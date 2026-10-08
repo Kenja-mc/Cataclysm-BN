@@ -17,7 +17,7 @@ direction?" prompt.
 | --------- | ------------------------------- | ----- | -------------------------------- |
 | `w a s d` | move                            | `x`   | wait a turn (also `.`)           |
 | `q e z c` | move diagonally                 | Space | interact / examine               |
-| `g`       | pick up                         | `,`   | pick up everything nearby        |
+| `g`       | pick up from everything nearby  | `,`   | pick up from one tile            |
 | `i`       | inventory                       | `u`   | use an item                      |
 | `h`       | hold (wield)                    | `W`/`T` | wear / take off                |
 | `f`       | fire                            | `r`   | reload                           |

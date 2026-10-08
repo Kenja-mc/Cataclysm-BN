@@ -899,8 +899,8 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
                         volume_predict > g->u.volume_capacity() ? c_red : c_white );
             const std::string fmted_volume_capacity = format_volume( g->u.volume_capacity() );
 
-            trim_and_print( w_pickup, point_zero, pickupW, c_white,
-                            string_format( _( "PICK Wgt %1$s/%2$s  Vol %3$s/%4$s" ),
+            trim_and_print( w_pickup, point_zero, pickupW, c_light_gray,
+                            string_format( _( "<color_light_cyan>Pick up</color>  Weight %1$s/%2$s  Volume %3$s/%4$s" ),
                                            fmted_weight_predict, fmted_weight_capacity,
                                            fmted_volume_predict, fmted_volume_capacity ) );
 
