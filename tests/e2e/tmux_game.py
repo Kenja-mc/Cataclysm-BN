@@ -100,6 +100,11 @@ def start_new_game(game, timeout=240):
     deadline = time.time() + timeout
     while time.time() < deadline:
         s = game.screen()
+        if "Welcome to Bright Nights" in s:
+            game.saw_welcome = True
+            game.welcome_screen = s
+            game.keys("Escape", delay=1)
+            continue
         if in_game(s) and "Are you SURE" not in s:
             return
         if "Select your language" in s:

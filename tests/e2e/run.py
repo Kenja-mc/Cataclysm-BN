@@ -54,6 +54,10 @@ def settle(g):
     g.keys("x", delay=0.6)
 
 
+def test_welcome_card(g):
+    assert getattr(g, "saw_welcome", False), "first new game should show the welcome card"
+
+
 def test_controls_strip(g):
     s = g.screen()
     for hint in ("wasd move", "qezc diag", "Q stash", "Z sort pile"):
@@ -194,7 +198,7 @@ def test_rounded_frames(g):
     assert "╭" in s and "╯" in s, "inventory window should have rounded corners"
 
 
-TESTS = [test_controls_strip, test_wasd_movement, test_wait_keeps_position,
+TESTS = [test_welcome_card, test_controls_strip, test_wasd_movement, test_wait_keeps_position,
          test_quick_stack, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
          test_aim_defaults, test_recraft_after_reload, test_magnet_pull_through_monster]
 

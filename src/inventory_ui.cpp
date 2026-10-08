@@ -1658,7 +1658,8 @@ namespace
 auto capacity_bar( const int cur_value, const int max_value ) -> std::string
 {
     constexpr auto cells = 8;
-    const auto ratio = max_value > 0 ? static_cast<double>( cur_value ) / max_value : 1.0;
+    // No storage at all reads as empty rather than full.
+    const auto ratio = max_value > 0 ? static_cast<double>( cur_value ) / max_value : cur_value > 0 ? 1.0 : 0.0;
     const auto filled = std::clamp( static_cast<int>( std::lround( ratio * cells ) ), 0, cells );
     const auto color = ratio >= 0.9 ? c_light_red : ratio >= 0.6 ? c_yellow : c_light_green;
     auto full = std::string();

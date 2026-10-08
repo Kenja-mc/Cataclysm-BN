@@ -83,6 +83,7 @@
 #include "iuse.h"
 #include "iuse_actor.h"
 #include "json.h"
+#include "keyhints_panel.h"
 #include "kill_tracker.h"
 #include "line.h"
 #include "live_view.h"
@@ -1237,6 +1238,7 @@ bool game::start_game()
     }
 
     cata::run_hooks( "on_game_started" );
+    show_welcome_once();
     return true;
 }
 

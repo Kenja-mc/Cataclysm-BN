@@ -1913,6 +1913,11 @@ void options_manager::add_options_interface()
          false
        );
 
+    add( "SHOW_WELCOME", interface, translate_marker( "Show welcome card" ),
+         translate_marker( "If true, the next new game starts with a short card explaining the controls." ),
+         true
+       );
+
     add( "FORCE_CAPITAL_YN", interface, translate_marker( "Force Y/N in prompts" ),
          translate_marker( "If true, Y/N prompts are case-sensitive and y and n are not accepted." ),
          false
