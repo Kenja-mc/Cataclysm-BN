@@ -1270,11 +1270,11 @@
       [ "rag", 20 ],
       { "group": "tinware", "prob": 20 },
       [ "mask_guy_fawkes", 10 ],
-      [ "gold_ear", 10 ],
+      { "item": "jewelry_earrings", "prob": 10, "variant": "gold_ear" },
       [ "bone_tainted", 5 ],
-      [ "silver_ear", 5 ],
+      { "item": "jewelry_earrings", "prob": 5, "variant": "silver_ear" },
       [ "bead_ear", 5 ],
-      [ "platinum_ear", 1 ],
+      { "item": "jewelry_earrings", "prob": 1, "variant": "platinum_ear" },
       { "group": "corpse_mansion", "prob": 5 },
       { "group": "neckties", "prob": 1 }
     ]

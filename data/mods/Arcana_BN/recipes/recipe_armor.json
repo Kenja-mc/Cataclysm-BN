@@ -202,7 +202,7 @@
     "time": "30 m",
     "autolearn": true,
     "components": [
-      [ [ "cordage_short", 1, "LIST" ], [ "silver_necklace", 1 ] ],
+      [ [ "cordage_short", 1, "LIST" ], [ "jewelry_necklace", 1 ] ],
       [ [ "vortex_shard", 1 ], [ "blob_gem", 1 ], [ "monster_tear", 1 ], [ "shadow_gem", 1 ] ]
     ]
   },

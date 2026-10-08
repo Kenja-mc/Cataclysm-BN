@@ -26,7 +26,7 @@
     "time": "20 m",
     "book_learn": [ [ "alchemy_basic", 1 ], [ "necro_basic", 2 ] ],
     "qualities": [ { "id": "CHISEL", "level": 1 } ],
-    "components": [ [ [ "copper_bracelet", 1 ] ] ]
+    "components": [ [ [ "jewelry_bracelet", 1 ] ] ]
   },
   {
     "type": "recipe",
@@ -40,7 +40,7 @@
     "time": "20 m",
     "book_learn": [ [ "alchemy_basic", 2 ], [ "necro_basic", 3 ] ],
     "qualities": [ { "id": "CHISEL", "level": 1 } ],
-    "components": [ [ [ "silver_bracelet", 1 ] ] ]
+    "components": [ [ [ "jewelry_bracelet", 1 ] ] ]
   },
   {
     "type": "recipe",

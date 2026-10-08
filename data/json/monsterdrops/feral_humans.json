@@ -837,7 +837,7 @@
       { "item": "dress_shoes", "prob": 100 },
       { "item": "fancy_sunglasses", "prob": 100 },
       { "item": "sf_watch", "prob": 100 },
-      { "item": "cufflinks_intricate", "prob": 50 }
+      { "item": "jewelry_cufflinks", "prob": 50, "variant": "cufflinks_intricate" }
     ]
   },
   {
@@ -848,8 +848,8 @@
       { "item": "dress", "prob": 100 },
       { "item": "heels", "prob": 100 },
       { "item": "fancy_sunglasses", "prob": 100 },
-      { "item": "platinum_bracelet", "prob": 100 },
-      { "item": "platinum_ear", "prob": 50 }
+      { "item": "jewelry_bracelet", "prob": 100, "variant": "platinum_bracelet" },
+      { "item": "jewelry_earrings", "prob": 50, "variant": "platinum_ear" }
     ]
   },
   {

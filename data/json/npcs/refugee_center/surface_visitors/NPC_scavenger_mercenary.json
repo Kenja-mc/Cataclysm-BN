@@ -63,8 +63,8 @@
     "items": [
       { "item": "ear_plugs", "custom-flags": [ "no_auto_equip" ] },
       { "item": "stanag30", "ammo-item": "556", "charges": 30 },
-      { "item": "mre_chilibeans_box" },
-      { "item": "mre_chickennoodle_box" }
+      { "item": "mre_ration" },
+      { "item": "mre_ration" }
     ]
   },
   {

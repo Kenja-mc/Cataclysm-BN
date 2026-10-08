@@ -244,9 +244,9 @@
       { "item": "rollmat" },
       { "item": "sleeping_bag_roll" },
       { "item": "ear_plugs" },
-      { "item": "mre_hashbrownbacon_box" },
-      { "item": "mre_macaronimarinara_box" },
-      { "item": "mre_meatball_box" },
+      { "item": "mre_ration" },
+      { "item": "mre_ration" },
+      { "item": "mre_ration" },
       { "item": "water_clean", "count": 2, "charges": 2, "container-item": "bottle_plastic" }
     ]
   },
