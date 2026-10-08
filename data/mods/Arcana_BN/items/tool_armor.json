@@ -811,7 +811,7 @@
   {
     "id": "cleric_ring",
     "type": "TOOL_ARMOR",
-    "copy-from": "ruby_silver_ring",
+    "copy-from": "jewelry_ring",
     "repairs_like": "orb_veil",
     "category": "tools",
     "name": { "str": "ring of the fallen angel", "str_pl": "rings of the fallen angel" },
@@ -836,7 +836,9 @@
     "relic_data": {
       "passive_effects": [ { "conditions": [ "WORN", "ACTIVE" ], "ench_effects": [ { "effect": "cleric_warding", "intensity": 1 } ] } ]
     },
-    "extend": { "flags": [ "NO_SALVAGE", "PSYSHIELD_PARTIAL", "COMBAT_NPC_USE", "MISSION_ITEM" ] }
+    "extend": { "flags": [ "NO_SALVAGE", "PSYSHIELD_PARTIAL", "COMBAT_NPC_USE", "MISSION_ITEM" ] },
+    "weight": "2700 mg",
+    "volume": "0 ml"
   },
   {
     "id": "cleric_ring_on",

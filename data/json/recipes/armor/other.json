@@ -25,7 +25,7 @@
     "components": [ [ [ "rag", 35 ] ], [ [ "plastic_chunk", 4 ] ], [ [ "element", 8 ] ], [ [ "cable", 10 ] ], [ [ "amplifier", 1 ] ] ]
   },
   {
-    "result": "gold_ring",
+    "result": "jewelry_ring",
     "type": "recipe",
     "category": "CC_ARMOR",
     "subcategory": "CSC_ARMOR_OTHER",
@@ -35,10 +35,12 @@
     "autolearn": true,
     "book_learn": [ [ "jewelry_book", 5 ] ],
     "using": [ [ "blacksmithing_advanced", 3 ] ],
-    "components": [ [ [ "gold_small", 3 ] ] ]
+    "components": [ [ [ "gold_small", 3 ] ] ],
+    "result_variant": "gold_ring",
+    "id_suffix": "gold_ring"
   },
   {
-    "result": "gold_bracelet",
+    "result": "jewelry_bracelet",
     "type": "recipe",
     "category": "CC_ARMOR",
     "subcategory": "CSC_ARMOR_OTHER",
@@ -48,10 +50,12 @@
     "autolearn": true,
     "book_learn": [ [ "jewelry_book", 5 ] ],
     "using": [ [ "blacksmithing_advanced", 3 ] ],
-    "components": [ [ [ "gold_small", 12 ] ] ]
+    "components": [ [ [ "gold_small", 12 ] ] ],
+    "result_variant": "gold_bracelet",
+    "id_suffix": "gold_bracelet"
   },
   {
-    "result": "copper_bracelet",
+    "result": "jewelry_bracelet",
     "type": "recipe",
     "category": "CC_ARMOR",
     "subcategory": "CSC_ARMOR_OTHER",
@@ -61,11 +65,13 @@
     "autolearn": true,
     "book_learn": [ [ "jewelry_book", 5 ] ],
     "using": [ [ "blacksmithing_advanced", 3 ] ],
-    "components": [ [ [ "copper_scrap_equivalent", 2, "LIST" ] ] ]
+    "components": [ [ [ "copper_scrap_equivalent", 2, "LIST" ] ] ],
+    "result_variant": "copper_bracelet",
+    "id_suffix": "copper_bracelet"
   },
   {
     "type": "recipe",
-    "result": "silver_bracelet",
+    "result": "jewelry_bracelet",
     "category": "CC_ARMOR",
     "subcategory": "CSC_ARMOR_OTHER",
     "skill_used": "fabrication",
@@ -74,7 +80,9 @@
     "autolearn": true,
     "book_learn": [ [ "jewelry_book", 5 ] ],
     "using": [ [ "blacksmithing_advanced", 3 ] ],
-    "components": [ [ [ "silver_small", 15 ] ] ]
+    "components": [ [ [ "silver_small", 15 ] ] ],
+    "result_variant": "silver_bracelet",
+    "id_suffix": "silver_bracelet"
   },
   {
     "type": "recipe",

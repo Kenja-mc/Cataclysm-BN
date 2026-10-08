@@ -218,17 +218,20 @@
   {
     "id": "locket",
     "type": "MIGRATION",
-    "replace": "silver_locket"
+    "replace": "jewelry_locket",
+    "variant": "silver_locket"
   },
   {
     "id": "ring",
     "type": "MIGRATION",
-    "replace": "gold_ring"
+    "replace": "jewelry_ring",
+    "variant": "gold_ring"
   },
   {
     "id": "necklace",
     "type": "MIGRATION",
-    "replace": "silver_necklace"
+    "replace": "jewelry_necklace",
+    "variant": "silver_necklace"
   },
   {
     "id": "brooch",
@@ -509,7 +512,8 @@
   {
     "id": "bp_22_fmj",
     "type": "MIGRATION",
-    "replace": "bp_22_cphp"
+    "replace": "22_cphp",
+    "stack_modifier": "black_powder"
   },
   {
     "id": "reloaded_22_fmj",

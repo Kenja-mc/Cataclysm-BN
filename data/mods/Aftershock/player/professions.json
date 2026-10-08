@@ -144,7 +144,7 @@
         "items": [ "tux", "dress_shoes", "socks", "gold_watch", "undershirt", "smart_phone", "gasdiscount_platinum" ],
         "entries": [ { "item": "afs_wraitheon_smartphone" } ]
       },
-      "male": [ "briefs", "collarpin", "diamond_ring" ],
+      "male": [ "briefs", "collarpin", "jewelry_ring" ],
       "female": [ "panties", "hairpin", "pearl_collar" ]
     }
   },
@@ -202,7 +202,7 @@
         "items": [ "tux", "dress_shoes", "socks", "gold_watch", "undershirt", "smart_phone", "gasdiscount_platinum" ],
         "entries": [ { "item": "cash_card", "charges": 200000000 } ]
       },
-      "male": [ "briefs", "collarpin", "diamond_ring" ],
+      "male": [ "briefs", "collarpin", "jewelry_ring" ],
       "female": [ "panties", "hairpin", "pearl_collar" ]
     }
   },

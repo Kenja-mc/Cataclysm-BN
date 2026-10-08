@@ -1,0 +1,158 @@
+[
+  {
+    "id": "mre_asianbeef_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_asianbeef"
+  },
+  {
+    "id": "mre_bbqbeef_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_bbqbeef"
+  },
+  {
+    "id": "mre_beef_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_beef"
+  },
+  {
+    "id": "mre_beefstew_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_beefstew"
+  },
+  {
+    "id": "mre_beeftaco_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_beeftaco"
+  },
+  {
+    "id": "mre_cheesetort_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_cheesetort"
+  },
+  {
+    "id": "mre_chicken_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_chicken"
+  },
+  {
+    "id": "mre_chickenburritobowl_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_chickenburritobowl"
+  },
+  {
+    "id": "mre_chickennoodle_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_chickennoodle"
+  },
+  {
+    "id": "mre_chickenpesto_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_chickenpesto"
+  },
+  {
+    "id": "mre_chilibeans_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_chilibeans"
+  },
+  {
+    "id": "mre_chilimac_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_chilimac"
+  },
+  {
+    "id": "mre_hashbrownbacon_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_hashbrownbacon"
+  },
+  {
+    "id": "mre_hotdog_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_hotdog"
+  },
+  {
+    "id": "mre_lemontuna_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_lemontuna"
+  },
+  {
+    "id": "mre_macaronimarinara_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_macaronimarinara"
+  },
+  {
+    "id": "mre_maplesausage_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_maplesausage"
+  },
+  {
+    "id": "mre_meatball_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_meatball"
+  },
+  {
+    "id": "mre_mexicanchickenstew_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_mexicanchickenstew"
+  },
+  {
+    "id": "mre_mushroomfettuccine_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_mushroomfettuccine"
+  },
+  {
+    "id": "mre_omelette_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_omelette"
+  },
+  {
+    "id": "mre_pepperjackbeef_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_pepperjackbeef"
+  },
+  {
+    "id": "mre_ravioli_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_ravioli"
+  },
+  {
+    "id": "mre_southwestbeef_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_southwestbeef"
+  },
+  {
+    "id": "mre_spaghetti_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_spaghetti"
+  },
+  {
+    "id": "mre_veggy_box",
+    "type": "MIGRATION",
+    "replace": "mre_ration",
+    "variant": "mre_veggy"
+  }
+]

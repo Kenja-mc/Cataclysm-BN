@@ -2856,8 +2856,8 @@
           "sunglasses",
           "sf_watch",
           "ring_signet",
-          "gold_necklace",
-          "gold_dental_grill"
+          "jewelry_necklace",
+          "jewelry_dental_grill"
         ],
         "entries": [
           { "item": "glock_19", "ammo-item": "9mm", "container-item": "holster", "charges": 15 },
@@ -3175,8 +3175,8 @@
     "starting_cash": 5000000,
     "items": {
       "both": { "items": [ "smart_phone", "platinum_watch" ] },
-      "male": [ "boxer_shorts", "tux", "dress_shoes", "diamond_platinum_earring", "fancy_sunglasses" ],
-      "female": [ "bra", "panties", "shorts_denim", "blazer", "diamond_platinum_earring", "heels", "fancy_sunglasses" ]
+      "male": [ "boxer_shorts", "tux", "dress_shoes", "jewelry_earrings", "fancy_sunglasses" ],
+      "female": [ "bra", "panties", "shorts_denim", "blazer", "jewelry_earrings", "heels", "fancy_sunglasses" ]
     }
   },
   {
@@ -3782,7 +3782,7 @@
     "points": 0,
     "skills": [ { "level": 5, "name": "barter" }, { "level": 3, "name": "speech" } ],
     "items": {
-      "both": { "items": [ "suit", "knit_scarf", "socks", "dress_shoes", "smart_phone", "gold_watch", "pen", "cufflinks_intricate" ] },
+      "both": { "items": [ "suit", "knit_scarf", "socks", "dress_shoes", "smart_phone", "gold_watch", "pen", "jewelry_cufflinks" ] },
       "male": [ "briefs" ],
       "female": [ "bra", "panties" ]
     }
@@ -6155,7 +6155,7 @@
     "items": {
       "both": {
         "items": [
-          "gold_ear",
+          "jewelry_earrings",
           "motorbike_armor",
           "pants_leather",
           "chaps_leather",
@@ -6653,7 +6653,7 @@
           "mbag",
           "leather_pouch",
           "scabbard",
-          "gold_ear",
+          "jewelry_earrings",
           "rum"
         ],
         "entries": [
@@ -6693,7 +6693,7 @@
           "mbag",
           "leather_pouch",
           "scabbard",
-          "gold_ear",
+          "jewelry_earrings",
           "rum"
         ],
         "entries": [
@@ -7807,7 +7807,7 @@
         "tieclip",
         "leather_belt",
         "briefcase",
-        "cufflinks_intricate"
+        "jewelry_cufflinks"
       ],
       "female": [
         "panties",
@@ -7815,11 +7815,11 @@
         "stockings",
         "heels",
         "gown",
-        "diamond_platinum_tiara",
+        "jewelry_tiara",
         "purse",
-        "platinum_ear",
-        "platinum_necklace",
-        "platinum_hairpin"
+        "jewelry_earrings",
+        "jewelry_necklace",
+        "jewelry_hairpin"
       ]
     }
   },
@@ -7859,7 +7859,7 @@
         "tieclip",
         "leather_belt",
         "briefcase",
-        "cufflinks_intricate"
+        "jewelry_cufflinks"
       ],
       "female": [
         "panties",
@@ -7867,11 +7867,11 @@
         "stockings",
         "heels",
         "gown",
-        "diamond_platinum_tiara",
+        "jewelry_tiara",
         "purse",
-        "platinum_ear",
-        "platinum_necklace",
-        "platinum_hairpin"
+        "jewelry_earrings",
+        "jewelry_necklace",
+        "jewelry_hairpin"
       ]
     }
   },
@@ -9092,8 +9092,8 @@
           "fancy_sunglasses",
           "suit",
           "tie_necktie",
-          "blue_topaz_platinum_cufflinks",
-          "platinum_ring",
+          "jewelry_cufflinks",
+          "jewelry_ring",
           "platinum_watch",
           "kevlar",
           "socks",
@@ -9119,8 +9119,8 @@
           { "item": "badge_IRS" }
         ]
       },
-      "male": [ "boxer_shorts", "platinum_necklace" ],
-      "female": [ "boy_shorts", "sports_bra", "blue_topaz_platinum_earring" ]
+      "male": [ "boxer_shorts", "jewelry_necklace" ],
+      "female": [ "boy_shorts", "sports_bra", "jewelry_earrings" ]
     }
   },
   {

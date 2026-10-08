@@ -454,9 +454,9 @@
         { "item": "tent_kit", "x": 0, "y": 0, "chance": 25 },
         { "item": "pur_tablets", "x": 0, "y": 0, "chance": 25 },
         { "item": "knife_trench", "x": 0, "y": 0, "chance": 25 },
-        { "item": "mre_hashbrownbacon_box", "x": 0, "y": 0, "chance": 25 },
-        { "item": "mre_macaronimarinara_box", "x": 0, "y": 0, "chance": 25 },
-        { "item": "mre_meatball_box", "x": 0, "y": 0, "chance": 25 }
+        { "item": "mre_ration", "x": 0, "y": 0, "chance": 25 },
+        { "item": "mre_ration", "x": 0, "y": 0, "chance": 25 },
+        { "item": "mre_ration", "x": 0, "y": 0, "chance": 25 }
       ]
     }
   },

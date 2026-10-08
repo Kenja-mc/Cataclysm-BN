@@ -25,7 +25,7 @@
     ],
     "material": [ "gold", "silver" ],
     "symbol": ",",
-    "looks_like": "gold_bracelet",
+    "looks_like": "jewelry_bracelet",
     "color": "yellow",
     "ammo": "essence_type",
     "skill": "magic",

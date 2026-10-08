@@ -2293,7 +2293,7 @@
     "weight": "300 g",
     "volume": "250 ml",
     "material": [ "plastic" ],
-    "looks_like": "mre_beef_box",
+    "looks_like": "mre_ration",
     "use_action": "DISASSEMBLE",
     "flags": [ "NO_REPAIR", "NO_SALVAGE" ]
   },

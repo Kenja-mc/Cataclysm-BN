@@ -55,19 +55,27 @@
   },
   {
     "id": "copper_infuser",
-    "copy-from": "copper_bracelet",
+    "copy-from": "jewelry_bracelet",
     "type": "ARMOR",
     "qualities": [ [ "MANA_INFUSE", 1 ] ],
     "name": { "str": "copper infusion bracelet" },
-    "description": "This bracelet has runes engraved on it.  You sense a faint air of mysticism when you look at it.  It would be useful for imbuing mana into material."
+    "description": "This bracelet has runes engraved on it.  You sense a faint air of mysticism when you look at it.  It would be useful for imbuing mana into material.",
+    "material": [ "copper" ],
+    "weight": "86 g",
+    "price": "25 USD",
+    "volume": "5 ml",
+    "delete": { "flags": [ "FANCY" ] }
   },
   {
     "id": "silver_infuser",
-    "copy-from": "silver_bracelet",
+    "copy-from": "jewelry_bracelet",
     "type": "ARMOR",
     "qualities": [ [ "MANA_INFUSE", 2 ] ],
     "name": { "str": "silver infusion bracelet" },
-    "description": "This bracelet has runes engraved on it.  You sense a faint air of mysticism when you look at it.  It would be useful for imbuing mana into material."
+    "description": "This bracelet has runes engraved on it.  You sense a faint air of mysticism when you look at it.  It would be useful for imbuing mana into material.",
+    "material": [ "silver" ],
+    "weight": "30 g",
+    "price": "250 USD"
   },
   {
     "id": "copper_circlet",

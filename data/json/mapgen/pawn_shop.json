@@ -534,9 +534,9 @@
       { "group": "supplies_metal_precious", "prob": 70 },
       { "item": "money_bundle", "prob": 90 },
       { "item": "gold_watch", "prob": 30 },
-      { "item": "gold_ear", "prob": 30 },
-      { "item": "gold_bracelet", "prob": 30 },
-      { "item": "diamond_ring", "prob": 20 },
+      { "item": "jewelry_earrings", "prob": 30, "variant": "gold_ear" },
+      { "item": "jewelry_bracelet", "prob": 30, "variant": "gold_bracelet" },
+      { "item": "jewelry_ring", "prob": 20, "variant": "diamond_ring" },
       { "item": "diamond", "prob": 10 }
     ]
   },
