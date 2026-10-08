@@ -8,7 +8,8 @@
         "name": { "str": "MRE - Chili & Beans", "str_pl": "MREs - Chili & Beans" },
         "description": "A 'Meal Ready to Eat' with a chili & beans entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes good.",
         "weight": 10,
-        "components": [ [ "mre_chilibeans", 1 ] ]
+        "components": [ [ "mre_chilibeans", 1 ] ],
+        "looks_like": "mre_chilibeans_box"
       },
       {
         "id": "mre_bbqbeef",
@@ -16,7 +17,8 @@
         "description": "A 'Meal Ready to Eat' with a BBQ beef entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes delicious.",
         "weight": 10,
         "price_multiplier": 1.33,
-        "components": [ [ "mre_bbqbeef", 1 ] ]
+        "components": [ [ "mre_bbqbeef", 1 ] ],
+        "looks_like": "mre_bbqbeef_box"
       },
       {
         "id": "mre_chickennoodle",
@@ -24,28 +26,32 @@
         "description": "A 'Meal Ready to Eat' with a chicken & noodles entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes bland and gross, even after all the flavoring added.",
         "weight": 10,
         "price_multiplier": 0.67,
-        "components": [ [ "mre_chickennoodle", 1 ] ]
+        "components": [ [ "mre_chickennoodle", 1 ] ],
+        "looks_like": "mre_chickennoodle_box"
       },
       {
         "id": "mre_spaghetti",
         "name": { "str": "MRE - Spaghetti", "str_pl": "MREs - Spaghetti" },
         "description": "A 'Meal Ready to Eat' with a spaghetti entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes good.",
         "weight": 10,
-        "components": [ [ "mre_spaghetti", 1 ] ]
+        "components": [ [ "mre_spaghetti", 1 ] ],
+        "looks_like": "mre_spaghetti_box"
       },
       {
         "id": "mre_chicken",
         "name": { "str": "MRE - Chicken Chunks", "str_pl": "MREs - Chicken Chunks" },
         "description": "A 'Meal Ready to Eat' with a chicken chunk entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes good, if not a bit bland.",
         "weight": 10,
-        "components": [ [ "mre_chicken", 1 ] ]
+        "components": [ [ "mre_chicken", 1 ] ],
+        "looks_like": "mre_chicken_box"
       },
       {
         "id": "mre_beeftaco",
         "name": { "str": "MRE - Beef Taco", "str_pl": "MREs - Beef Taco" },
         "description": "A 'Meal Ready to Eat' with a beef taco entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes good, but the flavors are a bit off.",
         "weight": 10,
-        "components": [ [ "mre_beeftaco", 1 ] ]
+        "components": [ [ "mre_beeftaco", 1 ] ],
+        "looks_like": "mre_beeftaco_box"
       },
       {
         "id": "mre_beef",
@@ -53,14 +59,16 @@
         "description": "A 'Meal Ready to Eat' with a beef brisket entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes delicious.",
         "weight": 10,
         "price_multiplier": 1.33,
-        "components": [ [ "mre_beef", 1 ] ]
+        "components": [ [ "mre_beef", 1 ] ],
+        "looks_like": "mre_beef_box"
       },
       {
         "id": "mre_meatball",
         "name": { "str": "MRE - Meatballs & Marinara", "str_pl": "MREs - Meatballs & Marinara" },
         "description": "A 'Meal Ready to Eat' with a meatball entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes good.",
         "weight": 10,
-        "components": [ [ "mre_meatball", 1 ] ]
+        "components": [ [ "mre_meatball", 1 ] ],
+        "looks_like": "mre_meatball_box"
       },
       {
         "id": "mre_beefstew",
@@ -68,7 +76,8 @@
         "description": "A 'Meal Ready to Eat' with a beef stew entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes delicious.",
         "weight": 10,
         "price_multiplier": 1.33,
-        "components": [ [ "mre_beefstew", 1 ] ]
+        "components": [ [ "mre_beefstew", 1 ] ],
+        "looks_like": "mre_beefstew_box"
       },
       {
         "id": "mre_chilimac",
@@ -76,14 +85,16 @@
         "description": "A 'Meal Ready to Eat' with a chili & macaroni entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes fantastic, could be one of the best MRE menus you can get your hands on.",
         "weight": 10,
         "price_multiplier": 2.0,
-        "components": [ [ "mre_chilimac", 1 ] ]
+        "components": [ [ "mre_chilimac", 1 ] ],
+        "looks_like": "mre_chilimac_box"
       },
       {
         "id": "mre_veggy",
         "name": { "str": "MRE - Vegetarian Taco", "str_pl": "MREs - Vegetarian Taco" },
         "description": "A 'Meal Ready to Eat' with a vegetarian taco entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes decent, not good but not offensive either.",
         "weight": 10,
-        "components": [ [ "mre_veggy", 1 ] ]
+        "components": [ [ "mre_veggy", 1 ] ],
+        "looks_like": "mre_veggy_box"
       },
       {
         "id": "mre_macaronimarinara",
@@ -91,14 +102,16 @@
         "description": "A 'Meal Ready to Eat' with a macaroni marinara entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes delicious.",
         "weight": 10,
         "price_multiplier": 1.33,
-        "components": [ [ "mre_macaronimarinara", 1 ] ]
+        "components": [ [ "mre_macaronimarinara", 1 ] ],
+        "looks_like": "mre_macaronimarinara_box"
       },
       {
         "id": "mre_cheesetort",
         "name": { "str": "MRE - Cheese Tortellini", "str_pl": "MREs - Cheese Tortellini" },
         "description": "A 'Meal Ready to Eat' with a cheese tortellini entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes good.",
         "weight": 10,
-        "components": [ [ "mre_cheesetort", 1 ] ]
+        "components": [ [ "mre_cheesetort", 1 ] ],
+        "looks_like": "mre_cheesetort_box"
       },
       {
         "id": "mre_mushroomfettuccine",
@@ -106,14 +119,16 @@
         "description": "A 'Meal Ready to Eat' with a mushroom fettuccine entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes horrible, a few steps above the infamous vomelette.",
         "weight": 10,
         "price_multiplier": 0.67,
-        "components": [ [ "mre_mushroomfettuccine", 1 ] ]
+        "components": [ [ "mre_mushroomfettuccine", 1 ] ],
+        "looks_like": "mre_mushroomfettuccine_box"
       },
       {
         "id": "mre_mexicanchickenstew",
         "name": { "str": "MRE - Mexican Chicken Stew", "str_pl": "MREs - Mexican Chicken Stew" },
         "description": "A 'Meal Ready to Eat' with a Mexican chicken stew entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes good.",
         "weight": 10,
-        "components": [ [ "mre_mexicanchickenstew", 1 ] ]
+        "components": [ [ "mre_mexicanchickenstew", 1 ] ],
+        "looks_like": "mre_mexicanchickenstew_box"
       },
       {
         "id": "mre_chickenburritobowl",
@@ -121,56 +136,64 @@
         "description": "A 'Meal Ready to Eat' with a chicken burrito bowl entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes delicious.",
         "weight": 1,
         "price_multiplier": 1.33,
-        "components": [ [ "mre_chickenburritobowl", 1 ] ]
+        "components": [ [ "mre_chickenburritobowl", 1 ] ],
+        "looks_like": "mre_chickenburritobowl_box"
       },
       {
         "id": "mre_maplesausage",
         "name": { "str": "MRE - Maple Sausage", "str_pl": "MREs - Maple Sausage" },
         "description": "A 'Meal Ready to Eat' with a maple sausage entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes good.",
         "weight": 10,
-        "components": [ [ "mre_maplesausage", 1 ] ]
+        "components": [ [ "mre_maplesausage", 1 ] ],
+        "looks_like": "mre_maplesausage_box"
       },
       {
         "id": "mre_ravioli",
         "name": { "str": "MRE - Ravioli", "str_pl": "MREs - Ravioli" },
         "description": "A 'Meal Ready to Eat' with a ravioli entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes decent, but the flavor is just not there.",
         "weight": 10,
-        "components": [ [ "mre_ravioli", 1 ] ]
+        "components": [ [ "mre_ravioli", 1 ] ],
+        "looks_like": "mre_ravioli_box"
       },
       {
         "id": "mre_pepperjackbeef",
         "name": { "str": "MRE - Pepper Jack Beef", "str_pl": "MREs - Pepper Jack Beef" },
         "description": "A 'Meal Ready to Eat' with a pepper jack beef entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes decent and just a step above bland.",
         "weight": 1,
-        "components": [ [ "mre_pepperjackbeef", 1 ] ]
+        "components": [ [ "mre_pepperjackbeef", 1 ] ],
+        "looks_like": "mre_pepperjackbeef_box"
       },
       {
         "id": "mre_hashbrownbacon",
         "name": { "str": "MRE - Hash Browns & Bacon", "str_pl": "MREs - Hash Browns & Bacon" },
         "description": "A 'Meal Ready to Eat' with a hash browns & bacon entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes good.",
         "weight": 10,
-        "components": [ [ "mre_hashbrownbacon", 1 ] ]
+        "components": [ [ "mre_hashbrownbacon", 1 ] ],
+        "looks_like": "mre_hashbrownbacon_box"
       },
       {
         "id": "mre_lemontuna",
         "name": { "str": "MRE - Lemon Pepper Tuna", "str_pl": "MREs - Lemon Pepper Tuna" },
         "description": "A 'Meal Ready to Eat' with a lemon pepper tuna entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes decent, the sweet flavor is just too strong.",
         "weight": 10,
-        "components": [ [ "mre_lemontuna", 1 ] ]
+        "components": [ [ "mre_lemontuna", 1 ] ],
+        "looks_like": "mre_lemontuna_box"
       },
       {
         "id": "mre_asianbeef",
         "name": { "str": "MRE - Asian Beef & Vegetables", "str_pl": "MREs - Asian Beef & Vegetables" },
         "description": "A 'Meal Ready to Eat' with an asian beef & vegetables entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes good and exotic.",
         "weight": 10,
-        "components": [ [ "mre_asianbeef", 1 ] ]
+        "components": [ [ "mre_asianbeef", 1 ] ],
+        "looks_like": "mre_asianbeef_box"
       },
       {
         "id": "mre_chickenpesto",
         "name": { "str": "MRE - Chicken Pesto & Pasta", "str_pl": "MREs - Chicken Pesto & Pasta" },
         "description": "A 'Meal Ready to Eat' with a chicken pesto entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes decent, just enough to eat.",
         "weight": 10,
-        "components": [ [ "mre_chickenpesto", 1 ] ]
+        "components": [ [ "mre_chickenpesto", 1 ] ],
+        "looks_like": "mre_chickenpesto_box"
       },
       {
         "id": "mre_southwestbeef",
@@ -178,7 +201,8 @@
         "description": "A 'Meal Ready to Eat' with a southwest beef & beans entree and everything a hungry soldier needs.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  This one tastes fantastic, could be one of the best MRE menus you can get your hands on.",
         "weight": 10,
         "price_multiplier": 1.67,
-        "components": [ [ "mre_southwestbeef", 1 ] ]
+        "components": [ [ "mre_southwestbeef", 1 ] ],
+        "looks_like": "mre_southwestbeef_box"
       },
       {
         "id": "mre_hotdog",
@@ -186,7 +210,8 @@
         "description": "A vintage MRE, still perfectly preserved and edible.  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  You have the potential to become the first person on Earth to be capable of enjoying this, with enough training.",
         "weight": 10,
         "price_multiplier": 0.33,
-        "components": [ [ "mre_hotdog", 1 ] ]
+        "components": [ [ "mre_hotdog", 1 ] ],
+        "looks_like": "mre_hotdog_box"
       },
       {
         "id": "mre_omelette",
@@ -194,13 +219,15 @@
         "description": "A vintage MRE, still perfectly preserved and edible.  Or is it?  The contents are individually packed and will remain sealed after you open this box.  Activate or disassemble it to get to its contents.  If you dare.",
         "weight": 10,
         "price_multiplier": 0.07,
-        "components": [ [ "mre_omelette", 1 ] ]
+        "components": [ [ "mre_omelette", 1 ] ],
+        "looks_like": "mre_omelette_box"
       }
     ]
   },
   {
     "type": "item_variants",
     "id": "jewelry_bracelet",
+    "cosmetic": true,
     "variants": [
       {
         "id": "alexandrite_gold_bracelet",
@@ -619,6 +646,7 @@
   {
     "type": "item_variants",
     "id": "jewelry_cufflinks",
+    "cosmetic": true,
     "variants": [
       {
         "id": "alexandrite_gold_cufflinks",
@@ -1019,6 +1047,7 @@
   {
     "type": "item_variants",
     "id": "jewelry_dental_grill",
+    "cosmetic": true,
     "variants": [
       {
         "id": "alexandrite_dental_grill",
@@ -1148,6 +1177,7 @@
   {
     "type": "item_variants",
     "id": "jewelry_earrings",
+    "cosmetic": true,
     "variants": [
       {
         "id": "alexandrite_gold_earring",
@@ -1565,6 +1595,7 @@
   {
     "type": "item_variants",
     "id": "jewelry_hairpin",
+    "cosmetic": true,
     "variants": [
       {
         "id": "copper_hairpin",
@@ -1605,6 +1636,7 @@
   {
     "type": "item_variants",
     "id": "jewelry_locket",
+    "cosmetic": true,
     "variants": [
       {
         "id": "copper_locket",
@@ -1645,6 +1677,7 @@
   {
     "type": "item_variants",
     "id": "jewelry_necklace",
+    "cosmetic": true,
     "variants": [
       {
         "id": "alexandrite_gold_pendant_necklace",
@@ -2063,6 +2096,7 @@
   {
     "type": "item_variants",
     "id": "jewelry_ring",
+    "cosmetic": true,
     "variants": [
       {
         "id": "alexandrite_gold_ring",
@@ -2480,6 +2514,7 @@
   {
     "type": "item_variants",
     "id": "jewelry_tiara",
+    "cosmetic": true,
     "variants": [
       {
         "id": "alexandrite_gold_tiara",

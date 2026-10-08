@@ -27,6 +27,7 @@
 #    include "int_id.h"
 #    include "item.h"
 #    include "item_factory.h"
+#    include "item_variant.h"
 #    include "itype.h"
 #    include "json.h"
 #    include "line.h"
@@ -5597,6 +5598,7 @@ bool cata_tiles::draw_field_or_item( const tripoint_bub_ms &p, const lit_level l
         mtype_id mon_id;
         bool hilite;
         const itype *it_type;
+        auto variant_sprite = std::string();
         if( it_overridden ) {
             it_id = std::get<0>( it_override->second );
             mon_id = std::get<1>( it_override->second );
@@ -5640,6 +5642,11 @@ bool cata_tiles::draw_field_or_item( const tripoint_bub_ms &p, const lit_level l
                 mon_id = mon ? mon->id : mtype_id::NULL_ID();
                 hilite = tile.get_item_count() > 1;
                 it_type = itm.type;
+                // Variants keep their old item ids, which tilesets may still have sprites for.
+                variant_sprite = item_variants::sprite( itm );
+                if( !variant_sprite.empty() && !find_tile_with_season( variant_sprite ) ) {
+                    variant_sprite.clear();
+                }
 
                 std::tie( bgCol, fgCol ) = get_item_color( itm, here, p );
             }
@@ -5649,7 +5656,8 @@ bool cata_tiles::draw_field_or_item( const tripoint_bub_ms &p, const lit_level l
         }
 
         if( it_type && !it_id.is_null() ) {
-            const std::string disp_id = it_id == itype_corpse && mon_id
+            const std::string disp_id = !variant_sprite.empty() ? variant_sprite
+                                        : it_id == itype_corpse && mon_id
                                         ? "corpse_" + mon_id.str()
                                         : it_id.str();
             const std::string it_category = it_type->get_item_type_string();

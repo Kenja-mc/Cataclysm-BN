@@ -118,6 +118,12 @@ that is optional:
   own price, material and melt-down parts (the ruby and the gold). Loot tables still name the exact
   piece they used to, and old saves convert. Pieces with a use or a story of their own stay
   separate: watches, badges, medals, holy symbols, wedding, engagement, purity and signet rings.
+- **Jewelry stacks.** Different rings share one stack, like items in Don't Starve: "3 rings".
+  Each ring still keeps its own name, gem, metal and price, so a stack is worth what its pieces
+  are worth. With a tileset, each piece shows the sprite of the item it used to be.
+- **Food of any freshness stacks**, with its rot averaged, as in Don't Starve. Rotten food never joins
+  fresh food. Options → General → Freshness similarity threshold brings back the stricter
+  upstream rule (0.25).
 - **One MRE.** The 26 MRE boxes are one *MRE*. The entree is a variant
   (`MRE - Chili & Beans`), and opening it still gives that entree.
 
@@ -180,6 +186,10 @@ item type variants instead of new item types:
 }
 ```
 
+- `"cosmetic": true` lets items of different variants stack. A stack of mixed pieces is named
+  after the item type.
+- A variant's `looks_like` names the tileset sprite to use (the variant id by default). If the
+  tileset lacks it, the item type's sprite is used.
 - A new item picks a variant by `weight` and keeps it.
 - Name, description, price and material follow the variant.
 - Disassembling a found piece yields the item type's own recipe plus the variant's `components`.

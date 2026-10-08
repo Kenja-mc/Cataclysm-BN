@@ -35,6 +35,7 @@ auto set_for( const item &it ) -> const item_variant_set * // *NOPAD*
 
 void item_variant_set::load( const JsonObject &jo, const std::string & )
 {
+    optional( jo, was_loaded, "cosmetic", cosmetic, false );
     variants.clear();
     for( JsonObject v : jo.get_array( "variants" ) ) {
         auto variant = item_variant{ .name = translation( translation::plural_tag() ) };
@@ -43,6 +44,7 @@ void item_variant_set::load( const JsonObject &jo, const std::string & )
         v.read( "description", variant.description );
         v.read( "weight", variant.weight );
         v.read( "price_multiplier", variant.price_multiplier );
+        v.read( "looks_like", variant.looks_like );
         v.read( "material", variant.materials );
         for( JsonArray c : v.get_array( "components" ) ) {
             variant.components.push_back( { .id = itype_id( c.get_string( 0 ) ), .count = c.get_int( 1 ) } );
@@ -115,6 +117,18 @@ auto of( const item &it ) -> const item_variant * // *NOPAD*
         }
     }
     return nullptr;
+}
+
+auto cosmetic( const itype &type ) -> bool
+{
+    const auto id = string_id<item_variant_set>( type.get_id().str() );
+    return id.is_valid() && id->cosmetic;
+}
+
+auto sprite( const item &it ) -> std::string
+{
+    const auto *variant = of( it );
+    return variant == nullptr ? std::string() : variant->looks_like.empty() ? variant->id : variant->looks_like;
 }
 
 auto find( const itype_id &type, const std::string &variant ) -> const item_variant * // *NOPAD*

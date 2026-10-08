@@ -668,7 +668,8 @@
     "material": [ "silver" ],
     "symbol": "[",
     "color": "light_gray",
-    "flags": [ "FANCY" ]
+    "flags": [ "FANCY" ],
+    "looks_like": "silver_bracelet"
   },
   {
     "id": "jewelry_cufflinks",
@@ -682,7 +683,8 @@
     "material": [ "silver", "gold" ],
     "symbol": "[",
     "color": "light_gray",
-    "flags": [ "FANCY" ]
+    "flags": [ "FANCY" ],
+    "looks_like": "cufflinks_intricate"
   },
   {
     "id": "jewelry_dental_grill",
@@ -699,7 +701,8 @@
     "symbol": "[",
     "color": "yellow",
     "covers": [ "mouth" ],
-    "flags": [ "COMPACT", "FANCY", "POWERARMOR_COMPATIBLE", "SKINTIGHT" ]
+    "flags": [ "COMPACT", "FANCY", "POWERARMOR_COMPATIBLE", "SKINTIGHT" ],
+    "looks_like": "gold_dental_grill"
   },
   {
     "id": "jewelry_earrings",
@@ -713,7 +716,8 @@
     "material": [ "silver" ],
     "symbol": "[",
     "color": "light_gray",
-    "flags": [ "FANCY" ]
+    "flags": [ "FANCY" ],
+    "looks_like": "silver_ear"
   },
   {
     "id": "jewelry_hairpin",
@@ -727,7 +731,8 @@
     "material": [ "silver" ],
     "symbol": "[",
     "color": "light_gray",
-    "flags": [ "FANCY" ]
+    "flags": [ "FANCY" ],
+    "looks_like": "silver_hairpin"
   },
   {
     "id": "jewelry_locket",
@@ -741,7 +746,8 @@
     "material": [ "silver" ],
     "symbol": "[",
     "color": "light_gray",
-    "flags": [ "FANCY" ]
+    "flags": [ "FANCY" ],
+    "looks_like": "silver_locket"
   },
   {
     "id": "jewelry_necklace",
@@ -755,7 +761,8 @@
     "material": [ "silver" ],
     "symbol": "[",
     "color": "light_gray",
-    "flags": [ "FANCY" ]
+    "flags": [ "FANCY" ],
+    "looks_like": "silver_necklace"
   },
   {
     "id": "jewelry_ring",
@@ -769,7 +776,8 @@
     "material": [ "gold" ],
     "symbol": "[",
     "color": "yellow",
-    "flags": [ "FANCY" ]
+    "flags": [ "FANCY" ],
+    "looks_like": "gold_ring"
   },
   {
     "id": "jewelry_tiara",
@@ -786,6 +794,7 @@
     "coverage": 5,
     "encumbrance": 1,
     "material_thickness": 1,
-    "flags": [ "SUPER_FANCY" ]
+    "flags": [ "SUPER_FANCY" ],
+    "looks_like": "alexandrite_gold_tiara"
   }
 ]
