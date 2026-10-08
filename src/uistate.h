@@ -42,10 +42,11 @@ struct advanced_inv_save_state {
         bool active_left = true;
         int last_popup_dest = 0;
 
-        int saved_area = 11;
+        // Surroundings beside your inventory (AIM_ALL = 13, AIM_INVENTORY = 0).
+        int saved_area = 13;
         int saved_area_right = 0;
-        advanced_inv_pane_save_state pane;
-        advanced_inv_pane_save_state pane_right;
+        advanced_inv_pane_save_state pane{ .area_idx = 13 };
+        advanced_inv_pane_save_state pane_right{ .area_idx = 0 };
 
         void serialize( JsonOut &json, const std::string &prefix ) const;
         void deserialize( const JsonObject &jo, const std::string &prefix );

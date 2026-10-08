@@ -3703,7 +3703,7 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
         vStatNames.emplace_back( _( "Perception:" ) );
         int pos = 0;
         for( size_t i = 0; i < vStatNames.size(); i++ ) {
-            std::string theName = "\t" + vStatNames[i];
+            std::string theName = "  " + vStatNames[i];
             pos = ( utf8_width( theName ) > pos ?
                     utf8_width( theName ) : pos );
             mvwprintz( w_stats, point( 0, i + 1 ), c_light_gray, theName );
@@ -3724,7 +3724,7 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
             for( size_t i = 0; i < current_traits.size(); i++ ) {
                 const auto current_trait = current_traits[i];
                 trim_and_print( w_traits, point( 0, i + 1 ), getmaxx( w_traits ) - 1,
-                                current_trait->get_display_color(), "\t" + current_trait->name() );
+                                current_trait->get_display_color(), "  " + current_trait->name() );
             }
         }
 
@@ -3752,7 +3752,7 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
             for( size_t i = 0; i < current_bionics.size(); i++ ) {
                 const auto current_bionic = current_bionics[i];
                 trim_and_print( w_bionics, point( 0, pos ), getmaxx( w_bionics ) - 1,
-                                c_white, "\t" + current_bionic->name.translated() );
+                                c_white, "  " + current_bionic->name.translated() );
                 pos++;
             }
         }
@@ -3762,14 +3762,14 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
         if( !you.prof->spells().empty() ) {
             for( const std::pair<spell_id, int> spell_pair : you.prof->spells() ) {
                 trim_and_print( w_bionics, point( 0, pos ), getmaxx( w_bionics ) - 1,
-                                c_white, "\t" + string_format( _( "%s level %d" ), spell_pair.first->name, spell_pair.second ) );
+                                c_white, "  " + string_format( _( "%s level %d" ), spell_pair.first->name, spell_pair.second ) );
                 pos++;
             }
         }
         if( you.magic->knows_spell() ) {
             for( const spell *spell : you.magic->get_spells() ) {
                 trim_and_print( w_bionics, point( 0, pos ), getmaxx( w_bionics ) - 1,
-                                c_white, "\t" + string_format( _( "%s level %d" ), spell->id()->name, spell->get_level() ) );
+                                c_white, "  " + string_format( _( "%s level %d" ), spell->id()->name, spell->get_level() ) );
                 pos++;
             }
         }
@@ -3808,7 +3808,7 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
                 if( last_category != elem->display_category() ) {
                     last_category = elem->display_category();
                     mvwprintz( w_skills, point( 0, line ), c_yellow,
-                               "\t" + elem->display_category()->display_string() );
+                               "  " + elem->display_category()->display_string() );
                     line++;
                 }
                 mvwprintz( w_skills, point( 2, line ), c_light_gray,
@@ -3916,7 +3916,7 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
             for( size_t i = 0; i < current_bionics.size(); i++ ) {
                 const auto current_bionic = current_bionics[i];
                 trim_and_print( w_bionics, point( 0, i + 1 ), getmaxx( w_traits ) - 1,
-                                c_white, "\t" + current_bionic->name.translated() );
+                                c_white, "  " + current_bionic->name.translated() );
             }
         }
 
@@ -3930,12 +3930,12 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
         }
         if( scen_veh ) {
             trim_and_print( w_misc, point( 0, misc_point ), getmaxx( w_misc ) - 1,
-                            c_white, "\t" + scen_veh->name );
+                            c_white, "  " + scen_veh->name );
             misc_point++;
         }
         if( prof_veh ) {
             trim_and_print( w_misc, point( 0, misc_point ), getmaxx( w_misc ) - 1,
-                            c_white, "\t" + prof_veh->name );
+                            c_white, "  " + prof_veh->name );
             misc_point++;
         }
         std::vector<npc_class_id> npcs = you.prof->npcs();
@@ -3946,7 +3946,7 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
                 if( id.is_valid() ) {
                     const npc_class &npc_cls = id.obj();
                     trim_and_print( w_misc, point( 0, misc_point ), getmaxx( w_misc ) - 1,
-                                    c_white, "\t" + npc_cls.get_name() );
+                                    c_white, "  " + npc_cls.get_name() );
                     misc_point ++;
                 }
             }
@@ -3972,7 +3972,7 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
                 if( id.is_valid() ) {
                     monster pet( id );
                     trim_and_print( w_misc, point( 0, misc_point ), getmaxx( w_misc ) - 1,
-                                    c_white, "\t" + pet.get_name() );
+                                    c_white, "  " + pet.get_name() );
                     misc_point ++;
                 }
             }
@@ -3985,7 +3985,7 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
         } else {
             for( addiction &addict : you.prof->addictions() ) {
                 trim_and_print( w_misc, point( 0, misc_point ), getmaxx( w_misc ) - 1,
-                                c_white, "\t" + addiction_name( addict ) );
+                                c_white, "  " + addiction_name( addict ) );
                 misc_point ++;
             }
         }
@@ -4025,7 +4025,7 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
             } else {
                 for( std::string name : wielded ) {
                     trim_and_print( w_gear, point( 0, item_point ), getmaxx( w_gear ) - 1,
-                                    c_white, "\t\t" + name );
+                                    c_white, "    " + name );
                     item_point ++;
                 }
             }
@@ -4036,7 +4036,7 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
             } else {
                 for( std::string name : worn ) {
                     trim_and_print( w_gear, point( 0, item_point ), getmaxx( w_gear ) - 1,
-                                    c_white, "\t\t" + name );
+                                    c_white, "    " + name );
                     item_point ++;
                 }
             }
@@ -4047,7 +4047,7 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
             } else {
                 for( std::string name : inventory ) {
                     trim_and_print( w_gear, point( 0, item_point ), getmaxx( w_gear ) - 1,
-                                    c_white, "\t\t" + name );
+                                    c_white, "    " + name );
                     item_point ++;
                 }
             }

@@ -1915,7 +1915,7 @@ void options_manager::add_options_interface()
 
     add( "FORCE_CAPITAL_YN", interface, translate_marker( "Force Y/N in prompts" ),
          translate_marker( "If true, Y/N prompts are case-sensitive and y and n are not accepted." ),
-         true
+         false
        );
 
     add( "SNAP_TO_TARGET", interface, translate_marker( "Snap to target" ),

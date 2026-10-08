@@ -879,6 +879,23 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
     const auto &available_recipes = crafter.get_available_recipes( crafting_inv, &helpers );
     std::unordered_map<const recipe *, availability> availability_cache( available_recipes.size() );
 
+    // Open on something useful rather than an empty favorites list.
+    if( available_recipes.favorite().empty() ) {
+        if( !available_recipes.recent().empty() ) {
+            for( size_t i = 0; i < craft_subcat_list[tab.cur()].size() && subtab.cur() != "CSC_*_RECENT"; i++ ) {
+                subtab.next();
+            }
+        } else {
+            for( size_t i = 0; i < craft_cat_list.size(); i++ ) {
+                tab.next();
+                if( tab.cur() != "CC_*" && !available_recipes.empty_category( tab.cur() ) ) {
+                    break;
+                }
+            }
+            subtab = list_circularizer<std::string>( craft_subcat_list[tab.cur()] );
+        }
+    }
+
     const std::string new_recipe_str = pgettext( "crafting gui", "NEW!" );
     const nc_color new_recipe_str_col = c_light_green;
     const int new_recipe_str_width = utf8_width( new_recipe_str );
