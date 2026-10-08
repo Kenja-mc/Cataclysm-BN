@@ -923,14 +923,20 @@ void JsonIn::skip_string()
         err << "expecting string but found '" << ch << "'";
         error( err.str(), -1 );
     }
-    while( stream->good() ) {
-        stream->get( ch );
-        if( ch == '\\' ) {
-            stream->get( ch );
-            continue;
-        } else if( ch == '"' ) {
+    // Straight from the buffer: per-character istream::get() was a large part of load time.
+    auto *const buf = stream->rdbuf();
+    for( auto c = buf->sbumpc(); ; c = buf->sbumpc() ) {
+        if( c == std::char_traits<char>::eof() ) {
+            stream->setstate( std::ios::eofbit | std::ios::failbit );
             break;
-        } else if( ch == '\r' || ch == '\n' ) {
+        } else if( c == '\\' ) {
+            if( buf->sbumpc() == std::char_traits<char>::eof() ) {
+                stream->setstate( std::ios::eofbit | std::ios::failbit );
+                break;
+            }
+        } else if( c == '"' ) {
+            break;
+        } else if( c == '\r' || c == '\n' ) {
             error( "string not closed before end of line", -1 );
         }
     }
