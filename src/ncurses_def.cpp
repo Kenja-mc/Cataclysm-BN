@@ -18,14 +18,18 @@
 
 #include <cstring>
 #include <langinfo.h>
+#include <termios.h>
+#include <unistd.h>
 #include <stdexcept>
 
 #include "cursesdef.h"
 #include "catacharset.h"
 #include "color.h"
 #include "game_ui.h"
+#include "options.h"
 #include "output.h"
 #include "ui_manager.h"
+#include "ui_theme.h"
 
 #include "ncurses_def.h"
 
@@ -47,6 +51,108 @@ RGBColor color_loader<RGBColor>::from_rgb( const int r, const int g, const int b
 
 static std::array<RGBColor, color_loader<RGBColor>::COLOR_NAMES_COUNT> windowsPalette;
 static std::array<pairs, 100> colorpairs;
+
+namespace
+{
+
+// When the terminal has 16 colors, bright variants get their own pairs instead of relying on
+// bold-is-bright, which modern terminals no longer do by default.
+auto bright_pair_offset = 0;
+auto default_background = static_cast<short>( COLOR_BLACK );
+auto rounded_corners = false;
+auto unicode_lines = false;
+
+auto translate_attrs( const int attrs ) -> int
+{
+    if( bright_pair_offset == 0 || !( attrs & A_BOLD ) ) {
+        return attrs;
+    }
+    const auto pair = static_cast<int>( PAIR_NUMBER( attrs ) );
+    return ( attrs & ~( A_BOLD | A_COLOR ) ) | static_cast<int>( COLOR_PAIR( pair + bright_pair_offset ) );
+}
+
+/// Box drawing as real Unicode in UTF-8 terminals; many of them mangle the DEC line-drawing charset.
+auto unicode_line( const catacurses::chtype ch ) -> const char * // *NOPAD*
+{
+    if( !unicode_lines ) {
+        return nullptr;
+    }
+    switch( ch ) {
+        case LINE_XOXO:
+            return "\u2502";
+        case LINE_OXOX:
+            return "\u2500";
+        case LINE_OXXO:
+            return rounded_corners ? "\u256D" : "\u250C";
+        case LINE_OOXX:
+            return rounded_corners ? "\u256E" : "\u2510";
+        case LINE_XXOO:
+            return rounded_corners ? "\u2570" : "\u2514";
+        case LINE_XOOX:
+            return rounded_corners ? "\u256F" : "\u2518";
+        case LINE_XXXO:
+            return "\u251C";
+        case LINE_XXOX:
+            return "\u2534";
+        case LINE_XOXX:
+            return "\u2524";
+        case LINE_OXXX:
+            return "\u252C";
+        case LINE_XXXX:
+            return "\u253C";
+        case LINE_OXXO_UNICODE:
+            return "\u250C";
+        case LINE_OOXX_UNICODE:
+            return "\u2510";
+        case LINE_XXOO_UNICODE:
+            return "\u2514";
+        case LINE_XOOX_UNICODE:
+            return "\u2518";
+        default:
+            return nullptr;
+    }
+}
+
+auto put_line( const catacurses::window &win, const point p, const catacurses::chtype ch ) -> void
+{
+    if( const auto *glyph = unicode_line( ch ) ) {
+        ::mvwaddstr( win.get<::WINDOW>(), p.y, p.x, glyph );
+    } else {
+        ::mvwaddch( win.get<::WINDOW>(), p.y, p.x, ch );
+    }
+}
+
+auto background_for( const catacurses::base_color b ) -> short
+{
+    return b == catacurses::black ? default_background : static_cast<short>( b );
+}
+
+auto apply_theme( std::array<RGBColor, color_loader<RGBColor>::COLOR_NAMES_COUNT> &palette ) -> void
+{
+    const auto theme = get_option<std::string>( "UI_THEME" );
+    if( ui_theme::inherits_terminal( theme ) ) {
+        if( ::use_default_colors() == OK ) {
+            default_background = -1;
+        }
+    } else if( const auto pal = ui_theme::builtin_palette( theme ) ) {
+        for( size_t i = 0; i < pal->size(); i++ ) {
+            const auto &c = ( *pal )[i];
+            palette[i].r = c.r;
+            palette[i].g = c.g;
+            palette[i].b = c.b;
+            if( ::can_change_color() && static_cast<int>( i ) < COLORS ) {
+                ::init_color( static_cast<short>( i ), c.r * 1000 / 255, c.g * 1000 / 255, c.b * 1000 / 255 );
+            }
+        }
+    }
+    if( COLORS >= 16 && COLOR_PAIRS > 200 ) {
+        bright_pair_offset = 100;
+    }
+    unicode_lines = std::strcmp( nl_langinfo( CODESET ), "UTF-8" ) == 0;
+    rounded_corners = get_option<bool>( "UI_ROUNDED_BORDERS" );
+}
+
+} // namespace
 
 auto ncurses::color_to_RGB( const nc_color &color ) -> RGBColor
 {
@@ -124,12 +230,12 @@ int catacurses::getcury( const window &win )
 
 void catacurses::wattroff( const window &win, const int attrs )
 {
-    return curses_check_result( ::wattroff( win.get<::WINDOW>(), attrs ), OK, "wattroff" );
+    return curses_check_result( ::wattroff( win.get<::WINDOW>(), translate_attrs( attrs ) ), OK, "wattroff" );
 }
 
 void catacurses::wattron( const window &win, const nc_color &attrs )
 {
-    return curses_check_result( ::wattron( win.get<::WINDOW>(), attrs ), OK, "wattron" );
+    return curses_check_result( ::wattron( win.get<::WINDOW>(), translate_attrs( attrs ) ), OK, "wattron" );
 }
 
 void catacurses::wmove( const window &win, point p )
@@ -182,24 +288,58 @@ void catacurses::endwin()
 void catacurses::wborder( const window &win, const chtype ls, const chtype rs, const chtype ts,
                           const chtype bs, const chtype tl, const chtype tr, const chtype bl, const chtype br )
 {
-    return curses_check_result( ::wborder( win.get<::WINDOW>(), ls, rs, ts, bs, tl, tr, bl, br ), OK,
-                                "wborder" );
+    if( !unicode_lines ) {
+        return curses_check_result( ::wborder( win.get<::WINDOW>(), ls, rs, ts, bs, tl, tr, bl, br ), OK,
+                                    "wborder" );
+    }
+    const auto cursor = point( getcurx( win ), getcury( win ) );
+    const auto far = point( getmaxx( win ) - 1, getmaxy( win ) - 1 );
+    for( auto x = 1; x < far.x; x++ ) {
+        put_line( win, point( x, 0 ), ts ? ts : LINE_OXOX );
+        put_line( win, point( x, far.y ), bs ? bs : LINE_OXOX );
+    }
+    for( auto y = 1; y < far.y; y++ ) {
+        put_line( win, point( 0, y ), ls ? ls : LINE_XOXO );
+        put_line( win, point( far.x, y ), rs ? rs : LINE_XOXO );
+    }
+    put_line( win, point( 0, 0 ), tl ? tl : LINE_OXXO );
+    put_line( win, point( far.x, 0 ), tr ? tr : LINE_OOXX );
+    put_line( win, point( 0, far.y ), bl ? bl : LINE_XXOO );
+    put_line( win, far, br ? br : LINE_XOOX );
+    wmove( win, cursor );
 }
 
 void catacurses::mvwhline( const window &win, point p, const chtype ch, const int n )
 {
+    if( unicode_line( ch ) ) {
+        const auto cursor = point( getcurx( win ), getcury( win ) );
+        for( auto i = 0; i < n && p.x + i < getmaxx( win ); i++ ) {
+            put_line( win, p + point( i, 0 ), ch );
+        }
+        return wmove( win, cursor );
+    }
     return curses_check_result( ::mvwhline( win.get<::WINDOW>(), p.y, p.x, ch, n ), OK,
                                 "mvwhline" );
 }
 
 void catacurses::mvwvline( const window &win, point p, const chtype ch, const int n )
 {
+    if( unicode_line( ch ) ) {
+        const auto cursor = point( getcurx( win ), getcury( win ) );
+        for( auto i = 0; i < n && p.y + i < getmaxy( win ); i++ ) {
+            put_line( win, p + point( 0, i ), ch );
+        }
+        return wmove( win, cursor );
+    }
     return curses_check_result( ::mvwvline( win.get<::WINDOW>(), p.y, p.x, ch, n ), OK,
                                 "mvwvline" );
 }
 
 void catacurses::mvwaddch( const window &win, point p, const chtype ch )
 {
+    if( const auto *glyph = unicode_line( ch ) ) {
+        return mvwprintw( win, p, glyph );
+    }
     // HACK: can't print some box drawing characters as integers, use strings instead
     switch( ch ) {
         case LINE_XDXO_UNICODE:
@@ -217,6 +357,9 @@ void catacurses::mvwaddch( const window &win, point p, const chtype ch )
 
 void catacurses::waddch( const window &win, const chtype ch )
 {
+    if( const auto *glyph = unicode_line( ch ) ) {
+        return wprintw( win, glyph );
+    }
     // HACK: can't print some box drawing characters as integers, use strings instead
     switch( ch ) {
         case LINE_XDXO_UNICODE:
@@ -271,7 +414,10 @@ void catacurses::init_pair( const short pair, const base_color f, const base_col
 {
     colorpairs[pair].FG = f;
     colorpairs[pair].BG = b;
-    return curses_check_result( ::init_pair( pair, static_cast<short>( f ), static_cast<short>( b ) ),
+    if( bright_pair_offset > 0 ) {
+        ::init_pair( static_cast<short>( pair + bright_pair_offset ), static_cast<short>( f + 8 ), background_for( b ) );
+    }
+    return curses_check_result( ::init_pair( pair, static_cast<short>( f ), background_for( b ) ),
                                 OK, "init_pair" );
 }
 
@@ -310,11 +456,17 @@ void catacurses::init_interface()
     // behave exactly like the wrapper, therefor:
     noecho();  // Don't echo keypresses
     cbreak();  // C-style breaks (e.g. ^C to SIGINT)
+    // Without this Ctrl+S freezes the terminal instead of reaching the game.
+    if( auto tio = termios{}; tcgetattr( STDIN_FILENO, &tio ) == 0 ) {
+        tio.c_iflag &= ~( IXON | IXOFF );
+        tcsetattr( STDIN_FILENO, TCSANOW, &tio );
+    }
     keypad( stdscr.get<::WINDOW>(), true ); // Numpad is numbers
     set_escdelay( 10 ); // Make Escape actually responsive
     // TODO: error checking
     start_color();
     color_loader<RGBColor>().load( windowsPalette );
+    apply_theme( windowsPalette );
     init_colors();
 }
 
