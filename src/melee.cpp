@@ -3118,10 +3118,10 @@ void Character::perform_special_attacks( Creature &t, dealt_damage_instance &dea
                 practiced = true;
                 as_player()->practice( skill_unarmed, rng( 0, 10 ) );
             }
-        }
-        int dam = dealt_dam.total_damage();
-        if( dam > 0 ) {
-            player_hit_message( this, att.text, t, dam );
+            // Upstream #1287: only a hit reports damage; a miss used to reprint the previous hit.
+            if( const int dam = dealt_dam.total_damage(); dam > 0 ) {
+                player_hit_message( this, att.text, t, dam );
+            }
         }
     }
 }

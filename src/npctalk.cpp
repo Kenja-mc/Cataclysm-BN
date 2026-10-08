@@ -1499,8 +1499,9 @@ std::string dialogue::dynamic_line( const talk_topic &the_topic ) const
             } else {
                 info += _( "\nThirsty" );
             }
-            if( p->max_stored_kcal() - p->get_stored_kcal() > 500 ) {
-                time_duration hunger_at = 5_minutes
+            // Upstream #10447: the check was inverted, and bmr() is kcal per day.
+            if( p->max_stored_kcal() - p->get_stored_kcal() < 500 ) {
+                time_duration hunger_at = 1_days
                                           * ( 500 - p->max_stored_kcal() + p->get_stored_kcal() )
                                           / p->bmr();
                 if( hunger_at > 1_hours ) {
