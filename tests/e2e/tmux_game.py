@@ -55,6 +55,19 @@ class Game:
         subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", chunk])
         time.sleep(delay)
 
+    def click(self, x, y, button=0):
+        """Mouse click at a screen cell, SGR (1006) encoded as xterm-256color terminfo expects."""
+        for suffix in ("M", "m"):
+            subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", f"\x1b[<{button};{x + 1};{y + 1}{suffix}"])
+            time.sleep(0.05)
+        time.sleep(1)
+
+    def find(self, ch):
+        for y, line in enumerate(self.screen().splitlines()):
+            if ch in line[:95]:
+                return line.index(ch), y
+        return None
+
     def wait_for(self, text, timeout=60):
         deadline = time.time() + timeout
         while time.time() < deadline:
