@@ -394,9 +394,16 @@ void Character::craft( const tripoint_bub_ms &loc )
 
 void Character::recraft( const tripoint_bub_ms &loc )
 {
-    if( lastrecipe.str().empty() ) {
+    if( lastrecipe.str().empty() || !lastrecipe.is_valid() ) {
+        lastrecipe = recipe_id();
         popup( _( "Craft something first" ) );
-    } else if( making_would_work( lastrecipe, last_batch ) ) {
+        return;
+    }
+    // Reloading a world in the same session reloads recipes, leaving the remembered command dangling.
+    if( last_craft->get_recipe() != &lastrecipe.obj() ) {
+        *last_craft = craft_command( &lastrecipe.obj(), last_batch, last_craft->is_long(), this, loc );
+    }
+    if( making_would_work( lastrecipe, last_batch ) ) {
         last_craft->execute( loc );
     }
 }
