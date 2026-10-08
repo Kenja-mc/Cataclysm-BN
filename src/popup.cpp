@@ -282,6 +282,7 @@ query_popup::result query_popup::query_once()
         ctxt.register_action( "LEFT" );
         ctxt.register_action( "RIGHT" );
         ctxt.register_action( "CONFIRM" );
+        ctxt.register_action( "SELECT" );
         for( const auto &opt : options ) {
             ctxt.register_action( opt.action );
         }
@@ -326,6 +327,17 @@ query_popup::result query_popup::query_once()
         if( cur < options.size() ) {
             res.wait_input = false;
             res.action = options[cur].action;
+        }
+    } else if( res.action == "SELECT" ) {
+        // Clicking a button picks it.
+        const auto p = res.evt.mouse_pos - point( getbegx( win ) + border_width, getbegy( win ) + border_width );
+        for( size_t ind = 0; ind < buttons.size(); ++ind ) {
+            const auto &btn = buttons[ind];
+            if( p.y == btn.pos.y && p.x >= btn.pos.x && p.x < btn.pos.x + utf8_width( btn.text, true ) ) {
+                cur = ind;
+                res.wait_input = false;
+                res.action = options[ind].action;
+            }
         }
     } else if( res.action == "HELP_KEYBINDINGS" ) {
         // Keybindings may have changed, regenerate the UI

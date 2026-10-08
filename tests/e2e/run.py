@@ -224,13 +224,15 @@ def test_walking_into_enemy_does_not_attack(g):
 
 
 def test_attack_command(g):
-    before = zombie_hp(g)
-    for _ in range(6):
-        g.keys("F", delay=0.8)
-        g.keys("d", delay=1.2)
-        if zombie_hp(g) != before:
-            break
-    assert zombie_hp(g) != before, "F then a direction should attack"
+    """Sword of the Stars: The Pit style: F attacks the nearest enemy; Tab and a direction picks one."""
+    for keys, why in ((("F",), "F should attack the nearest enemy"), (("Tab", "d"), "Tab then a direction should attack")):
+        before = zombie_hp(g)
+        for _ in range(6):
+            for k in keys:
+                g.keys(k, delay=1)
+            if zombie_hp(g) != before:
+                break
+        assert zombie_hp(g) != before, why
     g.lua("local m=gapi.get_monster_at(here(1,0)) if m then m:set_pos_ms(here(40,40)) end out('ok')")
 
 
@@ -372,7 +374,8 @@ def test_mre_unpacks_its_entree(g):
     assert "Lemon Pepper Tuna" in g.screen(), g.screen()
     g.keys("Enter", delay=1)
     assert "lemon pepper tuna entree" in g.screen().lower(), "the entree is listed in the yield"
-    g.keys("y", delay=1)
+    # Confirmation prompts start on Yes, so Enter confirms.
+    g.keys("Enter", delay=1)
     # The entree lands on the floor.
     assert wait_until(lambda: g.lua("count_at(0,0,'mre_lemontuna')") == ["1"], 60), g.screen()
     assert count_carried(g, "mre_ration") == 0

@@ -65,7 +65,7 @@
       },
       {
         "id": "LESSON_GOT_WEAPON",
-        "text": "The item you just picked up is a good weapon!  To wield a weapon, press <press_wield>, then pick what to wield.  To wield nothing, either drop your weapon with <press_drop>, or press <press_wield> and pick it again to put it away.  A zombie has spawned nearby.  To attack it, press <press_attack> and the direction it is in (in the classic control scheme, simply move into it)."
+        "text": "The item you just picked up is a good weapon!  To wield a weapon, press <press_wield>, then pick what to wield.  To wield nothing, either drop your weapon with <press_drop>, or press <press_wield> and pick it again to put it away.  A zombie has spawned nearby.  To attack it, press <press_autoattack> when it is next to you (in the classic control scheme, simply move into it)."
       },
       {
         "id": "LESSON_GOT_FOOD",

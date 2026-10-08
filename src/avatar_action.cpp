@@ -190,7 +190,7 @@ auto refuse_bump_attack( const Creature &target ) -> bool
         return false;
     }
     add_msg( m_info, _( "%1$s is in the way.  %2$s to attack." ), target.disp_name( false, true ),
-             press_x( ACTION_ATTACK ) );
+             press_x( ACTION_AUTOATTACK ) );
     return true;
 }
 
@@ -984,7 +984,7 @@ static auto attack_best_hostile( avatar &you, map &m ) -> void
 
     const auto diff = best.bub_pos() - you.bub_pos();
     if( std::abs( diff.x() ) <= 1 && std::abs( diff.y() ) <= 1 && diff.z() == 0 ) {
-        avatar_action::move( you, m, tripoint_rel_ms( diff.xy(), 0 ) );
+        avatar_action::attack_at( you, m, tripoint_rel_ms( diff.xy(), 0 ) );
         return;
     }
 

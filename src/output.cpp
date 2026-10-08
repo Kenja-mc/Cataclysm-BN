@@ -718,7 +718,8 @@ bool query_yn( const std::string &text )
                      pgettext( "query_yn", "%s" ), text )
            .option( "YES", allow_key )
            .option( "NO", allow_key )
-           .cursor( 1 )
+           // Enter confirms, Esc cancels, like any modern game.
+           .cursor( 0 )
            .default_color( c_light_red )
            .query()
            .action == "YES";
