@@ -26,7 +26,7 @@
           "crt_belt",
           "socks",
           "toolbox",
-          "mre_ration",
+          { "item": "mre_ration", "variant": "mre_veggy" },
           "lighter",
           "id_military",
           "id_science"

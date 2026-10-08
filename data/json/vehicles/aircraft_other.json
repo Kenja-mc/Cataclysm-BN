@@ -431,7 +431,7 @@
       { "x": -5, "y": 1, "chance": 10, "items": "tshirt_tour" },
       { "x": -2, "y": 1, "chance": 50, "items": "microphone_xlr_generic" },
       { "x": -2, "y": 1, "chance": 25, "items": "camera_pro" },
-      { "x": -2, "y": 0, "chance": 25, "items": "novel_sports" },
+      { "x": -2, "y": 0, "chance": 25, "items": "paperback" },
       { "x": -2, "y": 0, "chance": 5, "items": "touristmap" },
       { "x": 0, "y": 0, "chance": 10, "items": "aviators" },
       { "x": 0, "y": 0, "chance": 5, "items": "binoculars" }

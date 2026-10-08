@@ -1,0 +1,272 @@
+[
+  {
+    "id": "battleship",
+    "type": "MIGRATION",
+    "replace": "board_game",
+    "variant": "battleship"
+  },
+  {
+    "id": "catan",
+    "type": "MIGRATION",
+    "replace": "tabletop_game",
+    "variant": "catan"
+  },
+  {
+    "id": "clue",
+    "type": "MIGRATION",
+    "replace": "board_game",
+    "variant": "clue"
+  },
+  {
+    "id": "dnd",
+    "type": "MIGRATION",
+    "replace": "tabletop_game",
+    "variant": "dnd"
+  },
+  {
+    "id": "essay_book",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "essay_book"
+  },
+  {
+    "id": "g_warhammer",
+    "type": "MIGRATION",
+    "replace": "tabletop_game",
+    "variant": "g_warhammer"
+  },
+  {
+    "id": "g_warhammer40k",
+    "type": "MIGRATION",
+    "replace": "tabletop_game",
+    "variant": "g_warhammer40k"
+  },
+  {
+    "id": "judo_belt_black",
+    "type": "MIGRATION",
+    "replace": "judo_belt",
+    "variant": "judo_belt_black"
+  },
+  {
+    "id": "judo_belt_blue",
+    "type": "MIGRATION",
+    "replace": "judo_belt",
+    "variant": "judo_belt_blue"
+  },
+  {
+    "id": "judo_belt_brown",
+    "type": "MIGRATION",
+    "replace": "judo_belt",
+    "variant": "judo_belt_brown"
+  },
+  {
+    "id": "judo_belt_green",
+    "type": "MIGRATION",
+    "replace": "judo_belt",
+    "variant": "judo_belt_green"
+  },
+  {
+    "id": "judo_belt_orange",
+    "type": "MIGRATION",
+    "replace": "judo_belt",
+    "variant": "judo_belt_orange"
+  },
+  {
+    "id": "judo_belt_white",
+    "type": "MIGRATION",
+    "replace": "judo_belt",
+    "variant": "judo_belt_white"
+  },
+  {
+    "id": "judo_belt_yellow",
+    "type": "MIGRATION",
+    "replace": "judo_belt",
+    "variant": "judo_belt_yellow"
+  },
+  {
+    "id": "monopoly",
+    "type": "MIGRATION",
+    "replace": "board_game",
+    "variant": "monopoly"
+  },
+  {
+    "id": "novel_adventure",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_adventure"
+  },
+  {
+    "id": "novel_buddy",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_buddy"
+  },
+  {
+    "id": "novel_coa",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_coa"
+  },
+  {
+    "id": "novel_crime",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_crime"
+  },
+  {
+    "id": "novel_crime_murdergrape",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_crime_murdergrape"
+  },
+  {
+    "id": "novel_drama",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_drama"
+  },
+  {
+    "id": "novel_erotic",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_erotic"
+  },
+  {
+    "id": "novel_experimental",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_experimental"
+  },
+  {
+    "id": "novel_fantasy",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_fantasy"
+  },
+  {
+    "id": "novel_horror",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_horror"
+  },
+  {
+    "id": "novel_mystery",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_mystery"
+  },
+  {
+    "id": "novel_pulp",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_pulp"
+  },
+  {
+    "id": "novel_road",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_road"
+  },
+  {
+    "id": "novel_romance",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_romance"
+  },
+  {
+    "id": "novel_samurai",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_samurai"
+  },
+  {
+    "id": "novel_satire",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_satire"
+  },
+  {
+    "id": "novel_sports",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_sports"
+  },
+  {
+    "id": "novel_spy",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_spy"
+  },
+  {
+    "id": "novel_spy_comefly",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_spy_comefly"
+  },
+  {
+    "id": "novel_spy_rocketsci",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_spy_rocketsci"
+  },
+  {
+    "id": "novel_swash",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_swash"
+  },
+  {
+    "id": "novel_thriller",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_thriller"
+  },
+  {
+    "id": "novel_tragedy",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_tragedy"
+  },
+  {
+    "id": "novel_war",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_war"
+  },
+  {
+    "id": "novel_western",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "novel_western"
+  },
+  {
+    "id": "pictionary",
+    "type": "MIGRATION",
+    "replace": "board_game",
+    "variant": "pictionary"
+  },
+  {
+    "id": "plays_book",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "plays_book"
+  },
+  {
+    "id": "poetry_book",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "poetry_book"
+  },
+  {
+    "id": "story_book",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "story_book"
+  },
+  {
+    "id": "tall_tales",
+    "type": "MIGRATION",
+    "replace": "paperback",
+    "variant": "tall_tales"
+  }
+]

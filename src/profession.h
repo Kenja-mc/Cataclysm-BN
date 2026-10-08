@@ -37,6 +37,8 @@ class profession
             itype_id type_id;
             /** Snippet id, @see snippet_library. */
             snippet_id snip_id;
+            /** Item variant to start with, e.g. a black judo belt. */
+            std::string variant;
             // compatible with when this was just a std::string
             itypedec( const std::string &t ) : type_id( t ), snip_id( snippet_id::NULL_ID() ) {
             }

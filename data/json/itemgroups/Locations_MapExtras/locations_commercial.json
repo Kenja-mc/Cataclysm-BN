@@ -870,7 +870,7 @@
       { "item": "umbrella", "prob": 10 },
       { "item": "teleumbrella", "prob": 4 },
       { "group": "kids_books", "prob": 215 },
-      { "item": "novel_pulp", "prob": 30 },
+      { "item": "paperback", "prob": 30, "variant": "novel_pulp" },
       { "item": "folding_bicycle", "prob": 3 },
       { "item": "folding_skateboard", "prob": 3 },
       { "item": "sunglasses", "prob": 25 },

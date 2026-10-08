@@ -220,9 +220,9 @@
     "items": [
       [ "alarmclock", 60 ],
       [ "glasses_reading", 50 ],
-      [ "novel_drama", 50 ],
-      [ "novel_romance", 40 ],
-      [ "novel_mystery", 40 ],
+      { "item": "paperback", "prob": 50, "variant": "novel_drama" },
+      { "item": "paperback", "prob": 40, "variant": "novel_romance" },
+      { "item": "paperback", "prob": 40, "variant": "novel_mystery" },
       [ "glasses_bifocal", 20 ],
       { "item": "cotton_ball", "prob": 20, "container-item": "box_small", "charges-min": 1, "charges-max": 20 },
       [ "contacts", 20 ],

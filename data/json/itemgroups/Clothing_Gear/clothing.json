@@ -817,13 +817,13 @@
     "id": "judo_belts",
     "type": "item_group",
     "items": [
-      [ "judo_belt_white", 100 ],
-      [ "judo_belt_yellow", 50 ],
-      [ "judo_belt_orange", 25 ],
-      [ "judo_belt_green", 15 ],
-      [ "judo_belt_blue", 5 ],
-      [ "judo_belt_brown", 4 ],
-      [ "judo_belt_black", 1 ]
+      { "item": "judo_belt", "prob": 100, "variant": "judo_belt_white" },
+      { "item": "judo_belt", "prob": 50, "variant": "judo_belt_yellow" },
+      { "item": "judo_belt", "prob": 25, "variant": "judo_belt_orange" },
+      { "item": "judo_belt", "prob": 15, "variant": "judo_belt_green" },
+      { "item": "judo_belt", "prob": 5, "variant": "judo_belt_blue" },
+      { "item": "judo_belt", "prob": 4, "variant": "judo_belt_brown" },
+      { "item": "judo_belt", "prob": 1, "variant": "judo_belt_black" }
     ]
   },
   {

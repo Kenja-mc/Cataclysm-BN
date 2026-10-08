@@ -1,8 +1,10 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "color.h"
 #include "string_id.h"
 #include "translations.h"
 #include "type_id.h"
@@ -25,6 +27,8 @@ struct item_variant {
     int weight = 1;
     /** Relative to the item type's price, e.g. diamonds are worth more than garnets. */
     float price_multiplier = 1.0f;
+    /// Glyph color in the terminal, e.g. black for a black belt.
+    std::optional<nc_color> color;
     /// Sprite to look for in tilesets; defaults to the variant id.
     std::string looks_like;
     /// Replaces the item type's materials when set.

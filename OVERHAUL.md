@@ -118,6 +118,10 @@ that is optional:
   own price, material and melt-down parts (the ruby and the gold). Loot tables still name the exact
   piece they used to, and old saves convert. Pieces with a use or a story of their own stay
   separate: watches, badges, medals, holy symbols, wedding, engagement, purity and signet rings.
+- **Books, games and belts.** The same treatment applies to 30 novels and other light reading,
+  which become one *paperback* ("western novel", "Murdered by the Grapevine", "book of poetry").
+  Eight board and tabletop games become two items, and seven judo belts become one. Professions
+  still start with the exact piece (the black belt, the gold necklace).
 - **Jewelry stacks.** Different rings share one stack, like items in Don't Starve: "3 rings".
   Each ring still keeps its own name, gem, metal and price, so a stack is worth what its pieces
   are worth. With a tileset, each piece shows the sprite of the item it used to be.
@@ -188,12 +192,14 @@ item type variants instead of new item types:
 
 - `"cosmetic": true` lets items of different variants stack. A stack of mixed pieces is named
   after the item type.
+- A variant's `color` sets its glyph color in the terminal (a black belt is drawn black).
 - A variant's `looks_like` names the tileset sprite to use (the variant id by default). If the
   tileset lacks it, the item type's sprite is used.
 - A new item picks a variant by `weight` and keeps it.
 - Name, description, price and material follow the variant.
 - Disassembling a found piece yields the item type's own recipe plus the variant's `components`.
   A crafted piece yields what it was made from.
+- Profession item lists can name it too: `{ "item": "judo_belt", "variant": "judo_belt_black" }`.
 - An item group entry can name the variant: `{ "item": "jewelry_ring", "variant": "gold_ring" }`.
 - A recipe can make a variant: `"result": "jewelry_ring", "result_variant": "gold_ring"` (with an
   `id_suffix` when several recipes share a result).

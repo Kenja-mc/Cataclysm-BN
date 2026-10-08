@@ -50,62 +50,6 @@
     "flags": [ "WAIST", "COMPACT", "WATER_FRIENDLY", "ALLOWS_WINGS" ]
   },
   {
-    "id": "judo_belt_black",
-    "copy-from": "judo_belt_abstract",
-    "type": "ARMOR",
-    "name": { "str": "black belt" },
-    "description": "A belt worn by martial arts practitioners, advertising a master.",
-    "color": "dark_gray"
-  },
-  {
-    "id": "judo_belt_blue",
-    "copy-from": "judo_belt_abstract",
-    "type": "ARMOR",
-    "name": { "str": "blue belt" },
-    "description": "A belt worn by martial arts practitioners, advertising a strong intermediate.",
-    "color": "blue"
-  },
-  {
-    "id": "judo_belt_brown",
-    "copy-from": "judo_belt_abstract",
-    "type": "ARMOR",
-    "name": { "str": "brown belt" },
-    "description": "A belt worn by martial arts practitioners, advertising a near-master.",
-    "color": "brown"
-  },
-  {
-    "id": "judo_belt_green",
-    "copy-from": "judo_belt_abstract",
-    "type": "ARMOR",
-    "name": { "str": "green belt" },
-    "description": "A belt worn by martial arts practitioners, advertising an intermediate.",
-    "color": "green"
-  },
-  {
-    "id": "judo_belt_orange",
-    "copy-from": "judo_belt_abstract",
-    "type": "ARMOR",
-    "name": { "str": "orange belt" },
-    "description": "A belt worn by martial arts practitioners, advertising a fresh intermediate.",
-    "color": "light_red"
-  },
-  {
-    "id": "judo_belt_white",
-    "copy-from": "judo_belt_abstract",
-    "type": "ARMOR",
-    "name": { "str": "white belt" },
-    "description": "A belt worn by martial arts practitioners, advertising a novice.",
-    "color": "white"
-  },
-  {
-    "id": "judo_belt_yellow",
-    "copy-from": "judo_belt_abstract",
-    "type": "ARMOR",
-    "name": { "str": "yellow belt" },
-    "description": "A belt worn by martial arts practitioners, advertising a moderate novice.",
-    "color": "yellow"
-  },
-  {
     "id": "leather_belt",
     "type": "ARMOR",
     "name": { "str": "leather belt" },
@@ -267,5 +211,27 @@
     },
     "valid_mods": [ "resized_large", "resized_small" ],
     "flags": [ "WAIST", "COMPACT", "WATER_FRIENDLY", "ALLOWS_WINGS" ]
+  },
+  {
+    "id": "judo_belt",
+    "type": "ARMOR",
+    "name": { "str": "judo belt" },
+    "description": "A martial arts belt.  Its color shows the rank of whoever earned it.",
+    "repairs_like": "leather_belt",
+    "weight": "200 g",
+    "volume": "250 ml",
+    "price": "10 USD",
+    "price_postapoc": "25 cent",
+    "to_hit": -1,
+    "material": [ "cotton" ],
+    "symbol": "[",
+    "covers": [ "torso" ],
+    "coverage": 5,
+    "encumbrance": 2,
+    "material_thickness": 5,
+    "valid_mods": [ "resized_large", "resized_small" ],
+    "flags": [ "WAIST", "COMPACT", "WATER_FRIENDLY", "ALLOWS_WINGS" ],
+    "color": "light_red",
+    "looks_like": "judo_belt_orange"
   }
 ]

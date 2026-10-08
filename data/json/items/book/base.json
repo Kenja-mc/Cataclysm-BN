@@ -7,7 +7,7 @@
     "bashing": 2,
     "material": [ "paper" ],
     "symbol": "?",
-    "looks_like": "story_book",
+    "looks_like": "paperback",
     "color": "light_cyan",
     "flags": [ "TINDER", "FLAMMABLE" ]
   }

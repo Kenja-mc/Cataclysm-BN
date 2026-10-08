@@ -21,12 +21,12 @@
     "id": "light_reading",
     "type": "item_group",
     "items": [
-      [ "novel_coa", 10 ],
+      { "item": "paperback", "prob": 10, "variant": "novel_coa" },
       [ "child_book", 50 ],
       [ "manual_dodge_kid", 25 ],
-      [ "tall_tales", 20 ],
-      [ "story_book", 4 ],
-      [ "novel_pulp", 16 ],
+      { "item": "paperback", "prob": 20, "variant": "tall_tales" },
+      { "item": "paperback", "prob": 4, "variant": "story_book" },
+      { "item": "paperback", "prob": 16, "variant": "novel_pulp" },
       [ "fairy_tales", 20 ],
       [ "mag_comic", 20 ]
     ]

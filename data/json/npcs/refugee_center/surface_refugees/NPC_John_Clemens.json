@@ -54,7 +54,7 @@
     "type": "item_group",
     "id": "REFUGEE_John_carried",
     "subtype": "collection",
-    "entries": [ { "item": "novel_western" } ]
+    "entries": [ { "item": "paperback", "variant": "novel_western" } ]
   },
   {
     "type": "item_group",

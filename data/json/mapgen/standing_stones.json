@@ -6,8 +6,8 @@
     "items": [
       [ "holy_symbol", 5 ],
       [ "holy_symbol_wood", 4 ],
-      [ "essay_book", 6 ],
-      [ "poetry_book", 6 ],
+      { "item": "paperback", "prob": 6, "variant": "essay_book" },
+      { "item": "paperback", "prob": 6, "variant": "poetry_book" },
       [ "philosophy_book", 2 ],
       [ "holybook_havamal", 8 ],
       [ "robe", 3 ],
