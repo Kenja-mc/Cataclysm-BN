@@ -99,6 +99,7 @@ class craft_command
         bool empty() const {
             return rec == nullptr;
         }
+        auto get_recipe() const -> const recipe * { return rec; } // *NOPAD*
         skill_id get_skill_id();
 
         int get_batch_size() const { return batch_size; }
