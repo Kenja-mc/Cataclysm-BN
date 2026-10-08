@@ -25,6 +25,7 @@
 #include "input.h"
 #include "item.h"
 #include "json.h"
+#include "keyhints_panel.h"
 #include "lua_sidebar_widgets.h"
 #include "magic/magic.h"
 #include "map/map.h"
@@ -2463,6 +2464,7 @@ static std::vector<window_panel> initialize_default_classic_panels()
                       default_render, true );
 #endif // TILES
     ret.emplace_back( draw_ai_goal, "AI Needs", 1, 44, false );
+    ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 4, 44, true );
     return ret;
 }
 
@@ -2493,6 +2495,7 @@ static std::vector<window_panel> initialize_default_compact_panels()
 #endif // TILES
     ret.emplace_back( draw_ai_goal, "AI Needs", 1, 32, false );
 
+    ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 4, 32, true );
     return ret;
 }
 
@@ -2500,7 +2503,7 @@ static std::vector<window_panel> initialize_default_label_narrow_panels()
 {
     std::vector<window_panel> ret;
 
-    ret.emplace_back( draw_hint, translate_marker( "Hint" ), 1, 32, true );
+    ret.emplace_back( draw_hint, translate_marker( "Hint" ), 1, 32, false );
     ret.emplace_back( draw_limb_narrow, translate_marker( "Limbs" ), 3, 32, true );
     ret.emplace_back( draw_char_narrow, translate_marker( "Movement" ), 3, 32, true );
     ret.emplace_back( draw_mana_narrow, translate_marker( "Mana" ), 1, 32, true,
@@ -2529,6 +2532,7 @@ static std::vector<window_panel> initialize_default_label_narrow_panels()
 #endif // TILES
     ret.emplace_back( draw_ai_goal, "AI Needs", 1, 32, false );
 
+    ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 4, 32, true );
     return ret;
 }
 
@@ -2536,7 +2540,7 @@ static std::vector<window_panel> initialize_default_label_panels()
 {
     std::vector<window_panel> ret;
 
-    ret.emplace_back( draw_hint, translate_marker( "Hint" ), 1, 44, true );
+    ret.emplace_back( draw_hint, translate_marker( "Hint" ), 1, 44, false );
     ret.emplace_back( draw_limb_wide, translate_marker( "Limbs" ), 2, 44, true );
     ret.emplace_back( draw_char_wide, translate_marker( "Movement" ), 2, 44, true );
     ret.emplace_back( draw_mana_wide, translate_marker( "Mana" ), 1, 44, true,
@@ -2566,6 +2570,7 @@ static std::vector<window_panel> initialize_default_label_panels()
 #endif // TILES
     ret.emplace_back( draw_ai_goal, "AI Needs", 1, 44, false );
 
+    ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 4, 44, true );
     return ret;
 }
 
