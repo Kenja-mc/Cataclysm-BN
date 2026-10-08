@@ -180,6 +180,20 @@ auto try_shove_grabbed_vehicle( avatar &you ) -> bool
     return true;
 }
 
+// Set while an explicit attack command drives avatar_action::move.
+auto attack_requested = false;
+
+/// Walking into a hostile only attacks when the player asked for it or opted into bump attacks.
+auto refuse_bump_attack( const Creature &target ) -> bool
+{
+    if( attack_requested || get_option<bool>( "BUMP_ATTACK" ) ) {
+        return false;
+    }
+    add_msg( m_info, _( "%1$s is in the way.  %2$s to attack." ), target.disp_name( false, true ),
+             press_x( ACTION_ATTACK ) );
+    return true;
+}
+
 auto melee_attack_from_movement( avatar &you, Creature &target ) -> void
 {
     avatar_action::melee_attack_while_handling_manual_combat_mode( you, target );
@@ -563,6 +577,9 @@ bool avatar_action::move( avatar &you, map &m, const tripoint_rel_ms &d )
                     return false;
                 }
             }
+            if( refuse_bump_attack( critter ) ) {
+                return false;
+            }
             // Ask for confirmation before attacking a neutral creature unless we've already taken a swing at it
             if( ( att == MATT_IGNORE || att == MATT_FLEE ) &&
                 get_option<bool>( "QUERY_BEFORE_ATTACKING_NEUTRAL" ) &&
@@ -599,6 +616,9 @@ bool avatar_action::move( avatar &you, map &m, const tripoint_rel_ms &d )
             return false;
         }
 
+        if( refuse_bump_attack( np ) ) {
+            return false;
+        }
         melee_attack_from_movement( you, np );
         np.make_angry();
         return false;
@@ -995,6 +1015,21 @@ auto avatar_action::melee_attack_while_handling_manual_combat_mode( avatar &you,
 
     const melee::technique_prompt_suppression_guard suppress_technique_prompt;
     you.melee_attack( target, true );
+}
+
+auto avatar_action::attack_in_direction( avatar &you, map &m ) -> void
+{
+    const auto dir = choose_direction( _( "Attack where?" ) );
+    if( !dir || *dir == tripoint_rel_ms::zero() ) {
+        return;
+    }
+    if( g->critter_at<Creature>( you.bub_pos() + *dir, true ) == nullptr ) {
+        add_msg( m_info, _( "There's nothing there to attack." ) );
+        return;
+    }
+    attack_requested = true;
+    move( you, m, *dir );
+    attack_requested = false;
 }
 
 auto avatar_action::toggle_manual_combat_mode() -> void

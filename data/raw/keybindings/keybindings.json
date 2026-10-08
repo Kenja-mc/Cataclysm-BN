@@ -2213,6 +2213,13 @@
   },
   {
     "type": "keybinding",
+    "id": "attack",
+    "category": "DEFAULTMODE",
+    "name": "Attack in a direction",
+    "bindings": [ { "input_method": "keyboard", "key": "F" } ]
+  },
+  {
+    "type": "keybinding",
     "name": "Pickup Item(s) at Player Feet",
     "category": "DEFAULTMODE",
     "id": "pickup_feet"
@@ -2533,7 +2540,7 @@
     "name": "Toggle attack mode of Wielded Item",
     "category": "DEFAULTMODE",
     "id": "select_fire_mode",
-    "bindings": [ { "input_method": "keyboard", "key": "F" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "N" } ]
   },
   {
     "type": "keybinding",

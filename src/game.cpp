@@ -3604,6 +3604,7 @@ input_context get_default_mode_input_context()
     ctxt.register_action( "loot" );
     ctxt.register_action( "quick_stack" );
     ctxt.register_action( "sort_pile" );
+    ctxt.register_action( "attack" );
     ctxt.register_action( "examine" );
     ctxt.register_action( "jump" );
     ctxt.register_action( "advinv" );

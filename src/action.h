@@ -132,6 +132,8 @@ enum action_id : int {
     ACTION_QUICK_STACK,
     /** Distribute the pile underfoot into matching nearby storage */
     ACTION_SORT_PILE,
+    /** Melee attack in a chosen direction */
+    ACTION_ATTACK,
     /**@}*/
 
     // Inventory Interaction (including quasi-inventories like bionics)
