@@ -296,6 +296,18 @@ def test_jewelry_is_one_item_per_form(g):
     assert g.lua("count_at(0,0,'gold_small')") == ["2"]
 
 
+def test_mixed_jewelry_stacks(g):
+    """Different rings stack like Don't Starve items; each still keeps its own gem, metal and price."""
+    out = g.lua("local u=gapi.get_avatar() local p=0 for _,v in ipairs({'ruby_gold_ring','copper_ring'}) do "
+                "local r=gapi.create_item(ItypeId.new('jewelry_ring'), -1) r:set_var_str('variant',v) p=p+r:price(false) u:add_item(r) end "
+                "out(p)")
+    assert float(out[0]) > 0, out
+    g.keys("i", delay=1)
+    s = g.screen()
+    g.keys("Escape", delay=0.6)
+    assert any("2 " in l and "rings" in l for l in s.splitlines()), "both rings share one inventory line\n" + s
+
+
 def test_mre_unpacks_its_entree(g):
     """MRE boxes are one item; the entree is a variant and unpacking yields it."""
     arena(g)
@@ -339,7 +351,7 @@ def test_rounded_frames(g):
     assert "╭" in s and "╯" in s, "inventory window should have rounded corners"
 
 
-TESTS = [test_welcome_card, test_controls_strip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position,
+TESTS = [test_welcome_card, test_controls_strip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position,
          test_quick_stack, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
          test_aim_defaults, test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel,
          test_magnet_pull_through_monster, test_classic_control_scheme]

@@ -70,7 +70,7 @@
     "min": 0.0,
     "max": 1.0,
     "step": 0.05,
-    "default": 0.25,
+    "default": 1.0,
     "deps": [ { "option": "MERGE_COMESTIBLES", "values": [ "liquid", "all" ] } ]
   },
   {

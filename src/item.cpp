@@ -1194,7 +1194,15 @@ bool item::stacks_with( const item &rhs, bool check_components, bool skip_type_c
     }
     const auto vars_match = [&]() {
         if( !count_by_charges() ) {
-            return item_vars_ == rhs.item_vars_;
+            if( item_vars_ == rhs.item_vars_ || !item_variants::cosmetic( *type ) ) {
+                return item_vars_ == rhs.item_vars_;
+            }
+            // Cosmetic variants (which gem, which metal) stack like Don't Starve items; each keeps its own.
+            auto mine = item_vars_;
+            auto theirs = rhs.item_vars_;
+            mine.erase( "variant" );
+            theirs.erase( "variant" );
+            return mine == theirs;
         }
         // Stack modifier counts describe some of the units; they never keep stacks apart.
         const auto plain = []( const data_vars::data_set & vars ) {
@@ -1255,6 +1263,10 @@ bool item::stacks_with( const item &rhs, bool check_components, bool skip_type_c
             }
             [[fallthrough]];
             default:
+                // Fresh and stale food stack with their rot averaged, but rotten food never joins fresh.
+                if( rotten() != rhs.rotten() ) {
+                    return false;
+                }
                 return std::abs( get_relative_rot() - rhs.get_relative_rot() ) <= similarity_threshold;
         }
 
@@ -11540,7 +11552,9 @@ std::string item::type_name( unsigned int quantity ) const
     std::string ret_name;
     if( iter != item_vars_.end() ) {
         return iter->second;
-    } else if( const auto *variant = item_variants::of( *this ) ) {
+    } else if( const auto *variant = item_variants::of( *this );
+               variant != nullptr && ( quantity <= 1 || !item_variants::cosmetic( *type ) ) ) {
+        // A stack of cosmetic variants may mix several, so it goes by the plain type name.
         ret_name = variant->name.translated( quantity );
     } else {
         ret_name = type->nname( quantity );
