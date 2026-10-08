@@ -41,6 +41,10 @@ live keybindings, so it stays correct if you rebind anything.
 Players with an existing `keybindings.json` keep their own bindings. Delete that file from the
 config folder to get the new defaults.
 
+Your first new game opens with a short welcome card listing these keys (Options → Interface →
+Show welcome card brings it back). Yes/no prompts accept lowercase `y`/`n`, since those letters no
+longer move you.
+
 ## Look
 
 - **Color theme** (Options → Graphics). The default, *Terminal*, takes your terminal's palette and
@@ -51,6 +55,9 @@ config folder to get the new defaults.
   bold text being drawn bright, which most modern terminals no longer do. Light and dark variants
   stay distinct and text no longer turns bold at random.
 - Rounded window corners in the terminal version (Options → Graphics → Rounded window corners).
+  Borders are drawn as real Unicode in UTF-8 terminals, which many terminals render better than the
+  old line-drawing character set. Map walls keep square corners.
+- Quieter main menu, capacity meters in the inventory header, and a clearer pick-up list.
 
 ## Items and storage
 
@@ -70,8 +77,26 @@ that is optional:
   6), so a workshop with stocked shelves works like a Hytale workbench next to chests. You can
   change it under Options → Debug → Crafting range.
 
+- **Advanced inventory (`/`) opens like a loot window**: everything around you on the left, your
+  inventory on the right. Upstream's default pointed at the empty tile below you.
+- **Crafting (`k`) opens on something useful**: recent recipes, or the first category you can
+  craft from, not an empty favorites list.
+- **One pick-up list**: `g` shows everything within reach in one list.
+
 Zones and the loot-sorting activity are still there for anyone who wants them. They just have no
 default key.
+
+## Bug fixes
+
+- Starting any activity (crafting, for example) next to NPCs crashed: a range-for loop iterated a
+  temporary that was already destroyed.
+- Repeating the last craft crashed after save, quit to menu and reload in one session
+  ([upstream #10083](https://github.com/cataclysmbn/Cataclysm-BN/issues/10083)).
+- Generating the collapsed office tower crashed
+  ([upstream #9875](https://github.com/cataclysmbn/Cataclysm-BN/issues/9875)).
+- The electromagnetic unit crashed when pulled metal hit a monster
+  ([upstream #9354](https://github.com/cataclysmbn/Cataclysm-BN/issues/9354)).
+- Character creation's overview no longer draws stats on top of their labels in the terminal.
 
 ## Building
 
