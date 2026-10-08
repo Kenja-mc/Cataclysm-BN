@@ -5638,6 +5638,9 @@ nc_color item::color() const
     if( is_corpse() ) {
         return corpse->color;
     }
+    if( const auto *variant = item_variants::of( *this ); variant != nullptr && variant->color ) {
+        return *variant->color;
+    }
     return type->color;
 }
 

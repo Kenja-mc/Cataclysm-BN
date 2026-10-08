@@ -218,50 +218,47 @@
     "subtype": "collection",
     "entries": [
       {
-        "distribution": [
-          { "item": "novel_romance", "count": [ 1, 2 ], "prob": 20 },
-          { "item": "novel_erotic", "count": [ 1, 2 ], "prob": 10 }
-        ],
+        "distribution": [ { "item": "paperback", "count": [ 1, 2 ], "prob": 20 }, { "item": "paperback", "count": [ 1, 2 ], "prob": 10 } ],
         "prob": 50
       },
       {
         "distribution": [
-          { "item": "novel_spy", "count": [ 1, 2 ], "prob": 10 },
-          { "item": "novel_samurai", "count": [ 1, 2 ], "prob": 10 },
-          { "item": "novel_swash", "count": [ 1, 2 ], "prob": 10 },
-          { "item": "novel_western", "count": [ 1, 2 ], "prob": 20 },
-          { "item": "novel_war", "count": [ 1, 2 ], "prob": 20 },
-          { "item": "novel_adventure", "count": [ 1, 2 ], "prob": 10 }
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 10 },
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 10 },
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 10 },
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 20 },
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 20 },
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 10 }
         ],
         "prob": 75
       },
       {
         "distribution": [
-          { "item": "novel_fantasy", "count": [ 1, 2 ], "prob": 20 },
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 20 },
           { "item": "novel_scifi", "count": [ 1, 2 ], "prob": 20 },
-          { "item": "novel_pulp", "count": [ 1, 2 ], "prob": 10 }
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 10 }
         ],
         "prob": 50
       },
       {
         "distribution": [
-          { "item": "novel_drama", "count": [ 1, 2 ], "prob": 10 },
-          { "item": "novel_mystery", "count": [ 1, 2 ], "prob": 30 },
-          { "item": "novel_thriller", "count": [ 1, 2 ], "prob": 10 },
-          { "item": "novel_crime", "count": [ 1, 2 ], "prob": 20 },
-          { "item": "novel_horror", "count": [ 1, 2 ], "prob": 20 },
-          { "item": "novel_tragedy", "count": [ 1, 2 ], "prob": 30 }
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 10 },
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 30 },
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 10 },
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 20 },
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 20 },
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 30 }
         ],
         "prob": 50
       },
       {
         "distribution": [
-          { "item": "novel_satire", "count": [ 1, 2 ], "prob": 20 },
-          { "item": "novel_sports", "count": [ 1, 2 ], "prob": 20 },
-          { "item": "novel_experimental", "count": [ 1, 2 ], "prob": 10 },
-          { "item": "novel_road", "count": [ 1, 2 ], "prob": 20 },
-          { "item": "novel_buddy", "count": [ 1, 2 ], "prob": 20 },
-          { "item": "novel_coa", "count": [ 1, 2 ], "prob": 30 }
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 20 },
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 20 },
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 10 },
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 20 },
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 20 },
+          { "item": "paperback", "count": [ 1, 2 ], "prob": 30 }
         ],
         "prob": 75
       },

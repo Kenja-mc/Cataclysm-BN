@@ -236,7 +236,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "alexandrite", 4 ] ]
+        "components": [ [ "gold_small", 8 ], [ "alexandrite", 4 ] ],
+        "color": "green"
       },
       {
         "id": "alexandrite_platinum_bracelet",
@@ -245,7 +246,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "alexandrite", 4 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "alexandrite", 4 ] ],
+        "color": "green"
       },
       {
         "id": "alexandrite_silver_bracelet",
@@ -254,7 +256,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "alexandrite", 4 ] ]
+        "components": [ [ "silver_small", 8 ], [ "alexandrite", 4 ] ],
+        "color": "green"
       },
       {
         "id": "amethyst_gold_bracelet",
@@ -263,7 +266,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "amethyst", 4 ] ]
+        "components": [ [ "gold_small", 8 ], [ "amethyst", 4 ] ],
+        "color": "blue"
       },
       {
         "id": "amethyst_platinum_bracelet",
@@ -272,7 +276,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "amethyst", 4 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "amethyst", 4 ] ],
+        "color": "blue"
       },
       {
         "id": "amethyst_silver_bracelet",
@@ -281,7 +286,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "amethyst", 4 ] ]
+        "components": [ [ "silver_small", 8 ], [ "amethyst", 4 ] ],
+        "color": "blue"
       },
       {
         "id": "aquamarine_gold_bracelet",
@@ -290,7 +296,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "aquamarine", 4 ] ]
+        "components": [ [ "gold_small", 8 ], [ "aquamarine", 4 ] ],
+        "color": "light_blue"
       },
       {
         "id": "aquamarine_platinum_bracelet",
@@ -299,7 +306,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "aquamarine", 4 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "aquamarine", 4 ] ],
+        "color": "light_blue"
       },
       {
         "id": "aquamarine_silver_bracelet",
@@ -308,7 +316,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "aquamarine", 4 ] ]
+        "components": [ [ "silver_small", 8 ], [ "aquamarine", 4 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_gold_bracelet",
@@ -317,7 +326,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "blue_topaz", 4 ] ]
+        "components": [ [ "gold_small", 8 ], [ "blue_topaz", 4 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_platinum_bracelet",
@@ -326,7 +336,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "blue_topaz", 4 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "blue_topaz", 4 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_silver_bracelet",
@@ -335,7 +346,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "blue_topaz", 4 ] ]
+        "components": [ [ "silver_small", 8 ], [ "blue_topaz", 4 ] ],
+        "color": "light_blue"
       },
       {
         "id": "citrine_gold_bracelet",
@@ -344,7 +356,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "citrine", 4 ] ]
+        "components": [ [ "gold_small", 8 ], [ "citrine", 4 ] ],
+        "color": "yellow"
       },
       {
         "id": "citrine_platinum_bracelet",
@@ -353,7 +366,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "citrine", 4 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "citrine", 4 ] ],
+        "color": "yellow"
       },
       {
         "id": "citrine_silver_bracelet",
@@ -362,7 +376,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "citrine", 4 ] ]
+        "components": [ [ "silver_small", 8 ], [ "citrine", 4 ] ],
+        "color": "yellow"
       },
       {
         "id": "copper_bracelet",
@@ -371,7 +386,8 @@
         "weight": 166,
         "price_multiplier": 0.1,
         "material": [ "copper" ],
-        "components": [ [ "copper", 43 ] ]
+        "components": [ [ "copper", 43 ] ],
+        "color": "brown"
       },
       {
         "id": "diamond_gold_bracelet",
@@ -380,7 +396,8 @@
         "weight": 50,
         "price_multiplier": 8.0,
         "material": [ "gold", "diamond" ],
-        "components": [ [ "gold_small", 8 ], [ "diamond", 4 ] ]
+        "components": [ [ "gold_small", 8 ], [ "diamond", 4 ] ],
+        "color": "white"
       },
       {
         "id": "diamond_platinum_bracelet",
@@ -389,7 +406,8 @@
         "weight": 50,
         "price_multiplier": 8.0,
         "material": [ "platinum", "diamond" ],
-        "components": [ [ "platinum_small", 8 ], [ "diamond", 4 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "diamond", 4 ] ],
+        "color": "white"
       },
       {
         "id": "diamond_silver_bracelet",
@@ -398,7 +416,8 @@
         "weight": 50,
         "price_multiplier": 8.0,
         "material": [ "silver", "diamond" ],
-        "components": [ [ "silver_small", 8 ], [ "diamond", 4 ] ]
+        "components": [ [ "silver_small", 8 ], [ "diamond", 4 ] ],
+        "color": "white"
       },
       {
         "id": "emerald_gold_bracelet",
@@ -407,7 +426,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "emerald", 4 ] ]
+        "components": [ [ "gold_small", 8 ], [ "emerald", 4 ] ],
+        "color": "green"
       },
       {
         "id": "emerald_platinum_bracelet",
@@ -416,7 +436,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "emerald", 4 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "emerald", 4 ] ],
+        "color": "green"
       },
       {
         "id": "emerald_silver_bracelet",
@@ -425,7 +446,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "emerald", 4 ] ]
+        "components": [ [ "silver_small", 8 ], [ "emerald", 4 ] ],
+        "color": "green"
       },
       {
         "id": "garnet_gold_bracelet",
@@ -434,7 +456,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "garnet", 4 ] ]
+        "components": [ [ "gold_small", 8 ], [ "garnet", 4 ] ],
+        "color": "red"
       },
       {
         "id": "garnet_platinum_bracelet",
@@ -443,7 +466,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "garnet", 4 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "garnet", 4 ] ],
+        "color": "red"
       },
       {
         "id": "garnet_silver_bracelet",
@@ -452,7 +476,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "garnet", 4 ] ]
+        "components": [ [ "silver_small", 8 ], [ "garnet", 4 ] ],
+        "color": "red"
       },
       {
         "id": "gold_bracelet",
@@ -461,7 +486,8 @@
         "weight": 313,
         "price_multiplier": 1.84,
         "material": [ "gold" ],
-        "components": [ [ "gold_small", 8 ] ]
+        "components": [ [ "gold_small", 8 ] ],
+        "color": "yellow"
       },
       {
         "id": "opal_gold_bracelet",
@@ -470,7 +496,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "opal", 4 ] ]
+        "components": [ [ "gold_small", 8 ], [ "opal", 4 ] ],
+        "color": "white"
       },
       {
         "id": "opal_platinum_bracelet",
@@ -479,7 +506,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "opal", 4 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "opal", 4 ] ],
+        "color": "white"
       },
       {
         "id": "opal_silver_bracelet",
@@ -488,7 +516,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "opal", 4 ] ]
+        "components": [ [ "silver_small", 8 ], [ "opal", 4 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_gold_bracelet",
@@ -497,7 +526,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "pearl", 4 ] ]
+        "components": [ [ "gold_small", 8 ], [ "pearl", 4 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_platinum_bracelet",
@@ -506,7 +536,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "pearl", 4 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "pearl", 4 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_silver_bracelet",
@@ -515,7 +546,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "pearl", 4 ] ]
+        "components": [ [ "silver_small", 8 ], [ "pearl", 4 ] ],
+        "color": "white"
       },
       {
         "id": "peridot_gold_bracelet",
@@ -524,7 +556,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "peridot", 4 ] ]
+        "components": [ [ "gold_small", 8 ], [ "peridot", 4 ] ],
+        "color": "light_green"
       },
       {
         "id": "peridot_platinum_bracelet",
@@ -533,7 +566,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "peridot", 4 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "peridot", 4 ] ],
+        "color": "light_green"
       },
       {
         "id": "peridot_silver_bracelet",
@@ -542,7 +576,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "peridot", 4 ] ]
+        "components": [ [ "silver_small", 8 ], [ "peridot", 4 ] ],
+        "color": "light_green"
       },
       {
         "id": "platinum_bracelet",
@@ -551,7 +586,8 @@
         "weight": 170,
         "price_multiplier": 1.52,
         "material": [ "platinum" ],
-        "components": [ [ "platinum_small", 8 ] ]
+        "components": [ [ "platinum_small", 8 ] ],
+        "color": "white"
       },
       {
         "id": "ruby_gold_bracelet",
@@ -560,7 +596,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "ruby", 4 ] ]
+        "components": [ [ "gold_small", 8 ], [ "ruby", 4 ] ],
+        "color": "red"
       },
       {
         "id": "ruby_platinum_bracelet",
@@ -569,7 +606,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "ruby", 4 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "ruby", 4 ] ],
+        "color": "red"
       },
       {
         "id": "ruby_silver_bracelet",
@@ -578,7 +616,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "ruby", 4 ] ]
+        "components": [ [ "silver_small", 8 ], [ "ruby", 4 ] ],
+        "color": "red"
       },
       {
         "id": "sapphire_gold_bracelet",
@@ -587,7 +626,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "sapphire", 4 ] ]
+        "components": [ [ "gold_small", 8 ], [ "sapphire", 4 ] ],
+        "color": "blue"
       },
       {
         "id": "sapphire_platinum_bracelet",
@@ -596,7 +636,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "sapphire", 4 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "sapphire", 4 ] ],
+        "color": "blue"
       },
       {
         "id": "sapphire_silver_bracelet",
@@ -605,7 +646,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "sapphire", 4 ] ]
+        "components": [ [ "silver_small", 8 ], [ "sapphire", 4 ] ],
+        "color": "blue"
       },
       {
         "id": "silver_bracelet",
@@ -621,7 +663,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "tourmaline", 4 ] ]
+        "components": [ [ "gold_small", 8 ], [ "tourmaline", 4 ] ],
+        "color": "light_red"
       },
       {
         "id": "tourmaline_platinum_bracelet",
@@ -630,7 +673,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "tourmaline", 4 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "tourmaline", 4 ] ],
+        "color": "light_red"
       },
       {
         "id": "tourmaline_silver_bracelet",
@@ -639,7 +683,8 @@
         "weight": 50,
         "price_multiplier": 0.6,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "tourmaline", 4 ] ]
+        "components": [ [ "silver_small", 8 ], [ "tourmaline", 4 ] ],
+        "color": "light_red"
       }
     ]
   },
@@ -655,7 +700,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "alexandrite", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "alexandrite", 2 ] ],
+        "color": "green"
       },
       {
         "id": "alexandrite_platinum_cufflinks",
@@ -664,7 +710,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "alexandrite", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "alexandrite", 2 ] ],
+        "color": "green"
       },
       {
         "id": "alexandrite_silver_cufflinks",
@@ -673,7 +720,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "alexandrite", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "alexandrite", 2 ] ],
+        "color": "green"
       },
       {
         "id": "amethyst_gold_cufflinks",
@@ -682,7 +730,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "amethyst", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "amethyst", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "amethyst_platinum_cufflinks",
@@ -691,7 +740,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "amethyst", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "amethyst", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "amethyst_silver_cufflinks",
@@ -700,7 +750,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "amethyst", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "amethyst", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "aquamarine_gold_cufflinks",
@@ -709,7 +760,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "aquamarine", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "aquamarine", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "aquamarine_platinum_cufflinks",
@@ -718,7 +770,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "aquamarine", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "aquamarine", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "aquamarine_silver_cufflinks",
@@ -727,7 +780,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "aquamarine", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "aquamarine", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_gold_cufflinks",
@@ -736,7 +790,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "blue_topaz", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "blue_topaz", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_platinum_cufflinks",
@@ -745,7 +800,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "blue_topaz", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "blue_topaz", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_silver_cufflinks",
@@ -754,7 +810,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "blue_topaz", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "blue_topaz", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "citrine_gold_cufflinks",
@@ -763,7 +820,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "citrine", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "citrine", 2 ] ],
+        "color": "yellow"
       },
       {
         "id": "citrine_platinum_cufflinks",
@@ -772,7 +830,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "citrine", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "citrine", 2 ] ],
+        "color": "yellow"
       },
       {
         "id": "citrine_silver_cufflinks",
@@ -781,7 +840,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "citrine", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "citrine", 2 ] ],
+        "color": "yellow"
       },
       {
         "id": "cufflinks",
@@ -806,7 +866,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "gold", "diamond" ],
-        "components": [ [ "gold_small", 4 ], [ "diamond", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "diamond", 2 ] ],
+        "color": "white"
       },
       {
         "id": "diamond_platinum_cufflinks",
@@ -815,7 +876,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "platinum", "diamond" ],
-        "components": [ [ "platinum_small", 4 ], [ "diamond", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "diamond", 2 ] ],
+        "color": "white"
       },
       {
         "id": "diamond_silver_cufflinks",
@@ -824,7 +886,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "diamond" ],
-        "components": [ [ "silver_small", 4 ], [ "diamond", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "diamond", 2 ] ],
+        "color": "white"
       },
       {
         "id": "emerald_gold_cufflinks",
@@ -833,7 +896,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "emerald", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "emerald", 2 ] ],
+        "color": "green"
       },
       {
         "id": "emerald_platinum_cufflinks",
@@ -842,7 +906,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "emerald", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "emerald", 2 ] ],
+        "color": "green"
       },
       {
         "id": "emerald_silver_cufflinks",
@@ -851,7 +916,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "emerald", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "emerald", 2 ] ],
+        "color": "green"
       },
       {
         "id": "garnet_gold_cufflinks",
@@ -860,7 +926,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "garnet", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "garnet", 2 ] ],
+        "color": "red"
       },
       {
         "id": "garnet_platinum_cufflinks",
@@ -869,7 +936,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "garnet", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "garnet", 2 ] ],
+        "color": "red"
       },
       {
         "id": "garnet_silver_cufflinks",
@@ -878,7 +946,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "garnet", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "garnet", 2 ] ],
+        "color": "red"
       },
       {
         "id": "opal_gold_cufflinks",
@@ -887,7 +956,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "opal", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "opal", 2 ] ],
+        "color": "white"
       },
       {
         "id": "opal_platinum_cufflinks",
@@ -896,7 +966,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "opal", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "opal", 2 ] ],
+        "color": "white"
       },
       {
         "id": "opal_silver_cufflinks",
@@ -905,7 +976,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "opal", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "opal", 2 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_gold_cufflinks",
@@ -914,7 +986,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "pearl", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "pearl", 2 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_platinum_cufflinks",
@@ -923,7 +996,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "pearl", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "pearl", 2 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_silver_cufflinks",
@@ -932,7 +1006,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "pearl", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "pearl", 2 ] ],
+        "color": "white"
       },
       {
         "id": "peridot_gold_cufflinks",
@@ -941,7 +1016,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "peridot", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "peridot", 2 ] ],
+        "color": "light_green"
       },
       {
         "id": "peridot_platinum_cufflinks",
@@ -950,7 +1026,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "peridot", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "peridot", 2 ] ],
+        "color": "light_green"
       },
       {
         "id": "peridot_silver_cufflinks",
@@ -959,7 +1036,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "peridot", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "peridot", 2 ] ],
+        "color": "light_green"
       },
       {
         "id": "ruby_gold_cufflinks",
@@ -968,7 +1046,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "ruby", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "ruby", 2 ] ],
+        "color": "red"
       },
       {
         "id": "ruby_platinum_cufflinks",
@@ -977,7 +1056,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "ruby", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "ruby", 2 ] ],
+        "color": "red"
       },
       {
         "id": "ruby_silver_cufflinks",
@@ -986,7 +1066,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "ruby", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "ruby", 2 ] ],
+        "color": "red"
       },
       {
         "id": "sapphire_gold_cufflinks",
@@ -995,7 +1076,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "sapphire", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "sapphire", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "sapphire_platinum_cufflinks",
@@ -1004,7 +1086,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "sapphire", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "sapphire", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "sapphire_silver_cufflinks",
@@ -1013,7 +1096,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "sapphire", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "sapphire", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "tourmaline_gold_cufflinks",
@@ -1022,7 +1106,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "tourmaline", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "tourmaline", 2 ] ],
+        "color": "light_red"
       },
       {
         "id": "tourmaline_platinum_cufflinks",
@@ -1031,7 +1116,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "tourmaline", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "tourmaline", 2 ] ],
+        "color": "light_red"
       },
       {
         "id": "tourmaline_silver_cufflinks",
@@ -1040,7 +1126,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "tourmaline", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "tourmaline", 2 ] ],
+        "color": "light_red"
       }
     ]
   },
@@ -1056,7 +1143,8 @@
         "weight": 50,
         "price_multiplier": 1.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "alexandrite", 1 ] ]
+        "components": [ [ "gold_small", 4 ], [ "alexandrite", 1 ] ],
+        "color": "green"
       },
       {
         "id": "amethyst_dental_grill",
@@ -1065,7 +1153,8 @@
         "weight": 50,
         "price_multiplier": 1.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "amethyst", 1 ] ]
+        "components": [ [ "gold_small", 4 ], [ "amethyst", 1 ] ],
+        "color": "blue"
       },
       {
         "id": "aquamarine_dental_grill",
@@ -1074,7 +1163,8 @@
         "weight": 50,
         "price_multiplier": 1.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "aquamarine", 1 ] ]
+        "components": [ [ "gold_small", 4 ], [ "aquamarine", 1 ] ],
+        "color": "cyan"
       },
       {
         "id": "blue_topaz_dental_grill",
@@ -1083,7 +1173,8 @@
         "weight": 50,
         "price_multiplier": 1.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "blue_topaz", 1 ] ]
+        "components": [ [ "gold_small", 4 ], [ "blue_topaz", 1 ] ],
+        "color": "light_blue"
       },
       {
         "id": "citrine_dental_grill",
@@ -1109,7 +1200,8 @@
         "weight": 50,
         "price_multiplier": 1.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "emerald", 1 ] ]
+        "components": [ [ "gold_small", 4 ], [ "emerald", 1 ] ],
+        "color": "green"
       },
       {
         "id": "garnet_dental_grill",
@@ -1118,7 +1210,8 @@
         "weight": 50,
         "price_multiplier": 1.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "garnet", 1 ] ]
+        "components": [ [ "gold_small", 4 ], [ "garnet", 1 ] ],
+        "color": "red"
       },
       {
         "id": "gold_dental_grill",
@@ -1134,7 +1227,8 @@
         "weight": 50,
         "price_multiplier": 1.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "peridot", 1 ] ]
+        "components": [ [ "gold_small", 4 ], [ "peridot", 1 ] ],
+        "color": "light_green"
       },
       {
         "id": "platinum_dental_grill",
@@ -1143,7 +1237,8 @@
         "weight": 83,
         "price_multiplier": 0.75,
         "material": [ "platinum", "silver" ],
-        "components": [ [ "platinum_small", 2 ] ]
+        "components": [ [ "platinum_small", 2 ] ],
+        "color": "white"
       },
       {
         "id": "ruby_dental_grill",
@@ -1152,7 +1247,8 @@
         "weight": 50,
         "price_multiplier": 1.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "ruby", 1 ] ]
+        "components": [ [ "gold_small", 4 ], [ "ruby", 1 ] ],
+        "color": "red"
       },
       {
         "id": "sapphire_dental_grill",
@@ -1161,7 +1257,8 @@
         "weight": 50,
         "price_multiplier": 1.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "sapphire", 1 ] ]
+        "components": [ [ "gold_small", 4 ], [ "sapphire", 1 ] ],
+        "color": "blue"
       },
       {
         "id": "tourmaline_dental_grill",
@@ -1170,7 +1267,8 @@
         "weight": 50,
         "price_multiplier": 1.5,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "tourmaline", 1 ] ]
+        "components": [ [ "gold_small", 4 ], [ "tourmaline", 1 ] ],
+        "color": "light_red"
       }
     ]
   },
@@ -1186,7 +1284,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "alexandrite", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "alexandrite", 2 ] ],
+        "color": "green"
       },
       {
         "id": "alexandrite_platinum_earring",
@@ -1195,7 +1294,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "alexandrite", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "alexandrite", 2 ] ],
+        "color": "green"
       },
       {
         "id": "alexandrite_silver_earring",
@@ -1204,7 +1304,8 @@
         "weight": 50,
         "price_multiplier": 0.75,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "alexandrite", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "alexandrite", 2 ] ],
+        "color": "green"
       },
       {
         "id": "amethyst_gold_earring",
@@ -1213,7 +1314,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "amethyst", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "amethyst", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "amethyst_platinum_earring",
@@ -1222,7 +1324,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "amethyst", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "amethyst", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "amethyst_silver_earring",
@@ -1231,7 +1334,8 @@
         "weight": 50,
         "price_multiplier": 0.75,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "amethyst", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "amethyst", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "aquamarine_gold_earring",
@@ -1240,7 +1344,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "aquamarine", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "aquamarine", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "aquamarine_platinum_earring",
@@ -1249,7 +1354,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "aquamarine", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "aquamarine", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "aquamarine_silver_earring",
@@ -1258,7 +1364,8 @@
         "weight": 50,
         "price_multiplier": 0.75,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "aquamarine", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "aquamarine", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_gold_earring",
@@ -1267,7 +1374,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "blue_topaz", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "blue_topaz", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_platinum_earring",
@@ -1276,7 +1384,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "blue_topaz", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "blue_topaz", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_silver_earring",
@@ -1285,7 +1394,8 @@
         "weight": 50,
         "price_multiplier": 0.75,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "blue_topaz", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "blue_topaz", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "citrine_gold_earring",
@@ -1294,7 +1404,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "citrine", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "citrine", 2 ] ],
+        "color": "yellow"
       },
       {
         "id": "citrine_platinum_earring",
@@ -1303,7 +1414,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "citrine", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "citrine", 2 ] ],
+        "color": "yellow"
       },
       {
         "id": "citrine_silver_earring",
@@ -1312,7 +1424,8 @@
         "weight": 50,
         "price_multiplier": 0.75,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "citrine", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "citrine", 2 ] ],
+        "color": "yellow"
       },
       {
         "id": "copper_ear",
@@ -1321,7 +1434,8 @@
         "weight": 146,
         "price_multiplier": 0.36,
         "material": [ "copper" ],
-        "components": [ [ "copper", 25 ] ]
+        "components": [ [ "copper", 25 ] ],
+        "color": "brown"
       },
       {
         "id": "diamond_gold_earring",
@@ -1330,7 +1444,8 @@
         "weight": 50,
         "price_multiplier": 1.62,
         "material": [ "gold", "diamond" ],
-        "components": [ [ "gold_small", 4 ], [ "diamond", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "diamond", 2 ] ],
+        "color": "white"
       },
       {
         "id": "diamond_platinum_earring",
@@ -1339,7 +1454,8 @@
         "weight": 50,
         "price_multiplier": 1.5,
         "material": [ "platinum", "diamond" ],
-        "components": [ [ "platinum_small", 4 ], [ "diamond", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "diamond", 2 ] ],
+        "color": "white"
       },
       {
         "id": "diamond_silver_earring",
@@ -1347,7 +1463,8 @@
         "description": "A pair of shiny diamond and silver earrings.  You can wear it if you like, but it won't provide any effects.",
         "weight": 50,
         "material": [ "silver", "diamond" ],
-        "components": [ [ "silver_small", 4 ], [ "diamond", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "diamond", 2 ] ],
+        "color": "white"
       },
       {
         "id": "emerald_gold_earring",
@@ -1356,7 +1473,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "emerald", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "emerald", 2 ] ],
+        "color": "green"
       },
       {
         "id": "emerald_platinum_earring",
@@ -1365,7 +1483,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "emerald", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "emerald", 2 ] ],
+        "color": "green"
       },
       {
         "id": "emerald_silver_earring",
@@ -1374,7 +1493,8 @@
         "weight": 50,
         "price_multiplier": 0.75,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "emerald", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "emerald", 2 ] ],
+        "color": "green"
       },
       {
         "id": "garnet_gold_earring",
@@ -1383,7 +1503,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "garnet", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "garnet", 2 ] ],
+        "color": "red"
       },
       {
         "id": "garnet_platinum_earring",
@@ -1392,7 +1513,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "garnet", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "garnet", 2 ] ],
+        "color": "red"
       },
       {
         "id": "garnet_silver_earring",
@@ -1401,7 +1523,8 @@
         "weight": 50,
         "price_multiplier": 0.75,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "garnet", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "garnet", 2 ] ],
+        "color": "red"
       },
       {
         "id": "gold_ear",
@@ -1410,7 +1533,8 @@
         "weight": 287,
         "price_multiplier": 1.62,
         "material": [ "gold" ],
-        "components": [ [ "gold_small", 2 ] ]
+        "components": [ [ "gold_small", 2 ] ],
+        "color": "yellow"
       },
       {
         "id": "opal_gold_earring",
@@ -1419,7 +1543,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "opal", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "opal", 2 ] ],
+        "color": "white"
       },
       {
         "id": "opal_platinum_earring",
@@ -1428,7 +1553,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "opal", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "opal", 2 ] ],
+        "color": "white"
       },
       {
         "id": "opal_silver_earring",
@@ -1437,7 +1563,8 @@
         "weight": 50,
         "price_multiplier": 0.75,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "opal", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "opal", 2 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_gold_earring",
@@ -1446,7 +1573,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "pearl", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "pearl", 2 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_platinum_earring",
@@ -1455,7 +1583,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "pearl", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "pearl", 2 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_silver_earring",
@@ -1464,7 +1593,8 @@
         "weight": 50,
         "price_multiplier": 0.75,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "pearl", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "pearl", 2 ] ],
+        "color": "white"
       },
       {
         "id": "peridot_gold_earring",
@@ -1473,7 +1603,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "peridot", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "peridot", 2 ] ],
+        "color": "light_green"
       },
       {
         "id": "peridot_platinum_earring",
@@ -1482,7 +1613,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "peridot", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "peridot", 2 ] ],
+        "color": "light_green"
       },
       {
         "id": "peridot_silver_earring",
@@ -1491,7 +1623,8 @@
         "weight": 50,
         "price_multiplier": 0.75,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "peridot", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "peridot", 2 ] ],
+        "color": "light_green"
       },
       {
         "id": "platinum_ear",
@@ -1500,7 +1633,8 @@
         "weight": 111,
         "price_multiplier": 1.5,
         "material": [ "platinum" ],
-        "components": [ [ "platinum_small", 2 ] ]
+        "components": [ [ "platinum_small", 2 ] ],
+        "color": "white"
       },
       {
         "id": "ruby_gold_earring",
@@ -1509,7 +1643,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "ruby", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "ruby", 2 ] ],
+        "color": "red"
       },
       {
         "id": "ruby_platinum_earring",
@@ -1518,7 +1653,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "ruby", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "ruby", 2 ] ],
+        "color": "red"
       },
       {
         "id": "ruby_silver_earring",
@@ -1527,7 +1663,8 @@
         "weight": 50,
         "price_multiplier": 0.75,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "ruby", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "ruby", 2 ] ],
+        "color": "red"
       },
       {
         "id": "sapphire_gold_earring",
@@ -1536,7 +1673,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "sapphire", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "sapphire", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "sapphire_platinum_earring",
@@ -1545,7 +1683,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "sapphire", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "sapphire", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "sapphire_silver_earring",
@@ -1554,7 +1693,8 @@
         "weight": 50,
         "price_multiplier": 0.75,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "sapphire", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "sapphire", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "silver_ear",
@@ -1570,7 +1710,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 4 ], [ "tourmaline", 2 ] ]
+        "components": [ [ "gold_small", 4 ], [ "tourmaline", 2 ] ],
+        "color": "light_red"
       },
       {
         "id": "tourmaline_platinum_earring",
@@ -1579,7 +1720,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 4 ], [ "tourmaline", 2 ] ]
+        "components": [ [ "platinum_small", 4 ], [ "tourmaline", 2 ] ],
+        "color": "light_red"
       },
       {
         "id": "tourmaline_silver_earring",
@@ -1588,7 +1730,8 @@
         "weight": 50,
         "price_multiplier": 0.75,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 4 ], [ "tourmaline", 2 ] ]
+        "components": [ [ "silver_small", 4 ], [ "tourmaline", 2 ] ],
+        "color": "light_red"
       }
     ]
   },
@@ -1604,7 +1747,8 @@
         "weight": 121,
         "price_multiplier": 0.25,
         "material": [ "copper" ],
-        "components": [ [ "copper", 3 ] ]
+        "components": [ [ "copper", 3 ] ],
+        "color": "brown"
       },
       {
         "id": "gold_hairpin",
@@ -1613,7 +1757,8 @@
         "weight": 86,
         "price_multiplier": 2.5,
         "material": [ "gold" ],
-        "components": [ [ "gold_small", 3 ] ]
+        "components": [ [ "gold_small", 3 ] ],
+        "color": "yellow"
       },
       {
         "id": "platinum_hairpin",
@@ -1622,7 +1767,8 @@
         "weight": 16,
         "price_multiplier": 1.75,
         "material": [ "platinum" ],
-        "components": [ [ "platinum_small", 3 ] ]
+        "components": [ [ "platinum_small", 3 ] ],
+        "color": "white"
       },
       {
         "id": "silver_hairpin",
@@ -1645,7 +1791,8 @@
         "weight": 146,
         "price_multiplier": 0.25,
         "material": [ "copper" ],
-        "components": [ [ "copper", 4 ] ]
+        "components": [ [ "copper", 4 ] ],
+        "color": "brown"
       },
       {
         "id": "gold_locket",
@@ -1654,7 +1801,8 @@
         "weight": 128,
         "price_multiplier": 5.0,
         "material": [ "gold" ],
-        "components": [ [ "gold_small", 4 ] ]
+        "components": [ [ "gold_small", 4 ] ],
+        "color": "yellow"
       },
       {
         "id": "platinum_locket",
@@ -1663,7 +1811,8 @@
         "weight": 27,
         "price_multiplier": 4.0,
         "material": [ "platinum" ],
-        "components": [ [ "platinum_small", 4 ] ]
+        "components": [ [ "platinum_small", 4 ] ],
+        "color": "white"
       },
       {
         "id": "silver_locket",
@@ -1686,7 +1835,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "alexandrite", 2 ] ]
+        "components": [ [ "gold_small", 8 ], [ "alexandrite", 2 ] ],
+        "color": "green"
       },
       {
         "id": "alexandrite_platinum_pendant_necklace",
@@ -1695,7 +1845,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "alexandrite", 2 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "alexandrite", 2 ] ],
+        "color": "green"
       },
       {
         "id": "alexandrite_silver_pendant_necklace",
@@ -1704,7 +1855,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "alexandrite", 2 ] ]
+        "components": [ [ "silver_small", 8 ], [ "alexandrite", 2 ] ],
+        "color": "green"
       },
       {
         "id": "amethyst_gold_pendant_necklace",
@@ -1713,7 +1865,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "amethyst", 2 ] ]
+        "components": [ [ "gold_small", 8 ], [ "amethyst", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "amethyst_platinum_pendant_necklace",
@@ -1722,7 +1875,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "amethyst", 2 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "amethyst", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "amethyst_silver_pendant_necklace",
@@ -1731,7 +1885,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "amethyst", 2 ] ]
+        "components": [ [ "silver_small", 8 ], [ "amethyst", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "aquamarine_gold_pendant_necklace",
@@ -1740,7 +1895,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "aquamarine", 2 ] ]
+        "components": [ [ "gold_small", 8 ], [ "aquamarine", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "aquamarine_platinum_pendant_necklace",
@@ -1749,7 +1905,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "aquamarine", 2 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "aquamarine", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "aquamarine_silver_pendant_necklace",
@@ -1758,7 +1915,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "aquamarine", 2 ] ]
+        "components": [ [ "silver_small", 8 ], [ "aquamarine", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_gold_pendant_necklace",
@@ -1767,7 +1925,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "blue_topaz", 2 ] ]
+        "components": [ [ "gold_small", 8 ], [ "blue_topaz", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_platinum_pendant_necklace",
@@ -1776,7 +1935,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "blue_topaz", 2 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "blue_topaz", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_silver_pendant_necklace",
@@ -1785,7 +1945,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "blue_topaz", 2 ] ]
+        "components": [ [ "silver_small", 8 ], [ "blue_topaz", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "citrine_gold_pendant_necklace",
@@ -1794,7 +1955,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "citrine", 2 ] ]
+        "components": [ [ "gold_small", 8 ], [ "citrine", 2 ] ],
+        "color": "yellow"
       },
       {
         "id": "citrine_platinum_pendant_necklace",
@@ -1803,7 +1965,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "citrine", 2 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "citrine", 2 ] ],
+        "color": "yellow"
       },
       {
         "id": "citrine_silver_pendant_necklace",
@@ -1812,7 +1975,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "citrine", 2 ] ]
+        "components": [ [ "silver_small", 8 ], [ "citrine", 2 ] ],
+        "color": "yellow"
       },
       {
         "id": "copper_necklace",
@@ -1821,7 +1985,8 @@
         "weight": 146,
         "price_multiplier": 0.25,
         "material": [ "copper" ],
-        "components": [ [ "copper", 4 ] ]
+        "components": [ [ "copper", 4 ] ],
+        "color": "brown"
       },
       {
         "id": "diamond_gold_pendant_necklace",
@@ -1830,7 +1995,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "gold", "diamond" ],
-        "components": [ [ "gold_small", 8 ], [ "diamond", 2 ] ]
+        "components": [ [ "gold_small", 8 ], [ "diamond", 2 ] ],
+        "color": "white"
       },
       {
         "id": "diamond_platinum_pendant_necklace",
@@ -1839,7 +2005,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "platinum", "diamond" ],
-        "components": [ [ "platinum_small", 8 ], [ "diamond", 2 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "diamond", 2 ] ],
+        "color": "white"
       },
       {
         "id": "diamond_silver_pendant_necklace",
@@ -1848,7 +2015,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "silver", "diamond" ],
-        "components": [ [ "silver_small", 8 ], [ "diamond", 2 ] ]
+        "components": [ [ "silver_small", 8 ], [ "diamond", 2 ] ],
+        "color": "white"
       },
       {
         "id": "emerald_gold_pendant_necklace",
@@ -1857,7 +2025,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "emerald", 2 ] ]
+        "components": [ [ "gold_small", 8 ], [ "emerald", 2 ] ],
+        "color": "green"
       },
       {
         "id": "emerald_platinum_pendant_necklace",
@@ -1866,7 +2035,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "emerald", 2 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "emerald", 2 ] ],
+        "color": "green"
       },
       {
         "id": "emerald_silver_pendant_necklace",
@@ -1875,7 +2045,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "emerald", 2 ] ]
+        "components": [ [ "silver_small", 8 ], [ "emerald", 2 ] ],
+        "color": "green"
       },
       {
         "id": "garnet_gold_pendant_necklace",
@@ -1884,7 +2055,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "garnet", 2 ] ]
+        "components": [ [ "gold_small", 8 ], [ "garnet", 2 ] ],
+        "color": "red"
       },
       {
         "id": "garnet_platinum_pendant_necklace",
@@ -1893,7 +2065,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "garnet", 2 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "garnet", 2 ] ],
+        "color": "red"
       },
       {
         "id": "garnet_silver_pendant_necklace",
@@ -1902,7 +2075,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "garnet", 2 ] ]
+        "components": [ [ "silver_small", 8 ], [ "garnet", 2 ] ],
+        "color": "red"
       },
       {
         "id": "gold_necklace",
@@ -1911,7 +2085,8 @@
         "weight": 183,
         "price_multiplier": 3.33,
         "material": [ "gold" ],
-        "components": [ [ "gold_small", 3 ] ]
+        "components": [ [ "gold_small", 3 ] ],
+        "color": "yellow"
       },
       {
         "id": "opal_gold_pendant_necklace",
@@ -1920,7 +2095,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "opal", 2 ] ]
+        "components": [ [ "gold_small", 8 ], [ "opal", 2 ] ],
+        "color": "white"
       },
       {
         "id": "opal_platinum_pendant_necklace",
@@ -1929,7 +2105,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "opal", 2 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "opal", 2 ] ],
+        "color": "white"
       },
       {
         "id": "opal_silver_pendant_necklace",
@@ -1938,7 +2115,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "opal", 2 ] ]
+        "components": [ [ "silver_small", 8 ], [ "opal", 2 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_gold_pendant_necklace",
@@ -1947,7 +2125,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "pearl", 2 ] ]
+        "components": [ [ "gold_small", 8 ], [ "pearl", 2 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_platinum_pendant_necklace",
@@ -1956,7 +2135,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "pearl", 2 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "pearl", 2 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_silver_pendant_necklace",
@@ -1965,7 +2145,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "pearl", 2 ] ]
+        "components": [ [ "silver_small", 8 ], [ "pearl", 2 ] ],
+        "color": "white"
       },
       {
         "id": "peridot_gold_pendant_necklace",
@@ -1974,7 +2155,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "peridot", 2 ] ]
+        "components": [ [ "gold_small", 8 ], [ "peridot", 2 ] ],
+        "color": "light_green"
       },
       {
         "id": "peridot_platinum_pendant_necklace",
@@ -1983,7 +2165,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "peridot", 2 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "peridot", 2 ] ],
+        "color": "light_green"
       },
       {
         "id": "peridot_silver_pendant_necklace",
@@ -1992,7 +2175,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "peridot", 2 ] ]
+        "components": [ [ "silver_small", 8 ], [ "peridot", 2 ] ],
+        "color": "light_green"
       },
       {
         "id": "platinum_necklace",
@@ -2001,7 +2185,8 @@
         "weight": 69,
         "price_multiplier": 4.17,
         "material": [ "platinum" ],
-        "components": [ [ "platinum_small", 3 ] ]
+        "components": [ [ "platinum_small", 3 ] ],
+        "color": "white"
       },
       {
         "id": "ruby_gold_pendant_necklace",
@@ -2010,7 +2195,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "ruby", 2 ] ]
+        "components": [ [ "gold_small", 8 ], [ "ruby", 2 ] ],
+        "color": "red"
       },
       {
         "id": "ruby_platinum_pendant_necklace",
@@ -2019,7 +2205,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "ruby", 2 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "ruby", 2 ] ],
+        "color": "red"
       },
       {
         "id": "ruby_silver_pendant_necklace",
@@ -2028,7 +2215,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "ruby", 2 ] ]
+        "components": [ [ "silver_small", 8 ], [ "ruby", 2 ] ],
+        "color": "red"
       },
       {
         "id": "sapphire_gold_pendant_necklace",
@@ -2037,7 +2225,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "sapphire", 2 ] ]
+        "components": [ [ "gold_small", 8 ], [ "sapphire", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "sapphire_platinum_pendant_necklace",
@@ -2046,7 +2235,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "sapphire", 2 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "sapphire", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "sapphire_silver_pendant_necklace",
@@ -2055,7 +2245,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "sapphire", 2 ] ]
+        "components": [ [ "silver_small", 8 ], [ "sapphire", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "silver_necklace",
@@ -2071,7 +2262,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 8 ], [ "tourmaline", 2 ] ]
+        "components": [ [ "gold_small", 8 ], [ "tourmaline", 2 ] ],
+        "color": "light_red"
       },
       {
         "id": "tourmaline_platinum_pendant_necklace",
@@ -2080,7 +2272,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 8 ], [ "tourmaline", 2 ] ]
+        "components": [ [ "platinum_small", 8 ], [ "tourmaline", 2 ] ],
+        "color": "light_red"
       },
       {
         "id": "tourmaline_silver_pendant_necklace",
@@ -2089,7 +2282,8 @@
         "weight": 50,
         "price_multiplier": 4.17,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 8 ], [ "tourmaline", 2 ] ]
+        "components": [ [ "silver_small", 8 ], [ "tourmaline", 2 ] ],
+        "color": "light_red"
       }
     ]
   },
@@ -2105,7 +2299,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 2 ], [ "alexandrite", 1 ] ]
+        "components": [ [ "gold_small", 2 ], [ "alexandrite", 1 ] ],
+        "color": "green"
       },
       {
         "id": "alexandrite_platinum_ring",
@@ -2114,7 +2309,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 2 ], [ "alexandrite", 1 ] ]
+        "components": [ [ "platinum_small", 2 ], [ "alexandrite", 1 ] ],
+        "color": "green"
       },
       {
         "id": "alexandrite_silver_ring",
@@ -2123,7 +2319,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 2 ], [ "alexandrite", 1 ] ]
+        "components": [ [ "silver_small", 2 ], [ "alexandrite", 1 ] ],
+        "color": "green"
       },
       {
         "id": "amethyst_gold_ring",
@@ -2132,7 +2329,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 2 ], [ "amethyst", 1 ] ]
+        "components": [ [ "gold_small", 2 ], [ "amethyst", 1 ] ],
+        "color": "blue"
       },
       {
         "id": "amethyst_platinum_ring",
@@ -2141,7 +2339,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 2 ], [ "amethyst", 1 ] ]
+        "components": [ [ "platinum_small", 2 ], [ "amethyst", 1 ] ],
+        "color": "blue"
       },
       {
         "id": "amethyst_silver_ring",
@@ -2150,7 +2349,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 2 ], [ "amethyst", 1 ] ]
+        "components": [ [ "silver_small", 2 ], [ "amethyst", 1 ] ],
+        "color": "blue"
       },
       {
         "id": "aquamarine_gold_ring",
@@ -2159,7 +2359,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 2 ], [ "aquamarine", 1 ] ]
+        "components": [ [ "gold_small", 2 ], [ "aquamarine", 1 ] ],
+        "color": "light_blue"
       },
       {
         "id": "aquamarine_platinum_ring",
@@ -2168,7 +2369,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 2 ], [ "aquamarine", 1 ] ]
+        "components": [ [ "platinum_small", 2 ], [ "aquamarine", 1 ] ],
+        "color": "light_blue"
       },
       {
         "id": "aquamarine_silver_ring",
@@ -2177,7 +2379,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 2 ], [ "aquamarine", 1 ] ]
+        "components": [ [ "silver_small", 2 ], [ "aquamarine", 1 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_gold_ring",
@@ -2186,7 +2389,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 2 ], [ "blue_topaz", 1 ] ]
+        "components": [ [ "gold_small", 2 ], [ "blue_topaz", 1 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_platinum_ring",
@@ -2195,7 +2399,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 2 ], [ "blue_topaz", 1 ] ]
+        "components": [ [ "platinum_small", 2 ], [ "blue_topaz", 1 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_silver_ring",
@@ -2204,7 +2409,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 2 ], [ "blue_topaz", 1 ] ]
+        "components": [ [ "silver_small", 2 ], [ "blue_topaz", 1 ] ],
+        "color": "light_blue"
       },
       {
         "id": "citrine_gold_ring",
@@ -2240,7 +2446,8 @@
         "weight": 176,
         "price_multiplier": 0.07,
         "material": [ "copper" ],
-        "components": [ [ "copper", 3 ] ]
+        "components": [ [ "copper", 3 ] ],
+        "color": "brown"
       },
       {
         "id": "diamond_platinum_ring",
@@ -2249,7 +2456,8 @@
         "weight": 50,
         "price_multiplier": 0.4,
         "material": [ "platinum", "diamond" ],
-        "components": [ [ "platinum_small", 2 ], [ "diamond", 1 ] ]
+        "components": [ [ "platinum_small", 2 ], [ "diamond", 1 ] ],
+        "color": "white"
       },
       {
         "id": "diamond_ring",
@@ -2266,7 +2474,8 @@
         "weight": 50,
         "price_multiplier": 0.4,
         "material": [ "silver", "diamond" ],
-        "components": [ [ "silver_small", 2 ], [ "diamond", 1 ] ]
+        "components": [ [ "silver_small", 2 ], [ "diamond", 1 ] ],
+        "color": "white"
       },
       {
         "id": "emerald_gold_ring",
@@ -2275,7 +2484,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 2 ], [ "emerald", 1 ] ]
+        "components": [ [ "gold_small", 2 ], [ "emerald", 1 ] ],
+        "color": "green"
       },
       {
         "id": "emerald_platinum_ring",
@@ -2284,7 +2494,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 2 ], [ "emerald", 1 ] ]
+        "components": [ [ "platinum_small", 2 ], [ "emerald", 1 ] ],
+        "color": "green"
       },
       {
         "id": "emerald_silver_ring",
@@ -2293,7 +2504,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 2 ], [ "emerald", 1 ] ]
+        "components": [ [ "silver_small", 2 ], [ "emerald", 1 ] ],
+        "color": "green"
       },
       {
         "id": "garnet_gold_ring",
@@ -2302,7 +2514,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 2 ], [ "garnet", 1 ] ]
+        "components": [ [ "gold_small", 2 ], [ "garnet", 1 ] ],
+        "color": "red"
       },
       {
         "id": "garnet_platinum_ring",
@@ -2311,7 +2524,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 2 ], [ "garnet", 1 ] ]
+        "components": [ [ "platinum_small", 2 ], [ "garnet", 1 ] ],
+        "color": "red"
       },
       {
         "id": "garnet_silver_ring",
@@ -2320,7 +2534,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 2 ], [ "garnet", 1 ] ]
+        "components": [ [ "silver_small", 2 ], [ "garnet", 1 ] ],
+        "color": "red"
       },
       {
         "id": "gold_ring",
@@ -2336,7 +2551,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 2 ], [ "opal", 1 ] ]
+        "components": [ [ "gold_small", 2 ], [ "opal", 1 ] ],
+        "color": "white"
       },
       {
         "id": "opal_platinum_ring",
@@ -2345,7 +2561,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 2 ], [ "opal", 1 ] ]
+        "components": [ [ "platinum_small", 2 ], [ "opal", 1 ] ],
+        "color": "white"
       },
       {
         "id": "opal_silver_ring",
@@ -2354,7 +2571,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 2 ], [ "opal", 1 ] ]
+        "components": [ [ "silver_small", 2 ], [ "opal", 1 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_gold_ring",
@@ -2363,7 +2581,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 2 ], [ "pearl", 1 ] ]
+        "components": [ [ "gold_small", 2 ], [ "pearl", 1 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_platinum_ring",
@@ -2372,7 +2591,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 2 ], [ "pearl", 1 ] ]
+        "components": [ [ "platinum_small", 2 ], [ "pearl", 1 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_silver_ring",
@@ -2381,7 +2601,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 2 ], [ "pearl", 1 ] ]
+        "components": [ [ "silver_small", 2 ], [ "pearl", 1 ] ],
+        "color": "white"
       },
       {
         "id": "peridot_gold_ring",
@@ -2390,7 +2611,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 2 ], [ "peridot", 1 ] ]
+        "components": [ [ "gold_small", 2 ], [ "peridot", 1 ] ],
+        "color": "light_green"
       },
       {
         "id": "peridot_platinum_ring",
@@ -2399,7 +2621,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 2 ], [ "peridot", 1 ] ]
+        "components": [ [ "platinum_small", 2 ], [ "peridot", 1 ] ],
+        "color": "light_green"
       },
       {
         "id": "peridot_silver_ring",
@@ -2408,7 +2631,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 2 ], [ "peridot", 1 ] ]
+        "components": [ [ "silver_small", 2 ], [ "peridot", 1 ] ],
+        "color": "light_green"
       },
       {
         "id": "platinum_ring",
@@ -2417,7 +2641,8 @@
         "weight": 70,
         "price_multiplier": 0.8,
         "material": [ "platinum" ],
-        "components": [ [ "platinum_small", 2 ] ]
+        "components": [ [ "platinum_small", 2 ] ],
+        "color": "white"
       },
       {
         "id": "ruby_gold_ring",
@@ -2426,7 +2651,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 2 ], [ "ruby", 1 ] ]
+        "components": [ [ "gold_small", 2 ], [ "ruby", 1 ] ],
+        "color": "red"
       },
       {
         "id": "ruby_platinum_ring",
@@ -2435,7 +2661,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 2 ], [ "ruby", 1 ] ]
+        "components": [ [ "platinum_small", 2 ], [ "ruby", 1 ] ],
+        "color": "red"
       },
       {
         "id": "ruby_silver_ring",
@@ -2444,7 +2671,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 2 ], [ "ruby", 1 ] ]
+        "components": [ [ "silver_small", 2 ], [ "ruby", 1 ] ],
+        "color": "red"
       },
       {
         "id": "sapphire_gold_ring",
@@ -2453,7 +2681,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 2 ], [ "sapphire", 1 ] ]
+        "components": [ [ "gold_small", 2 ], [ "sapphire", 1 ] ],
+        "color": "blue"
       },
       {
         "id": "sapphire_platinum_ring",
@@ -2462,7 +2691,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 2 ], [ "sapphire", 1 ] ]
+        "components": [ [ "platinum_small", 2 ], [ "sapphire", 1 ] ],
+        "color": "blue"
       },
       {
         "id": "sapphire_silver_ring",
@@ -2471,7 +2701,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 2 ], [ "sapphire", 1 ] ]
+        "components": [ [ "silver_small", 2 ], [ "sapphire", 1 ] ],
+        "color": "blue"
       },
       {
         "id": "silver_ring",
@@ -2480,7 +2711,8 @@
         "weight": 281,
         "price_multiplier": 0.17,
         "material": [ "silver" ],
-        "components": [ [ "silver_small", 3 ] ]
+        "components": [ [ "silver_small", 3 ] ],
+        "color": "light_gray"
       },
       {
         "id": "tourmaline_gold_ring",
@@ -2489,7 +2721,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "gold", "gemstone" ],
-        "components": [ [ "gold_small", 2 ], [ "tourmaline", 1 ] ]
+        "components": [ [ "gold_small", 2 ], [ "tourmaline", 1 ] ],
+        "color": "light_red"
       },
       {
         "id": "tourmaline_platinum_ring",
@@ -2498,7 +2731,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 2 ], [ "tourmaline", 1 ] ]
+        "components": [ [ "platinum_small", 2 ], [ "tourmaline", 1 ] ],
+        "color": "light_red"
       },
       {
         "id": "tourmaline_silver_ring",
@@ -2507,7 +2741,8 @@
         "weight": 50,
         "price_multiplier": 0.33,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 2 ], [ "tourmaline", 1 ] ]
+        "components": [ [ "silver_small", 2 ], [ "tourmaline", 1 ] ],
+        "color": "light_red"
       }
     ]
   },
@@ -2546,7 +2781,8 @@
         "name": { "str": "amethyst and gold tiara" },
         "description": "A shiny, gold tiara adorned with amethyst.",
         "weight": 50,
-        "components": [ [ "gold_small", 16 ], [ "amethyst", 2 ] ]
+        "components": [ [ "gold_small", 16 ], [ "amethyst", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "amethyst_platinum_tiara",
@@ -2555,7 +2791,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 16 ], [ "amethyst", 2 ] ]
+        "components": [ [ "platinum_small", 16 ], [ "amethyst", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "amethyst_silver_tiara",
@@ -2564,14 +2801,16 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 16 ], [ "amethyst", 2 ] ]
+        "components": [ [ "silver_small", 16 ], [ "amethyst", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "aquamarine_gold_tiara",
         "name": { "str": "aquamarine and gold tiara" },
         "description": "A shiny, gold tiara adorned with aquamarine.",
         "weight": 50,
-        "components": [ [ "gold_small", 16 ], [ "aquamarine", 2 ] ]
+        "components": [ [ "gold_small", 16 ], [ "aquamarine", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "aquamarine_platinum_tiara",
@@ -2580,7 +2819,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 16 ], [ "aquamarine", 2 ] ]
+        "components": [ [ "platinum_small", 16 ], [ "aquamarine", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "aquamarine_silver_tiara",
@@ -2589,14 +2829,16 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 16 ], [ "aquamarine", 2 ] ]
+        "components": [ [ "silver_small", 16 ], [ "aquamarine", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_gold_tiara",
         "name": { "str": "blue topaz and gold tiara" },
         "description": "A shiny, gold tiara adorned with blue topaz.",
         "weight": 50,
-        "components": [ [ "gold_small", 16 ], [ "blue_topaz", 2 ] ]
+        "components": [ [ "gold_small", 16 ], [ "blue_topaz", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_platinum_tiara",
@@ -2605,7 +2847,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 16 ], [ "blue_topaz", 2 ] ]
+        "components": [ [ "platinum_small", 16 ], [ "blue_topaz", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "blue_topaz_silver_tiara",
@@ -2614,14 +2857,16 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 16 ], [ "blue_topaz", 2 ] ]
+        "components": [ [ "silver_small", 16 ], [ "blue_topaz", 2 ] ],
+        "color": "light_blue"
       },
       {
         "id": "citrine_gold_tiara",
         "name": { "str": "citrine and gold tiara" },
         "description": "A shiny, gold tiara adorned with citrines.",
         "weight": 50,
-        "components": [ [ "gold_small", 16 ], [ "citrine", 2 ] ]
+        "components": [ [ "gold_small", 16 ], [ "citrine", 2 ] ],
+        "color": "yellow"
       },
       {
         "id": "citrine_platinum_tiara",
@@ -2630,7 +2875,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 16 ], [ "citrine", 2 ] ]
+        "components": [ [ "platinum_small", 16 ], [ "citrine", 2 ] ],
+        "color": "yellow"
       },
       {
         "id": "citrine_silver_tiara",
@@ -2639,7 +2885,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 16 ], [ "citrine", 2 ] ]
+        "components": [ [ "silver_small", 16 ], [ "citrine", 2 ] ],
+        "color": "yellow"
       },
       {
         "id": "diamond_gold_tiara",
@@ -2647,7 +2894,8 @@
         "description": "A shiny, gold tiara adorned with diamonds.",
         "weight": 50,
         "material": [ "gold", "diamond" ],
-        "components": [ [ "gold_small", 16 ], [ "diamond", 2 ] ]
+        "components": [ [ "gold_small", 16 ], [ "diamond", 2 ] ],
+        "color": "white"
       },
       {
         "id": "diamond_platinum_tiara",
@@ -2656,7 +2904,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "diamond" ],
-        "components": [ [ "platinum_small", 16 ], [ "diamond", 2 ] ]
+        "components": [ [ "platinum_small", 16 ], [ "diamond", 2 ] ],
+        "color": "white"
       },
       {
         "id": "diamond_silver_tiara",
@@ -2665,7 +2914,8 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "diamond" ],
-        "components": [ [ "silver_small", 16 ], [ "diamond", 2 ] ]
+        "components": [ [ "silver_small", 16 ], [ "diamond", 2 ] ],
+        "color": "white"
       },
       {
         "id": "emerald_gold_tiara",
@@ -2697,7 +2947,8 @@
         "name": { "str": "garnet and gold tiara" },
         "description": "A shiny, gold tiara adorned with garnets.",
         "weight": 50,
-        "components": [ [ "gold_small", 16 ], [ "garnet", 2 ] ]
+        "components": [ [ "gold_small", 16 ], [ "garnet", 2 ] ],
+        "color": "red"
       },
       {
         "id": "garnet_platinum_tiara",
@@ -2706,7 +2957,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 16 ], [ "garnet", 2 ] ]
+        "components": [ [ "platinum_small", 16 ], [ "garnet", 2 ] ],
+        "color": "red"
       },
       {
         "id": "garnet_silver_tiara",
@@ -2715,14 +2967,16 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 16 ], [ "garnet", 2 ] ]
+        "components": [ [ "silver_small", 16 ], [ "garnet", 2 ] ],
+        "color": "red"
       },
       {
         "id": "opal_gold_tiara",
         "name": { "str": "opal and gold tiara" },
         "description": "A shiny, gold tiara adorned with opals.",
         "weight": 50,
-        "components": [ [ "gold_small", 16 ], [ "opal", 2 ] ]
+        "components": [ [ "gold_small", 16 ], [ "opal", 2 ] ],
+        "color": "white"
       },
       {
         "id": "opal_platinum_tiara",
@@ -2731,7 +2985,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 16 ], [ "opal", 2 ] ]
+        "components": [ [ "platinum_small", 16 ], [ "opal", 2 ] ],
+        "color": "white"
       },
       {
         "id": "opal_silver_tiara",
@@ -2740,14 +2995,16 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 16 ], [ "opal", 2 ] ]
+        "components": [ [ "silver_small", 16 ], [ "opal", 2 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_gold_tiara",
         "name": { "str": "pearl and gold tiara" },
         "description": "A shiny, gold tiara adorned with pearls.",
         "weight": 50,
-        "components": [ [ "gold_small", 16 ], [ "pearl", 2 ] ]
+        "components": [ [ "gold_small", 16 ], [ "pearl", 2 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_platinum_tiara",
@@ -2756,7 +3013,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 16 ], [ "pearl", 2 ] ]
+        "components": [ [ "platinum_small", 16 ], [ "pearl", 2 ] ],
+        "color": "white"
       },
       {
         "id": "pearl_silver_tiara",
@@ -2765,14 +3023,16 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 16 ], [ "pearl", 2 ] ]
+        "components": [ [ "silver_small", 16 ], [ "pearl", 2 ] ],
+        "color": "white"
       },
       {
         "id": "peridot_gold_tiara",
         "name": { "str": "peridot and gold tiara" },
         "description": "A shiny, gold tiara adorned with peridots.",
         "weight": 50,
-        "components": [ [ "gold_small", 16 ], [ "peridot", 2 ] ]
+        "components": [ [ "gold_small", 16 ], [ "peridot", 2 ] ],
+        "color": "light_green"
       },
       {
         "id": "peridot_platinum_tiara",
@@ -2781,7 +3041,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 16 ], [ "peridot", 2 ] ]
+        "components": [ [ "platinum_small", 16 ], [ "peridot", 2 ] ],
+        "color": "light_green"
       },
       {
         "id": "peridot_silver_tiara",
@@ -2790,14 +3051,16 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 16 ], [ "peridot", 2 ] ]
+        "components": [ [ "silver_small", 16 ], [ "peridot", 2 ] ],
+        "color": "light_green"
       },
       {
         "id": "ruby_gold_tiara",
         "name": { "str": "ruby and gold tiara" },
         "description": "A shiny, gold tiara adorned with rubies.",
         "weight": 50,
-        "components": [ [ "gold_small", 16 ], [ "ruby", 2 ] ]
+        "components": [ [ "gold_small", 16 ], [ "ruby", 2 ] ],
+        "color": "red"
       },
       {
         "id": "ruby_platinum_tiara",
@@ -2806,7 +3069,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 16 ], [ "ruby", 2 ] ]
+        "components": [ [ "platinum_small", 16 ], [ "ruby", 2 ] ],
+        "color": "red"
       },
       {
         "id": "ruby_silver_tiara",
@@ -2815,14 +3079,16 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 16 ], [ "ruby", 2 ] ]
+        "components": [ [ "silver_small", 16 ], [ "ruby", 2 ] ],
+        "color": "red"
       },
       {
         "id": "sapphire_gold_tiara",
         "name": { "str": "sapphire and gold tiara" },
         "description": "A shiny, gold tiara adorned with sapphires.",
         "weight": 50,
-        "components": [ [ "gold_small", 16 ], [ "sapphire", 2 ] ]
+        "components": [ [ "gold_small", 16 ], [ "sapphire", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "sapphire_platinum_tiara",
@@ -2831,7 +3097,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 16 ], [ "sapphire", 2 ] ]
+        "components": [ [ "platinum_small", 16 ], [ "sapphire", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "sapphire_silver_tiara",
@@ -2840,14 +3107,16 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 16 ], [ "sapphire", 2 ] ]
+        "components": [ [ "silver_small", 16 ], [ "sapphire", 2 ] ],
+        "color": "blue"
       },
       {
         "id": "tourmaline_gold_tiara",
         "name": { "str": "tourmaline and gold tiara" },
         "description": "A shiny, gold tiara adorned with tourmalines.",
         "weight": 50,
-        "components": [ [ "gold_small", 16 ], [ "tourmaline", 2 ] ]
+        "components": [ [ "gold_small", 16 ], [ "tourmaline", 2 ] ],
+        "color": "light_red"
       },
       {
         "id": "tourmaline_platinum_tiara",
@@ -2856,7 +3125,8 @@
         "weight": 50,
         "price_multiplier": 1.25,
         "material": [ "platinum", "gemstone" ],
-        "components": [ [ "platinum_small", 16 ], [ "tourmaline", 2 ] ]
+        "components": [ [ "platinum_small", 16 ], [ "tourmaline", 2 ] ],
+        "color": "light_red"
       },
       {
         "id": "tourmaline_silver_tiara",
@@ -2865,7 +3135,335 @@
         "weight": 50,
         "price_multiplier": 0.5,
         "material": [ "silver", "gemstone" ],
-        "components": [ [ "silver_small", 16 ], [ "tourmaline", 2 ] ]
+        "components": [ [ "silver_small", 16 ], [ "tourmaline", 2 ] ],
+        "color": "light_red"
+      }
+    ]
+  },
+  {
+    "type": "item_variants",
+    "id": "paperback",
+    "cosmetic": true,
+    "variants": [
+      {
+        "id": "novel_adventure",
+        "name": { "str": "adventure novel" },
+        "description": "The stirring tale of a race against time, in search of a lost city located in the dark heart of the African continent.",
+        "weight": 95,
+        "price_multiplier": 1.13
+      },
+      {
+        "id": "novel_buddy",
+        "name": { "str": "buddy novel" },
+        "description": "A gripping tale of two friends struggling to survive on the streets of New York City.",
+        "weight": 33,
+        "price_multiplier": 0.87
+      },
+      {
+        "id": "novel_coa",
+        "name": { "str": "coming of age novel" },
+        "description": "A classic tale about growing up, portraying one young man's funny and poignant experiences with life, love, and sex.",
+        "weight": 156
+      },
+      {
+        "id": "novel_crime",
+        "name": { "str": "crime novel" },
+        "description": "After their diamond heist goes wrong, the surviving criminals begin to suspect that one of them is a police informant.",
+        "weight": 211,
+        "price_multiplier": 1.13
+      },
+      {
+        "id": "novel_drama",
+        "name": { "str": "drama novel" },
+        "description": "A real book for real adults.",
+        "weight": 101
+      },
+      {
+        "id": "novel_erotic",
+        "name": { "str": "erotic novel" },
+        "description": "A hackneyed fictional narrative concealing low-grade literary smut.",
+        "weight": 135
+      },
+      {
+        "id": "novel_experimental",
+        "name": { "str": "experimental novel" },
+        "description": "A bizarre play about the philosophy of existential absurdity.  Or maybe it's about two guys waiting for their friend to show up.  It's confusing.",
+        "weight": 150
+      },
+      {
+        "id": "novel_fantasy",
+        "name": { "str": "fantasy novel" },
+        "description": "Basic sword & sorcery.",
+        "weight": 541
+      },
+      {
+        "id": "novel_horror",
+        "name": { "str": "horror novel" },
+        "description": "Maybe not the best reading material considering the situation.",
+        "weight": 139
+      },
+      {
+        "id": "novel_mystery",
+        "name": { "str": "mystery novel" },
+        "description": "A detective investigates an unusual murder in a secluded location.",
+        "weight": 196
+      },
+      {
+        "id": "novel_pulp",
+        "name": { "str": "pulp novel" },
+        "description": "A hardboiled detective tale filled with hard hitting action and intrigue.",
+        "weight": 171
+      },
+      {
+        "id": "novel_road",
+        "name": { "str": "road novel" },
+        "description": "A tale about a group of friends who wander the USA in the 1960s against a backdrop of jazz, poetry and drug use.",
+        "weight": 31
+      },
+      {
+        "id": "novel_romance",
+        "name": { "str": "romance novel" },
+        "description": "Drama and mild smut.",
+        "weight": 111
+      },
+      {
+        "id": "novel_samurai",
+        "name": { "str": "samurai novel" },
+        "description": "The classic tale of a wandering swordsman who comes to a small settlement and is hired to help the townsfolk defend themselves from a band of marauding outlaws.",
+        "weight": 33
+      },
+      {
+        "id": "novel_satire",
+        "name": { "str": "satire novel" },
+        "description": "A political satire of the pre-apocalypse world.  Looking back on it from this side of Armageddon makes it seem all the more ridiculous.",
+        "weight": 36,
+        "price_multiplier": 1.13
+      },
+      {
+        "id": "novel_sports",
+        "name": { "str": "sports novel" },
+        "description": "The dramatic tale of a small-time boxer who gets a rare chance to fight the heavy-weight champion, and seize his one chance to make a better life for himself while impressing the cute girl who works in the pet store.",
+        "weight": 43
+      },
+      {
+        "id": "novel_spy",
+        "name": { "str": "spy novel" },
+        "description": "A tale of intrigue and espionage amongst Nazis, no, Commies, no, Iraqis!",
+        "weight": 109
+      },
+      {
+        "id": "novel_swash",
+        "name": { "str": "swashbuckling novel" },
+        "description": "An exciting seventeenth century tale of how an enslaved Irish doctor and his comrades-in-chains escape and become heroic pirates of the Robin Hood variety.",
+        "weight": 40
+      },
+      {
+        "id": "novel_thriller",
+        "name": { "str": "thriller novel" },
+        "description": "A suspenseful tale of betrayal and revenge.",
+        "weight": 199
+      },
+      {
+        "id": "novel_tragedy",
+        "name": { "str": "tragedy novel" },
+        "description": "The story of two young lovers whose feuding families threaten to keep them apart.",
+        "weight": 39
+      },
+      {
+        "id": "novel_war",
+        "name": { "str": "war novel" },
+        "description": "A thrilling narrative of survival in a prisoner of war camp during the Second World War, filled with riveting subplots about rat farming and dysentery.",
+        "weight": 111
+      },
+      {
+        "id": "novel_western",
+        "name": { "str": "western novel" },
+        "description": "The classic tale of a gunfighting stranger who comes to a small settlement and is hired to help the townsfolk defend themselves from a band of marauding outlaws.",
+        "weight": 143
+      },
+      {
+        "id": "novel_crime_murdergrape",
+        "name": { "str": "Murdered by the Grapevine", "str_pl": "copies of Murdered by the Grapevine" },
+        "description": "This cheap paperback tells the story of a mob boss done in by mere suspicion.  She never breaks a confidence, never rats out an accomplice, and never turns her back on a friend.  Nonetheless her grip on the reigns of the underworld is eroded by rumor and paranoia.",
+        "weight": 1
+      },
+      {
+        "id": "novel_spy_comefly",
+        "name": { "str": "Come Fly the Treacherous Skies", "str_pl": "copies of Come Fly the Treacherous Skies" },
+        "description": "This tale of intrigue betrays the story of a debonair mechanic driven by a lust for revenge.  As she uncovers a sophisticated network of amateur pilots turned smugglers, the good guys and the bad guys begin to all look the same.",
+        "weight": 1
+      },
+      {
+        "id": "novel_spy_rocketsci",
+        "name": { "str": "Lies, Damn Lies, and Rocket Science", "str_pl": "copies of Lies, Damn Lies, and Rocket Science" },
+        "description": "This spy novel tells the story of a jaded rocket scientist looking for redemption in all the wrong places.  As selling state secrets becomes her career, she learns there isn't much of difference between a double-agent and a triple-agent.",
+        "weight": 1
+      },
+      {
+        "id": "essay_book",
+        "name": { "str": "book of essays", "str_pl": "books of essays" },
+        "description": "A collection of essays by various authors from around the world, including works by Churchill, Mailer, Eco, and Voltaire.",
+        "weight": 119,
+        "price_multiplier": 1.67
+      },
+      {
+        "id": "plays_book",
+        "name": { "str": "book of plays", "str_pl": "books of plays" },
+        "description": "A collection of plays by various authors from around the world, including scripts by Wilde, Beckett, Checkov, and Shakespeare.",
+        "weight": 39,
+        "price_multiplier": 1.53
+      },
+      {
+        "id": "poetry_book",
+        "name": { "str": "book of poetry", "str_pl": "books of poetry" },
+        "description": "A collection of poetry by various authors from around the world, including writings by Dickinson, Goethe, Thoreau, and Yeats.",
+        "weight": 183,
+        "price_multiplier": 1.4
+      },
+      {
+        "id": "story_book",
+        "name": { "str": "big book of short stories", "str_pl": "big books of short stories" },
+        "description": "This humongous volume contains a vast collection of short stories by different authors, spanning a wide variety of topics and genres.",
+        "weight": 19,
+        "price_multiplier": 1.87
+      },
+      {
+        "id": "tall_tales",
+        "name": { "str": "book of tall tales", "str_pl": "books of tall tales" },
+        "description": "An entertaining collection of early American folklore, featuring tales of larger than life individuals and their amazing adventures.",
+        "weight": 36,
+        "price_multiplier": 1.4
+      }
+    ]
+  },
+  {
+    "type": "item_variants",
+    "id": "board_game",
+    "cosmetic": true,
+    "variants": [
+      {
+        "id": "pictionary",
+        "name": { "str": "Picturesque", "str_pl": "sets of Picturesque" },
+        "description": "A game where one draws an image, and the others attempt to guess what it is.",
+        "weight": 150
+      },
+      {
+        "id": "monopoly",
+        "name": { "str": "Capitalism", "str_pl": "sets of Capitalism" },
+        "description": "A game where players traverse around the board buying property and swindling their friends.",
+        "weight": 50,
+        "price_multiplier": 0.07,
+        "color": "red"
+      },
+      {
+        "id": "battleship",
+        "name": { "str": "Warships", "str_pl": "sets of Warships" },
+        "description": "A game where players try to guess where the opponent placed their ships on the board.",
+        "weight": 150,
+        "price_multiplier": 1.33,
+        "color": "blue"
+      },
+      {
+        "id": "clue",
+        "name": { "str": "Murder Mystery", "str_pl": "sets of Murder Mystery" },
+        "description": "A game where players try to figure out who murdered the butler.",
+        "weight": 150,
+        "price_multiplier": 1.65,
+        "material": [ "paper" ],
+        "color": "blue"
+      }
+    ]
+  },
+  {
+    "type": "item_variants",
+    "id": "tabletop_game",
+    "cosmetic": true,
+    "variants": [
+      {
+        "id": "dnd",
+        "name": { "str": "Blobs and Bandits", "str_pl": "sets of Blobs and Bandits" },
+        "description": "A roleplaying game set in the post-apocalypse, so you can pretend to survive the apocalypse while surviving the apocalypse.",
+        "weight": 250
+      },
+      {
+        "id": "g_warhammer",
+        "name": { "str": "Battlehammer", "str_pl": "sets of Battlehammer" },
+        "description": "A strategy game featuring a set of tiny figurines of fantasy creatures.",
+        "weight": 150,
+        "price_multiplier": 0.84,
+        "color": "yellow"
+      },
+      {
+        "id": "g_warhammer40k",
+        "name": { "str": "Battlehammer 20k", "str_pl": "sets of Battlehammer 20k" },
+        "description": "A strategy game featuring a set of tiny figurines of grotesque aliens and imperious space marines.",
+        "weight": 150,
+        "price_multiplier": 0.84,
+        "color": "yellow"
+      },
+      {
+        "id": "catan",
+        "name": { "str": "Settlers of the Ranch", "str_pl": "sets of Settlers of the Ranch" },
+        "description": "A strategy game where players build settlements and trade for supplies.",
+        "weight": 250,
+        "price_multiplier": 0.54,
+        "material": [ "wood" ],
+        "color": "light_blue"
+      }
+    ]
+  },
+  {
+    "type": "item_variants",
+    "id": "judo_belt",
+    "cosmetic": true,
+    "variants": [
+      {
+        "id": "judo_belt_black",
+        "name": { "str": "black belt" },
+        "description": "A belt worn by martial arts practitioners, advertising a master.",
+        "weight": 111,
+        "color": "dark_gray"
+      },
+      {
+        "id": "judo_belt_blue",
+        "name": { "str": "blue belt" },
+        "description": "A belt worn by martial arts practitioners, advertising a strong intermediate.",
+        "weight": 115,
+        "color": "blue"
+      },
+      {
+        "id": "judo_belt_brown",
+        "name": { "str": "brown belt" },
+        "description": "A belt worn by martial arts practitioners, advertising a near-master.",
+        "weight": 14,
+        "color": "brown"
+      },
+      {
+        "id": "judo_belt_green",
+        "name": { "str": "green belt" },
+        "description": "A belt worn by martial arts practitioners, advertising an intermediate.",
+        "weight": 55,
+        "color": "green"
+      },
+      {
+        "id": "judo_belt_orange",
+        "name": { "str": "orange belt" },
+        "description": "A belt worn by martial arts practitioners, advertising a fresh intermediate.",
+        "weight": 165
+      },
+      {
+        "id": "judo_belt_white",
+        "name": { "str": "white belt" },
+        "description": "A belt worn by martial arts practitioners, advertising a novice.",
+        "weight": 140,
+        "color": "white"
+      },
+      {
+        "id": "judo_belt_yellow",
+        "name": { "str": "yellow belt" },
+        "description": "A belt worn by martial arts practitioners, advertising a moderate novice.",
+        "weight": 90,
+        "color": "yellow"
       }
     ]
   }

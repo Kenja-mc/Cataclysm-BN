@@ -105,7 +105,7 @@
       [ "frisbee", 40 ],
       [ "disc_golf", 40 ],
       [ "magic_8_ball", 30 ],
-      [ "novel_pulp", 20 ],
+      { "item": "paperback", "prob": 20, "variant": "novel_pulp" },
       [ "folding_bicycle", 5 ],
       [ "folding_skateboard", 5 ],
       [ "folding_wagon", 5 ],

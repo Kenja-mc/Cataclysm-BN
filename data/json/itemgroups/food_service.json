@@ -77,12 +77,12 @@
       { "item": "mag_stabbing", "prob": 70 },
       { "item": "mag_unarmed", "prob": 70 },
       { "item": "manual_dodge", "prob": 70 },
-      { "item": "novel_spy", "prob": 70 },
-      { "item": "novel_thriller", "prob": 70 },
-      { "item": "novel_crime", "prob": 70 },
-      { "item": "novel_adventure", "prob": 70 },
-      { "item": "novel_war", "prob": 70 },
-      { "item": "poetry_book", "prob": 30 },
+      { "item": "paperback", "prob": 70, "variant": "novel_spy" },
+      { "item": "paperback", "prob": 70, "variant": "novel_thriller" },
+      { "item": "paperback", "prob": 70, "variant": "novel_crime" },
+      { "item": "paperback", "prob": 70, "variant": "novel_adventure" },
+      { "item": "paperback", "prob": 70, "variant": "novel_war" },
+      { "item": "paperback", "prob": 30, "variant": "poetry_book" },
       { "item": "cookbook_human", "prob": 10 }
     ]
   },

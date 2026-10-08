@@ -11,7 +11,7 @@
     "price_postapoc": "50 cent",
     "bashing": 5,
     "intelligence": 6,
-    "looks_like": "story_book",
+    "looks_like": "paperback",
     "color": "light_cyan",
     "flags": [ "TINDER", "FLAMMABLE" ],
     "time": "40 m",
@@ -80,14 +80,6 @@
     "copy-from": "black_box_transcript",
     "price": "4 USD",
     "material": [ "paper", "plastic" ]
-  },
-  {
-    "id": "essay_book",
-    "type": "BOOK",
-    "name": { "str": "book of essays", "str_pl": "books of essays" },
-    "description": "A collection of essays by various authors from around the world, including works by Churchill, Mailer, Eco, and Voltaire.",
-    "copy-from": "paperback_novel",
-    "price": "1250 cent"
   },
   {
     "id": "fairy_tales",
@@ -228,115 +220,6 @@
     "description": "A newsweekly covering regional events.  There is an article on the winter's snowstorms and several letters to the editor concerning the community response.",
     "copy-from": "mag_comic",
     "price": "350 cent"
-  },
-  {
-    "id": "novel_adventure",
-    "type": "BOOK",
-    "name": { "str": "adventure novel" },
-    "description": "The stirring tale of a race against time, in search of a lost city located in the dark heart of the African continent.",
-    "copy-from": "paperback_novel",
-    "price": "850 cent"
-  },
-  {
-    "id": "novel_buddy",
-    "type": "BOOK",
-    "name": { "str": "buddy novel" },
-    "description": "A gripping tale of two friends struggling to survive on the streets of New York City.",
-    "copy-from": "paperback_novel",
-    "price": "650 cent"
-  },
-  {
-    "id": "novel_coa",
-    "type": "BOOK",
-    "name": { "str": "coming of age novel" },
-    "description": "A classic tale about growing up, portraying one young man's funny and poignant experiences with life, love, and sex.",
-    "copy-from": "paperback_novel"
-  },
-  {
-    "id": "novel_crime",
-    "type": "BOOK",
-    "name": { "str": "crime novel" },
-    "description": "After their diamond heist goes wrong, the surviving criminals begin to suspect that one of them is a police informant.",
-    "copy-from": "paperback_novel",
-    "price": "850 cent"
-  },
-  {
-    "id": "novel_drama",
-    "type": "BOOK",
-    "name": { "str": "drama novel" },
-    "description": "A real book for real adults.",
-    "copy-from": "paperback_novel"
-  },
-  {
-    "id": "novel_erotic",
-    "type": "BOOK",
-    "name": { "str": "erotic novel" },
-    "description": "A hackneyed fictional narrative concealing low-grade literary smut.",
-    "copy-from": "paperback_novel"
-  },
-  {
-    "id": "novel_experimental",
-    "type": "BOOK",
-    "name": { "str": "experimental novel" },
-    "description": "A bizarre play about the philosophy of existential absurdity.  Or maybe it's about two guys waiting for their friend to show up.  It's confusing.",
-    "copy-from": "paperback_novel"
-  },
-  {
-    "id": "novel_fantasy",
-    "type": "BOOK",
-    "name": { "str": "fantasy novel" },
-    "description": "Basic sword & sorcery.",
-    "copy-from": "paperback_novel"
-  },
-  {
-    "id": "novel_horror",
-    "type": "BOOK",
-    "name": { "str": "horror novel" },
-    "description": "Maybe not the best reading material considering the situation.",
-    "copy-from": "paperback_novel"
-  },
-  {
-    "id": "novel_mystery",
-    "type": "BOOK",
-    "name": { "str": "mystery novel" },
-    "description": "A detective investigates an unusual murder in a secluded location.",
-    "copy-from": "paperback_novel"
-  },
-  {
-    "id": "novel_pulp",
-    "type": "BOOK",
-    "name": { "str": "pulp novel" },
-    "description": "A hardboiled detective tale filled with hard hitting action and intrigue.",
-    "copy-from": "paperback_novel"
-  },
-  {
-    "id": "novel_road",
-    "type": "BOOK",
-    "name": { "str": "road novel" },
-    "description": "A tale about a group of friends who wander the USA in the 1960s against a backdrop of jazz, poetry and drug use.",
-    "copy-from": "paperback_novel"
-  },
-  {
-    "id": "novel_romance",
-    "type": "BOOK",
-    "name": { "str": "romance novel" },
-    "description": "Drama and mild smut.",
-    "copy-from": "paperback_novel"
-  },
-  {
-    "id": "novel_samurai",
-    "type": "BOOK",
-    "name": { "str": "samurai novel" },
-    "description": "The classic tale of a wandering swordsman who comes to a small settlement and is hired to help the townsfolk defend themselves from a band of marauding outlaws.",
-    "copy-from": "paperback_novel"
-  },
-  {
-    "id": "novel_satire",
-    "type": "BOOK",
-    "name": { "str": "satire novel" },
-    "description": "A political satire of the pre-apocalypse world.  Looking back on it from this side of Armageddon makes it seem all the more ridiculous.",
-    "copy-from": "paperback_novel",
-    "price": "850 cent"
   },
   {
     "id": "novel_scifi",
@@ -490,55 +373,6 @@
       }
     ],
     "extend": { "flags": "SNIPPET_NEEDS_LITERACY" }
-  },
-  {
-    "id": "novel_sports",
-    "type": "BOOK",
-    "name": { "str": "sports novel" },
-    "description": "The dramatic tale of a small-time boxer who gets a rare chance to fight the heavy-weight champion, and seize his one chance to make a better life for himself while impressing the cute girl who works in the pet store.",
-    "copy-from": "paperback_novel"
-  },
-  {
-    "id": "novel_spy",
-    "type": "BOOK",
-    "name": { "str": "spy novel" },
-    "description": "A tale of intrigue and espionage amongst Nazis, no, Commies, no, Iraqis!",
-    "copy-from": "paperback_novel"
-  },
-  {
-    "id": "novel_swash",
-    "type": "BOOK",
-    "name": { "str": "swashbuckling novel" },
-    "description": "An exciting seventeenth century tale of how an enslaved Irish doctor and his comrades-in-chains escape and become heroic pirates of the Robin Hood variety.",
-    "copy-from": "paperback_novel"
-  },
-  {
-    "id": "novel_thriller",
-    "type": "BOOK",
-    "name": { "str": "thriller novel" },
-    "description": "A suspenseful tale of betrayal and revenge.",
-    "copy-from": "paperback_novel"
-  },
-  {
-    "id": "novel_tragedy",
-    "type": "BOOK",
-    "name": { "str": "tragedy novel" },
-    "description": "The story of two young lovers whose feuding families threaten to keep them apart.",
-    "copy-from": "paperback_novel"
-  },
-  {
-    "id": "novel_war",
-    "type": "BOOK",
-    "name": { "str": "war novel" },
-    "description": "A thrilling narrative of survival in a prisoner of war camp during the Second World War, filled with riveting subplots about rat farming and dysentery.",
-    "copy-from": "paperback_novel"
-  },
-  {
-    "id": "novel_western",
-    "type": "BOOK",
-    "name": { "str": "western novel" },
-    "description": "The classic tale of a gunfighting stranger who comes to a small settlement and is hired to help the townsfolk defend themselves from a band of marauding outlaws.",
-    "copy-from": "paperback_novel"
   },
   {
     "id": "philosophy_book",
@@ -719,22 +553,6 @@
     "fun": 1
   },
   {
-    "id": "plays_book",
-    "type": "BOOK",
-    "name": { "str": "book of plays", "str_pl": "books of plays" },
-    "description": "A collection of plays by various authors from around the world, including scripts by Wilde, Beckett, Checkov, and Shakespeare.",
-    "copy-from": "paperback_novel",
-    "price": "1150 cent"
-  },
-  {
-    "id": "poetry_book",
-    "type": "BOOK",
-    "name": { "str": "book of poetry", "str_pl": "books of poetry" },
-    "description": "A collection of poetry by various authors from around the world, including writings by Dickinson, Goethe, Thoreau, and Yeats.",
-    "copy-from": "paperback_novel",
-    "price": "1050 cent"
-  },
-  {
     "id": "record_accounting",
     "type": "BOOK",
     "name": { "str": "corporate accounting ledger" },
@@ -759,22 +577,6 @@
     "description": "Old weather records are about as interesting as a rock.",
     "copy-from": "black_box_transcript",
     "price": "5 USD"
-  },
-  {
-    "id": "story_book",
-    "type": "BOOK",
-    "name": { "str": "big book of short stories", "str_pl": "big books of short stories" },
-    "description": "This humongous volume contains a vast collection of short stories by different authors, spanning a wide variety of topics and genres.",
-    "copy-from": "paperback_novel",
-    "price": "14 USD"
-  },
-  {
-    "id": "tall_tales",
-    "type": "BOOK",
-    "name": { "str": "book of tall tales", "str_pl": "books of tall tales" },
-    "description": "An entertaining collection of early American folklore, featuring tales of larger than life individuals and their amazing adventures.",
-    "copy-from": "paperback_novel",
-    "price": "1050 cent"
   },
   {
     "type": "BOOK",
@@ -877,7 +679,7 @@
       { "id": "classic53", "text": "This is a copy of \"Peter Simple\" by Frederick Marryat." }
     ],
     "price": "20 USD",
-    "looks_like": "tall_tales",
+    "looks_like": "paperback",
     "extend": { "flags": "SNIPPET_NEEDS_LITERACY" }
   },
   {
@@ -960,8 +762,27 @@
       }
     ],
     "price": "4550 cent",
-    "looks_like": "tall_tales",
+    "looks_like": "paperback",
     "fun": 3,
     "extend": { "flags": "SNIPPET_NEEDS_LITERACY" }
+  },
+  {
+    "id": "paperback",
+    "type": "BOOK",
+    "name": { "str": "paperback" },
+    "description": "A paperback book: a novel, short stories, poems or essays.  Something to pass the time.",
+    "bashing": 5,
+    "material": [ "paper" ],
+    "symbol": "?",
+    "color": "light_cyan",
+    "flags": [ "TINDER", "FLAMMABLE" ],
+    "weight": "400 g",
+    "volume": "750 ml",
+    "price": "750 cent",
+    "price_postapoc": "50 cent",
+    "intelligence": 6,
+    "time": "40 m",
+    "fun": 2,
+    "looks_like": "novel_fantasy"
   }
 ]

@@ -15,6 +15,7 @@
 #include "generic_factory.h"
 #include "generic_readers.h"
 #include "item.h"
+#include "item_variant.h"
 #include "item_contents.h"
 #include "item_group.h"
 #include "itype.h"
@@ -123,6 +124,12 @@ class item_reader : public generic_typed_reader<item_reader>
             // and as second entry the item description.
             if( jin.test_string() ) {
                 return profession::itypedec( jin.get_string() );
+            }
+            if( jin.test_object() ) {
+                JsonObject jo = jin.get_object();
+                auto dec = profession::itypedec( jo.get_string( "item" ) );
+                jo.read( "variant", dec.variant );
+                return dec;
             }
             JsonArray jarr = jin.get_array();
             const auto id = jarr.get_string( 0 );
@@ -300,6 +307,8 @@ void profession::check_item_definitions( const itypedecvec &items ) const
     for( auto &itd : items ) {
         if( !itd.type_id.is_valid() ) {
             debugmsg( "profession %s: item %s does not exist", id.str(), itd.type_id.str() );
+        } else if( !itd.variant.empty() && item_variants::find( itd.type_id, itd.variant ) == nullptr ) {
+            debugmsg( "profession %s: item %s has no variant %s", id.str(), itd.type_id.str(), itd.variant );
         } else if( !itd.snip_id.is_null() ) {
             const itype *type = &*itd.type_id;
             if( type->snippet_category.empty() ) {
@@ -470,6 +479,9 @@ std::vector<detached_ptr<item>> profession::items( bool male,
             detached_ptr<item> it = item::spawn( elem.type_id, advanced_spawn_time(), item::default_charges_tag {} );
             if( !elem.snip_id.is_null() ) {
                 it->set_snippet( elem.snip_id );
+            }
+            if( !elem.variant.empty() ) {
+                item_variants::set( *it, elem.variant );
             }
             it = item::in_its_container( std::move( it ) );
             result.push_back( std::move( it ) );

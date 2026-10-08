@@ -2183,21 +2183,21 @@
     "id": "novel_coa2",
     "type": "BOOK",
     "name": { "str": "coming of age novel" },
-    "copy-from": "novel_coa",
+    "copy-from": "paperback",
     "description": "A graphic novel about a young girl living in Iran during the 1980's, seeing the world change around her as Iraq invaded her country."
   },
   {
     "id": "novel_crime2",
     "type": "BOOK",
     "name": { "str": "crime novel" },
-    "copy-from": "novel_crime",
+    "copy-from": "paperback",
     "description": "A story about three people in the fictional city of Los Santos, a gangster, an upper-class man, and a psychopath, eventually banding together to pull-off the biggest heist in the city's history"
   },
   {
     "id": "novel_war2",
     "type": "BOOK",
     "name": { "str": "war novel" },
-    "copy-from": "novel_war",
+    "copy-from": "paperback",
     "description": "A story about a Bosnian citizen who goes through many hardships and near death during the breakup of Yugoslavia."
   },
   {

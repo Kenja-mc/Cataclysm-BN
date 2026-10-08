@@ -45,6 +45,9 @@ void item_variant_set::load( const JsonObject &jo, const std::string & )
         v.read( "weight", variant.weight );
         v.read( "price_multiplier", variant.price_multiplier );
         v.read( "looks_like", variant.looks_like );
+        if( v.has_string( "color" ) ) {
+            variant.color = color_from_string( v.get_string( "color" ) );
+        }
         v.read( "material", variant.materials );
         for( JsonArray c : v.get_array( "components" ) ) {
             variant.components.push_back( { .id = itype_id( c.get_string( 0 ) ), .count = c.get_int( 1 ) } );

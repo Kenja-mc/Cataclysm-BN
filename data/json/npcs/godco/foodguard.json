@@ -248,7 +248,7 @@
     "goal": "MGOAL_FIND_ITEM",
     "difficulty": 2,
     "value": 0,
-    "item": "novel_mystery",
+    "item": "paperback",
     "count": 3,
     "origins": [ "ORIGIN_SECONDARY" ],
     "dialogue": {

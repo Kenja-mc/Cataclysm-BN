@@ -3,9 +3,9 @@
     "id": "cleansing_flame_books",
     "type": "item_group",
     "items": [
-      [ "poetry_book", 5 ],
+      { "item": "paperback", "prob": 5, "variant": "poetry_book" },
       [ "philosophy_book", 3 ],
-      [ "essay_book", 3 ],
+      { "item": "paperback", "prob": 3, "variant": "essay_book" },
       [ "holybook_bible1", 1 ],
       [ "holybook_bible2", 1 ],
       [ "holybook_bible4", 5 ],
@@ -30,9 +30,9 @@
     "id": "cleansing_flame_books_postapoc",
     "type": "item_group",
     "items": [
-      [ "poetry_book", 5 ],
+      { "item": "paperback", "prob": 5, "variant": "poetry_book" },
       [ "philosophy_book", 3 ],
-      [ "essay_book", 3 ],
+      { "item": "paperback", "prob": 3, "variant": "essay_book" },
       [ "holybook_bible1", 1 ],
       [ "holybook_bible2", 1 ],
       [ "holybook_bible4", 5 ],

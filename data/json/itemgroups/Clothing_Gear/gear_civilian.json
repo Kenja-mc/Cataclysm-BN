@@ -123,7 +123,7 @@
       [ "umbrella", 5 ],
       [ "teleumbrella", 2 ],
       { "group": "kids_books", "prob": 155 },
-      [ "novel_pulp", 16 ],
+      { "item": "paperback", "prob": 16, "variant": "novel_pulp" },
       [ "radio_car_box", 1 ],
       [ "radiocontrol", 5 ],
       [ "slingshot", 10 ],
