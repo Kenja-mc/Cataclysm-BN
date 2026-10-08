@@ -16835,7 +16835,9 @@ std::vector<weak_ptr_fast<npc>> game::get_npcs_pointers_if( const std::function<
                              &pred )
 {
     std::vector<weak_ptr_fast<npc>> result;
-    for( weak_ptr_fast<npc> guy : *all_npcs().items ) {
+    // Keep the range alive: a temporary in the range-for initializer dies before the loop runs.
+    const auto npcs = all_npcs();
+    for( weak_ptr_fast<npc> guy : *npcs.items ) {
         if( shared_ptr_fast<npc> true_guy = guy.lock() ) {
             if( pred( *true_guy ) ) {
                 result.push_back( guy );

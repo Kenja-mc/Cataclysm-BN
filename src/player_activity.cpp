@@ -178,7 +178,8 @@ void player_activity::init_all_moves( Character &who )
 std::vector<weak_ptr_fast<npc>> &player_activity::assistants()
 {
     if( !assistants_ids_.empty() && assistants_.empty() ) {
-        for( weak_ptr_fast<npc> guy : * ( g->all_npcs().items ) ) {
+        const auto npcs = g->all_npcs();
+        for( weak_ptr_fast<npc> guy : *npcs.items ) {
             if( auto true_guy = guy.lock() ) {
                 if( assistants_ids_.contains( true_guy->getID().get_value() ) ) {
                     assistants_.push_back( guy );
