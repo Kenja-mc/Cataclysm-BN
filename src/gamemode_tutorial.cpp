@@ -20,6 +20,7 @@
 #include "point.h"
 #include "profession.h"
 #include "scent_map.h"
+#include "help.h"
 #include "text_snippets.h"
 #include "translations.h"
 #include "trap.h"
@@ -329,6 +330,6 @@ void tutorial_game::add_message( tut_lesson lesson )
     }
     tutorials_seen[lesson] = true;
     g->invalidate_main_ui_adaptor();
-    popup( SNIPPET.get_snippet_by_id( snippet_id( io::enum_to_string<tut_lesson>( lesson ) ) ).value_or(
-               translation() ).translated(), PF_ON_TOP );
+    popup( expand_key_tags( SNIPPET.get_snippet_by_id( snippet_id( io::enum_to_string<tut_lesson>( lesson ) ) ).value_or(
+                                translation() ).translated() ), PF_ON_TOP );
 }

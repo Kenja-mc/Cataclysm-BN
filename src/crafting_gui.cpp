@@ -1540,7 +1540,7 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
             user_moved_line = highlight_unread_recipes;
         } else if( action == "CONFIRM" ) {
             if( available.empty() || !( available[line].can_craft || available[line].is_nested_category ) ) {
-                popup( _( "You can't do that!  Press [<color_yellow>ESC</color>]!" ) );
+                popup( _( "You can't craft this yet.  What you are missing is shown in red on the right." ) );
             } else if( current[line]->is_nested() ) {
                 nested_toggle( current[line]->ident(), recalc, keepline );
             } else if( !crafter.check_eligible_containers_for_crafting( *current[line],

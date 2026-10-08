@@ -28,6 +28,26 @@
 #include "ui_manager.h"
 #include "path_display.h"
 
+std::string expand_key_tags( const std::string &text )
+{
+    auto out = text;
+    for( auto pos = out.find( "<press_" ); pos != std::string::npos; pos = out.find( "<press_", pos ) ) {
+        const auto end = out.find( '>', pos );
+        if( end == std::string::npos ) {
+            break;
+        }
+        const auto action = look_up_action( out.substr( pos + 7, end - pos - 7 ) );
+        const auto keys = keys_bound_to( action );
+        // One key reads better than every binding ("w", not "w or UP or 8 or NUMPAD_8").
+        const auto key = keys.empty() ? press_x( action, "", "" )
+                         : keys.front() == ' ' ? std::string( _( "Space" ) ) : std::string( 1, keys.front() );
+        const auto replacement = "<color_light_blue>" + key + "</color>";
+        out.replace( pos, end - pos + 1, replacement );
+        pos += replacement.size();
+    }
+    return out;
+}
+
 help &get_help()
 {
     static help single_instance;
@@ -184,23 +204,7 @@ void help::display_help()
                     i18n_help_texts.reserve( help_texts[i].second.size() );
                     std::transform( help_texts[i].second.begin(), help_texts[i].second.end(),
                     std::back_inserter( i18n_help_texts ), [&]( std::string & line ) {
-                        std::string line_proc = _( line );
-                        size_t pos = line_proc.find( "<press_", 0, 7 );
-                        while( pos != std::string::npos ) {
-                            size_t pos2 = line_proc.find( ">", pos, 1 );
-
-                            std::string action = line_proc.substr( pos + 7, pos2 - pos - 7 );
-                            auto replace = "<color_light_blue>" + press_x( look_up_action( action ), "", "" ) + "</color>";
-
-                            if( replace.empty() ) {
-                                debugmsg( "Help json: Unknown action: %s", action );
-                            } else {
-                                line_proc = replace_all( line_proc, "<press_" + action + ">", replace );
-                            }
-
-                            pos = line_proc.find( "<press_", pos2, 7 );
-                        }
-                        return line_proc;
+                        return expand_key_tags( _( line ) );
                     } );
 
                     if( !i18n_help_texts.empty() ) {

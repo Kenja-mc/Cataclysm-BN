@@ -32,4 +32,7 @@ help &get_help();
 
 std::string get_hint();
 
+/// Replaces `<press_action>` tags with the first key bound to that action, e.g. "w".
+std::string expand_key_tags( const std::string &text );
+
 
