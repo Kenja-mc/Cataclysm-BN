@@ -98,6 +98,22 @@ that is optional:
 - **No duplicate containers.** The plastic 30-gallon barrel, steel keg, medium cardboard box, bag in
   a box and squeeze tube were near-copies of other containers and are merged into them.
 
+- **Black powder handloads stack with factory rounds.** The 75 `bp_*` ammo items are gone. A
+  black powder round is the normal round with a *black powder* stack modifier, so 30 factory 9mm
+  and 10 handloads make one stack, shown as `9mm JHP (40, 10 black powder)`. Each shot rolls which
+  round fires, and only black powder shots hit softer, spread wider and kick less. Loading,
+  unloading and splitting keep the right share of handloads; handloads can't be pulled apart for
+  smokeless powder. The handloading recipes are still there, listed as `9mm JHP (black powder)`.
+
+- **Jewelry: 292 items down to 9.** Rings, bracelets, earrings, necklaces, lockets, hairpins,
+  tiaras, cufflinks and dental grills are one item each. The metal and gem are a variant the piece
+  remembers, so you still find a "ruby and gold ring" or a "copper bracelet". Each one keeps its
+  own price, material and melt-down parts (the ruby and the gold). Loot tables still name the exact
+  piece they used to, and old saves convert. Pieces with a use or a story of their own stay
+  separate: watches, badges, medals, holy symbols, wedding, engagement, purity and signet rings.
+- **One MRE.** The 26 MRE boxes are one *MRE*. The entree is a variant
+  (`MRE - Chili & Beans`), and opening it still gives that entree.
+
 Zones and the loot-sorting activity are still there for anyone who wants them. They just have no
 default key.
 
@@ -108,6 +124,63 @@ The guns and calibers CDDA cut over the years (5.45x39, 5.7x28, 4.6x30, 7.62x25,
 PPSh-41, Tokarev, Makarov, S&W 500, Raging Bull and friends) live in Bright Nights' *Exotic ammo
 types* mod. It is now on by default for new worlds, so they spawn in normal loot. Leave it off
 when creating a world if you prefer fewer calibers.
+
+## Stack modifiers (for modders)
+
+Variants that differ only by a uniform tweak do not need their own item type. Define the tweak
+once and let stacks count how many of their units carry it:
+
+```json
+{
+  "type": "stack_modifier",
+  "id": "black_powder",
+  "name": { "str": "black powder" },
+  "damage": 0.8,
+  "armor_penetration": 0.5,
+  "dispersion": 1.2,
+  "recoil": 0.76,
+  "blocks_disassembly": true
+}
+```
+
+- A recipe marks its output with `"result_stack_modifier": "black_powder"`.
+- A `MIGRATION` with `"stack_modifier": "black_powder"` turns an old item id into the base item
+  with every unit modified, so saves keep their handloads.
+- Stacks merge regardless of modifiers; counts add up on merge and split proportionally.
+- The shot multipliers apply per round fired. Other kinds of modifier can reuse the same counting
+  and only need their own effect hook.
+
+## Item variants (for modders)
+
+For items that differ only in looks, price, material and the parts they break down into, give the
+item type variants instead of new item types:
+
+```json
+{
+  "type": "item_variants",
+  "id": "jewelry_ring",
+  "variants": [
+    {
+      "id": "ruby_gold_ring",
+      "name": { "str": "ruby and gold ring" },
+      "description": "…",
+      "weight": 50,
+      "price_multiplier": 0.33,
+      "material": [ "gold", "gemstone" ],
+      "components": [ [ "gold_small", 2 ], [ "ruby", 1 ] ]
+    }
+  ]
+}
+```
+
+- A new item picks a variant by `weight` and keeps it.
+- Name, description, price and material follow the variant.
+- Disassembling a found piece yields the item type's own recipe plus the variant's `components`.
+  A crafted piece yields what it was made from.
+- An item group entry can name the variant: `{ "item": "jewelry_ring", "variant": "gold_ring" }`.
+- A recipe can make a variant: `"result": "jewelry_ring", "result_variant": "gold_ring"` (with an
+  `id_suffix` when several recipes share a result).
+- A `MIGRATION` with `"variant": "gold_ring"` maps an old item id onto the right variant.
 
 ## Bug fixes
 
