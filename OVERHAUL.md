@@ -9,7 +9,7 @@ Upstream base: `cataclysmbn/Cataclysm-BN@d14e047` (first commit on this branch).
 
 ## Controls
 
-Movement is **WASD**, with **Q E Z C** for diagonals. The arrow keys and the numpad still work.
+Movement is **WASD**, with **Q E Z C** for diagonals. The layout merges Bright Nights with Sword of the Stars: The Pit: `F` attacks the nearest enemy, Space interacts with anything (doors, containers, people), `C` is the character sheet, and `X` waits or rests. The arrow keys and the numpad still work.
 The same keys move the cursor in look mode, targeting and the overmap, and answer every "which
 direction?" prompt.
 
@@ -27,7 +27,8 @@ direction?" prompt.
 | `k`       | craft (`&` also works)          | `K`   | construct (`*` also works)       |
 | `Q`       | **quick stack** to storage      | `Z`   | **sort the pile** you stand on   |
 | `l`       | look around                     | `m`   | map                              |
-| `F`       | attack in a direction           | Tab   | attack the nearest enemy         |
+| `F`       | attack the nearest enemy        | Tab   | attack in a direction            |
+| `C`       | character sheet                 | `X`   | wait or rest a while             |
 | Enter     | action menu with every action   | `N`   | switch fire mode                 |
 | `F1`      | help                            | `?`   | full keybinding list (any screen)|
 
@@ -63,8 +64,10 @@ A `keybindings.json` saved by an older version holds every key, so it overrides 
 Delete it from the config folder to follow the scheme again.
 
 Your first new game opens with a short welcome card listing these keys (Options → Interface →
-Show welcome card brings it back). Yes/no prompts accept lowercase `y`/`n`, since those letters no
-longer move you.
+Show welcome card brings it back).
+
+Confirmation prompts work like any modern game. They open with **Yes** highlighted: Enter confirms,
+Esc cancels, the arrow keys switch, and you can click a button. `y` and `n` still work.
 
 ## Look
 
@@ -148,6 +151,13 @@ PPSh-41, Tokarev, Makarov, S&W 500, Raging Bull and friends) live in Bright Nigh
 types* mod. It is now on by default for new worlds, so they spawn in normal loot. Leave it off
 when creating a world if you prefer fewer calibers.
 
+## Optional mods
+
+**Limited Zombie Revival** (by sagittarius72, MIT) is bundled and can be picked when creating a world.
+Zombies still rise, but weakened according to how mangled the corpse was, helpless for a moment
+after rising, and only a limited number of times. It's a middle ground between upstream revival and
+switching it off.
+
 ## Stack modifiers (for modders)
 
 Variants that differ only by a uniform tweak do not need their own item type. Define the tweak
@@ -222,6 +232,12 @@ item type variants instead of new item types:
 - The electromagnetic unit crashed when pulled metal hit a monster
   ([upstream #9354](https://github.com/cataclysmbn/Cataclysm-BN/issues/9354)).
 - Character creation's overview no longer draws stats on top of their labels in the terminal.
+- NPC "Size up stats" said "Hungry" for well-fed followers; the check was inverted
+  ([upstream #10447](https://github.com/cataclysmbn/Cataclysm-BN/issues/10447)).
+- A missed mutation attack reprinted the previous hit's damage
+  ([upstream #1287](https://github.com/cataclysmbn/Cataclysm-BN/issues/1287)).
+- Loading is faster: item migrations finalize in one pass over item groups (about 4× faster data
+  loading in testing), and the JSON reader skips strings without per-character stream overhead.
 
 ## Building
 

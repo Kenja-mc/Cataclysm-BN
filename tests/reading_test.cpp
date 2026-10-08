@@ -45,7 +45,7 @@ TEST_CASE("identifying unread books", "[reading][book][identify]") {
     avatar dummy;
 
     GIVEN("player has some unidentified books") {
-        detached_ptr<item> det = item::spawn("novel_western");
+        detached_ptr<item> det = item::spawn("paperback");
         item& book1 = *det;
         dummy.i_add(std::move(det));
         det = item::spawn("mag_throwing");
@@ -72,7 +72,7 @@ TEST_CASE("reading a book for fun", "[reading][book][fun]") {
     avatar dummy;
 
     GIVEN("a fun book") {
-        detached_ptr<item> det = item::spawn("novel_western");
+        detached_ptr<item> det = item::spawn("paperback");
         item& book = *det;
         dummy.i_add(std::move(det));
         REQUIRE(book.type->book);
@@ -180,7 +180,7 @@ TEST_CASE("estimated reading time for a book", "[reading][book][time]") {
     item& child = *det;
     dummy.i_add(std::move(det));
 
-    det = item::spawn("novel_western");
+    det = item::spawn("paperback");
     item& western = *det;
     dummy.i_add(std::move(det));
 
@@ -261,7 +261,7 @@ TEST_CASE("reasons for not being able to read", "[reading][reasons]") {
     detached_ptr<item> det = item::spawn("child_book");
     item& child = *det;
     dummy.i_add(std::move(det));
-    det = item::spawn("novel_western");
+    det = item::spawn("paperback");
     item& western = *det;
     dummy.i_add(std::move(det));
     det = item::spawn("recipe_alpha");
@@ -479,14 +479,14 @@ TEST_CASE("Losing book during reading", "[reading][book]") {
     set_time(calendar::turn_zero + 12_hours);
     avatar& u = get_avatar();
     SECTION("Book in inventory") {
-        detached_ptr<item> det = item::spawn("novel_western");
+        detached_ptr<item> det = item::spawn("paperback");
         item& western = *det;
         u.i_add(std::move(det));
         destroyed_book_test_helper(u, &western);
     }
 
     SECTION("Book below player") {
-        detached_ptr<item> det = item::spawn("novel_western");
+        detached_ptr<item> det = item::spawn("paperback");
         item& western = *det;
         get_map().add_item(u.bub_pos(), std::move(det));
         destroyed_book_test_helper(u, &western);
@@ -497,7 +497,7 @@ TEST_CASE("Losing book during reading", "[reading][book]") {
         REQUIRE(veh != nullptr);
         int part = veh->part_with_feature(tripoint_mnt_veh::zero(), "CARGO", true);
         REQUIRE(part >= 0);
-        detached_ptr<item> det = item::spawn("novel_western");
+        detached_ptr<item> det = item::spawn("paperback");
         item& western = *det;
         veh->add_item(part, std::move(det));
         destroyed_book_test_helper(u, &western);
