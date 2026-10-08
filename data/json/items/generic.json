@@ -347,7 +347,7 @@
     "ammo_type": "glue",
     "effects": [ "STREAM_GLUE" ],
     "spill_field": "fd_glue",
-    "container": "squeeze_tube",
+    "container": "bottle_plastic_small",
     "to_hit": -2,
     "flags": [ "UNRECOVERABLE" ],
     "stackable": true
@@ -367,7 +367,7 @@
     "volume": "25 ml",
     "phase": "liquid",
     "spill_field": "fd_glue",
-    "container": "squeeze_tube",
+    "container": "bottle_plastic_small",
     "to_hit": -2,
     "flags": [ "UNRECOVERABLE", "NO_SALVAGE" ],
     "stackable": true

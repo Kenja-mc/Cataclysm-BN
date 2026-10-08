@@ -45,7 +45,7 @@
       [ "can_drink_unsealed", 2 ],
       [ "can_food_unsealed", 1 ],
       [ "box_small", 5 ],
-      [ "box_medium", 3 ],
+      [ "box_large", 3 ],
       [ "box_large", 1 ],
       [ "plastic_sheet", 1 ],
       [ "jug_plastic", 1 ],
@@ -104,7 +104,7 @@
       { "item": "bottle_plastic_small", "prob": 45, "count": [ 1, 5 ] },
       { "item": "bottle_plastic", "prob": 40, "count": [ 1, 5 ] },
       { "item": "bowl_plastic", "prob": 30, "count": [ 1, 4 ] },
-      { "item": "box_medium", "prob": 15, "count": [ 1, 3 ] },
+      { "item": "box_large", "prob": 15, "count": [ 1, 3 ] },
       { "item": "box_small", "prob": 10, "count": [ 1, 4 ] },
       { "item": "bubblewrap", "prob": 20, "count": [ 1, 4 ] },
       { "item": "can_drink_unsealed", "prob": 40, "count": [ 1, 5 ] },
@@ -236,7 +236,7 @@
       [ "eclipse_glasses", 1 ],
       [ "plastic_sheet", 5 ],
       [ "balloon", 5 ],
-      [ "box_medium", 15 ],
+      [ "box_large", 15 ],
       [ "thermos", 30 ],
       { "group": "tinware", "prob": 15 }
     ]

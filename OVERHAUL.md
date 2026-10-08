@@ -95,6 +95,8 @@ that is optional:
   three cells: light (150 charge), medium (750) and heavy (1500). Atomic cells stay as the rare
   long-life option, along with car and storage batteries. That is 9 batteries instead of 19, and
   every device takes the one cell size that fits it. Old saves convert automatically.
+- **No duplicate containers.** The plastic 30-gallon barrel, steel keg, medium cardboard box, bag in
+  a box and squeeze tube were near-copies of other containers and are merged into them.
 
 Zones and the loot-sorting activity are still there for anyone who wants them. They just have no
 default key.

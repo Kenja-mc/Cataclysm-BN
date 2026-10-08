@@ -294,8 +294,8 @@
       { "item": "cookbook_italian", "prob": 2 },
       { "item": "flour", "prob": 20, "charges": [ 5, 40 ] },
       { "item": "flour", "prob": 5, "charges": 40 },
-      { "item": "flour", "prob": 12, "charges": [ 10, 120 ], "container-item": "box_medium" },
-      { "item": "flour", "prob": 3, "charges": 120, "container-item": "box_medium" }
+      { "item": "flour", "prob": 12, "charges": [ 10, 120 ], "container-item": "box_large" },
+      { "item": "flour", "prob": 3, "charges": 120, "container-item": "box_large" }
     ]
   },
   {
@@ -584,8 +584,8 @@
       { "item": "soysauce", "prob": 10 },
       { "item": "flour", "prob": 25, "charges": [ 5, 40 ] },
       { "item": "flour", "prob": 5, "charges": 40 },
-      { "item": "flour", "prob": 8, "charges": [ 10, 120 ], "container-item": "box_medium" },
-      { "item": "flour", "prob": 2, "charges": 120, "container-item": "box_medium" },
+      { "item": "flour", "prob": 8, "charges": [ 10, 120 ], "container-item": "box_large" },
+      { "item": "flour", "prob": 2, "charges": 120, "container-item": "box_large" },
       { "item": "curry_powder", "prob": 40 },
       { "item": "cornmeal", "prob": 52 }
     ]
@@ -724,7 +724,7 @@
     "subtype": "distribution",
     "entries": [
       { "item": "flour", "prob": 60, "charges": 40 },
-      { "item": "flour", "prob": 5, "charges": 120, "container-item": "box_medium" },
+      { "item": "flour", "prob": 5, "charges": 120, "container-item": "box_large" },
       { "item": "cornmeal", "prob": 50 },
       { "item": "yeast", "prob": 40 },
       { "item": "powder_eggs", "prob": 55 },
@@ -949,8 +949,8 @@
       [ "sugar", 5 ],
       { "item": "flour", "prob": 10, "charges": [ 5, 40 ] },
       { "item": "flour", "prob": 2, "charges": 40 },
-      { "item": "flour", "prob": 4, "charges": [ 10, 120 ], "container-item": "box_medium" },
-      { "item": "flour", "prob": 1, "charges": 120, "container-item": "box_medium" },
+      { "item": "flour", "prob": 4, "charges": [ 10, 120 ], "container-item": "box_large" },
+      { "item": "flour", "prob": 1, "charges": 120, "container-item": "box_large" },
       [ "soysauce", 25 ],
       [ "cooking_oil", 20 ],
       [ "cooking_oil2", 20 ],

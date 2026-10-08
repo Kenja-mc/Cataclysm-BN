@@ -113,7 +113,7 @@
     "deconstruct": {
       "items": [
         { "item": "box_large", "count": 1 },
-        { "item": "box_medium", "count": 2 },
+        { "item": "box_large", "count": 2 },
         { "item": "box_small", "count": 4 },
         { "item": "rag", "count": 50 },
         { "item": "paper", "count": 50 },
@@ -128,7 +128,7 @@
       "sound_fail": "whump.",
       "items": [
         { "item": "box_large", "count": [ 0, 1 ] },
-        { "item": "box_medium", "count": [ 0, 2 ] },
+        { "item": "box_large", "count": [ 0, 2 ] },
         { "item": "box_small", "count": [ 0, 4 ] },
         { "item": "rag", "count": [ 20, 50 ] },
         { "item": "paper", "count": [ 20, 40 ] },
@@ -215,7 +215,7 @@
     "deconstruct": {
       "items": [
         { "item": "box_large", "count": 1 },
-        { "item": "box_medium", "count": 2 },
+        { "item": "box_large", "count": 2 },
         { "item": "box_small", "count": 4 },
         { "item": "rag", "count": 50 },
         { "item": "paper", "count": [ 30, 80 ] },
@@ -230,7 +230,7 @@
       "sound_fail": "whump.",
       "items": [
         { "item": "box_large", "count": [ 0, 1 ] },
-        { "item": "box_medium", "count": [ 0, 2 ] },
+        { "item": "box_large", "count": [ 0, 2 ] },
         { "item": "box_small", "count": [ 0, 4 ] },
         { "item": "rag", "count": [ 20, 50 ] },
         { "item": "paper", "count": [ 30, 80 ] },
@@ -255,7 +255,7 @@
     "deconstruct": {
       "items": [
         { "item": "box_large", "count": 1 },
-        { "item": "box_medium", "count": 2 },
+        { "item": "box_large", "count": 2 },
         { "item": "box_small", "count": 4 },
         { "item": "rag", "count": 50 },
         { "item": "paper", "count": [ 30, 80 ] },
@@ -270,7 +270,7 @@
       "sound_fail": "whump.",
       "items": [
         { "item": "box_large", "count": [ 0, 1 ] },
-        { "item": "box_medium", "count": [ 0, 2 ] },
+        { "item": "box_large", "count": [ 0, 2 ] },
         { "item": "box_small", "count": [ 0, 4 ] },
         { "item": "rag", "count": [ 20, 50 ] },
         { "item": "paper", "count": [ 50, 150 ] },

@@ -1,0 +1,27 @@
+[
+  {
+    "id": "30gal_barrel",
+    "type": "MIGRATION",
+    "replace": "30gal_drum"
+  },
+  {
+    "id": "keg_steel",
+    "type": "MIGRATION",
+    "replace": "keg"
+  },
+  {
+    "id": "box_medium",
+    "type": "MIGRATION",
+    "replace": "box_large"
+  },
+  {
+    "id": "bag_in_a_box",
+    "type": "MIGRATION",
+    "replace": "jug_plastic"
+  },
+  {
+    "id": "squeeze_tube",
+    "type": "MIGRATION",
+    "replace": "bottle_plastic_small"
+  }
+]
