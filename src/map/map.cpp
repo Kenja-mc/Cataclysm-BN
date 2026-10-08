@@ -173,6 +173,17 @@ static const std::string str_OPENCLOSE_INSIDE("OPENCLOSE_INSIDE");
 
 namespace {
 
+// Map glyphs keep square corners; the curses frontend rounds the plain corner glyphs used by windows.
+auto square_corner(const int sym) -> int {
+    switch (sym) {
+        case LINE_OXXO: return LINE_OXXO_UNICODE;
+        case LINE_OOXX: return LINE_OOXX_UNICODE;
+        case LINE_XXOO: return LINE_XXOO_UNICODE;
+        case LINE_XOOX: return LINE_XOOX_UNICODE;
+        default: return sym;
+    }
+}
+
 auto horde_should_avoid_vehicle_tile(
     const map& here, const tripoint_bub_ms& p, const mongroup& group) -> bool {
     if (!group.horde) { return false; }
@@ -6490,7 +6501,7 @@ void map::draw(const catacurses::window& w, const tripoint_bub_ms& center) {
             sym = get_memory_at(p);
             col = c_brown;
         }
-        wputch(w, col, sym);
+        wputch(w, col, square_corner(sym));
     };
 
     const auto draw_vision_effect = [&](const visibility_type vis) -> bool {
@@ -6773,7 +6784,7 @@ auto map::draw_maptile(
 
     if (params.output()) {
         if (item_sym.empty()) {
-            wputch(w, tercol, sym);
+            wputch(w, tercol, square_corner(sym));
         } else {
             wprintz(w, tercol, item_sym);
         }
@@ -6848,7 +6859,7 @@ void map::draw_from_above(
 
     if (params.highlight()) { tercol = invert_color(tercol); }
 
-    if (params.output()) { wputch(w, tercol, sym); }
+    if (params.output()) { wputch(w, tercol, square_corner(sym)); }
 }
 
 auto map::sees(const tripoint_bub_ms& F, const tripoint_bub_ms& T, const int range) const -> bool {
