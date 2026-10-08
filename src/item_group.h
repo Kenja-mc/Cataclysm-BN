@@ -3,6 +3,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include <utility>
 #include <set>
@@ -137,6 +138,8 @@ class Item_spawn_data
         virtual bool remove_item( const itype_id &itemid ) = 0;
         virtual bool replace_item( const itype_id &itemid, const itype_id &replacementid,
                                    const std::string &context ) = 0;
+        /** Applies every migration at once to this group's own entries (not to groups it links to). */
+        virtual void replace_items( const std::unordered_map<std::string, std::string> &replacements ) = 0;
         virtual bool has_item( const itype_id &itemid ) const = 0;
 
         virtual std::set<const itype *> every_item() const = 0;
@@ -210,6 +213,7 @@ class Item_modifier
         bool remove_item( const itype_id &itemid );
         bool replace_item( const itype_id &itemid, const itype_id &replacementid,
                            const std::string &context );
+        void replace_items( const std::unordered_map<std::string, std::string> &replacements );
 
         // Currently these always have the same chance as the item group it's part of, but
         // theoretically it could be defined per-item / per-group.
@@ -260,6 +264,7 @@ class Single_item_creator : public Item_spawn_data
         bool remove_item( const itype_id &itemid ) override;
         bool replace_item( const itype_id &itemid, const itype_id &replacementid,
                            const std::string &context ) override;
+        void replace_items( const std::unordered_map<std::string, std::string> &replacements ) override;
 
         bool has_item( const itype_id &itemid ) const override;
         std::set<const itype *> every_item() const override;
@@ -311,6 +316,7 @@ class Item_group : public Item_spawn_data
         bool remove_specific_group( const std::string &itemid );
         bool replace_item( const itype_id &itemid, const itype_id &replacementid,
                            const std::string &context ) override;
+        void replace_items( const std::unordered_map<std::string, std::string> &replacements ) override;
         bool has_item( const itype_id &itemid ) const override;
         std::set<const itype *> every_item() const override;
         std::vector<detached_ptr<item>> every_item_modified( bool modify = true ) const override;
