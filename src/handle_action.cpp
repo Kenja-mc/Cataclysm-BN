@@ -2559,6 +2559,10 @@ bool game::handle_action()
                 }
                 break;
 
+            case ACTION_ATTACK:
+                avatar_action::attack_in_direction( u, get_map() );
+                break;
+
             case ACTION_SORT_PILE:
                 if( u.is_mounted() ) {
                     add_msg( m_info, _( "You can't sort things while you're riding." ) );

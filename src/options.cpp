@@ -1913,6 +1913,11 @@ void options_manager::add_options_interface()
          false
        );
 
+    add( "BUMP_ATTACK", interface, translate_marker( "Attack by walking into enemies" ),
+         translate_marker( "If true, moving into a hostile creature attacks it.  If false, use the attack command instead, so a stray step never starts a fight." ),
+         false
+       );
+
     add( "SHOW_WELCOME", interface, translate_marker( "Show welcome card" ),
          translate_marker( "If true, the next new game starts with a short card explaining the controls." ),
          true

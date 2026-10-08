@@ -44,6 +44,8 @@ auto handle_melee_action( const melee_action_callback &callback ) -> void;
 auto melee_attack_while_handling_manual_combat_mode( avatar &you, Creature &target ) -> void;
 auto autoattack( avatar &you, map &m ) -> void;
 auto toggle_manual_combat_mode() -> void;
+/// Deliberate melee attack in a direction; walking into enemies only attacks when BUMP_ATTACK is on.
+auto attack_in_direction( avatar &you, map &m ) -> void;
 auto is_manual_combat_mode() -> bool;
 
 void mend( avatar &you, item *loc );
