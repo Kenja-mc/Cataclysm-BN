@@ -8,10 +8,10 @@ from tmux_game import Game, start_new_game
 
 HELPERS = (
     "M=gapi.get_map() function here(dx,dy) local c=gapi.get_avatar():get_pos_ms() return TripointBubMs.new(c.x+dx,c.y+dy,c.z) end "
-    "function arena() for dx=-13,13 do for dy=-13,13 do local p=here(dx,dy) "
+    "function arena() local k=0 for dx=-13,13 do for dy=-13,13 do local p=here(dx,dy) "
     "if math.abs(dx)<=4 and math.abs(dy)<=4 then M:set_ter_at(p, TerId.new('t_floor'):int_id()) end "
     "M:set_furn_at(p, FurnId.new('f_null'):int_id()) M:clear_items_at(p) "
-    "local cr=gapi.get_creature_at(p) if cr and not cr:is_avatar() then cr:set_pos_ms(here(30,30)) end end end out('ok') end "
+    "local cr=gapi.get_creature_at(p) if cr and not cr:is_avatar() then k=k+1 cr:set_pos_ms(here(30+k,30)) end end end out('ok') end "
     "function units(it) if it:is_stackable() then return it.charges end return 1 end "
     "function count_at(dx,dy,id) local n=0 for _,it in pairs(M:get_items_at(here(dx,dy))) do "
     "if it:get_type():str()==id then n=n+units(it) end end out(n) end "
@@ -234,6 +234,87 @@ def test_click_to_travel(g):
     assert wait_until(lambda: bub_pos(g) == (start[0] + 3, start[1], start[2]), timeout=15), (start, bub_pos(g))
 
 
+def test_black_powder_rounds_stack(g):
+    """Black powder handloads are a stack modifier, so they merge into the factory 9mm stack."""
+    arena(g)
+    out = g.lua("local p=here(1,0) M:create_item_at(p, ItypeId.new('9mm'), 20) "
+                "local it=gapi.create_item(ItypeId.new('9mm'), 10) it:set_var_str('stack_mod:black_powder','10') M:add_item(p, it) "
+                "local s=M:get_items_at(p):items() out(#s, s[1].charges, s[1]:get_var_str('stack_mod:black_powder',''))")
+    assert out == ["1,30,10"], out
+    name = g.lua("out(M:get_items_at(here(1,0)):items()[1]:display_name(1))")
+    assert name and "10 black powder" in name[0], name
+    assert g.lua("out(ItypeId.new('bp_9mm'):is_valid())") == ["false"]
+
+
+REVOLVER = ("local w=nil for _,it in ipairs(gapi.get_avatar():all_items(false)) do "
+            "if it:get_type():str()=='model_10_revolver' then w=it end end ")
+
+
+def test_black_powder_survives_reloading(g):
+    arena(g)
+    assert g.lua("local u=gapi.get_avatar() u:add_item(gapi.create_item(ItypeId.new('model_10_revolver'), -1)) "
+                 "local a=gapi.create_item(ItypeId.new('38_special'), 6) a:set_var_str('stack_mod:black_powder','3') u:add_item(a) "
+                 + REVOLVER + "out(u:wield(w))") == ["true"]
+    for _ in range(6):
+        g.keys("r", delay=1)
+        g.keys("r", delay=2)
+    out = g.lua(REVOLVER + "out(w.charges, w:get_var_str('stack_mod:black_powder','0'), w:display_name(1))")
+    charges, black_powder, name = out[0].split(",", 2)
+    assert int(charges) == 6, out
+    assert int(black_powder) == 3, "the three black powder rounds move into the cylinder"
+    assert "3 black powder" in name, name
+
+
+def test_jewelry_is_one_item_per_form(g):
+    """Rings, bracelets and the like are one item each; metal and gem are a variant the item remembers."""
+    arena(g)
+    assert g.lua("out(ItypeId.new('ruby_gold_ring'):is_valid(), ItypeId.new('copper_ring'):is_valid())") == ["false,false"]
+    out = g.lua("local r=gapi.create_item(ItypeId.new('jewelry_ring'), -1) r:set_var_str('variant','ruby_gold_ring') "
+                "gapi.get_avatar():add_item(r) out(r:display_name(1))")
+    assert "ruby and gold ring" in out[0], out
+    prices = g.lua("local d=gapi.create_item(ItypeId.new('jewelry_bracelet'), -1) d:set_var_str('variant','diamond_gold_bracelet') "
+                   "local q=gapi.create_item(ItypeId.new('jewelry_bracelet'), -1) q:set_var_str('variant','copper_bracelet') "
+                   "out(d:price(false), q:price(false))")
+    diamond, copper = (float(v) for v in prices[0].split(","))
+    assert diamond > copper * 5, prices
+    assert g.lua("give('hammer',1)") == ["ok"]
+
+    def open_disassembly():
+        g.keys("(", delay=1)
+        if "Disassemble item" in g.screen():
+            return True
+        g.keys("Escape", delay=0.5)
+        return False
+    assert wait_until(open_disassembly), g.screen()
+    g.keys("/", delay=0.5)
+    g.type("ruby")
+    g.keys("Enter", delay=1)
+    assert "gold (2) and 1 ruby" in g.screen(), "the yield lists the ring's gold and ruby\n" + g.screen()
+    # A second Enter straight after the first is swallowed, so move the cursor in between.
+    g.keys("Down", "Up", "Enter", delay=0.5)
+    assert wait_until(lambda: g.lua("count_at(0,0,'ruby')") == ["1"], 60), g.screen()
+    assert g.lua("count_at(0,0,'gold_small')") == ["2"]
+
+
+def test_mre_unpacks_its_entree(g):
+    """MRE boxes are one item; the entree is a variant and unpacking yields it."""
+    arena(g)
+    out = g.lua("local m=gapi.create_item(ItypeId.new('mre_ration'), -1) m:set_var_str('variant','mre_lemontuna') "
+                "gapi.get_avatar():add_item(m) out(m:display_name(1))")
+    assert "Lemon Pepper Tuna" in out[0], out
+    g.keys("u", delay=1)
+    g.keys("/", delay=0.5)
+    g.type("Lemon")
+    g.keys("Enter", "Down", "Up", delay=0.5)
+    assert "Lemon Pepper Tuna" in g.screen(), g.screen()
+    g.keys("Enter", delay=1)
+    assert "lemon pepper tuna entree" in g.screen().lower(), "the entree is listed in the yield"
+    g.keys("y", delay=1)
+    # The entree lands on the floor.
+    assert wait_until(lambda: g.lua("count_at(0,0,'mre_lemontuna')") == ["1"], 60), g.screen()
+    assert count_carried(g, "mre_ration") == 0
+
+
 def test_rounded_frames(g):
     g.keys("i", delay=1)
     s = g.screen()
@@ -241,9 +322,9 @@ def test_rounded_frames(g):
     assert "╭" in s and "╯" in s, "inventory window should have rounded corners"
 
 
-TESTS = [test_welcome_card, test_controls_strip, test_unified_batteries, test_wasd_movement, test_wait_keeps_position,
+TESTS = [test_welcome_card, test_controls_strip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position,
          test_quick_stack, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
-         test_aim_defaults, test_recraft_after_reload, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel,
+         test_aim_defaults, test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel,
          test_magnet_pull_through_monster]
 
 

@@ -84,10 +84,21 @@ class Game:
         self.keys("Enter", delay=0.5)
         # Keep the echoed command short so its output is still on screen afterwards.
         self.type(f"OUT='{marker}' " + code)
-        self.keys("C-s", delay=1.5)
-        lines = [l.strip("│^v ").strip() for l in self.screen().splitlines()]
+        self.keys("C-s", delay=0.5)
+        # Slow machines take a while to run big snippets; wait for the output instead of guessing.
+        deadline = time.time() + 20
+        found = []
+        while time.time() < deadline:
+            lines = [l.strip("│^v ").strip() for l in self.screen().splitlines()]
+            found = [l[len(marker):] for l in lines if l.startswith(marker)]
+            if found:
+                time.sleep(0.3)
+                lines = [l.strip("│^v ").strip() for l in self.screen().splitlines()]
+                found = [l[len(marker):] for l in lines if l.startswith(marker)]
+                break
+            time.sleep(0.3)
         self.keys("Escape", delay=0.8)
-        return [l[len(marker):] for l in lines if l.startswith(marker)]
+        return found
 
     def define_lua(self, code):
         """Defines globals once; later `lua` calls can stay short."""
