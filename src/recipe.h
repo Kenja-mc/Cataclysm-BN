@@ -224,6 +224,10 @@ class recipe
         double batch_rscale = 0.0;
         int batch_rsize = 0; // minimum batch size to needed to reach batch_rscale
         int result_mult = 1; // used by certain batch recipes that create more than one stack of the result
+        /** Stack modifier every crafted unit carries, e.g. black powder for handloads. */
+        std::string result_stack_modifier;
+        /** Item variant the result is made as, e.g. a gold ring. */
+        std::string result_variant;
 
         translation bp_name;
         std::vector<itype_id> bp_resources;

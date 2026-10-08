@@ -20,6 +20,7 @@
 #include "output.h"
 #include "player_activity.h"
 #include "skill.h"
+#include "stack_modifier.h"
 #include "trap.h"
 #include "vehicle/veh_type.h"
 #include "vehicle/vehicle.h"
@@ -806,6 +807,7 @@ bool unload_item( avatar &you, item &loc )
 
         // Construct a new ammo item and try to drop it
         detached_ptr<item> ammo = item::spawn( target->ammo_current(), calendar::turn, qty );
+        stack_modifiers::transfer( *target, *ammo, qty );
 
         item &ammo_ref = *ammo;
 

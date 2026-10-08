@@ -92,6 +92,8 @@
 #include "skill_boost.h"
 #include "sounds.h"
 #include "speech.h"
+#include "item_variant.h"
+#include "stack_modifier.h"
 #include "start_location.h"
 #include "string_formatter.h"
 #include "text_snippets.h"
@@ -278,6 +280,8 @@ void DynamicDataLoader::initialize()
     add( "base_weather", &base_weathers::load );
     add( "world_type", &world_types::load );
     add( "ammo_effect", &ammo_effects::load );
+    add( "stack_modifier", &stack_modifiers::load );
+    add( "item_variants", &item_variants::load );
     add( "emit", &emit::load_emit );
     add( "activity_type", &activity_type::load );
     add( "vitamin", &vitamin::load_vitamin );
@@ -599,6 +603,8 @@ void DynamicDataLoader::unload_data()
     achievement::reset();
     activity_type::reset();
     ammo_effects::reset();
+    stack_modifiers::reset();
+    item_variants::reset();
     ammunition_type::reset();
     anatomy::reset();
     ascii_art::reset();
@@ -817,6 +823,8 @@ void DynamicDataLoader::check_consistency( loading_ui &ui )
             { _( "World types" ), &world_types::check_consistency },
             { _( "Field types" ), &field_types::check_consistency },
             { _( "Ammo effects" ), &ammo_effects::check_consistency },
+            { _( "Stack modifiers" ), &stack_modifiers::check_consistency },
+            { _( "Item variants" ), &item_variants::check_consistency },
             { _( "Emissions" ), &emit::check_consistency },
             { _( "Activities" ), &activity_type::check_consistency },
             {

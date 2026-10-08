@@ -86,6 +86,8 @@
 #include "skill.h"
 #include "sol/sol.hpp"
 #include "stomach.h"
+#include "item_variant.h"
+#include "stack_modifier.h"
 #include "string_formatter.h"
 #include "string_id_utils.h"
 #include "string_utils.h"
@@ -297,6 +299,7 @@ item::item( const itype *type, time_point turn, int qty ) : type( type ),
     components( new component_item_location( this ) ), bday( turn )
 {
     item_vars_ = type->item_vars;
+    item_variants::assign_random( *this );
     corpse = has_flag( flag_CORPSE ) ? &mtype_id::NULL_ID().obj() : nullptr;
     item_counter = type->countdown_interval;
 
@@ -859,6 +862,7 @@ detached_ptr<item> item::split( int qty )
         return detach();
     }
     detached_ptr<item> res = item::spawn( *this );
+    stack_modifiers::split( *this, *res, qty );
     res->charges = qty;
     charges -= qty;
     if( split_from_preserving_container ) {
@@ -877,6 +881,7 @@ detached_ptr<item> item::unsafe_split( int qty )
         qty = charges;
     }
     detached_ptr<item> res = item::spawn( *this );
+    stack_modifiers::split( *this, *res, qty );
     res->charges = qty;
     charges -= qty;
     return res;
@@ -1187,7 +1192,23 @@ bool item::stacks_with( const item &rhs, bool check_components, bool skip_type_c
     if( techniques != rhs.techniques ) {
         return false;
     }
-    if( item_vars_ != rhs.item_vars_ ) {
+    const auto vars_match = [&]() {
+        if( !count_by_charges() ) {
+            return item_vars_ == rhs.item_vars_;
+        }
+        // Stack modifier counts describe some of the units; they never keep stacks apart.
+        const auto plain = []( const data_vars::data_set & vars ) {
+            auto out = std::map<std::string, std::string>();
+            for( const auto &[key, value] : vars ) {
+                if( !stack_modifiers::is_count_var( key ) ) {
+                    out.emplace( key, value );
+                }
+            }
+            return out;
+        };
+        return plain( item_vars_ ) == plain( rhs.item_vars_ );
+    };
+    if( !vars_match() ) {
         return false;
     }
 
@@ -1285,6 +1306,7 @@ bool item::merge_charges( detached_ptr<item> &&rhs, bool force )
         item_counter = ( static_cast<double>( item_counter ) * charges + static_cast<double>
                          ( obj.item_counter ) * obj.charges ) / ( charges + obj.charges );
     }
+    stack_modifiers::merge( *this, obj );
     charges += obj.charges;
 
     rot = new_rot;
@@ -1809,7 +1831,9 @@ void item::basic_info( std::vector<iteminfo> &info, const iteminfo_query *parts,
                                    craft_data_->making->result_name(),
                                    percent_progress ) );
             } else {
-                info.emplace_back( "DESCRIPTION", type->description.translated() );
+                const auto *variant = item_variants::of( *this );
+                info.emplace_back( "DESCRIPTION", variant && !variant->description.empty()
+                                   ? variant->description.translated() : type->description.translated() );
             }
         }
         const auto item_note = item_vars_.find( "item_note" );
@@ -5527,6 +5551,14 @@ std::string item::display_name( unsigned int quantity ) const
             ammotext = ammotype( *ammo_types().begin() )->name();
         }
     }
+    if( !ammotext.empty() ) {
+        // Loaded rounds may carry stack modifiers (black powder handloads and so on).
+        const item *mag = is_magazine() ? this : magazine_current();
+        const item *rounds = mag ? ( mag->contents.empty() ? nullptr : &mag->contents.front() ) : this;
+        if( rounds ) {
+            ammotext += stack_modifiers::describe( *rounds );
+        }
+    }
 
     if( amount || show_amt ) {
         if( is_money() ) {
@@ -5560,7 +5592,8 @@ std::string item::display_name( unsigned int quantity ) const
                 }
 
             } else {
-                amt = string_format( " (%i%s)", amount, ammotext );
+                amt = string_format( " (%i%s%s)", amount, ammotext,
+                                     count_by_charges() ? stack_modifiers::describe( *this ) : "" );
             }
         }
     } else if( !ammotext.empty() ) {
@@ -5607,6 +5640,9 @@ auto item::price( bool practical ) const -> float
         }
 
         float child = units::to_cent( practical ? e->type->price_post : e->type->price );
+        if( const auto *variant = item_variants::of( *e ) ) {
+            child *= variant->price_multiplier;
+        }
         if( e->damage() > 0 ) {
             // maximal damage level is 4, maximal reduction is 40% of the value.
             child -= child * static_cast<double>( e->damage_level( 4 ) ) / 10;
@@ -7445,6 +7481,9 @@ const std::vector<material_id> &item::made_of() const
     if( is_corpse() ) {
         return corpse->mat;
     }
+    if( const auto *variant = item_variants::of( *this ); variant != nullptr && !variant->materials.empty() ) {
+        return variant->materials;
+    }
     return type->materials;
 }
 
@@ -8679,6 +8718,7 @@ int item::ammo_consume( int qty, const tripoint_bub_ms &pos )
                 e.destroy();
             } else {
                 e.charges -= need;
+                stack_modifiers::clamp( e, e.charges );
                 need = 0;
                 break;
             }
@@ -8693,6 +8733,7 @@ int item::ammo_consume( int qty, const tripoint_bub_ms &pos )
             you.mod_power_level( units::from_kilojoule( -qty ) );
         }
         charges -= qty;
+        stack_modifiers::clamp( *this, charges );
         if( charges == 0 ) {
             curammo = nullptr;
         }
@@ -9346,6 +9387,7 @@ bool item::reload( Character &who, item &loc, int qty )
         if( ammo->has_flag( flag_SPEEDLOADER ) ) {
             curammo = ammo->contents.front().type;
             qty = std::min( qty, ammo->ammo_remaining() );
+            stack_modifiers::transfer( ammo->contents.front(), *this, qty );
             ammo->ammo_consume( qty, tripoint_bub_ms::zero() );
             charges += qty;
         } else if( ammo->ammo_type() == ammo_plutonium ) {
@@ -9358,6 +9400,7 @@ bool item::reload( Character &who, item &loc, int qty )
         } else {
             curammo = ammo->type;
             qty = std::min( qty, ammo->charges );
+            stack_modifiers::transfer( *ammo, *this, qty );
             ammo->charges -= qty;
             charges += qty;
         }
@@ -11497,6 +11540,8 @@ std::string item::type_name( unsigned int quantity ) const
     std::string ret_name;
     if( iter != item_vars_.end() ) {
         return iter->second;
+    } else if( const auto *variant = item_variants::of( *this ) ) {
+        ret_name = variant->name.translated( quantity );
     } else {
         ret_name = type->nname( quantity );
     }
@@ -11731,6 +11776,9 @@ std::vector<item_comp> item::get_uncraft_components() const
                                              typeId() ).disassembly_requirements().get_components();
         for( std::vector<item_comp> &component : recipe ) {
             ret.push_back( component.front() );
+        }
+        for( const auto &extra : item_variants::disassembly_extras( *this ) ) {
+            ret.emplace_back( extra.id, extra.count );
         }
     } else {
         //Make a new vector of components from the registered components
