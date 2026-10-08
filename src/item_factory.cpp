@@ -800,14 +800,21 @@ void Item_factory::finalize_item_blacklist()
         }
     }
 
+    // Item groups take every migration in one pass; one pass per migration took minutes.
+    auto group_replacements = std::unordered_map<std::string, std::string>();
+    for( const auto &[from, migrate] : migrations ) {
+        if( m_templates.contains( migrate.replace ) ) {
+            group_replacements.emplace( from.str(), migrate.replace.str() );
+        }
+    }
+    for( auto &g : m_template_groups ) {
+        g.second->replace_items( group_replacements );
+    }
+
     for( const std::pair<const itype_id, migration> &migrate : migrations ) {
         if( !m_templates.contains( migrate.second.replace ) ) {
             debugmsg( "Replacement item for migration %s does not exist", migrate.first.c_str() );
             continue;
-        }
-
-        for( std::pair<const item_group_id, std::unique_ptr<Item_spawn_data>> &g : m_template_groups ) {
-            g.second->replace_item( migrate.first, migrate.second.replace, g.first.str() );
         }
 
         // replace migrated items in requirements

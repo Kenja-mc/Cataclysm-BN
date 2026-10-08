@@ -358,6 +358,23 @@ bool Single_item_creator::remove_item( const itype_id &itemid )
     return type == S_NONE;
 }
 
+void Single_item_creator::replace_items( const std::unordered_map<std::string, std::string>
+        &replacements )
+{
+    if( modifier ) {
+        modifier->replace_items( replacements );
+    }
+    if( type != S_ITEM ) {
+        return;
+    }
+    if( const auto found = replacements.find( id ); found != replacements.end() ) {
+        if( get_option<bool>( "MIGRATION_CHECKS" ) ) {
+            debugmsg( "Migrated item: %s should be migrated to %s", id, found->second );
+        }
+        id = found->second;
+    }
+}
+
 bool Single_item_creator::replace_item( const itype_id &itemid, const itype_id &replacementid,
                                         const std::string &context )
 {
@@ -668,6 +685,15 @@ bool Item_modifier::remove_item( const itype_id &itemid )
     return false;
 }
 
+void Item_modifier::replace_items( const std::unordered_map<std::string, std::string> &replacements )
+{
+    for( auto *data : { ammo.get(), container.get(), contents.get() } ) {
+        if( data != nullptr ) {
+            data->replace_items( replacements );
+        }
+    }
+}
+
 bool Item_modifier::replace_item( const itype_id &itemid, const itype_id &replacementid,
                                   const std::string &context )
 {
@@ -842,6 +868,13 @@ bool Item_group::remove_specific_group( const std::string &itemid )
         }
     }
     return items.empty();
+}
+
+void Item_group::replace_items( const std::unordered_map<std::string, std::string> &replacements )
+{
+    for( const auto &elem : items ) {
+        elem->replace_items( replacements );
+    }
 }
 
 bool Item_group::replace_item( const itype_id &itemid, const itype_id &replacementid,
