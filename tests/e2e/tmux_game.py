@@ -27,7 +27,7 @@ class Game:
             (config / "options.json").write_text(json.dumps(
                 [{"info": "", "default": "", "name": k, "value": v} for k, v in options.items()]))
         subprocess.run(["tmux", "kill-session", "-t", name], stderr=subprocess.DEVNULL)
-        cmd = f"cd {ROOT} && LANG=C.UTF-8 LC_ALL=C.UTF-8 TERM=xterm-256color {find_binary()} --basepath {ROOT}/ --userdir {self.userdir}/"
+        cmd = f"cd {ROOT} && LANG=C.UTF-8 LC_ALL=C.UTF-8 TERM=xterm-256color {os.environ.get('GAME_WRAPPER', '')} {find_binary()} --basepath {ROOT}/ --userdir {self.userdir}/"
         subprocess.run(["tmux", "new-session", "-d", "-s", name, "-x", str(cols), "-y", str(rows), cmd], check=True)
 
     def screen(self):

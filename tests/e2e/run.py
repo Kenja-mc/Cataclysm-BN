@@ -12,10 +12,11 @@ HELPERS = (
     "if math.abs(dx)<=4 and math.abs(dy)<=4 then M:set_ter_at(p, TerId.new('t_floor'):int_id()) end "
     "M:set_furn_at(p, FurnId.new('f_null'):int_id()) M:clear_items_at(p) "
     "local cr=gapi.get_creature_at(p) if cr and not cr:is_avatar() then cr:set_pos_ms(here(30,30)) end end end out('ok') end "
+    "function units(it) if it:is_stackable() then return it.charges end return 1 end "
     "function count_at(dx,dy,id) local n=0 for _,it in pairs(M:get_items_at(here(dx,dy))) do "
-    "if it:get_type():str()==id then n=n+1 end end out(n) end "
+    "if it:get_type():str()==id then n=n+units(it) end end out(n) end "
     "function carried(id) local n=0 for _,it in ipairs(gapi.get_avatar():all_items(false)) do "
-    "if it:get_type():str()==id then n=n+1 end end out(n) end "
+    "if it:get_type():str()==id then n=n+units(it) end end out(n) end "
     "function spawn(dx,dy,id,n,furn) local p=here(dx,dy) if furn then M:set_furn_at(p, FurnId.new(furn):int_id()) end "
     "for i=1,n do M:create_item_at(p, ItypeId.new(id), -1) end out('ok') end "
     "function give(id,n) for i=1,n do gapi.get_avatar():create_item(ItypeId.new(id), -1) end out('ok') end "
@@ -104,6 +105,73 @@ def test_sort_pile(g):
     assert count_at(g, 0, 0, "plastic_six_dice") == 1, "unmatched items stay in the pile"
 
 
+def wait_until(check, timeout=30):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if check():
+            return True
+        time.sleep(1)
+    return False
+
+
+def craft_by_name(g, name):
+    g.keys("k", delay=1.5)
+    g.keys("f", delay=0.8)
+    g.type(name)
+    g.keys("Enter", delay=1.5)
+    for _ in range(3):
+        if "Searched" not in g.screen():
+            break
+        g.keys("Enter", delay=1.5)
+
+
+def test_crafting_opens_on_content(g):
+    g.keys("k", delay=1.5)
+    s = g.screen()
+    g.keys("Escape", delay=0.6)
+    assert "< FAVORITE >" not in s, "crafting should not open on the empty favorites list"
+
+
+def test_recraft_after_reload(g):
+    """Upstream #10083: recraft crashed after save, quit to menu and reload in one session."""
+    # Materials on the floor nearby also exercise the larger crafting reach.
+    arena(g)
+    spawn(g, 3, 0, "glass_shard", 3)
+    settle(g)
+    craft_by_name(g, "glass shard trap")
+    assert wait_until(lambda: count_carried(g, "glass_shard_trap") == 1), g.screen()
+    g.keys("Escape", delay=1)
+    g.keys("S", delay=1)
+    g.keys("y", delay=1)
+    g.wait_for("[Load]", timeout=60)
+    load_first_save(g)
+    g.define_lua(HELPERS)
+    g.keys("-", delay=1)
+    assert wait_until(lambda: count_carried(g, "glass_shard_trap") == 2), g.screen()
+
+
+def load_first_save(g, timeout=120):
+    """After save-and-quit the main menu reopens on Load; Enter picks the world, then the character."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        s = g.screen()
+        if "X,Y,Z:" in s and "wasd move" in s:
+            return
+        if "»" in s:
+            g.keys("Enter", delay=2)
+        else:
+            time.sleep(0.5)
+    raise AssertionError("could not load the save\n" + g.screen())
+
+
+def test_aim_defaults(g):
+    g.keys("/", delay=1.5)
+    s = g.screen()
+    g.keys("Escape", delay=0.6)
+    assert "Surrounding area" in s or "Surrounding" in s or "AL" in s, "left pane should show the surroundings"
+    assert "Inventory" in s
+
+
 def test_rounded_frames(g):
     g.keys("i", delay=1)
     s = g.screen()
@@ -112,18 +180,22 @@ def test_rounded_frames(g):
 
 
 TESTS = [test_controls_strip, test_wasd_movement, test_wait_keeps_position,
-         test_quick_stack, test_sort_pile, test_rounded_frames]
+         test_quick_stack, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
+         test_aim_defaults, test_recraft_after_reload]
 
 
 def main():
     keep = "--keep" in sys.argv
-    g = Game()
+    wanted = [a for a in sys.argv[1:] if not a.startswith("--")]
+    # Safe mode would stop movement whenever wildlife wanders into view.
+    g = Game(options={"SAFEMODE": "false"})
     failures = 0
     try:
         start_new_game(g)
         settle(g)
         g.define_lua(HELPERS)
-        for test in TESTS:
+        wanted = [a for a in sys.argv[1:] if not a.startswith("--")]
+        for test in [t for t in TESTS if not wanted or any(w in t.__name__ for w in wanted)]:
             started = time.time()
             try:
                 test(g)
@@ -137,7 +209,8 @@ def main():
     finally:
         if not keep:
             g.close()
-    print(f"{len(TESTS) - failures}/{len(TESTS)} passed")
+    ran = len([t for t in TESTS if not wanted or any(w in t.__name__ for w in wanted)])
+    print(f"{ran - failures}/{ran} passed")
     return 1 if failures else 0
 
 
