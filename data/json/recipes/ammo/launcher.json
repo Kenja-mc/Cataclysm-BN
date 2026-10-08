@@ -559,8 +559,10 @@
     "components": [ [ [ "25mm_casing", 1 ] ], [ [ "gunpowder", 80 ], [ "gunpowder_rifle", 80 ] ], [ [ "lgrifle_primer", 1 ] ] ]
   },
   {
-    "result": "bp_25mm_slug",
     "type": "recipe",
+    "result": "25mm_slug",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_LAUNCHER",
     "skill_used": "fabrication",
@@ -596,8 +598,10 @@
     ]
   },
   {
-    "result": "bp_25mm_he_reloaded",
     "type": "recipe",
+    "result": "25mm_he_reloaded",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_LAUNCHER",
     "skill_used": "fabrication",
@@ -635,7 +639,9 @@
   },
   {
     "type": "recipe",
-    "result": "bp_105mm_slug",
+    "result": "105mm_slug",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_LAUNCHER",
     "skill_used": "fabrication",
@@ -672,7 +678,9 @@
   },
   {
     "type": "recipe",
-    "result": "bp_105mm_he_reloaded",
+    "result": "105mm_he_reloaded",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_LAUNCHER",
     "skill_used": "fabrication",
@@ -714,7 +722,9 @@
   },
   {
     "type": "recipe",
-    "result": "bp_120mm_usable_shot",
+    "result": "120mm_usable_shot",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_LAUNCHER",
     "skill_used": "fabrication",
@@ -751,7 +761,9 @@
   },
   {
     "type": "recipe",
-    "result": "bp_120mm_usable_slug",
+    "result": "120mm_usable_slug",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_LAUNCHER",
     "skill_used": "fabrication",
@@ -788,7 +800,9 @@
   },
   {
     "type": "recipe",
-    "result": "bp_120mm_usable_he_reloaded",
+    "result": "120mm_usable_he_reloaded",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_LAUNCHER",
     "skill_used": "fabrication",
@@ -825,7 +839,9 @@
   },
   {
     "type": "recipe",
-    "result": "bp_155mm_shot",
+    "result": "155mm_shot",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_LAUNCHER",
     "skill_used": "fabrication",
@@ -857,7 +873,9 @@
   },
   {
     "type": "recipe",
-    "result": "bp_155mm_slug",
+    "result": "155mm_slug",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_LAUNCHER",
     "skill_used": "fabrication",
@@ -893,7 +911,9 @@
   },
   {
     "type": "recipe",
-    "result": "bp_155mm_he_reloaded",
+    "result": "155mm_he_reloaded",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_LAUNCHER",
     "skill_used": "fabrication",

@@ -33,33 +33,5 @@
     "loudness": 155,
     "speed": 250,
     "effects": [ "COOKOFF" ]
-  },
-  {
-    "id": "bp_38_fmj",
-    "copy-from": "38_fmj",
-    "type": "AMMO",
-    "name": { "str": ".38 FMJ, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8, "armor_penetration": 0.5 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "RECYCLED", "BLACKPOWDER", "MUZZLE_SMOKE" ] }
-  },
-  {
-    "id": "bp_38_special",
-    "copy-from": "38_special",
-    "type": "AMMO",
-    "name": { "str": ".38 Special, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8, "armor_penetration": 0.5 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "RECYCLED", "BLACKPOWDER", "MUZZLE_SMOKE" ] }
   }
 ]

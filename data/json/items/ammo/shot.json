@@ -1,70 +1,5 @@
 [
   {
-    "id": "bp_shot_bird",
-    "copy-from": "shot_bird",
-    "type": "AMMO",
-    "name": { "str": "birdshot, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "RECYCLED", "MUZZLE_SMOKE", "BLACKPOWDER" ] }
-  },
-  {
-    "id": "bp_shot_dragon",
-    "copy-from": "shot_dragon",
-    "type": "AMMO",
-    "name": { "str": "dragon's breath shell, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "heat", "amount": 0.8 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "RECYCLED", "MUZZLE_SMOKE", "BLACKPOWDER" ] }
-  },
-  {
-    "id": "bp_shot_00",
-    "copy-from": "shot_00",
-    "type": "AMMO",
-    "name": { "str": "00 shot, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "RECYCLED", "MUZZLE_SMOKE", "BLACKPOWDER" ] }
-  },
-  {
-    "id": "bp_shot_flechette",
-    "copy-from": "shot_flechette",
-    "type": "AMMO",
-    "name": { "str": "flechette shell, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8, "armor_penetration": 0.5 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "RECYCLED", "MUZZLE_SMOKE", "BLACKPOWDER" ] }
-  },
-  {
-    "id": "bp_shot_slug",
-    "copy-from": "shot_slug",
-    "type": "AMMO",
-    "name": { "str": "shotgun slug, black powder" },
-    "damage": { "damage_type": "bullet", "amount": 46, "armor_penetration": 9 },
-    "proportional": { "price": 0.5, "recoil": 0.76, "dispersion": 1.2 },
-    "extend": { "effects": [ "RECYCLED", "MUZZLE_SMOKE", "BLACKPOWDER" ] }
-  },
-  {
     "abstract": "shot_abstract",
     "type": "AMMO",
     "name": { "str": "00 shot" },
@@ -165,20 +100,6 @@
     "extend": { "effects": [ "AMMO_SHOT_HE", "NO_PENETRATE_OBSTACLES" ] }
   },
   {
-    "id": "bp_shot_he",
-    "copy-from": "shot_he",
-    "type": "AMMO",
-    "name": { "str": "explosive slug, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "RECYCLED", "MUZZLE_SMOKE" ] }
-  },
-  {
     "id": "shot_scrap",
     "copy-from": "shot_00",
     "type": "AMMO",
@@ -189,20 +110,6 @@
     "shot": { "count": 5, "half_angle": 6 },
     "proportional": { "price": 0.5, "price_postapoc": 0.5 },
     "extend": { "effects": [ "RECYCLED" ] }
-  },
-  {
-    "id": "bp_shot_scrap",
-    "copy-from": "shot_scrap",
-    "type": "AMMO",
-    "name": { "str": "00 shot, black powder, scrap loaded" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "RECYCLED", "MUZZLE_SMOKE" ] }
   },
   {
     "id": "shot_slug",

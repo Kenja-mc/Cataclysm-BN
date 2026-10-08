@@ -103,20 +103,6 @@
     "effects": [ "COOKOFF", "RECYCLED" ]
   },
   {
-    "id": "bp_25mm_slug",
-    "copy-from": "25mm_slug",
-    "type": "AMMO",
-    "name": { "str_sp": "reloaded 25x137mm, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "BLACKPOWDER", "MUZZLE_SMOKE" ] }
-  },
-  {
     "id": "25mm_he_reloaded",
     "copy-from": "25mm_slug",
     "type": "AMMO",
@@ -132,20 +118,6 @@
     "extend": { "effects": [ "CUSTOM_EXPLOSION", "NO_PENETRATE_OBSTACLES" ] },
     "explode_in_fire": true,
     "explosion": { "damage": 25, "radius": 2 }
-  },
-  {
-    "id": "bp_25mm_he_reloaded",
-    "copy-from": "25mm_he_reloaded",
-    "type": "AMMO",
-    "name": { "str_sp": "reloaded 25x137mm HE, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "BLACKPOWDER", "MUZZLE_SMOKE" ] }
   },
   {
     "type": "AMMO",
@@ -223,20 +195,6 @@
     "effects": [ "COOKOFF", "RECYCLED" ]
   },
   {
-    "id": "bp_105mm_slug",
-    "copy-from": "105mm_slug",
-    "type": "AMMO",
-    "name": { "str_sp": "makeshift 105mm slug, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "BLACKPOWDER", "MUZZLE_SMOKE" ] }
-  },
-  {
     "id": "105mm_he_reloaded",
     "copy-from": "105mm_slug",
     "type": "AMMO",
@@ -254,20 +212,6 @@
     "extend": { "effects": [ "CUSTOM_EXPLOSION", "NO_PENETRATE_OBSTACLES" ] },
     "explode_in_fire": true,
     "explosion": { "damage": 150, "radius": 4 }
-  },
-  {
-    "id": "bp_105mm_he_reloaded",
-    "copy-from": "105mm_he_reloaded",
-    "type": "AMMO",
-    "name": { "str_sp": "reloaded 105mm HE, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "BLACKPOWDER", "MUZZLE_SMOKE" ] }
   },
   {
     "type": "AMMO",
@@ -344,20 +288,6 @@
     "effects": [ "COOKOFF", "SHOT", "RECYCLED" ]
   },
   {
-    "id": "bp_120mm_usable_shot",
-    "copy-from": "120mm_usable_shot",
-    "type": "AMMO",
-    "name": { "str_sp": "makeshift 120mm shot, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "BLACKPOWDER", "MUZZLE_SMOKE" ] }
-  },
-  {
     "type": "AMMO",
     "id": "120mm_usable_slug",
     "price_postapoc": "10 USD",
@@ -381,20 +311,6 @@
     "effects": [ "COOKOFF", "RECYCLED" ]
   },
   {
-    "id": "bp_120mm_usable_slug",
-    "copy-from": "120mm_usable_slug",
-    "type": "AMMO",
-    "name": { "str_sp": "makeshift 120mm slug, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "BLACKPOWDER", "MUZZLE_SMOKE" ] }
-  },
-  {
     "id": "120mm_usable_he_reloaded",
     "copy-from": "120mm_usable_slug",
     "type": "AMMO",
@@ -410,20 +326,6 @@
     "extend": { "effects": [ "CUSTOM_EXPLOSION", "NO_PENETRATE_OBSTACLES" ] },
     "explode_in_fire": true,
     "explosion": { "damage": 200, "radius": 6 }
-  },
-  {
-    "id": "bp_120mm_usable_he_reloaded",
-    "copy-from": "120mm_usable_he_reloaded",
-    "type": "AMMO",
-    "name": { "str_sp": "reloaded 120mm HE, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "BLACKPOWDER", "MUZZLE_SMOKE" ] }
   },
   {
     "type": "AMMO",
@@ -498,20 +400,6 @@
     "effects": [ "COOKOFF", "SHOT", "RECYCLED" ]
   },
   {
-    "id": "bp_155mm_shot",
-    "copy-from": "155mm_shot",
-    "type": "AMMO",
-    "name": { "str_sp": "makeshift 155mm shot, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "BLACKPOWDER", "MUZZLE_SMOKE" ] }
-  },
-  {
     "type": "AMMO",
     "id": "155mm_slug",
     "price_postapoc": "12 USD",
@@ -534,20 +422,6 @@
     "effects": [ "COOKOFF", "RECYCLED" ]
   },
   {
-    "id": "bp_155mm_slug",
-    "copy-from": "155mm_slug",
-    "type": "AMMO",
-    "name": { "str_sp": "makeshift 155mm slug, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "BLACKPOWDER", "MUZZLE_SMOKE" ] }
-  },
-  {
     "id": "155mm_he_reloaded",
     "copy-from": "155mm_slug",
     "type": "AMMO",
@@ -563,20 +437,6 @@
     "extend": { "effects": [ "CUSTOM_EXPLOSION", "NO_PENETRATE_OBSTACLES" ] },
     "explode_in_fire": true,
     "explosion": { "damage": 250, "radius": 10 }
-  },
-  {
-    "id": "bp_155mm_he_reloaded",
-    "copy-from": "155mm_he_reloaded",
-    "type": "AMMO",
-    "name": { "str_sp": "reloaded 155mm HE, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "BLACKPOWDER", "MUZZLE_SMOKE" ] }
   },
   {
     "type": "AMMO",

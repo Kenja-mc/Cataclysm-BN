@@ -32,7 +32,7 @@
     "subtype": "distribution",
     "entries": [
       { "item": "45colt_jhp", "prob": 100, "charges": [ 25, 50 ] },
-      { "item": "bp_45colt_jhp", "prob": 50, "charges": [ 25, 50 ] }
+      { "item": "45colt_jhp", "prob": 50, "charges": [ 25, 50 ] }
     ]
   },
   {

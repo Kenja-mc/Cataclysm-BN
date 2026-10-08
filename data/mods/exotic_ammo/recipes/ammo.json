@@ -1,7 +1,9 @@
 [
   {
-    "result": "bp_9x18mm",
     "type": "recipe",
+    "result": "9x18mm",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_PISTOL",
     "skill_used": "fabrication",
@@ -16,8 +18,10 @@
     "components": [ [ [ "9x18mm_casing", 1 ] ], [ [ "smpistol_primer", 1 ] ], [ [ "chem_black_powder", 4 ] ] ]
   },
   {
-    "result": "bp_9x18mmfmj",
     "type": "recipe",
+    "result": "9x18mmfmj",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_PISTOL",
     "skill_used": "fabrication",
@@ -112,8 +116,10 @@
     "components": [ [ [ "gunpowder", 3 ] ], [ [ "copper", 1 ] ] ]
   },
   {
-    "result": "bp_38_super",
     "type": "recipe",
+    "result": "38_super",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_PISTOL",
     "skill_used": "fabrication",
@@ -128,8 +134,10 @@
     "components": [ [ [ "chem_black_powder", 5 ] ] ]
   },
   {
-    "result": "bp_38super_fmj",
     "type": "recipe",
+    "result": "38super_fmj",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_PISTOL",
     "skill_used": "fabrication",
@@ -160,8 +168,10 @@
     "components": [ [ [ "700nx_casing", 1 ] ], [ [ "lgrifle_primer", 1 ] ], [ [ "gunpowder", 30 ] ], [ [ "copper", 5 ] ] ]
   },
   {
-    "result": "bp_700nx",
     "type": "recipe",
+    "result": "700nx",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_RIFLE",
     "skill_used": "fabrication",
@@ -176,8 +186,10 @@
     "components": [ [ [ "700nx_casing", 1 ] ], [ [ "lgrifle_primer", 1 ] ], [ [ "chem_black_powder", 45 ] ], [ [ "copper", 5 ] ] ]
   },
   {
-    "result": "bp_460_fmj",
     "type": "recipe",
+    "result": "460_fmj",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_PISTOL",
     "skill_used": "fabrication",
@@ -192,8 +204,10 @@
     "components": [ [ [ "460_casing", 1 ] ], [ [ "lgpistol_primer", 1 ] ], [ [ "chem_black_powder", 9 ] ], [ [ "copper", 2 ] ] ]
   },
   {
-    "result": "bp_460_rowland",
     "type": "recipe",
+    "result": "460_rowland",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_PISTOL",
     "skill_used": "fabrication",
@@ -256,8 +270,10 @@
     "components": [ [ [ "454_casing", 1 ] ], [ [ "smrifle_primer", 1 ] ], [ [ "gunpowder", 6 ] ], [ [ "copper", 2 ] ] ]
   },
   {
-    "result": "bp_454_Casull",
     "type": "recipe",
+    "result": "454_Casull",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_PISTOL",
     "skill_used": "fabrication",
@@ -272,8 +288,10 @@
     "components": [ [ [ "454_casing", 1 ] ], [ [ "smrifle_primer", 1 ] ], [ [ "chem_black_powder", 9 ] ], [ [ "copper", 2 ] ] ]
   },
   {
-    "result": "bp_500_Magnum",
     "type": "recipe",
+    "result": "500_Magnum",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_PISTOL",
     "skill_used": "fabrication",
@@ -304,8 +322,10 @@
     "components": [ [ [ "500_casing", 1 ] ], [ [ "lgrifle_primer", 1 ] ], [ [ "gunpowder", 8 ] ], [ [ "copper", 2 ] ] ]
   },
   {
-    "result": "bp_57mm",
     "type": "recipe",
+    "result": "57mm",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_PISTOL",
     "skill_used": "fabrication",
@@ -338,8 +358,10 @@
     "components": [ [ [ "57mm_casing", 1 ] ], [ [ "smrifle_primer", 1 ] ], [ [ "gunpowder", 4 ] ] ]
   },
   {
-    "result": "bp_57mm_civ",
     "type": "recipe",
+    "result": "57mm_civ",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_PISTOL",
     "skill_used": "fabrication",
@@ -372,8 +394,10 @@
     "components": [ [ [ "57mm_casing", 1 ] ], [ [ "smrifle_primer", 1 ] ], [ [ "gunpowder", 4 ] ] ]
   },
   {
-    "result": "bp_46mm",
     "type": "recipe",
+    "result": "46mm",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_PISTOL",
     "skill_used": "fabrication",
@@ -438,8 +462,10 @@
     "components": [ [ [ "545_casing", 1 ] ], [ [ "smrifle_primer", 1 ] ], [ [ "gunpowder", 6 ] ], [ [ "copper", 1 ] ] ]
   },
   {
-    "result": "bp_545",
     "type": "recipe",
+    "result": "545",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_RIFLE",
     "skill_used": "fabrication",
@@ -454,8 +480,10 @@
     "components": [ [ [ "545_casing", 1 ] ], [ [ "smrifle_primer", 1 ] ], [ [ "chem_black_powder", 8 ] ], [ [ "copper", 1 ] ] ]
   },
   {
-    "result": "bp_545_ap",
     "type": "recipe",
+    "result": "545_ap",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_RIFLE",
     "skill_used": "fabrication",
@@ -486,8 +514,10 @@
     "components": [ [ [ "gunpowder", 10 ] ], [ [ "copper", 3 ] ] ]
   },
   {
-    "result": "bp_270win_jsp",
     "type": "recipe",
+    "result": "270win_jsp",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_RIFLE",
     "skill_used": "fabrication",
@@ -502,8 +532,10 @@
     "components": [ [ [ "chem_black_powder", 15 ] ], [ [ "copper", 3 ] ] ]
   },
   {
-    "result": "bp_762_25",
     "type": "recipe",
+    "result": "762_25",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
     "subcategory": "CSC_AMMO_PISTOL",
     "skill_used": "fabrication",

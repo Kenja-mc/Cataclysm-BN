@@ -1,0 +1,356 @@
+[
+  {
+    "id": "bp_105mm_he_reloaded",
+    "type": "MIGRATION",
+    "replace": "105mm_he_reloaded",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_105mm_slug",
+    "type": "MIGRATION",
+    "replace": "105mm_slug",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_10mm_fmj",
+    "type": "MIGRATION",
+    "replace": "10mm_fmj",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_120mm_usable_he_reloaded",
+    "type": "MIGRATION",
+    "replace": "120mm_usable_he_reloaded",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_120mm_usable_shot",
+    "type": "MIGRATION",
+    "replace": "120mm_usable_shot",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_120mm_usable_slug",
+    "type": "MIGRATION",
+    "replace": "120mm_usable_slug",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_155mm_he_reloaded",
+    "type": "MIGRATION",
+    "replace": "155mm_he_reloaded",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_155mm_shot",
+    "type": "MIGRATION",
+    "replace": "155mm_shot",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_155mm_slug",
+    "type": "MIGRATION",
+    "replace": "155mm_slug",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_223",
+    "type": "MIGRATION",
+    "replace": "223",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_22_cphp",
+    "type": "MIGRATION",
+    "replace": "22_cphp",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_22_lr",
+    "type": "MIGRATION",
+    "replace": "22_lr",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_25mm_he_reloaded",
+    "type": "MIGRATION",
+    "replace": "25mm_he_reloaded",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_25mm_slug",
+    "type": "MIGRATION",
+    "replace": "25mm_slug",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_277_fmj",
+    "type": "MIGRATION",
+    "replace": "277_fmj",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_277_hybrid",
+    "type": "MIGRATION",
+    "replace": "277_hybrid",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_3006",
+    "type": "MIGRATION",
+    "replace": "3006",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_3006_incendiary",
+    "type": "MIGRATION",
+    "replace": "3006_incendiary",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_3006fmj",
+    "type": "MIGRATION",
+    "replace": "3006fmj",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_300_winmag",
+    "type": "MIGRATION",
+    "replace": "300_winmag",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_300blk",
+    "type": "MIGRATION",
+    "replace": "300blk",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_308",
+    "type": "MIGRATION",
+    "replace": "308",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_32_acp",
+    "type": "MIGRATION",
+    "replace": "32_acp",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_357mag_fmj",
+    "type": "MIGRATION",
+    "replace": "357mag_fmj",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_357mag_jhp",
+    "type": "MIGRATION",
+    "replace": "357mag_jhp",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_357sig_fmj",
+    "type": "MIGRATION",
+    "replace": "357sig_fmj",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_357sig_jhp",
+    "type": "MIGRATION",
+    "replace": "357sig_jhp",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_380_FMJ",
+    "type": "MIGRATION",
+    "replace": "380_FMJ",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_380_JHP",
+    "type": "MIGRATION",
+    "replace": "380_JHP",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_38_fmj",
+    "type": "MIGRATION",
+    "replace": "38_fmj",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_38_special",
+    "type": "MIGRATION",
+    "replace": "38_special",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_40fmj",
+    "type": "MIGRATION",
+    "replace": "40fmj",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_40sw",
+    "type": "MIGRATION",
+    "replace": "40sw",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_410shot_000",
+    "type": "MIGRATION",
+    "replace": "410shot_000",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_44fmj",
+    "type": "MIGRATION",
+    "replace": "44fmj",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_44magnum",
+    "type": "MIGRATION",
+    "replace": "44magnum",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_45_acp",
+    "type": "MIGRATION",
+    "replace": "45_acp",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_45_jhp",
+    "type": "MIGRATION",
+    "replace": "45_jhp",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_45colt_jhp",
+    "type": "MIGRATION",
+    "replace": "45colt_jhp",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_50_incendiary",
+    "type": "MIGRATION",
+    "replace": "50_incendiary",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_50_mk211",
+    "type": "MIGRATION",
+    "replace": "50_mk211",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_50bmg",
+    "type": "MIGRATION",
+    "replace": "50bmg",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_50ss",
+    "type": "MIGRATION",
+    "replace": "50ss",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_556",
+    "type": "MIGRATION",
+    "replace": "556",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_556_incendiary",
+    "type": "MIGRATION",
+    "replace": "556_incendiary",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_762_51",
+    "type": "MIGRATION",
+    "replace": "762_51",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_762_51_incendiary",
+    "type": "MIGRATION",
+    "replace": "762_51_incendiary",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_762_54R",
+    "type": "MIGRATION",
+    "replace": "762_54R",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_762_m43",
+    "type": "MIGRATION",
+    "replace": "762_m43",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_762_m87",
+    "type": "MIGRATION",
+    "replace": "762_m87",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_9mm",
+    "type": "MIGRATION",
+    "replace": "9mm",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_9mmfmj",
+    "type": "MIGRATION",
+    "replace": "9mmfmj",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_shot_00",
+    "type": "MIGRATION",
+    "replace": "shot_00",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_shot_bird",
+    "type": "MIGRATION",
+    "replace": "shot_bird",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_shot_dragon",
+    "type": "MIGRATION",
+    "replace": "shot_dragon",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_shot_flechette",
+    "type": "MIGRATION",
+    "replace": "shot_flechette",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_shot_he",
+    "type": "MIGRATION",
+    "replace": "shot_he",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_shot_scrap",
+    "type": "MIGRATION",
+    "replace": "shot_scrap",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_shot_slug",
+    "type": "MIGRATION",
+    "replace": "shot_slug",
+    "stack_modifier": "black_powder"
+  }
+]
