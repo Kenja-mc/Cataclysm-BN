@@ -69,6 +69,7 @@
 #include "panels.h"
 #include "player.h"
 #include "player_activity.h"
+#include "quick_stack.h"
 #include "popup.h"
 #include "profile.h"
 #include "ranged.h"
@@ -2548,6 +2549,22 @@ bool game::handle_action()
 
             case ACTION_LOOT:
                 loot();
+                break;
+
+            case ACTION_QUICK_STACK:
+                if( u.is_mounted() ) {
+                    add_msg( m_info, _( "You can't stash things while you're riding." ) );
+                } else {
+                    quick_stack::stash_inventory( u );
+                }
+                break;
+
+            case ACTION_SORT_PILE:
+                if( u.is_mounted() ) {
+                    add_msg( m_info, _( "You can't sort things while you're riding." ) );
+                } else {
+                    quick_stack::sort_pile( u );
+                }
                 break;
 
             case ACTION_INVENTORY:
