@@ -57,13 +57,14 @@ config folder to get the new defaults.
 Upstream expects you to set up loot zones and run a sorting activity to keep a base usable. Here
 that is optional:
 
-- **Quick stack (`Q`)**, as in Terraria and Hytale. Everything you carry goes onto visible tiles
-  nearby that already hold the same item, or into storage (shelves, lockers, counters, vehicle
-  cargo) that mostly holds the same kind of item. Worn, wielded and favorited (`*` in the
+- **Quick stack (`Q`)**, as in Terraria and Hytale. Everything you carry goes into visible storage
+  nearby (shelves, lockers, counters, vehicle cargo) that already holds the same item, or mostly
+  the same kind of item. Loose piles on the ground are left alone. Worn, wielded and favorited (`*` in the
   inventory) items always stay with you. It costs the time it takes to walk over and put things
   down.
 - **Sort pile (`Z`)**. Dump a haul in one place, stand on it and press `Z`. Each item goes to the
-  nearby spot that already holds the same thing, or mostly the same category. Put one example of
+  nearby storage that already holds the same thing or mostly the same category, or to a loose pile
+  of exactly the same item. Put one example of
   each kind of thing where you want it to live, and everything else follows.
 - **Bigger crafting reach.** Crafting and construction pull from items within 12 tiles (upstream:
   6), so a workshop with stocked shelves works like a Hytale workbench next to chests. You can
