@@ -2211,6 +2211,17 @@ void options_manager::add_options_graphics()
         this->add_empty_line( graphics );
     };
 
+    add( "UI_THEME", graphics, translate_marker( "Color theme" ),
+         translate_marker( "Palette for the whole interface.  \"Terminal\" inherits your terminal's colors and background, so the game follows your desktop theme.  Requires restart." ),
+    { { "terminal", translate_marker( "Terminal" ) }, { "tokyo_night", translate_marker( "Tokyo Night" ) }, { "catppuccin", translate_marker( "Catppuccin" ) }, { "gruvbox", translate_marker( "Gruvbox" ) }, { "everforest", translate_marker( "Everforest" ) }, { "classic", translate_marker( "Classic" ) } },
+    "terminal" );
+
+    add( "UI_ROUNDED_BORDERS", graphics, translate_marker( "Rounded window corners" ),
+         translate_marker( "If true, window corners are drawn rounded in the terminal version (needs a UTF-8 locale)." ),
+         true, COPT_SDL_HIDE );
+
+    add_empty_line();
+
     add( "ANIMATIONS", graphics, translate_marker( "Animations" ),
          translate_marker( "If true, will display enabled animations." ),
          true
@@ -2732,7 +2743,7 @@ void options_manager::add_options_debug()
 
     add( "PICKUP_RANGE", debug, translate_marker( "Crafting range" ),
          translate_marker( "Maximum distance at which items are considered available for crafting (or some other actions)." ),
-         1, 30, 6
+         1, 30, 12
        );
 
     add( "ENABLE_EVENTS", debug, translate_marker( "Event bus system" ),

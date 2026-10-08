@@ -128,6 +128,10 @@ enum action_id : int {
     ACTION_ZONES,
     /** Sort out the loot */
     ACTION_LOOT,
+    /** Stash carried items into matching nearby storage */
+    ACTION_QUICK_STACK,
+    /** Distribute the pile underfoot into matching nearby storage */
+    ACTION_SORT_PILE,
     /**@}*/
 
     // Inventory Interaction (including quasi-inventories like bionics)

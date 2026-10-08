@@ -110,6 +110,8 @@ std::string io::enum_to_string<action_id>( action_id data )
             PAIR( ACTION_LIST_ITEMS )
             PAIR( ACTION_ZONES )
             PAIR( ACTION_LOOT )
+            PAIR( ACTION_QUICK_STACK )
+            PAIR( ACTION_SORT_PILE )
 
             PAIR( ACTION_INVENTORY )
             PAIR( ACTION_ADVANCEDINV )
@@ -341,6 +343,10 @@ std::string action_ident( action_id act )
             return "zones";
         case ACTION_LOOT:
             return "loot";
+        case ACTION_QUICK_STACK:
+            return "quick_stack";
+        case ACTION_SORT_PILE:
+            return "sort_pile";
         case ACTION_INVENTORY:
             return "inventory";
         case ACTION_COMPARE:
@@ -1154,6 +1160,7 @@ action_id handle_action_menu()
                 ACTION_EXAMINE, ACTION_JUMP, ACTION_SMASH, ACTION_MOVE_DOWN, ACTION_MOVE_UP,
                 ACTION_OPEN, ACTION_CLOSE, ACTION_CHAT, ACTION_PICKUP,
                 ACTION_PICKUP_ALL, ACTION_PICKUP_FEET, ACTION_GRAB, ACTION_HAUL, ACTION_BUTCHER, ACTION_LOOT,
+                ACTION_QUICK_STACK, ACTION_SORT_PILE,
             } );
             register_lua_action_entries( category_id );
         } else if( category_id == "combat" ) {
