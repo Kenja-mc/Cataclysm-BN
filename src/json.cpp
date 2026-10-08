@@ -837,8 +837,16 @@ void JsonIn::seek( int pos )
 
 void JsonIn::eat_whitespace()
 {
-    while( is_whitespace( peek() ) ) {
-        stream->get();
+    // Straight from the buffer, like skip_string: indentation is most of the bytes we read.
+    auto *const buf = stream->rdbuf();
+    for( auto c = buf->sgetc(); ; c = buf->snextc() ) {
+        if( c == std::char_traits<char>::eof() ) {
+            stream->setstate( std::ios::eofbit );
+            return;
+        }
+        if( !is_whitespace( static_cast<char>( c ) ) ) {
+            return;
+        }
     }
 }
 

@@ -9,7 +9,7 @@ Upstream base: `cataclysmbn/Cataclysm-BN@d14e047` (first commit on this branch).
 
 ## Controls
 
-Movement is **WASD**, with **Q E Z C** for diagonals. The layout merges Bright Nights with Sword of the Stars: The Pit: `F` attacks the nearest enemy, Space interacts with anything (doors, containers, people), `C` is the character sheet, and `X` waits or rests. The arrow keys and the numpad still work.
+Movement is **WASD**, with **Q E Z C** for diagonals. The layout merges Bright Nights with Sword of the Stars: The Pit: `F` attacks the nearest enemy, Space interacts with anything (doors, containers, people; `y` also talks), `C` is the character sheet, and `X` waits or rests. The arrow keys and the numpad still work.
 The same keys move the cursor in look mode, targeting and the overmap, and answer every "which
 direction?" prompt.
 
@@ -236,8 +236,9 @@ item type variants instead of new item types:
   ([upstream #10447](https://github.com/cataclysmbn/Cataclysm-BN/issues/10447)).
 - A missed mutation attack reprinted the previous hit's damage
   ([upstream #1287](https://github.com/cataclysmbn/Cataclysm-BN/issues/1287)).
-- Loading is faster: item migrations finalize in one pass over item groups (about 4× faster data
-  loading in testing), and the JSON reader skips strings without per-character stream overhead.
+- Loading is faster: item migrations finalize in one pass over item groups, and the JSON reader
+  skips strings and whitespace straight from the stream buffer. In testing, the core data load and
+  check went from 734 s to 118 s, and a new game starts in about 18 s.
 
 ## Building
 
