@@ -237,7 +237,7 @@
         "o": { "item": "straw_pile", "chance": 100, "repeat": [ 5, 10 ] },
         "q": { "item": "pitchfork", "chance": 100 },
         "U": { "item": "salt_lick", "chance": 100 },
-        "W": { "item": "box_medium", "chance": 100 }
+        "W": { "item": "box_large", "chance": 100 }
       },
       "items": {
         "e": { "item": "tools_home", "chance": 100 },

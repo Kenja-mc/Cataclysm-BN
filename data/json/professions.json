@@ -4127,7 +4127,7 @@
     "items": {
       "both": {
         "items": [ "pants", "tshirt", "socks", "sneakers", "backpack", "wristwatch", "smart_phone", "pen" ],
-        "entries": [ { "contents-group": [ "manuals_school", "textbooks_school", "light_reading" ], "item": "box_medium" } ]
+        "entries": [ { "contents-group": [ "manuals_school", "textbooks_school", "light_reading" ], "item": "box_large" } ]
       },
       "male": [ "boxer_shorts" ],
       "female": [ "bra", "boy_shorts" ]

@@ -3678,13 +3678,6 @@
     "components": [ [ [ "cardboard", 15 ] ] ]
   },
   {
-    "result": "box_medium",
-    "type": "uncraft",
-    "time": "4 m",
-    "qualities": [ { "id": "CUT", "level": 1 } ],
-    "components": [ [ [ "cardboard", 85 ] ] ]
-  },
-  {
     "result": "box_huge",
     "type": "uncraft",
     "time": "30 m",

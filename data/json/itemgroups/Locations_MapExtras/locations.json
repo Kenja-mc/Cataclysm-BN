@@ -688,7 +688,7 @@
       [ "wrapper", 150 ],
       [ "phonebook", 110 ],
       [ "box_small", 400 ],
-      [ "box_medium", 400 ],
+      [ "box_large", 400 ],
       [ "box_large", 200 ],
       { "group": "newspaper", "prob": 1000 }
     ]
@@ -2622,7 +2622,6 @@
     "entries": [
       { "item": "bottle_plastic_small", "prob": 20 },
       { "item": "box_small", "prob": 40 },
-      { "item": "box_medium", "prob": 100 },
       { "item": "box_large", "prob": 100 },
       { "item": "bag_iv", "prob": 60 },
       { "item": "bag_body_bag", "prob": 40 },
