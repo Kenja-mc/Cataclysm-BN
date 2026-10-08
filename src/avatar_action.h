@@ -46,6 +46,8 @@ auto autoattack( avatar &you, map &m ) -> void;
 auto toggle_manual_combat_mode() -> void;
 /// Deliberate melee attack in a direction; walking into enemies only attacks when BUMP_ATTACK is on.
 auto attack_in_direction( avatar &you, map &m ) -> void;
+/// Attacks whatever is at the adjacent tile `dir` away.
+auto attack_at( avatar &you, map &m, const tripoint_rel_ms &dir ) -> void;
 auto is_manual_combat_mode() -> bool;
 
 void mend( avatar &you, item *loc );

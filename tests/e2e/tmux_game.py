@@ -62,6 +62,11 @@ class Game:
             time.sleep(0.05)
         time.sleep(1)
 
+    def hover(self, x, y):
+        """Mouse motion with no button held, SGR encoded (button code 35)."""
+        subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", f"\x1b[<35;{x + 1};{y + 1}M"])
+        time.sleep(1)
+
     def find(self, ch):
         for y, line in enumerate(self.screen().splitlines()):
             if ch in line[:95]:

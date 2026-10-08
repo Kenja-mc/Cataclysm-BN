@@ -1026,12 +1026,17 @@ auto avatar_action::attack_in_direction( avatar &you, map &m ) -> void
     if( !dir || *dir == tripoint_rel_ms::zero() ) {
         return;
     }
-    if( g->critter_at<Creature>( you.bub_pos() + *dir, true ) == nullptr ) {
+    attack_at( you, m, *dir );
+}
+
+auto avatar_action::attack_at( avatar &you, map &m, const tripoint_rel_ms &dir ) -> void
+{
+    if( g->critter_at<Creature>( you.bub_pos() + dir, true ) == nullptr ) {
         add_msg( m_info, _( "There's nothing there to attack." ) );
         return;
     }
     attack_requested = true;
-    move( you, m, *dir );
+    move( you, m, dir );
     attack_requested = false;
 }
 
