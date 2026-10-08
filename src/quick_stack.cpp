@@ -58,13 +58,14 @@ auto dominant_category( const spot &s ) -> std::optional<item_category_id>
     return best->first;
 }
 
-/// Every visible tile in crafting range that already holds items or is furniture/vehicle storage.
+/// Every tile in line of sight and crafting range that already holds items or is furniture/vehicle storage.
 auto gather_spots( avatar &you, const std::optional<tripoint_bub_ms> &skip ) -> std::vector<spot>
 {
     auto &here = get_map();
     auto spots = std::vector<spot>();
     for( const auto &p : here.points_in_radius( you.bub_pos(), PICKUP_RANGE ) ) {
-        if( p == skip || !you.sees( p ) || here.has_flag( "SEALED", p ) ) {
+        // Line of sight rather than light: you know where your shelves are in a dark basement.
+        if( p == skip || here.has_flag( "SEALED", p ) || !here.sees( you.bub_pos(), p, PICKUP_RANGE ) ) {
             continue;
         }
         auto s = spot{ .pos = p, .dist = rl_dist( you.bub_pos(), p ) };

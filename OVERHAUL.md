@@ -57,7 +57,7 @@ config folder to get the new defaults.
 Upstream expects you to set up loot zones and run a sorting activity to keep a base usable. Here
 that is optional:
 
-- **Quick stack (`Q`)**, as in Terraria and Hytale. Everything you carry goes into visible storage
+- **Quick stack (`Q`)**, as in Terraria and Hytale. Everything you carry goes into storage in line of sight
   nearby (shelves, lockers, counters, vehicle cargo) that already holds the same item, or mostly
   the same kind of item. Loose piles on the ground are left alone. Worn, wielded and favorited (`*` in the
   inventory) items always stay with you. It costs the time it takes to walk over and put things
