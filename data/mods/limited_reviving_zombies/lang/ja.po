@@ -1,0 +1,35 @@
+# Japanese translation for the "Limited Zombie Revival" mod.
+# Assisted-by: Claude:claude-opus-5-5
+msgid ""
+msgstr ""
+"Project-Id-Version: limited_reviving_zombies\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Limited Zombie Revival"
+msgstr "制限付きゾンビ復活"
+
+msgid ""
+"Zombies still rise, but never at full strength.  A corpse that gets up comes "
+"back weakened in proportion to how badly it was mangled, spends a while "
+"helpless and stiff after rising, and can only rise a limited number of times "
+"before it is too broken to move again.  An alternative to disabling revival "
+"entirely."
+msgstr ""
+"ゾンビは起き上がるが、万全の状態では戻ってこない。損壊が酷い死体ほど弱く、遅く蘇り、"
+"起き上がった直後はしばらく無力で、死後硬直で動きも鈍い。さらに同じ死体が起き上がれる"
+"回数にも上限がある。復活を完全に禁止する代わりの選択肢。"
+
+msgid "Rigor Mortis"
+msgstr "死後硬直"
+
+msgid ""
+"Death has already stiffened these limbs.  Every step is a fight against its "
+"own body."
+msgstr "死によって四肢が硬直している。一歩ごとに自分の体と格闘している。"
+
+msgid "The %s is too broken to rise again."
+msgstr "%sは壊れすぎていて、もう起き上がれない。"
