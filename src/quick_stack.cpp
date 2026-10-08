@@ -89,17 +89,21 @@ auto gather_spots( avatar &you, const std::optional<tripoint_bub_ms> &skip ) -> 
     return spots;
 }
 
-/// Same item anywhere beats same category; storage beats loose piles; closer beats farther.
-auto pick_spot( const std::vector<spot> &spots, const item &it ) -> std::optional<size_t>
+/// Same item beats same category, storage beats loose piles, closer beats farther.
+/// Loose piles only ever take exact matches, and only when `allow_piles` is set.
+auto pick_spot( const std::vector<spot> &spots, const item &it, const bool allow_piles ) -> std::optional<size_t>
 {
     auto best = std::optional<size_t>();
     auto best_score = 0;
     for( size_t i = 0; i < spots.size(); i++ ) {
         const auto &s = spots[i];
+        if( !s.is_storage && !allow_piles ) {
+            continue;
+        }
         auto score = 0;
         if( s.types.contains( it.typeId() ) ) {
             score = 3000;
-        } else if( dominant_category( s ) == it.get_category().get_id() ) {
+        } else if( s.is_storage && dominant_category( s ) == it.get_category().get_id() ) {
             score = 2000;
         } else {
             continue;
@@ -113,11 +117,12 @@ auto pick_spot( const std::vector<spot> &spots, const item &it ) -> std::optiona
     return best;
 }
 
-auto plan_moves( std::vector<spot> &spots, const std::vector<item *> &items ) -> std::vector<move_plan>
+auto plan_moves( std::vector<spot> &spots, const std::vector<item *> &items,
+                 const bool allow_piles ) -> std::vector<move_plan>
 {
     auto plan = std::vector<move_plan>();
     for( item *it : items ) {
-        if( const auto idx = pick_spot( spots, *it ) ) {
+        if( const auto idx = pick_spot( spots, *it, allow_piles ) ) {
             plan.push_back( { .it = it, .spot_index = *idx } );
             record( spots[*idx], *it );
         }
@@ -163,7 +168,7 @@ auto stash_inventory( avatar &you ) -> void
         return;
     }
     auto spots = gather_spots( you, std::nullopt );
-    const auto plan = plan_moves( spots, carried );
+    const auto plan = plan_moves( spots, carried, false );
     if( plan.empty() ) {
         add_msg( m_info, _( "No nearby storage holds anything like what you carry.  Drop your haul, stand on it and %s to sort it." ),
                  press_x( ACTION_SORT_PILE ) );
@@ -185,7 +190,7 @@ auto sort_pile( avatar &you ) -> void
         return;
     }
     auto spots = gather_spots( you, feet );
-    const auto plan = plan_moves( spots, pile );
+    const auto plan = plan_moves( spots, pile, true );
     if( plan.empty() ) {
         add_msg( m_info, _( "Nothing nearby matches this pile.  Put one of each kind of thing where you want it to live." ) );
         return;

@@ -66,16 +66,21 @@ class Game:
     def lua(self, code):
         """Runs one line in the in-game Lua console; `out(...)` inside it reports values back."""
         self.calls = getattr(self, "calls", 0) + 1
-        marker = f"#{self.calls}#"
-        prelude = ("local function out(...) local t = {} for i, v in ipairs({...}) do t[i] = tostring(v) end "
-                   f"print('{marker}' .. table.concat(t, ',')) end ")
+        marker = f"#{os.getpid()}.{self.calls}#"
         self.keys("`", delay=1)
         self.keys("Enter", delay=0.5)
-        self.type(prelude + code)
+        # Keep the echoed command short so its output is still on screen afterwards.
+        self.type(f"OUT='{marker}' " + code)
         self.keys("C-s", delay=1.5)
-        lines = [l.strip("│ ").strip() for l in self.screen().splitlines()]
+        lines = [l.strip("│^v ").strip() for l in self.screen().splitlines()]
         self.keys("Escape", delay=0.8)
         return [l[len(marker):] for l in lines if l.startswith(marker)]
+
+    def define_lua(self, code):
+        """Defines globals once; later `lua` calls can stay short."""
+        prelude = ("function out(...) local t = {} for i, v in ipairs({...}) do t[i] = tostring(v) end "
+                   "print(OUT .. table.concat(t, ',')) end ")
+        assert self.lua(prelude + code + " out('defined')") == ["defined"], self.screen()
 
     def pos(self):
         line = next(l for l in self.screen().splitlines() if "X,Y,Z:" in l)
