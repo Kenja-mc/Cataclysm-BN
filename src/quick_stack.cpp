@@ -150,9 +150,11 @@ auto execute( avatar &you, std::vector<spot> &spots, const std::vector<move_plan
         put_into_vehicle_or_drop( you, item_drop_reason::deliberate, s.incoming, s.pos );
     }
     you.mod_moves( -moves );
-    add_msg( m_good, vgettext( "Stashed %1$d item into %2$d spot (%3$s).",
-                               "Stashed %1$d items into %2$d spots (%3$s).", plan.size() ),
-             plan.size(), visited, to_string( time_duration::from_turns( moves / 100 + 1 ) ) );
+    //~ %1$s: "3 items", %2$s: "2 spots", %3$s: time taken
+    add_msg( m_good, _( "Stashed %1$s into %2$s (%3$s)." ),
+             string_format( vgettext( "%d item", "%d items", plan.size() ), plan.size() ),
+             string_format( vgettext( "%d spot", "%d spots", visited ), visited ),
+             to_string( time_duration::from_turns( moves / 100 + 1 ) ) );
 }
 
 } // namespace
