@@ -1,0 +1,98 @@
+[
+  {
+    "id": "bp_270win_jsp",
+    "type": "MIGRATION",
+    "replace": "270win_jsp",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_38_super",
+    "type": "MIGRATION",
+    "replace": "38_super",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_38super_fmj",
+    "type": "MIGRATION",
+    "replace": "38super_fmj",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_454_Casull",
+    "type": "MIGRATION",
+    "replace": "454_Casull",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_460_fmj",
+    "type": "MIGRATION",
+    "replace": "460_fmj",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_460_rowland",
+    "type": "MIGRATION",
+    "replace": "460_rowland",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_46mm",
+    "type": "MIGRATION",
+    "replace": "46mm",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_500_Magnum",
+    "type": "MIGRATION",
+    "replace": "500_Magnum",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_545",
+    "type": "MIGRATION",
+    "replace": "545",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_545_ap",
+    "type": "MIGRATION",
+    "replace": "545_ap",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_57mm",
+    "type": "MIGRATION",
+    "replace": "57mm",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_57mm_civ",
+    "type": "MIGRATION",
+    "replace": "57mm_civ",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_700nx",
+    "type": "MIGRATION",
+    "replace": "700nx",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_762_25",
+    "type": "MIGRATION",
+    "replace": "762_25",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_9x18mm",
+    "type": "MIGRATION",
+    "replace": "9x18mm",
+    "stack_modifier": "black_powder"
+  },
+  {
+    "id": "bp_9x18mmfmj",
+    "type": "MIGRATION",
+    "replace": "9x18mmfmj",
+    "stack_modifier": "black_powder"
+  }
+]

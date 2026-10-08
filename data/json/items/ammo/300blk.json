@@ -35,21 +35,5 @@
     "speed": 310,
     "damage": { "damage_type": "bullet", "amount": 26 },
     "recoil": 1700
-  },
-  {
-    "id": "bp_300blk",
-    "copy-from": "300blk",
-    "type": "AMMO",
-    "name": { "str": ".300 AAC Blackout, black powder" },
-    "loudness": 150,
-    "speed": 310,
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8, "armor_penetration": 0.5 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "RECYCLED", "BLACKPOWDER", "MUZZLE_SMOKE" ] }
   }
 ]

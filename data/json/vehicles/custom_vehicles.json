@@ -443,11 +443,7 @@
           "tread2",
           "seat",
           "turret_mount_manual_steel",
-          {
-            "part": "mounted_25mm_autocannon_sawn",
-            "ammo": 80,
-            "ammo_types": [ "25mm_hei", "25mm_slug", "bp_25mm_slug" ]
-          }
+          { "part": "mounted_25mm_autocannon_sawn", "ammo": 80, "ammo_types": [ "25mm_hei", "25mm_slug" ] }
         ]
       },
       { "x": 3, "y": -2, "parts": [ "frame_vertical" ] },
@@ -470,7 +466,7 @@
           {
             "part": "mounted_bigun",
             "ammo": 80,
-            "ammo_types": [ "shot_00", "shot_slug", "shot_scrap", "bp_shot_00", "bp_shot_slug" ],
+            "ammo_types": [ "shot_00", "shot_slug", "shot_scrap" ],
             "ammo_qty": [ 5, 20 ]
           },
           "controls",

@@ -36,33 +36,5 @@
     "//": "Balanced as +p instead of AP, giving it a total damage+arpen on par with .30-06 AP but weighted more towards raw damage.",
     "relative": { "damage": { "damage_type": "bullet", "amount": 15 } },
     "proportional": { "dispersion": 1.25, "recoil": 1.5 }
-  },
-  {
-    "id": "bp_277_fmj",
-    "copy-from": "277_fmj",
-    "type": "AMMO",
-    "name": { "str": "6.8x51mm 'Fury' FMJ, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8, "armor_penetration": 0.5 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "RECYCLED", "BLACKPOWDER", "MUZZLE_SMOKE" ] }
-  },
-  {
-    "id": "bp_277_hybrid",
-    "copy-from": "277_hybrid",
-    "type": "AMMO",
-    "name": { "str": "6.8x51mm 'Fury' Hybrid, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8, "armor_penetration": 0.5 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "RECYCLED", "BLACKPOWDER", "MUZZLE_SMOKE" ] }
   }
 ]

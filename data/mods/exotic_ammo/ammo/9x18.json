@@ -50,33 +50,5 @@
     "speed": 325,
     "//": "AP variant, 7/8 damage relative to FMJ variant, 6/7 armor penetration.",
     "relative": { "damage": { "damage_type": "bullet", "amount": -3, "armor_penetration": 7 } }
-  },
-  {
-    "id": "bp_9x18mm",
-    "copy-from": "9x18mm",
-    "type": "AMMO",
-    "name": { "str": "9x18mm, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8, "armor_penetration": 0.5 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "RECYCLED", "BLACKPOWDER", "MUZZLE_SMOKE" ] }
-  },
-  {
-    "id": "bp_9x18mmfmj",
-    "copy-from": "9x18mmfmj",
-    "type": "AMMO",
-    "name": { "str": "9x18mm FMJ, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8, "armor_penetration": 0.5 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "RECYCLED", "BLACKPOWDER", "MUZZLE_SMOKE" ] }
   }
 ]

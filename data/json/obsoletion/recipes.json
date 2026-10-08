@@ -21,7 +21,7 @@
   },
   {
     "type": "recipe",
-    "result": "t\u00d6ttchen",
+    "result": "tÖttchen",
     "obsolete": true
   },
   {
@@ -1990,13 +1990,17 @@
     "obsolete": true
   },
   {
-    "result": "bp_9x18mm",
     "type": "recipe",
+    "result": "9x18mm",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "obsolete": true
   },
   {
-    "result": "bp_9x18mmfmj",
     "type": "recipe",
+    "result": "9x18mmfmj",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "obsolete": true
   },
   {
@@ -2030,13 +2034,17 @@
     "obsolete": true
   },
   {
-    "result": "bp_38_super",
     "type": "recipe",
+    "result": "38_super",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "obsolete": true
   },
   {
-    "result": "bp_38super_fmj",
     "type": "recipe",
+    "result": "38super_fmj",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "obsolete": true
   },
   {
@@ -2055,18 +2063,24 @@
     "obsolete": true
   },
   {
-    "result": "bp_700nx",
     "type": "recipe",
+    "result": "700nx",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "obsolete": true
   },
   {
-    "result": "bp_460_fmj",
     "type": "recipe",
+    "result": "460_fmj",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "obsolete": true
   },
   {
-    "result": "bp_460_rowland",
     "type": "recipe",
+    "result": "460_rowland",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "obsolete": true
   },
   {
@@ -2101,13 +2115,17 @@
     "obsolete": true
   },
   {
-    "result": "bp_454_Casull",
     "type": "recipe",
+    "result": "454_Casull",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "obsolete": true
   },
   {
-    "result": "bp_500_Magnum",
     "type": "recipe",
+    "result": "500_Magnum",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "obsolete": true
   },
   {
@@ -2121,8 +2139,10 @@
     "obsolete": true
   },
   {
-    "result": "bp_57mm",
     "type": "recipe",
+    "result": "57mm",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "obsolete": true
   },
   {
@@ -2136,8 +2156,10 @@
     "obsolete": true
   },
   {
-    "result": "bp_46mm",
     "type": "recipe",
+    "result": "46mm",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "obsolete": true
   },
   {
@@ -2161,13 +2183,17 @@
     "obsolete": true
   },
   {
-    "result": "bp_545",
     "type": "recipe",
+    "result": "545",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "obsolete": true
   },
   {
-    "result": "bp_545_ap",
     "type": "recipe",
+    "result": "545_ap",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "obsolete": true
   },
   {
@@ -2186,8 +2212,10 @@
     "obsolete": true
   },
   {
-    "result": "bp_270win_jsp",
     "type": "recipe",
+    "result": "270win_jsp",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "obsolete": true
   },
   {
@@ -2196,8 +2224,10 @@
     "obsolete": true
   },
   {
-    "result": "bp_762_25",
     "type": "recipe",
+    "result": "762_25",
+    "id_suffix": "black_powder",
+    "result_stack_modifier": "black_powder",
     "obsolete": true
   },
   {

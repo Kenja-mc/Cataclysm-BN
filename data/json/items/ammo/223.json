@@ -46,49 +46,5 @@
     "name": { "str": "5.56x45mm NATO tracer" },
     "description": "This ammunition is a one-in-five mix of M855A1 and M856 tracer rounds to help keep the weapon they are fired from on target.",
     "extend": { "effects": [ "INCENDIARY" ] }
-  },
-  {
-    "id": "bp_223",
-    "copy-from": "223",
-    "type": "AMMO",
-    "name": { "str": "5.56x45mm '.223 Remington', black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8, "armor_penetration": 0.5 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "RECYCLED", "BLACKPOWDER", "MUZZLE_SMOKE" ] }
-  },
-  {
-    "id": "bp_556",
-    "copy-from": "556",
-    "type": "AMMO",
-    "name": { "str": "5.56x45mm NATO, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8, "armor_penetration": 0.5 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "RECYCLED", "BLACKPOWDER", "MUZZLE_SMOKE" ] },
-    "delete": { "effects": [ "NEVER_MISFIRES" ] }
-  },
-  {
-    "id": "bp_556_incendiary",
-    "copy-from": "556_incendiary",
-    "type": "AMMO",
-    "name": { "str": "5.56x45mm NATO tracer, black powder" },
-    "proportional": {
-      "price": 0.5,
-      "price_postapoc": 0.5,
-      "damage": { "damage_type": "bullet", "amount": 0.8, "armor_penetration": 0.5 },
-      "recoil": 0.76,
-      "dispersion": 1.2
-    },
-    "extend": { "effects": [ "RECYCLED", "BLACKPOWDER", "MUZZLE_SMOKE" ] },
-    "delete": { "effects": [ "NEVER_MISFIRES" ] }
   }
 ]
