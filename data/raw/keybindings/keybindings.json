@@ -900,14 +900,106 @@
     "id": "ZOOM_OUT",
     "category": "OVERMAP",
     "name": "Zoom Out",
-    "bindings": [ { "input_method": "keyboard", "key": "Z" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "-" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "UP",
+    "category": "OVERMAP",
+    "name": "Move north",
+    "bindings": [
+      { "input_method": "keyboard", "key": "w" },
+      { "input_method": "keyboard", "key": "UP" },
+      { "input_method": "keyboard", "key": "8" },
+      { "input_method": "keyboard", "key": "NUMPAD_8" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "DOWN",
+    "category": "OVERMAP",
+    "name": "Move south",
+    "bindings": [
+      { "input_method": "keyboard", "key": "s" },
+      { "input_method": "keyboard", "key": "DOWN" },
+      { "input_method": "keyboard", "key": "2" },
+      { "input_method": "keyboard", "key": "NUMPAD_2" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "LEFT",
+    "category": "OVERMAP",
+    "name": "Move west",
+    "bindings": [
+      { "input_method": "keyboard", "key": "a" },
+      { "input_method": "keyboard", "key": "LEFT" },
+      { "input_method": "keyboard", "key": "4" },
+      { "input_method": "keyboard", "key": "NUMPAD_4" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RIGHT",
+    "category": "OVERMAP",
+    "name": "Move east",
+    "bindings": [
+      { "input_method": "keyboard", "key": "d" },
+      { "input_method": "keyboard", "key": "RIGHT" },
+      { "input_method": "keyboard", "key": "6" },
+      { "input_method": "keyboard", "key": "NUMPAD_6" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "LEFTUP",
+    "category": "OVERMAP",
+    "name": "Move northwest",
+    "bindings": [
+      { "input_method": "keyboard", "key": "q" },
+      { "input_method": "keyboard", "key": "7" },
+      { "input_method": "keyboard", "key": "NUMPAD_7" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RIGHTUP",
+    "category": "OVERMAP",
+    "name": "Move northeast",
+    "bindings": [
+      { "input_method": "keyboard", "key": "e" },
+      { "input_method": "keyboard", "key": "9" },
+      { "input_method": "keyboard", "key": "NUMPAD_9" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "LEFTDOWN",
+    "category": "OVERMAP",
+    "name": "Move southwest",
+    "bindings": [
+      { "input_method": "keyboard", "key": "z" },
+      { "input_method": "keyboard", "key": "1" },
+      { "input_method": "keyboard", "key": "NUMPAD_1" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RIGHTDOWN",
+    "category": "OVERMAP",
+    "name": "Move southeast",
+    "bindings": [
+      { "input_method": "keyboard", "key": "c" },
+      { "input_method": "keyboard", "key": "3" },
+      { "input_method": "keyboard", "key": "NUMPAD_3" }
+    ]
   },
   {
     "type": "keybinding",
     "id": "ZOOM_IN",
     "category": "OVERMAP",
     "name": "Zoom In",
-    "bindings": [ { "input_method": "keyboard", "key": "z" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "=" }, { "input_method": "keyboard", "key": "+" } ]
   },
   {
     "type": "keybinding",
@@ -1012,7 +1104,7 @@
     "id": "TOGGLE_OVERMAP_WEATHER",
     "category": "OVERMAP",
     "name": "Toggle Visible Weather",
-    "bindings": [ { "input_method": "keyboard", "key": "w" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "R" } ]
   },
   {
     "type": "keybinding",
@@ -1047,14 +1139,14 @@
     "id": "PLACE_SPECIAL",
     "category": "OVERMAP",
     "name": "Place Overmap Special",
-    "bindings": [ { "input_method": "keyboard", "key": "s" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "S" } ]
   },
   {
     "type": "keybinding",
     "id": "SET_SPECIAL_ARGS",
     "category": "OVERMAP",
     "name": "Set Overmap Special Arguments",
-    "bindings": [ { "input_method": "keyboard", "key": "a" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "Y" } ]
   },
   {
     "type": "keybinding",
@@ -1075,7 +1167,7 @@
     "id": "SET_CUSTOM_WAYPOINT",
     "category": "OVERMAP",
     "name": "Toggle Custom Waypoint",
-    "bindings": [ { "input_method": "keyboard", "key": "c" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "x" } ]
   },
   {
     "type": "keybinding",
@@ -1121,6 +1213,112 @@
   },
   {
     "type": "keybinding",
+    "id": "zoom_in",
+    "category": "TARGET",
+    "name": "Zoom in",
+    "bindings": [ { "input_method": "keyboard", "key": "=" }, { "input_method": "keyboard", "key": "+" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "zoom_out",
+    "category": "TARGET",
+    "name": "Zoom out",
+    "bindings": [ { "input_method": "keyboard", "key": "-" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "UP",
+    "category": "TARGET",
+    "name": "Move north",
+    "bindings": [
+      { "input_method": "keyboard", "key": "w" },
+      { "input_method": "keyboard", "key": "UP" },
+      { "input_method": "keyboard", "key": "8" },
+      { "input_method": "keyboard", "key": "NUMPAD_8" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "DOWN",
+    "category": "TARGET",
+    "name": "Move south",
+    "bindings": [
+      { "input_method": "keyboard", "key": "s" },
+      { "input_method": "keyboard", "key": "DOWN" },
+      { "input_method": "keyboard", "key": "2" },
+      { "input_method": "keyboard", "key": "NUMPAD_2" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "LEFT",
+    "category": "TARGET",
+    "name": "Move west",
+    "bindings": [
+      { "input_method": "keyboard", "key": "a" },
+      { "input_method": "keyboard", "key": "LEFT" },
+      { "input_method": "keyboard", "key": "4" },
+      { "input_method": "keyboard", "key": "NUMPAD_4" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RIGHT",
+    "category": "TARGET",
+    "name": "Move east",
+    "bindings": [
+      { "input_method": "keyboard", "key": "d" },
+      { "input_method": "keyboard", "key": "RIGHT" },
+      { "input_method": "keyboard", "key": "6" },
+      { "input_method": "keyboard", "key": "NUMPAD_6" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "LEFTUP",
+    "category": "TARGET",
+    "name": "Move northwest",
+    "bindings": [
+      { "input_method": "keyboard", "key": "q" },
+      { "input_method": "keyboard", "key": "7" },
+      { "input_method": "keyboard", "key": "NUMPAD_7" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RIGHTUP",
+    "category": "TARGET",
+    "name": "Move northeast",
+    "bindings": [
+      { "input_method": "keyboard", "key": "e" },
+      { "input_method": "keyboard", "key": "9" },
+      { "input_method": "keyboard", "key": "NUMPAD_9" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "LEFTDOWN",
+    "category": "TARGET",
+    "name": "Move southwest",
+    "bindings": [
+      { "input_method": "keyboard", "key": "z" },
+      { "input_method": "keyboard", "key": "1" },
+      { "input_method": "keyboard", "key": "NUMPAD_1" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RIGHTDOWN",
+    "category": "TARGET",
+    "name": "Move southeast",
+    "bindings": [
+      { "input_method": "keyboard", "key": "c" },
+      { "input_method": "keyboard", "key": "3" },
+      { "input_method": "keyboard", "key": "NUMPAD_3" }
+    ]
+  },
+  {
+    "type": "keybinding",
     "id": "PREV_TARGET",
     "category": "TARGET",
     "name": "Prev Target",
@@ -1146,42 +1344,46 @@
     "id": "AIM",
     "category": "TARGET",
     "name": "Aim",
-    "bindings": [ { "input_method": "keyboard", "key": "." }, { "input_method": "keyboard", "key": "5" } ]
+    "bindings": [
+      { "input_method": "keyboard", "key": "." },
+      { "input_method": "keyboard", "key": "x" },
+      { "input_method": "keyboard", "key": "5" }
+    ]
   },
   {
     "type": "keybinding",
     "id": "AIMED_SHOT",
     "category": "TARGET",
     "name": "Aimed Shot",
-    "bindings": [ { "input_method": "keyboard", "key": "a" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "u" } ]
   },
   {
     "type": "keybinding",
     "id": "CAREFUL_SHOT",
     "category": "TARGET",
     "name": "Careful Shot",
-    "bindings": [ { "input_method": "keyboard", "key": "c" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "i" } ]
   },
   {
     "type": "keybinding",
     "id": "PRECISE_SHOT",
     "category": "TARGET",
     "name": "Precise Shot",
-    "bindings": [ { "input_method": "keyboard", "key": "p" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "o" } ]
   },
   {
     "type": "keybinding",
     "id": "SWITCH_AMMO",
     "category": "TARGET",
     "name": "Switch ammo",
-    "bindings": [ { "input_method": "keyboard", "key": "o" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "r" } ]
   },
   {
     "type": "keybinding",
     "id": "SWITCH_MODE",
     "category": "TARGET",
     "name": "Switch Firing Mode",
-    "bindings": [ { "input_method": "keyboard", "key": "s" }, { "input_method": "keyboard", "key": "F" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "F" }, { "input_method": "keyboard", "key": "m" } ]
   },
   {
     "type": "keybinding",
@@ -1793,9 +1995,102 @@
     "category": "DEFAULTMODE",
     "id": "pause",
     "bindings": [
+      { "input_method": "keyboard", "key": "x" },
       { "input_method": "keyboard", "key": "." },
       { "input_method": "keyboard", "key": "5" },
       { "input_method": "keyboard", "key": "NUMPAD_5" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "UP",
+    "category": "DEFAULTMODE",
+    "name": "Move north",
+    "bindings": [
+      { "input_method": "keyboard", "key": "w" },
+      { "input_method": "keyboard", "key": "UP" },
+      { "input_method": "keyboard", "key": "8" },
+      { "input_method": "keyboard", "key": "NUMPAD_8" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "DOWN",
+    "category": "DEFAULTMODE",
+    "name": "Move south",
+    "bindings": [
+      { "input_method": "keyboard", "key": "s" },
+      { "input_method": "keyboard", "key": "DOWN" },
+      { "input_method": "keyboard", "key": "2" },
+      { "input_method": "keyboard", "key": "NUMPAD_2" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "LEFT",
+    "category": "DEFAULTMODE",
+    "name": "Move west",
+    "bindings": [
+      { "input_method": "keyboard", "key": "a" },
+      { "input_method": "keyboard", "key": "LEFT" },
+      { "input_method": "keyboard", "key": "4" },
+      { "input_method": "keyboard", "key": "NUMPAD_4" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RIGHT",
+    "category": "DEFAULTMODE",
+    "name": "Move east",
+    "bindings": [
+      { "input_method": "keyboard", "key": "d" },
+      { "input_method": "keyboard", "key": "RIGHT" },
+      { "input_method": "keyboard", "key": "6" },
+      { "input_method": "keyboard", "key": "NUMPAD_6" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "LEFTUP",
+    "category": "DEFAULTMODE",
+    "name": "Move northwest",
+    "bindings": [
+      { "input_method": "keyboard", "key": "q" },
+      { "input_method": "keyboard", "key": "7" },
+      { "input_method": "keyboard", "key": "NUMPAD_7" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RIGHTUP",
+    "category": "DEFAULTMODE",
+    "name": "Move northeast",
+    "bindings": [
+      { "input_method": "keyboard", "key": "e" },
+      { "input_method": "keyboard", "key": "9" },
+      { "input_method": "keyboard", "key": "NUMPAD_9" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "LEFTDOWN",
+    "category": "DEFAULTMODE",
+    "name": "Move southwest",
+    "bindings": [
+      { "input_method": "keyboard", "key": "z" },
+      { "input_method": "keyboard", "key": "1" },
+      { "input_method": "keyboard", "key": "NUMPAD_1" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RIGHTDOWN",
+    "category": "DEFAULTMODE",
+    "name": "Move southeast",
+    "bindings": [
+      { "input_method": "keyboard", "key": "c" },
+      { "input_method": "keyboard", "key": "3" },
+      { "input_method": "keyboard", "key": "NUMPAD_3" }
     ]
   },
   {
@@ -1823,28 +2118,28 @@
     "name": "Move View North",
     "category": "DEFAULTMODE",
     "id": "shift_n",
-    "bindings": [ { "input_method": "keyboard", "key": "K" } ]
+    "bindings": [ ]
   },
   {
     "type": "keybinding",
     "name": "Move View East",
     "category": "DEFAULTMODE",
     "id": "shift_e",
-    "bindings": [ { "input_method": "keyboard", "key": "L" } ]
+    "bindings": [ ]
   },
   {
     "type": "keybinding",
     "name": "Move View South",
     "category": "DEFAULTMODE",
     "id": "shift_s",
-    "bindings": [ { "input_method": "keyboard", "key": "J" } ]
+    "bindings": [ ]
   },
   {
     "type": "keybinding",
     "name": "Move View West",
     "category": "DEFAULTMODE",
     "id": "shift_w",
-    "bindings": [ { "input_method": "keyboard", "key": "H" } ]
+    "bindings": [ ]
   },
   {
     "type": "keybinding",
@@ -1858,28 +2153,28 @@
     "name": "Close Door",
     "category": "DEFAULTMODE",
     "id": "close",
-    "bindings": [ { "input_method": "keyboard", "key": "c" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "O" } ]
   },
   {
     "type": "keybinding",
     "name": "Smash Nearby Terrain",
     "category": "DEFAULTMODE",
     "id": "smash",
-    "bindings": [ { "input_method": "keyboard", "key": "s" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "b" } ]
   },
   {
     "type": "keybinding",
     "name": "Examine Nearby Terrain",
     "category": "DEFAULTMODE",
     "id": "examine",
-    "bindings": [ { "input_method": "keyboard", "key": "e" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "SPACE" } ]
   },
   {
     "type": "keybinding",
     "name": "Jump across an adjacent tile",
     "category": "DEFAULTMODE",
     "id": "jump",
-    "bindings": [ { "input_method": "keyboard", "key": "SPACE" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "j" } ]
   },
   {
     "type": "keybinding",
@@ -1901,6 +2196,20 @@
     "category": "DEFAULTMODE",
     "id": "pickup_all",
     "bindings": [ { "input_method": "keyboard", "key": "," } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "quick_stack",
+    "category": "DEFAULTMODE",
+    "name": "Quick stack to nearby storage",
+    "bindings": [ { "input_method": "keyboard", "key": "Q" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "sort_pile",
+    "category": "DEFAULTMODE",
+    "name": "Sort the pile you're standing on",
+    "bindings": [ { "input_method": "keyboard", "key": "Z" } ]
   },
   {
     "type": "keybinding",
@@ -1927,7 +2236,7 @@
     "name": "Zone activities",
     "category": "DEFAULTMODE",
     "id": "loot",
-    "bindings": [ { "input_method": "keyboard", "key": "O" } ]
+    "bindings": [ ]
   },
   {
     "type": "keybinding",
@@ -1948,7 +2257,7 @@
     "name": "Look Around",
     "category": "DEFAULTMODE",
     "id": "look",
-    "bindings": [ { "input_method": "keyboard", "key": ";" }, { "input_method": "keyboard", "key": "x" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "l" }, { "input_method": "keyboard", "key": ";" } ]
   },
   {
     "type": "keybinding",
@@ -2003,7 +2312,7 @@
     "name": "Apply or Use Item",
     "category": "DEFAULTMODE",
     "id": "apply",
-    "bindings": [ { "input_method": "keyboard", "key": "a" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "u" } ]
   },
   {
     "type": "keybinding",
@@ -2051,7 +2360,7 @@
     "name": "Wield",
     "category": "DEFAULTMODE",
     "id": "wield",
-    "bindings": [ { "input_method": "keyboard", "key": "w" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "h" } ]
   },
   {
     "type": "keybinding",
@@ -2101,6 +2410,119 @@
   },
   {
     "type": "keybinding",
+    "id": "zoom_in",
+    "category": "LOOK",
+    "name": "Zoom in",
+    "bindings": [ { "input_method": "keyboard", "key": "=" }, { "input_method": "keyboard", "key": "+" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "zoom_out",
+    "category": "LOOK",
+    "name": "Zoom out",
+    "bindings": [ { "input_method": "keyboard", "key": "-" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "EXTENDED_DESCRIPTION",
+    "category": "LOOK",
+    "name": "Show extended description",
+    "bindings": [ { "input_method": "keyboard", "key": "v" }, { "input_method": "keyboard", "key": "i" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "UP",
+    "category": "LOOK",
+    "name": "Move north",
+    "bindings": [
+      { "input_method": "keyboard", "key": "w" },
+      { "input_method": "keyboard", "key": "UP" },
+      { "input_method": "keyboard", "key": "8" },
+      { "input_method": "keyboard", "key": "NUMPAD_8" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "DOWN",
+    "category": "LOOK",
+    "name": "Move south",
+    "bindings": [
+      { "input_method": "keyboard", "key": "s" },
+      { "input_method": "keyboard", "key": "DOWN" },
+      { "input_method": "keyboard", "key": "2" },
+      { "input_method": "keyboard", "key": "NUMPAD_2" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "LEFT",
+    "category": "LOOK",
+    "name": "Move west",
+    "bindings": [
+      { "input_method": "keyboard", "key": "a" },
+      { "input_method": "keyboard", "key": "LEFT" },
+      { "input_method": "keyboard", "key": "4" },
+      { "input_method": "keyboard", "key": "NUMPAD_4" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RIGHT",
+    "category": "LOOK",
+    "name": "Move east",
+    "bindings": [
+      { "input_method": "keyboard", "key": "d" },
+      { "input_method": "keyboard", "key": "RIGHT" },
+      { "input_method": "keyboard", "key": "6" },
+      { "input_method": "keyboard", "key": "NUMPAD_6" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "LEFTUP",
+    "category": "LOOK",
+    "name": "Move northwest",
+    "bindings": [
+      { "input_method": "keyboard", "key": "q" },
+      { "input_method": "keyboard", "key": "7" },
+      { "input_method": "keyboard", "key": "NUMPAD_7" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RIGHTUP",
+    "category": "LOOK",
+    "name": "Move northeast",
+    "bindings": [
+      { "input_method": "keyboard", "key": "e" },
+      { "input_method": "keyboard", "key": "9" },
+      { "input_method": "keyboard", "key": "NUMPAD_9" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "LEFTDOWN",
+    "category": "LOOK",
+    "name": "Move southwest",
+    "bindings": [
+      { "input_method": "keyboard", "key": "z" },
+      { "input_method": "keyboard", "key": "1" },
+      { "input_method": "keyboard", "key": "NUMPAD_1" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RIGHTDOWN",
+    "category": "LOOK",
+    "name": "Move southeast",
+    "bindings": [
+      { "input_method": "keyboard", "key": "c" },
+      { "input_method": "keyboard", "key": "3" },
+      { "input_method": "keyboard", "key": "NUMPAD_3" }
+    ]
+  },
+  {
+    "type": "keybinding",
     "name": "Fire Wielded Item",
     "category": "DEFAULTMODE",
     "id": "fire",
@@ -2125,14 +2547,14 @@
     "name": "Drop Item",
     "category": "DEFAULTMODE",
     "id": "drop",
-    "bindings": [ { "input_method": "keyboard", "key": "d" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "D" } ]
   },
   {
     "type": "keybinding",
     "name": "Drop Item to Adjacent Tile",
     "category": "DEFAULTMODE",
     "id": "drop_adj",
-    "bindings": [ { "input_method": "keyboard", "key": "D" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "CTRL+D" } ]
   },
   {
     "type": "keybinding",
@@ -2174,7 +2596,7 @@
     "name": "Craft Items",
     "category": "DEFAULTMODE",
     "id": "craft",
-    "bindings": [ { "input_method": "keyboard", "key": "&" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "k" }, { "input_method": "keyboard", "key": "&" } ]
   },
   {
     "type": "keybinding",
@@ -2188,7 +2610,7 @@
     "name": "Construct Terrain",
     "category": "DEFAULTMODE",
     "id": "construct",
-    "bindings": [ { "input_method": "keyboard", "key": "*" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "K" }, { "input_method": "keyboard", "key": "*" } ]
   },
   {
     "type": "keybinding",
@@ -2202,7 +2624,7 @@
     "name": "Salvage items",
     "category": "DEFAULTMODE",
     "id": "salvage",
-    "bindings": [  ]
+    "bindings": [ ]
   },
   {
     "type": "keybinding",
@@ -2319,21 +2741,21 @@
     "name": "Open Wiki",
     "category": "DEFAULTMODE",
     "id": "open_wiki",
-    "bindings": [ { "input_method": "keyboard", "key": "w" } ]
+    "bindings": [ ]
   },
   {
     "type": "keybinding",
     "name": "Open Hitchhiker's Guide",
     "category": "DEFAULTMODE",
     "id": "open_hhg",
-    "bindings": [ { "input_method": "keyboard", "key": "h" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "H" } ]
   },
   {
     "type": "keybinding",
     "name": "View Help",
     "category": "DEFAULTMODE",
     "id": "help",
-    "bindings": [ { "input_method": "keyboard", "key": "0" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "F1" }, { "input_method": "keyboard", "key": "0" } ]
   },
   {
     "type": "keybinding",
@@ -2669,7 +3091,7 @@
     "id": "cast_last_spell",
     "name": "Cast Last Spell",
     "category": "DEFAULTMODE",
-    "bindings": [  ]
+    "bindings": [ ]
   },
   {
     "type": "keybinding",

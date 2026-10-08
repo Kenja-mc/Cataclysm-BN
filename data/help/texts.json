@@ -15,7 +15,7 @@
     "order": 1,
     "name": "<b|B>: Movement",
     "messages": [
-      "Movement is performed using the numpad, or vikeys.",
+      "Move with <press_UP><press_LEFT><press_DOWN><press_RIGHT> (WASD) and step diagonally with <press_LEFTUP>, <press_RIGHTUP>, <press_LEFTDOWN> and <press_RIGHTDOWN>.  The arrow keys and the numpad work too.  Every key can be changed in the keybindings menu (? on any screen).",
       "<HELP_DRAW_DIRECTIONS>",
       "Each step will take 100 movement points (or more, depending on the terrain); you will then replenish a variable amount of movement points, depending on many factors (press <press_player_data> to see the exact amount).",
       "To attempt to hit a monster with your weapon, simply move into it.",
@@ -28,7 +28,7 @@
     "order": 2,
     "name": "<c|C>: Viewing",
     "messages": [
-      "The player can often see more than can be displayed on the screen at a time.  Pressing <press_look> enters \"look around mode\", which allows you to scroll around using the movement keys and view items on the map as well as monsters and their stance toward the character.  Pressing <press_listitems> provides a list of nearby visible items, though items shut away in crates, cupboards, refrigerators and the like won't be displayed until you are close enough.  Pressing Shift+vikeys (h,j,k,l,y,u,b,n) will scroll the view persistently, allowing you to keep an eye on things as you move around.  You can also ",
+      "The player can often see more than can be displayed on the screen at a time.  Pressing <press_look> enters \"look around mode\", which allows you to scroll around using the movement keys and view items on the map as well as monsters and their stance toward the character.  Pressing <press_listitems> provides a list of nearby visible items, though items shut away in crates, cupboards, refrigerators and the like won't be displayed until you are close enough.  You can bind keys to scroll the view persistently (the \"Shift view\" actions), allowing you to keep an eye on things as you move around.  You can also ",
       "Places outside of your view but seen previously and memorized can be visualized, but covered by the \"fog of war\"."
     ]
   },
@@ -172,6 +172,8 @@
       "To wield an item as a weapon, press <press_wield> then the proper letter.  Wielding the item you are currently wielding will unwield it, leaving your hands empty.  A wielded weapon will not contribute to your volume carried, so holding a large item in your hands may be a good option for travel.  When unwielding your weapon, it can go back in your inventory, be stored in an appropriate holster or sheath, or can be dropped on the ground if there is no space.",
       "To wear a piece of clothing, press <press_wear> then the proper letter.  Armor reduces damage, gas masks can help protect you against smoke and poisonous gas, and holsters, sheaths, and belts can be used to easily carry and switch between weapons and tools.  To take off an item, press <press_take_off> then the proper letter.  Some worn items can be used with <press_apply> and selecting that item.  Clothing and armor are worn on layers, and provide different coverage, protection and warmth. Each piece has its own encumbrance, and wearing too much on each layer can significantly hamper your movement and other abilities, especially during combat. You can view and sort worn items by pressing <press_sort_armor>.",
       "If taking off storage gear would leave you over capacity, extra inventory items may be dropped.  Non-favorite items are dropped before favorite ones.",
+      "You never need sorting zones to keep a base tidy.  Press <press_quick_stack> near your storage to stash everything you carry onto nearby shelves, lockers, vehicle cargo or piles that already hold the same item, or mostly the same kind of item.  Worn, wielded and favorite items always stay with you.  To sort a haul, drop it in one pile, stand on it and press <press_sort_pile>.  Put one example of each kind of thing where you want it to live and everything else will follow.",
+      "Crafting and construction use any items within a dozen steps of you, so there is no need to carry your workshop around.",
       "Your clothing can sit in one of five layers on your body: next-to-skin, standard, waist, over, and belted.  You can wear one item from each layer on a body part without incurring an encumbrance penalty for too many worn items, unless that item's menu says otherwise. Any items beyond the first on each layer add the encumbrance of the additional article(s) of clothing to the body part's encumbrance.  The layering penalty applies a minimum of 2 and a maximum of 10 encumbrance per article of clothing.",
       "For example, on her torso, a character might wear a leather corset (next-to-skin), a leather touring suit (standard), a trenchcoat (over), and a survivor's runner pack (belted).  Her encumbrance penalty is 0.  If she put on a fur coat it would conflict with the trenchcoat and add the minimum encumbrance penalty of 2 on top of the items natural encumbrance.",
       "In the view nearby items menu (press <press_listitems> to open) you can filter or prioritize items.  You can enter item names, or various advanced filter strings: {<token>:<search param>}",
@@ -232,7 +234,7 @@
     "order": 17,
     "name": "<r|R>: Vehicles and Driving",
     "messages": [
-      "You control vehicles using the numpad, or vikeys. However, you control their controls, rather than the vehicle directly.",
+      "You control vehicles with the movement keys (WASD and Q/E/Z/C), the arrow keys or the numpad.  However, you control their controls, rather than the vehicle directly.",
       "<HELP_DRAW_DIRECTIONS>",
       "In order to assume control of the vehicle, get to a location with working \"vehicle controls\" and a \"seat\", then press <press_control_vehicle>.  Once you are in control, <press_UP> accelerates, <press_DOWN> slows or reverses, & <press_LEFT> & <press_RIGHT> turn left or right.  Diagonals adjust course and speed.  You default to cruise control, so the gas/brake adjust the speed which the vehicle will attempt to maintain.",
       "10-30 MPH, or 16-48 KPH, is a good speed for beginning drivers, who tend to fumble the controls.  As your Driving skill improves, you will fumble less and less.  To simply maintain course and speed, hit <press_pause>.",
