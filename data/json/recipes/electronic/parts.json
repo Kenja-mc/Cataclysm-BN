@@ -550,38 +550,6 @@
     "components": [ [ [ "medium_battery_cell", 2 ] ], [ [ "scrap", 4 ] ], [ [ "cable", 5 ] ] ]
   },
   {
-    "type": "recipe",
-    "result": "medium_plus_battery_cell",
-    "category": "CC_ELECTRONIC",
-    "subcategory": "CSC_ELECTRONIC_PARTS",
-    "skill_used": "electronics",
-    "skills_required": [ "fabrication", 1 ],
-    "difficulty": 3,
-    "time": "15 m",
-    "reversible": true,
-    "decomp_learn": 3,
-    "book_learn": [ [ "manual_electronics", 2 ], [ "mag_electronics", 2 ] ],
-    "using": [ [ "soldering_standard", 10 ] ],
-    "qualities": [ { "id": "SCREW", "level": 1 } ],
-    "components": [ [ [ "light_plus_battery_cell", 5 ] ], [ [ "scrap", 4 ] ], [ [ "cable", 5 ] ] ]
-  },
-  {
-    "type": "recipe",
-    "result": "heavy_plus_battery_cell",
-    "category": "CC_ELECTRONIC",
-    "subcategory": "CSC_ELECTRONIC_PARTS",
-    "skill_used": "electronics",
-    "skills_required": [ "fabrication", 1 ],
-    "difficulty": 3,
-    "time": "20 m",
-    "reversible": true,
-    "decomp_learn": 3,
-    "book_learn": [ [ "manual_electronics", 2 ], [ "mag_electronics", 2 ] ],
-    "using": [ [ "soldering_standard", 10 ] ],
-    "qualities": [ { "id": "SCREW", "level": 1 } ],
-    "components": [ [ [ "medium_plus_battery_cell", 2 ] ], [ [ "scrap", 4 ] ], [ [ "cable", 5 ] ] ]
-  },
-  {
     "result": "battery_car",
     "type": "recipe",
     "category": "CC_ELECTRONIC",
@@ -640,22 +608,6 @@
     "using": [ [ "soldering_standard", 20 ] ],
     "qualities": [ { "id": "SCREW", "level": 1 } ],
     "components": [ [ [ "storage_battery", 2 ] ], [ [ "e_scrap", 4 ] ], [ [ "scrap", 8 ] ], [ [ "cable", 5 ] ] ]
-  },
-  {
-    "result": "light_minus_atomic_battery_cell",
-    "type": "recipe",
-    "category": "CC_ELECTRONIC",
-    "subcategory": "CSC_ELECTRONIC_PARTS",
-    "skill_used": "electronics",
-    "difficulty": 6,
-    "skills_required": [ "fabrication", 6 ],
-    "time": "60 m",
-    "reversible": true,
-    "decomp_learn": 7,
-    "book_learn": [ [ "recipe_atomic_battery", 6 ], [ "textbook_atomic_lab", 7 ] ],
-    "using": [ [ "soldering_standard", 10 ] ],
-    "qualities": [ { "id": "SCREW", "level": 1 } ],
-    "components": [ [ [ "scrap", 6 ] ], [ [ "cable", 4 ] ], [ [ "plut_cell", 1 ] ] ]
   },
   {
     "result": "light_atomic_battery_cell",

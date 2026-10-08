@@ -798,19 +798,11 @@
     "items": [
       { "x": -3, "y": 0, "chance": 70, "item_groups": [ "fridgesnacks" ] },
       { "x": -3, "y": 0, "chance": 20, "items": [ "foodplace_food" ] },
-      { "x": -3, "y": 0, "chance": 20, "items": [ "foodplace_food" ] },
       { "x": -3, "y": 0, "chance": 60, "item_groups": [ "fridgesnacks" ] },
       { "x": -3, "y": 0, "chance": 50, "item_groups": [ "fridgesnacks" ] },
       { "x": -3, "y": 0, "chance": 30, "item_groups": [ "fridgesnacks" ] },
       { "x": -1, "y": 0, "chance": 60, "item_groups": [ "fridgesnacks" ] },
-      { "x": -1, "y": 0, "chance": 60, "item_groups": [ "fridgesnacks" ] },
-      { "x": -1, "y": 0, "chance": 60, "item_groups": [ "fridgesnacks" ] },
       { "x": -1, "y": 0, "chance": 20, "items": [ "foodplace_food" ] },
-      { "x": -1, "y": 0, "chance": 20, "items": [ "foodplace_food" ] },
-      { "x": -1, "y": 0, "chance": 60, "item_groups": [ "fridgesnacks" ] },
-      { "x": -1, "y": 0, "chance": 70, "item_groups": [ "fast_fridge" ] },
-      { "x": -1, "y": 0, "chance": 70, "item_groups": [ "fast_fridge" ] },
-      { "x": -1, "y": 0, "chance": 70, "item_groups": [ "fast_fridge" ] },
       { "x": -1, "y": 0, "chance": 70, "item_groups": [ "fast_fridge" ] },
       { "x": -1, "y": 0, "chance": 30, "item_groups": [ "fridgesnacks" ] },
       { "x": -3, "y": 2, "chance": 60, "item_groups": [ "snacks" ] },
@@ -835,7 +827,7 @@
       { "x": -3, "y": 2, "chance": 20, "items": [ "armguard_hard" ] },
       { "x": -3, "y": 2, "chance": 20, "items": [ "gloves_rubber" ] },
       { "x": -3, "y": 2, "chance": 20, "items": [ "boots_rubber" ] },
-      { "x": -3, "y": 2, "chance": 20, "items": [ "medium_disposable_cell" ] }
+      { "x": -3, "y": 2, "chance": 20, "items": [ "medium_battery_cell" ] }
     ]
   },
   {
@@ -919,25 +911,6 @@
     ],
     "items": [
       { "x": -3, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -3, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -3, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -3, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -3, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -3, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -3, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -3, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -1, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -1, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -1, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -1, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -1, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -1, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -1, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -1, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -1, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -1, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -1, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
-      { "x": -1, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
       { "x": -1, "y": 0, "chance": 100, "items": [ "foodplace_food" ] },
       { "x": -3, "y": 2, "chance": 20, "item_groups": [ "snacks" ] },
       { "x": -3, "y": 2, "chance": 50, "item_groups": [ "snacks" ] },
@@ -957,7 +930,7 @@
       { "x": -3, "y": 2, "chance": 100, "items": [ "armguard_hard" ] },
       { "x": -3, "y": 2, "chance": 100, "items": [ "gloves_rubber" ] },
       { "x": -3, "y": 2, "chance": 100, "items": [ "boots_rubber" ] },
-      { "x": -3, "y": 2, "chance": 100, "items": [ "medium_disposable_cell" ] }
+      { "x": -3, "y": 2, "chance": 100, "items": [ "medium_battery_cell" ] }
     ]
   },
   {

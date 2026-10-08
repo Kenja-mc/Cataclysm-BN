@@ -638,7 +638,7 @@
       { "item": "water_clean" },
       { "item": "matches" },
       { "item": "pockknife" },
-      { "item": "light_plus_battery_cell", "ammo-item": "battery", "charges": 150, "container-item": "cell_phone" }
+      { "item": "light_battery_cell", "ammo-item": "battery", "charges": 150, "container-item": "cell_phone" }
     ]
   },
   {

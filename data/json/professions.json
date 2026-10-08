@@ -495,27 +495,25 @@
     "type": "item_group",
     "subtype": "collection",
     "id": "charged_flashlight",
-    "entries": [ { "item": "light_disposable_cell", "ammo-item": "battery", "charges": 300, "container-item": "flashlight" } ]
+    "entries": [ { "item": "light_battery_cell", "ammo-item": "battery", "charges": 300, "container-item": "flashlight" } ]
   },
   {
     "type": "item_group",
     "subtype": "collection",
     "id": "charged_two_way_radio",
-    "entries": [ { "item": "light_disposable_cell", "ammo-item": "battery", "charges": 300, "container-item": "two_way_radio" } ]
+    "entries": [ { "item": "light_battery_cell", "ammo-item": "battery", "charges": 300, "container-item": "two_way_radio" } ]
   },
   {
     "type": "item_group",
     "subtype": "collection",
     "id": "charged_headseat",
-    "entries": [
-      { "item": "light_disposable_cell", "ammo-item": "battery", "charges": 300, "container-item": "army_powered_earmuffs" }
-    ]
+    "entries": [ { "item": "light_battery_cell", "ammo-item": "battery", "charges": 300, "container-item": "army_powered_earmuffs" } ]
   },
   {
     "type": "item_group",
     "subtype": "collection",
     "id": "charged_tazer",
-    "entries": [ { "item": "light_disposable_cell", "ammo-item": "battery", "charges": 300, "container-item": "tazer" } ]
+    "entries": [ { "item": "light_battery_cell", "ammo-item": "battery", "charges": 300, "container-item": "tazer" } ]
   },
   {
     "type": "item_group",
@@ -1793,7 +1791,7 @@
           "boots_rubber"
         ],
         "entries": [
-          { "item": "medium_disposable_cell", "ammo-item": "battery", "charges": 1500, "container-item": "foodperson_mask" },
+          { "item": "medium_battery_cell", "ammo-item": "battery", "charges": 1500, "container-item": "foodperson_mask" },
           { "group": "snacks_fancy" },
           { "group": "snacks" },
           { "item": "bat", "custom-flags": [ "auto_wield" ] }
@@ -2406,7 +2404,7 @@
           "wristwatch",
           "canteen",
           "molle_pack",
-          "light_disposable_cell"
+          "light_battery_cell"
         ],
         "entries": [
           { "group": "charged_headseat", "custom-flags": [ "no_auto_equip" ] },
@@ -4625,7 +4623,7 @@
           "rollmat"
         ],
         "entries": [
-          { "item": "medium_plus_battery_cell", "ammo-item": "battery", "charges": 750, "container-item": "mil_mess_kit" },
+          { "item": "medium_battery_cell", "ammo-item": "battery", "charges": 750, "container-item": "mil_mess_kit" },
           { "group": "charged_two_way_radio" },
           { "item": "ear_plugs", "custom-flags": [ "no_auto_equip" ] },
           { "item": "knife_hunting", "container-item": "sheath" },
@@ -5027,9 +5025,7 @@
     "items": {
       "both": {
         "items": [ "socks", "tank_top", "wolfsuit", "mbag", "sewing_kit", "water_clean", "smart_phone" ],
-        "entries": [
-          { "item": "light_plus_battery_cell", "ammo-item": "battery", "charges": 150, "container-item": "thermal_cooling_suit" }
-        ]
+        "entries": [ { "item": "light_battery_cell", "ammo-item": "battery", "charges": 150, "container-item": "thermal_cooling_suit" } ]
       },
       "male": [ "briefs" ],
       "female": [ "sports_bra", "boy_shorts" ]
@@ -6235,12 +6231,7 @@
             "charges": [ 1, 30 ],
             "contents-item": [ "shoulder_strap", "holo_sight" ]
           },
-          {
-            "item": "medium_plus_battery_cell",
-            "ammo-item": "battery",
-            "charges": 750,
-            "container-item": "mil_mess_kit"
-          },
+          { "item": "medium_battery_cell", "ammo-item": "battery", "charges": 750, "container-item": "mil_mess_kit" },
           { "group": "charged_two_way_radio" },
           { "item": "modularvestceramic", "contents-group": "army_mags_m4" }
         ]
@@ -7031,7 +7022,7 @@
     "items": {
       "both": {
         "items": [ "pants", "dress_shirt", "smart_phone", "blazer", "socks", "dress_shoes", "wristwatch", "pen", "mbag" ],
-        "entries": [ { "item": "light_disposable_cell", "ammo-item": "battery", "charges": 300, "container-item": "camera_pro" } ]
+        "entries": [ { "item": "light_battery_cell", "ammo-item": "battery", "charges": 300, "container-item": "camera_pro" } ]
       },
       "male": [ "boxer_shorts" ],
       "female": [ "boy_shorts", "bra" ]
@@ -7178,8 +7169,8 @@
         "entries": [
           { "item": "ear_plugs", "custom-flags": [ "no_auto_equip" ] },
           { "item": "jackhammer", "charges": 400 },
-          { "item": "light_minus_disposable_cell", "charges": 150 },
-          { "item": "light_minus_disposable_cell", "charges": 150, "container-item": "miner_hat" }
+          { "item": "light_battery_cell", "charges": 150 },
+          { "item": "light_battery_cell", "charges": 150, "container-item": "miner_hat" }
         ]
       },
       "male": [ "boxer_shorts" ],
@@ -8396,13 +8387,8 @@
         ],
         "entries": [
           { "item": "smart_phone" },
-          { "item": "light_disposable_cell", "ammo-item": "battery", "charges": 300, "container-item": "camera_pro" },
-          {
-            "item": "light_disposable_cell",
-            "ammo-item": "battery",
-            "charges": 300,
-            "container-item": "wearable_light"
-          }
+          { "item": "light_battery_cell", "ammo-item": "battery", "charges": 300, "container-item": "camera_pro" },
+          { "item": "light_battery_cell", "ammo-item": "battery", "charges": 300, "container-item": "wearable_light" }
         ]
       },
       "male": [ "briefs" ],

@@ -191,6 +191,13 @@ def test_magnet_pull_through_monster(g):
     g.lua("for dx=-6,6 do for dy=-6,6 do local m=gapi.get_monster_at(here(dx,dy)) if m then m:set_pos_ms(here(40,40)) end end end out('ok')")
 
 
+def test_unified_batteries(g):
+    """Battery variants merged into light/medium/heavy cells plus atomic ones."""
+    out = g.lua("out(ItypeId.new('light_minus_battery_cell'):is_valid(), ItypeId.new('heavy_disposable_cell'):is_valid(), "
+                "ItypeId.new('light_battery_cell'):is_valid(), ItypeId.new('light_atomic_battery_cell'):is_valid())")
+    assert out == ["false,false,true,true"], out
+
+
 def test_rounded_frames(g):
     g.keys("i", delay=1)
     s = g.screen()
@@ -198,7 +205,7 @@ def test_rounded_frames(g):
     assert "╭" in s and "╯" in s, "inventory window should have rounded corners"
 
 
-TESTS = [test_welcome_card, test_controls_strip, test_wasd_movement, test_wait_keeps_position,
+TESTS = [test_welcome_card, test_controls_strip, test_unified_batteries, test_wasd_movement, test_wait_keeps_position,
          test_quick_stack, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
          test_aim_defaults, test_recraft_after_reload, test_magnet_pull_through_monster]
 

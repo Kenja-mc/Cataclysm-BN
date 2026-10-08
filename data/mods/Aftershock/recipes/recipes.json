@@ -90,7 +90,7 @@
     "qualities": [ { "id": "SCREW_FINE", "level": 1 } ],
     "components": [
       [ [ "plastic_chunk", 1 ] ],
-      [ [ "light_minus_battery_cell", 1 ] ],
+      [ [ "light_battery_cell", 1 ] ],
       [ [ "cable", 5 ] ],
       [ [ "circuit", 1 ] ],
       [ [ "scrap", 1 ] ]

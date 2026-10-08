@@ -2818,12 +2818,8 @@
         "battery",
         [
           "medium_battery_cell",
-          "medium_plus_battery_cell",
-          "medium_disposable_cell",
           "medium_atomic_battery_cell",
           "heavy_battery_cell",
-          "heavy_plus_battery_cell",
-          "heavy_disposable_cell",
           "heavy_atomic_battery_cell",
           "small_storage_battery",
           "medium_storage_battery",
@@ -2867,12 +2863,8 @@
         "battery",
         [
           "medium_battery_cell",
-          "medium_plus_battery_cell",
-          "medium_disposable_cell",
           "medium_atomic_battery_cell",
           "heavy_battery_cell",
-          "heavy_plus_battery_cell",
-          "heavy_disposable_cell",
           "heavy_atomic_battery_cell",
           "small_storage_battery",
           "medium_storage_battery",
@@ -3136,12 +3128,7 @@
     "ammo": "battery",
     "power_draw": 9000,
     "revert_to": "dab_pen",
-    "magazines": [
-      [
-        "battery",
-        [ "light_minus_battery_cell", "light_minus_disposable_cell", "light_battery_cell", "light_disposable_cell" ]
-      ]
-    ],
+    "magazines": [ [ "battery", [ "light_battery_cell" ] ] ],
     "charges_per_use": 1,
     "max_charges": 100,
     "use_action": {
@@ -3323,12 +3310,8 @@
         "battery",
         [
           "medium_battery_cell",
-          "medium_plus_battery_cell",
-          "medium_disposable_cell",
           "medium_atomic_battery_cell",
           "heavy_battery_cell",
-          "heavy_plus_battery_cell",
-          "heavy_disposable_cell",
           "heavy_atomic_battery_cell",
           "small_storage_battery",
           "medium_storage_battery",
@@ -3372,12 +3355,8 @@
         "battery",
         [
           "medium_battery_cell",
-          "medium_plus_battery_cell",
-          "medium_disposable_cell",
           "medium_atomic_battery_cell",
           "heavy_battery_cell",
-          "heavy_plus_battery_cell",
-          "heavy_disposable_cell",
           "heavy_atomic_battery_cell",
           "small_storage_battery",
           "medium_storage_battery",
@@ -3411,12 +3390,8 @@
         "battery",
         [
           "medium_battery_cell",
-          "medium_plus_battery_cell",
-          "medium_disposable_cell",
           "medium_atomic_battery_cell",
           "heavy_battery_cell",
-          "heavy_plus_battery_cell",
-          "heavy_disposable_cell",
           "heavy_atomic_battery_cell",
           "small_storage_battery",
           "medium_storage_battery",
@@ -3461,12 +3436,8 @@
         "battery",
         [
           "medium_battery_cell",
-          "medium_plus_battery_cell",
-          "medium_disposable_cell",
           "medium_atomic_battery_cell",
           "heavy_battery_cell",
-          "heavy_plus_battery_cell",
-          "heavy_disposable_cell",
           "heavy_atomic_battery_cell",
           "small_storage_battery",
           "medium_storage_battery",
@@ -3628,12 +3599,7 @@
       }
     ],
     "flags": [ "ALLOWS_REMOTE_USE" ],
-    "magazines": [
-      [
-        "battery",
-        [ "medium_battery_cell", "medium_plus_battery_cell", "medium_atomic_battery_cell", "medium_disposable_cell" ]
-      ]
-    ]
+    "magazines": [ [ "battery", [ "medium_battery_cell", "medium_atomic_battery_cell" ] ] ]
   },
   {
     "id": "lobster",
