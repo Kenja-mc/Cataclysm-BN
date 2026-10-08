@@ -58,6 +58,7 @@
 #include "shape_impl.h"
 #include "skill.h"
 #include "sounds.h"
+#include "stack_modifier.h"
 #include "string_formatter.h"
 #include "string_id.h"
 #include "translations.h"
@@ -172,6 +173,21 @@ static const std::string flag_SHOOT_ME( "SHOOT_ME" );
 static constexpr int AIF_DURATION_LIMIT = 10;
 
 static projectile make_gun_projectile( const item &gun );
+
+namespace
+{
+
+/// Draws the round about to fire; it may be one of a stack's modified units (black powder and so on).
+auto next_round_modifier( item &gun ) -> std::optional<stack_modifier_id>
+{
+    if( item *mag = gun.magazine_current(); mag && !mag->contents.empty() ) {
+        auto &round = mag->contents.front();
+        return stack_modifiers::take_one( round, round.charges );
+    }
+    return stack_modifiers::take_one( gun, gun.charges );
+}
+
+} // namespace
 static void cycle_action( item &weap, const tripoint_bub_ms &pos );
 static dispersion_sources calculate_dispersion( const map &m, const Character &who, const item &gun,
         int at_recoil, bool burst );
@@ -1356,6 +1372,7 @@ int ranged::fire_gun( Character &who, const tripoint_bub_ms &target, int max_sho
     const auto recoil_origin = shot_origin.value_or( who.bub_pos() );
     int curshot = 0;
     int hits = 0; // total shots on target
+    auto round_recoil = 1.0f;
     while( curshot != shots ) {
         if( !!ammo && !gun.ammo_remaining() ) {
             gun.reload( get_avatar(), *ammo, 1 );
@@ -1374,7 +1391,18 @@ int ranged::fire_gun( Character &who, const tripoint_bub_ms &target, int max_sho
         const vehicle *in_veh = who.has_effect( effect_on_roof )
                                 ? veh_pointer_or_null( here.veh_at( who.bub_pos() ) )
                                 : nullptr;
+        const auto round_mod = gun.ammo_required() ? next_round_modifier( gun ) : std::nullopt;
         projectile projectile = make_gun_projectile( gun );
+        auto shot_dispersion = dispersion;
+        round_recoil = 1.0f;
+        if( round_mod ) {
+            for( auto &du : projectile.impact ) {
+                du.amount *= ( *round_mod )->damage;
+                du.res_pen *= ( *round_mod )->armor_penetration;
+            }
+            shot_dispersion.add_multiplier( ( *round_mod )->dispersion );
+            round_recoil = ( *round_mod )->recoil;
+        }
         const auto shot_count = get_shot_count( gun );
         const auto shot_half_angle = get_shot_half_angle( gun );
 
@@ -1430,10 +1458,10 @@ int ranged::fire_gun( Character &who, const tripoint_bub_ms &target, int max_sho
                 .source = who.bub_pos(),
                 .target = aim,
                 .proj = projectile,
-                .dispersion = dispersion,
+                .dispersion = shot_dispersion,
             } ) : aim;
             const auto pellet_dispersion = shot_count > 1 ? dispersion_sources {} :
-                                           dispersion;
+                                           shot_dispersion;
             for( int projectile_index = 0; projectile_index < shot_count; projectile_index++ ) {
                 const auto pellet_target = shot_count > 1 ? get_pellet_target( {
                     .source = who.bub_pos(),
@@ -1480,7 +1508,7 @@ int ranged::fire_gun( Character &who, const tripoint_bub_ms &target, int max_sho
             }
         } else {
             // 30 degree cap, like for projectiles
-            double angle_offset_arcmin = std::min( dispersion.roll(), 1800.0 ) * ( one_in( 2 ) ? 1 : -1 );
+            double angle_offset_arcmin = std::min( shot_dispersion.roll(), 1800.0 ) * ( one_in( 2 ) ? 1 : -1 );
             double angle_offset = units::to_radians( units::from_arcmin( angle_offset_arcmin ) );
             double dx = aim.x() - who.bub_pos().x();
             double dy = aim.y() - who.bub_pos().y();
@@ -1536,7 +1564,8 @@ int ranged::fire_gun( Character &who, const tripoint_bub_ms &target, int max_sho
         const Character &shooter = who;
         // Now actually apply recoil for the future shots
         // But only for one shot, because bursts kinda suck
-        int gun_recoil = gun.gun_recoil( ranged::can_use_heavy_weapon( shooter, here, shooter.bub_pos() ) );
+        int gun_recoil = gun.gun_recoil( ranged::can_use_heavy_weapon( shooter, here, shooter.bub_pos() ) ) *
+                         round_recoil;
 
         // If user is currently able to fire a mounted gun freely, penalize dispersion
         // HEAVY_WEAPON_SUPPORT flag has highest penalty, Large mutants lower penalty, no penalty for Huge mutants.

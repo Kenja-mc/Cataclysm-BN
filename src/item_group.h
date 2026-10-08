@@ -194,6 +194,9 @@ class Item_modifier
          */
         std::vector<flag_id> custom_flags;
 
+        /** Item variant to spawn, e.g. a gold ring rather than any ring. */
+        std::string variant;
+
         /**
          * Custom functions to be applied to the item after its creation.
          */

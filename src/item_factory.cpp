@@ -51,6 +51,8 @@ class player;
 #include "relic.h"
 #include "requirements.h"
 #include "skill.h"
+#include "item_variant.h"
+#include "stack_modifier.h"
 #include "string_formatter.h"
 #include "string_id.h"
 #include "string_utils.h"
@@ -2993,6 +2995,8 @@ void Item_factory::load_migration( const JsonObject &jo )
     assign( jo, "flags", m.flags );
     assign( jo, "charges", m.charges );
     assign( jo, "contents", m.contents );
+    assign( jo, "stack_modifier", m.stack_modifier );
+    assign( jo, "variant", m.variant );
 
     if( jo.has_string( "id" ) ) {
         jo.read( "id", m.id, true );
@@ -3024,6 +3028,13 @@ void Item_factory::migrate_item( const itype_id &id, item &obj )
         }
         if( iter->second.charges > 0 ) {
             obj.charges = iter->second.charges;
+        }
+        if( !iter->second.variant.empty() ) {
+            item_variants::set( obj, iter->second.variant );
+        }
+        if( !iter->second.stack_modifier.empty() ) {
+            stack_modifiers::set_count( obj, stack_modifier_id( iter->second.stack_modifier ),
+                                        std::max( obj.charges, 1 ) );
         }
 
         obj.contents.migrate_item( obj, iter->second.contents );
@@ -3391,6 +3402,7 @@ void Item_factory::add_entry( Item_group &ig, const JsonObject &obj )
     use_modifier |= load_sub_ref( modifier.container, obj, "container", ig );
     use_modifier |= load_sub_ref( modifier.contents, obj, "contents", ig );
     use_modifier |= load_active( modifier.postprocess_fns, obj );
+    use_modifier |= obj.read( "variant", modifier.variant );
 
     std::vector<std::string> custom_flags;
     use_modifier |= load_string( custom_flags, obj, "custom-flags" );

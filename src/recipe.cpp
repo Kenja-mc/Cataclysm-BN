@@ -9,11 +9,13 @@
 #include "flat_set.h"
 #include "game_constants.h"
 #include "item.h"
+#include "item_variant.h"
 #include "itype.h"
 #include "json.h"
 #include "mapgen/mapgen_functions.h"
 #include "output.h"
 #include "skill.h"
+#include "stack_modifier.h"
 #include "string_formatter.h"
 #include "string_id.h"
 #include "string_id_utils.h"
@@ -140,6 +142,8 @@ void recipe::load( const JsonObject &jo, const std::string &src )
 
     assign( jo, "charges", charges );
     assign( jo, "result_mult", result_mult );
+    assign( jo, "result_stack_modifier", result_stack_modifier );
+    assign( jo, "result_variant", result_variant );
 
     assign( jo, "skill_used", skill_used, strict );
     if( difficulty != 0 && !skill_used ) {
@@ -336,6 +340,10 @@ std::string recipe::get_consistency_error() const
         return "defines invalid result";
     }
 
+    if( !result_variant.empty() && item_variants::find( result_, result_variant ) == nullptr ) {
+        return "makes an unknown variant of its result";
+    }
+
     if( charges && !item::count_by_charges( result_ ) ) {
         return "specifies charges but result is not counted by charges";
     }
@@ -397,6 +405,12 @@ detached_ptr<item> recipe::create_result() const
         // TODO: Make it work for charge-less items (update makes amount)
         newit->charges *= result_mult;
     }
+    if( !result_stack_modifier.empty() ) {
+        stack_modifiers::set_count( *newit, stack_modifier_id( result_stack_modifier ), newit->charges );
+    }
+    if( !result_variant.empty() ) {
+        item_variants::set( *newit, result_variant );
+    }
 
     // Show crafted items as fitting
     // They might end up not fitting, but it's rare
@@ -425,6 +439,9 @@ std::vector<detached_ptr<item>> recipe::create_results( int batch ) const
     } else {
         detached_ptr<item> newit = create_result();
         newit->charges *= batch;
+        if( !result_stack_modifier.empty() ) {
+            stack_modifiers::set_count( *newit, stack_modifier_id( result_stack_modifier ), newit->charges );
+        }
         items.push_back( std::move( newit ) );
     }
 
@@ -542,6 +559,12 @@ std::string recipe::batch_savings_string() const
 auto recipe::result_name( const bool decorated ) const -> std::string
 {
     auto name = nested_name.empty() ? item::nname( result_ ) : nested_name;
+    if( !result_stack_modifier.empty() ) {
+        name = string_format( "%s (%s)", name, stack_modifier_id( result_stack_modifier )->name );
+    }
+    if( const auto *variant = item_variants::find( result_, result_variant ) ) {
+        name = variant->name.translated();
+    }
     if( decorated && uistate.favorite_recipes.contains( this->ident() ) ) {
         name = "* " + name;
     }

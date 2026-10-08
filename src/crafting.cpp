@@ -51,6 +51,8 @@
 #include "ret_val.h"
 #include "rng.h"
 #include "skill.h"
+#include "item_variant.h"
+#include "stack_modifier.h"
 #include "string_formatter.h"
 #include "string_id.h"
 #include "string_input_popup.h"
@@ -2086,6 +2088,14 @@ ret_val<bool> crafting::can_disassemble( const Character &who, const item &obj,
         return ret_val<bool>::make_failure( _( "You cannot disassemble this." ) );
     }
 
+    // Modified units were made from different components than the base recipe returns.
+    for( const auto &m : stack_modifiers::on( obj ) ) {
+        if( m.id->blocks_disassembly ) {
+            return ret_val<bool>::make_failure( string_format( _( "Some of these are %s; they can't be taken apart for parts." ),
+                                                m.id->name ) );
+        }
+    }
+
     // check sufficient light
     if( lighting_crafting_speed_multiplier( who, r ) == 0.0f ) {
         return ret_val<bool>::make_failure( _( "You can't see to craft!" ) );
@@ -2392,6 +2402,18 @@ void crafting::complete_disassemble( Character &who, const iuse_location &target
                 components.push_back( item::spawn( *newit ) );
             }
         }
+        // The variant's own parts, such as the metal and gem of a ring.
+        for( const auto &extra : item_variants::disassembly_extras( dis_item ) ) {
+            auto part = item::spawn( extra.id, calendar::turn );
+            if( part->count_by_charges() ) {
+                part->charges = extra.count * target.count;
+                components.push_back( std::move( part ) );
+            } else {
+                for( auto i = 0; i < extra.count * target.count; i++ ) {
+                    components.push_back( item::spawn( *part ) );
+                }
+            }
+        }
     }
 
     std::vector<detached_ptr<item>> drop_items;
@@ -2477,6 +2499,7 @@ void remove_ammo( item &dis_item, Character &who )
     }
     if( dis_item.is_gun() && !dis_item.ammo_current().is_null() ) {
         detached_ptr<item> ammodrop = item::spawn( dis_item.ammo_current(), calendar::turn );
+        stack_modifiers::transfer( dis_item, *ammodrop, dis_item.charges );
         ammodrop->charges = dis_item.charges;
         drop_or_handle( std::move( ammodrop ), who );
         dis_item.charges = 0;

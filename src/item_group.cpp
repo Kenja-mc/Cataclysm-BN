@@ -14,6 +14,7 @@
 #include "game_constants.h"
 #include "item.h"
 #include "item_factory.h"
+#include "item_variant.h"
 #include "itype.h"
 #include "iuse_actor.h"
 #include "json.h"
@@ -152,6 +153,10 @@ void Single_item_creator::check_consistency( const std::string &context ) const
         // this is okay, it will be ignored
     } else {
         debugmsg( "Unknown type of Single_item_creator: %d", static_cast<int>( type ) );
+    }
+    if( modifier && !modifier->variant.empty() && type == S_ITEM &&
+        item_variants::find( itype_id( id ), modifier->variant ) == nullptr ) {
+        debugmsg( "item %s has no variant %s (in %s)", id, modifier->variant, context );
     }
     if( modifier ) {
         modifier->check_consistency( context );
@@ -491,6 +496,10 @@ detached_ptr<item> Item_modifier::modify( detached_ptr<item> &&new_item ) const
         } else if( one_in( 10 ) && !new_item->has_flag( flag_NEEDS_NO_LUBE ) ) {
             new_item->faults.emplace( "fault_gun_unlubricated" );
         }
+    }
+
+    if( !variant.empty() ) {
+        item_variants::set( *new_item, variant );
     }
 
     // create container here from modifier or from default to get max charges later
