@@ -980,7 +980,7 @@ void Creature::deal_projectile_attack( Creature *source, item *source_weapon,
         // Doing this here because checking if a magic projectile is attached causes issues.
         const double sender_skill = ( thrownattack ) ? sender->get_skill_level(
                                         skill_throw ) :
-                                    ( source_weapon->is_gun() ) ? sender->get_skill_level(
+                                    ( source_weapon && source_weapon->is_gun() ) ? sender->get_skill_level(
                                         source_weapon->gun_skill() ) : 0.0;
         const double stat_adjust = 0.05 * ( ( sender_dex ) + ( sender_per ) - 16 );
         // Use a different forumla for stamina percentage if the sender is an NPC rather than the player.
