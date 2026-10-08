@@ -7,6 +7,7 @@
 #include "map/map.h"
 #include "options.h"
 #include "output.h"
+#include "tile_selection.h"
 #include "panels.h"
 #include "translations.h"
 #include "ui_manager.h"
@@ -65,6 +66,9 @@ void live_view::show( const tripoint_bub_ms &p )
             g->pre_print_all_tile_info( mouse_position, win, line_out, getmaxy( win ) - 2, cache );
             draw_border( win );
             center_print( win, 0, c_white, _( "< <color_green>Mouse View</color> >" ) );
+            if( const auto hint = tile_selection::hint(); !hint.empty() ) {
+                center_print( win, getmaxy( win ) - 1, c_light_green, "< " + hint + " >" );
+            }
             wnoutrefresh( win );
         } );
     }

@@ -35,8 +35,14 @@ Walking into an enemy no longer attacks it. It tells you to press `F`, so a stra
 starts a fight (Options → Interface → Attack by walking into enemies turns bump attacks back on).
 Walking into a closed door still opens it.
 
-The mouse works alongside the keyboard in the terminal: click a tile to preview the route, click
-again to walk there, and right-click to examine or act on what is there.
+**Mouse tile selection**, inspired by Sword of the Stars: The Pit, works in the terminal too.
+- **Hover:** hovering a map tile highlights it, draws the route there, and opens the Mouse View box
+  with what is on the tile and what a click will do ("click: attack the zombie", "click: walk here
+  (12 steps)").
+- **Left click** does that: attack an adjacent enemy, open a door, pick up items, examine
+  furniture, or walk there in one click.
+- **Right click** lists every option for the tile (fire at, close, examine, pick up, walk…).
+- Turn it off under Options → Interface → Mouse tile selection to get the old two-click travel back.
 
 When aiming: `f`/Enter fires, `x` aims one step, `u` `i` `o` pick aimed, careful or precise shots
 (more care, left to right), `r` switches ammo, `F` or `m` switches fire mode.

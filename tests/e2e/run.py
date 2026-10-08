@@ -240,8 +240,40 @@ def test_click_to_travel(g):
     start = bub_pos(g)
     x, y = g.find("@")
     g.click(x + 3, y)
-    g.click(x + 3, y)
     assert wait_until(lambda: bub_pos(g) == (start[0] + 3, start[1], start[2]), timeout=15), (start, bub_pos(g))
+
+
+def test_hover_says_what_a_click_does(g):
+    """Sword of the Stars: The Pit style: hovering a tile highlights it and names the click action."""
+    arena(g)
+    settle(g)
+    x, y = g.find("@")
+    g.hover(x + 3, y)
+    assert "click: walk here (3 steps)" in g.screen(), g.screen()
+
+
+def test_click_attacks_an_adjacent_enemy(g):
+    arena(g)
+    assert g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(1,0)) out('ok')") == ["ok"]
+    settle(g)
+    before = zombie_hp(g)
+    x, y = g.find("@")
+    g.hover(x + 1, y)
+    assert "click: attack" in g.screen(), g.screen()
+    for _ in range(6):
+        g.click(x + 1, y)
+        if zombie_hp(g) != before:
+            break
+    assert zombie_hp(g) != before, "clicking an adjacent enemy attacks it"
+
+
+def test_right_click_lists_actions(g):
+    x, y = g.find("@")
+    g.click(x + 1, y, button=2)
+    s = g.screen()
+    g.keys("Escape", delay=0.6)
+    assert "attack" in s, s
+    g.lua("local m=gapi.get_monster_at(here(1,0)) if m then m:set_pos_ms(here(40,40)) end out('ok')")
 
 
 def test_black_powder_rounds_stack(g):
@@ -372,7 +404,7 @@ def test_rounded_frames(g):
 
 TESTS = [test_welcome_card, test_controls_strip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
          test_quick_stack, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
-         test_aim_defaults, test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel,
+         test_aim_defaults, test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions,
          test_magnet_pull_through_monster, test_classic_control_scheme]
 
 

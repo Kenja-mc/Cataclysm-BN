@@ -1,3 +1,4 @@
+#include <cstdio>
 #if !(defined(TILES) || defined(_WIN32))
 
 // input.h must be include *before* the ncurses header. The latter has some macro
@@ -282,6 +283,8 @@ void catacurses::erase()
 
 void catacurses::endwin()
 {
+    std::fputs( "\033[?1003l", stdout );
+    std::fflush( stdout );
     return curses_check_result( ::endwin(), OK, "endwin" );
 }
 
@@ -451,6 +454,9 @@ void catacurses::init_interface()
 #if !defined(__CYGWIN__)
     // ncurses mouse registration
     mousemask( BUTTON1_CLICKED | BUTTON3_CLICKED | REPORT_MOUSE_POSITION, nullptr );
+    // Ask the terminal for motion events too, so hovering the map works (any-event tracking).
+    std::fputs( "\033[?1003h", stdout );
+    std::fflush( stdout );
 #endif
     // our curses wrapper does not support changing this behavior, ncurses must
     // behave exactly like the wrapper, therefor:

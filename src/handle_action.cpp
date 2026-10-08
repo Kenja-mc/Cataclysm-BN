@@ -82,6 +82,7 @@
 #include "string_id.h"
 #include "string_input_popup.h"
 #include "string_utils.h"
+#include "tile_selection.h"
 #include "translations.h"
 #include "travel/travel_destination.h"
 #include "type_id.h"
@@ -2029,7 +2030,28 @@ bool game::handle_action()
             }
             mouse_target = mouse_pos;
 
-            if( act == ACTION_SELECT ) {
+            if( tile_selection::enabled() ) {
+                const auto choices = tile_selection::choices_at( u, *mouse_target );
+                auto picked = std::optional<tile_selection::choice>();
+                if( act == ACTION_SELECT && !choices.empty() ) {
+                    picked = choices.front();
+                } else if( act == ACTION_SEC_SELECT && !choices.empty() ) {
+                    auto menu = uilist();
+                    menu.title = m.name( *mouse_target );
+                    for( const auto &c : choices ) {
+                        menu.addentry( -1, true, MENU_AUTOASSIGN, c.label );
+                    }
+                    menu.query();
+                    if( menu.ret >= 0 && menu.ret < static_cast<int>( choices.size() ) ) {
+                        picked = choices[menu.ret];
+                    }
+                }
+                tile_selection::clear_hover();
+                act = picked ? tile_selection::resolve( u, m, *picked, *mouse_target ) : ACTION_NULL;
+                if( act == ACTION_NULL ) {
+                    return false;
+                }
+            } else if( act == ACTION_SELECT ) {
                 if( !avatar_knows_travel_destination( u, *mouse_target ) ) {
                     return false;
                 }
@@ -2560,7 +2582,11 @@ bool game::handle_action()
                 break;
 
             case ACTION_ATTACK:
-                avatar_action::attack_in_direction( u, get_map() );
+                if( mouse_target ) {
+                    avatar_action::attack_at( u, get_map(), *mouse_target - u.bub_pos() );
+                } else {
+                    avatar_action::attack_in_direction( u, get_map() );
+                }
                 break;
 
             case ACTION_SORT_PILE:

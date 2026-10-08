@@ -1918,6 +1918,11 @@ void options_manager::add_options_interface()
     { { "modern", translate_marker( "Modern (WASD)" ) }, { "classic", translate_marker( "Classic" ) } },
     "modern" );
 
+    add( "MOUSE_TILE_SELECTION", interface, translate_marker( "Mouse tile selection" ),
+         translate_marker( "If true, hovering a map tile highlights it, previews the route and says what a click does.  Left click attacks, opens, picks up, examines or walks there; right click lists every option." ),
+         true
+       );
+
     add( "BUMP_ATTACK", interface, translate_marker( "Attack by walking into enemies" ),
          translate_marker( "If true, moving into a hostile creature attacks it.  If false, use the attack command instead, so a stray step never starts a fight." ),
          false

@@ -160,6 +160,7 @@
 #include "string_input_popup.h"
 #include "thread_pool.h"
 #include "tileray.h"
+#include "tile_selection.h"
 #include "timed_event.h"
 #include "translations.h"
 #include "trap.h"
@@ -3467,6 +3468,7 @@ bool game::handle_mouseview( input_context &ctxt, std::string &action )
                 liveview_pos.reset();
                 liveview.hide();
             }
+            tile_selection::hover( u, m, mouse_pos );
             {
                 ZoneScopedN( "handle_mouseview_redraw" );
                 ui_manager::redraw();
@@ -3478,6 +3480,7 @@ bool game::handle_mouseview( input_context &ctxt, std::string &action )
         // Keyboard event, break out of animation loop
         ZoneScopedN( "handle_mouseview_hide_liveview" );
         liveview.hide();
+        tile_selection::clear_hover();
         return false;
     }
 
@@ -5027,6 +5030,15 @@ void game::draw_ter( const tripoint_bub_ms &center, const bool looking, const bo
         mvwputch( w_terrain, final_destination.xy().raw() - u.view_offset.xy().raw() + point(
                       POSX - u.bub_pos().x(),
                       POSY - u.bub_pos().y() ), c_white, 'X' );
+    }
+
+    if( const auto hovered = tile_selection::hovered(); hovered && !looking && u.view_offset.z() == 0 ) {
+        // Mouse tile selection: the route the click would walk, then the tile itself highlighted.
+        const auto &path = tile_selection::hover_path();
+        if( !path.empty() ) {
+            draw_line( path.back(), u.bub_pos() + u.view_offset, path, true );
+        }
+        m.drawsq( w_terrain, *hovered, drawsq_params().highlight( true ).center( center ) );
     }
 
     if( ( u.controlling_vehicle || remoteveh() ) && !looking ) {
