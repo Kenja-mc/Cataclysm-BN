@@ -41,7 +41,6 @@
 #endif
 
 #include <algorithm>
-#include <cmath>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -1651,27 +1650,6 @@ void inventory_selector::draw_header( const catacurses::window &w ) const
     }
 }
 
-namespace
-{
-
-/// Small fill meter, green while comfortable and red when full.
-auto capacity_bar( const int cur_value, const int max_value ) -> std::string
-{
-    constexpr auto cells = 8;
-    // No storage at all reads as empty rather than full.
-    const auto ratio = max_value > 0 ? static_cast<double>( cur_value ) / max_value : cur_value > 0 ? 1.0 : 0.0;
-    const auto filled = std::clamp( static_cast<int>( std::lround( ratio * cells ) ), 0, cells );
-    const auto color = ratio >= 0.9 ? c_light_red : ratio >= 0.6 ? c_yellow : c_light_green;
-    auto full = std::string();
-    auto empty = std::string();
-    for( auto i = 0; i < cells; i++ ) {
-        ( i < filled ? full : empty ) += i < filled ? "\u2588" : "\u2591";
-    }
-    return colorize( full, color ) + colorize( empty, c_dark_gray );
-}
-
-} // namespace
-
 inventory_selector::stat display_stat( const std::string &caption, int cur_value, int max_value,
                                        const std::function<std::string( int )> &disp_func )
 {
@@ -1679,7 +1657,7 @@ inventory_selector::stat display_stat( const std::string &caption, int cur_value
     return {{
             caption,
             colorize( disp_func( cur_value ), color ), "/",
-            colorize( disp_func( max_value ), c_light_gray ) + " " + capacity_bar( cur_value, max_value )
+            colorize( disp_func( max_value ), c_light_gray )
         }};
 }
 

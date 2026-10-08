@@ -65,7 +65,7 @@ longer move you.
 - Rounded window corners in the terminal version (Options → Graphics → Rounded window corners).
   Borders are drawn as real Unicode in UTF-8 terminals, which many terminals render better than the
   old line-drawing character set. Map walls keep square corners.
-- Quieter main menu, capacity meters in the inventory header, and a clearer pick-up list.
+- Quieter main menu and a clearer pick-up list.
 
 ## Items and storage
 
