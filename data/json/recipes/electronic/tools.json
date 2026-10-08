@@ -642,13 +642,7 @@
     "components": [
       [ [ "antenna", 1 ] ],
       [ [ "pilot_light", 1 ] ],
-      [
-        [ "light_minus_battery_cell", 1 ],
-        [ "light_minus_disposable_cell", 1 ],
-        [ "light_battery_cell", 1 ],
-        [ "light_disposable_cell", 1 ],
-        [ "light_plus_battery_cell", 1 ]
-      ],
+      [ [ "light_battery_cell", 1 ] ],
       [ [ "amplifier", 1 ] ],
       [ [ "cable", 2 ] ]
     ]
@@ -666,82 +660,6 @@
     "autolearn": true,
     "qualities": [ { "id": "CUT", "level": 1 } ],
     "components": [ [ [ "cable", 50 ], [ "jumper_cable", 1 ] ], [ [ "scrap", 2 ] ] ]
-  },
-  {
-    "type": "recipe",
-    "result": "light_minus_disposable_cell",
-    "category": "CC_ELECTRONIC",
-    "subcategory": "CSC_ELECTRONIC_TOOLS",
-    "skill_used": "cooking",
-    "skills_required": [ "electronics", 5 ],
-    "difficulty": 6,
-    "time": "45 m",
-    "book_learn": [ [ "adv_chemistry", 6 ], [ "reference_cooking", 6 ] ],
-    "using": [ [ "blacksmithing_intermediate", 1 ] ],
-    "components": [
-      [ [ "chem_manganese_dioxide", 29 ] ],
-      [ [ "zinc_metal", 2 ] ],
-      [ [ "chem_potassium_hydroxide", 7 ] ],
-      [ [ "water_clean", 1 ] ],
-      [ [ "steel_chunk", 1 ], [ "scrap", 2 ] ]
-    ]
-  },
-  {
-    "type": "recipe",
-    "result": "light_disposable_cell",
-    "category": "CC_ELECTRONIC",
-    "subcategory": "CSC_ELECTRONIC_TOOLS",
-    "skill_used": "cooking",
-    "skills_required": [ "electronics", 5 ],
-    "difficulty": 6,
-    "time": "1 h",
-    "book_learn": [ [ "adv_chemistry", 6 ], [ "reference_cooking", 6 ] ],
-    "using": [ [ "blacksmithing_intermediate", 1 ] ],
-    "components": [
-      [ [ "chem_manganese_dioxide", 87 ] ],
-      [ [ "zinc_metal", 6 ] ],
-      [ [ "chem_potassium_hydroxide", 20 ] ],
-      [ [ "water_clean", 3 ] ],
-      [ [ "steel_chunk", 3 ], [ "scrap", 6 ] ]
-    ]
-  },
-  {
-    "type": "recipe",
-    "result": "medium_disposable_cell",
-    "category": "CC_ELECTRONIC",
-    "subcategory": "CSC_ELECTRONIC_TOOLS",
-    "skill_used": "cooking",
-    "skills_required": [ "electronics", 5 ],
-    "difficulty": 6,
-    "time": "1 h 20 m",
-    "book_learn": [ [ "adv_chemistry", 6 ], [ "reference_cooking", 6 ] ],
-    "using": [ [ "blacksmithing_intermediate", 1 ] ],
-    "components": [
-      [ [ "chem_manganese_dioxide", 348 ] ],
-      [ [ "zinc_metal", 24 ] ],
-      [ [ "chem_potassium_hydroxide", 82 ] ],
-      [ [ "water_clean", 12 ] ],
-      [ [ "steel_chunk", 12 ], [ "scrap", 24 ] ]
-    ]
-  },
-  {
-    "type": "recipe",
-    "result": "heavy_disposable_cell",
-    "category": "CC_ELECTRONIC",
-    "subcategory": "CSC_ELECTRONIC_TOOLS",
-    "skill_used": "cooking",
-    "skills_required": [ "electronics", 5 ],
-    "difficulty": 6,
-    "time": "1 h 45 m",
-    "book_learn": [ [ "adv_chemistry", 6 ], [ "reference_cooking", 6 ] ],
-    "using": [ [ "blacksmithing_intermediate", 1 ] ],
-    "components": [
-      [ [ "chem_manganese_dioxide", 725 ] ],
-      [ [ "zinc_metal", 50 ] ],
-      [ [ "chem_potassium_hydroxide", 170 ] ],
-      [ [ "water_clean", 25 ] ],
-      [ [ "steel_chunk", 25 ], [ "scrap", 50 ] ]
-    ]
   },
   {
     "result": "angle_grinder",

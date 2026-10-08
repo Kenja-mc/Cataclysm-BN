@@ -1919,7 +1919,7 @@ void mapgen_tutorial(mapgendata& dat) {
         m->spawn_item(point_omt_ms(SEEX * 2 - 2, SEEY + 5), itype_id("bubblewrap"));
         m->spawn_item(point_omt_ms(SEEX * 2 - 2, SEEY + 6), itype_id("grenade"));
         m->spawn_item(point_omt_ms(SEEX * 2 - 3, SEEY + 6), itype_id("flashlight"));
-        m->spawn_item(point_omt_ms(SEEX * 2 - 3, SEEY + 6), itype_id("light_disposable_cell"));
+        m->spawn_item(point_omt_ms(SEEX * 2 - 3, SEEY + 6), itype_id("light_battery_cell"));
         m->spawn_item(point_omt_ms(SEEX * 2 - 2, SEEY + 7), itype_id("cig"));
         m->spawn_item(point_omt_ms(SEEX * 2 - 2, SEEY + 7), itype_id("codeine"));
         m->spawn_item(point_omt_ms(SEEX * 2 - 3, SEEY + 7), itype_id("water"));

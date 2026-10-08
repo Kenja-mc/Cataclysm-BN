@@ -202,7 +202,7 @@
     "time": "50 m",
     "qualities": [ { "id": "SCREW_FINE", "level": 1 }, { "id": "SAW_M_FINE", "level": 1 }, { "id": "WRENCH_FINE", "level": 1 } ],
     "components": [
-      [ [ "light_minus_battery_cell", 2 ] ],
+      [ [ "light_battery_cell", 2 ] ],
       [ [ "circuit", 2 ] ],
       [ [ "cable", 2 ] ],
       [ [ "plut_cell", 1 ] ],
@@ -217,7 +217,7 @@
     "time": "50 m",
     "qualities": [ { "id": "SCREW_FINE", "level": 1 }, { "id": "SAW_M_FINE", "level": 1 }, { "id": "WRENCH_FINE", "level": 1 } ],
     "components": [
-      [ [ "light_plus_battery_cell", 2 ] ],
+      [ [ "light_battery_cell", 2 ] ],
       [ [ "circuit", 2 ] ],
       [ [ "cable", 2 ] ],
       [ [ "plut_cell", 2 ] ],

@@ -11,7 +11,7 @@
       { "item": "emer_blanket", "prob": 75 },
       { "item": "mask_gas", "prob": 2 },
       { "item": "flashlight", "prob": 50 },
-      { "item": "light_disposable_cell", "prob": 10 },
+      { "item": "light_battery_cell", "prob": 10 },
       { "item": "lighter", "prob": 20 },
       { "item": "whistle", "prob": 70 },
       { "item": "water_clean", "count": [ 1, 2 ], "prob": 80 },
@@ -71,7 +71,7 @@
                 "prob": 50
               },
               { "item": "two_way_radio", "prob": 65 },
-              { "item": "light_disposable_cell", "count": [ 2, 4 ], "prob": 65 },
+              { "item": "light_battery_cell", "count": [ 2, 4 ], "prob": 65 },
               { "item": "electric_lantern", "prob": 35 },
               { "item": "barometer", "prob": 8 }
             ],

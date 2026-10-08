@@ -83,6 +83,11 @@ that is optional:
   craft from, not an empty favorites list.
 - **One pick-up list**: `g` shows everything within reach in one list.
 
+- **Fewer battery types.** The light-minus, high-capacity and disposable variants are folded into
+  three cells: light (150 charge), medium (750) and heavy (1500). Atomic cells stay as the rare
+  long-life option, along with car and storage batteries. That is 9 batteries instead of 19, and
+  every device takes the one cell size that fits it. Old saves convert automatically.
+
 Zones and the loot-sorting activity are still there for anyone who wants them. They just have no
 default key.
 

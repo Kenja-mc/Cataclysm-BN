@@ -14,12 +14,7 @@
     "weight": "1250 g",
     "volume": "4500 ml",
     "ammo": "battery",
-    "magazines": [
-      [
-        "battery",
-        [ "medium_battery_cell", "medium_plus_battery_cell", "medium_atomic_battery_cell", "medium_disposable_cell" ]
-      ]
-    ],
+    "magazines": [ [ "battery", [ "medium_battery_cell", "medium_atomic_battery_cell" ] ] ],
     "rigid": true,
     "magazine_well": "250 ml",
     "use_action": {

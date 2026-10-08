@@ -49,26 +49,5 @@
     "time": "1 h",
     "qualities": [ { "id": "HAMMER", "level": 3 }, { "id": "ANVIL", "level": 2 } ],
     "components": [ [ [ "cu_pipe", 4 ] ], [ [ "sheet_metal_small", 8 ] ], [ [ "sheet_metal", 2 ] ] ]
-  },
-  {
-    "type": "recipe",
-    "result": "light_minus_disposable_cell",
-    "category": "CC_ELECTRONIC",
-    "subcategory": "CSC_ELECTRONIC_TOOLS",
-    "skill_used": "cooking",
-    "skills_required": [ "electronics", 5 ],
-    "difficulty": 4,
-    "time": "45 m",
-    "autolearn": true,
-    "using": [ [ "blacksmithing_standard", 1 ] ],
-    "tools": [ [ [ "crucible", -1 ], [ "crucible_clay", -1 ] ] ],
-    "components": [
-      [ [ "chem_manganese_dioxide", 29 ] ],
-      [ [ "zinc_metal", 8 ] ],
-      [ [ "acid", 7 ] ],
-      [ [ "duct_tape", 1 ] ],
-      [ [ "water_clean", 1 ] ],
-      [ [ "steel_chunk", 1 ], [ "scrap", 2 ] ]
-    ]
   }
 ]
