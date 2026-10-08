@@ -81,6 +81,16 @@ def test_wait_keeps_position(g):
     assert bub_pos(g) == before
 
 
+def test_blocked_step_says_why(g):
+    """Walking into a wall tells you what is in the way instead of silently doing nothing."""
+    arena(g)
+    assert g.lua("M:set_ter_at(here(1,0), TerId.new('t_wall'):int_id()) out('ok')") == ["ok"]
+    before = bub_pos(g)
+    g.keys("d", delay=0.8)
+    assert bub_pos(g) == before
+    assert "is in the way" in g.screen(), g.screen()
+
+
 def test_quick_stack(g):
     arena(g)
     spawn(g, 2, 0, "usb_drive", furn="f_rack")
@@ -308,6 +318,15 @@ def test_mixed_jewelry_stacks(g):
     assert any("2 " in l and "rings" in l for l in s.splitlines()), "both rings share one inventory line\n" + s
 
 
+def test_folded_families(g):
+    """Novels, board games and judo belts are one item each, with the old items as variants."""
+    out = g.lua("local b=gapi.create_item(ItypeId.new('paperback'), -1) b:set_var_str('variant','novel_western') "
+                "local j=gapi.create_item(ItypeId.new('judo_belt'), -1) j:set_var_str('variant','judo_belt_black') "
+                "out(b:display_name(1), j:display_name(1), ItypeId.new('novel_western'):is_valid())")
+    book, belt, old_id_valid = out[0].split(",")
+    assert "western novel" in book and "black belt" in belt and old_id_valid == "false", out
+
+
 def test_mre_unpacks_its_entree(g):
     """MRE boxes are one item; the entree is a variant and unpacking yields it."""
     arena(g)
@@ -351,7 +370,7 @@ def test_rounded_frames(g):
     assert "╭" in s and "╯" in s, "inventory window should have rounded corners"
 
 
-TESTS = [test_welcome_card, test_controls_strip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position,
+TESTS = [test_welcome_card, test_controls_strip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
          test_quick_stack, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
          test_aim_defaults, test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel,
          test_magnet_pull_through_monster, test_classic_control_scheme]

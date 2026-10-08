@@ -796,6 +796,9 @@ bool avatar_action::move( avatar &you, map &m, const tripoint_rel_ms &d )
         add_msg( _( "That door is locked!" ) );
     } else if( m.ter( dest_loc ) == t_door_bar_locked ) {
         add_msg( _( "You rattle the bars but the door is locked!" ) );
+    } else if( !you.is_auto_moving() && !m.passable( dest_loc ) ) {
+        // Say what stopped you, so a blocked step never looks like the game ignoring the key.
+        add_msg( m_info, _( "The %s is in the way." ), m.obstacle_name( dest_loc ) );
     }
     return false;
 }

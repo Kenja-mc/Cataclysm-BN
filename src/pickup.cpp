@@ -181,7 +181,7 @@ static pickup_answer handle_problematic_pickup( const item &it, bool &offered_sw
     }
     if( u.is_armed() ) {
         amenu.addentry( WIELD, !u.primary_weapon().has_flag( STATIC( flag_id( "NO_UNWIELD" ) ) ), 'w',
-                        _( "Dispose of %s and wield %s" ), u.primary_weapon().display_name(),
+                        _( "Put away %s and wield %s" ), u.primary_weapon().display_name(),
                         it.display_name() );
     } else {
         amenu.addentry( WIELD, true, 'w', _( "Wield %s" ), it.display_name() );

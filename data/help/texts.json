@@ -15,7 +15,7 @@
     "order": 1,
     "name": "<b|B>: Movement",
     "messages": [
-      "Move with <press_UP><press_LEFT><press_DOWN><press_RIGHT> and step diagonally with <press_LEFTUP>, <press_RIGHTUP>, <press_LEFTDOWN> and <press_RIGHTDOWN>.  The arrow keys and the numpad work too.  Every key can be changed in the keybindings menu (<press_HELP_KEYBINDINGS> on any screen), and Options → Interface → Control scheme switches between the modern WASD layout and the classic vi-keys.",
+      "Move with <press_UP>, <press_LEFT>, <press_DOWN> and <press_RIGHT>, and step diagonally with <press_LEFTUP>, <press_RIGHTUP>, <press_LEFTDOWN> and <press_RIGHTDOWN>.  The arrow keys and the numpad work too.  Every key can be changed in the keybindings menu (<press_HELP_KEYBINDINGS> on any screen), and Options → Interface → Control scheme switches between the modern WASD layout and the classic vi-keys.",
       "<HELP_DRAW_DIRECTIONS>",
       "Each step will take 100 movement points (or more, depending on the terrain); you will then replenish a variable amount of movement points, depending on many factors (press <press_player_data> to see the exact amount).",
       "To attack a monster with your weapon, press <press_attack> and pick a direction, or simply move into it if bump attacks are on (they are in the classic control scheme).",

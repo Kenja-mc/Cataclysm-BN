@@ -9,39 +9,39 @@
       },
       {
         "id": "LESSON_MOVE",
-        "text": "The '@' character in the center of the screen represents you.  To move, you can use the numpad, the vikeys (hjklyubn), or the arrow keys.  To have your character wait in place, press '.'"
+        "text": "The '@' character in the center of the screen represents you.  To move, press <press_UP>, <press_LEFT>, <press_DOWN> or <press_RIGHT> (the arrow keys and numpad work too), and <press_LEFTUP>, <press_RIGHTUP>, <press_LEFTDOWN> or <press_RIGHTDOWN> to step diagonally.  To have your character wait in place, press <press_pause>."
       },
       {
         "id": "LESSON_LOOK",
-        "text": "To see what the symbols around you mean, press ';'.  You'll be able to scroll around and get information on the terrain, monsters, and items in the world around you."
+        "text": "To see what the symbols around you mean, press <press_look>.  You'll be able to scroll around and get information on the terrain, monsters, and items in the world around you."
       },
       {
         "id": "LESSON_OPEN",
-        "text": "That brown '+' next to you is a closed door.  To open it, either simply walk into it, or press 'o' and then a movement key."
+        "text": "That brown '+' next to you is a closed door.  To open it, either simply walk into it, or press <press_open> and then a movement key."
       },
       {
         "id": "LESSON_CLOSE",
-        "text": "You can close an opened door by pressing 'c' and then a movement key.  Closing doors behind you can often slow down throngs of monsters greatly."
+        "text": "You can close an opened door by pressing <press_close> and then a movement key.  Closing doors behind you can often slow down throngs of monsters greatly."
       },
       {
         "id": "LESSON_SMASH",
-        "text": "Most monsters will have to smash their way through a closed door.  If a door is locked or stuck, you can smash it by pressing 's' and then a movement key."
+        "text": "Most monsters will have to smash their way through a closed door.  If a door is locked or stuck, you can smash it by pressing <press_smash> and then a movement key."
       },
       {
         "id": "LESSON_WINDOW",
-        "text": "You can smash through windows by pressing 's' and then a movement key.  A smashed window takes a long time to climb through, and it's possible to hurt yourself on the broken glass, but it's a good last-ditch escape route.  You can smash through other things, too."
+        "text": "You can smash through windows by pressing <press_smash> and then a movement key.  A smashed window takes a long time to climb through, and it's possible to hurt yourself on the broken glass, but it's a good last-ditch escape route.  You can smash through other things, too."
       },
       {
         "id": "LESSON_PICKUP",
-        "text": "You just stepped on a space with one or more items.  If you wish to pick it up, press ',' or 'g'."
+        "text": "You just stepped on a space with one or more items.  If you wish to pick it up, press <press_pickup> or <press_pickup_all>."
       },
       {
         "id": "LESSON_EXAMINE",
-        "text": "The nearby { is a display rack, and the blue background indicates that there are items there.  If you press 'g' while adjacent to the rack, you can pick up items without moving to the square."
+        "text": "The nearby { is a display rack, and the blue background indicates that there are items there.  If you press <press_pickup_all> while adjacent to the rack, you can pick up items without moving to the square."
       },
       {
         "id": "LESSON_INTERACT",
-        "text": "The Examine command 'e' can be used for interacting with some terrain and furniture.  Interactive terrain is often designated with a '6' symbol."
+        "text": "The Examine command (<press_examine>) can be used for interacting with some terrain and furniture.  Interactive terrain is often designated with a '6' symbol."
       },
       {
         "id": "LESSON_FULL_INV",
@@ -57,23 +57,23 @@
       },
       {
         "id": "LESSON_ITEM_INTO_INV",
-        "text": "The item you just picked up went into your inventory, the shared storage space of all the clothing you're wearing.  To view your inventory, press 'i'.  You can then press the letter of any item to get more information about it."
+        "text": "The item you just picked up went into your inventory, the shared storage space of all the clothing you're wearing.  To view your inventory, press <press_inventory>.  You can then press the letter of any item to get more information about it."
       },
       {
         "id": "LESSON_GOT_ARMOR",
-        "text": "The item you just picked up is a type of clothing!  To wear clothing, press W and then select an item.  To take off clothing, press T, or simply take it off and drop it in one action by pressing d."
+        "text": "The item you just picked up is a type of clothing!  To wear clothing, press <press_wear> and then select an item.  To take off clothing, press <press_take_off>, or simply take it off and drop it in one action by pressing <press_drop>."
       },
       {
         "id": "LESSON_GOT_WEAPON",
-        "text": "The item you just picked up is a good weapon!  To wield a weapon, press w, then pick what to wield.  To wield nothing, either drop your weapon with d, or press 'w-' to put it away.  A zombie has spawned nearby.  To attack it, simply move into it."
+        "text": "The item you just picked up is a good weapon!  To wield a weapon, press <press_wield>, then pick what to wield.  To wield nothing, either drop your weapon with <press_drop>, or press <press_wield> and pick it again to put it away.  A zombie has spawned nearby.  To attack it, press <press_attack> and the direction it is in (in the classic control scheme, simply move into it)."
       },
       {
         "id": "LESSON_GOT_FOOD",
-        "text": "The item you just picked up is a comestible!  To eat a comestible, press 'E'.  Comestibles are items you can use up, like food, drink, pills, etc.  Most food expires eventually, so be careful.  Some comestibles, especially drugs, can cause subtle, long-term effects."
+        "text": "The item you just picked up is a comestible!  To eat a comestible, press <press_eat>.  Comestibles are items you can use up, like food, drink, pills, etc.  Most food expires eventually, so be careful.  Some comestibles, especially drugs, can cause subtle, long-term effects."
       },
       {
         "id": "LESSON_GOT_TOOL",
-        "text": "The item you just picked up is a tool!  To activate a tool, press 'a'.  Some tools have a set charge, which can be reloaded once depleted.  Other are single-use items, and still others are reusable."
+        "text": "The item you just picked up is a tool!  To activate a tool, press <press_apply>.  Some tools have a set charge, which can be reloaded once depleted.  Other are single-use items, and still others are reusable."
       },
       {
         "id": "LESSON_GOT_GUN",
@@ -97,7 +97,7 @@
       },
       {
         "id": "LESSON_WEAPON_INFO",
-        "text": "If you press 'i' and then the letter of your weapon, you'll see its combat stats.  Bashing damage ignores most armor, but varies greatly and requires strength.  Cutting damage is a fixed amount, but is blocked by armor.  The To-hit bonus affects your chances of hitting.  The amount of time it takes to swing your melee weapon depends on both its size and weight; small, compact weapons are the fastest."
+        "text": "If you press <press_inventory> and then the letter of your weapon, you'll see its combat stats.  Bashing damage ignores most armor, but varies greatly and requires strength.  Cutting damage is a fixed amount, but is blocked by armor.  The To-hit bonus affects your chances of hitting.  The amount of time it takes to swing your melee weapon depends on both its size and weight; small, compact weapons are the fastest."
       },
       {
         "id": "LESSON_HIT_MONSTER",
@@ -109,7 +109,7 @@
       },
       {
         "id": "LESSON_BUTCHER",
-        "text": "When you kill a monster it will often leave behind a corpse.  Corpses can be important sources of food, but you must Butcher them by standing on the corpse and pressing 'B'.  You'll need a bladed weapon in your inventory, preferably a small, very sharp one.  An unskilled butcher may only get a few pieces of meat, or none at all.  Note that many monsters, such as zombies, leave tainted meat, unsuitable for consumption."
+        "text": "When you kill a monster it will often leave behind a corpse.  Corpses can be important sources of food, but you must Butcher them by standing on the corpse and pressing <press_butcher>.  You'll need a bladed weapon in your inventory, preferably a small, very sharp one.  An unskilled butcher may only get a few pieces of meat, or none at all.  Note that many monsters, such as zombies, leave tainted meat, unsuitable for consumption."
       },
       {
         "id": "LESSON_TOOK_PAINKILLER",
@@ -117,7 +117,7 @@
       },
       {
         "id": "LESSON_TOOK_CIG",
-        "text": "That drug you just took placed an effect on you.  To check your effects, press '@'.  Most only last a short while, while others, like chronic disease, last until cured by some other means."
+        "text": "That drug you just took placed an effect on you.  To check your effects, press <press_player_data>.  Most only last a short while, while others, like chronic disease, last until cured by some other means."
       },
       {
         "id": "LESSON_DRANK_WATER",
@@ -125,7 +125,7 @@
       },
       {
         "id": "LESSON_ACT_GRENADE",
-        "text": "You just activated a grenade!  You probably want to throw it.  To throw an item, press 't' and then select the item to throw.  The maximum range depends on your strength and the object's weight and size.  Throwing isn't very good in most combat situations, but if you've got some fire power…"
+        "text": "You just activated a grenade!  You probably want to throw it.  To throw an item, press <press_throw> and then select the item to throw.  The maximum range depends on your strength and the object's weight and size.  Throwing isn't very good in most combat situations, but if you've got some fire power…"
       },
       {
         "id": "LESSON_ACT_BUBBLEWRAP",
@@ -137,15 +137,15 @@
       },
       {
         "id": "LESSON_GUN_LOAD",
-        "text": "To use a gun, first wield it with the 'w' key.  Next you need to reload using the 'r' key, assuming you have the proper ammo.  If you wish to unload your gun, possibly to change ammunition types, press 'U'."
+        "text": "To use a gun, first wield it with <press_wield>.  Next you need to reload using <press_reload_item>, assuming you have the proper ammo.  If you wish to unload your gun, possibly to change ammunition types, press <press_unload>."
       },
       {
         "id": "LESSON_GUN_FIRE",
-        "text": "Once you have a loaded gun wielded, you can fire it.  Press the 'f' key to fire a single shot.  With many guns, you can fire a burst by pressing 'F'.  You'll automatically target the last monster you shot at, or the closest monster to you.  You can change your target with the movement keys, or cycle through monsters with '<' and '>'.  To fire, press 'f' or '.'; to cancel, hit the escape key."
+        "text": "Once you have a loaded gun wielded, you can fire it.  Press <press_fire> to fire a single shot.  With many guns, you can fire a burst by pressing <press_select_fire_mode>.  You'll automatically target the last monster you shot at, or the closest monster to you.  You can change your target with the movement keys, or cycle through monsters with '<' and '>'.  To fire, press 'f' or '.'; to cancel, hit the escape key."
       },
       {
         "id": "LESSON_RECOIL",
-        "text": "After firing your gun, you will probably notice a Recoil alert in the lower right.  Generally speaking, the more damaging the ammo, the worse the recoil.  Recoil severely reduces your chance to hit, but you can eliminate recoil by pausing ('.') for a turn or moving normally.  High strength reduces recoil, so weak characters might want to stick to .22 or 9x19mm guns."
+        "text": "After firing your gun, you will probably notice a Recoil alert in the lower right.  Generally speaking, the more damaging the ammo, the worse the recoil.  Recoil severely reduces your chance to hit, but you can eliminate recoil by pausing (<press_pause>) for a turn or moving normally.  High strength reduces recoil, so weak characters might want to stick to .22 or 9x19mm guns."
       },
       {
         "id": "LESSON_STAIRS",
@@ -157,11 +157,11 @@
       },
       {
         "id": "LESSON_DARK",
-        "text": "It's dark down here!  Fortunately, you have a flashlight.  Press 'a' and then select your flashlight to turn it on."
+        "text": "It's dark down here!  Fortunately, you have a flashlight.  Press <press_apply> and then select your flashlight to turn it on."
       },
       {
         "id": "LESSON_PICKUP_WATER",
-        "text": "~ is a terrain symbol that indicates water.  From a water source like this, you can fill any containers you might have.  Examine the water ('e') and press 'c' to fill a container, then select a watertight container to put the water into."
+        "text": "~ is a terrain symbol that indicates water.  From a water source like this, you can fill any containers you might have.  Examine the water (<press_examine>) and press 'c' to fill a container, then select a watertight container to put the water into."
       }
     ]
   }
