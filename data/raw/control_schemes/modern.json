@@ -478,7 +478,7 @@
     "id": "attack",
     "category": "DEFAULTMODE",
     "name": "Attack in a direction",
-    "bindings": [ { "input_method": "keyboard", "key": "F" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "TAB" } ]
   },
   {
     "type": "keybinding",
@@ -676,5 +676,40 @@
     "category": "DEFAULTMODE",
     "id": "help",
     "bindings": [ { "input_method": "keyboard", "key": "F1" }, { "input_method": "keyboard", "key": "0" } ]
+  },
+  {
+    "type": "keybinding",
+    "name": "Autoattack",
+    "category": "DEFAULTMODE",
+    "id": "autoattack",
+    "bindings": [ { "input_method": "keyboard", "key": "F" } ]
+  },
+  {
+    "type": "keybinding",
+    "name": "Wait for Several Minutes",
+    "category": "DEFAULTMODE",
+    "id": "wait",
+    "bindings": [ { "input_method": "keyboard", "key": "X" }, { "input_method": "keyboard", "key": "|" } ]
+  },
+  {
+    "type": "keybinding",
+    "name": "Peek Around Corners",
+    "category": "DEFAULTMODE",
+    "id": "peek",
+    "bindings": [  ]
+  },
+  {
+    "type": "keybinding",
+    "name": "View Player Info",
+    "category": "DEFAULTMODE",
+    "id": "player_data",
+    "bindings": [ { "input_method": "keyboard", "key": "C" }, { "input_method": "keyboard", "key": "@" } ]
+  },
+  {
+    "type": "keybinding",
+    "name": "Chat with NPC",
+    "category": "DEFAULTMODE",
+    "id": "chat",
+    "bindings": [ { "input_method": "keyboard", "key": "y" } ]
   }
 ]
