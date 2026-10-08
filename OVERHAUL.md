@@ -46,8 +46,15 @@ On the overmap: `=`/`-` zoom, `R` toggles weather, `x` sets a waypoint.
 A **Controls** strip at the bottom of the sidebar always shows the most used keys. It reads the
 live keybindings, so it stays correct if you rebind anything.
 
-Players with an existing `keybindings.json` keep their own bindings. Delete that file from the
-config folder to get the new defaults.
+**Classic controls** are one option away: Options → Interface → Control scheme → Classic restores
+the original vi-keys and numpad layout, turns bump attacks back on and makes Y/N prompts want
+capitals. Your own key changes are kept in both schemes, because the game now saves only the keys
+you changed. The modern layout lives in `data/raw/control_schemes/modern.json` on top of the
+untouched upstream keybindings, so other schemes can be added the same way. Quick stack, sort pile
+and attack have no key in classic; bind them or use the Enter action menu.
+
+A `keybindings.json` saved by an older version holds every key, so it overrides either scheme.
+Delete it from the config folder to follow the scheme again.
 
 Your first new game opens with a short welcome card listing these keys (Options → Interface →
 Show welcome card brings it back). Yes/no prompts accept lowercase `y`/`n`, since those letters no

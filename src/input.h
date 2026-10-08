@@ -325,6 +325,8 @@ class input_manager
         using t_actions = std::map<std::string, action_attributes>;
         using t_action_contexts = std::map<std::string, t_actions>;
         t_action_contexts action_contexts;
+        /** Bindings from the game data and control scheme, before the user's own changes. */
+        t_action_contexts default_contexts;
 
         using t_key_to_name_map = std::map<int, std::string>;
         t_key_to_name_map keycode_to_keyname;
