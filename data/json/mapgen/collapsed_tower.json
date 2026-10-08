@@ -76,7 +76,7 @@
         { "point": "bash", "x": [ 48, 71 ], "y": [ 0, 23 ], "repeat": [ 50, 100 ] },
         { "point": "bash", "x": [ 0, 23 ], "y": [ 24, 47 ], "repeat": [ 50, 100 ] },
         { "point": "bash", "x": [ 24, 47 ], "y": [ 24, 47 ], "repeat": [ 50, 100 ] },
-        { "point": "bash", "x": [ 48, 74 ], "y": [ 24, 47 ], "repeat": [ 50, 100 ] }
+        { "point": "bash", "x": [ 48, 71 ], "y": [ 24, 47 ], "repeat": [ 50, 100 ] }
       ],
       "palettes": [ "collapsed_tower" ],
       "place_items": [
@@ -162,7 +162,7 @@
         { "point": "bash", "x": [ 48, 71 ], "y": [ 0, 23 ], "repeat": [ 50, 100 ] },
         { "point": "bash", "x": [ 0, 23 ], "y": [ 24, 47 ], "repeat": [ 50, 100 ] },
         { "point": "bash", "x": [ 24, 47 ], "y": [ 24, 47 ], "repeat": [ 50, 100 ] },
-        { "point": "bash", "x": [ 48, 74 ], "y": [ 24, 47 ], "repeat": [ 50, 100 ] }
+        { "point": "bash", "x": [ 48, 71 ], "y": [ 24, 47 ], "repeat": [ 50, 100 ] }
       ],
       "palettes": [ "collapsed_tower" ],
       "furniture": { "R": "f_rack" },
