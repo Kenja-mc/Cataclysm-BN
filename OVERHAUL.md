@@ -27,8 +27,16 @@ direction?" prompt.
 | `k`       | craft (`&` also works)          | `K`   | construct (`*` also works)       |
 | `Q`       | **quick stack** to storage      | `Z`   | **sort the pile** you stand on   |
 | `l`       | look around                     | `m`   | map                              |
-| Tab       | attack nearest enemy            | Enter | action menu with every action    |
+| `F`       | attack in a direction           | Tab   | attack the nearest enemy         |
+| Enter     | action menu with every action   | `N`   | switch fire mode                 |
 | `F1`      | help                            | `?`   | full keybinding list (any screen)|
+
+Walking into an enemy no longer attacks it. It tells you to press `F`, so a stray step never
+starts a fight (Options → Interface → Attack by walking into enemies turns bump attacks back on).
+Walking into a closed door still opens it.
+
+The mouse works alongside the keyboard in the terminal: click a tile to preview the route, click
+again to walk there, and right-click to examine or act on what is there.
 
 When aiming: `f`/Enter fires, `x` aims one step, `u` `i` `o` pick aimed, careful or precise shots
 (more care, left to right), `r` switches ammo, `F` or `m` switches fire mode.
@@ -90,6 +98,14 @@ that is optional:
 
 Zones and the loot-sorting activity are still there for anyone who wants them. They just have no
 default key.
+
+## Firearms
+
+The guns and calibers CDDA cut over the years (5.45x39, 5.7x28, 4.6x30, 7.62x25, 9x18, .454,
+.460, .500 S&W, .38 Super, .270 Win and .700 NX, with the AK-74M, AN-94, FN P90, Five-seveN, MP7,
+PPSh-41, Tokarev, Makarov, S&W 500, Raging Bull and friends) live in Bright Nights' *Exotic ammo
+types* mod. It is now on by default for new worlds, so they spawn in normal loot. Leave it off
+when creating a world if you prefer fewer calibers.
 
 ## Bug fixes
 

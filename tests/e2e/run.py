@@ -198,6 +198,42 @@ def test_unified_batteries(g):
     assert out == ["false,false,true,true"], out
 
 
+def zombie_hp(g):
+    out = g.lua("local m=gapi.get_monster_at(here(1,0)) if m then out(m:get_hp()) else out(-1) end")
+    return int(out[0])
+
+
+def test_walking_into_enemy_does_not_attack(g):
+    arena(g)
+    assert g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(1,0)) out('ok')") == ["ok"]
+    before = zombie_hp(g)
+    assert before > 0
+    g.keys("d", delay=1)
+    assert "in the way" in g.screen(), g.screen()
+    assert zombie_hp(g) == before, "a plain step must not swing at the zombie"
+
+
+def test_attack_command(g):
+    before = zombie_hp(g)
+    for _ in range(6):
+        g.keys("F", delay=0.8)
+        g.keys("d", delay=1.2)
+        if zombie_hp(g) != before:
+            break
+    assert zombie_hp(g) != before, "F then a direction should attack"
+    g.lua("local m=gapi.get_monster_at(here(1,0)) if m then m:set_pos_ms(here(40,40)) end out('ok')")
+
+
+def test_click_to_travel(g):
+    arena(g)
+    settle(g)
+    start = bub_pos(g)
+    x, y = g.find("@")
+    g.click(x + 3, y)
+    g.click(x + 3, y)
+    assert wait_until(lambda: bub_pos(g) == (start[0] + 3, start[1], start[2]), timeout=15), (start, bub_pos(g))
+
+
 def test_rounded_frames(g):
     g.keys("i", delay=1)
     s = g.screen()
@@ -207,7 +243,8 @@ def test_rounded_frames(g):
 
 TESTS = [test_welcome_card, test_controls_strip, test_unified_batteries, test_wasd_movement, test_wait_keeps_position,
          test_quick_stack, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
-         test_aim_defaults, test_recraft_after_reload, test_magnet_pull_through_monster]
+         test_aim_defaults, test_recraft_after_reload, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel,
+         test_magnet_pull_through_monster]
 
 
 def main():
