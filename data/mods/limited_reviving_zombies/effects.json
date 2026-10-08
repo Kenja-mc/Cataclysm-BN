@@ -1,0 +1,14 @@
+[
+  {
+    "type": "effect_type",
+    "id": "lrz_rigor",
+    "name": [ "Rigor Mortis" ],
+    "desc": [ "Death has already stiffened these limbs.  Every step is a fight against its own body." ],
+    "speed_name": "Rigor Mortis",
+    "rating": "bad",
+    "max_intensity": 4,
+    "base_mods": { "speed_mod": [ -10 ] },
+    "scaling_mods": { "speed_mod": [ -10 ] },
+    "show_in_info": true
+  }
+]

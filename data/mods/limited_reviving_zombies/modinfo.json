@@ -1,0 +1,17 @@
+[
+  {
+    "type": "MOD_INFO",
+    "id": "limited_reviving_zombies",
+    "name": "Limited_Reviving_Zombies",
+    "authors": [ "sagittarius72" ],
+    "description": "Zombies still rise, but never at full strength.  A corpse that gets up comes back weakened in proportion to how badly it was mangled, spends a while helpless and stiff after rising, and can only rise a limited number of times before it is too broken to move again.  An alternative to disabling revival entirely.",
+    "category": "rebalance",
+    "lua_api_version": 2,
+    "dependencies": [ "bn" ]
+  },
+  {
+    "type": "monster_adjustment",
+    "species": "ZOMBIE",
+    "flag": { "name": "REVIVES_HEALTHY", "value": false }
+  }
+]
