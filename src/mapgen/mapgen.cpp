@@ -3662,6 +3662,12 @@ auto jmapgen_setmap::apply(
     for (int i = 0; i < trepeat; i++) {
         point_omt_ms pt = func(point_omt_ms(x_get(), y_get()));
         point_omt_ms pt2 = func(point_omt_ms(x2_get(), y2_get()));
+        // Multi-tile mapgen shares one "set" list between pieces; points owned by other pieces land
+        // outside this one and must not be applied (bashing out of bounds crashes).
+        if (op < JMAPGEN_SETMAP_OPTYPE_LINE
+            && (pt.x() < 0 || pt.y() < 0 || pt.x() >= SEEX * 2 || pt.y() >= SEEY * 2)) {
+            continue;
+        }
         // If it is not a line or square, pt2 will always be 0, 0
         // This is in case rotation messes with the order
         if (op >= JMAPGEN_SETMAP_OPTYPE_LINE) {
