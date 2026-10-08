@@ -172,6 +172,21 @@ def test_aim_defaults(g):
     assert "Inventory" in s
 
 
+def test_magnet_pull_through_monster(g):
+    """Upstream #9354: pulling metal through a monster with the electromagnetic unit crashed."""
+    arena(g)
+    assert g.lua("local u=gapi.get_avatar() u:add_bionic(BionicDataId.new('bio_magnet')) "
+                 "u:set_max_power_level(Energy.from_kilojoule(100)) out('ok')") == ["ok"]
+    for _ in range(4):
+        out = g.lua("spawn(5,0,'throwing_knife',1,nil) spawn(4,0,'throwing_axe',1,nil) "
+                    "local u=gapi.get_avatar() u:set_power_level(Energy.from_kilojoule(100)) "
+                    "if not gapi.get_monster_at(here(2,0)) then gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(2,0)) end "
+                    "out(u:activate_bionic(BionicDataId.new('bio_magnet'), false))")
+        assert out and out[-1] == "true", g.screen()
+    assert "wasd move" in g.screen(), "game should still be running"
+    g.lua("for dx=-6,6 do for dy=-6,6 do local m=gapi.get_monster_at(here(dx,dy)) if m then m:set_pos_ms(here(40,40)) end end end out('ok')")
+
+
 def test_rounded_frames(g):
     g.keys("i", delay=1)
     s = g.screen()
@@ -181,7 +196,7 @@ def test_rounded_frames(g):
 
 TESTS = [test_controls_strip, test_wasd_movement, test_wait_keeps_position,
          test_quick_stack, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
-         test_aim_defaults, test_recraft_after_reload]
+         test_aim_defaults, test_recraft_after_reload, test_magnet_pull_through_monster]
 
 
 def main():
