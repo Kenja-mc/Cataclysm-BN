@@ -117,6 +117,7 @@ void input_manager::init()
     init_keycode_mapping();
     reset_timeout();
 
+    action_contexts.clear();
     // recursively load all keybindings from the data/raw directory
     for( const auto &file : get_files_from_path( ".json", PATH_INFO::keybindingsdir(), true, true ) ) {
         try {
@@ -125,6 +126,17 @@ void input_manager::init()
             throw std::runtime_error( err.what() );
         }
     }
+    // The control scheme rebinds part of the defaults (WASD and friends for "modern").
+    const auto scheme = PATH_INFO::datadir() + "raw/control_schemes/" +
+                        get_option<std::string>( "CONTROL_SCHEME" ) + ".json";
+    if( file_exist( scheme ) ) {
+        try {
+            load( scheme, false );
+        } catch( const JsonError &err ) {
+            throw std::runtime_error( err.what() );
+        }
+    }
+    default_contexts = action_contexts;
 
     // user keybindings are searched from separate directory
     try {
@@ -301,6 +313,16 @@ void input_manager::save()
             const t_actions &actions = a->second;
             for( const auto &action : actions ) {
                 const t_input_event_list &events = action.second.input_events;
+                // Only the user's own changes are saved, so switching control schemes still works.
+                if( !action.second.is_user_created && !action.second.is_deleted ) {
+                    const auto ctx = default_contexts.find( a->first );
+                    if( ctx != default_contexts.end() ) {
+                        const auto def = ctx->second.find( action.first );
+                        if( def != ctx->second.end() && def->second.input_events == events ) {
+                            continue;
+                        }
+                    }
+                }
                 jsout.start_object();
 
                 jsout.member( "id", action.first );

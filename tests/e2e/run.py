@@ -159,7 +159,7 @@ def load_first_save(g, timeout=120):
     deadline = time.time() + timeout
     while time.time() < deadline:
         s = g.screen()
-        if "X,Y,Z:" in s and "wasd move" in s:
+        if "X,Y,Z:" in s and " move " in s:
             return
         if "»" in s:
             g.keys("Enter", delay=2)
@@ -315,6 +315,23 @@ def test_mre_unpacks_its_entree(g):
     assert count_carried(g, "mre_ration") == 0
 
 
+def test_classic_control_scheme(g):
+    """Options → Control scheme → Classic brings back vi-keys and bump attacks."""
+    classic = Game(name="bn-e2e-classic", options={"SAFEMODE": "false", "CONTROL_SCHEME": "classic"})
+    try:
+        start_new_game(classic)
+        classic.keys(".", delay=0.6)
+        classic.define_lua(HELPERS)
+        arena(classic)
+        for key, (dx, dy) in {"l": (1, 0), "k": (0, -1), "h": (-1, 0), "j": (0, 1)}.items():
+            before = bub_pos(classic)
+            classic.keys(key, delay=0.8)
+            assert bub_pos(classic) == (before[0] + dx, before[1] + dy, before[2]), key
+        assert "wasd move" not in classic.screen()
+    finally:
+        classic.close()
+
+
 def test_rounded_frames(g):
     g.keys("i", delay=1)
     s = g.screen()
@@ -325,7 +342,7 @@ def test_rounded_frames(g):
 TESTS = [test_welcome_card, test_controls_strip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position,
          test_quick_stack, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
          test_aim_defaults, test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel,
-         test_magnet_pull_through_monster]
+         test_magnet_pull_through_monster, test_classic_control_scheme]
 
 
 def main():

@@ -1913,6 +1913,11 @@ void options_manager::add_options_interface()
          false
        );
 
+    add( "CONTROL_SCHEME", interface, translate_marker( "Control scheme" ),
+         translate_marker( "Modern: WASD movement and mnemonic keys, attacks with F.  Classic: the original vi-keys and numpad layout, walking into enemies attacks and Y/N prompts need capitals.  Your own key changes are kept either way." ),
+    { { "modern", translate_marker( "Modern (WASD)" ) }, { "classic", translate_marker( "Classic" ) } },
+    "modern" );
+
     add( "BUMP_ATTACK", interface, translate_marker( "Attack by walking into enemies" ),
          translate_marker( "If true, moving into a hostile creature attacks it.  If false, use the attack command instead, so a stray step never starts a fight." ),
          false
@@ -4167,6 +4172,7 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
     bool options_changed = false;
     bool world_options_changed = false;
     bool lang_changed = false;
+    bool control_scheme_changed = false;
     bool used_tiles_changed = false;
     bool pixel_minimap_changed = false;
     bool terminal_size_changed = false;
@@ -4202,6 +4208,9 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
             } else if( iter.first == "USE_LANG" ) {
                 lang_changed = true;
 
+            } else if( iter.first == "CONTROL_SCHEME" ) {
+                control_scheme_changed = true;
+
             } else if( iter.first == "TERMINAL_X" || iter.first == "TERMINAL_Y" ) {
                 terminal_size_changed = true;
             }
@@ -4224,7 +4233,19 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
             ui_manager::redraw();
             refresh_display();
 
+            if( control_scheme_changed ) {
+                // Options that belong to the scheme follow it, unless they were changed alongside it.
+                const auto classic = ::get_option<std::string>( "CONTROL_SCHEME" ) == "classic";
+                for( const auto &[id, value] : { std::pair{ "BUMP_ATTACK", classic }, std::pair{ "FORCE_CAPITAL_YN", classic } } ) {
+                    if( OPTIONS[id] == OPTIONS_OLD[id] ) {
+                        OPTIONS[id].setValue( value ? "true" : "false" );
+                    }
+                }
+            }
             save();
+            if( control_scheme_changed ) {
+                inp_mngr.init();
+            }
             if( ingame && world_options_changed ) {
                 world_generator->active_world->info->WORLD_OPTIONS = ACTIVE_WORLD_OPTIONS;
                 world_generator->active_world->info->save();
@@ -4235,6 +4256,7 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
             g->on_options_changed();
         } else {
             lang_changed = false;
+            control_scheme_changed = false;
             terminal_size_changed = false;
             used_tiles_changed = false;
             pixel_minimap_changed = false;
