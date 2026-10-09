@@ -9327,7 +9327,8 @@ bool item::reload( Character &who, item &loc, int qty )
     int limit = 0;
     if( is_watertight_container() && ammo->made_of( LIQUID ) ) {
         limit = get_remaining_capacity_for_liquid( *ammo, true );
-    } else if( is_container() && ammo->is_comestible() ) {
+        // Disallow stackable generic to avoid issues with damage melding
+    } else if( is_container() && ( ammo->is_ammo() || ammo->is_comestible() ) ) {
         limit = ammo->charges_per_volume( get_container_capacity() );
         if( !is_container_empty() ) {
             limit -= ammo_remaining();

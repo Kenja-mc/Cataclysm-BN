@@ -15,12 +15,28 @@
 #include "item.h"
 #include "item_factory.h"
 #include "item_variant.h"
+#include "stack_modifier.h"
 #include "itype.h"
 #include "iuse_actor.h"
 #include "json.h"
 #include "rng.h"
 #include "type_id.h"
 #include "options.h"
+
+namespace
+{
+
+/// Ammo spawn entries can be wrapped in their default container.
+auto spawned_ammo_id( const item &spawned ) -> itype_id
+{
+    const auto *ammo = &spawned;
+    while( ammo->is_container() && ammo->contents.num_item_stacks() == 1 ) {
+        ammo = &ammo->get_contained();
+    }
+    return ammo->typeId();
+}
+
+} // namespace
 
 // FIXME: Somehow we cant get item_groups from their ids
 // Only can get Item_spawn_data
@@ -595,9 +611,7 @@ detached_ptr<item> Item_modifier::modify( detached_ptr<item> &&new_item ) const
         } else {
             detached_ptr<item> am = ammo->create_single( new_item->birthday() );
             if( am ) {
-                // Liquid ammo (water for a super soaker) arrives in its default container.
-                const item &round = am->is_container() && !am->contents.empty() ? am->contents.front() : *am;
-                new_item->ammo_set( round.typeId(), ch );
+                new_item->ammo_set( spawned_ammo_id( *am ), ch );
             }
         }
         // Make sure the item is in valid state
@@ -622,12 +636,17 @@ detached_ptr<item> Item_modifier::modify( detached_ptr<item> &&new_item ) const
             if( ammo ) {
                 detached_ptr<item> am = ammo->create_single( new_item->birthday() );
                 if( am ) {
-                    new_item->ammo_set( am->typeId() );
+                    new_item->ammo_set( spawned_ammo_id( *am ) );
                 }
             } else {
                 new_item->ammo_set( new_item->ammo_default() );
             }
         }
+    }
+
+    if( !stack_modifier.empty() && new_item->count_by_charges() ) {
+        stack_modifiers::set_count( *new_item, stack_modifier_id( stack_modifier ),
+                                    std::max( new_item->charges, 1 ) );
     }
 
     if( cont != nullptr && !cont->is_null() ) {
@@ -662,6 +681,9 @@ void Item_modifier::check_consistency( const std::string &context ) const
     }
     if( contents != nullptr ) {
         contents->check_consistency( "contents of " + context );
+    }
+    if( !stack_modifier.empty() && !stack_modifier_id( stack_modifier ).is_valid() ) {
+        debugmsg( "Unknown stack modifier %s in %s", stack_modifier, context );
     }
     if( with_ammo < 0 || with_ammo > 100 ) {
         debugmsg( "Item modifier's ammo chance %d is out of range", with_ammo );
