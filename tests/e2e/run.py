@@ -419,6 +419,29 @@ def test_classic_control_scheme(g):
         classic.close()
 
 
+def test_vehicle_screen_diagonals(g):
+    """WASD/QEZC move the vehicle screen cursor too; the actions they shadowed moved to capitals."""
+    arena(g)
+    g.keys("F12", "s", "v", delay=1)
+    g.keys("p", delay=1.5)  # Bicycle, spawned under the player
+    g.keys("Enter", delay=1.5)
+    g.keys("Enter", delay=1.5)
+    g.keys("Space", delay=1.5)
+    g.keys("x", delay=1.5)
+    g.keys("e", delay=2)  # "Examine vehicle"
+    try:
+        start = g.screen()
+        assert "Siphon" in start and "rEname" in start and "creW" in start, start
+        g.keys("s", delay=1.5)
+        moved = g.screen()
+        assert "ESC-back" in moved and moved != start, "s should move the cursor, not siphon"
+        g.keys("e", delay=1.5)
+        diag = g.screen()
+        assert "ESC-back" in diag and "new name" not in diag.lower() and diag != moved, "e should move diagonally, not rename"
+    finally:
+        g.keys("Escape", delay=1)
+
+
 def test_rounded_frames(g):
     g.keys("i", delay=1)
     s = g.screen()
@@ -429,7 +452,7 @@ def test_rounded_frames(g):
 TESTS = [test_welcome_card, test_death_mode_choice, test_first_time_tip, test_controls_strip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
          test_quick_stack, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
          test_aim_defaults, test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions,
-         test_magnet_pull_through_monster, test_classic_control_scheme]
+         test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme]
 
 
 def main():

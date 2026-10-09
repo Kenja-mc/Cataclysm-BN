@@ -50,6 +50,10 @@ When aiming: `f`/Enter fires, `x` aims one step, `u` `i` `o` pick aimed, careful
 
 On the overmap: `=`/`-` zoom, `R` toggles weather, `x` sets a waypoint.
 
+In the vehicle screen, WASD and Q E Z C move the cursor like everywhere else. The actions those
+letters used to start moved to Shift: `W` crew, `A` label, `S` siphon, `D` unload, `E` rename,
+`C` change tire, and `Z`/`X` zoom in and out.
+
 A **Controls** strip at the bottom of the sidebar always shows the most used keys. It reads the
 live keybindings, so it stays correct if you rebind anything.
 

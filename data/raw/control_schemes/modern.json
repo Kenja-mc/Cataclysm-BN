@@ -711,5 +711,153 @@
     "category": "DEFAULTMODE",
     "id": "chat",
     "bindings": [ { "input_method": "keyboard", "key": "y" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "UP",
+    "category": "VEH_INTERACT",
+    "name": "Move cursor north",
+    "bindings": [
+      { "input_method": "keyboard", "key": "w" },
+      { "input_method": "keyboard", "key": "UP" },
+      { "input_method": "keyboard", "key": "8" },
+      { "input_method": "keyboard", "key": "NUMPAD_8" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "DOWN",
+    "category": "VEH_INTERACT",
+    "name": "Move cursor south",
+    "bindings": [
+      { "input_method": "keyboard", "key": "s" },
+      { "input_method": "keyboard", "key": "DOWN" },
+      { "input_method": "keyboard", "key": "2" },
+      { "input_method": "keyboard", "key": "NUMPAD_2" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "LEFT",
+    "category": "VEH_INTERACT",
+    "name": "Move cursor west",
+    "bindings": [
+      { "input_method": "keyboard", "key": "a" },
+      { "input_method": "keyboard", "key": "LEFT" },
+      { "input_method": "keyboard", "key": "4" },
+      { "input_method": "keyboard", "key": "NUMPAD_4" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RIGHT",
+    "category": "VEH_INTERACT",
+    "name": "Move cursor east",
+    "bindings": [
+      { "input_method": "keyboard", "key": "d" },
+      { "input_method": "keyboard", "key": "RIGHT" },
+      { "input_method": "keyboard", "key": "6" },
+      { "input_method": "keyboard", "key": "NUMPAD_6" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "LEFTUP",
+    "category": "VEH_INTERACT",
+    "name": "Move cursor northwest",
+    "bindings": [
+      { "input_method": "keyboard", "key": "q" },
+      { "input_method": "keyboard", "key": "7" },
+      { "input_method": "keyboard", "key": "NUMPAD_7" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RIGHTUP",
+    "category": "VEH_INTERACT",
+    "name": "Move cursor northeast",
+    "bindings": [
+      { "input_method": "keyboard", "key": "e" },
+      { "input_method": "keyboard", "key": "9" },
+      { "input_method": "keyboard", "key": "NUMPAD_9" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "LEFTDOWN",
+    "category": "VEH_INTERACT",
+    "name": "Move cursor southwest",
+    "bindings": [
+      { "input_method": "keyboard", "key": "z" },
+      { "input_method": "keyboard", "key": "1" },
+      { "input_method": "keyboard", "key": "NUMPAD_1" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RIGHTDOWN",
+    "category": "VEH_INTERACT",
+    "name": "Move cursor southeast",
+    "bindings": [
+      { "input_method": "keyboard", "key": "c" },
+      { "input_method": "keyboard", "key": "3" },
+      { "input_method": "keyboard", "key": "NUMPAD_3" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "ASSIGN_CREW",
+    "category": "VEH_INTERACT",
+    "name": "Assign crew",
+    "bindings": [ { "input_method": "keyboard", "key": "W" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RELABEL",
+    "category": "VEH_INTERACT",
+    "name": "Relabel a portion of a vehicle",
+    "bindings": [ { "input_method": "keyboard", "key": "A" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "SIPHON",
+    "category": "VEH_INTERACT",
+    "name": "Siphon from tank",
+    "bindings": [ { "input_method": "keyboard", "key": "S" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "UNLOAD",
+    "category": "VEH_INTERACT",
+    "name": "Unload fuel bunker",
+    "bindings": [ { "input_method": "keyboard", "key": "D" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RENAME",
+    "category": "VEH_INTERACT",
+    "name": "Rename vehicle",
+    "bindings": [ { "input_method": "keyboard", "key": "E" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "TIRE_CHANGE",
+    "category": "VEH_INTERACT",
+    "name": "Change tire",
+    "bindings": [ { "input_method": "keyboard", "key": "C" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "ZOOM_IN",
+    "category": "VEH_INTERACT",
+    "name": "Zoom in (tiles mode)",
+    "bindings": [ { "input_method": "keyboard", "key": "Z" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "ZOOM_OUT",
+    "category": "VEH_INTERACT",
+    "name": "Zoom out (tiles mode)",
+    "bindings": [ { "input_method": "keyboard", "key": "X" } ]
   }
 ]
