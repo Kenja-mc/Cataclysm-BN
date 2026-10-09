@@ -1250,6 +1250,10 @@ void avatar::load( const JsonObject &data )
 
     items_identified.clear();
     data.read( "items_identified", items_identified );
+    // Books folded into one type (paperbacks) are known under their new id.
+    for( const auto &id : std::vector<itype_id>( items_identified.begin(), items_identified.end() ) ) {
+        items_identified.insert( item_controller->migrate_id( id ) );
+    }
 
     // Player only, snippets they have read at least once.
     data.read( "snippets_read", snippets_read );
@@ -2930,6 +2934,11 @@ void item::deserialize( JsonIn &jsin )
         }
     } else {
         data.read( "contents", contents );
+    }
+    // A magazine migrated to a smaller type (the unified batteries) keeps no more than it now holds.
+    if( is_magazine() && !contents.empty() && ammo_remaining() > ammo_capacity() ) {
+        item &rounds = contents.front();
+        rounds.charges = std::max( 0, rounds.charges - ( ammo_remaining() - ammo_capacity() ) );
     }
     if( data.has_member( "item_kill_tracker" ) ) {
         kills = std::make_unique<kill_tracker>( false );

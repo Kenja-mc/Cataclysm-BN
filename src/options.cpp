@@ -58,6 +58,7 @@
 #include <exception>
 #include <memory>
 #include <sstream>
+#include <set>
 #include <string>
 
 std::map<std::string, std::string> TILESETS; // All found tilesets: <name, tileset_dir>
@@ -166,6 +167,13 @@ constexpr auto debug = "debug";
 #if defined(__ANDROID__)
 constexpr auto android = "android";
 #endif
+
+/// Options that follow the control scheme: classic means upstream behaviour.
+static auto scheme_companions( const bool classic ) -> std::vector<std::pair<std::string, bool>>
+{
+    return { { "BUMP_ATTACK", classic }, { "FORCE_CAPITAL_YN", classic }, { "YN_HOTKEYS", classic },
+        { "MOUSE_TILE_SELECTION", !classic } };
+}
 
 options_manager::options_manager()
 {
@@ -4256,7 +4264,7 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
             if( control_scheme_changed ) {
                 // Options that belong to the scheme follow it, unless they were changed alongside it.
                 const auto classic = ::get_option<std::string>( "CONTROL_SCHEME" ) == "classic";
-                for( const auto &[id, value] : { std::pair{ "BUMP_ATTACK", classic }, std::pair{ "FORCE_CAPITAL_YN", classic }, std::pair{ "YN_HOTKEYS", classic } } ) {
+                for( const auto &[id, value] : scheme_companions( classic ) ) {
                     if( OPTIONS[id] == OPTIONS_OLD[id] ) {
                         OPTIONS[id].setValue( value ? "true" : "false" );
                     }
@@ -4346,6 +4354,7 @@ void options_manager::serialize( JsonOut &json ) const
 
 void options_manager::deserialize( JsonIn &jsin )
 {
+    auto loaded_names = std::set<std::string>();
     jsin.start_array();
     while( !jsin.end_array() ) {
         JsonObject joOptions = jsin.get_object();
@@ -4357,6 +4366,16 @@ void options_manager::deserialize( JsonIn &jsin )
 
         add_retry( name, value );
         options[ name ].setValue( value );
+        loaded_names.insert( name );
+    }
+    // A scheme set without its companions (a hand-written options.json) still gets them.
+    if( loaded_names.contains( "CONTROL_SCHEME" ) ) {
+        const auto classic = options[ "CONTROL_SCHEME" ].getValue() == "classic";
+        for( const auto &[id, value] : scheme_companions( classic ) ) {
+            if( !loaded_names.contains( id ) && options.contains( id ) ) {
+                options[ id ].setValue( value ? "true" : "false" );
+            }
+        }
     }
 }
 

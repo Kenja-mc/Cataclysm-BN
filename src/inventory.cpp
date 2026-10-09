@@ -25,6 +25,7 @@
 #include "player.h"
 #include "point.h"
 #include "rng.h"
+#include "stack_modifier.h"
 #include "translations.h"
 #include "type_id.h"
 #include "vehicle/veh_type.h"
@@ -404,6 +405,7 @@ void inventory::restack( player &p )
         for( invstack::iterator other = iter; other != items.end(); ++other ) {
             if( iter != other && iter->front()->stacks_with( *other->front() ) ) {
                 if( other->front()->count_by_charges() ) {
+                    stack_modifiers::merge( *iter->front(), *other->front() );
                     iter->front()->charges += other->front()->charges;
                 } else {
                     for( auto &elem : *other ) {

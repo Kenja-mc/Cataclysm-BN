@@ -111,6 +111,7 @@ input_manager inp_mngr;
 
 void input_manager::init()
 {
+    bindings_version_++;
     std::map<char, action_id> keymap;
     std::string keymap_file_loaded_from;
     std::set<action_id> unbound_keymap;
@@ -126,6 +127,7 @@ void input_manager::init()
             throw std::runtime_error( err.what() );
         }
     }
+    upstream_contexts = action_contexts;
     // The control scheme rebinds part of the defaults (WASD and friends for "modern").
     const auto scheme = PATH_INFO::datadir() + "raw/control_schemes/" +
                         get_option<std::string>( "CONTROL_SCHEME" ) + ".json";
@@ -265,6 +267,19 @@ void input_manager::load( const std::string &file_name, bool is_user_preferences
             events.push_back( new_event );
         }
 
+        // Older versions saved every binding, not just changed ones. An entry that only repeats
+        // upstream's default is not a preference and must not undo the control scheme.
+        if( is_user_preferences && !action.get_bool( "is_deleted", false ) &&
+            !action.get_bool( "is_user_created", false ) ) {
+            const auto ctx = upstream_contexts.find( context );
+            if( ctx != upstream_contexts.end() ) {
+                const auto act = ctx->second.find( action_id );
+                if( act != ctx->second.end() && act->second.input_events == events ) {
+                    continue;
+                }
+            }
+        }
+
         if( is_user_preferences && context != default_context_id &&
             action.get_bool( "is_deleted", false ) ) {
             if( actions.contains( action_id ) ) {
@@ -304,6 +319,7 @@ void input_manager::load( const std::string &file_name, bool is_user_preferences
 
 void input_manager::save()
 {
+    bindings_version_++;
     write_to_file( PATH_INFO::user_keybindings(), [&]( std::ostream & data_file ) {
         JsonOut jsout( data_file, true );
 
@@ -624,6 +640,7 @@ input_manager::t_input_event_list &input_manager::get_or_create_event_list(
 void input_manager::remove_input_for_action(
     const std::string &action_descriptor, const std::string &context )
 {
+    bindings_version_++;
     const t_action_contexts::iterator action_context = action_contexts.find( context );
     if( action_context != action_contexts.end() ) {
         t_actions &actions = action_context->second;
@@ -650,6 +667,7 @@ void input_manager::remove_input_for_action(
 void input_manager::add_input_for_action(
     const std::string &action_descriptor, const std::string &context, const input_event &event )
 {
+    bindings_version_++;
     t_input_event_list &events = get_or_create_event_list( action_descriptor, context );
     for( auto &events_a : events ) {
         if( events_a == event ) {

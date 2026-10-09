@@ -64,8 +64,10 @@ auto gather_spots( avatar &you, const std::optional<tripoint_bub_ms> &skip ) -> 
     auto &here = get_map();
     auto spots = std::vector<spot>();
     for( const auto &p : here.points_in_radius( you.bub_pos(), PICKUP_RANGE ) ) {
-        // Line of sight rather than light: you know where your shelves are in a dark basement.
-        if( p == skip || here.has_flag( "SEALED", p ) || !here.sees( you.bub_pos(), p, PICKUP_RANGE ) ) {
+        // A walkable straight line, like crafting's nearby items: works in the dark, but not through
+        // windows, bars or fences.
+        if( p == skip || here.has_flag( "SEALED", p ) ||
+            ( p != you.bub_pos() && !here.clear_path( you.bub_pos(), p, PICKUP_RANGE, 1, 100 ) ) ) {
             continue;
         }
         auto s = spot{ .pos = p, .dist = rl_dist( you.bub_pos(), p ) };

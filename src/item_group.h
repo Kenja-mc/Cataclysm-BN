@@ -102,6 +102,14 @@ item_group_id load_item_group( const JsonValue &value, const std::string &defaul
  * Base interface for item spawn.
  * Used to generate a list of items.
  */
+/// Where a migrated item id goes, with the variant or stack modifier the migration gives it.
+struct item_replacement {
+    std::string id;
+    std::string variant;
+    std::string stack_modifier;
+};
+using item_replacements = std::unordered_map<std::string, item_replacement>;
+
 class Item_spawn_data
 {
     public:
@@ -139,7 +147,7 @@ class Item_spawn_data
         virtual bool replace_item( const itype_id &itemid, const itype_id &replacementid,
                                    const std::string &context ) = 0;
         /** Applies every migration at once to this group's own entries (not to groups it links to). */
-        virtual void replace_items( const std::unordered_map<std::string, std::string> &replacements ) = 0;
+        virtual void replace_items( const item_replacements &replacements ) = 0;
         virtual bool has_item( const itype_id &itemid ) const = 0;
 
         virtual std::set<const itype *> every_item() const = 0;
@@ -215,7 +223,7 @@ class Item_modifier
         bool remove_item( const itype_id &itemid );
         bool replace_item( const itype_id &itemid, const itype_id &replacementid,
                            const std::string &context );
-        void replace_items( const std::unordered_map<std::string, std::string> &replacements );
+        void replace_items( const item_replacements &replacements );
 
         // Currently these always have the same chance as the item group it's part of, but
         // theoretically it could be defined per-item / per-group.
@@ -266,7 +274,7 @@ class Single_item_creator : public Item_spawn_data
         bool remove_item( const itype_id &itemid ) override;
         bool replace_item( const itype_id &itemid, const itype_id &replacementid,
                            const std::string &context ) override;
-        void replace_items( const std::unordered_map<std::string, std::string> &replacements ) override;
+        void replace_items( const item_replacements &replacements ) override;
 
         bool has_item( const itype_id &itemid ) const override;
         std::set<const itype *> every_item() const override;
@@ -318,7 +326,7 @@ class Item_group : public Item_spawn_data
         bool remove_specific_group( const std::string &itemid );
         bool replace_item( const itype_id &itemid, const itype_id &replacementid,
                            const std::string &context ) override;
-        void replace_items( const std::unordered_map<std::string, std::string> &replacements ) override;
+        void replace_items( const item_replacements &replacements ) override;
         bool has_item( const itype_id &itemid ) const override;
         std::set<const itype *> every_item() const override;
         std::vector<detached_ptr<item>> every_item_modified( bool modify = true ) const override;
