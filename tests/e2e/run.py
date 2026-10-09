@@ -156,7 +156,7 @@ def test_recraft_after_reload(g):
     assert wait_until(lambda: count_carried(g, "glass_shard_trap") == 1), g.screen()
     g.keys("Escape", delay=1)
     g.keys("S", delay=1)
-    g.keys("y", delay=1)
+    g.keys("y", "Enter", delay=1)
     g.wait_for("[Load]", timeout=60)
     load_first_save(g)
     g.define_lua(HELPERS)
@@ -374,7 +374,9 @@ def test_mre_unpacks_its_entree(g):
     assert "Lemon Pepper Tuna" in g.screen(), g.screen()
     g.keys("Enter", delay=1)
     assert "lemon pepper tuna entree" in g.screen().lower(), "the entree is listed in the yield"
-    # Confirmation prompts start on Yes, so Enter confirms.
+    # Prompts start on No; y only selects Yes, and Enter confirms it.
+    g.keys("y", delay=1)
+    assert "Really disassemble?" in g.screen(), "y alone must not answer the prompt"
     g.keys("Enter", delay=1)
     # The entree lands on the floor.
     assert wait_until(lambda: g.lua("count_at(0,0,'mre_lemontuna')") == ["1"], 60), g.screen()

@@ -66,8 +66,9 @@ Delete it from the config folder to follow the scheme again.
 Your first new game opens with a short welcome card listing these keys (Options → Interface →
 Show welcome card brings it back).
 
-Confirmation prompts work like any modern game. They open with **Yes** highlighted: Enter confirms,
-Esc cancels, the arrow keys switch, and you can click a button. `y` and `n` still work.
+Yes/No prompts are selectable buttons. They open on **No**: move with the arrow keys (or `y`/`n`),
+press Enter or click a button to answer, and Esc always cancels. Options → Interface → Answer Yes/No
+prompts with Y and N makes `y`/`n` answer at once instead; the classic control scheme turns that on.
 
 ## Look
 
