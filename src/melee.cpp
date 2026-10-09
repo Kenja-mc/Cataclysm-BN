@@ -783,14 +783,8 @@ auto technique_unavailable_reason( Character &self, Creature &target,
         return _( "human target only" );
     }
 
-    if( self.is_armed() && !tec.reqs.melee_allowed && tec.reqs.unarmed_allowed ) {
-        return _( "unarmed only" );
-    }
-
-    if( !self.is_armed() && !tec.reqs.unarmed_allowed && tec.reqs.melee_allowed ) {
-        return _( "requires a weapon" );
-    }
-
+    // Upstream #10388: armed/unarmed is left to character_requirement_reason below, which knows
+    // styles like Taekwondo that keep kicking with a weapon in hand (as automatic mode does).
     if( !tec.aoe.empty() && !aoe_technique_is_valid( self, target, tec ) ) {
         return technique_aoe_reason( self, target, tec );
     }

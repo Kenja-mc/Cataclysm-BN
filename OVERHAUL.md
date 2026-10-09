@@ -259,6 +259,14 @@ item type variants instead of new item types:
   ([upstream #10415](https://github.com/cataclysmbn/Cataclysm-BN/issues/10415)).
 - Starting as a delinquent logged an error: the super soaker's water was handed over still in its
   bottle (introduced upstream by #10533).
+- Manual technique selection greyed out kicks for styles that keep kicking with a weapon in hand,
+  such as Taekwondo ([upstream #10388](https://github.com/cataclysmbn/Cataclysm-BN/issues/10388)).
+- Hacking a card reader opened only the doors within three tiles; it now opens the whole door
+  line, like swiping the ID card ([upstream #10117](https://github.com/cataclysmbn/Cataclysm-BN/issues/10117)).
+- The rope hanging below a vehicle ladder was invisible in the terminal
+  ([upstream #10353](https://github.com/cataclysmbn/Cataclysm-BN/issues/10353)).
+- Followers in pain no longer take painkillers until they overdose
+  ([upstream #10429](https://github.com/cataclysmbn/Cataclysm-BN/issues/10429)).
 - Fixes from an adversarial review of the fork itself:
   - A `keybindings.json` saved by an older version (which stored every key) no longer undoes the
     control scheme; only keys you really changed count.
