@@ -3410,6 +3410,7 @@ void Item_factory::add_entry( Item_group &ig, const JsonObject &obj )
     use_modifier |= load_sub_ref( modifier.contents, obj, "contents", ig );
     use_modifier |= load_active( modifier.postprocess_fns, obj );
     use_modifier |= obj.read( "variant", modifier.variant );
+    use_modifier |= obj.read( "stack_modifier", modifier.stack_modifier );
 
     std::vector<std::string> custom_flags;
     use_modifier |= load_string( custom_flags, obj, "custom-flags" );

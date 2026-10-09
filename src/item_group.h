@@ -199,6 +199,8 @@ class Item_modifier
 
         /** Item variant to spawn, e.g. a gold ring rather than any ring. */
         std::string variant;
+        /** Stack modifier carried by every spawned unit, e.g. black powder handloads. */
+        std::string stack_modifier;
 
         /**
          * Custom functions to be applied to the item after its creation.

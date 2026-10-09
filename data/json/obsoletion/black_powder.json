@@ -288,6 +288,12 @@
     "stack_modifier": "black_powder"
   },
   {
+    "id": "bp_762_54R_7n1",
+    "type": "MIGRATION",
+    "replace": "762_54R_7n1",
+    "stack_modifier": "black_powder"
+  },
+  {
     "id": "bp_762_m43",
     "type": "MIGRATION",
     "replace": "762_m43",

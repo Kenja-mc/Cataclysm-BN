@@ -679,14 +679,20 @@ class wish_item_callback: public uilist_callback
             } );
             uilist container_menu;
             container_menu.text = _( "Select a container" );
+            container_menu.addentry( 0, true, 0, _( "None (no container)" ) );
             for( size_t index = 0; index < containers.size(); ++index ) {
                 const auto candidate = item::spawn_temporary( containers[index], calendar::turn );
-                container_menu.addentry( static_cast<int>( index ), true, 0, candidate->tname() );
+                container_menu.addentry( static_cast<int>( index + 1 ), true, 0, candidate->tname() );
             }
             container_menu.query();
             if( container_menu.ret >= 0 ) {
-                container = containers[static_cast<size_t>( container_menu.ret )]->get_id();
-                incontainer = true;
+                if( container_menu.ret == 0 ) {
+                    container.reset();
+                    incontainer = false;
+                } else {
+                    container = containers[static_cast<size_t>( container_menu.ret - 1 )]->get_id();
+                    incontainer = true;
+                }
             }
         }
 
