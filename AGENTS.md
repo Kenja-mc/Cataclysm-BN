@@ -1,4 +1,64 @@
-# Cataclysm: Bright Nights - Agent Guidelines
+# Bright Nights Overhaul: agent guide
+
+This file has two parts. Part 1 is for this fork. Part 2 is the upstream guide. Obey the two parts.
+
+## Part 1: The fork
+
+### Purpose
+
+This repository is a fork of Cataclysm: Bright Nights (BN). The fork makes the game easier to
+learn and use. It keeps the BN game rules. `OVERHAUL.md` explains each change.
+`CHANGELOG-OVERHAUL.md` lists the changes by date.
+
+### Rules
+
+1. Do not change the game balance. Change the interface, the controls and duplicate item data only.
+2. Put a new behavior behind an option when a player can want the old behavior.
+3. Keep the classic control scheme the same as upstream.
+4. Do not add AI art.
+5. Write few comments. Write a comment only when the code does not show the reason.
+6. Obey the upstream code rules in Part 2.
+
+### Build
+
+1. Run `cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCURSES=ON -DTILES=OFF -DTESTS=ON`.
+2. Run `ninja -C build cataclysm-bn cata_test`.
+
+### Test
+
+Do all three tests before you push. All results must be good.
+
+1. Data check: run `./cataclysm-bn --basepath ./ --userdir /tmp/chk/ --check-all-mods`. Make sure
+   that there are no errors.
+2. Upstream unit tests: use the software GPU, as upstream CI does. Refer to "Unit tests" in
+   `OVERHAUL.md`.
+3. Fork end-to-end tests: run `python3 tests/e2e/run.py`. Do not run other heavy work at the same
+   time, because slow input makes these tests fail.
+
+Write one end-to-end test for each new fork feature. Do not write unit tests for fork features.
+
+### Where to find the fork code
+
+| Subject | Location |
+| --- | --- |
+| Modern keys | `data/raw/control_schemes/modern.json` |
+| Options | `src/options.cpp` |
+| Fork interface | `src/hud_boxes.cpp`, `src/body_panel.cpp`, `src/keyhints_panel.cpp`, `src/tile_selection.cpp`, `src/first_tips.cpp` |
+| Quick stack and sort pile | `src/quick_stack.cpp` |
+| Item variants and stack modifiers | `src/item_variant.cpp`, `src/stack_modifier.cpp`, `data/json/item_variants.json` |
+| Save migrations for removed items | `data/json/obsoletion/` |
+| End-to-end tests | `tests/e2e/` |
+
+### Upstream merges
+
+1. Merge the upstream `main` branch. Do not rebase.
+2. Upstream can add items that the fork folded, for example `bp_` ammo, jewelry or novels. Fold the
+   new items in the same way. Add a migration for each item that you remove.
+3. Do not change the authors of upstream commits.
+
+## Part 2: Upstream guide
+
+### Cataclysm: Bright Nights - Agent Guidelines
 
 ## HARD CONSTRAINTS (NEVER VIOLATE)
 

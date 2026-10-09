@@ -61,6 +61,9 @@ def settle(g):
 
 def test_welcome_card(g):
     assert getattr(g, "saw_welcome", False), "first new game should show the welcome card"
+    card = g.welcome_screen
+    assert "Unsupported" not in card and "%" not in card, "the card text must be formatted:\n" + card
+    assert "Space" in card and "mouse works too" in card, card
 
 
 def test_death_mode_choice(g):
@@ -543,6 +546,19 @@ def test_body_panel(g):
     assert "bleeding" in details and "disinfectant" in details, details
 
 
+def test_readable_map_glyphs(g):
+    """Trees and saplings draw as ♣ and τ instead of digits."""
+    arena(g)
+    # Right next to the character, so even a dark start can see them.
+    g.lua("M:set_ter_at(here(-1,-1), TerId.new('t_tree'):int_id()) M:set_ter_at(here(1,-1), TerId.new('t_tree_young'):int_id()) out('ok')")
+    settle(g)
+    s = g.screen()
+    g.lua("M:set_ter_at(here(-1,-1), TerId.new('t_floor'):int_id()) M:set_ter_at(here(1,-1), TerId.new('t_floor'):int_id()) out('ok')")
+    x, y = g.find("@")
+    row = s.splitlines()[y - 1]
+    assert "♣" in row and "τ" in row, "\n".join(s.splitlines()[y - 2:y + 2])
+
+
 def test_rounded_frames(g):
     g.keys("i", delay=1)
     s = g.screen()
@@ -551,7 +567,7 @@ def test_rounded_frames(g):
 
 
 TESTS = [test_welcome_card, test_death_mode_choice, test_first_time_tip, test_controls_strip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
-         test_hud_boxes, test_body_panel, test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
+         test_hud_boxes, test_body_panel, test_readable_map_glyphs, test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
          test_aim_defaults, test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions,
          test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_old_full_keybindings_file, test_hud_box_options]
 

@@ -52,7 +52,7 @@ class migration
         std::set<itype_id> contents;
         /** Stack modifier the migrated units carry, e.g. black powder when bp_9mm becomes 9mm. */
         std::string stack_modifier;
-        /** Variant the migrated item takes, e.g. ruby when ruby_gold_ring becomes gemset_gold_ring. */
+        /** Variant the migrated item takes, e.g. ruby_gold_ring when that item becomes jewelry_ring. */
         std::string variant;
 };
 

@@ -70,7 +70,7 @@ struct figure_part {
 };
 
 /// A front view, so the character's right arm is on the left of the screen.
-const std::vector<figure_part> figure = {
+const auto figure = std::vector<figure_part> {
     { "head", { 2, 0 }, "O" },
     { "arm_r", { 1, 1 }, "/" }, { "torso", { 2, 1 }, "|" }, { "arm_l", { 3, 1 }, "\\" },
     { "torso", { 2, 2 }, "|" },
@@ -90,25 +90,25 @@ auto draw( avatar &you, const catacurses::window &w ) -> void
         mvwprintz( w, part.pos + point( 1, 0 ), health_color( you, bp ), part.glyph );
     }
     // Beside the figure: the worst problem of each hurt limb, then a hint for the full view.
-    auto lines = std::vector<std::pair<std::string, nc_color>>();
+    auto lines = std::vector<wound>();
     for( const auto &bp : you.get_all_body_parts( true ) ) {
         const auto found = wounds_of( you, bp );
         if( !found.empty() ) {
-            lines.emplace_back( string_format( "%s: %s", body_part_name_as_heading( bp, 1 ), found.front().text ),
-                                found.front().color );
+            lines.push_back( { string_format( "%s: %s", body_part_name_as_heading( bp, 1 ), found.front().text ),
+                               found.front().color } );
         }
     }
     const auto rows = std::max( getmaxy( w ) - 1, 1 );
     if( lines.empty() ) {
-        lines.emplace_back( _( "No wounds" ), c_green );
+        lines.push_back( { _( "No wounds" ), c_green } );
     } else if( static_cast<int>( lines.size() ) > rows ) {
         const auto more = lines.size() - rows + 1;
         lines.resize( rows - 1 );
-        lines.emplace_back( string_format( _( "and %d more" ), more ), c_light_gray );
+        lines.push_back( { string_format( _( "And %d more" ), more ), c_light_gray } );
     }
     const auto text_x = 7;
     for( int i = 0; i < static_cast<int>( lines.size() ) && i < rows; i++ ) {
-        trim_and_print( w, point( text_x, i ), getmaxx( w ) - text_x - 1, lines[i].second, lines[i].first );
+        trim_and_print( w, point( text_x, i ), getmaxx( w ) - text_x - 1, lines[i].color, lines[i].text );
     }
     // Looking the key up walks every binding, so only redo it when bindings change.
     static auto key = std::string();

@@ -168,12 +168,22 @@ constexpr auto debug = "debug";
 constexpr auto android = "android";
 #endif
 
-/// Options that follow the control scheme: classic means upstream behaviour.
-static auto scheme_companions( const bool classic ) -> std::vector<std::pair<std::string, bool>>
+namespace
 {
-    return { { "BUMP_ATTACK", classic }, { "FORCE_CAPITAL_YN", classic }, { "YN_HOTKEYS", classic },
-        { "MOUSE_TILE_SELECTION", !classic } };
+
+struct scheme_companion {
+    std::string id;
+    bool value = false;
+};
+
+/// Options that follow the control scheme: classic means upstream behaviour.
+auto scheme_companions( const bool classic ) -> std::vector<scheme_companion>
+{
+    return { { .id = "BUMP_ATTACK", .value = classic }, { .id = "FORCE_CAPITAL_YN", .value = classic },
+        { .id = "YN_HOTKEYS", .value = classic }, { .id = "MOUSE_TILE_SELECTION", .value = !classic } };
 }
+
+} // namespace
 
 options_manager::options_manager()
 {
@@ -1960,7 +1970,7 @@ void options_manager::add_options_interface()
     "top_left" );
 
     add( "HUD_ICONS", interface, translate_marker( "Box icons" ),
-         translate_marker( "Unicode works in most terminals.  Nerd Font needs a patched font (nerdfonts.com).  ASCII works everywhere." ),
+         translate_marker( "Icons in the weather and weapon boxes.  Unicode works in most terminals.  Nerd Font needs a patched font (nerdfonts.com).  ASCII works everywhere." ),
     { { "unicode", translate_marker( "Unicode" ) }, { "nerd", translate_marker( "Nerd Font" ) }, { "ascii", translate_marker( "ASCII" ) } },
     "unicode" );
 
@@ -2276,6 +2286,11 @@ void options_manager::add_options_graphics()
          translate_marker( "Palette for the whole interface.  \"Terminal\" inherits your terminal's colors and background, so the game follows your desktop theme.  Requires restart." ),
     { { "terminal", translate_marker( "Terminal" ) }, { "tokyo_night", translate_marker( "Tokyo Night" ) }, { "catppuccin", translate_marker( "Catppuccin" ) }, { "gruvbox", translate_marker( "Gruvbox" ) }, { "everforest", translate_marker( "Everforest" ) }, { "classic", translate_marker( "Classic" ) } },
     "terminal" );
+
+    add( "READABLE_MAP_GLYPHS", graphics, translate_marker( "Readable map glyphs" ),
+         translate_marker( "If true, trees are drawn as ♣ (pines ♠) and saplings as τ instead of the digits 7, 4 and 1 in the terminal version." ),
+         true
+       );
 
     add( "UI_ROUNDED_BORDERS", graphics, translate_marker( "Rounded window corners" ),
          translate_marker( "If true, window corners are drawn rounded in the terminal version (needs a UTF-8 locale)." ),
@@ -4440,6 +4455,7 @@ void options_manager::cache_to_globals()
     display_mod_source = ::get_option<bool>( "MOD_SOURCE" );
     display_object_ids = ::get_option<bool>( "SHOW_IDS" );
     trigdist = ::get_option<bool>( "CIRCLEDIST" );
+    readable_map_glyphs = ::get_option<bool>( "READABLE_MAP_GLYPHS" );
 #if defined(TILES)
     use_tiles = ::get_option<bool>( "USE_TILES" );
     colored_lighting = use_tiles && ::get_option<bool>( "COLORED_LIGHTING" );

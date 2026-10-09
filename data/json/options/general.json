@@ -66,7 +66,7 @@
     "page": "general",
     "group": "comestible_merging",
     "menu_text": "Freshness similarity threshold",
-    "tooltip": "Limit maximum allowed staleness difference when merging comestibles.  The lower the value, the more similar the items must be to merge.  0.0: Only merge identical items.  1.0: Merge comestibles regardless of its freshness.",
+    "tooltip": "Limit maximum allowed staleness difference when merging comestibles.  The lower the value, the more similar the items must be to merge.  0.0: Only merge identical items.  1.0: Merge comestibles regardless of its freshness (rotten food never merges with fresh).",
     "min": 0.0,
     "max": 1.0,
     "step": 0.05,

@@ -38,7 +38,7 @@ auto hurt( const avatar &you ) -> bool
     return false;
 }
 
-auto tips() -> const std::vector<tip> &
+auto tips() -> const std::vector<tip> & // *NOPAD*
 {
     static const auto all = std::vector<tip> {
         {

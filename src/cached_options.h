@@ -61,6 +61,9 @@ extern bool display_object_ids;
  */
 extern bool trigdist;
 
+// Draw trees and saplings with picture glyphs instead of digits in the terminal.
+extern bool readable_map_glyphs;
+
 /** Angled sunlight shadows: trace direct natural light along the current sun angle. */
 extern bool angled_sunlight_shadows;
 

@@ -1,4 +1,5 @@
 """Drives the curses build inside a detached tmux session."""
+import json
 import os
 import shutil
 import subprocess
@@ -23,7 +24,6 @@ class Game:
         config = self.userdir / "config"
         config.mkdir(parents=True)
         if options:
-            import json
             (config / "options.json").write_text(json.dumps(
                 [{"info": "", "default": "", "name": k, "value": v} for k, v in options.items()]))
         if keybindings:

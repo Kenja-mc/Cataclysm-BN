@@ -9,7 +9,7 @@ judgement, not counts.
 | 1 | Steep learning curve, weak onboarding | very common | welcome card, key hints; no guided first day yet |
 | 2 | Documentation hard to find or outdated | common | open |
 | 3 | Keybindings overwhelming and non-standard | very common | WASD, hint strip, classic toggle; discoverability of the long tail open |
-| 4 | Poor mouse support in the terminal | common | click-to-travel, right-click examine; tile selection in progress |
+| 4 | Poor mouse support in the terminal | common | click-to-travel, right-click examine; Sword of the Stars style tile selection (hover, click, right-click menu) |
 | 5 | Hard to read at a glance | common | themes; glyph density open |
 | 6 | Nested containers and pockets | very common (DDA) | BN mostly avoids pockets |
 | 7 | Item bloat | common | about 480 items folded into variants |
