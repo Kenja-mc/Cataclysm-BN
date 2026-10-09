@@ -83,6 +83,7 @@
 #include "iuse.h"
 #include "iuse_actor.h"
 #include "json.h"
+#include "first_tips.h"
 #include "keyhints_panel.h"
 #include "kill_tracker.h"
 #include "line.h"
@@ -2140,6 +2141,8 @@ bool game::do_turn()
         ZoneScopedN( "do_turn_autosave" );
         autosave();
     }
+
+    first_tips::check( u );
 
     {
         ZoneScopedN( "do_turn_weather_update" );

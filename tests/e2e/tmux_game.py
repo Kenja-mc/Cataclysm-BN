@@ -134,6 +134,10 @@ def start_new_game(game, timeout=240):
             game.welcome_screen = s
             game.keys("Escape", delay=1)
             continue
+        if "How should death work" in s:
+            game.saw_death_choice = True
+            game.keys("r", delay=1)
+            continue
         if in_game(s) and "Are you SURE" not in s:
             return
         if "Select your language" in s:

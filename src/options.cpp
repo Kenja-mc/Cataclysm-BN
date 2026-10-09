@@ -1933,6 +1933,11 @@ void options_manager::add_options_interface()
          true
        );
 
+    add( "SHOW_TIPS", interface, translate_marker( "Show first-time tips" ),
+         translate_marker( "If true, a one-line tip appears in the message log the first time your character gets hungry, hurt, sees a hostile and so on." ),
+         true
+       );
+
     add( "YN_HOTKEYS", interface, translate_marker( "Answer Yes/No prompts with Y and N" ),
          translate_marker( "If true, pressing Y or N answers a Yes/No prompt at once.  If false, they only select a button: confirm with Enter or a click, cancel with Esc." ),
          false

@@ -2675,11 +2675,12 @@ item::sound_data item::gun_noise( const bool burst ) const
 
         // Default behavior for normal guns without sound class defined.
     } else if( noise > 0 ) {
-        if( noise < 50 ) {
+        // Upstream #10415: bands follow the decibel-like loudness scale, so suppressed guns (capped near 100) plink.
+        if( noise < 100 ) {
             return { noise, burst ? _( "Brrrip!" ) : _( "plink!" ) };
-        } else if( noise < 120 ) {
+        } else if( noise < 150 ) {
             return { noise, burst ? _( "Brrrap!" ) : _( "bang!" ) };
-        } else if( noise < 160 ) {
+        } else if( noise < 165 ) {
             return { noise, burst ? _( "P-p-p-pow!" ) : _( "blam!" ) };
         } else {
             return { noise, burst ? _( "Kaboom!" ) : _( "kerblam!" ) };

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """End-to-end checks for the overhaul, played through the real curses binary in tmux."""
+import re
 import sys
 import time
 import traceback
@@ -56,6 +57,24 @@ def settle(g):
 
 def test_welcome_card(g):
     assert getattr(g, "saw_welcome", False), "first new game should show the welcome card"
+
+
+def test_death_mode_choice(g):
+    """Caves of Qud style: the first game asks Permadeath or Roleplay; the harness picks Roleplay."""
+    import json
+    assert getattr(g, "saw_death_choice", False), "welcome should ask how death works"
+    opts = {o["name"]: o["value"] for o in json.loads((g.userdir / "config" / "options.json").read_text())}
+    assert opts.get("PROMPT_ON_CHARACTER_DEATH") == "true", opts.get("PROMPT_ON_CHARACTER_DEATH")
+
+
+def test_first_time_tip(g):
+    arena(g)
+    g.lua("gapi.get_avatar():set_value('tip_seen_hostile','') out('ok')")
+    assert g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(4,0)) out('ok')") == ["ok"]
+    settle(g)
+    assert "Tip: Something hostile" in g.screen(), g.screen()
+    assert g.lua("out(gapi.get_avatar():get_value('tip_seen_hostile'))") == ["1"]
+    g.lua("local m=gapi.get_monster_at(here(4,0)) if m then m:set_pos_ms(here(40,40)) end out('ok')")
 
 
 def test_controls_strip(g):
@@ -261,7 +280,7 @@ def test_click_attacks_an_adjacent_enemy(g):
     before = zombie_hp(g)
     x, y = g.find("@")
     g.hover(x + 1, y)
-    assert "click: attack" in g.screen(), g.screen()
+    assert re.search(r"click: attack[^\n]*\[\S+\]", g.screen()), "hover hint should name the key: " + g.screen()
     for _ in range(6):
         g.click(x + 1, y)
         if zombie_hp(g) != before:
@@ -407,7 +426,7 @@ def test_rounded_frames(g):
     assert "╭" in s and "╯" in s, "inventory window should have rounded corners"
 
 
-TESTS = [test_welcome_card, test_controls_strip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
+TESTS = [test_welcome_card, test_death_mode_choice, test_first_time_tip, test_controls_strip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
          test_quick_stack, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
          test_aim_defaults, test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions,
          test_magnet_pull_through_monster, test_classic_control_scheme]
