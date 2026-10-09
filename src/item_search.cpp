@@ -40,6 +40,11 @@ std::function<bool( const item & )> basic_item_filter( std::string filter )
                     return lcmatch( mat->name(), filter );
                 } );
             };
+        case 'M':
+            return [filter]( const item & i ) {
+                return !i.made_of().empty() && std::ranges::all_of( i.made_of(),
+                [&filter]( const material_id & mat ) { return lcmatch( mat->name(), filter ); } );
+            };
         // qualities
         case 'q':
             return [filter]( const item & i ) {
@@ -115,11 +120,8 @@ std::function<bool( const itype & )> basic_itype_filter( std::string filter )
             };
         case 'M':
             return [filter]( const itype & i ) {
-                // Upstream #9617: an item without materials is not "made purely of" anything.
-                const auto &mats = i.materials;
-                return !mats.empty() && std::ranges::all_of( mats, [&filter]( const material_id & mat ) {
-                    return lcmatch( mat->name(), filter );
-                } );
+                return !i.materials.empty() && std::ranges::all_of( i.materials,
+                [&filter]( const material_id & mat ) { return lcmatch( mat->name(), filter ); } );
             };
         // qualities
         case 'q':
@@ -206,6 +208,11 @@ std::function<bool( const item & )> wildcard_item_filter( std::string filter )
                     return wildcard_match( mat->name(), filter );
                 } );
             };
+        case 'M':
+            return [filter]( const item & i ) {
+                return !i.made_of().empty() && std::ranges::all_of( i.made_of(),
+                [&filter]( const material_id & mat ) { return wildcard_match( mat->name(), filter ); } );
+            };
         // qualities
         case 'q':
             return [filter]( const item & i ) {
@@ -283,11 +290,8 @@ std::function<bool( const itype & )> wildcard_itype_filter( std::string filter )
             };
         case 'M':
             return [filter]( const itype & i ) {
-                // Upstream #9617: an item without materials is not "made purely of" anything.
-                const auto &mats = i.materials;
-                return !mats.empty() && std::ranges::all_of( mats, [&filter]( const material_id & mat ) {
-                    return wildcard_match( mat->name(), filter );
-                } );
+                return !i.materials.empty() && std::ranges::all_of( i.materials,
+                [&filter]( const material_id & mat ) { return wildcard_match( mat->name(), filter ); } );
             };
         // qualities
         case 'q':
