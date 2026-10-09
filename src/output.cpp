@@ -708,8 +708,12 @@ bool query_yn( const std::string &text )
 {
     // TODO: Queries are often opened in test_mode, shouldn't it be an error?
     const bool force_uc = get_option<bool>( "FORCE_CAPITAL_YN" );
-    const auto &allow_key = force_uc ? input_context::disallow_lower_case
-                            : input_context::allow_all_keys;
+    // Without Y/N hotkeys, y and n only move the highlight; Enter confirms and Esc still cancels.
+    static const input_context::input_event_filter select_only = []( const input_event & evt ) {
+        return evt.get_first_input() == KEY_ESCAPE;
+    };
+    const auto &allow_key = !get_option<bool>( "YN_HOTKEYS" ) ? select_only
+                            : force_uc ? input_context::disallow_lower_case : input_context::allow_all_keys;
 
     return query_popup()
            .context( "YESNO" )
@@ -718,8 +722,7 @@ bool query_yn( const std::string &text )
                      pgettext( "query_yn", "%s" ), text )
            .option( "YES", allow_key )
            .option( "NO", allow_key )
-           // Enter confirms, Esc cancels, like any modern game.
-           .cursor( 0 )
+           .cursor( 1 )
            .default_color( c_light_red )
            .query()
            .action == "YES";

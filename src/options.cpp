@@ -1914,7 +1914,7 @@ void options_manager::add_options_interface()
        );
 
     add( "CONTROL_SCHEME", interface, translate_marker( "Control scheme" ),
-         translate_marker( "Modern: WASD movement and mnemonic keys, attacks with F.  Classic: the original vi-keys and numpad layout, walking into enemies attacks and Y/N prompts need capitals.  Your own key changes are kept either way." ),
+         translate_marker( "Modern: WASD movement and mnemonic keys, attacks with F.  Classic: the original vi-keys and numpad layout, walking into enemies attacks and Y/N prompts answer to capital Y and N.  Your own key changes are kept either way." ),
     { { "modern", translate_marker( "Modern (WASD)" ) }, { "classic", translate_marker( "Classic" ) } },
     "modern" );
 
@@ -1931,6 +1931,11 @@ void options_manager::add_options_interface()
     add( "SHOW_WELCOME", interface, translate_marker( "Show welcome card" ),
          translate_marker( "If true, the next new game starts with a short card explaining the controls." ),
          true
+       );
+
+    add( "YN_HOTKEYS", interface, translate_marker( "Answer Yes/No prompts with Y and N" ),
+         translate_marker( "If true, pressing Y or N answers a Yes/No prompt at once.  If false, they only select a button: confirm with Enter or a click, cancel with Esc." ),
+         false
        );
 
     add( "FORCE_CAPITAL_YN", interface, translate_marker( "Force Y/N in prompts" ),
@@ -4241,7 +4246,7 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
             if( control_scheme_changed ) {
                 // Options that belong to the scheme follow it, unless they were changed alongside it.
                 const auto classic = ::get_option<std::string>( "CONTROL_SCHEME" ) == "classic";
-                for( const auto &[id, value] : { std::pair{ "BUMP_ATTACK", classic }, std::pair{ "FORCE_CAPITAL_YN", classic } } ) {
+                for( const auto &[id, value] : { std::pair{ "BUMP_ATTACK", classic }, std::pair{ "FORCE_CAPITAL_YN", classic }, std::pair{ "YN_HOTKEYS", classic } } ) {
                     if( OPTIONS[id] == OPTIONS_OLD[id] ) {
                         OPTIONS[id].setValue( value ? "true" : "false" );
                     }
