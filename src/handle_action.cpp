@@ -69,6 +69,7 @@
 #include "panels.h"
 #include "player.h"
 #include "player_activity.h"
+#include "body_panel.h"
 #include "quick_stack.h"
 #include "popup.h"
 #include "profile.h"
@@ -2914,6 +2915,10 @@ bool game::handle_action()
 
             case ACTION_PL_INFO:
                 character_display::disp_info( u );
+                break;
+
+            case ACTION_BODY_STATUS:
+                body_panel::show_details( u );
                 break;
 
             case ACTION_MAP:

@@ -84,6 +84,7 @@
 #include "iuse_actor.h"
 #include "json.h"
 #include "first_tips.h"
+#include "hud_boxes.h"
 #include "keyhints_panel.h"
 #include "kill_tracker.h"
 #include "line.h"
@@ -3676,6 +3677,7 @@ input_context get_default_mode_input_context()
     ctxt.register_action( "quickload" );
     ctxt.register_action( "SUICIDE" );
     ctxt.register_action( "player_data" );
+    ctxt.register_action( "body_status" );
     ctxt.register_action( "map" );
     ctxt.register_action( "sky" );
     ctxt.register_action( "missions" );
@@ -4839,6 +4841,10 @@ void game::draw( ui_adaptor &ui )
                 it = draw_callbacks.erase( it );
             }
         }
+    }
+    // Tiles draw the map themselves; these boxes are for the terminal view.
+    if( !is_draw_tiles_mode() ) {
+        hud_boxes::draw( u, w_terrain );
     }
     {
         ZoneScopedN( "game_draw_wrefresh" );

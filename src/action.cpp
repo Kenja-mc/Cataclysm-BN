@@ -169,6 +169,7 @@ std::string io::enum_to_string<action_id>( action_id data )
             PAIR( ACTION_SUICIDE )
 
             PAIR( ACTION_PL_INFO )
+            PAIR( ACTION_BODY_STATUS )
             PAIR( ACTION_MAP )
             PAIR( ACTION_SKY )
             PAIR( ACTION_MISSIONS )
@@ -450,6 +451,8 @@ std::string action_ident( action_id act )
             return "SUICIDE";
         case ACTION_PL_INFO:
             return "player_data";
+        case ACTION_BODY_STATUS:
+            return "body_status";
         case ACTION_MAP:
             return "map";
         case ACTION_SKY:
@@ -598,6 +601,7 @@ bool can_action_change_worldstate( const action_id act )
         case ACTION_SUICIDE:
         // Info Screens
         case ACTION_PL_INFO:
+        case ACTION_BODY_STATUS:
         case ACTION_MAP:
         case ACTION_SKY:
         case ACTION_MISSIONS:
@@ -1186,7 +1190,7 @@ action_id handle_action_menu()
             register_lua_action_entries( category_id );
         } else if( category_id == "info" ) {
             register_actions( {
-                ACTION_PL_INFO, ACTION_MISSIONS, ACTION_SCORES,
+                ACTION_PL_INFO, ACTION_BODY_STATUS, ACTION_MISSIONS, ACTION_SCORES,
                 ACTION_FACTIONS, ACTION_MORALE, ACTION_MESSAGES, ACTION_DIARY
             } );
             register_lua_action_entries( category_id );

@@ -78,7 +78,13 @@ TEST_CASE("fluid grids preserve multiple liquid types", "[overmap][fluid_grid]")
     const auto cleanup = on_out_of_scope([] { clear_all_state(); });
     clear_map();
     auto& here = get_map();
-    const auto tank_pos = tripoint_bub_ms{g_half_mapsize_x, g_half_mapsize_y, 0};
+    // Every fixture must share one overmap tile (grids are per tile), so start from the middle of
+    // the tile under the map centre: after tests that move the map (catalua_test's dimension
+    // travel) the centre can sit on a tile corner, splitting the fixtures over four grids.
+    const auto centre_omt = project_to<coords::omt>(
+        map_local_to_abs(here, tripoint_bub_ms{g_half_mapsize_x, g_half_mapsize_y, 0}));
+    const auto tank_pos =
+        abs_to_bub(project_to<coords::ms>(centre_omt) + tripoint_rel_ms{SEEX, SEEY, 0});
     const auto water_tank_pos = tank_pos + point_south;
     const auto autofill_tank_pos = tank_pos + point_east;
     const auto sink_pos = tank_pos + point_west;

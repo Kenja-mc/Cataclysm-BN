@@ -252,6 +252,7 @@ enum action_id : int {
     /**@{*/
     /** Display player status screen */
     ACTION_PL_INFO,
+    ACTION_BODY_STATUS,
     /** Display over-map */
     ACTION_MAP,
     /** Show sky state for trying to predict weather */
