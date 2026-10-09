@@ -10,8 +10,9 @@ from tmux_game import Game, start_new_game
 
 HELPERS = (
     "M=gapi.get_map() function here(dx,dy) local c=gapi.get_avatar():get_pos_ms() return TripointBubMs.new(c.x+dx,c.y+dy,c.z) end "
-    "PARKED=0 function park(cr) repeat PARKED=PARKED+1 until not gapi.get_creature_at(here(30+PARKED%20,30+PARKED//20)) "
-    "cr:set_pos_ms(here(30+PARKED%20,30+PARKED//20)) end "
+    # Far enough that a parked zombie does not wander back and interrupt a later test's activity.
+    "PARKED=0 function park(cr) repeat PARKED=PARKED+1 until not gapi.get_creature_at(here(45+PARKED%15,45+PARKED//15)) "
+    "cr:set_pos_ms(here(45+PARKED%15,45+PARKED//15)) end "
     "function arena() local k=0 for dx=-13,13 do for dy=-13,13 do local p=here(dx,dy) "
     "if math.abs(dx)<=4 and math.abs(dy)<=4 then M:set_ter_at(p, TerId.new('t_floor'):int_id()) end "
     "M:set_furn_at(p, FurnId.new('f_null'):int_id()) M:clear_items_at(p) "
