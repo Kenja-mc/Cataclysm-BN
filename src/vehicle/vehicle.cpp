@@ -47,6 +47,7 @@
 #include "point_float.h"
 #include "rng.h"
 #include "sounds.h"
+#include "stack_modifier.h"
 #include "string_formatter.h"
 #include "string_id.h"
 #include "string_input_popup.h"
@@ -5821,10 +5822,14 @@ auto vehicle::add_charges(int part, detached_ptr<item>&& itm) -> detached_ptr<it
     if (amount == 0) { return std::move(itm); }
 
     detached_ptr<item> itm_copy = item::spawn(*itm);
+    stack_modifiers::split(*itm, *itm_copy, amount);
     itm_copy->charges = amount;
     itm->charges -= amount;
     detached_ptr<item> remaining = add_item(part, std::move(itm_copy));
-    if (remaining) { itm->charges += remaining->charges; }
+    if (remaining) {
+        stack_modifiers::merge(*itm, *remaining);
+        itm->charges += remaining->charges;
+    }
     return itm->charges > 0 ? std::move(itm) : detached_ptr<item>();
 }
 

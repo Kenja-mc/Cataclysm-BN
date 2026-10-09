@@ -1205,6 +1205,9 @@ bool item::stacks_with( const item &rhs, bool check_components, bool skip_type_c
             return mine == theirs;
         }
         // Stack modifier counts describe some of the units; they never keep stacks apart.
+        if( item_vars_ == rhs.item_vars_ ) {
+            return true;
+        }
         const auto plain = []( const data_vars::data_set & vars ) {
             auto out = std::map<std::string, std::string>();
             for( const auto &[key, value] : vars ) {
@@ -9809,13 +9812,16 @@ detached_ptr<item> item::fill_with( detached_ptr<item> &&liquid, int amount )
         item &cts = contents.front();
 
         cts.set_rot( weighted_averaged_rot( &cts, &*liquid ) );
+        stack_modifiers::transfer( *liquid, cts, amount );
         cts.mod_charges( amount );
     } else if( !is_container_empty() ) {
         // if container already has liquid we need to set the amount
         item &cts = contents.front();
+        stack_modifiers::transfer( *liquid, cts, amount );
         cts.mod_charges( amount );
     } else {
         detached_ptr<item> liquid_copy = item::spawn( *liquid );
+        stack_modifiers::split( *liquid, *liquid_copy, amount );
         liquid_copy->charges = amount;
         put_in( std::move( liquid_copy ) );
     }

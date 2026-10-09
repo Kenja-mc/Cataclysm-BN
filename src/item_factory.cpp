@@ -801,10 +801,20 @@ void Item_factory::finalize_item_blacklist()
     }
 
     // Item groups take every migration in one pass; one pass per migration took minutes.
-    auto group_replacements = std::unordered_map<std::string, std::string>();
+    auto group_replacements = item_replacements();
     for( const auto &[from, migrate] : migrations ) {
-        if( m_templates.contains( migrate.replace ) ) {
-            group_replacements.emplace( from.str(), migrate.replace.str() );
+        // Follow chains (a -> b -> c) to their end, as one replace pass per migration used to.
+        const auto *last = &migrate;
+        for( int hops = 0; hops < 8; hops++ ) {
+            const auto next = migrations.find( last->replace );
+            if( next == migrations.end() ) {
+                break;
+            }
+            last = &next->second;
+        }
+        if( m_templates.contains( last->replace ) ) {
+            group_replacements.emplace( from.str(), item_replacement{ .id = last->replace.str(),
+                                        .variant = migrate.variant, .stack_modifier = migrate.stack_modifier } );
         }
     }
     for( auto &g : m_template_groups ) {

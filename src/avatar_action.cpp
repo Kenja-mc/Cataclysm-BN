@@ -563,10 +563,17 @@ bool avatar_action::move( avatar &you, map &m, const tripoint_rel_ms &d )
             !critter.has_effect( effect_pet ) && att != MATT_FRIEND ) {
             if( you.is_auto_moving() ) {
                 add_msg( m_warning, _( "Monster in the way.  Auto-move canceled." ) );
-                add_msg( m_info, _( "Move into the monster to attack." ) );
+                if( get_option<bool>( "BUMP_ATTACK" ) ) {
+                    add_msg( m_info, _( "Move into the monster to attack." ) );
+                } else {
+                    add_msg( m_info, _( "%s to attack." ), press_x( ACTION_AUTOATTACK ) );
+                }
                 you.clear_destination();
                 return false;
             } else {
+            }
+            if( refuse_bump_attack( critter ) ) {
+                return false;
             }
             if( you.has_effect( effect_relax_gas ) ) {
                 if( one_in( 8 ) ) {
@@ -576,9 +583,6 @@ bool avatar_action::move( avatar &you, map &m, const tripoint_rel_ms &d )
                     add_msg( m_bad, _( "You're too pacified to strike anything…" ) );
                     return false;
                 }
-            }
-            if( refuse_bump_attack( critter ) ) {
-                return false;
             }
             // Ask for confirmation before attacking a neutral creature unless we've already taken a swing at it
             if( ( att == MATT_IGNORE || att == MATT_FLEE ) &&
@@ -796,7 +800,8 @@ bool avatar_action::move( avatar &you, map &m, const tripoint_rel_ms &d )
         add_msg( _( "That door is locked!" ) );
     } else if( m.ter( dest_loc ) == t_door_bar_locked ) {
         add_msg( _( "You rattle the bars but the door is locked!" ) );
-    } else if( !you.is_auto_moving() && !m.passable( dest_loc ) ) {
+    } else if( !you.is_auto_moving() && !m.passable( dest_loc ) &&
+               get_option<std::string>( "CONTROL_SCHEME" ) != "classic" ) {
         // Say what stopped you, so a blocked step never looks like the game ignoring the key.
         add_msg( m_info, _( "The %s is in the way." ), m.obstacle_name( dest_loc ) );
     }
@@ -1031,7 +1036,11 @@ auto avatar_action::attack_in_direction( avatar &you, map &m ) -> void
 
 auto avatar_action::attack_at( avatar &you, map &m, const tripoint_rel_ms &dir ) -> void
 {
-    if( g->critter_at<Creature>( you.bub_pos() + dir, true ) == nullptr ) {
+    const auto *target = g->critter_at<Creature>( you.bub_pos() + dir, true );
+    const auto *guy = dynamic_cast<const npc *>( target );
+    // Moving into a pet swaps places and into a friendly NPC talks; neither is an attack.
+    if( target == nullptr || ( guy != nullptr && !guy->is_enemy() ) ||
+        ( guy == nullptr && target->attitude_to( you ) == Attitude::A_FRIENDLY ) ) {
         add_msg( m_info, _( "There's nothing there to attack." ) );
         return;
     }

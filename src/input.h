@@ -260,6 +260,8 @@ class input_manager
          * Initializes the input manager, aka loads the input mapping configuration JSON.
          */
         void init();
+        /// Changes whenever any binding changes, so callers can cache what they derive from them.
+        auto bindings_version() const -> int { return bindings_version_; }
         /**
          * Opposite of @ref init, save the data that has been loaded by @ref init,
          * and possibly been modified.
@@ -327,6 +329,9 @@ class input_manager
         t_action_contexts action_contexts;
         /** Bindings from the game data and control scheme, before the user's own changes. */
         t_action_contexts default_contexts;
+        /// Bindings from data/raw/keybindings alone, before a control scheme rebinds them.
+        t_action_contexts upstream_contexts;
+        int bindings_version_ = 0;
 
         using t_key_to_name_map = std::map<int, std::string>;
         t_key_to_name_map keycode_to_keyname;

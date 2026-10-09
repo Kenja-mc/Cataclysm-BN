@@ -7,6 +7,7 @@
 #include "catacharset.h"
 #include "color.h"
 #include "cursesdef.h"
+#include "input.h"
 #include "options.h"
 #include "output.h"
 #include "string_formatter.h"
@@ -74,7 +75,14 @@ auto draw_keyhints( const avatar &/*you*/, const catacurses::window &w ) -> void
     const auto width = getmaxx( w ) - 1;
     const auto height = getmaxy( w );
     auto pos = point( 1, 0 );
-    for( const auto &h : collect_hints() ) {
+    // Building the hints walks every binding; only redo it when the bindings change.
+    static auto cached = std::vector<hint>();
+    static auto cached_version = -1;
+    if( cached_version != inp_mngr.bindings_version() ) {
+        cached = collect_hints();
+        cached_version = inp_mngr.bindings_version();
+    }
+    for( const auto &h : cached ) {
         const auto len = utf8_width( h.keys ) + 1 + utf8_width( h.label );
         if( pos.x > 1 && pos.x + len > width ) {
             pos = point( 1, pos.y + 1 );

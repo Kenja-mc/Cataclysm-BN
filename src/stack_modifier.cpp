@@ -88,7 +88,8 @@ auto transfer( item &from, item &to, const int qty ) -> void
             moved++;
         }
         // Units left behind cannot outnumber the charges left behind.
-        moved = std::clamp( moved, std::max( 0, m.count - ( total - qty ) ), std::min( m.count, qty ) );
+        const auto hi = std::min( m.count, qty );
+        moved = std::clamp( moved, std::min( hi, std::max( 0, m.count - ( total - qty ) ) ), hi );
         set_count( from, m.id, m.count - moved );
         set_count( to, m.id, count( to, m.id ) + moved );
     }
@@ -114,6 +115,7 @@ auto take_one( item &source, const int total ) -> std::optional<stack_modifier_i
     if( total <= 0 ) {
         return std::nullopt;
     }
+    clamp( source, total );
     auto roll = rng( 1, total );
     for( const auto &m : on( source ) ) {
         if( roll <= m.count ) {
@@ -129,7 +131,8 @@ auto describe( const item &it ) -> std::string
 {
     auto out = std::string();
     for( const auto &m : on( it ) ) {
-        out += string_format( ", %d %s", m.count, m.id->name.translated() );
+        const auto n = it.count_by_charges() ? std::min( m.count, std::max( it.charges, 1 ) ) : m.count;
+        out += string_format( ", %d %s", n, m.id->name.translated() );
     }
     return out;
 }

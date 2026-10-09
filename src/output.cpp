@@ -717,7 +717,7 @@ bool query_yn( const std::string &text )
 
     return query_popup()
            .context( "YESNO" )
-           .message( force_uc ?
+           .message( force_uc && get_option<bool>( "YN_HOTKEYS" ) ?
                      pgettext( "query_yn", "%s (Case Sensitive)" ) :
                      pgettext( "query_yn", "%s" ), text )
            .option( "YES", allow_key )

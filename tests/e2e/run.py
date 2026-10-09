@@ -124,6 +124,28 @@ def test_quick_stack(g):
     assert "Stashed 3 items into 1 spot" in g.screen()
 
 
+def test_quick_stack_not_through_windows(g):
+    arena(g)
+    assert g.lua("M:set_ter_at(here(1,0), TerId.new('t_window'):int_id()) out('ok')") == ["ok"]
+    spawn(g, 2, 0, "usb_drive", furn="f_rack")
+    give(g, "usb_drive", 2)
+    g.keys("Q", delay=1.5)
+    settle(g)
+    assert count_carried(g, "usb_drive") == 2, "a shelf behind a window is out of reach"
+    assert count_at(g, 2, 0, "usb_drive") == 1
+    g.lua("M:set_ter_at(here(1,0), TerId.new('t_floor'):int_id()) out('ok')")
+
+
+def test_black_powder_loot_keeps_its_modifier(g):
+    arena(g)
+    g.lua("for i=1,5 do M:place_items('ammo_rifle_blackpowder_handloads', 100, here(2,0), here(2,0), false) end out('ok')")
+    rows = g.lua("for _,it in pairs(M:get_items_at(here(2,0))) do out(it.charges, it:get_var_num('stack_mod:black_powder', 0)) end")
+    assert rows, "the group should spawn something"
+    for row in rows:
+        charges, bp = (int(float(v)) for v in row.split(","))
+        assert bp == charges, f"every spawned round is black powder: {rows}"
+
+
 def test_sort_pile(g):
     arena(g)
     spawn(g, 3, 0, "usb_drive", furn="f_rack")
@@ -415,8 +437,34 @@ def test_classic_control_scheme(g):
             classic.keys(key, delay=0.8)
             assert bub_pos(classic) == (before[0] + dx, before[1] + dy, before[2]), key
         assert "wasd move" not in classic.screen()
+        # Bump attacks come with the scheme even though options.json only names the scheme.
+        assert classic.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(1,0)) out('ok')") == ["ok"]
+        before = zombie_hp(classic)
+        for _ in range(6):
+            classic.keys("l", delay=1)
+            if zombie_hp(classic) != before:
+                break
+        assert zombie_hp(classic) != before, "walking into a zombie attacks it in classic"
     finally:
         classic.close()
+
+
+def test_old_full_keybindings_file(g):
+    """Older versions saved every binding; such a file must not undo the modern scheme."""
+    old = Game(name="bn-e2e-oldkeys", options={"SAFEMODE": "false"},
+               keybindings="data/raw/keybindings/keybindings.json")
+    try:
+        start_new_game(old)
+        old.define_lua(HELPERS)
+        arena(old)
+        old.keys("x", delay=0.6)
+        for key, (dx, dy) in {"d": (1, 0), "w": (0, -1), "e": (1, -1)}.items():
+            before = bub_pos(old)
+            old.keys(key, delay=0.8)
+            assert bub_pos(old) == (before[0] + dx, before[1] + dy, before[2]), key
+        assert "wasd move" in old.screen()
+    finally:
+        old.close()
 
 
 def test_vehicle_screen_diagonals(g):
@@ -450,9 +498,9 @@ def test_rounded_frames(g):
 
 
 TESTS = [test_welcome_card, test_death_mode_choice, test_first_time_tip, test_controls_strip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
-         test_quick_stack, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
+         test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
          test_aim_defaults, test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions,
-         test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme]
+         test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_old_full_keybindings_file]
 
 
 def main():

@@ -374,8 +374,7 @@ bool Single_item_creator::remove_item( const itype_id &itemid )
     return type == S_NONE;
 }
 
-void Single_item_creator::replace_items( const std::unordered_map<std::string, std::string>
-        &replacements )
+void Single_item_creator::replace_items( const item_replacements &replacements )
 {
     if( modifier ) {
         modifier->replace_items( replacements );
@@ -384,10 +383,22 @@ void Single_item_creator::replace_items( const std::unordered_map<std::string, s
         return;
     }
     if( const auto found = replacements.find( id ); found != replacements.end() ) {
+        const auto &to = found->second;
         if( get_option<bool>( "MIGRATION_CHECKS" ) ) {
-            debugmsg( "Migrated item: %s should be migrated to %s", id, found->second );
+            debugmsg( "Migrated item: %s should be migrated to %s", id, to.id );
         }
-        id = found->second;
+        id = to.id;
+        if( !to.variant.empty() || !to.stack_modifier.empty() ) {
+            if( !modifier ) {
+                modifier.emplace();
+            }
+            if( modifier->variant.empty() ) {
+                modifier->variant = to.variant;
+            }
+            if( modifier->stack_modifier.empty() ) {
+                modifier->stack_modifier = to.stack_modifier;
+            }
+        }
     }
 }
 
@@ -709,7 +720,7 @@ bool Item_modifier::remove_item( const itype_id &itemid )
     return false;
 }
 
-void Item_modifier::replace_items( const std::unordered_map<std::string, std::string> &replacements )
+void Item_modifier::replace_items( const item_replacements &replacements )
 {
     for( auto *data : { ammo.get(), container.get(), contents.get() } ) {
         if( data != nullptr ) {
@@ -894,7 +905,7 @@ bool Item_group::remove_specific_group( const std::string &itemid )
     return items.empty();
 }
 
-void Item_group::replace_items( const std::unordered_map<std::string, std::string> &replacements )
+void Item_group::replace_items( const item_replacements &replacements )
 {
     for( const auto &elem : items ) {
         elem->replace_items( replacements );
