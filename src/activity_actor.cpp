@@ -21,6 +21,7 @@
 #include "event.h"
 #include "event_bus.h"
 #include "flag.h"
+#include "flood_fill.h"
 #include "game.h"
 #include "gates.h"
 #include "iexamine.h"
@@ -61,6 +62,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <utility>
 
 #define dbg(x) DebugLog((x),DC::Game)
@@ -1012,9 +1014,17 @@ void hacking_activity_actor::finish( player_activity &act, Character &who )
                 who.add_msg_if_player( _( "You activate the panel!" ) );
                 who.add_msg_if_player( m_good, _( "The nearby doors unlock." ) );
                 here.ter_set( examp, t_card_reader_broken );
-                for( const tripoint_bub_ms &tmp : here.points_in_radius( ( examp ), 3 ) ) {
-                    if( here.ter( tmp ) == t_door_metal_locked ) {
-                        here.ter_set( tmp, t_door_metal_c );
+                // Upstream #10117: open the whole door line like an ID card does, not just the
+                // tiles within reach of the reader.
+                const auto is_door = [&here]( const tripoint_bub_ms & pos ) {
+                    return here.ter( pos ) == t_door_metal_locked;
+                };
+                auto visited = std::unordered_set<tripoint_bub_ms>();
+                for( const tripoint_bub_ms &tmp : here.points_in_radius( examp, 3 ) ) {
+                    if( is_door( tmp ) ) {
+                        for( const tripoint_bub_ms &door : ff::point_flood_fill_4_connected( tmp, visited, is_door ) ) {
+                            here.ter_set( door, t_door_metal_c );
+                        }
                     }
                 }
             }
