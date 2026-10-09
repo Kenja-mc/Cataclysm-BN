@@ -595,7 +595,9 @@ detached_ptr<item> Item_modifier::modify( detached_ptr<item> &&new_item ) const
         } else {
             detached_ptr<item> am = ammo->create_single( new_item->birthday() );
             if( am ) {
-                new_item->ammo_set( am->typeId(), ch );
+                // Liquid ammo (water for a super soaker) arrives in its default container.
+                const item &round = am->is_container() && !am->contents.empty() ? am->contents.front() : *am;
+                new_item->ammo_set( round.typeId(), ch );
             }
         }
         // Make sure the item is in valid state

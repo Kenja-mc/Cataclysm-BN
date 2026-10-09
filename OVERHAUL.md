@@ -257,6 +257,8 @@ item type variants instead of new item types:
   selected ([upstream #870](https://github.com/cataclysmbn/Cataclysm-BN/issues/870)).
 - Suppressed small-calibre guns go "plink!" again; the sound bands now match the newer loudness scale
   ([upstream #10415](https://github.com/cataclysmbn/Cataclysm-BN/issues/10415)).
+- Starting as a delinquent logged an error: the super soaker's water was handed over still in its
+  bottle (introduced upstream by #10533).
 - Loading is faster: item migrations finalize in one pass over item groups, and the JSON reader
   skips strings and whitespace straight from the stream buffer. In testing, the core data load and
   check went from 734 s to 118 s, and a new game starts in about 18 s.
