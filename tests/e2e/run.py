@@ -4,6 +4,7 @@ import re
 import sys
 import time
 import traceback
+from pathlib import Path
 
 from tmux_game import Game, start_new_game
 
@@ -138,12 +139,12 @@ def test_quick_stack_not_through_windows(g):
 
 def test_black_powder_loot_keeps_its_modifier(g):
     arena(g)
-    g.lua("for i=1,5 do M:place_items('ammo_rifle_blackpowder_handloads', 100, here(2,0), here(2,0), false) end out('ok')")
-    rows = g.lua("for _,it in pairs(M:get_items_at(here(2,0))) do out(it.charges, it:get_var_num('stack_mod:black_powder', 0)) end")
+    g.lua("M:clear_items_at(here(2,0)) for i=1,5 do M:place_items('ammo_rifle_blackpowder_handloads', 100, here(2,0), here(2,0), false) end out('ok')")
+    rows = g.lua("for _,it in pairs(M:get_items_at(here(2,0))) do out(it:get_type():str(), it.charges, it:get_var_num('stack_mod:black_powder', 0)) end")
     assert rows, "the group should spawn something"
     for row in rows:
-        charges, bp = (int(float(v)) for v in row.split(","))
-        assert bp == charges, f"every spawned round is black powder: {rows}"
+        _, charges, bp = row.split(",")
+        assert int(float(bp)) == int(charges), f"every spawned round is black powder: {rows}"
 
 
 def test_sort_pile(g):
@@ -451,8 +452,13 @@ def test_classic_control_scheme(g):
 
 def test_old_full_keybindings_file(g):
     """Older versions saved every binding; such a file must not undo the modern scheme."""
-    old = Game(name="bn-e2e-oldkeys", options={"SAFEMODE": "false"},
-               keybindings="data/raw/keybindings/keybindings.json")
+    import json, tempfile
+    # What upstream's save() wrote: every action of every context, with id, category and bindings.
+    dump = [{"id": e["id"], "category": e.get("category", "default"), "bindings": e["bindings"]}
+            for e in json.load(open("data/raw/keybindings/keybindings.json")) if "bindings" in e]
+    path = Path(tempfile.mkdtemp()) / "keybindings.json"
+    path.write_text(json.dumps(dump))
+    old = Game(name="bn-e2e-oldkeys", options={"SAFEMODE": "false"}, keybindings=str(path))
     try:
         start_new_game(old)
         old.define_lua(HELPERS)

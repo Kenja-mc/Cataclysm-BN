@@ -259,6 +259,19 @@ item type variants instead of new item types:
   ([upstream #10415](https://github.com/cataclysmbn/Cataclysm-BN/issues/10415)).
 - Starting as a delinquent logged an error: the super soaker's water was handed over still in its
   bottle (introduced upstream by #10533).
+- Fixes from an adversarial review of the fork itself:
+  - A `keybindings.json` saved by an older version (which stored every key) no longer undoes the
+    control scheme; only keys you really changed count.
+  - Quick stack and sort pile need a walkable straight line to a shelf, so nothing gets stashed
+    through a window, bars or a fence.
+  - Black powder counts stay right when a stack only partly fits in a vehicle trunk or container,
+    and when stacks merge in your inventory. Black powder loot spawns as black powder again.
+  - Old saves: unified batteries are trimmed to the new cell's capacity, and books folded into
+    one item stay identified.
+  - Classic really is upstream: setting it in `options.json` alone also turns bump attacks on,
+    Y/N hotkeys on and one-click mouse movement off, and the extra "in the way" message is modern-only.
+  - Attack commands never swap places with a pet or start talking to a friend; walking into an
+    enemy under relaxation gas is refused before it costs any time.
 - Loading is faster: item migrations finalize in one pass over item groups, and the JSON reader
   skips strings and whitespace straight from the stream buffer. In testing, the core data load and
   check went from 734 s to 118 s, and a new game starts in about 18 s.
@@ -272,6 +285,27 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCURSES=ON -DTILES=OFF 
 ninja -C build cataclysm-bn
 ./cataclysm-bn
 ```
+
+## Upstream merges
+
+The fork follows upstream `main` with plain merges. When upstream adds black powder ammo
+(`bp_*`) or items the fork folded into variants, fold them the same way: the new items become
+migrations so old saves keep working, and loot entries keep the black powder `stack_modifier`.
+
+## Unit tests
+
+Upstream's Catch2 suite (`cata_test`) must pass. Upstream CI runs it in file shards on a software
+GPU, and the vision tests only agree with that setup, so run it the same way: install Mesa's
+software Vulkan driver (`mesa-vulkan-drivers`) and Xvfb, then
+
+```sh
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCURSES=ON -DTILES=OFF -DTESTS=ON
+ninja -C build cata_test
+Xvfb :99 & DISPLAY=:99 build-scripts/run-linux-test-shards.ts --mode file-tags build/tests/cata_test -- --gpu-backend=software
+```
+
+Running every test in one process is not supported upstream either: some tests leave the map
+shifted for the next one.
 
 ## End-to-end tests
 
