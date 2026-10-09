@@ -11,6 +11,7 @@
 #include "output.h"
 #include "string_formatter.h"
 #include "translations.h"
+#include "ui.h"
 
 namespace
 {
@@ -112,6 +113,16 @@ auto show_welcome_once() -> void
                           key( ACTION_INVENTORY ), key( ACTION_USE ), key( ACTION_CRAFT ), key( ACTION_LOOK ), key( ACTION_MAP ),
                           key( ACTION_QUICK_STACK ), key( ACTION_SORT_PILE ) );
     popup( text );
+    // Caves of Qud lets you pick Classic or Roleplay at the start; same here, using the existing death prompt.
+    auto death = uilist();
+    death.text = _( "How should death work?  You can change this later under Options, General." );
+    death.addentry( 0, true, 'p', _( "Permadeath: a dead character stays dead" ) );
+    death.addentry( 1, true, 'r', _( "Roleplay: offer to reload the last save when you die" ) );
+    death.selected = get_option<bool>( "PROMPT_ON_CHARACTER_DEATH" ) ? 1 : 0;
+    death.query();
+    if( death.ret == 0 || death.ret == 1 ) {
+        get_options().get_option( "PROMPT_ON_CHARACTER_DEATH" ).setValue( death.ret == 1 ? "true" : "false" );
+    }
     get_options().get_option( "SHOW_WELCOME" ).setValue( "false" );
     get_options().save();
 }

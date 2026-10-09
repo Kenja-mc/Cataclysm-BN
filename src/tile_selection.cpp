@@ -2,6 +2,7 @@
 
 #include "avatar.h"
 #include "creature.h"
+#include "action.h"
 #include "game.h"
 #include "item.h"
 #include "map/map.h"
@@ -118,7 +119,10 @@ auto hover( avatar &you, map &m, const std::optional<tripoint_bub_ms> &p ) -> vo
     } else if( choices.front().travel && !hovered_route.empty() ) {
         hovered_hint = string_format( _( "click: walk here (%d steps)" ), hovered_route.size() );
     } else {
-        hovered_hint = string_format( _( "click: %s" ), choices.front().label );
+        // Name the key too, so the mouse teaches the keyboard.
+        const auto act = choices.front().act;
+        const auto key = act == ACTION_NULL ? std::string() : press_x( act, " [", "]", "" );
+        hovered_hint = string_format( _( "click: %s" ), choices.front().label ) + key;
     }
     if( choices.size() > 1 ) {
         hovered_hint += _( "  right-click: more" );

@@ -64,7 +64,17 @@ A `keybindings.json` saved by an older version holds every key, so it overrides 
 Delete it from the config folder to follow the scheme again.
 
 Your first new game opens with a short welcome card listing these keys (Options → Interface →
-Show welcome card brings it back).
+Show welcome card brings it back). Like Caves of Qud's Classic and Roleplay modes, it then asks how
+death works: *Permadeath* (the default) or *Roleplay*, which offers to reload your last save when
+you die. Autosave is on, so that save is recent. This only sets upstream's Options → General →
+Prompt on character death, so you can change it later.
+
+The first time your character gets hungry, thirsty, tired, hurt, overloaded, sees a hostile or meets
+the night, a one-line tip in the message log says what to do and names the key. Each tip shows once
+per character; Options → Interface → Show first-time tips turns them off.
+
+With mouse tile selection, the hover hint also names the key for the same action
+(`click: attack the zombie [TAB]`), so the mouse teaches the keyboard.
 
 Yes/No prompts are selectable buttons. They open on **No**: move with the arrow keys (or `y`/`n`),
 press Enter or click a button to answer, and Esc always cancels. Options → Interface → Answer Yes/No
@@ -237,6 +247,12 @@ item type variants instead of new item types:
   ([upstream #10447](https://github.com/cataclysmbn/Cataclysm-BN/issues/10447)).
 - A missed mutation attack reprinted the previous hit's damage
   ([upstream #1287](https://github.com/cataclysmbn/Cataclysm-BN/issues/1287)).
+- An item made of no materials matched every "made purely of" (`M:`) search filter
+  ([upstream #9617](https://github.com/cataclysmbn/Cataclysm-BN/issues/9617)).
+- The list-items view described the stack's first item even when another group of the same item was
+  selected ([upstream #870](https://github.com/cataclysmbn/Cataclysm-BN/issues/870)).
+- Suppressed small-calibre guns go "plink!" again; the sound bands now match the newer loudness scale
+  ([upstream #10415](https://github.com/cataclysmbn/Cataclysm-BN/issues/10415)).
 - Loading is faster: item migrations finalize in one pass over item groups, and the JSON reader
   skips strings and whitespace straight from the stream buffer. In testing, the core data load and
   check went from 734 s to 118 s, and a new game starts in about 18 s.
