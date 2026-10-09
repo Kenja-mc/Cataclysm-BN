@@ -115,13 +115,11 @@ std::function<bool( const itype & )> basic_itype_filter( std::string filter )
             };
         case 'M':
             return [filter]( const itype & i ) {
-                bool pure_material = true;
-                for( auto &mat : i.materials ) {
-                    if( !lcmatch( mat->name(), filter ) ) {
-                        pure_material = false;
-                    }
-                }
-                return pure_material;
+                // Upstream #9617: an item without materials is not "made purely of" anything.
+                const auto &mats = i.materials;
+                return !mats.empty() && std::ranges::all_of( mats, [&filter]( const material_id & mat ) {
+                    return lcmatch( mat->name(), filter );
+                } );
             };
         // qualities
         case 'q':
@@ -285,13 +283,11 @@ std::function<bool( const itype & )> wildcard_itype_filter( std::string filter )
             };
         case 'M':
             return [filter]( const itype & i ) {
-                bool pure_material = true;
-                for( auto &mat : i.materials ) {
-                    if( !wildcard_match( mat->name(), filter ) ) {
-                        pure_material = false;
-                    }
-                }
-                return pure_material;
+                // Upstream #9617: an item without materials is not "made purely of" anything.
+                const auto &mats = i.materials;
+                return !mats.empty() && std::ranges::all_of( mats, [&filter]( const material_id & mat ) {
+                    return wildcard_match( mat->name(), filter );
+                } );
             };
         // qualities
         case 'q':
