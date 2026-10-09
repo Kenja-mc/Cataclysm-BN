@@ -195,7 +195,9 @@ def test_recraft_after_reload(g):
     spawn(g, 3, 0, "glass_shard", 3)
     settle(g)
     craft_by_name(g, "glass shard trap")
-    assert wait_until(lambda: count_carried(g, "glass_shard_trap") == 1), g.screen()
+    # A heavily loaded character puts the result on the ground; either way it was crafted.
+    made = lambda: count_carried(g, "glass_shard_trap") + count_at(g, 0, 0, "glass_shard_trap")
+    assert wait_until(lambda: made() == 1), g.screen()
     g.keys("Escape", delay=1)
     g.keys("S", delay=1)
     g.keys("y", "Enter", delay=1)
@@ -203,7 +205,7 @@ def test_recraft_after_reload(g):
     load_first_save(g)
     g.define_lua(HELPERS)
     g.keys("-", delay=1)
-    assert wait_until(lambda: count_carried(g, "glass_shard_trap") == 2), g.screen()
+    assert wait_until(lambda: made() == 2), g.screen()
 
 
 def load_first_save(g, timeout=120):
