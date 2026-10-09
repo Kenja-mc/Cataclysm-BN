@@ -58,7 +58,7 @@ auto dominant_category( const spot &s ) -> std::optional<item_category_id>
     return best->first;
 }
 
-/// Every tile in line of sight and crafting range that already holds items or is furniture/vehicle storage.
+/// Every tile within reach (a walkable straight line) and crafting range that already holds items or is furniture/vehicle storage.
 auto gather_spots( avatar &you, const std::optional<tripoint_bub_ms> &skip ) -> std::vector<spot>
 {
     auto &here = get_map();

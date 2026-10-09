@@ -1,8 +1,8 @@
 #include "tile_selection.h"
 
+#include "action.h"
 #include "avatar.h"
 #include "creature.h"
-#include "action.h"
 #include "game.h"
 #include "item.h"
 #include "map/map.h"
@@ -21,7 +21,7 @@ auto hovered_tile = std::optional<tripoint_bub_ms>();
 auto hovered_route = std::vector<tripoint_bub_ms>();
 auto hovered_hint = std::string();
 
-auto hostile_at( const avatar &you, const tripoint_bub_ms &p ) -> Creature *
+auto hostile_at( const avatar &you, const tripoint_bub_ms &p ) -> Creature * // *NOPAD*
 {
     auto *critter = g->critter_at<Creature>( p, true );
     if( critter == nullptr || critter == &you || !you.sees( *critter ) ) {
@@ -117,7 +117,8 @@ auto hover( avatar &you, map &m, const std::optional<tripoint_bub_ms> &p ) -> vo
     if( choices.empty() ) {
         hovered_hint.clear();
     } else if( choices.front().travel && !hovered_route.empty() ) {
-        hovered_hint = string_format( _( "click: walk here (%d steps)" ), hovered_route.size() );
+        hovered_hint = string_format( vgettext( "click: walk here (%d step)", "click: walk here (%d steps)",
+                                       hovered_route.size() ), hovered_route.size() );
     } else {
         // Name the key too, so the mouse teaches the keyboard.
         const auto act = choices.front().act;
@@ -138,7 +139,7 @@ auto clear_hover() -> void
 
 auto hovered() -> std::optional<tripoint_bub_ms> { return hovered_tile; }
 
-auto hover_path() -> const std::vector<tripoint_bub_ms> & { return hovered_route; }
+auto hover_path() -> const std::vector<tripoint_bub_ms> & { return hovered_route; } // *NOPAD*
 
 auto hint() -> std::string { return hovered_hint; }
 

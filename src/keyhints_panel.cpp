@@ -113,13 +113,17 @@ auto show_welcome_once() -> void
                              "%13$s uses an item, %14$s crafts, %15$s looks around and %16$s opens the map.\n\n"
                              "Back at a base, %17$s stashes what you carry onto nearby shelves that hold the same kind of thing, "
                              "and %18$s sorts the pile you are standing on.  No sorting zones needed.\n\n"
+                             "%19$s"
                              "The Controls strip at the bottom of the sidebar always shows these keys, "
                              "and <color_light_cyan>?</color> on any screen lists every key." ),
                           key( ACTION_MOVE_FORTH ), key( ACTION_MOVE_LEFT ), key( ACTION_MOVE_BACK ), key( ACTION_MOVE_RIGHT ),
                           key( ACTION_MOVE_FORTH_LEFT ), key( ACTION_MOVE_FORTH_RIGHT ), key( ACTION_MOVE_BACK_LEFT ),
                           key( ACTION_MOVE_BACK_RIGHT ), key( ACTION_PAUSE ), key( ACTION_EXAMINE ), key( ACTION_PICKUP_ALL ),
                           key( ACTION_INVENTORY ), key( ACTION_USE ), key( ACTION_CRAFT ), key( ACTION_LOOK ), key( ACTION_MAP ),
-                          key( ACTION_QUICK_STACK ), key( ACTION_SORT_PILE ) );
+                          key( ACTION_QUICK_STACK ), key( ACTION_SORT_PILE ),
+                          get_option<bool>( "MOUSE_TILE_SELECTION" ) ?
+                          std::string( _( "The mouse works too: hover a tile to see what a click does, click to walk "
+                                          "there or act, and right-click for every option.\n\n" ) ) : std::string() );
     popup( text );
     // Caves of Qud lets you pick Classic or Roleplay at the start; same here, using the existing death prompt.
     auto death = uilist();

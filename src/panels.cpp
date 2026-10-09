@@ -2435,6 +2435,7 @@ static std::vector<window_panel> initialize_default_classic_panels()
     std::vector<window_panel> ret;
 
     ret.emplace_back( draw_health_classic, translate_marker( "Health" ), 7, 44, true );
+    ret.emplace_back( body_panel::draw, translate_marker( "Body" ), 4, 44, false );
     ret.emplace_back( draw_veh_classic, translate_marker( "Vehicle" ), 2, 44, true, veh_panel );
     ret.emplace_back( draw_location_classic, translate_marker( "Location" ), 1, 44,
                       true );

@@ -16,6 +16,7 @@ int message_cooldown;
 bool display_mod_source;
 bool display_object_ids;
 bool trigdist;
+bool readable_map_glyphs = true;
 bool angled_sunlight_shadows = false;
 int prevent_occlusion = 2;
 bool prevent_occlusion_retract = true;

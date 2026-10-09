@@ -32,8 +32,8 @@ auto resolve( avatar &you, map &m, const choice &c, const tripoint_bub_ms &p ) -
 auto hover( avatar &you, map &m, const std::optional<tripoint_bub_ms> &p ) -> void;
 auto clear_hover() -> void;
 auto hovered() -> std::optional<tripoint_bub_ms>;
-auto hover_path() -> const std::vector<tripoint_bub_ms> &;
-/// "click: attack the zombie" style line for the sidebar, empty when nothing is hovered.
+auto hover_path() -> const std::vector<tripoint_bub_ms> &; // *NOPAD*
+/// "click: attack the zombie" style line for the Mouse View box, empty when nothing is hovered.
 auto hint() -> std::string;
 
 } // namespace tile_selection

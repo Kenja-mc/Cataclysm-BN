@@ -98,10 +98,6 @@ void load_item_group( const JsonObject &jsobj, const item_group_id &group_id,
 item_group_id load_item_group( const JsonValue &value, const std::string &default_subtype );
 } // namespace item_group
 
-/**
- * Base interface for item spawn.
- * Used to generate a list of items.
- */
 /// Where a migrated item id goes, with the variant or stack modifier the migration gives it.
 struct item_replacement {
     std::string id;
@@ -109,6 +105,11 @@ struct item_replacement {
     std::string stack_modifier;
 };
 using item_replacements = std::unordered_map<std::string, item_replacement>;
+
+/**
+ * Base interface for item spawn.
+ * Used to generate a list of items.
+ */
 
 class Item_spawn_data
 {

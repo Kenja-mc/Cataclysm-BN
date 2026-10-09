@@ -9,6 +9,7 @@
 #include "avatar.h"
 #include "bodypart.h"
 #include "cached_options.h"
+#include "catacharset.h"
 #include "calendar.h"
 #include "cata_cartesian_product.h"
 #include "cata_utility.h"
@@ -173,6 +174,16 @@ static const std::string str_DOOR_LOCKING("DOOR_LOCKING");
 static const std::string str_OPENCLOSE_INSIDE("OPENCLOSE_INSIDE");
 
 namespace {
+
+/// Prints one map glyph. A curses chtype holds only a byte of text, so code points beyond ASCII
+/// (readable tree glyphs, Unicode symbols from JSON) go out as UTF-8 instead.
+auto put_glyph(const catacurses::window& w, const nc_color col, const int sym) -> void {
+    if (sym >= 0x80 && sym < 0x110000) {
+        wprintz(w, col, utf32_to_utf8(static_cast<uint32_t>(sym)));
+    } else {
+        wputch(w, col, sym);
+    }
+}
 
 // Map glyphs keep square corners; the curses frontend rounds the plain corner glyphs used by windows.
 auto square_corner(const int sym) -> int {
@@ -6523,7 +6534,7 @@ void map::draw(const catacurses::window& w, const tripoint_bub_ms& center) {
             sym = get_memory_at(p);
             col = c_brown;
         }
-        wputch(w, col, square_corner(sym));
+        put_glyph(w, col, square_corner(sym));
     };
 
     const auto draw_vision_effect = [&](const visibility_type vis) -> bool {
@@ -6649,6 +6660,14 @@ auto map::draw_maptile(
         terrain_sym = determine_wall_corner(p);
     } else {
         terrain_sym = curr_ter.symbol();
+    }
+    // Digits read as numbers to newcomers; trees and saplings get picture glyphs instead.
+    if (readable_map_glyphs) {
+        if (curr_ter.has_flag(TFLAG_TREE)) {
+            terrain_sym = terrain_sym == '4' ? 0x2660 : 0x2663; // ♠ for pines, ♣ for the rest
+        } else if (curr_ter.has_flag(TFLAG_YOUNG)) {
+            terrain_sym = 0x03C4; // τ
+        }
     }
 
     if (curr_furn.id) {
@@ -6812,7 +6831,7 @@ auto map::draw_maptile(
 
     if (params.output()) {
         if (item_sym.empty()) {
-            wputch(w, tercol, square_corner(sym));
+            put_glyph(w, tercol, square_corner(sym));
         } else {
             wprintz(w, tercol, item_sym);
         }
@@ -6887,7 +6906,7 @@ void map::draw_from_above(
 
     if (params.highlight()) { tercol = invert_color(tercol); }
 
-    if (params.output()) { wputch(w, tercol, square_corner(sym)); }
+    if (params.output()) { put_glyph(w, tercol, square_corner(sym)); }
 }
 
 auto map::sees(const tripoint_bub_ms& F, const tripoint_bub_ms& T, const int range) const -> bool {

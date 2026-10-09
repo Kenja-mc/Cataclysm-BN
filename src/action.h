@@ -252,6 +252,7 @@ enum action_id : int {
     /**@{*/
     /** Display player status screen */
     ACTION_PL_INFO,
+    /** Display every limb's health and wounds */
     ACTION_BODY_STATUS,
     /** Display over-map */
     ACTION_MAP,

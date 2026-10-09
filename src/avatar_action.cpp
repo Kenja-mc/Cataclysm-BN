@@ -180,7 +180,7 @@ auto try_shove_grabbed_vehicle( avatar &you ) -> bool
     return true;
 }
 
-// Set while an explicit attack command drives avatar_action::move.
+/// Set while an explicit attack command drives avatar_action::move.
 auto attack_requested = false;
 
 /// Walking into a hostile only attacks when the player asked for it or opted into bump attacks.

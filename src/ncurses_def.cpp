@@ -1,4 +1,3 @@
-#include <cstdio>
 #if !(defined(TILES) || defined(_WIN32))
 
 // input.h must be include *before* the ncurses header. The latter has some macro
@@ -17,6 +16,7 @@
 #include <curses.h>
 #endif
 
+#include <cstdio>
 #include <cstring>
 #include <langinfo.h>
 #include <termios.h>
@@ -283,8 +283,10 @@ void catacurses::erase()
 
 void catacurses::endwin()
 {
+#if !defined(__CYGWIN__)
     std::fputs( "\033[?1003l", stdout );
     std::fflush( stdout );
+#endif
     return curses_check_result( ::endwin(), OK, "endwin" );
 }
 

@@ -46,7 +46,7 @@ std::optional<int> cata::string_formatter::read_argument_index()
     const char c = get_current_input();
     // can't use has_digit because '0' is not allowed as first character
     if( c >= '1' && c <= '9' ) {
-        const size_t pos = format.find_first_not_of( "012345678", current_index_in_format + 1 );
+        const size_t pos = format.find_first_not_of( "0123456789", current_index_in_format + 1 );
         if( pos == std::string::npos || format[pos] != '$' ) {
             return std::nullopt;
         }

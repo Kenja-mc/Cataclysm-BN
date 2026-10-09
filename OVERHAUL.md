@@ -5,7 +5,10 @@ make the game easier to pick up. The simulation, content and tone stay the same:
 items, same zombies. The changes are to the controls, the look of the interface and the busywork
 around managing items.
 
-Upstream base: `cataclysmbn/Cataclysm-BN@d14e047` (first commit on this branch).
+Branched from `cataclysmbn/Cataclysm-BN@d14e047`; last merged upstream `main`: `a27f19d`.
+
+Screenshots: [docs/fork/visual-changes.md](docs/fork/visual-changes.md). Changes by date:
+[CHANGELOG-OVERHAUL.md](CHANGELOG-OVERHAUL.md).
 
 ## Controls
 
@@ -29,6 +32,7 @@ direction?" prompt.
 | `l`       | look around                     | `m`   | map                              |
 | `F`       | attack the nearest enemy        | Tab   | attack in a direction            |
 | `C`       | character sheet                 | `X`   | wait or rest a while             |
+| `H`       | body status (every limb)        | `J`   | Hitchhiker's Guide               |
 | Enter     | action menu with every action   | `N`   | switch fire mode                 |
 | `F1`      | help                            | `?`   | full keybinding list (any screen)|
 
@@ -61,8 +65,9 @@ live keybindings, so it stays correct if you rebind anything.
 the original vi-keys and numpad layout, turns bump attacks back on and makes Y/N prompts want
 capitals. Your own key changes are kept in both schemes, because the game now saves only the keys
 you changed. The modern layout lives in `data/raw/control_schemes/modern.json` on top of the
-untouched upstream keybindings, so other schemes can be added the same way. Quick stack, sort pile
-and attack have no key in classic; bind them or use the Enter action menu.
+untouched upstream keybindings, so other schemes can be added the same way. Quick stack, sort pile,
+attack and body status have no key in classic; bind them or use the Enter action menu. The modern
+scheme unbinds peek (its key `X` waits) and the map-shift keys.
 
 A `keybindings.json` saved by an older version holds every key, so it overrides either scheme.
 Delete it from the config folder to follow the scheme again.
@@ -93,12 +98,14 @@ prompts with Y and N makes `y`/`n` answer at once instead; the classic control s
 - On terminals with 16 colors, bright colors get their own color pairs instead of depending on
   bold text being drawn bright, which most modern terminals no longer do. Light and dark variants
   stay distinct and text no longer turns bold at random.
+- Readable map glyphs (Options → Graphics): trees are ♣, pines ♠ and saplings τ instead of the digits
+  7, 4 and 1 that newcomers read as numbers.
 - Rounded window corners in the terminal version (Options → Graphics → Rounded window corners).
   Borders are drawn as real Unicode in UTF-8 terminals, which many terminals render better than the
   old line-drawing character set. Map walls keep square corners.
 - Quieter main menu and a clearer pick-up list.
 
-- **Weather and weapon boxes** sit in the map's top-left corner: the weather with an icon, the time
+- **Weather and weapon boxes** (terminal view) sit in the map's top-left corner: the weather with an icon, the time
   (exact with a watch) and the temperature (with a thermometer); and what you fight with, its ammo
   and your fighting style. Options → Interface → Weather box / Weapon box moves each to any corner
   or turns it off, and Box icons picks Unicode, [Nerd Font](https://www.nerdfonts.com/) or ASCII.
@@ -112,7 +119,7 @@ prompts with Y and N makes `y`/`n` answer at once instead; the classic control s
 Upstream expects you to set up loot zones and run a sorting activity to keep a base usable. Here
 that is optional:
 
-- **Quick stack (`Q`)**, as in Terraria and Hytale. Everything you carry goes into storage in line of sight
+- **Quick stack (`Q`)**, as in Terraria and Hytale. Everything you carry goes into storage within reach (a walkable straight line, dark or not)
   nearby (shelves, lockers, counters, vehicle cargo) that already holds the same item, or mostly
   the same kind of item. Loose piles on the ground are left alone. Worn, wielded and favorited (`*` in the
   inventory) items always stay with you. It costs the time it takes to walk over and put things
@@ -164,8 +171,8 @@ that is optional:
 - **One MRE.** The 26 MRE boxes are one *MRE*. The entree is a variant
   (`MRE - Chili & Beans`), and opening it still gives that entree.
 
-Zones and the loot-sorting activity are still there for anyone who wants them. They just have no
-default key.
+Zones (`Y`) and the loot-sorting activity are still there for anyone who wants them; loot sorting
+just has no key in the modern scheme.
 
 ## Firearms
 
@@ -274,6 +281,8 @@ item type variants instead of new item types:
   line, like swiping the ID card ([upstream #10117](https://github.com/cataclysmbn/Cataclysm-BN/issues/10117)).
 - The rope hanging below a vehicle ladder was invisible in the terminal
   ([upstream #10353](https://github.com/cataclysmbn/Cataclysm-BN/issues/10353)).
+- Text formatting rejected argument numbers such as `%19$s` (the digit 9 was missing from the
+  parser); saplings were never flagged `YOUNG`, so map extras that burn or infect trees skipped them.
 - Followers in pain no longer take painkillers until they overdose
   ([upstream #10429](https://github.com/cataclysmbn/Cataclysm-BN/issues/10429)).
 - Fixes from an adversarial review of the fork itself:
@@ -328,7 +337,7 @@ shifted for the next one.
 
 `tests/e2e/run.py` starts the terminal build inside tmux, creates a character and plays through the
 new controls, quick stack and sort pile by sending real key presses and reading the screen. It
-needs `tmux` and a built `cataclysm-bn` binary at the repo root:
+needs `tmux` and a built `cataclysm-bn` binary (at the repo root or in `build/src`):
 
 ```sh
 python3 tests/e2e/run.py

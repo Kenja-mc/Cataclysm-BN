@@ -12,7 +12,7 @@
 #include "character_martial_arts.h"
 #include "color.h"
 #include "cursesdef.h"
-#include "game.h"
+#include "flag.h"
 #include "item.h"
 #include "options.h"
 #include "output.h"
@@ -27,7 +27,7 @@ enum class icon {
     sun, moon, cloud, rain, storm, snow, strange, underground, fists, melee, gun, bow, style
 };
 
-/// One glyph per icon for each icon set. Nerd Font glyphs are Material Design icons.
+/// One glyph per icon for each icon set. Nerd Font glyphs are Material Design icons (the fist is Font Awesome).
 auto glyph( const icon i ) -> std::string
 {
     const auto style = get_option<std::string>( "HUD_ICONS" );
@@ -50,7 +50,7 @@ auto glyph( const icon i ) -> std::string
         case icon::strange:
             return pick( "◎", "\U000F0591", "%" );
         case icon::underground:
-            return pick( "▼", "\U000F0591", "v" );
+            return pick( "▼", "▼", "v" );
         case icon::fists:
             return pick( "✶", "\uF255", "f" );
         case icon::melee:
@@ -116,7 +116,7 @@ auto weather_lines( const avatar &you ) -> std::vector<line>
                          w.weather_id->name.translated(), w.weather_id->color } );
     }
     auto second = time_text( you );
-    if( you.has_item_with_flag( flag_id( "THERMOMETER" ) ) ||
+    if( you.has_item_with_flag( flag_THERMOMETER ) ||
         you.has_enchantment_flag( enchantment_flag_id( "THERMOMETER" ) ) ) {
         second += "  " + print_temperature( w.get_temperature( you.abs_pos() ) );
     }
@@ -127,7 +127,7 @@ auto weather_lines( const avatar &you ) -> std::vector<line>
 auto combat_lines( const avatar &you ) -> std::vector<line>
 {
     auto out = std::vector<line>();
-    const item &weapon = you.primary_weapon();
+    const auto &weapon = you.primary_weapon();
     auto kind = icon::fists;
     if( you.is_armed() ) {
         kind = !weapon.is_gun() ? icon::melee :
@@ -143,9 +143,15 @@ auto combat_lines( const avatar &you ) -> std::vector<line>
 }
 
 /// Draws the lines in a bordered box whose top-left corner is `at`.
-auto draw_box( const catacurses::window &w, const point &at, const int inner, const std::vector<line> &lines )
--> void
+struct box_spec {
+    point at;
+    int inner = 0;
+    const std::vector<line> &lines;
+};
+
+auto draw_box( const catacurses::window &w, const box_spec &box ) -> void
 {
+    const auto &[at, inner, lines] = box;
     const auto rounded = get_option<bool>( "UI_ROUNDED_BORDERS" );
     const auto bar = [&]( const char *l, const char *r ) {
         auto s = std::string( l );
@@ -205,7 +211,7 @@ auto draw( const avatar &you, const catacurses::window &w ) -> void
         }
         const auto x = right ? width - box_w : 0;
         const auto y = bottom ? height - used - box_h : used;
-        draw_box( w, point( x, y ), inner, b.lines );
+        draw_box( w, box_spec{ .at = point( x, y ), .inner = inner, .lines = b.lines } );
         used += box_h;
     }
 }

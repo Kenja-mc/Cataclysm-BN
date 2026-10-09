@@ -1,7 +1,9 @@
 # Cataclysm: Bright Nights
 
-> **This is the overhaul fork.** It adds WASD controls, a modern terminal look, Terraria-style quick
-> stacking instead of loot zones, and other ways to cut busywork. See [OVERHAUL.md](./OVERHAUL.md).
+> **This is the overhaul fork.** It adds WASD controls with mouse tile selection, a modern terminal
+> look with weather, weapon and body panels, Terraria-style quick stacking instead of loot zones,
+> stackable item variants and other ways to cut busywork. See [OVERHAUL.md](./OVERHAUL.md),
+> [the screenshots](./docs/fork/visual-changes.md) and [the changelog](./CHANGELOG-OVERHAUL.md).
 
 <header align="center">
   <a><img src="docs/en/contribute/img/readme-title.png" title="screenshots of (clockwise from upper-right: Chaosvolt (x2), ExecutorBill, scarf005"></a>

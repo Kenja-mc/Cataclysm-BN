@@ -97,7 +97,9 @@ std::vector<std::vector<std::string>> query_popup::fold_query(
     int query_width = 0;
     for( const auto &opt : options ) {
         const auto &name = ctxt.get_action_name( opt.action );
-        const auto &desc = ctxt.get_desc( opt.action, name, opt.filter );
+        // A button no key can trigger (Yes/No without hotkeys) shows its plain name, not "[n/a]".
+        const auto keyed = std::ranges::any_of( inp_mngr.get_input_for_action( opt.action, category ), opt.filter );
+        const auto desc = keyed ? ctxt.get_desc( opt.action, name, opt.filter ) : name;
         const int this_query_width = utf8_width( desc, true ) + horz_padding;
         ++query_cnt;
         query_width += this_query_width;
