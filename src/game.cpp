@@ -11205,6 +11205,12 @@ game::vmenu_ret game::list_items( const std::vector<map_item_stack> &item_list )
     int iActive = 0; // Item index that we're looking at
     bool refilter = true;
     int page_num = 0;
+    // Upstream #870: describe the item of the selected group, not just the stack's first item.
+    const auto shown_item = [&]() -> const item & {
+        const auto &groups = activeItem->vIG;
+        const auto *picked = page_num >= 0 && page_num < static_cast<int>( groups.size() ) ? groups[page_num].example : nullptr;
+        return picked != nullptr ? *picked : *activeItem->example;
+    };
     int iCatSortNum = 0;
     int iScrollPos = 0;
     std::map<int, std::string> mSortCategory;
@@ -11314,9 +11320,9 @@ game::vmenu_ret game::list_items( const std::vector<map_item_stack> &item_list )
             werase( w_item_info );
 
             if( iItemNum > 0 && activeItem ) {
-                const item &loc = *activeItem->example;
+                const item &loc = shown_item();
                 temperature_flag temperature = rot::temp::for_location( m, loc );
-                std::vector<iteminfo> this_item = activeItem->example->info( temperature );
+                std::vector<iteminfo> this_item = loc.info( temperature );
                 std::vector<iteminfo> item_info_dummy;
 
                 item_info_data dummy( "", "", this_item, item_info_dummy, iScrollPos );
@@ -11335,8 +11341,8 @@ game::vmenu_ret game::list_items( const std::vector<map_item_stack> &item_list )
         if( iItemNum > 0 && activeItem ) {
             // print info window title: < item name >
             mvwprintw( w_item_info, point( 2, 0 ), "< " );
-            trim_and_print( w_item_info, point( 4, 0 ), width - 8, activeItem->example->color_in_inventory(),
-                            activeItem->example->display_name() );
+            trim_and_print( w_item_info, point( 4, 0 ), width - 8, shown_item().color_in_inventory(),
+                            shown_item().display_name() );
             wprintw( w_item_info, " >" );
             // move the cursor to the selected item (for screen readers)
             ui.set_cursor( w_items, point( 1, iActive - iStartPos ) );
@@ -11384,7 +11390,7 @@ game::vmenu_ret game::list_items( const std::vector<map_item_stack> &item_list )
             addcategory = !sort_radius;
         } else if( action == "EXAMINE" && !filtered_items.empty() && activeItem ) {
             std::vector<iteminfo> dummy;
-            const item *example_item = activeItem->example;
+            const item *example_item = &shown_item();
             // TODO: const_item_location
             const item &loc = *example_item;
             temperature_flag temperature = rot::temp::for_location( m, loc );
