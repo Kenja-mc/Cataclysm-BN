@@ -1941,6 +1941,29 @@ void options_manager::add_options_interface()
          true
        );
 
+    add( "HUD_WEATHER_BOX", interface, translate_marker( "Weather box" ),
+         translate_marker( "A small box on the map showing the weather, the time and, with a thermometer, the temperature." ),
+    {
+        { "top_left", translate_marker( "Top left" ) }, { "top_right", translate_marker( "Top right" ) },
+        { "bottom_left", translate_marker( "Bottom left" ) }, { "bottom_right", translate_marker( "Bottom right" ) },
+        { "off", translate_marker( "Off" ) }
+    },
+    "top_left" );
+
+    add( "HUD_COMBAT_BOX", interface, translate_marker( "Weapon box" ),
+         translate_marker( "A small box on the map showing what you fight with and your fighting style." ),
+    {
+        { "top_left", translate_marker( "Top left" ) }, { "top_right", translate_marker( "Top right" ) },
+        { "bottom_left", translate_marker( "Bottom left" ) }, { "bottom_right", translate_marker( "Bottom right" ) },
+        { "off", translate_marker( "Off" ) }
+    },
+    "top_left" );
+
+    add( "HUD_ICONS", interface, translate_marker( "Box icons" ),
+         translate_marker( "Unicode works in most terminals.  Nerd Font needs a patched font (nerdfonts.com).  ASCII works everywhere." ),
+    { { "unicode", translate_marker( "Unicode" ) }, { "nerd", translate_marker( "Nerd Font" ) }, { "ascii", translate_marker( "ASCII" ) } },
+    "unicode" );
+
     add( "SHOW_TIPS", interface, translate_marker( "Show first-time tips" ),
          translate_marker( "If true, a one-line tip appears in the message log the first time your character gets hungry, hurt, sees a hostile and so on." ),
          true

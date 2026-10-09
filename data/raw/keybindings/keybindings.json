@@ -4022,6 +4022,13 @@
   },
   {
     "type": "keybinding",
+    "id": "body_status",
+    "category": "DEFAULTMODE",
+    "name": "Body status",
+    "bindings": [  ]
+  },
+  {
+    "type": "keybinding",
     "id": "quick_stack",
     "category": "DEFAULTMODE",
     "name": "Quick stack to nearby storage",

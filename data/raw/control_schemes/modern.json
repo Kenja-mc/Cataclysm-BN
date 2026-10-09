@@ -668,7 +668,7 @@
     "name": "Open Hitchhiker's Guide",
     "category": "DEFAULTMODE",
     "id": "open_hhg",
-    "bindings": [ { "input_method": "keyboard", "key": "H" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "J" } ]
   },
   {
     "type": "keybinding",
@@ -859,5 +859,12 @@
     "category": "VEH_INTERACT",
     "name": "Zoom out (tiles mode)",
     "bindings": [ { "input_method": "keyboard", "key": "X" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "body_status",
+    "category": "DEFAULTMODE",
+    "name": "Body status",
+    "bindings": [ { "input_method": "keyboard", "key": "H" } ]
   }
 ]

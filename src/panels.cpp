@@ -25,6 +25,7 @@
 #include "input.h"
 #include "item.h"
 #include "json.h"
+#include "body_panel.h"
 #include "keyhints_panel.h"
 #include "lua_sidebar_widgets.h"
 #include "magic/magic.h"
@@ -2473,6 +2474,7 @@ static std::vector<window_panel> initialize_default_compact_panels()
     std::vector<window_panel> ret;
 
     ret.emplace_back( draw_limb2, translate_marker( "Limbs" ), 3, 32, true );
+    ret.emplace_back( body_panel::draw, translate_marker( "Body" ), 4, 32, true );
     ret.emplace_back( draw_stealth, translate_marker( "Sound" ), 1, 32, true );
     ret.emplace_back( draw_stats, translate_marker( "Stats" ), 1, 32, true );
     ret.emplace_back( draw_mana_compact, translate_marker( "Mana" ), 1, 32, true,
@@ -2505,6 +2507,7 @@ static std::vector<window_panel> initialize_default_label_narrow_panels()
 
     ret.emplace_back( draw_hint, translate_marker( "Hint" ), 1, 32, false );
     ret.emplace_back( draw_limb_narrow, translate_marker( "Limbs" ), 3, 32, true );
+    ret.emplace_back( body_panel::draw, translate_marker( "Body" ), 4, 32, true );
     ret.emplace_back( draw_char_narrow, translate_marker( "Movement" ), 3, 32, true );
     ret.emplace_back( draw_mana_narrow, translate_marker( "Mana" ), 1, 32, true,
                       spell_panel );
@@ -2542,6 +2545,7 @@ static std::vector<window_panel> initialize_default_label_panels()
 
     ret.emplace_back( draw_hint, translate_marker( "Hint" ), 1, 44, false );
     ret.emplace_back( draw_limb_wide, translate_marker( "Limbs" ), 2, 44, true );
+    ret.emplace_back( body_panel::draw, translate_marker( "Body" ), 4, 44, true );
     ret.emplace_back( draw_char_wide, translate_marker( "Movement" ), 2, 44, true );
     ret.emplace_back( draw_mana_wide, translate_marker( "Mana" ), 1, 44, true,
                       spell_panel );

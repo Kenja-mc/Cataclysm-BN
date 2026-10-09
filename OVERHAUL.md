@@ -98,6 +98,15 @@ prompts with Y and N makes `y`/`n` answer at once instead; the classic control s
   old line-drawing character set. Map walls keep square corners.
 - Quieter main menu and a clearer pick-up list.
 
+- **Weather and weapon boxes** sit in the map's top-left corner: the weather with an icon, the time
+  (exact with a watch) and the temperature (with a thermometer); and what you fight with, its ammo
+  and your fighting style. Options → Interface → Weather box / Weapon box moves each to any corner
+  or turns it off, and Box icons picks Unicode, [Nerd Font](https://www.nerdfonts.com/) or ASCII.
+- **Body panel** (inspired by Project Zomboid's health screen): a small figure in the sidebar,
+  each limb coloured by its health, with wounds listed beside it (bleeding, infected, bitten,
+  broken, bandaged, disinfected). `H` opens the full view with every limb's health and what to do
+  about wounds. Hide it like any panel from the sidebar options. The Hitchhiker's Guide moved to `J`.
+
 ## Items and storage
 
 Upstream expects you to set up loot zones and run a sorting activity to keep a base usable. Here
