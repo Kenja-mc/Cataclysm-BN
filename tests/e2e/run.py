@@ -10,10 +10,12 @@ from tmux_game import Game, start_new_game
 
 HELPERS = (
     "M=gapi.get_map() function here(dx,dy) local c=gapi.get_avatar():get_pos_ms() return TripointBubMs.new(c.x+dx,c.y+dy,c.z) end "
+    "PARKED=0 function park(cr) repeat PARKED=PARKED+1 until not gapi.get_creature_at(here(30+PARKED%20,30+PARKED//20)) "
+    "cr:set_pos_ms(here(30+PARKED%20,30+PARKED//20)) end "
     "function arena() local k=0 for dx=-13,13 do for dy=-13,13 do local p=here(dx,dy) "
     "if math.abs(dx)<=4 and math.abs(dy)<=4 then M:set_ter_at(p, TerId.new('t_floor'):int_id()) end "
     "M:set_furn_at(p, FurnId.new('f_null'):int_id()) M:clear_items_at(p) "
-    "local cr=gapi.get_creature_at(p) if cr and not cr:is_avatar() then k=k+1 cr:set_pos_ms(here(30+k,30)) end end end out('ok') end "
+    "local cr=gapi.get_creature_at(p) if cr and not cr:is_avatar() then park(cr) end end end out('ok') end "
     "function units(it) if it:is_stackable() then return it.charges end return 1 end "
     "function count_at(dx,dy,id) local n=0 for _,it in pairs(M:get_items_at(here(dx,dy))) do "
     "if it:get_type():str()==id then n=n+units(it) end end out(n) end "
@@ -75,7 +77,7 @@ def test_first_time_tip(g):
     settle(g)
     assert "Tip: Something hostile" in g.screen(), g.screen()
     assert g.lua("out(gapi.get_avatar():get_value('tip_seen_hostile'))") == ["1"]
-    g.lua("local m=gapi.get_monster_at(here(4,0)) if m then m:set_pos_ms(here(40,40)) end out('ok')")
+    g.lua("local m=gapi.get_monster_at(here(4,0)) if m then park(m) end out('ok')")
 
 
 def test_controls_strip(g):
@@ -242,7 +244,7 @@ def test_magnet_pull_through_monster(g):
                     "out(u:activate_bionic(BionicDataId.new('bio_magnet'), false))")
         assert out and out[-1] == "true", g.screen()
     assert "wasd move" in g.screen(), "game should still be running"
-    g.lua("for dx=-6,6 do for dy=-6,6 do local m=gapi.get_monster_at(here(dx,dy)) if m then m:set_pos_ms(here(40,40)) end end end out('ok')")
+    g.lua("for dx=-6,6 do for dy=-6,6 do local m=gapi.get_monster_at(here(dx,dy)) if m then park(m) end end end out('ok')")
 
 
 def test_unified_batteries(g):
@@ -277,7 +279,7 @@ def test_attack_command(g):
             if zombie_hp(g) != before:
                 break
         assert zombie_hp(g) != before, why
-    g.lua("local m=gapi.get_monster_at(here(1,0)) if m then m:set_pos_ms(here(40,40)) end out('ok')")
+    g.lua("local m=gapi.get_monster_at(here(1,0)) if m then park(m) end out('ok')")
 
 
 def test_click_to_travel(g):
@@ -319,7 +321,7 @@ def test_right_click_lists_actions(g):
     s = g.screen()
     g.keys("Escape", delay=0.6)
     assert "attack" in s, s
-    g.lua("local m=gapi.get_monster_at(here(1,0)) if m then m:set_pos_ms(here(40,40)) end out('ok')")
+    g.lua("local m=gapi.get_monster_at(here(1,0)) if m then park(m) end out('ok')")
 
 
 def test_black_powder_rounds_stack(g):
