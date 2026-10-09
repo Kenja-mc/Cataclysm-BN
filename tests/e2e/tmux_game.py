@@ -87,7 +87,12 @@ class Game:
         """Runs one line in the in-game Lua console; `out(...)` inside it reports values back."""
         self.calls = getattr(self, "calls", 0) + 1
         marker = f"#{os.getpid()}.{self.calls}#"
-        self.keys("`", delay=1)
+        # The console can take a moment to open; typing before it does sends the code to the map.
+        for _ in range(3):
+            self.keys("`", delay=1)
+            if "to enter/edit command" in self.screen():
+                break
+            self.keys("Escape", delay=0.5)
         self.keys("Enter", delay=0.5)
         # Keep the echoed command short so its output is still on screen afterwards.
         self.type(f"OUT='{marker}' " + code)
