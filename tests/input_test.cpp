@@ -1,6 +1,7 @@
 #include "catch/catch.hpp"
 #include "filesystem.h"
 #include "input.h"
+#include "options_helpers.h"
 #include "path_info.h"
 
 #include <algorithm>
@@ -91,4 +92,35 @@ TEST_CASE("manual combat default bindings reserve backtab for the toggle", "[inp
     CHECK(autoattack_key == inp_mngr.get_keycode("TAB"));
     CHECK(toggle_key == inp_mngr.get_keycode("BACKTAB"));
     CHECK(removed_manual_attack_key == 0);
+}
+
+TEST_CASE(
+    "a modern-scheme rebind to the upstream key survives save and reload", "[input][keybindings]") {
+    auto restore_keybindings = user_keybindings_file_guard();
+    auto modern = override_option("CONTROL_SCHEME", "modern");
+    const auto close_keys = [] { return input_context("DEFAULTMODE").keys_bound_to("close"); };
+    const auto user_close_c = std::string(R"({
+  "type": "keybinding",
+  "id": "close",
+  "category": "DEFAULTMODE",
+  "bindings": [ { "input_method": "keyboard", "key": "c" } ]
+})");
+
+    SECTION("files with the format marker keep the binding") {
+        write_user_keybindings(R"({ "type": "keybindings_format", "version": 2 },)" + user_close_c);
+        inp_mngr.init();
+        REQUIRE(contains_key(close_keys(), 'c'));
+
+        inp_mngr.save();
+        inp_mngr.init();
+        CHECK(contains_key(close_keys(), 'c'));
+        CHECK_FALSE(contains_key(close_keys(), 'O'));
+    }
+
+    SECTION("older files that repeat the upstream default follow the scheme") {
+        write_user_keybindings(user_close_c);
+        inp_mngr.init();
+        CHECK(contains_key(close_keys(), 'O'));
+        CHECK_FALSE(contains_key(close_keys(), 'c'));
+    }
 }
