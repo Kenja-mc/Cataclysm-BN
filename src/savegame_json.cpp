@@ -2710,7 +2710,9 @@ void item::io( Archive &archive )
     };
 
     const auto load_curammo = [this]( const std::string & id ) {
-        curammo = &*item_controller->migrate_id( itype_id( id ) );
+        const itype_id orig_ammo_id( id );
+        curammo = &*item_controller->migrate_id( orig_ammo_id );
+        item_controller->migrate_stack_modifier( orig_ammo_id, *this, charges );
     };
     const auto load_corpse = [this]( const std::string & id ) {
         if( itype_id( id ).is_null() ) {

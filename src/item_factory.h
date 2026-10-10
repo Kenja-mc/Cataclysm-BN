@@ -195,6 +195,9 @@ class Item_factory
          * @see Item_factory::migrate_id
          */
         void migrate_item( const itype_id &id, item &obj );
+        /// Applies only the stack modifier of `id`'s migration to `count` units of `obj`, e.g. rounds
+        /// loaded in an integral magazine under an old ammo id. Ignores the migration's other fields.
+        auto migrate_stack_modifier( const itype_id &id, item &obj, int count ) -> void;
 
     private:
         /**
