@@ -4047,5 +4047,12 @@
     "category": "DEFAULTMODE",
     "name": "Attack in a direction",
     "bindings": [  ]
+  },
+  {
+    "type": "keybinding",
+    "id": "auto_explore",
+    "category": "DEFAULTMODE",
+    "name": "Explore the nearest unexplored area",
+    "bindings": [  ]
   }
 ]

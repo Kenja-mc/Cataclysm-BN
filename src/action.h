@@ -132,6 +132,8 @@ enum action_id : int {
     ACTION_QUICK_STACK,
     /** Distribute the pile underfoot into matching nearby storage */
     ACTION_SORT_PILE,
+    /** Auto-move toward the nearest unexplored area */
+    ACTION_AUTO_EXPLORE,
     /** Melee attack in a chosen direction */
     ACTION_ATTACK,
     /**@}*/
