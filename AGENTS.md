@@ -39,15 +39,15 @@ Write one end-to-end test for each new fork feature. Do not write unit tests for
 
 ### Where to find the fork code
 
-| Subject | Location |
-| --- | --- |
-| Modern keys | `data/raw/control_schemes/modern.json` |
-| Options | `src/options.cpp` |
-| Fork interface | `src/hud_boxes.cpp`, `src/body_panel.cpp`, `src/keyhints_panel.cpp`, `src/tile_selection.cpp`, `src/first_tips.cpp` |
-| Quick stack and sort pile | `src/quick_stack.cpp` |
-| Item variants and stack modifiers | `src/item_variant.cpp`, `src/stack_modifier.cpp`, `data/json/item_variants.json` |
-| Save migrations for removed items | `data/json/obsoletion/` |
-| End-to-end tests | `tests/e2e/` |
+| Subject                           | Location                                                                                                            |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Modern keys                       | `data/raw/control_schemes/modern.json`                                                                              |
+| Options                           | `src/options.cpp`                                                                                                   |
+| Fork interface                    | `src/hud_boxes.cpp`, `src/body_panel.cpp`, `src/keyhints_panel.cpp`, `src/tile_selection.cpp`, `src/first_tips.cpp` |
+| Quick stack and sort pile         | `src/quick_stack.cpp`                                                                                               |
+| Item variants and stack modifiers | `src/item_variant.cpp`, `src/stack_modifier.cpp`, `data/json/item_variants.json`                                    |
+| Save migrations for removed items | `data/json/obsoletion/`                                                                                             |
+| End-to-end tests                  | `tests/e2e/`                                                                                                        |
 
 ### Upstream merges
 

@@ -9,10 +9,10 @@
 #include "avatar.h"
 #include "bodypart.h"
 #include "cached_options.h"
-#include "catacharset.h"
 #include "calendar.h"
 #include "cata_cartesian_product.h"
 #include "cata_utility.h"
+#include "catacharset.h"
 #include "catalua_hooks.h"
 #include "catalua_sol.h"
 #include "character.h"
@@ -185,14 +185,20 @@ auto put_glyph(const catacurses::window& w, const nc_color col, const int sym) -
     }
 }
 
-// Map glyphs keep square corners; the curses frontend rounds the plain corner glyphs used by windows.
+// Map glyphs keep square corners; the curses frontend rounds the plain corner glyphs used by
+// windows.
 auto square_corner(const int sym) -> int {
     switch (sym) {
-        case LINE_OXXO: return LINE_OXXO_UNICODE;
-        case LINE_OOXX: return LINE_OOXX_UNICODE;
-        case LINE_XXOO: return LINE_XXOO_UNICODE;
-        case LINE_XOOX: return LINE_XOOX_UNICODE;
-        default: return sym;
+        case LINE_OXXO:
+            return LINE_OXXO_UNICODE;
+        case LINE_OOXX:
+            return LINE_OOXX_UNICODE;
+        case LINE_XXOO:
+            return LINE_XXOO_UNICODE;
+        case LINE_XOOX:
+            return LINE_XOOX_UNICODE;
+        default:
+            return sym;
     }
 }
 
