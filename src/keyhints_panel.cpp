@@ -52,8 +52,9 @@ auto collect_hints() -> std::vector<hint>
         { ACTION_PAUSE, _( "wait" ) }, { ACTION_EXAMINE, _( "interact" ) }, { ACTION_PICKUP_ALL, _( "pick up" ) },
         { ACTION_INVENTORY, _( "inventory" ) }, { ACTION_USE, _( "use" ) }, { ACTION_WIELD, _( "wield" ) },
         { ACTION_AUTOATTACK, _( "attack" ) }, { ACTION_FIRE, _( "fire" ) }, { ACTION_RELOAD_ITEM, _( "reload" ) }, { ACTION_CRAFT, _( "craft" ) },
-        { ACTION_QUICK_STACK, _( "stash" ) }, { ACTION_SORT_PILE, _( "sort pile" ) }, { ACTION_LOOK, _( "look" ) },
-        { ACTION_MAP, _( "map" ) },
+        { ACTION_QUICK_STACK, _( "stash" ) }, { ACTION_SORT_PILE, _( "sort pile" ) }, { ACTION_MAP, _( "map" ) },
+        // Look goes last: it is the first to drop off a full strip, and hovering the map covers it.
+        { ACTION_AUTO_EXPLORE, _( "explore" ) }, { ACTION_LOOK, _( "look" ) },
     };
     for( const auto &[act, label] : singles ) {
         if( auto keys = first_key( act ); !keys.empty() ) {
@@ -113,7 +114,7 @@ auto show_welcome_once() -> void
                              "%13$s uses an item, %14$s crafts, %15$s looks around and %16$s opens the map.\n\n"
                              "Back at a base, %17$s stashes what you carry onto nearby shelves that hold the same kind of thing, "
                              "and %18$s sorts the pile you are standing on.  No sorting zones needed.\n\n"
-                             "%19$s"
+                             "%19$s%20$s"
                              "The Controls strip at the bottom of the sidebar always shows these keys, "
                              "and <color_light_cyan>?</color> on any screen lists every key." ),
                           key( ACTION_MOVE_FORTH ), key( ACTION_MOVE_LEFT ), key( ACTION_MOVE_BACK ), key( ACTION_MOVE_RIGHT ),
@@ -123,7 +124,10 @@ auto show_welcome_once() -> void
                           key( ACTION_QUICK_STACK ), key( ACTION_SORT_PILE ),
                           get_option<bool>( "MOUSE_TILE_SELECTION" ) ?
                           std::string( _( "The mouse works too: hover a tile to see what a click does, click to walk "
-                                          "there or act, and right-click for every option.\n\n" ) ) : std::string() );
+                                          "there or act, and right-click for every option.\n\n" ) ) : std::string(),
+                          first_key( ACTION_AUTO_EXPLORE ).empty() ? std::string() :
+                          string_format( _( "%s walks toward ground you have not seen yet.\n\n" ),
+                                         key( ACTION_AUTO_EXPLORE ) ) );
     popup( text );
     // Caves of Qud lets you pick Classic or Roleplay at the start; same here, using the existing death prompt.
     auto death = uilist();
