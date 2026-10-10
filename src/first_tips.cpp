@@ -69,6 +69,17 @@ auto tips() -> const std::vector<tip> & // *NOPAD*
             "night", []( const avatar & ) { return is_night( calendar::turn ); },
             [] { return _( "Night has fallen.  You see less, but so do most zombies.  A light helps you and gives you away." ); }
         },
+        {
+            "goal",
+            []( const avatar & /*you*/ ) { return calendar::turn - calendar::start_of_game > 5_minutes; },
+            [] {
+                const auto explore = press_x( ACTION_AUTO_EXPLORE, "", "", "" );
+                return string_format( _( "Start by finding water, food and a weapon; houses usually have all three.  "
+                                         "%s opens the map." ), key( ACTION_MAP ) ) +
+                       ( explore.empty() ? std::string() :
+                         string_format( _( "  %s walks toward ground you have not seen yet." ), explore ) );
+            }
+        },
     };
     return all;
 }
