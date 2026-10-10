@@ -63,6 +63,9 @@ auto default_background = static_cast<short>( COLOR_BLACK );
 auto rounded_corners = false;
 auto unicode_lines = false;
 
+/// A built-in theme redefined terminal colors this session; they are reset on exit.
+auto palette_changed = false;
+
 auto translate_attrs( const int attrs ) -> int
 {
     if( bright_pair_offset == 0 || !( attrs & A_BOLD ) ) {
@@ -143,6 +146,7 @@ auto apply_theme( std::array<RGBColor, color_loader<RGBColor>::COLOR_NAMES_COUNT
             palette[i].b = c.b;
             if( ::can_change_color() && static_cast<int>( i ) < COLORS ) {
                 ::init_color( static_cast<short>( i ), c.r * 1000 / 255, c.g * 1000 / 255, c.b * 1000 / 255 );
+                palette_changed = true;
             }
         }
     }
@@ -287,7 +291,14 @@ void catacurses::endwin()
     std::fputs( "\033[?1003l", stdout );
     std::fflush( stdout );
 #endif
-    return curses_check_result( ::endwin(), OK, "endwin" );
+    const auto result = ::endwin();
+    if( palette_changed ) {
+        // ncurses cannot read the terminal's real palette back, so ask the terminal to reset
+        // the colors a built-in theme overrode (OSC 104), instead of leaving them in the shell.
+        std::fputs( "\033]104\007", stdout );
+        std::fflush( stdout );
+    }
+    return curses_check_result( result, OK, "endwin" );
 }
 
 void catacurses::wborder( const window &win, const chtype ls, const chtype rs, const chtype ts,
