@@ -482,6 +482,13 @@
   },
   {
     "type": "keybinding",
+    "id": "auto_explore",
+    "category": "DEFAULTMODE",
+    "name": "Explore the nearest unexplored area",
+    "bindings": [ { "input_method": "keyboard", "key": "n" } ]
+  },
+  {
+    "type": "keybinding",
     "name": "Zone activities",
     "category": "DEFAULTMODE",
     "id": "loot",

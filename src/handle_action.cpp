@@ -2,6 +2,7 @@
 #include "advanced_inv.h"
 #include "animation.h"
 #include "armor_layers.h"
+#include "auto_explore.h"
 #include "auto_note.h"
 #include "auto_pickup.h"
 #include "avatar.h"
@@ -2572,6 +2573,10 @@ bool game::handle_action()
 
             case ACTION_LOOT:
                 loot();
+                break;
+
+            case ACTION_AUTO_EXPLORE:
+                auto_explore::handle( u );
                 break;
 
             case ACTION_QUICK_STACK:
