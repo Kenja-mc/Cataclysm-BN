@@ -19,6 +19,8 @@ namespace
 
 auto hovered_tile = std::optional<tripoint_bub_ms>();
 auto hovered_route = std::vector<tripoint_bub_ms>();
+/// Turn the hover was computed on; a new turn can change what a click does.
+auto hovered_turn = std::optional<time_point>();
 auto hovered_hint = std::string();
 
 auto hostile_at( const avatar &you, const tripoint_bub_ms &p ) -> Creature * // *NOPAD*
@@ -85,6 +87,13 @@ auto resolve( avatar &you, map &m, const choice &c, const tripoint_bub_ms &p ) -
         // Walking into a closed door opens it.
         return get_movement_action_from_delta( p - you.bub_pos(), iso_rotate::yes );
     }
+    if( c.act == ACTION_FIRE ) {
+        // Aim at the creature the hint named, not whichever hostile is nearest.
+        if( auto *target = hostile_at( you, p ) ) {
+            you.last_target = g->shared_from( *target );
+        }
+        return c.act;
+    }
     if( !c.travel ) {
         return c.act;
     }
@@ -107,10 +116,11 @@ auto hover( avatar &you, map &m, const std::optional<tripoint_bub_ms> &p ) -> vo
         clear_hover();
         return;
     }
-    if( hovered_tile == p ) {
+    if( hovered_tile == p && hovered_turn == calendar::turn ) {
         return;
     }
     hovered_tile = p;
+    hovered_turn = calendar::turn;
     const auto choices = choices_at( you, *p );
     hovered_route = !choices.empty() && choices.front().travel &&
                     square_dist( p->xy(), you.bub_pos().xy() ) > 1 ? route_to( you, m, *p ) : std::vector<tripoint_bub_ms>();
