@@ -64,6 +64,7 @@ def test_welcome_card(g):
     card = g.welcome_screen
     assert "Unsupported" not in card and "%" not in card, "the card text must be formatted:\n" + card
     assert "Space" in card and "mouse works too" in card, card
+    assert "walks toward ground" in card, card
 
 
 def test_death_mode_choice(g):
@@ -86,8 +87,17 @@ def test_first_time_tip(g):
 
 def test_controls_strip(g):
     s = g.screen()
-    for hint in ("wasd move", "qezc diag", "Q stash", "Z sort pile"):
+    for hint in ("wasd move", "qezc diag", "Q stash", "Z sort pile", "n explore"):
         assert hint in s, f"missing {hint!r} in sidebar"
+
+
+def test_auto_explore(g):
+    """n walks toward unseen ground; runs before any test spawns hostiles, which would block it."""
+    settle(g)
+    start = bub_pos(g)
+    g.keys("n", delay=0.6)
+    assert wait_until(lambda: bub_pos(g) != start, timeout=15), "n should start walking:\n" + g.screen()
+    assert "Auto-move canceled" not in g.screen(), g.screen()
 
 
 def test_wasd_movement(g):
@@ -325,6 +335,21 @@ def test_right_click_lists_actions(g):
     s = g.screen()
     g.keys("Escape", delay=0.6)
     assert "attack" in s, s
+    g.lua("local m=gapi.get_monster_at(here(1,0)) if m then park(m) end out('ok')")
+
+
+def test_right_click_pick_runs_the_action(g):
+    arena(g)
+    assert g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(1,0)) out('ok')") == ["ok"]
+    settle(g)
+    before = zombie_hp(g)
+    x, y = g.find("@")
+    for _ in range(6):
+        g.click(x + 1, y, button=2)
+        g.keys("Enter", delay=1)
+        if zombie_hp(g) != before:
+            break
+    assert zombie_hp(g) != before, "picking 'attack' from the right-click menu attacks:\n" + g.screen()
     g.lua("local m=gapi.get_monster_at(here(1,0)) if m then park(m) end out('ok')")
 
 
@@ -566,9 +591,9 @@ def test_rounded_frames(g):
     assert "╭" in s and "╯" in s, "inventory window should have rounded corners"
 
 
-TESTS = [test_welcome_card, test_death_mode_choice, test_first_time_tip, test_controls_strip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
+TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_auto_explore, test_first_time_tip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
          test_hud_boxes, test_body_panel, test_readable_map_glyphs, test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
-         test_aim_defaults, test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions,
+         test_aim_defaults, test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions, test_right_click_pick_runs_the_action,
          test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_old_full_keybindings_file, test_hud_box_options]
 
 
