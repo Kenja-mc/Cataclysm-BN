@@ -1,5 +1,11 @@
 # Cataclysm: Bright Nights
 
+> **これはオーバーホールフォークです。** WASD操作とマウスでのタイル選択、天気・武器・身体パネルを備えた
+> モダンなターミナル表示、ルートゾーンの代わりになるテラリア風クイックスタック、スタックできる
+> アイテムバリアントなど、手間を減らす変更が加えられています。[OVERHAUL.md](./OVERHAUL.md)、
+> [スクリーンショット](./docs/fork/visual-changes.md)、
+> [変更履歴](./CHANGELOG-OVERHAUL.md) をご覧ください。
+
 <header align="center">
   <a><img src="docs/en/contribute/img/readme-title.png" title="screenshots of (clockwise from upper-right: Chaosvolt (x2), ExecutorBill, scarf005"></a>
 

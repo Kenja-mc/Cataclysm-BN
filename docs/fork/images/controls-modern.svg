@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="690" viewBox="0 0 1000 690" font-family="sans-serif">
+  <title>Modern control scheme</title>
+  <desc>Keyboard diagram of the default (modern) control scheme of Cataclysm: Bright Nights Overhaul fork. Every key is labelled with its default-mode action; the small label is the same key pressed with Shift.</desc>
+
+  <rect x="0" y="0" width="1000" height="690" fill="#f8fafc"/>
+
+  <text x="40" y="44" font-size="25" font-weight="700" fill="#0f172a">Modern control scheme &#8212; default keys</text>
+  <text x="40" y="68" font-size="12.5" fill="#475569">Cataclysm: Bright Nights, Overhaul fork. Every key shows its default-mode action; the small label is the same key with Shift.</text>
+
+  <g transform="translate(-16,0)">
+  <!-- ================= row 0: Esc, F1 ================= -->
+  <g>
+    <rect x="40" y="96" width="60" height="58" rx="6" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.5"/>
+    <text x="46" y="110" font-size="10" fill="#64748b">Esc</text>
+    <text x="70" y="130" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">main menu</text>
+  </g>
+  <g>
+    <rect x="106" y="96" width="60" height="58" rx="6" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.5"/>
+    <text x="112" y="110" font-size="10" fill="#64748b">F1</text>
+    <text x="136" y="130" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">help</text>
+  </g>
+
+  <!-- ================= row 1: number row ================= -->
+  <g>
+    <rect x="40" y="162" width="60" height="58" rx="6" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.5"/>
+    <text x="46" y="176" font-size="10" fill="#64748b">`</text>
+    <text x="70" y="196" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">console</text>
+    <text x="70" y="211" font-size="6.8" fill="#b91c1c" text-anchor="middle">&#8679; whitelist</text>
+  </g>
+  <g>
+    <rect x="106" y="162" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="112" y="176" font-size="10" fill="#64748b">1</text>
+    <text x="136" y="196" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">move sw</text>
+    <text x="136" y="211" font-size="6.8" fill="#b91c1c" text-anchor="middle">&#8679; safe mode</text>
+  </g>
+  <g>
+    <rect x="172" y="162" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="178" y="176" font-size="10" fill="#64748b">2</text>
+    <text x="202" y="196" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">move s</text>
+    <text x="202" y="211" font-size="6.8" fill="#7e22ce" text-anchor="middle">&#8679; char sheet</text>
+  </g>
+  <g>
+    <rect x="238" y="162" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="244" y="176" font-size="10" fill="#64748b">3</text>
+    <text x="268" y="196" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">move se</text>
+    <text x="268" y="211" font-size="7.4" fill="#7e22ce" text-anchor="middle">&#8679; factions</text>
+  </g>
+  <g>
+    <rect x="304" y="162" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="310" y="176" font-size="10" fill="#64748b">4</text>
+    <text x="334" y="196" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">move w</text>
+    <text x="334" y="211" font-size="7.4" fill="#7e22ce" text-anchor="middle">&#8679; sleep</text>
+  </g>
+  <g>
+    <rect x="370" y="162" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="376" y="176" font-size="10" fill="#64748b">5</text>
+    <text x="400" y="196" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">wait</text>
+    <text x="400" y="211" font-size="6.8" fill="#15803d" text-anchor="middle">&#8679; item menu</text>
+  </g>
+  <g>
+    <rect x="436" y="162" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="442" y="176" font-size="10" fill="#64748b">6</text>
+    <text x="466" y="196" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">move e</text>
+    <text x="466" y="211" font-size="8.2" fill="#1d4ed8" text-anchor="middle">&#8679; drive</text>
+  </g>
+  <g>
+    <rect x="502" y="162" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="508" y="176" font-size="10" fill="#64748b">7</text>
+    <text x="532" y="196" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">move nw</text>
+    <text x="532" y="211" font-size="7.4" fill="#15803d" text-anchor="middle">&#8679; craft</text>
+  </g>
+  <g>
+    <rect x="568" y="162" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="574" y="176" font-size="10" fill="#64748b">8</text>
+    <text x="598" y="196" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">move n</text>
+    <text x="598" y="211" font-size="6.8" fill="#15803d" text-anchor="middle">&#8679; construct</text>
+  </g>
+  <g>
+    <rect x="634" y="162" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="640" y="176" font-size="10" fill="#64748b">9</text>
+    <text x="664" y="196" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">move ne</text>
+    <text x="664" y="211" font-size="6.8" fill="#15803d" text-anchor="middle">&#8679; break down</text>
+  </g>
+  <g>
+    <rect x="700" y="162" width="60" height="58" rx="6" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.5"/>
+    <text x="706" y="176" font-size="10" fill="#64748b">0</text>
+    <text x="730" y="196" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">help</text>
+    <text x="730" y="211" font-size="7.4" fill="#7e22ce" text-anchor="middle">&#8679; scores</text>
+  </g>
+  <g>
+    <rect x="766" y="162" width="60" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="772" y="176" font-size="10" fill="#64748b">-</text>
+    <text x="796" y="196" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">recraft</text>
+    <text x="796" y="211" font-size="6.8" fill="#b91c1c" text-anchor="middle">&#8679; art style</text>
+  </g>
+  <g>
+    <rect x="832" y="162" width="60" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="838" y="176" font-size="10" fill="#64748b">=</text>
+    <text x="862" y="196" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">swap inv</text>
+    <text x="862" y="211" font-size="7.4" fill="#15803d" text-anchor="middle">&#8679; re-layer</text>
+  </g>
+
+  <!-- ================= row 2: Tab, QWERTY top ================= -->
+  <g>
+    <rect x="40" y="228" width="93" height="58" rx="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="46" y="242" font-size="10" fill="#64748b">Tab</text>
+    <text x="86.5" y="262" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">attack (dir)</text>
+  </g>
+  <g>
+    <rect x="139" y="228" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="145" y="242" font-size="10" fill="#64748b">Q</text>
+    <text x="169" y="262" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">move nw</text>
+    <text x="169" y="277" font-size="6.8" fill="#15803d" text-anchor="middle">&#8679; quick stack</text>
+  </g>
+  <g>
+    <rect x="205" y="228" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="211" y="242" font-size="10" fill="#64748b">W</text>
+    <text x="235" y="262" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">move n</text>
+    <text x="235" y="277" font-size="8.2" fill="#15803d" text-anchor="middle">&#8679; wear</text>
+  </g>
+  <g>
+    <rect x="271" y="228" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="277" y="242" font-size="10" fill="#64748b">E</text>
+    <text x="301" y="262" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">move ne</text>
+    <text x="301" y="277" font-size="8.2" fill="#15803d" text-anchor="middle">&#8679; eat</text>
+  </g>
+  <g>
+    <rect x="337" y="228" width="60" height="58" rx="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="343" y="242" font-size="10" fill="#64748b">R</text>
+    <text x="367" y="262" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">reload</text>
+    <text x="367" y="277" font-size="8.2" fill="#7e22ce" text-anchor="middle">&#8679; read</text>
+  </g>
+  <g>
+    <rect x="403" y="228" width="60" height="58" rx="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="409" y="242" font-size="10" fill="#64748b">T</text>
+    <text x="433" y="262" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">throw</text>
+    <text x="433" y="277" font-size="7.4" fill="#15803d" text-anchor="middle">&#8679; take off</text>
+  </g>
+  <g>
+    <rect x="469" y="228" width="60" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="475" y="242" font-size="10" fill="#64748b">Y</text>
+    <text x="499" y="262" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">talk</text>
+    <text x="499" y="277" font-size="8.2" fill="#7e22ce" text-anchor="middle">&#8679; zones</text>
+  </g>
+  <g>
+    <rect x="535" y="228" width="60" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="541" y="242" font-size="10" fill="#64748b">U</text>
+    <text x="565" y="262" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">use</text>
+    <text x="565" y="277" font-size="7.4" fill="#15803d" text-anchor="middle">&#8679; unload</text>
+  </g>
+  <g>
+    <rect x="601" y="228" width="60" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="607" y="242" font-size="10" fill="#64748b">I</text>
+    <text x="631" y="262" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">inventory</text>
+    <text x="631" y="277" font-size="7.4" fill="#15803d" text-anchor="middle">&#8679; compare</text>
+  </g>
+  <g>
+    <rect x="667" y="228" width="60" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="673" y="242" font-size="10" fill="#64748b">O</text>
+    <text x="697" y="262" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">open</text>
+    <text x="697" y="277" font-size="7.4" fill="#15803d" text-anchor="middle">&#8679; close</text>
+  </g>
+  <g>
+    <rect x="733" y="228" width="60" height="58" rx="6" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.5"/>
+    <text x="739" y="242" font-size="10" fill="#64748b">P</text>
+    <text x="763" y="262" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">bionics</text>
+    <text x="763" y="277" font-size="7.4" fill="#7e22ce" text-anchor="middle">&#8679; messages</text>
+  </g>
+  <g>
+    <rect x="799" y="228" width="60" height="58" rx="6" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.5"/>
+    <text x="805" y="242" font-size="10" fill="#64748b">[</text>
+    <text x="829" y="262" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">mutations</text>
+    <text x="829" y="277" font-size="6.8" fill="#b91c1c" text-anchor="middle">&#8679; pick ammo</text>
+  </g>
+  <g>
+    <rect x="865" y="228" width="60" height="58" rx="6" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.5"/>
+    <text x="871" y="242" font-size="10" fill="#64748b">]</text>
+    <text x="895" y="262" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">spells</text>
+    <text x="895" y="277" font-size="6.8" fill="#7e22ce" text-anchor="middle">&#8679; sidebar opts</text>
+  </g>
+  <g>
+    <rect x="931" y="228" width="60" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="937" y="242" font-size="10" fill="#64748b">\</text>
+    <text x="961" y="262" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">haul</text>
+    <text x="961" y="277" font-size="8.2" fill="#1d4ed8" text-anchor="middle">&#8679; wait</text>
+  </g>
+
+  <!-- ================= row 3: home row, Enter ================= -->
+  <g>
+    <rect x="90" y="294" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="96" y="308" font-size="10" fill="#64748b">A</text>
+    <text x="120" y="328" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">move w</text>
+    <text x="120" y="343" font-size="6.8" fill="#15803d" text-anchor="middle">&#8679; apply wielded</text>
+  </g>
+  <g>
+    <rect x="156" y="294" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="162" y="308" font-size="10" fill="#64748b">S</text>
+    <text x="186" y="328" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">move s</text>
+    <text x="186" y="343" font-size="6.8" fill="#7e22ce" text-anchor="middle">&#8679; save &amp; quit</text>
+  </g>
+  <g>
+    <rect x="222" y="294" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="228" y="308" font-size="10" fill="#64748b">D</text>
+    <text x="252" y="328" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">move e</text>
+    <text x="252" y="343" font-size="8.2" fill="#15803d" text-anchor="middle">&#8679; drop</text>
+  </g>
+  <g>
+    <rect x="288" y="294" width="60" height="58" rx="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="294" y="308" font-size="10" fill="#64748b">F</text>
+    <text x="318" y="328" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">fire</text>
+    <text x="318" y="343" font-size="7.4" fill="#b91c1c" text-anchor="middle">&#8679; attack</text>
+  </g>
+  <g>
+    <rect x="354" y="294" width="60" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="360" y="308" font-size="10" fill="#64748b">G</text>
+    <text x="384" y="328" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">pick up all</text>
+    <text x="384" y="343" font-size="8.2" fill="#15803d" text-anchor="middle">&#8679; grab</text>
+  </g>
+  <g>
+    <rect x="420" y="294" width="60" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="426" y="308" font-size="10" fill="#64748b">H</text>
+    <text x="450" y="328" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">wield</text>
+    <text x="450" y="343" font-size="6.8" fill="#7e22ce" text-anchor="middle">&#8679; body status</text>
+  </g>
+  <g>
+    <rect x="486" y="294" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="492" y="308" font-size="10" fill="#64748b">J</text>
+    <text x="516" y="328" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">jump</text>
+    <text x="516" y="343" font-size="7.4" fill="#7e22ce" text-anchor="middle">&#8679; guide</text>
+  </g>
+  <g>
+    <rect x="552" y="294" width="60" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="558" y="308" font-size="10" fill="#64748b">K</text>
+    <text x="582" y="328" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">craft</text>
+    <text x="582" y="343" font-size="7.4" fill="#15803d" text-anchor="middle">&#8679; construct</text>
+  </g>
+  <g>
+    <rect x="618" y="294" width="60" height="58" rx="6" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.5"/>
+    <text x="624" y="308" font-size="10" fill="#64748b">L</text>
+    <text x="648" y="328" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">look</text>
+  </g>
+  <g>
+    <rect x="684" y="294" width="60" height="58" rx="6" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.5"/>
+    <text x="690" y="308" font-size="10" fill="#64748b">;</text>
+    <text x="714" y="328" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">look</text>
+    <text x="714" y="343" font-size="7.4" fill="#7e22ce" text-anchor="middle">&#8679; center view</text>
+  </g>
+  <g>
+    <rect x="750" y="294" width="60" height="58" rx="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="756" y="308" font-size="10" fill="#64748b">'</text>
+    <text x="780" y="328" font-size="8.5" font-weight="700" fill="#0f172a" text-anchor="middle">ignore enemy</text>
+    <text x="780" y="343" font-size="6.8" fill="#7e22ce" text-anchor="middle">&#8679; move menu</text>
+  </g>
+  <g>
+    <rect x="816" y="294" width="109" height="58" rx="6" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.5"/>
+    <text x="822" y="308" font-size="10" fill="#64748b">Enter</text>
+    <text x="870.5" y="328" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">action menu</text>
+  </g>
+
+  <!-- ================= row 4: bottom letter row ================= -->
+  <g>
+    <rect x="238" y="360" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="244" y="374" font-size="10" fill="#64748b">Z</text>
+    <text x="268" y="394" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">move sw</text>
+    <text x="268" y="409" font-size="7.4" fill="#15803d" text-anchor="middle">&#8679; sort pile</text>
+  </g>
+  <g>
+    <rect x="304" y="360" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="310" y="374" font-size="10" fill="#64748b">X</text>
+    <text x="334" y="394" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">wait</text>
+    <text x="334" y="409" font-size="7.4" fill="#1d4ed8" text-anchor="middle">&#8679; wait a while</text>
+  </g>
+  <g>
+    <rect x="370" y="360" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="376" y="374" font-size="10" fill="#64748b">C</text>
+    <text x="400" y="394" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">move se</text>
+    <text x="400" y="409" font-size="6.8" fill="#7e22ce" text-anchor="middle">&#8679; char sheet</text>
+  </g>
+  <g>
+    <rect x="436" y="360" width="60" height="58" rx="6" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.5"/>
+    <text x="442" y="374" font-size="10" fill="#64748b">V</text>
+    <text x="466" y="394" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">morale</text>
+    <text x="466" y="409" font-size="7.4" fill="#15803d" text-anchor="middle">&#8679; list items</text>
+  </g>
+  <g>
+    <rect x="502" y="360" width="60" height="58" rx="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="508" y="374" font-size="10" fill="#64748b">B</text>
+    <text x="532" y="394" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">smash</text>
+    <text x="532" y="409" font-size="7.4" fill="#15803d" text-anchor="middle">&#8679; butcher</text>
+  </g>
+  <g>
+    <rect x="568" y="360" width="60" height="58" rx="6" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.5"/>
+    <text x="574" y="374" font-size="10" fill="#64748b">N</text>
+    <text x="598" y="394" font-size="9" font-weight="700" fill="#0f172a" text-anchor="middle">auto-explore</text>
+    <text x="598" y="409" font-size="7.4" fill="#b91c1c" text-anchor="middle">&#8679; fire mode</text>
+  </g>
+  <g>
+    <rect x="634" y="360" width="60" height="58" rx="6" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.5"/>
+    <text x="640" y="374" font-size="10" fill="#64748b">M</text>
+    <text x="664" y="394" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">map</text>
+    <text x="664" y="409" font-size="7.4" fill="#7e22ce" text-anchor="middle">&#8679; missions</text>
+  </g>
+  <g>
+    <rect x="700" y="360" width="60" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="706" y="374" font-size="10" fill="#64748b">,</text>
+    <text x="730" y="394" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">pick up 1</text>
+  </g>
+  <g>
+    <rect x="766" y="360" width="60" height="58" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="772" y="374" font-size="10" fill="#64748b">.</text>
+    <text x="796" y="394" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">wait</text>
+  </g>
+  <g>
+    <rect x="832" y="360" width="60" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="838" y="374" font-size="10" fill="#64748b">/</text>
+    <text x="862" y="394" font-size="9.5" font-weight="700" fill="#0f172a" text-anchor="middle">adv inv</text>
+  </g>
+
+  <!-- ================= row 5: Space ================= -->
+  <g>
+    <rect x="255" y="426" width="456" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="265" y="440" font-size="10" fill="#64748b">Space</text>
+    <text x="483" y="462" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">interact / examine</text>
+  </g>
+  </g>
+
+  <!-- ================= legend ================= -->
+  <line x1="40" y1="500" x2="960" y2="500" stroke="#cbd5e1" stroke-width="1"/>
+  <g font-size="12">
+    <rect x="40" y="514" width="18" height="18" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="66" y="528" fill="#0f172a">move &amp; wait</text>
+    <rect x="220" y="514" width="18" height="18" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="246" y="528" fill="#0f172a">items &amp; interaction</text>
+    <rect x="430" y="514" width="18" height="18" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="456" y="528" fill="#0f172a">combat</text>
+    <rect x="560" y="514" width="18" height="18" rx="4" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.5"/>
+    <text x="586" y="528" fill="#0f172a">menus &amp; info</text>
+  </g>
+
+  <!-- ================= notes ================= -->
+  <g font-size="11.5" fill="#475569">
+    <text x="40" y="558">The small label under a key is the same key with Shift: <tspan font-weight="700" fill="#0f172a">Q</tspan> quick stacks, <tspan font-weight="700" fill="#0f172a">W</tspan> wears, <tspan font-weight="700" fill="#0f172a">S</tspan> saves, <tspan font-weight="700" fill="#0f172a">D</tspan> drops, <tspan font-weight="700" fill="#0f172a">H</tspan> shows body status.</text>
+    <text x="40" y="578"><tspan font-weight="700" fill="#0f172a">n</tspan> auto-explores: it walks to the nearest reachable ground you have not seen yet, and refuses while a hostile is in view.</text>
+    <text x="40" y="598">Arrow keys and the numpad still move, aim and answer direction prompts. Click a map tile to walk there in one click.</text>
+    <text x="40" y="618"><tspan font-weight="700" fill="#0f172a">?</tspan> lists every keybinding on any screen, and Enter opens the action menu with every action.</text>
+    <text x="40" y="638">Classic controls (vi-keys, numpad, bump attacks) stay one option away: Options &#8594; Interface &#8594; Control scheme.</text>
+  </g>
+</svg>

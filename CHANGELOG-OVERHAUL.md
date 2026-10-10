@@ -4,6 +4,37 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-10
+
+### Added
+
+- Auto-explore (`n`): each press walks to the nearest reachable spot that borders ground you have
+  not seen, around walls, closed doors, known traps and dangerous fields. It refuses while a
+  hostile is in view. No key in the classic scheme; it is in the Enter action menu.
+- A keyboard diagram of the modern scheme in `OVERHAUL.md`
+  ([`docs/fork/images/controls-modern.svg`](docs/fork/images/controls-modern.svg)).
+- The welcome card and Controls strip show the auto-explore key, and a first tip suggests a
+  starter goal: find water, food and a weapon, because houses usually have all three.
+
+### Changed
+
+- Modern scheme, tiles: the mouse wheel zooms and `Ctrl+N` toggles the pixel minimap. Their
+  upstream keys (`z`, `Z`, `N`) are taken by movement, sort pile and fire mode, which left them
+  unreachable.
+- The Controls strip lists `look` last, so it is the hint that drops off a full strip.
+
+### Fixed
+
+- Picking an entry from the right-click tile menu did nothing.
+- Binding a key back to its upstream default in the modern scheme was lost on restart.
+  `keybindings.json` now starts with a format marker.
+- Clicking "fire at" a monster aimed at the nearest hostile instead of that monster.
+- Built-in color themes left the terminal palette changed after quitting; the game now resets it.
+- The weather and weapon boxes drew Unicode frames on non-UTF-8 terminals.
+- Black powder rounds loaded in a revolver or other integral magazine lost their modifier when an
+  older save was loaded.
+- A recipe with both a result variant and a stack modifier dropped the modifier from its name.
+
 ## 2026-10-09
 
 ### Added

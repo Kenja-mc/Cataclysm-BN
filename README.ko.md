@@ -1,5 +1,11 @@
 # 카타클리즘: 밝은 밤
 
+> **이 저장소는 오버홀 포크입니다.** WASD 조작과 마우스 타일 선택, 날씨·무기·신체 패널을 갖춘 모던한
+> 터미널 디자인, 루팅 구역 대신 쓰는 테라리아식 빠른 쌓기, 겹칠 수 있는 아이템 변형 등 잡일을
+> 줄이는 변경이 더해졌습니다. [OVERHAUL.md](./OVERHAUL.md),
+> [스크린샷](./docs/fork/visual-changes.md),
+> [변경 기록](./CHANGELOG-OVERHAUL.md)을 참고하세요.
+
 <header align="center">
   <a><img src="docs/en/contribute/img/readme-title.png" title="우측 위부터 시계방향으로 Chaosvolt (x2), ExecutorBill, scarf005의 스크린샷"></a>
 
