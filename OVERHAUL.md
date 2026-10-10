@@ -16,6 +16,18 @@ Movement is **WASD**, with **Q E Z C** for diagonals. The layout merges Bright N
 The same keys move the cursor in look mode, targeting and the overmap, and answer every "which
 direction?" prompt.
 
+![Modern control scheme](docs/fork/images/controls-modern.svg)
+
+`n` **auto-explores**: each press walks you to the nearest spot you can reach that borders ground
+you have not seen yet, on your current floor. It goes around walls, closed doors, known traps and
+dangerous fields rather than through them, so open a door yourself to explore past it. It refuses to
+start while a hostile is in view, it stops like any other auto-travel (danger, or any keypress), and
+when nothing unexplored is left nearby it says "Nothing left to explore nearby." The classic scheme
+gives it no key; bind one yourself, or pick it from the Enter action menu, which lists every action.
+
+The welcome card also mentions click-to-walk, and a first tip suggests a starter goal: find water,
+food and a weapon, because houses usually have all three.
+
 | Key       | Action                          | Key     | Action                            |
 | --------- | ------------------------------- | ------- | --------------------------------- |
 | `w a s d` | move                            | `x`     | wait a turn (also `.`)            |
@@ -34,6 +46,7 @@ direction?" prompt.
 | `C`       | character sheet                 | `X`     | wait or rest a while              |
 | `H`       | body status (every limb)        | `J`     | Hitchhiker's Guide                |
 | Enter     | action menu with every action   | `N`     | switch fire mode                  |
+| `n`       | **auto-explore**                | `y`     | talk to someone                   |
 | `F1`      | help                            | `?`     | full keybinding list (any screen) |
 
 Walking into an enemy no longer attacks it. It tells you to press `F`, so a stray step never
@@ -53,7 +66,9 @@ Walking into a closed door still opens it.
 When aiming: `f`/Enter fires, `x` aims one step, `u` `i` `o` pick aimed, careful or precise shots
 (more care, left to right), `r` switches ammo, `F` or `m` switches fire mode.
 
-On the overmap: `=`/`-` zoom, `R` toggles weather, `x` sets a waypoint.
+On the overmap: `=`/`-` zoom, `R` toggles weather, `x` sets a waypoint. In the tiles version's
+main view the mouse wheel zooms and `Ctrl+N` toggles the pixel minimap, because their upstream keys
+`z`, `Z` and `N` are movement, sort pile and fire mode here.
 
 In the vehicle screen, WASD and Q E Z C move the cursor like everywhere else. The actions those
 letters used to start moved to Shift: `W` crew, `A` label, `S` siphon, `D` unload, `E` rename,
@@ -67,11 +82,13 @@ the original vi-keys and numpad layout, turns bump attacks back on and makes Y/N
 capitals. Your own key changes are kept in both schemes, because the game now saves only the keys
 you changed. The modern layout lives in `data/raw/control_schemes/modern.json` on top of the
 untouched upstream keybindings, so other schemes can be added the same way. Quick stack, sort pile,
-attack and body status have no key in classic; bind them or use the Enter action menu. The modern
-scheme unbinds peek (its key `X` waits) and the map-shift keys.
+attack, auto-explore and body status have no key in classic; bind them or use the Enter action
+menu. The modern scheme unbinds peek (its key `X` waits) and the map-shift keys.
 
-A `keybindings.json` saved by an older version holds every key, so it overrides either scheme.
-Delete it from the config folder to follow the scheme again.
+`keybindings.json` starts with a format marker and holds only the keys you changed, including a
+key set back to its upstream default. A file saved by an older version, without the marker, held
+every key: entries in it that only repeat upstream's default are ignored, so it cannot undo the
+scheme.
 
 Your first new game opens with a short welcome card listing these keys (Options → Interface →
 Show welcome card brings it back). Like Caves of Qud's Classic and Roleplay modes, it then asks how
@@ -299,6 +316,11 @@ item type variants instead of new item types:
     Y/N hotkeys on and one-click mouse movement off, and the extra "in the way" message is modern-only.
   - Attack commands never swap places with a pet or start talking to a friend; walking into an
     enemy under relaxation gas is refused before it costs any time.
+- Fixes from a second adversarial review:
+  - Picking an entry from the right-click tile menu did nothing; clicking "fire at" a monster
+    aimed at the nearest hostile instead.
+  - Built-in color themes left the terminal palette changed after quitting.
+  - Black powder rounds loaded in a revolver lost their modifier when an older save was loaded.
 - Loading is faster: item migrations finalize in one pass over item groups, and the JSON reader
   skips strings and whitespace straight from the stream buffer. In testing, the core data load and
   check went from 734 s to 118 s, and a new game starts in about 18 s.
