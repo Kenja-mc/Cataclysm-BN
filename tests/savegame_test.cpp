@@ -3,6 +3,9 @@
 #include "debug.h"
 #include "filesystem.h"
 #include "game.h"
+#include "item.h"
+#include "json.h"
+#include "stack_modifier.h"
 #include "state_helpers.h"
 #include "world.h"
 #include "worldfactory.h"
@@ -48,4 +51,24 @@ TEST_CASE("manual combat mode is serialized in save data", "[save]") {
     g->serialize(save_data);
 
     CHECK(save_data.str().find(R"("manual_combat_mode": true)") != std::string::npos);
+}
+
+TEST_CASE("old_save_revolver_keeps_black_powder_rounds", "[save][migration]") {
+    const auto load = [](item& it, const std::string& json) {
+        auto iss = std::istringstream(json);
+        auto jsin = JsonIn(iss);
+        it.deserialize(jsin);
+    };
+    const auto black_powder = stack_modifier_id("black_powder");
+    auto gun = item();
+
+    SECTION("loaded rounds keep the modifier") {
+        load(gun, R"({"typeid": "sw_619", "curammo": "bp_38_special", "charges": 6})");
+        CHECK(gun.ammo_current() == itype_id("38_special"));
+        CHECK(stack_modifiers::count(gun, black_powder) == 6);
+    }
+    SECTION("an empty gun gets no modified rounds") {
+        load(gun, R"({"typeid": "sw_619", "curammo": "bp_38_special", "charges": 0})");
+        CHECK(stack_modifiers::count(gun, black_powder) == 0);
+    }
 }

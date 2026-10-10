@@ -559,11 +559,11 @@ std::string recipe::batch_savings_string() const
 auto recipe::result_name( const bool decorated ) const -> std::string
 {
     auto name = nested_name.empty() ? item::nname( result_ ) : nested_name;
-    if( !result_stack_modifier.empty() ) {
-        name = string_format( "%s (%s)", name, stack_modifier_id( result_stack_modifier )->name );
-    }
     if( const auto *variant = item_variants::find( result_, result_variant ) ) {
         name = variant->name.translated();
+    }
+    if( !result_stack_modifier.empty() ) {
+        name = string_format( "%s (%s)", name, stack_modifier_id( result_stack_modifier )->name );
     }
     if( decorated && uistate.favorite_recipes.contains( this->ident() ) ) {
         name = "* " + name;

@@ -3065,6 +3065,14 @@ void Item_factory::migrate_item( const itype_id &id, item &obj )
     }
 }
 
+auto Item_factory::migrate_stack_modifier( const itype_id &id, item &obj, const int count ) -> void
+{
+    const auto iter = migrations.find( id );
+    if( count > 0 && iter != migrations.end() && !iter->second.stack_modifier.empty() ) {
+        stack_modifiers::set_count( obj, stack_modifier_id( iter->second.stack_modifier ), count );
+    }
+}
+
 void Item_factory::set_qualities_from_json( const JsonObject &jo, const std::string &member,
         itype &def )
 {
