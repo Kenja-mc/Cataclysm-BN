@@ -15,14 +15,10 @@ local mod = game.mod_runtime[game.current_mod]
 
 -- 死体から蘇ったモンスターを捕まえる（revive_corpse() 内で呼ばれる）
 game.add_hook("on_monster_spawn", function(...)
-  if mod.on_monster_spawn then
-    return mod.on_monster_spawn(...)
-  end
+  if mod.on_monster_spawn then return mod.on_monster_spawn(...) end
 end)
 
 -- 蘇った個体が再び倒れたとき、その死体に「もう起き上がれない」印を付ける
 game.add_hook("on_mon_death", function(...)
-  if mod.on_mon_death then
-    return mod.on_mon_death(...)
-  end
+  if mod.on_mon_death then return mod.on_mon_death(...) end
 end)

@@ -16,31 +16,32 @@ Movement is **WASD**, with **Q E Z C** for diagonals. The layout merges Bright N
 The same keys move the cursor in look mode, targeting and the overmap, and answer every "which
 direction?" prompt.
 
-| Key       | Action                          | Key   | Action                           |
-| --------- | ------------------------------- | ----- | -------------------------------- |
-| `w a s d` | move                            | `x`   | wait a turn (also `.`)           |
-| `q e z c` | move diagonally                 | Space | interact / examine               |
-| `g`       | pick up from everything nearby  | `,`   | pick up from one tile            |
-| `i`       | inventory                       | `u`   | use an item                      |
-| `h`       | hold (wield)                    | `W`/`T` | wear / take off                |
-| `f`       | fire                            | `r`   | reload                           |
-| `t`       | throw                           | `b`   | bash (smash)                     |
-| `o` / `O` | open / close                    | `j`   | jump                             |
-| `D`       | drop (`Ctrl+D` drops to a side) | `E`   | eat or drink                     |
-| `k`       | craft (`&` also works)          | `K`   | construct (`*` also works)       |
-| `Q`       | **quick stack** to storage      | `Z`   | **sort the pile** you stand on   |
-| `l`       | look around                     | `m`   | map                              |
-| `F`       | attack the nearest enemy        | Tab   | attack in a direction            |
-| `C`       | character sheet                 | `X`   | wait or rest a while             |
-| `H`       | body status (every limb)        | `J`   | Hitchhiker's Guide               |
-| Enter     | action menu with every action   | `N`   | switch fire mode                 |
-| `F1`      | help                            | `?`   | full keybinding list (any screen)|
+| Key       | Action                          | Key     | Action                            |
+| --------- | ------------------------------- | ------- | --------------------------------- |
+| `w a s d` | move                            | `x`     | wait a turn (also `.`)            |
+| `q e z c` | move diagonally                 | Space   | interact / examine                |
+| `g`       | pick up from everything nearby  | `,`     | pick up from one tile             |
+| `i`       | inventory                       | `u`     | use an item                       |
+| `h`       | hold (wield)                    | `W`/`T` | wear / take off                   |
+| `f`       | fire                            | `r`     | reload                            |
+| `t`       | throw                           | `b`     | bash (smash)                      |
+| `o` / `O` | open / close                    | `j`     | jump                              |
+| `D`       | drop (`Ctrl+D` drops to a side) | `E`     | eat or drink                      |
+| `k`       | craft (`&` also works)          | `K`     | construct (`*` also works)        |
+| `Q`       | **quick stack** to storage      | `Z`     | **sort the pile** you stand on    |
+| `l`       | look around                     | `m`     | map                               |
+| `F`       | attack the nearest enemy        | Tab     | attack in a direction             |
+| `C`       | character sheet                 | `X`     | wait or rest a while              |
+| `H`       | body status (every limb)        | `J`     | Hitchhiker's Guide                |
+| Enter     | action menu with every action   | `N`     | switch fire mode                  |
+| `F1`      | help                            | `?`     | full keybinding list (any screen) |
 
 Walking into an enemy no longer attacks it. It tells you to press `F`, so a stray step never
 starts a fight (Options → Interface → Attack by walking into enemies turns bump attacks back on).
 Walking into a closed door still opens it.
 
 **Mouse tile selection**, inspired by Sword of the Stars: The Pit, works in the terminal too.
+
 - **Hover:** hovering a map tile highlights it, draws the route there, and opens the Mouse View box
   with what is on the tile and what a click will do ("click: attack the zombie", "click: walk here
   (12 steps)").
@@ -74,7 +75,7 @@ Delete it from the config folder to follow the scheme again.
 
 Your first new game opens with a short welcome card listing these keys (Options → Interface →
 Show welcome card brings it back). Like Caves of Qud's Classic and Roleplay modes, it then asks how
-death works: *Permadeath* (the default) or *Roleplay*, which offers to reload your last save when
+death works: _Permadeath_ (the default) or _Roleplay_, which offers to reload your last save when
 you die. Autosave is on, so that save is recent. This only sets upstream's Options → General →
 Prompt on character death, so you can change it later.
 
@@ -91,10 +92,10 @@ prompts with Y and N makes `y`/`n` answer at once instead; the classic control s
 
 ## Look
 
-- **Color theme** (Options → Graphics). The default, *Terminal*, takes your terminal's palette and
+- **Color theme** (Options → Graphics). The default, _Terminal_, takes your terminal's palette and
   background, so the game follows whatever theme your desktop uses (Omarchy, base16, pywal and so
-  on). *Tokyo Night*, *Catppuccin*, *Gruvbox* and *Everforest* are built in for terminals that
-  allow palette changes, and *Classic* keeps the original colors.
+  on). _Tokyo Night_, _Catppuccin_, _Gruvbox_ and _Everforest_ are built in for terminals that
+  allow palette changes, and _Classic_ keeps the original colors.
 - On terminals with 16 colors, bright colors get their own color pairs instead of depending on
   bold text being drawn bright, which most modern terminals no longer do. Light and dark variants
   stay distinct and text no longer turns bold at random.
@@ -146,7 +147,7 @@ that is optional:
   a box and squeeze tube were near-copies of other containers and are merged into them.
 
 - **Black powder handloads stack with factory rounds.** The 75 `bp_*` ammo items are gone. A
-  black powder round is the normal round with a *black powder* stack modifier, so 30 factory 9mm
+  black powder round is the normal round with a _black powder_ stack modifier, so 30 factory 9mm
   and 10 handloads make one stack, shown as `9mm JHP (40, 10 black powder)`. Each shot rolls which
   round fires, and only black powder shots hit softer, spread wider and kick less. Loading,
   unloading and splitting keep the right share of handloads; handloads can't be pulled apart for
@@ -159,7 +160,7 @@ that is optional:
   piece they used to, and old saves convert. Pieces with a use or a story of their own stay
   separate: watches, badges, medals, holy symbols, wedding, engagement, purity and signet rings.
 - **Books, games and belts.** The same treatment applies to 30 novels and other light reading,
-  which become one *paperback* ("western novel", "Murdered by the Grapevine", "book of poetry").
+  which become one _paperback_ ("western novel", "Murdered by the Grapevine", "book of poetry").
   Eight board and tabletop games become two items, and seven judo belts become one. Professions
   still start with the exact piece (the black belt, the gold necklace).
 - **Jewelry stacks.** Different rings share one stack, like items in Don't Starve: "3 rings".
@@ -168,7 +169,7 @@ that is optional:
 - **Food of any freshness stacks**, with its rot averaged, as in Don't Starve. Rotten food never joins
   fresh food. Options → General → Freshness similarity threshold brings back the stricter
   upstream rule (0.25).
-- **One MRE.** The 26 MRE boxes are one *MRE*. The entree is a variant
+- **One MRE.** The 26 MRE boxes are one _MRE_. The entree is a variant
   (`MRE - Chili & Beans`), and opening it still gives that entree.
 
 Zones (`Y`) and the loot-sorting activity are still there for anyone who wants them; loot sorting
@@ -178,8 +179,8 @@ just has no key in the modern scheme.
 
 The guns and calibers CDDA cut over the years (5.45x39, 5.7x28, 4.6x30, 7.62x25, 9x18, .454,
 .460, .500 S&W, .38 Super, .270 Win and .700 NX, with the AK-74M, AN-94, FN P90, Five-seveN, MP7,
-PPSh-41, Tokarev, Makarov, S&W 500, Raging Bull and friends) live in Bright Nights' *Exotic ammo
-types* mod. It is now on by default for new worlds, so they spawn in normal loot. Leave it off
+PPSh-41, Tokarev, Makarov, S&W 500, Raging Bull and friends) live in Bright Nights' _Exotic ammo
+types_ mod. It is now on by default for new worlds, so they spawn in normal loot. Leave it off
 when creating a world if you prefer fewer calibers.
 
 ## Optional mods
@@ -230,8 +231,8 @@ item type variants instead of new item types:
       "description": "…",
       "weight": 50,
       "price_multiplier": 0.33,
-      "material": [ "gold", "gemstone" ],
-      "components": [ [ "gold_small", 2 ], [ "ruby", 1 ] ]
+      "material": ["gold", "gemstone"],
+      "components": [["gold_small", 2], ["ruby", 1]]
     }
   ]
 }

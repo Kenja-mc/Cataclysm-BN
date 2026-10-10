@@ -80,9 +80,7 @@ local VAR_GEN = "lrz_gen"
 ----------------------------------------------------------------------
 
 local function log(fmt, ...)
-  if mod.cfg.debug then
-    gdebug.log_info("LRZ: " .. string.format(fmt, ...))
-  end
+  if mod.cfg.debug then gdebug.log_info("LRZ: " .. string.format(fmt, ...)) end
 end
 
 -- 損壊度を 0〜3 に丸める（4 = 完全に破壊された死体は復活しないので来ない）
@@ -103,22 +101,16 @@ end
 -- どちらの場合も、既に封じた(PULPED)死体は無視する。
 local function find_corpse_at(pos, mtype_str, prefer_marked)
   local map = gapi.get_map()
-  if not map then
-    return nil
-  end
+  if not map then return nil end
   local stack = map:get_items_at(pos)
-  if not stack then
-    return nil
-  end
+  if not stack then return nil end
   local fallback = nil
   for _, it in pairs(stack) do
     if it and it:is_corpse() and not it:has_flag(FLAG_PULPED) then
       local mt = it:get_mtype()
       if mt and mt:str() == mtype_str then
         local marked = it:get_var_num(VAR_GEN, 0) > 0
-        if marked == prefer_marked then
-          return it
-        end
+        if marked == prefer_marked then return it end
         fallback = fallback or it
       end
     end
@@ -129,9 +121,7 @@ end
 -- HPの残り割合から損壊度を推定する（死体が見つからなかったとき用）
 local function guess_dl_from_hp(mon)
   local hp_max = mon:get_hp_max()
-  if not hp_max or hp_max <= 0 then
-    return 0
-  end
+  if not hp_max or hp_max <= 0 then return 0 end
   local r = mon:get_hp() / hp_max
   if r >= 0.6 then
     return 0
@@ -146,16 +136,10 @@ end
 -- 効果の付与。強度付きが通らない環境でも落ちないようにしておく
 local function add_effect_safe(mon, eff, dur, intensity)
   if intensity then
-    local ok = pcall(function()
-      mon:add_effect(eff, dur, nil, intensity)
-    end)
-    if ok then
-      return
-    end
+    local ok = pcall(function() mon:add_effect(eff, dur, nil, intensity) end)
+    if ok then return end
   end
-  pcall(function()
-    mon:add_effect(eff, dur)
-  end)
+  pcall(function() mon:add_effect(eff, dur) end)
 end
 
 ----------------------------------------------------------------------
@@ -165,19 +149,11 @@ end
 local function handle_revived(mon)
   -- revive_corpse() は蘇らせた直後に downed を 5 ターン付ける。
   -- 通常のスポーンには付かないので、これを「復活してきた個体」の判定に使う。
-  if not mon:has_effect(EFF_DOWNED) then
-    return
-  end
-  if not mon:has_flag(MonsterFlag.REVIVES) then
-    return
-  end
-  if not mon:in_species(SPECIES_ZOMBIE) then
-    return
-  end
+  if not mon:has_effect(EFF_DOWNED) then return end
+  if not mon:has_flag(MonsterFlag.REVIVES) then return end
+  if not mon:in_species(SPECIES_ZOMBIE) then return end
   -- プレイヤーが作ったゾンビ奴隷(zlave)は対象外
-  if mon:has_effect(EFF_PET) or mon:has_effect(EFF_PACIFIED) then
-    return
-  end
+  if mon:has_effect(EFF_PET) or mon:has_effect(EFF_PACIFIED) then return end
 
   local pos = mon:get_pos_ms()
   local corpse = find_corpse_at(pos, mon:get_type():str(), true)
@@ -195,13 +171,9 @@ local function handle_revived(mon)
   local ratio = mod.cfg.hp_ratio[dl] or 0.5
   local hp_max = mon:get_hp_max()
   local target = math.floor(hp_max * ratio)
-  if target < 1 then
-    target = 1
-  end
+  if target < 1 then target = 1 end
   local cur = mon:get_hp()
-  if target < cur then
-    mon:set_hp(target)
-  end
+  if target < cur then mon:set_hp(target) end
 
   -- 2) 起き上がるまでしばらく無力にする
   local secs = mod.cfg.rise_secs[dl]
@@ -213,9 +185,7 @@ local function handle_revived(mon)
 
   -- 3) 死後硬直（移動速度低下）
   local mins = mod.cfg.rigor_mins[dl]
-  if mins and mins > 0 then
-    add_effect_safe(mon, EFF_RIGOR, TimeDuration.from_minutes(mins), dl + 1)
-  end
+  if mins and mins > 0 then add_effect_safe(mon, EFF_RIGOR, TimeDuration.from_minutes(mins), dl + 1) end
 
   -- 4) 何度目の復活かを個体に記録しておく（死亡時に死体へ書き戻す）
   mon:set_value(VAR_GEN, tostring(gen + 1))
@@ -225,13 +195,9 @@ end
 
 mod.on_monster_spawn = function(params)
   local mon = params and params.monster
-  if not mon then
-    return
-  end
+  if not mon then return end
   local ok, err = pcall(handle_revived, mon)
-  if not ok then
-    gdebug.log_info("LRZ: on_monster_spawn failed: " .. tostring(err))
-  end
+  if not ok then gdebug.log_info("LRZ: on_monster_spawn failed: " .. tostring(err)) end
 end
 
 ----------------------------------------------------------------------
@@ -239,12 +205,8 @@ end
 ----------------------------------------------------------------------
 
 local function handle_death(mon)
-  if not mon:has_flag(MonsterFlag.REVIVES) then
-    return
-  end
-  if not mon:in_species(SPECIES_ZOMBIE) then
-    return
-  end
+  if not mon:has_flag(MonsterFlag.REVIVES) then return end
+  if not mon:in_species(SPECIES_ZOMBIE) then return end
 
   local gen = tonumber(mon:get_value(VAR_GEN)) or 0
   if gen < 1 and mod.cfg.max_revivals > 0 then
@@ -254,9 +216,7 @@ local function handle_death(mon)
 
   local pos = mon:get_pos_ms()
   local corpse = find_corpse_at(pos, mon:get_type():str(), false)
-  if not corpse then
-    return
-  end
+  if not corpse then return end
 
   corpse:set_var_num(VAR_GEN, gen)
 
@@ -267,31 +227,20 @@ local function handle_death(mon)
     if mod.cfg.announce then
       local u = gapi.get_avatar()
       if u and u:sees(pos) then
-        gapi.add_msg(MsgType.good,
-          string.format(locale.gettext("The %s is too broken to rise again."), mon:get_name()))
+        gapi.add_msg(MsgType.good, string.format(locale.gettext("The %s is too broken to rise again."), mon:get_name()))
       end
     end
   end
 end
 
 mod.on_mon_death = function(params)
-  if not params then
-    return
-  end
+  if not params then return end
   local mon = params.mon or params.creature
-  if not mon then
-    return
-  end
+  if not mon then return end
   -- Creature として渡ってきた場合に備える
   local as_mon = nil
-  pcall(function()
-    as_mon = mon:as_monster()
-  end)
-  if as_mon then
-    mon = as_mon
-  end
+  pcall(function() as_mon = mon:as_monster() end)
+  if as_mon then mon = as_mon end
   local ok, err = pcall(handle_death, mon)
-  if not ok then
-    gdebug.log_info("LRZ: on_mon_death failed: " .. tostring(err))
-  end
+  if not ok then gdebug.log_info("LRZ: on_mon_death failed: " .. tostring(err)) end
 end

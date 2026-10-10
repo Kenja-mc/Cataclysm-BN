@@ -29,13 +29,13 @@ Tarn Adams). Neither studio published a postmortem; reasons marked "inferred" ar
 
 ## What the fork took
 
-| Idea | Status in the fork |
-|---|---|
-| Choose Classic or Roleplay at start | Welcome card asks; sets upstream's *Prompt on character death* |
-| Tutorial hints | One-line first-time tips, once per character, option to turn off |
-| Binds shown wherever an action is | Hover hint names the key; Controls strip already did |
-| Danger stops automation | Already upstream: "Spotted X--safe mode is on!" |
-| Search in long lists | Already upstream: `/` filters menus and inventory |
-| Hide sidebar | Already upstream: toggle panel admin |
-| One Look panel | Not done |
-| Keep the old behavior behind a toggle | Every item above is an option |
+| Idea                                  | Status in the fork                                               |
+| ------------------------------------- | ---------------------------------------------------------------- |
+| Choose Classic or Roleplay at start   | Welcome card asks; sets upstream's _Prompt on character death_   |
+| Tutorial hints                        | One-line first-time tips, once per character, option to turn off |
+| Binds shown wherever an action is     | Hover hint names the key; Controls strip already did             |
+| Danger stops automation               | Already upstream: "Spotted X--safe mode is on!"                  |
+| Search in long lists                  | Already upstream: `/` filters menus and inventory                |
+| Hide sidebar                          | Already upstream: toggle panel admin                             |
+| One Look panel                        | Not done                                                         |
+| Keep the old behavior behind a toggle | Every item above is an option                                    |
