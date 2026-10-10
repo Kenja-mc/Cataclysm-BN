@@ -209,6 +209,9 @@ void input_manager::load( const std::string &file_name, bool is_user_preferences
 
     JsonIn jsin( data_file, file_name );
 
+    // Files saved before the "keybindings_format" marker existed may repeat upstream defaults.
+    auto format_version = 1;
+
     //Crawl through once and create an entry for every definition
     jsin.start_array();
     while( !jsin.end_array() ) {
@@ -216,6 +219,10 @@ void input_manager::load( const std::string &file_name, bool is_user_preferences
         JsonObject action = jsin.get_object();
 
         const std::string type = action.get_string( "type", "keybinding" );
+        if( type == "keybindings_format" ) {
+            format_version = action.get_int( "version" );
+            continue;
+        }
         if( type != "keybinding" ) {
             debugmsg( "Only objects of type 'keybinding' (not %s) should appear in the "
                       "keybindings file '%s'", type, file_name );
@@ -267,12 +274,14 @@ void input_manager::load( const std::string &file_name, bool is_user_preferences
             events.push_back( new_event );
         }
 
-        // Older versions saved every binding, not just changed ones. An entry that only repeats
-        // upstream's default is not a preference and must not undo the control scheme.
+        // Files without the format marker saved every binding, so an entry repeating upstream's
+        // default is no preference and must not undo the control scheme. Marked files hold only
+        // changed keys; there only an entry equal to the scheme's own default is redundant.
         if( is_user_preferences && !action.get_bool( "is_deleted", false ) &&
             !action.get_bool( "is_user_created", false ) ) {
-            const auto ctx = upstream_contexts.find( context );
-            if( ctx != upstream_contexts.end() ) {
+            const auto &cmp = format_version >= 2 ? default_contexts : upstream_contexts;
+            const auto ctx = cmp.find( context );
+            if( ctx != cmp.end() ) {
                 const auto act = ctx->second.find( action_id );
                 if( act != ctx->second.end() && act->second.input_events == events ) {
                     continue;
@@ -324,6 +333,13 @@ void input_manager::save()
         JsonOut jsout( data_file, true );
 
         jsout.start_array();
+
+        // Marks a file that holds only changed keys; see the format_version check in load().
+        jsout.start_object();
+        jsout.member( "type", "keybindings_format" );
+        jsout.member( "version", 2 );
+        jsout.end_object();
+
         for( t_action_contexts::const_iterator a = action_contexts.begin(); a != action_contexts.end();
              ++a ) {
             const t_actions &actions = a->second;
