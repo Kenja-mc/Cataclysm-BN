@@ -489,6 +489,27 @@
   },
   {
     "type": "keybinding",
+    "id": "zoom_in",
+    "category": "DEFAULTMODE",
+    "name": "Zoom in",
+    "bindings": [ { "input_method": "mouse", "key": "SCROLL_UP" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "zoom_out",
+    "category": "DEFAULTMODE",
+    "name": "Zoom out",
+    "bindings": [ { "input_method": "mouse", "key": "SCROLL_DOWN" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "toggle_pixel_minimap",
+    "category": "DEFAULTMODE",
+    "name": "Toggle Minimap",
+    "bindings": [ { "input_method": "keyboard", "key": "CTRL+N" } ]
+  },
+  {
+    "type": "keybinding",
     "name": "Zone activities",
     "category": "DEFAULTMODE",
     "id": "loot",
