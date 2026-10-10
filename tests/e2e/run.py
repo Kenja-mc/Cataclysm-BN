@@ -93,6 +93,10 @@ def test_controls_strip(g):
 
 def test_auto_explore(g):
     """n walks toward unseen ground; runs before any test spawns hostiles, which would block it."""
+    # The start shelter can be fully seen with its doors shut; a cross of floor opens it to the outdoors.
+    assert g.lua("for d=-30,30 do for _,p in ipairs({here(d,0), here(0,d)}) do "
+                 "M:set_ter_at(p, TerId.new('t_floor'):int_id()) M:set_furn_at(p, FurnId.new('f_null'):int_id()) "
+                 "end end out('ok')") == ["ok"]
     settle(g)
     start = bub_pos(g)
     g.keys("n", delay=0.6)
@@ -138,7 +142,8 @@ def test_quick_stack(g):
     assert count_at(g, 2, 0, "usb_drive") == 4, "drives should join the rack"
     assert count_carried(g, "usb_drive") == 0
     assert count_carried(g, "plastic_six_dice") == 1, "nothing nearby holds dice, so they stay"
-    assert "Stashed 3 items into 1 spot" in g.screen()
+    # The random starting profession may carry something of the drives' category, which also goes.
+    assert re.search(r"Stashed \d+ items into 1 spot", g.screen()), g.screen()
 
 
 def test_quick_stack_not_through_windows(g):
