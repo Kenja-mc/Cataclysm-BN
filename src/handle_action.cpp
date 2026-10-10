@@ -2040,8 +2040,8 @@ bool game::handle_action()
                 } else if( act == ACTION_SEC_SELECT && !choices.empty() ) {
                     auto menu = uilist();
                     menu.title = m.name( *mouse_target );
-                    for( const auto &c : choices ) {
-                        menu.addentry( -1, true, MENU_AUTOASSIGN, c.label );
+                    for( size_t i = 0; i < choices.size(); i++ ) {
+                        menu.addentry( static_cast<int>( i ), true, MENU_AUTOASSIGN, choices[i].label );
                     }
                     menu.query();
                     if( menu.ret >= 0 && menu.ret < static_cast<int>( choices.size() ) ) {
