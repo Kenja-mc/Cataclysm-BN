@@ -1,6 +1,11 @@
 #include "hud_boxes.h"
 
 #include <algorithm>
+#include <cstring>
+#include <optional>
+#if !defined(TILES) && !defined(_WIN32)
+#include <langinfo.h>
+#endif
 #include <map>
 #include <string>
 #include <vector>
@@ -22,6 +27,49 @@
 
 namespace
 {
+
+/// Whether the terminal can show Unicode box drawing; tiles builds always can.
+auto unicode_locale() -> bool
+{
+#if defined(TILES) || defined(_WIN32)
+    return true;
+#else
+    return std::strcmp( nl_langinfo( CODESET ), "UTF-8" ) == 0;
+#endif
+}
+
+struct frame_glyphs {
+    const char *horizontal;
+    const char *vertical;
+    const char *top_left;
+    const char *top_right;
+    const char *bottom_left;
+    const char *bottom_right;
+};
+
+auto frame_for( const bool unicode, const bool rounded ) -> frame_glyphs
+{
+    if( !unicode ) {
+        return { .horizontal = "-", .vertical = "|", .top_left = "+", .top_right = "+", .bottom_left = "+", .bottom_right = "+" };
+    }
+    if( rounded ) {
+        return { .horizontal = "─", .vertical = "│", .top_left = "╭", .top_right = "╮", .bottom_left = "╰", .bottom_right = "╯" };
+    }
+    return { .horizontal = "─", .vertical = "│", .top_left = "┌", .top_right = "┐", .bottom_left = "└", .bottom_right = "┘" };
+}
+
+/// The weather box redraws every frame; scanning the whole inventory once per turn is enough.
+auto has_thermometer( const avatar &you ) -> bool
+{
+    static auto checked_on = std::optional<time_point>();
+    static auto cached = false;
+    if( checked_on != calendar::turn ) {
+        cached = you.has_item_with_flag( flag_THERMOMETER ) ||
+                 you.has_enchantment_flag( enchantment_flag_id( "THERMOMETER" ) );
+        checked_on = calendar::turn;
+    }
+    return cached;
+}
 
 enum class icon {
     sun, moon, cloud, rain, storm, snow, strange, underground, fists, melee, gun, bow, style
@@ -116,8 +164,7 @@ auto weather_lines( const avatar &you ) -> std::vector<line>
                          w.weather_id->name.translated(), w.weather_id->color } );
     }
     auto second = time_text( you );
-    if( you.has_item_with_flag( flag_THERMOMETER ) ||
-        you.has_enchantment_flag( enchantment_flag_id( "THERMOMETER" ) ) ) {
+    if( has_thermometer( you ) ) {
         second += "  " + print_temperature( w.get_temperature( you.abs_pos() ) );
     }
     out.push_back( { std::string( utf8_width( out.front().icon ), ' ' ), c_light_gray, second, c_light_gray } );
@@ -152,25 +199,25 @@ struct box_spec {
 auto draw_box( const catacurses::window &w, const box_spec &box ) -> void
 {
     const auto &[at, inner, lines] = box;
-    const auto rounded = get_option<bool>( "UI_ROUNDED_BORDERS" );
+    const auto frame = frame_for( unicode_locale(), get_option<bool>( "UI_ROUNDED_BORDERS" ) );
     const auto bar = [&]( const char *l, const char *r ) {
         auto s = std::string( l );
         for( int i = 0; i < inner + 2; i++ ) {
-            s += "─";
+            s += frame.horizontal;
         }
         return s + r;
     };
-    mvwprintz( w, at, c_dark_gray, bar( rounded ? "╭" : "┌", rounded ? "╮" : "┐" ) );
+    mvwprintz( w, at, c_dark_gray, bar( frame.top_left, frame.top_right ) );
     for( size_t i = 0; i < lines.size(); i++ ) {
         const auto row = at + point( 0, i + 1 );
-        mvwprintz( w, row, c_dark_gray, "│" );
+        mvwprintz( w, row, c_dark_gray, frame.vertical );
         mvwprintz( w, row + point( 1, 0 ), c_black, std::string( inner + 2, ' ' ) );
         mvwprintz( w, row + point( 2, 0 ), lines[i].icon_color, lines[i].icon );
         const auto icon_w = utf8_width( lines[i].icon );
         trim_and_print( w, row + point( 3 + icon_w, 0 ), inner - icon_w - 1, lines[i].text_color, lines[i].text );
-        mvwprintz( w, row + point( inner + 3, 0 ), c_dark_gray, "│" );
+        mvwprintz( w, row + point( inner + 3, 0 ), c_dark_gray, frame.vertical );
     }
-    mvwprintz( w, at + point( 0, lines.size() + 1 ), c_dark_gray, bar( rounded ? "╰" : "└", rounded ? "╯" : "┘" ) );
+    mvwprintz( w, at + point( 0, lines.size() + 1 ), c_dark_gray, bar( frame.bottom_left, frame.bottom_right ) );
 }
 
 } // namespace
