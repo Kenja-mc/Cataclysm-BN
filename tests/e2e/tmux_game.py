@@ -18,11 +18,11 @@ def find_binary():
 
 
 class Game:
-    def __init__(self, name="bn-e2e", cols=140, rows=45, options=None, keybindings=None):
+    def __init__(self, name="bn-e2e", cols=140, rows=45, options=None, keybindings=None, userdir=None):
         self.name = name
-        self.userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-"))
+        self.userdir = Path(userdir) if userdir else Path(tempfile.mkdtemp(prefix="bn-e2e-"))
         config = self.userdir / "config"
-        config.mkdir(parents=True)
+        config.mkdir(parents=True, exist_ok=True)
         if options:
             (config / "options.json").write_text(json.dumps(
                 [{"info": "", "default": "", "name": k, "value": v} for k, v in options.items()]))

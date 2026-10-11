@@ -67,7 +67,7 @@ Walking into a closed door still opens it.
 - **Left click** does that: attack an adjacent enemy, open a door, pick up items, examine
   furniture, or walk there in one click.
 - **Right click** lists every option for the tile (fire at, close, examine, pick up, walk…).
-- Turn it off under Options → Interface → Mouse tile selection to get the old two-click travel back.
+  Turn it off under Options → Interface → Mouse tile selection to get the old two-click travel back.
 
 When aiming: `f`/Enter fires, `x` aims one step, `u` `i` `o` pick aimed, careful or precise shots
 (more care, left to right), `r` switches ammo, `F` or `m` switches fire mode. With **smarter
@@ -381,6 +381,22 @@ item type variants instead of new item types:
 - Loading is faster: item migrations finalize in one pass over item groups, and the JSON reader
   skips strings and whitespace straight from the stream buffer. In testing, the core data load and
   check went from 734 s to 118 s, and a new game starts in about 18 s.
+
+## Playtesting
+
+`tests/e2e/playtest.py` builds a situation for a fork feature in a fresh game and hands the game to
+you:
+
+```sh
+python3 tests/e2e/playtest.py --list                 # the scenarios
+python3 tests/e2e/playtest.py crafting               # play it in this terminal (tmux; Ctrl+B D leaves)
+python3 tests/e2e/playtest.py status_effects --tiles # reopen the same game in the tiles window
+python3 tests/e2e/playtest.py safe_mode --no-attach  # print the screen and close
+```
+
+Each run starts a new game in `/tmp/bn-playtest/<scenario>/` with the curses binary, runs the
+scenario's Lua next to the player and prints what to check. `--scheme classic` tries the classic
+keys. `--tiles` saves, then opens the save in `cataclysm-bn-tiles`.
 
 ## Building
 
