@@ -84,6 +84,7 @@
 #include "iuse_actor.h"
 #include "json.h"
 #include "first_tips.h"
+#include "enemy_indicators.h"
 #include "hud_boxes.h"
 #include "keyhints_panel.h"
 #include "kill_tracker.h"
@@ -5082,6 +5083,12 @@ void game::draw_ter( const tripoint_bub_ms &center, const bool looking, const bo
         draw_veh_dir_indicator( false );
         draw_veh_dir_indicator( true );
     }
+    // Drawn before the HUD boxes, so a box in a corner hides an arrow under it
+    // instead of the arrow being drawn over the box.
+    for( const auto &arrow : enemy_indicators::map_arrows( u, TERRAIN_WINDOW_WIDTH,
+            TERRAIN_WINDOW_HEIGHT ) ) {
+        mvwprintz( w_terrain, point( POSX, POSY ) + arrow.offset, arrow.color, arrow.glyph );
+    }
     // Place the cursor over the player as is expected by screen readers.
     wmove( w_terrain, -center.xy().raw() + g->u.bub_pos().xy().raw() + point( POSX, POSY ) );
 }
@@ -5605,6 +5612,11 @@ auto game::mon_info_update() -> void
     mon_visible.visible_count_by_dir.fill( 0 );
     mon_visible.nearby_hostile_count = 0;
     mon_visible.combat_hostile_count = 0;
+    mon_visible.offscreen_hostiles = {};
+    // The nearest off-screen hostile per compass direction. The route check below
+    // walks the map, so it runs once per direction instead of once per monster.
+    auto nearest_offscreen = std::array<const monster *, 8> {};
+    auto offscreen_nearest = std::array<int, 8> {};
     const int combat_bubble_range = SEEX * ( get_option<int>( "COMBAT_BUBBLE_SIZE" ) + 1 );
 
     const auto view = u.bub_pos() + u.view_offset;
@@ -5703,6 +5715,18 @@ auto game::mon_info_update() -> void
         const auto matt = critter.attitude( &u );
         const auto player_attitude = player_attitude_from( matt );
 
+        // Off-screen hostiles become the map-edge arrows; index 8 means the map
+        // window shows the monster already.
+        if( index < 8 && ( MATT_ATTACK == matt || MATT_FOLLOW == matt ) ) {
+            auto &offscreen = mon_visible.offscreen_hostiles[compass_index];
+            offscreen.count++;
+            offscreen.hunting = offscreen.hunting || MATT_ATTACK == matt;
+            if( nearest_offscreen[compass_index] == nullptr || mon_dist < offscreen_nearest[compass_index] ) {
+                nearest_offscreen[compass_index] = &critter;
+                offscreen_nearest[compass_index] = mon_dist;
+            }
+        }
+
         // Accumulate hostile counts for danger music and combat bubble.
         if( player_attitude == Attitude::A_HOSTILE ) {
             mon_visible.nearby_hostile_count++;
@@ -5772,6 +5796,16 @@ auto game::mon_info_update() -> void
         const auto [index, compass_index] = visible_info( guy.bub_pos() );
         mon_visible.visible_count_by_dir[compass_index]++;
 
+        // Off-screen hostiles become the map-edge arrows; index 8 means the map
+        // window shows the survivor already. A hostile survivor counts as close
+        // enough to matter within safe mode's own distance.
+        if( index < 8 && guy.get_attitude() == NPCATT_KILL ) {
+            auto &offscreen = mon_visible.offscreen_hostiles[compass_index];
+            offscreen.count++;
+            offscreen.hunting = true;
+            offscreen.threatening = offscreen.threatening || npc_dist <= iProxyDist;
+        }
+
         // Accumulate hostile counts for danger music and combat bubble.
         if( u.attitude_to( guy ) == Attitude::A_HOSTILE ) {
             mon_visible.nearby_hostile_count++;
@@ -5798,6 +5832,13 @@ auto game::mon_info_update() -> void
     }
     for( const shared_ptr_fast<npc> &guy : active_npc ) {
         process_npc( guy );
+    }
+
+    for( int i = 0; i < 8; i++ ) {
+        if( const monster *mon = nearest_offscreen[i] ) {
+            mon_visible.offscreen_hostiles[i].threatening =
+                mon_visible.offscreen_hostiles[i].threatening || smart_safemode::can_reach_soon( *mon, u );
+        }
     }
 
     if( newseen > mostseen ) {

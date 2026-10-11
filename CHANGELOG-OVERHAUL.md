@@ -8,6 +8,10 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Added
 
+- **Enemy edge arrows**: a hostile you can see that sits outside the map window gets an arrow at the
+  edge of the view pointing at it, red when it can reach you soon and yellow when it cannot. An
+  arrow sits on the edge itself when the hostile is hunting you, one cell in when it is only
+  trailing. Options → Interface → Enemy edge arrows turns it off.
 - **Smart safe mode**: safe mode, the "spotted" interruption, noise interruptions and auto-explore
   ignore hostiles that cannot reach you soon (fleeing, immobile and not adjacent, or with no route;
   doors they can smash count as open). Ranged and leaping attackers always count; noises from
