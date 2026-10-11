@@ -199,6 +199,21 @@ that is optional:
 - **One MRE.** The 26 MRE boxes are one _MRE_. The entree is a variant
   (`MRE - Chili & Beans`), and opening it still gives that entree.
 
+- **ASCII pictures in item descriptions.** Bright Nights already draws a picture for 71 items at the
+  end of their description; this fork adds 134 more, ported from
+  [Cataclysm: Dark Days Ahead](https://github.com/CleverRaven/Cataclysm-DDA) (CC-BY-SA 3.0, the same
+  license as this fork). They are ammunition, containers, canisters, flasks, jerrycans, drums,
+  batteries, a few guns and a few melee weapons. Only pictures whose every line fits the loader's
+  41-column limit are ported.
+- **Item kind thumbnails.** Items with no picture of their own now show a small one of what they
+  are: a pistol, rifle, shotgun, SMG, launcher or bow for a gun, by the skill it uses; a blade, a
+  blunt weapon or a spear for melee; armor by the body part it covers (head, torso, whole body, legs,
+  feet, hands); food, drink, a book, a container, a tool, ammunition, a magazine, medicine or a
+  battery; and a plain box for everything else. The thumbnail is at the top of the item
+  description, above the item name, and is six rows and twenty columns at most, so the item name
+  and the stats stay on the first screen of an 80x24 terminal. Options → Graphics →
+  Item kind thumbnails turns it off; it depends on Enable ASCII art in item descriptions.
+
 Zones (`Y`) and the loot-sorting activity are still there for anyone who wants them; loot sorting
 just has no key in the modern scheme.
 
