@@ -1,7 +1,10 @@
 #pragma once
 
 #include <map>
-#include <set>
+#include <utility>
+#include <vector>
+
+#include "type_id.h"
 
 class inventory;
 struct item_comp;
@@ -11,17 +14,34 @@ class recipe_subset;
 namespace craft_chain
 {
 
-/// Cached producer-lookup state for a single goal recipe.  Distinguishes
-/// producers that exist but cannot be crafted now from those that can.
+/// Menu-level producer cache.  Everything stored in it is independent of the
+/// goal recipe, so one instance is shared across all goals the player browses.
+/// Clear it when the crafting inventory, the known recipes or the crafter
+/// change; a stale cache would claim the wrong parts are craftable.
 struct production_info {
-    /// Known non-nested recipes (excluding the goal) that produce a component
-    /// type and can be crafted right now.
-    std::map<itype_id, const recipe *> craftable_producers;
-    /// Known non-nested recipes (excluding the goal) that produce a component
-    /// type but cannot be crafted right now (missing tools/materials).
-    std::map<itype_id, const recipe *> known_producers;
-    /// Component types for which a producer was searched but none was found.
-    std::set<itype_id> no_producer;
+    /// Non-nested, known recipes that produce a component type, as their result
+    /// or as a byproduct, in preference order (result makers first).  Filled
+    /// once per component type because the search is goal independent.
+    std::map<itype_id, std::vector<const recipe *>> producers;
+    /// Whether a producer can be crafted right now, per producer recipe.
+    std::map<const recipe *, bool> craftable;
+    /// Real units of a component type that one batch of a producer yields.
+    std::map<std::pair<const recipe *, itype_id>, int> units;
+
+    void clear()
+    {
+        producers.clear();
+        craftable.clear();
+        units.clear();
+    }
+};
+
+/// The producers a part lookup found for one component.
+struct part_producers {
+    /// A producer that can be crafted right now, or nullptr.
+    const recipe *craftable = nullptr;
+    /// A known producer that cannot be crafted right now, or nullptr.
+    const recipe *known = nullptr;
 };
 
 /// What a part lookup needs: the recipe the player wants, what they have and know.
@@ -30,7 +50,8 @@ struct part_query {
     const inventory &crafting_inv;
     const recipe_subset &known_recipes;
     int goal_batch = 1;
-    /// When non-null, producers are looked up once per goal and cached here.
+    /// When non-null, producers, craftability and unit counts are cached here
+    /// and shared across goals, so no lookup repeats work it already did.
     production_info *cache = nullptr;
 };
 
@@ -51,5 +72,11 @@ auto has_known_unavailable_producer( const part_query &query, const item_comp &c
 
 /// Returns a known producer that cannot be crafted right now (or nullptr).
 auto find_known_producer( const part_query &query, const item_comp &comp ) -> const recipe *;
+
+/// How many units of `type` one batch of `producer` really yields, counting
+/// actual result charges, container contents and byproducts.  The real items
+/// are only built once per producer and component when the query has a cache.
+auto units_per_batch( const part_query &query, const recipe &producer,
+                      const itype_id &type ) -> int;
 
 } // namespace craft_chain

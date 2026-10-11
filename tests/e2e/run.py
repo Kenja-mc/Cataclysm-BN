@@ -184,37 +184,97 @@ def test_recraft_after_reload(g):
     assert wait_until(lambda: made() == 2), g.screen()
 
 
+def flat_text(g):
+    """Screen text with line folding undone, so wrapped panel lines match again."""
+    return " ".join(g.screen().split())
+
+
+# Crafting times read like "2 minutes" or "1 hour and 5 minutes".
+DURATION = (r"\d+ (?:second|seconds|minute|minutes|hour|hours|day|days|week|weeks)"
+            r"(?: and \d+ (?:second|seconds|minute|minutes|hour|hours|day|days|week|weeks))?")
+
+
+def learn_all_recipes(g):
+    """Teach the avatar every recipe, for the large-known-recipe-menu timing runs.
+
+    Deterministic fixture for measuring the crafting menu on a fully known
+    recipe list: run this, then open the menu with k and step through the rows
+    (Down/Up, Page Down/Up).  Do it once on a game started with
+    CRAFTING_PART_CHAINS on and once with it off, and compare how long a full
+    screen of rows takes to draw.  With part chains on, no row may wait on a
+    recipe search: markers are only computed for the visible rows and the
+    producer cache is shared across goals.
+    """
+    learned = g.lua("local a=gapi.get_avatar() local n=0 for _,r in ipairs(Recipe.get_all()) do "
+                    "a:learn_recipe(r:recipe_id()) n=n+1 end out(n)")
+    assert learned and int(learned[0]) > 0, learned
+    return int(learned[0])
+
+
 def test_craft_parts_chain(g):
-    """An uncraftable recipe says what is missing, marks a part you can make and jumps to its recipe."""
+    """The parts UI tells craftable parts, blocked parts and plain missing items apart."""
     arena(g)
-    give(g, "string_6", 6)  # one long string's worth; a short rope needs six long strings
     settle(g)
-    g.keys("k", delay=1.5)
-    g.keys("f", delay=0.8)
-    g.type("short rope", delay=1.0)
-    g.keys("Enter", delay=1.5)
-    assert "Missing" in g.screen(), "the recipe info should say what is missing:\n" + g.screen()
 
-    def find_tag():
-        for _ in range(4):
-            if "can make" in g.screen():
-                return True
-            g.keys("]", delay=0.5)
-        return False
+    def close_recipes():
+        g.keys("Escape", delay=0.8)
+        g.keys("Escape", delay=0.5)
 
-    # Short rope has several recipes; the string one carries the tag.
-    tagged = find_tag() or (g.keys("Down", delay=0.8), find_tag())[1]
-    assert tagged, "the part the player can make should be tagged:\n" + g.screen()
-    # List-level marker should appear on the tagged recipe row
-    assert "parts:make" in g.screen(), "the recipe row should carry a [parts:make] marker:\n" + g.screen()
-    # Panel should show the part name and a time estimate
-    s = g.screen()
-    assert "Part:" in s and "turns" in s, "the panel should show part recipe and time:\n" + s
-    g.keys("p", delay=1.2)
-    assert "long string" in g.screen().lower(), "the parts key should select the part's recipe:\n" + g.screen()
-    # After jumping, the panel should show the part name and time estimate
-    s = g.screen()
-    assert "Part:" in s and "turns" in s, "the panel should show part recipe and time after jump:\n" + s
+    # Missing with no producer at all: the panel says what is missing and the row
+    # carries no part marker, because nothing can make the part.
+    craft_by_name(g, "tinfoil hat")
+    s = flat_text(g)
+    assert "aluminum foil" in s, "the recipe info should say what is missing:\n" + s
+    assert "parts:" not in s, "an uncraftable missing item gets no parts marker:\n" + s
+    assert "Part:" not in s and "Part (blocked):" not in s, \
+        "an uncraftable missing item gets no parts panel:\n" + s
+    close_recipes()
+
+    # Missing part with a known producer that cannot be crafted yet: the row is
+    # tagged and the panel names the part and what the part itself still needs.
+    give(g, "tobacco", 20)
+    settle(g)
+    craft_by_name(g, "cigarette")
+    s = flat_text(g)
+    assert "parts:known" in s, "a known but unavailable part should be tagged:\n" + s
+    assert "Part (blocked):" in s, "the panel should name the blocked part:\n" + s
+    assert "Missing: 1 paper" in s, "the panel should list the part's prerequisites:\n" + s
+    close_recipes()
+
+    # Missing part the player can make: quantity and time come from the real
+    # recipe, so a charged output counts its real charges per craft (rolling
+    # paper makes 6 per craft) and the time matches crafting the producer
+    # that many times.
+    give(g, "paper", 12)
+    settle(g)
+    craft_by_name(g, "cigarette")
+    assert "parts:make" in flat_text(g), "a craftable part should be tagged:\n" + flat_text(g)
+    g.keys("b", delay=1.0)  # batch mode
+    for _ in range(11):
+        g.keys("Down", delay=0.4)
+    # Durations sit at the end of their own panel line, so match them per line.
+    part = None
+    for line in g.screen().splitlines():
+        part = re.search(r"Part: rolling paper \(make (\d+) more, ~(" + DURATION + r")\)", line)
+        if part:
+            break
+    assert part, "the panel should count the parts a batch needs:\n" + flat_text(g)
+    assert part.group(1) == "12", "twelve cigarettes need twelve rolling papers:\n" + flat_text(g)
+    # Craft the producer twice (2 x 6 papers) and check the estimate is honest.
+    g.keys("p", delay=1.5)
+    assert "rolling paper" in flat_text(g).lower(), \
+        "the parts key should select the part's recipe:\n" + flat_text(g)
+    g.keys("b", delay=1.0)  # batch mode on the part recipe
+    g.keys("Down", delay=0.8)  # two batches
+    made = None
+    for line in g.screen().splitlines():
+        made = re.search(r"Time to complete:\s*(" + DURATION + r")", line)
+        if made:
+            break
+    assert made, "the part recipe should show its own crafting time:\n" + flat_text(g)
+    assert made.group(1) == part.group(2), \
+        "the part time should equal crafting the producer twice:\n" + flat_text(g)
+    close_recipes()
 
 
 def load_first_save(g, timeout=120):
