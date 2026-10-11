@@ -35,10 +35,12 @@ Upstream's own changes are in `docs/en/game/changelog`.
   had. Options → Graphics → Status effect animations turns it off.
 - 12 sprites the default tileset lacked, from the CDDA tilesets (CC-BY-SA 3.0).
 - 132 ASCII item pictures from CDDA (CC-BY-SA 3.0) for 134 items, shown in the item description.
-- **Environment in the weather box**: the weather box now shows light level, wind (description and
-  arrow, colored by strength), moon phase and the season with day number, alongside the weather,
-  time and temperature. While it is on, the Location sidebar panel drops Sky, Light, Date and Time
-  (keeping Place and coordinates); turn the box off and the panel shows everything again.
+- **Environment in the weather box**: under the weather and time, the weather box lists the season
+  and day, light level, moon phase and wind, each value colored as the sidebar colors it.
+- **No repeated sidebar rows**: while the weather box is on, the sidebar drops Sky, Light, Date and
+  Time (the Location panel keeps Place and coordinates); while the weapon box is on, it drops the
+  Weapon panel and moves mana into the box. Turn a box off and its rows come back.
+- **Mana** reads `current/max` like weight and volume.
 - The **Overhaul soundpack** (Kenney, CC0) for footsteps, melee, impacts, reloads, menus and
   vehicle doors; the Otopack stays the default when it is installed.
 - A playtest harness, `tests/e2e/playtest.py`: 13 scenarios that set up a fork feature in a fresh

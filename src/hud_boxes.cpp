@@ -20,6 +20,7 @@
 #include "flag.h"
 #include "game.h"
 #include "item.h"
+#include "magic/magic.h"
 #include "options.h"
 #include "output.h"
 #include "overmap/overmapbuffer_registry.h"
@@ -78,7 +79,7 @@ auto has_thermometer( const avatar &you ) -> bool
 
 enum class icon {
     sun, moon, cloud, rain, storm, snow, strange, underground, fists, melee, gun, bow, style,
-    walk, run, crouch, prone
+    walk, run, crouch, prone, mana
 };
 
 /// One glyph per icon for each icon set. Nerd Font glyphs are Material Design icons (the fist is Font Awesome).
@@ -123,6 +124,8 @@ auto glyph( const icon i ) -> std::string
             return pick( "▼", "▼", "v" );
         case icon::prone:
             return pick( "━", "━", "-" );
+        case icon::mana:
+            return pick( "✦", "✦", "+" );
     }
     return "?";
 }
@@ -200,16 +203,21 @@ auto weather_lines( const avatar &you ) -> std::vector<line>
         time_line += "  " + print_temperature( w.get_temperature( you.abs_pos() ) );
     }
     out.push_back( { indent, c_light_gray, time_line, c_light_gray } );
+    if( !hud_boxes::roomy() ) {
+        return out;
+    }
     out.push_back( { indent, c_light_gray,
                      string_format( _( "%s, day %d" ), calendar::name_season( season_of_year( calendar::turn ) ),
                                     day_of_season<int>( calendar::turn ) + 1 ), c_light_gray } );
     const auto light = get_light_level( character_funcs::fine_detail_vision_mod( you ) );
-    out.push_back( { indent, c_light_gray, string_format( _( "Light: %s" ), light.first ), light.second } );
+    out.push_back( { indent, c_light_gray, string_format( _( "Light: %s" ), colorize( light.first, light.second ) ),
+                     c_light_gray } );
     out.push_back( { indent, c_light_gray,
                      string_format( _( "Moon: %s" ), moon_phase_name( get_moon_phase( calendar::turn ) ) ),
                      c_light_gray } );
     const auto wind = wind_text( you );
-    out.push_back( { indent, c_light_gray, string_format( _( "Wind: %s" ), wind.text ), wind.color } );
+    out.push_back( { indent, c_light_gray, string_format( _( "Wind: %s" ), colorize( wind.text, wind.color ) ),
+                     c_light_gray } );
     return out;
 }
 
@@ -223,7 +231,7 @@ auto combat_lines( const avatar &you ) -> std::vector<line>
                weapon.gun_skill() == skill_id( "archery" ) ? icon::bow : icon::gun;
     }
     const auto name = you.is_armed() ? character_funcs::fmt_wielded_weapon( you ) : std::string( _( "fists" ) );
-    out.push_back( { glyph( kind ), c_light_cyan, remove_color_tags( name ), c_white } );
+    out.push_back( { glyph( kind ), c_light_cyan, name, c_light_gray } );
     const auto style = you.martial_arts_data->selected_style_name( you );
     if( !style.empty() ) {
         out.push_back( { glyph( icon::style ), c_light_blue, style, c_light_gray } );
@@ -245,6 +253,11 @@ auto combat_lines( const avatar &you ) -> std::vector<line>
         stance_text = _( "Prone" );
     }
     out.push_back( { glyph( stance_icon ), stance_color, stance_text, stance_color } );
+    if( hud_boxes::roomy() && hud_boxes::mana_matters( you ) ) {
+        const auto mana = hud_boxes::mana_reading( you );
+        out.push_back( { glyph( icon::mana ), c_light_blue,
+                         string_format( _( "Mana: %s" ), colorize( mana.text, mana.color ) ), c_light_gray } );
+    }
     return out;
 }
 
@@ -284,6 +297,52 @@ auto draw_box( const catacurses::window &w, const box_spec &box ) -> void
 namespace hud_boxes
 {
 
+auto mana_matters( const Character &you ) -> bool
+{
+    if( get_option<bool>( "ALWAYS_SHOW_MANA" ) || you.magic->available_mana() < you.magic->max_mana( you ) ) {
+        return true;
+    }
+    return std::ranges::any_of( you.magic->spells(), [&]( const spell_id &sp ) {
+        return you.magic->get_spell( sp ).energy_source() == mana_energy;
+    } );
+}
+
+auto mana_reading( const Character &you ) -> mana_text
+{
+    const auto max = you.magic->max_mana( you );
+    if( max <= 0 ) {
+        return { .text = "--", .color = c_light_gray };
+    }
+    const auto now = you.magic->available_mana();
+    const auto color = now >= max / 2 ? c_light_blue : now >= max / 3 ? c_yellow : c_red;
+    return { .text = string_format( "%d/%d", now, max ), .color = color };
+}
+
+auto roomy() -> bool
+{
+    return g->w_terrain && getmaxx( g->w_terrain ) >= 54;
+}
+
+auto weather_box_shown() -> bool
+{
+    return !is_draw_tiles_mode() && get_option<std::string>( "HUD_WEATHER_BOX" ) != "off";
+}
+
+auto weather_box_shows_environment() -> bool
+{
+    return weather_box_shown() && roomy();
+}
+
+auto combat_box_shown() -> bool
+{
+    return !is_draw_tiles_mode() && get_option<std::string>( "HUD_COMBAT_BOX" ) != "off";
+}
+
+auto combat_box_shows_mana( const Character &you ) -> bool
+{
+    return combat_box_shown() && roomy() && mana_matters( you );
+}
+
 auto draw( const avatar &you, const catacurses::window &w ) -> void
 {
     struct box {
@@ -304,7 +363,7 @@ auto draw( const avatar &you, const catacurses::window &w ) -> void
     for( const auto &b : boxes ) {
         auto inner = 0;
         for( const auto &l : b.lines ) {
-            inner = std::max( inner, utf8_width( l.icon ) + 1 + utf8_width( l.text ) );
+            inner = std::max( inner, utf8_width( l.icon ) + 1 + utf8_width( l.text, true ) );
         }
         inner = std::min( inner, std::max( 8, width / 3 ) );
         const auto box_w = inner + 4;

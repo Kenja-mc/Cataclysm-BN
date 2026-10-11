@@ -26,6 +26,7 @@
 #include "item.h"
 #include "json.h"
 #include "body_panel.h"
+#include "hud_boxes.h"
 #include "keyhints_panel.h"
 #include "lua_sidebar_widgets.h"
 #include "magic/magic.h"
@@ -954,24 +955,6 @@ static std::pair<nc_color, std::string> power_stat( const avatar &u )
     return std::make_pair( c_pwr, s_pwr );
 }
 
-static std::pair<nc_color, std::string> mana_stat( const player &u )
-{
-    nc_color c_mana = c_red;
-    std::string s_mana;
-    if( u.magic->max_mana( u ) <= 0 ) {
-        s_mana = "--";
-        c_mana = c_light_gray;
-    } else {
-        if( u.magic->available_mana() >= u.magic->max_mana( u ) / 2 ) {
-            c_mana = c_light_blue;
-        } else if( u.magic->available_mana() >= u.magic->max_mana( u ) / 3 ) {
-            c_mana = c_yellow;
-        }
-        s_mana = std::to_string( u.magic->available_mana() );
-    }
-    return std::make_pair( c_mana, s_mana );
-}
-
 static nc_color safe_color()
 {
     nc_color s_color = g->safe_mode ? c_green : c_red;
@@ -1568,11 +1551,30 @@ static void draw_stat_wide( avatar &u, const catacurses::window &w )
     wnoutrefresh( w );
 }
 
-/// The weather box shows the environment facts; the Location panel drops them while it is on.
-static bool weather_box_on()
+namespace
 {
-    return get_option<std::string>( "HUD_WEATHER_BOX" ) != "off";
+
+/// Rows of the Location panel: place and coordinates, then the weather rows no box shows already.
+struct location_rows {
+    bool sky_and_time = true;
+    bool light_and_date = true;
+
+    auto count() const -> int { return 2 + ( sky_and_time ? 2 : 0 ) + ( light_and_date ? 2 : 0 ); }
+};
+
+auto current_location_rows() -> location_rows
+{
+    return { .sky_and_time = !hud_boxes::weather_box_shown(), .light_and_date = !hud_boxes::weather_box_shows_environment() };
 }
+
+/// The 5x5 overmap beside the rows needs four of them.
+auto location_height( const bool minimap ) -> int
+{
+    const auto rows = current_location_rows().count();
+    return minimap ? std::max( rows, 4 ) : rows;
+}
+
+} // namespace
 
 static void draw_loc_labels( const avatar &u, const catacurses::window &w, bool minimap )
 {
@@ -1594,39 +1596,35 @@ static void draw_loc_labels( const avatar &u, const catacurses::window &w, bool 
     } else {
         wprintz( w, c_white, string_format( "%d, %d, %d", coord.x(), coord.y(), coord.z() ) );
     }
-    if( weather_box_on() ) {
-        wnoutrefresh( w );
-        return;
+    const auto rows = current_location_rows();
+    auto row = 2;
+    if( rows.sky_and_time ) {
+        print_label( w, { .pos = point( label_column, row++ ), .label = _( "Sky" ) } );
+        if( g->get_levz() < 0 ) {
+            wprintz( w, c_light_gray, _( "Underground" ) );
+        } else {
+            wprintz( w, get_weather().weather_id->color, "%s", get_weather().weather_id->name.translated() );
+        }
     }
-
-    // display weather
-    print_label( w, { .pos = point( label_column, 2 ), .label = _( "Sky" ) } );
-    if( g->get_levz() < 0 ) {
-        wprintz( w, c_light_gray, _( "Underground" ) );
-    } else {
-        wprintz( w, get_weather().weather_id->color, "%s", get_weather().weather_id->name.translated() );
+    if( rows.light_and_date ) {
+        const auto ll = get_light_level( character_funcs::fine_detail_vision_mod( get_avatar() ) );
+        print_label( w, { .pos = point( label_column, row++ ), .label = _( "Light" ) } );
+        wprintz( w, ll.second, ll.first );
+        print_label( w, { .pos = point( label_column, row++ ), .label = _( "Date" ) } );
+        wprintz( w, c_light_gray, string_format( "%s, day %d",
+                 calendar::name_season( season_of_year( calendar::turn ) ),
+                 day_of_season<int>( calendar::turn ) + 1 ) );
     }
-    // display lighting
-    const std::pair<std::string, nc_color> ll = get_light_level(
-                character_funcs::fine_detail_vision_mod( get_avatar() ) );
-    print_label( w, { .pos = point( label_column, 3 ), .label = _( "Light" ) } );
-    wprintz( w, ll.second, ll.first );
-
-    // display date
-    print_label( w, { .pos = point( label_column, 4 ), .label = _( "Date" ) } );
-    wprintz( w, c_light_gray, string_format( "%s, day %d",
-             calendar::name_season( season_of_year( calendar::turn ) ),
-             day_of_season<int>( calendar::turn ) + 1 ) );
-
-    // display time
-    print_label( w, { .pos = point( label_column, 5 ), .label = _( "Time" ) } );
-    if( u.has_watch() ) {
-        wprintz( w, c_light_gray, to_string_time_of_day( calendar::turn ) );
-    } else if( g->get_levz() >= 0 ) {
-        wprintz( w, c_light_gray, time_approx() );
-    } else {
-        // NOLINTNEXTLINE(cata-text-style): the question mark does not end a sentence
-        wprintz( w, c_light_gray, _( "???" ) );
+    if( rows.sky_and_time ) {
+        print_label( w, { .pos = point( label_column, row ), .label = _( "Time" ) } );
+        if( u.has_watch() ) {
+            wprintz( w, c_light_gray, to_string_time_of_day( calendar::turn ) );
+        } else if( g->get_levz() >= 0 ) {
+            wprintz( w, c_light_gray, time_approx() );
+        } else {
+            // NOLINTNEXTLINE(cata-text-style): the question mark does not end a sentence
+            wprintz( w, c_light_gray, _( "???" ) );
+        }
     }
     if( minimap ) {
         const int offset = getmaxx( w ) - 6;
@@ -2344,17 +2342,9 @@ static void draw_hint( const avatar &, const catacurses::window &w )
 static void print_mana( const player &u, const catacurses::window &w, const int pad )
 {
     werase( w );
-
-    const auto mana_pair = mana_stat( u );
-    const auto value1 = print_label( w, { .pos = point( label_column, 0 ), .label = _( "Mana" ) }, pad );
-    mvwprintz( w, point( value1, 0 ), mana_pair.first, "%s", mana_pair.second );
-    // "Max Mana" is longer than the label field, so start it where its value still lands on the grid.
-    const auto value2 = label_column + label_column_step + pad + 2;
-    print_label( w, {
-        .pos = point( value2 - 2 - utf8_width( _( "Max Mana" ) ), 0 ), .label = _( "Max Mana" )
-    }, pad );
-    mvwprintz( w, point( value2, 0 ), c_light_blue, "%d", u.magic->max_mana( u ) );
-
+    const auto mana = hud_boxes::mana_reading( u );
+    const auto col = print_label( w, { .pos = point( label_column, 0 ), .label = _( "Mana" ) }, pad );
+    mvwprintz( w, point( col, 0 ), mana.color, "%s", mana.text );
     wnoutrefresh( w );
 }
 
@@ -2374,24 +2364,22 @@ static void draw_mana_classic( const player &u, const catacurses::window &w )
 
 static bool spell_panel()
 {
-    // If a mod says to always show it, then return early
-    if( get_option<bool>( "ALWAYS_SHOW_MANA" ) ) {
-        return true;
-    }
-    // Also return early if we're below our maximum capacity
-    if( get_avatar().magic->available_mana() < get_avatar().magic->max_mana( get_avatar() ) ) {
-        return true;
-    }
-    // Determine if any of the spells the player has take mana to cast
-    std::vector<spell_id> spells = get_avatar().magic->spells();
-    bool has_manacasting = false;
-    for( spell_id sp : spells ) {
-        spell temp_spell = get_avatar().magic->get_spell( sp );
-        if( temp_spell.energy_source() == mana_energy ) {
-            has_manacasting = true;
-        }
-    }
-    return has_manacasting;
+    return hud_boxes::mana_matters( get_avatar() ) && !hud_boxes::combat_box_shows_mana( get_avatar() );
+}
+
+static bool weapon_panel()
+{
+    return !hud_boxes::combat_box_shown();
+}
+
+static bool weather_panel()
+{
+    return !hud_boxes::weather_box_shown();
+}
+
+static bool environment_panel()
+{
+    return !hud_boxes::weather_box_shows_environment();
 }
 
 static bool veh_panel()
@@ -2415,15 +2403,15 @@ static std::vector<window_panel> initialize_default_classic_panels()
     ret.emplace_back( draw_mana_classic, translate_marker( "Mana" ), 1, 44, true,
                       spell_panel );
     ret.emplace_back( draw_weather_classic, translate_marker( "Weather" ), 1, 44,
-                      true );
+                      true, weather_panel );
     ret.emplace_back( draw_lighting_classic, translate_marker( "Lighting" ), 1, 44,
-                      true );
-    ret.emplace_back( draw_weapon_classic, translate_marker( "Weapon" ), 1, 44, true );
+                      true, environment_panel );
+    ret.emplace_back( draw_weapon_classic, translate_marker( "Weapon" ), 1, 44, true, weapon_panel );
     ret.emplace_back( draw_weapon_classic_alt, translate_marker( "Weapon_alt" ), 2, 44,
                       false );
     ret.emplace_back( draw_weightvolume_classic, translate_marker( "Wgt/Vol" ), 2, 44,
                       true );
-    ret.emplace_back( draw_time_classic, translate_marker( "Time" ), 1, 44, true );
+    ret.emplace_back( draw_time_classic, translate_marker( "Time" ), 1, 44, true, environment_panel );
     ret.emplace_back( draw_wind, translate_marker( "Wind" ), 1, 44, false );
     ret.emplace_back( draw_armor, translate_marker( "Armor" ), 5, 44, false );
     ret.emplace_back( draw_armor_comp, translate_marker( "comp.Armor" ), 1, 32, false );
@@ -2488,10 +2476,10 @@ static std::vector<window_panel> initialize_default_label_narrow_panels()
     ret.emplace_back( draw_stat_narrow, translate_marker( "Stats" ), 3, 32, true );
     ret.emplace_back( draw_veh_padding, translate_marker( "Vehicle" ), 2, 32, true, veh_panel );
     auto loc = window_panel( draw_loc_narrow, translate_marker( "Location" ), 6, 32, true );
-    loc.set_height_override( []() { return weather_box_on() ? 2 : 6; } );
+    loc.set_height_override( []() { return location_height( false ); } );
     ret.push_back( std::move( loc ) );
     ret.emplace_back( draw_wind, translate_marker( "Wind" ), 1, 32, false );
-    ret.emplace_back( draw_weapon_labels, translate_marker( "Weapon" ), 2, 32, true );
+    ret.emplace_back( draw_weapon_labels, translate_marker( "Weapon" ), 2, 32, true, weapon_panel );
     ret.emplace_back( draw_weightvolume_narrow, translate_marker( "Wgt/Vol" ), 2, 32,
                       true );
     ret.emplace_back( draw_needs_narrow, translate_marker( "Needs" ), 5, 32, true );
@@ -2529,11 +2517,11 @@ static std::vector<window_panel> initialize_default_label_panels()
     ret.emplace_back( draw_stat_wide, translate_marker( "Stats" ), 2, 44, true );
     ret.emplace_back( draw_veh_padding, translate_marker( "Vehicle" ), 2, 44, true, veh_panel );
     auto loc = window_panel( draw_loc_wide_map, translate_marker( "Location" ), 6, 44, true );
-    loc.set_height_override( []() { return weather_box_on() ? 2 : 6; } );
+    loc.set_height_override( []() { return location_height( true ); } );
     ret.push_back( std::move( loc ) );
     ret.emplace_back( draw_wind, translate_marker( "Wind" ), 1, 44, false );
     ret.emplace_back( draw_loc_wide, translate_marker( "Location Alt" ), 6, 44, false );
-    ret.emplace_back( draw_weapon_labels, translate_marker( "Weapon" ), 2, 44, true );
+    ret.emplace_back( draw_weapon_labels, translate_marker( "Weapon" ), 2, 44, true, weapon_panel );
     ret.emplace_back( draw_weightvolume_labels, translate_marker( "Wgt/Vol" ), 2, 44,
                       true );
     ret.emplace_back( draw_needs_labels, translate_marker( "Needs" ), 5, 44, true );
