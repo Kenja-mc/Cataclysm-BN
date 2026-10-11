@@ -158,6 +158,9 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 - **Fuller default tileset**: 12 sprites the bundled tileset lacked (atlatl, sewing machine,
   concrete ramps, treetops and others) come from the CDDA tilesets (CC-BY-SA 3.0, credits in
   `gfx/MSX++UnDeadPeopleEdition/fork_fill_CREDITS.md`).
+- **More item pictures in the terminal**: 132 ASCII pictures from CDDA (CC-BY-SA 3.0) for 134
+  items such as ammo, jars, bags and batteries, at the end of the item description like upstream's
+  own (Options → Graphics → Enable ASCII art in item descriptions).
 - **Overhaul soundpack**, the default when the Otopack is not installed: footsteps, melee swings
   and hits, bullet impacts, reloads, bites, bionic zaps, menus and vehicle doors from Kenney's CC0
   packs. Gunshots, deaths and ambience stay silent rather than use a sound that does not fit.

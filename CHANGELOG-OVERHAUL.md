@@ -27,6 +27,7 @@ Upstream's own changes are in `docs/en/game/changelog`.
   dizzy stars and spiral, a bobbing "zz", a snowflake. Monsters get them too, which they never
   had. Options → Graphics → Status effect animations turns it off.
 - 12 sprites the default tileset lacked, from the CDDA tilesets (CC-BY-SA 3.0).
+- 132 ASCII item pictures from CDDA (CC-BY-SA 3.0) for 134 items, shown in the item description.
 - The **Overhaul soundpack** (Kenney, CC0) for footsteps, melee, impacts, reloads, menus and
   vehicle doors; the Otopack stays the default when it is installed.
 
