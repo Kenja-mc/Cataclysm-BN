@@ -127,10 +127,15 @@ prompts with Y and N makes `y`/`n` answer at once instead; the classic control s
   (exact with a watch) and the temperature (with a thermometer); and what you fight with, its ammo
   and your fighting style. Options → Interface → Weather box / Weapon box moves each to any corner
   or turns it off, and Box icons picks Unicode, [Nerd Font](https://www.nerdfonts.com/) or ASCII.
-- **Body panel** (inspired by Project Zomboid's health screen): a small figure in the sidebar,
-  each limb coloured by its health, with wounds listed beside it (bleeding, infected, bitten,
-  broken, bandaged, disinfected). `H` opens the full view with every limb's health and what to do
-  about wounds. Hide it like any panel from the sidebar options. The Hitchhiker's Guide moved to `J`.
+- **Body panel** (inspired by Project Zomboid's health screen): the sidebar lists every hurt limb
+  and what is wrong with it (bleeding, infected, bitten, broken, bandaged, disinfected). `H` opens
+  the full view with every limb's health and what to do about wounds. Hide it like any panel from
+  the sidebar options. The Hitchhiker's Guide moved to `J`.
+- **Aligned sidebar**: every row uses one label width and one column grid, with a space after each
+  colon, in every sidebar layout. The separate Sound panel starts hidden, because the Movement row
+  already shows the sound level; turn it back on from the sidebar options.
+- Gun and ammo info show **loudness**: the noise of one shot and a word for it (quiet, loud, very
+  loud, deafening). An unloaded gun shows its default ammo, like the other stats.
 
 ## Items and storage
 
@@ -155,6 +160,11 @@ that is optional:
 - **Crafting (`k`) opens on something useful**: recent recipes, or the first category you can
   craft from, not an empty favorites list.
 - **One pick-up list**: `g` shows everything within reach in one list.
+- **Combine** (item menu, `C` in the modern scheme): partly used tools that hold their own charges
+  and that nothing refills, such as matchbooks, pour into one, as in Project Zomboid. Every charge
+  is kept and the emptied copies go away. Duct tape, thread and other counted items already stack.
+- The crafting menu's full-description search (`d:`) remembers each recipe's description for the
+  turn, so refining a search no longer rebuilds every item (from CDDA #77914).
 
 - **Fewer battery types.** The light-minus, high-capacity and disposable variants are folded into
   three cells: light (150 charge), medium (750) and heavy (1500). Atomic cells stay as the rare

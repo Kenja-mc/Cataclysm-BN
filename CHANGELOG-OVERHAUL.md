@@ -15,6 +15,12 @@ Upstream's own changes are in `docs/en/game/changelog`.
   ([`docs/fork/images/controls-modern.svg`](docs/fork/images/controls-modern.svg)).
 - The welcome card and Controls strip show the auto-explore key, and a first tip suggests a
   starter goal: find water, food and a weapon, because houses usually have all three.
+- **Combine** in the item menu (`C` in the modern scheme): pours partly used tools that nothing
+  refills, such as matchbooks, into one. Charges are kept. Duct tape already stacked.
+- Gun and ammo info show how loud a shot is (from the same noise the game makes when firing; an
+  unloaded gun uses its default ammo).
+- 88 items without a sprite in the default tileset now borrow the sprite of a close relative
+  (`looks_like`), for example soda syrups, 25/105/155 mm shells and carbon frames.
 
 ### Changed
 
@@ -22,6 +28,11 @@ Upstream's own changes are in `docs/en/game/changelog`.
   upstream keys (`z`, `Z`, `N`) are taken by movement, sort pile and fire mode, which left them
   unreachable.
 - The Controls strip lists `look` last, so it is the hint that drops off a full strip.
+- Sidebar rows share one label width and column grid in every layout, with one space after each
+  colon. The Body panel lists hurt limbs without the stick figure. The standalone Sound panel is
+  hidden by default because the Movement row already shows the sound level.
+- The crafting menu's full-description search (`d:`) caches each recipe's description, so only
+  the first search in a turn is slow (CDDA #77914).
 
 ### Fixed
 
@@ -34,6 +45,9 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Black powder rounds loaded in a revolver or other integral magazine lost their modifier when an
   older save was loaded.
 - A recipe with both a result variant and a stack modifier dropped the modifier from its name.
+- Auto-explore said "Nothing left to explore nearby" when the pathfinder refused the nearest
+  unexplored spot; it now tries the next nearest ones.
+- Running the whole unit suite in one process used unbounded memory after the sound resize test.
 
 ## 2026-10-09
 
