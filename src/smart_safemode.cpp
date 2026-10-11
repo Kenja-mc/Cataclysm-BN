@@ -50,8 +50,11 @@ auto threatens( const monster &mon, avatar &you ) -> bool
     if( mon.type->has_flag( MF_IMMOBILE ) || mon.type->speed <= 0 ) {
         return false;
     }
+    // The monster's own settings, so a zombie that can smash or open your door can reach you.
     const auto proximity = safe_mode_proximity <= 0 ? g_max_view_distance : safe_mode_proximity;
-    const auto settings = pathfinding_settings{ 0, 2 * proximity, 4 * proximity, 0, false, false, true, false, false };
+    auto settings = mon.get_legacy_pathfinding_settings();
+    settings.max_dist = 2 * proximity;
+    settings.max_length = 4 * proximity;
     return !get_map().route( mon.bub_pos(), you.bub_pos(), settings ).empty();
 }
 
