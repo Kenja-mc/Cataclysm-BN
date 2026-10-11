@@ -1690,7 +1690,7 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
                 { "st", ">=", _( "15" ), _( "<color_cyan>storage</color> in liters" )},
                 { "en", "<=", _( "1" ), _( "clothing <color_cyan>encumbrance</color>" )},
 
-                { "d", ":", _( "reach attack" ), _( "<color_cyan>full description</color> of resulting item (slow)" ) },
+                { "d", ":", _( "reach attack" ), _( "<color_cyan>full description</color> of resulting item (slow the first time)" ) },
             };
             int max_example_length = 0;
             for( const auto &prefix : prefixes ) {

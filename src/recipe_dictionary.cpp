@@ -48,6 +48,25 @@ void delete_if( std::map<recipe_id, recipe> &data,
     }
 }
 
+/// Colour-stripped result descriptions for the `d:` filter; building them is the slow part.
+struct description_cache {
+    std::map<recipe_id, std::string> strings;
+    time_point cached_turn = calendar::before_time_starts;
+    int cached_character_id = -1;
+
+    /// The description depends on the turn and on who reads it.
+    auto invalidate_if_stale() -> void {
+        const auto current_id = get_player_character().getID().get_value();
+        if( cached_turn != calendar::turn || cached_character_id != current_id ) {
+            strings.clear();
+            cached_turn = calendar::turn;
+            cached_character_id = current_id;
+        }
+    }
+};
+
+auto description_cache_instance = description_cache{};
+
 } // namespace
 
 static recipe null_recipe;
@@ -429,8 +448,13 @@ std::vector<const recipe *> recipe_subset::search( const search_type key, const 
             }
 
             case search_type::description_result: {
-                const detached_ptr<item> result = r->create_result();
-                match = lcmatch( remove_color_tags( result->info_string( iteminfo_query::no_conditions ) ), txt );
+                auto &cache = description_cache_instance;
+                cache.invalidate_if_stale();
+                auto [it, missing] = cache.strings.try_emplace( r->ident() );
+                if( missing ) {
+                    it->second = remove_color_tags( r->create_result()->info_string( iteminfo_query::no_conditions ) );
+                }
+                match = lcmatch( it->second, txt );
                 break;
             }
         }
