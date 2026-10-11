@@ -71,6 +71,7 @@ enum class iteminfo_parts : size_t {
 
     AMMO_REMAINING,
     AMMO_UPSCOST,
+    AMMO_LOUDNESS,
 
     GUN_DEFAULT_AMMO,
     GUN_MAX_RANGE,
@@ -102,6 +103,7 @@ enum class iteminfo_parts : size_t {
     GUN_RELOAD_TIME,
 
     GUN_FIRE_MODES,
+    GUN_LOUDNESS,
     GUN_ALLOWED_MAGAZINES,
 
     DESCRIPTION_GUN_MODS,
