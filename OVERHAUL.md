@@ -67,7 +67,7 @@ Walking into a closed door still opens it.
 - **Left click** does that: attack an adjacent enemy, open a door, pick up items, examine
   furniture, or walk there in one click.
 - **Right click** lists every option for the tile (fire at, close, examine, pick up, walk…).
-- Turn it off under Options → Interface → Mouse tile selection to get the old two-click travel back.
+Turn it off under Options → Interface → Mouse tile selection to get the old two-click travel back.
 
 When aiming: `f`/Enter fires, `x` aims one step, `u` `i` `o` pick aimed, careful or precise shots
 (more care, left to right), `r` switches ammo, `F` or `m` switches fire mode. With **smarter
@@ -381,6 +381,19 @@ item type variants instead of new item types:
 - Loading is faster: item migrations finalize in one pass over item groups, and the JSON reader
   skips strings and whitespace straight from the stream buffer. In testing, the core data load and
   check went from 734 s to 118 s, and a new game starts in about 18 s.
+
+## Playtesting
+
+`tests/e2e/playtest.py` sets up a scenario and hands you the game to try it:
+
+```sh
+python3 tests/e2e/playtest.py --list          # scenarios with a one-line description
+python3 tests/e2e/playtest.py quick_stack      # curses: prepares, saves, attaches tmux
+python3 tests/e2e/playtest.py quick_stack --tiles   # loads the save in the tiles binary
+python3 tests/e2e/playtest.py quick_stack --no-attach  # print the screen instead of attaching
+```
+
+Each scenario gets a fresh userdir under `/tmp/bn-playtest/`, runs its Lua setup (spawn items, monsters, terrain, set options), saves, and prints a checklist of what to look at. `--no-attach` captures the screen and prints it instead of handing you the terminal. `--tiles` quits the curses session and launches the tiles binary with the same save.
 
 ## Building
 

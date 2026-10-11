@@ -18,19 +18,9 @@ def find_binary():
 
 
 class Game:
-    def __init__(self, name="bn-e2e", cols=140, rows=45, options=None, keybindings=None):
+    def __init__(self, name="bn-e2e", cols=140, rows=45, options=None, keybindings=None, userdir=None):
         self.name = name
-        self.userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-"))
-        config = self.userdir / "config"
-        config.mkdir(parents=True)
-        if options:
-            (config / "options.json").write_text(json.dumps(
-                [{"info": "", "default": "", "name": k, "value": v} for k, v in options.items()]))
-        if keybindings:
-            (config / "keybindings.json").write_text((ROOT / keybindings).read_text())
-        subprocess.run(["tmux", "kill-session", "-t", name], stderr=subprocess.DEVNULL)
-        cmd = f"cd {ROOT} && LANG=C.UTF-8 LC_ALL=C.UTF-8 TERM=xterm-256color {os.environ.get('GAME_WRAPPER', '')} {find_binary()} --basepath {ROOT}/ --userdir {self.userdir}/"
-        subprocess.run(["tmux", "new-session", "-d", "-s", name, "-x", str(cols), "-y", str(rows), cmd], check=True)
+        self.userdir = Path(userdir) if userdir else Path(tempfile.mkdtemp(prefix="bn-e2e-"))
 
     def screen(self):
         return subprocess.run(["tmux", "capture-pane", "-p", "-t", self.name],

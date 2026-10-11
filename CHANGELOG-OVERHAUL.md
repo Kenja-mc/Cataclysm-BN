@@ -52,6 +52,7 @@ Upstream's own changes are in `docs/en/game/changelog`.
   unloaded gun uses its default ammo).
 - 88 items without a sprite in the default tileset now borrow the sprite of a close relative
   (`looks_like`), for example soda syrups, 25/105/155 mm shells and carbon frames.
+- A playtest harness (`tests/e2e/playtest.py`) that prepares a scenario and hands you the game: quick stack, sort pile, combine tools, item folding, HUD boxes, aiming, click interactions, gun loudness, and stubs for features landing soon (sound markers, smart targeting, stances, contextual interact, crafting chains, status effects).
 
 ### Changed
 
