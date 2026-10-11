@@ -1,6 +1,13 @@
 [
   {
     "type": "keybinding",
+    "id": "COMBINE",
+    "category": "INVENTORY_ITEM",
+    "name": "Combine",
+    "bindings": [ { "input_method": "keyboard", "key": "C" } ]
+  },
+  {
+    "type": "keybinding",
     "id": "ZOOM_OUT",
     "category": "OVERMAP",
     "name": "Zoom Out",

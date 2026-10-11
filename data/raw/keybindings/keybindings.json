@@ -3671,6 +3671,13 @@
     "bindings": [ { "input_method": "keyboard", "key": "S" } ]
   },
   {
+    "id": "COMBINE",
+    "type": "keybinding",
+    "category": "INVENTORY_ITEM",
+    "name": "Combine",
+    "bindings": [  ]
+  },
+  {
     "id": "DISASSEMBLE",
     "type": "keybinding",
     "category": "INVENTORY_ITEM",
