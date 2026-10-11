@@ -8,6 +8,8 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Added
 
+- **Monster health bars** (tiles): a small bar under every hurt monster in view, as fuzzy as the
+  look-around list shows it. Options → Graphics → Monster health bars turns it off.
 - **Enemy edge arrows**: a hostile you can see that sits outside the map window gets an arrow at the
   edge of the view pointing at it, red when it can reach you soon and yellow when it cannot. An
   arrow sits on the edge itself when the hostile is hunting you, one cell in when it is only
