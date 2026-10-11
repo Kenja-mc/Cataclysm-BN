@@ -1075,16 +1075,20 @@ void inventory_column::draw( const catacurses::window &win, point pos ) const
             if( use_tiles && item_thumbnails_enabled ) {
                 const item *any_item = entry.any_item();
                 if( any_item && any_item->type ) {
+                    const bool is_corpse = any_item->is_corpse();
+                    const mtype *mon = is_corpse ? any_item->get_mtype() : nullptr;
+                    const std::string display_id = is_corpse && mon ? "corpse_" + mon->id.str() : any_item->typeId().str();
                     register_item_thumbnail( item_thumbnail_opts{
                         .pos = { win_px_origin.x + pos.x * fontwidth, win_px_origin.y + yy * fontheight },
                         .width = 2 * fontwidth,
                         .height = fontheight,
-                        .item_id = any_item->typeId().str()
+                        .item_id = display_id
                     } );
                 }
             }
 #endif
         }
+    }
 
     if( pages_count() > 1 ) {
         mvwprintw( win, pos + point( 0, height - 1 ), _( "Page %d/%d" ), page_index() + 1, pages_count() );

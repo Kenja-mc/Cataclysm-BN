@@ -1620,9 +1620,6 @@ static void draw_pending_thumbnails()
 {
     for( const auto &thumb : pending_thumbnails ) {
         const itype_id id( thumb.item_id );
-        if( !id.is_valid() ) {
-            continue;
-        }
         const cata_tiles::thumbnail_params tp{ thumb.pos, thumb.width, thumb.height };
         tilecontext->draw_item_thumbnail( id, tp );
     }

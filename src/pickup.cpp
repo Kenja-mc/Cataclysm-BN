@@ -883,11 +883,14 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
                 // Register tile thumbnail for this pickup list item
                 if( use_tiles && item_thumbnails_enabled ) {
                     const window_dimensions dim = get_window_dimensions( w_pickup );
+                    const bool is_corpse = this_item.is_corpse();
+                    const mtype *mon = is_corpse ? this_item.get_mtype() : nullptr;
+                    const std::string display_id = is_corpse && mon ? "corpse_" + mon->id.str() : this_item.typeId().str();
                     register_item_thumbnail( item_thumbnail_opts{
                         .pos = { dim.window_pos_pixel.x, dim.window_pos_pixel.y + ( 1 + ( cur_it % maxitems ) ) * fontheight },
                         .width = 2 * fontwidth,
                         .height = fontheight,
-                        .item_id = this_item.typeId().str()
+                        .item_id = display_id
                     } );
                 }
 #endif

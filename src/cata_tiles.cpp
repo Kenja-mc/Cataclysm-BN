@@ -3705,7 +3705,7 @@ void cata_tiles::draw( point dest, const tripoint_bub_ms &center, int width, int
         decltype( &cata_tiles::draw_furniture ) function;
     };
     const auto base_drawing_layers = std::array{
-        &cata_tiles::draw_furniture, &cata_tiles::draw_item_on_furniture, &cata_tiles::draw_graffiti, &cata_tiles::draw_trap
+        &cata_tiles::draw_furniture, &cata_tiles::draw_graffiti, &cata_tiles::draw_trap
     };
     const auto zlevel_drawing_layers = std::array{
         zlevel_layer{ true, &cata_tiles::draw_field_or_item },
@@ -5451,84 +5451,6 @@ bool cata_tiles::draw_furniture( const tripoint_bub_ms &p, const lit_level ll, i
     return false;
 }
 
-auto cata_tiles::draw_item_on_furniture( const tripoint_bub_ms &p, const lit_level ll, int &height_3d,
-                                          const bool ( &invisible )[5], int z_drop ) -> bool
-{
-    if( !item_layering_enabled || invisible[0] ) {
-        return false;
-    }
-    map &here = get_map();
-    const furn_id &f = here.furn( p );
-    if( !f ) {
-        return false;
-    }
-    // Mannequins handle their own items
-    if( f.id() == furn_f_mannequin ) {
-        return false;
-    }
-    // Respect field's display_items flag
-    const field_type_id &fld = here.field_at( p ).displayed_field_type();
-    if( !fld.obj().display_items ) {
-        return false;
-    }
-    // Visibility/perception check
-    if( !here.sees_some_items( p, g->u ) ) {
-        return false;
-    }
-    // Handle item overrides (from memory/forecast systems)
-    const auto it_override = item_override.find( p );
-    if( it_override != item_override.end() ) {
-        const auto &[it_id, mon_id, hilite] = it_override->second;
-        const auto *it_type = &*it_id;
-        if( !it_type ) {
-            return false;
-        }
-        const std::string disp_id = it_id == itype_corpse && mon_id
-                                    ? "corpse_" + mon_id.str()
-                                    : it_id.str();
-        const tile_search_params tile{ disp_id, C_ITEM, it_type->get_item_type_string(), 0, 0 };
-        const bool drawn = draw_from_id_string(
-                               tile, p, tint_config{}, tint_config{},
-                               ll, false, z_drop, false, height_3d );
-        if( drawn && hilite ) {
-            draw_item_highlight( p );
-        }
-        return drawn;
-    }
-    // Draw actual item on furniture surface
-    const maptile &tile = here.maptile_at( p );
-    const item &itm = tile.get_uppermost_item();
-    if( !itm.type ) {
-        return false;
-    }
-    // Build display ID with variant/corpse support
-    const mtype *const mon = itm.get_mtype();
-    const mtype_id mon_id = mon ? mon->id : mtype_id::NULL_ID();
-    const bool hilite = tile.get_item_count() > 1;
-    std::string variant_sprite = item_variants::sprite( itm );
-    if( !variant_sprite.empty() && !find_tile_with_season( variant_sprite ) ) {
-        variant_sprite.clear();
-    }
-    const std::string disp_id = !variant_sprite.empty() ? variant_sprite
-                                : itm.typeId() == itype_corpse && mon_id
-                                ? "corpse_" + mon_id.str()
-                                : itm.typeId().str();
-    // Small 3D height offset to show item above furniture surface
-    const int surf_offset = 1;
-    const int saved_height = height_3d;
-    height_3d += surf_offset;
-    const auto [bgCol, fgCol] = get_item_color( itm, here, p );
-    const tile_search_params tile{ disp_id, C_ITEM, itm.type->get_item_type_string(), 0, 0 };
-    const bool drawn = draw_from_id_string(
-                           tile, p, bgCol, fgCol,
-                           ll, false, z_drop, false, height_3d );
-    height_3d = saved_height;
-    if( drawn && hilite ) {
-        draw_item_highlight( p );
-    }
-    return drawn;
-}
-
 auto cata_tiles::draw_cliff_overlay( const tripoint_bub_ms &p, const lit_level ll, int &height_3d,
                                      const bool ( &invisible )[5], int z_drop ) -> bool
 {
@@ -5540,20 +5462,40 @@ auto cata_tiles::draw_cliff_overlay( const tripoint_bub_ms &p, const lit_level l
     if( !t || t == t_open_air ) {
         return false;
     }
-    // Check same-z neighbors for open air (platform edge = cliff)
+    // Check each cardinal for open air (platform edge), using invisible flags
     const point cardinals[4] = { point_south, point_east, point_west, point_north };
-    for( const point &dir : cardinals ) {
-        const tripoint_bub_ms neighbor{ p.xy() + dir, p.z() };
-        if( here.inbounds( neighbor ) && here.ter( neighbor ) == t_open_air ) {
-            // Draw cliff edge shadow along the bottom
-            const point screen_pos = player_to_screen( p.xy() );
-            const int sh = std::max( 1, tile_height / 10 );
-            geometry->rect( renderer, point( screen_pos.x, screen_pos.y + tile_height - sh ),
-                            tile_width, sh, SDL_Color{ 0, 0, 0, 80 } );
-            return true;
+    bool any_edge = false;
+    for( int i = 0; i < 4; ++i ) {
+        if( invisible[i + 1] ) {
+            continue; // skip fogged neighbors
         }
+        const tripoint_bub_ms neighbor{ p.xy() + cardinals[i], p.z() };
+        if( !here.inbounds( neighbor ) || here.ter( neighbor ) != t_open_air ) {
+            continue;
+        }
+        any_edge = true;
+        const point screen_pos = player_to_screen( p.xy() );
+        const int sh = std::max( 1, tile_height / 10 );
+        const int sw = std::max( 1, tile_width / 10 );
+        SDL_Rect edge_rect{};
+        switch( i ) {
+            case 0: // south → bottom edge
+                edge_rect = { screen_pos.x, screen_pos.y + tile_height - sh, tile_width, sh };
+                break;
+            case 1: // east → right edge
+                edge_rect = { screen_pos.x + tile_width - sw, screen_pos.y, sw, tile_height };
+                break;
+            case 2: // west → left edge
+                edge_rect = { screen_pos.x, screen_pos.y, sw, tile_height };
+                break;
+            case 3: // north → top edge
+                edge_rect = { screen_pos.x, screen_pos.y, tile_width, sh };
+                break;
+        }
+        geometry->rect( renderer, point( edge_rect.x, edge_rect.y ),
+                        edge_rect.w, edge_rect.h, SDL_Color{ 0, 0, 0, 80 } );
     }
-    return false;
+    return any_edge;
 }
 
 auto cata_tiles::draw_item_thumbnail( const item &itm, const thumbnail_params &params ) -> bool
@@ -5597,10 +5539,13 @@ auto cata_tiles::draw_item_thumbnail( const item &itm, const thumbnail_params &p
 
 auto cata_tiles::draw_item_thumbnail( const itype_id &id, const thumbnail_params &params ) -> bool
 {
-    if( !item_thumbnails_enabled || !id.is_valid() ) {
+    if( !item_thumbnails_enabled || id.str().empty() ) {
         return false;
     }
-    const tile_search_params tile_params{ id.str(), C_ITEM, id->get_item_type_string(), 0, 0 };
+    // Use the ID string directly; may be a corpse display ID ("corpse_zombie")
+    // that isn't a valid itype.  Tile search will determine actual sprite availability.
+    const std::string category = id.is_valid() ? id->get_item_type_string() : std::string{};
+    const tile_search_params tile_params{ id.str(), C_ITEM, category, 0, 0 };
     auto search_result = tile_type_search( tile_params );
     if( search_result == std::nullopt ) {
         return false;
@@ -5817,11 +5762,6 @@ bool cata_tiles::draw_field_or_item( const tripoint_bub_ms &p, const lit_level l
                 }
                 it_type = nullptr;
                 hilite = false;
-            } else if( item_layering_enabled && here.furn( p ) ) {
-                // Items on furniture are already drawn by draw_item_on_furniture layer.
-                // Skip them here to avoid double-drawing.
-                it_type = nullptr;
-                hilite = false;
             } else {
                 const maptile &tile = here.maptile_at( p );
                 const item &itm = tile.get_uppermost_item();
@@ -5843,6 +5783,11 @@ bool cata_tiles::draw_field_or_item( const tripoint_bub_ms &p, const lit_level l
             hilite = false;
         }
 
+        // Surface height offset to layer items above furniture
+        const int saved_height = height_3d;
+        if( item_layering_enabled && here.furn( p ) && here.furn( p ).id() != furn_f_mannequin ) {
+            height_3d += 1;
+        }
         if( it_type && !it_id.is_null() ) {
             const std::string disp_id = !variant_sprite.empty() ? variant_sprite
                                         : it_id == itype_corpse && mon_id
@@ -5860,6 +5805,7 @@ bool cata_tiles::draw_field_or_item( const tripoint_bub_ms &p, const lit_level l
                 draw_item_highlight( p );
             }
         }
+        height_3d = saved_height;
     }
     return ret_draw_field && ret_draw_items;
 }
@@ -7471,13 +7417,29 @@ void cata_tiles::get_terrain_orientation( const tripoint_bub_ms &p, int &rota, i
     get_rotation_and_subtile( val, rota, subtile );
 }
 
-void cata_tiles::get_stairs_orientation( const tripoint_bub_ms &, int &rota, int &subtile,
-        const bool ( & )[5] )
+void cata_tiles::get_stairs_orientation( const tripoint_bub_ms &p, int &rota, int &subtile,
+        const bool ( &invisible )[5] )
 {
-    // Neighbor terrain data may be hidden (FOW).  Shipped stair sprites are
-    // non-rotatable, so default orientation is the only correct fallback.
-    rota = 0;
-    subtile = 0;
+    const ter_id tid = get_map().ter( p );
+    if( !tid ) {
+        rota = 0;
+        subtile = 0;
+        return;
+    }
+    // Check same-terrain neighbors for connectivity.
+    // invisible[1-4] indicate which cardinals are fogged — skip those.
+    constexpr point dirs[4] = { point_south, point_east, point_west, point_north };
+    char val = 0;
+    for( int i = 0; i < 4; ++i ) {
+        if( invisible[i + 1] ) {
+            continue;
+        }
+        const tripoint_bub_ms q{ p.xy() + dirs[i], p.z() };
+        if( get_map().ter( q ) == tid ) {
+            val += 1 << i;
+        }
+    }
+    get_rotation_and_subtile( val, rota, subtile );
 }
 
 void cata_tiles::get_rotation_and_subtile( const char val, int &rotation, int &subtile )

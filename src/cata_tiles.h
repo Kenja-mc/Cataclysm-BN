@@ -939,8 +939,6 @@ class cata_tiles
                         const bool ( &invisible )[5], int z_drop );
         bool draw_field_or_item( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
                                  const bool ( &invisible )[5], int z_drop );
-        bool draw_item_on_furniture( const tripoint_bub_ms &p, const lit_level ll, int &height_3d,
-                                    const bool ( &invisible )[5], int z_drop );
         bool draw_cliff_overlay( const tripoint_bub_ms &p, const lit_level ll, int &height_3d,
                                  const bool ( &invisible )[5], int z_drop );
         void get_stairs_orientation( const tripoint_bub_ms &p, int &rota, int &subtile,
