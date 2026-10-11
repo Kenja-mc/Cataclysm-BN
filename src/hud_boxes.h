@@ -39,4 +39,7 @@ auto combat_box_shown() -> bool;
 /// The weapon box carries the mana line, so the sidebar Mana panel steps aside.
 auto combat_box_shows_mana( const Character &you ) -> bool;
 
+/// The vehicle box is on screen, so the sidebar Vehicle panel steps aside.
+auto vehicle_box_shown() -> bool;
+
 } // namespace hud_boxes

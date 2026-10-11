@@ -194,6 +194,14 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   repeat what a box shows: with the weather box on it drops Sky, Light, Date and Time (the Location
   panel keeps Place and coordinates); with the weapon box on it drops the Weapon and Mana panels.
   Turn a box off and its rows come back.
+- **Vehicle box** (terminal view) appears when you board a vehicle or control one remotely. It shows
+  azimuth (degrees clockwise from north), current speed, cruise target, engine state, the selected
+  engine's fuel percentage and battery charge. Aircraft keep their takeoff-speed readout. Low fuel
+  and battery readings change color; empty fuel still reads `0%`. It starts at the bottom right,
+  uses the same frames and icon settings as the other boxes, and stacks with boxes in the same
+  corner. Options → Interface → Vehicle box moves it to any corner or turns it off. While it is on,
+  the Vehicle sidebar panel steps aside; turn it off to restore that panel. Native tiles readouts
+  are unchanged.
 - **Body panel** (inspired by Project Zomboid's health screen): the sidebar lists every hurt limb
   and what is wrong with it (bleeding, infected, bitten, broken, bandaged, disinfected). `H` opens
   the full view with every limb's health and what to do about wounds. Hide it like any panel from

@@ -2384,7 +2384,7 @@ static bool environment_panel()
 
 static bool veh_panel()
 {
-    return get_avatar().in_vehicle || g->remoteveh();
+    return ( get_avatar().in_vehicle || g->remoteveh() ) && !hud_boxes::vehicle_box_shown();
 }
 bool default_render()
 {

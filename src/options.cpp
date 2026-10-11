@@ -1994,8 +1994,17 @@ void options_manager::add_options_interface()
     },
     "top_left" );
 
+    add( "HUD_VEHICLE_BOX", interface, translate_marker( "Vehicle box" ),
+         translate_marker( "A small box on the map showing vehicle info: speed, fuel, heading, engine state and battery.  Shown automatically aboard a vehicle or when remote-controlling one." ),
+    {
+        { "top_left", translate_marker( "Top left" ) }, { "top_right", translate_marker( "Top right" ) },
+        { "bottom_left", translate_marker( "Bottom left" ) }, { "bottom_right", translate_marker( "Bottom right" ) },
+        { "off", translate_marker( "Off" ) }
+    },
+    "bottom_right" );
+
     add( "HUD_ICONS", interface, translate_marker( "Box icons" ),
-         translate_marker( "Icons in the weather and weapon boxes.  Unicode works in most terminals.  Nerd Font needs a patched font (nerdfonts.com).  ASCII works everywhere." ),
+         translate_marker( "Icons in the weather, weapon and vehicle boxes.  Unicode works in most terminals.  Nerd Font needs a patched font (nerdfonts.com).  ASCII works everywhere." ),
     { { "unicode", translate_marker( "Unicode" ) }, { "nerd", translate_marker( "Nerd Font" ) }, { "ascii", translate_marker( "ASCII" ) } },
     "unicode" );
 
