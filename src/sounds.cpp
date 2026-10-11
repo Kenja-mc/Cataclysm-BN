@@ -35,6 +35,7 @@
 #include "profile.h"
 #include "rng.h"
 #include "safemode_ui.h"
+#include "smart_safemode.h"
 #include "string_formatter.h"
 #include "string_id.h"
 #include "thread_pool.h"
@@ -1864,6 +1865,23 @@ std::string enum_to_string<sfx::channel>( sfx::channel chan )
 // The sound events currently displayed to the player.
 static std::unordered_map<tripoint_bub_ms, sound_event> sound_markers;
 
+namespace
+{
+
+/// Smart safe mode: a noise does not interrupt an activity when the monster making it is not
+/// hostile or cannot reach you soon.
+auto harmless_noise( const sound_event &noise, Character &who ) -> bool
+{
+    if( !get_option<bool>( "SMART_SAFEMODE" ) || !who.is_avatar() ) {
+        return false;
+    }
+    const auto *mon = std::as_const( *g ).critter_at<monster>( noise.origin );
+    return mon != nullptr && ( mon->attitude_to( who ) != Attitude::A_HOSTILE ||
+                               !smart_safemode::can_reach_soon( *mon, *who.as_avatar() ) );
+}
+
+} // namespace
+
 void sounds::sound( const sound_event &soundevent )
 {
     // Worker-safe mapgen (e.g. a building collapse bash during background OMT
@@ -2766,7 +2784,8 @@ void sounds::process_sound_markers( Character *who )
                     ( element.sound.origin != who->bub_pos() ) &&
                     !get_map().pl_sees( element.sound.origin, distance_to_sound ) ) {
                     if( !who->activity->is_distraction_ignored( distraction_type::noise ) &&
-                        !get_safemode().is_sound_safe( element.sound.description, distance_to_sound ) ) {
+                        !get_safemode().is_sound_safe( element.sound.description, distance_to_sound ) &&
+                        !harmless_noise( element.sound, *who ) ) {
                         const std::string final_description = ensure_punctuation( description, '!' );
                         const std::string query = string_format( _( "Heard %s!" ), final_description );
                         g->cancel_activity_or_ignore_query( distraction_type::noise, query );

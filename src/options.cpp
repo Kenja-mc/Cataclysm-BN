@@ -1962,7 +1962,7 @@ void options_manager::add_options_interface()
        );
 
     add( "SMART_SAFEMODE", interface, translate_marker( "Smart safe mode" ),
-         translate_marker( "If true, safe mode, the 'hostile spotted' interruption and auto-explore ignore monsters that cannot reach you soon: fleeing monsters, immobile monsters that are not next to you, and monsters with no walking route to you.  Monsters with ranged or leaping attacks always count.  Turn it off to stop for every spotted hostile." ),
+         translate_marker( "If true, safe mode, the 'hostile spotted' interruption, noise interruptions and auto-explore ignore monsters that cannot reach you soon: fleeing monsters, immobile monsters that are not next to you, and monsters with no route to you, counting doors they can open or smash.  Monsters with ranged or leaping attacks always count, and noises from monsters that are not hostile never interrupt.  Turn it off to stop for every spotted hostile and noise." ),
          true
        );
 

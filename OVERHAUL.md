@@ -27,9 +27,11 @@ gives it no key; bind one yourself, or pick it from the Enter action menu, which
 
 **Smart safe mode** (Options → Interface, on by default): safe mode, the "spotted" interruption and
 auto-explore ignore a hostile that cannot get to you soon: one that is fleeing, one that cannot move
-and is not next to you, or one with no walking route to you within twice the safe-mode distance (a
-zombie behind a fence or in a locked room). A monster with a ranged or leaping attack, such as a
-turret or a spitter, always counts, and so does anything next to you.
+and is not next to you, or one with no route to you within twice the safe-mode distance (a zombie
+behind a fence or in a sealed room; a door it can open or smash counts as open). A monster with a
+ranged or leaping attack, such as a turret or a spitter, always counts, and so does anything next
+to you. While you craft, read or wait, a noise from such a monster, or from one that is not
+hostile, does not stop you to ask "Heard …!".
 
 The welcome card also mentions click-to-walk, and a first tip suggests a starter goal: find water,
 food and a weapon, because houses usually have all three.
