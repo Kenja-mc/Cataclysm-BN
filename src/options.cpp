@@ -1946,6 +1946,11 @@ void options_manager::add_options_interface()
          false
        );
 
+    add( "SMART_SAFEMODE", interface, translate_marker( "Smart safe mode" ),
+         translate_marker( "If true, safe mode, the 'hostile spotted' interruption and auto-explore ignore monsters that cannot reach you soon: fleeing monsters, immobile monsters that are not next to you, and monsters with no walking route to you.  Monsters with ranged or leaping attacks always count.  Turn it off to stop for every spotted hostile." ),
+         true
+       );
+
     add( "SHOW_WELCOME", interface, translate_marker( "Show welcome card" ),
          translate_marker( "If true, the next new game starts with a short card explaining the controls." ),
          true

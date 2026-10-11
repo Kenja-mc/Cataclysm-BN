@@ -1,12 +1,15 @@
 #include "auto_explore.h"
 
+#include <algorithm>
 #include <vector>
 
 #include "avatar.h"
 #include "game_constants.h"
 #include "map/map.h"
 #include "messages.h"
+#include "monster.h"
 #include "point.h"
+#include "smart_safemode.h"
 #include "translations.h"
 #include "trap.h"
 
@@ -97,7 +100,11 @@ auto set_route_to_frontier( const frontier_options &opts ) -> bool
 
 auto handle( avatar &you ) -> void
 {
-    if( !you.get_hostile_creatures( g_max_view_distance ).empty() ) {
+    const auto threatening = [&]( const Creature * cr ) {
+        const auto *mon = dynamic_cast<const monster *>( cr );
+        return mon == nullptr || smart_safemode::threatens( *mon, you );
+    };
+    if( std::ranges::any_of( you.get_hostile_creatures( g_max_view_distance ), threatening ) ) {
         add_msg( m_info, _( "You can't explore with enemies in sight." ) );
         return;
     }

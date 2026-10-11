@@ -149,6 +149,7 @@
 #include "rng.h"
 #include "rot.h"
 #include "safemode_ui.h"
+#include "smart_safemode.h"
 #include "salvage.h"
 #include "scenario.h"
 #include "scent_map.h"
@@ -2518,6 +2519,11 @@ void game::process_voluntary_act_interrupt()
         !u.activity->is_distraction_ignored( distraction_type::hostile_spotted_near ) ) {
         Creature *hostile_critter = is_hostile_very_close();
         if( hostile_critter != nullptr ) {
+            if( monster *mon = dynamic_cast<monster *>( hostile_critter ) ) {
+                if( !smart_safemode::threatens( *mon, u ) ) {
+                    return;
+                }
+            }
             cancel_activity_or_ignore_query( distraction_type::hostile_spotted_near,
                                              string_format( _( "The %s is dangerously close!" ),
                                                      hostile_critter->get_name() ) );
@@ -5557,6 +5563,7 @@ auto game::mon_info_update() -> void
     mon_info_cache_dirty = false;
 
     int newseen = 0;
+    int threatening_newseen = 0;
     const auto iProxyDist = ( safe_mode_proximity <= 0 ) ? g_max_view_distance : safe_mode_proximity;
 
     monster_visible_info &mon_visible = u.get_mon_visible();
@@ -5712,6 +5719,9 @@ auto game::mon_info_update() -> void
 
                     if( !passmon ) {
                         newseen++;
+                        if( smart_safemode::threatens( critter, u ) ) {
+                            threatening_newseen++;
+                        }
                         new_seen_mon.push_back( mon_ptr );
                     }
                 }
@@ -5774,8 +5784,12 @@ auto game::mon_info_update() -> void
         if( newseen - mostseen == 1 ) {
             if( !new_seen_mon.empty() ) {
                 monster &critter = *new_seen_mon.back();
-                cancel_activity_or_ignore_query( distraction_type::hostile_spotted_far,
-                                                 string_format( _( "%s spotted!" ), critter.name() ) );
+                if( smart_safemode::threatens( critter, u ) ) {
+                    cancel_activity_or_ignore_query( distraction_type::hostile_spotted_far,
+                                                     string_format( _( "%s spotted!" ), critter.name() ) );
+                } else {
+                    add_msg( m_warning, _( "%s spotted!" ), critter.name() );
+                }
                 if( u.has_trait( trait_id( "M_DEFENDER" ) ) && critter.type->in_species( PLANT ) ) {
                     add_msg( m_warning, _( "We have detected a %s - an enemy of the Mycus!" ), critter.name() );
                     if( !u.has_effect( effect_adrenaline_mycus ) ) {
@@ -5796,7 +5810,7 @@ auto game::mon_info_update() -> void
             cancel_activity_or_ignore_query( distraction_type::hostile_spotted_far, _( "Monsters spotted!" ) );
         }
         turnssincelastmon = 0;
-        if( safe_mode == SAFE_MODE_ON ) {
+        if( safe_mode == SAFE_MODE_ON && threatening_newseen > 0 ) {
             set_safe_mode( SAFE_MODE_STOP );
         }
     } else if( calendar::turn > previous_turn && get_option<bool>( "AUTOSAFEMODE" ) &&
