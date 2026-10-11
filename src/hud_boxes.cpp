@@ -18,9 +18,12 @@
 #include "color.h"
 #include "cursesdef.h"
 #include "flag.h"
+#include "game.h"
 #include "item.h"
 #include "options.h"
 #include "output.h"
+#include "overmap/overmapbuffer_registry.h"
+#include "panels_utility.h"
 #include "string_formatter.h"
 #include "translations.h"
 #include "weather/weather.h"
@@ -164,6 +167,23 @@ auto time_text( const avatar &you ) -> std::string
            hour < 14 ? _( "noon" ) : hour < 18 ? _( "afternoon" ) : hour < 21 ? _( "evening" ) : _( "night" );
 }
 
+struct wind_info {
+    std::string text;
+    nc_color color;
+};
+
+/// Local wind as the Wind panel shows it: description plus arrow, colored by strength.
+auto wind_text( const avatar &you ) -> wind_info
+{
+    const oter_id &cur_om_ter = ACTIVE_OVERMAP_BUFFER.ter( you.abs_omt_pos() );
+    const weather_manager &weather = get_weather();
+    const double windpower = get_local_windpower( weather.windspeed, cur_om_ter,
+                                you.abs_pos(), weather.winddirection,
+                                weather::is_sheltered( get_map(), you.bub_pos() ) );
+    return { get_wind_desc( windpower ) + " " + get_wind_arrow( weather.winddirection ),
+             get_wind_color( windpower ) };
+}
+
 auto weather_lines( const avatar &you ) -> std::vector<line>
 {
     auto out = std::vector<line>();
@@ -179,6 +199,17 @@ auto weather_lines( const avatar &you ) -> std::vector<line>
         second += "  " + print_temperature( w.get_temperature( you.abs_pos() ) );
     }
     out.push_back( { std::string( utf8_width( out.front().icon ), ' ' ), c_light_gray, second, c_light_gray } );
+    const auto light = get_light_level( character_funcs::fine_detail_vision_mod( you ) );
+    out.push_back( { std::string(), c_light_gray,
+                     string_format( _( "Light: %s" ), light.first ), light.second } );
+    const auto wind = wind_text( you );
+    const auto moon = moon_phase_name( get_moon_phase( calendar::turn ) );
+    out.push_back( { std::string(), c_light_gray,
+                     string_format( _( "Wind: %s  Moon: %s" ), wind.text, moon ), wind.color } );
+    out.push_back( { std::string(), c_light_gray,
+                     string_format( _( "%s, day %d" ),
+                                    calendar::name_season( season_of_year( calendar::turn ) ),
+                                    day_of_season<int>( calendar::turn ) + 1 ), c_light_gray } );
     return out;
 }
 

@@ -47,6 +47,7 @@ class window_panel
 
         int get_height() const;
         int get_width() const;
+        void set_height_override( std::function<int()> override );
         std::string get_name() const;
         bool toggle;
         bool always_draw;
@@ -56,6 +57,7 @@ class window_panel
         int width;
         bool default_toggle;
         std::string name;
+        std::function<int()> height_override;
 };
 
 class panel_manager
