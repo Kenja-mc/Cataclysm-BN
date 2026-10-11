@@ -568,6 +568,10 @@ void reinitialize_framebuffer( const bool force_invalidate )
     //Re-initialize the framebuffer with new values.
     const int new_height = std::max( { TERMY, OVERMAP_WINDOW_HEIGHT, TERRAIN_WINDOW_HEIGHT } );
     const int new_width = std::max( { TERMX, OVERMAP_WINDOW_WIDTH, TERRAIN_WINDOW_WIDTH } );
+    // Loading screens can close before the terminal size is known; keep the buffers init sized.
+    if( new_height <= 0 || new_width <= 0 ) {
+        return;
+    }
     if( new_height != prev_height || new_width != prev_width ) {
         prev_height = new_height;
         prev_width = new_width;
