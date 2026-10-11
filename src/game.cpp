@@ -3481,12 +3481,23 @@ bool game::handle_mouseview( input_context &ctxt, std::string &action )
                 liveview.hide();
             }
             tile_selection::hover( u, m, mouse_pos );
+            // Cursor panning: in normal play, holding the mouse at the edge pans the view.
+            if( cursor_pan_view( ctxt ) ) {
+                const std::optional<tripoint_bub_ms> panned_pos = ctxt.get_coordinates( w_terrain );
+                tile_selection::hover( u, m, panned_pos );
+            }
             {
                 ZoneScopedN( "handle_mouseview_redraw" );
                 ui_manager::redraw();
             }
         }
     } while( action == "MOUSE_MOVE" ); // Freeze animation when moving the mouse
+    // Cursor panning: continue panning when the cursor rests at the edge.
+    if( action == "TIMEOUT" && cursor_pan_view( ctxt ) ) {
+        const std::optional<tripoint_bub_ms> panned_pos = ctxt.get_coordinates( w_terrain );
+        tile_selection::hover( u, m, panned_pos );
+        ui_manager::redraw();
+    }
 
     if( action != "TIMEOUT" ) {
         // Keyboard event, break out of animation loop
@@ -3580,6 +3591,75 @@ tripoint_rel_omt game::mouse_edge_scrolling_overmap( input_context &ctxt )
     last_mouse_edge_scroll_vector_terrain = tripoint_rel_ms::zero();
     return ret.first;
 }
+
+bool game::cursor_pan_view( input_context &ctxt )
+{
+    if( !get_option<bool>( "CURSOR_PANNING" ) ) {
+        return false;
+    }
+    const int edge_scroll = get_option<int>( "EDGE_SCROLL" );
+    const int rate = edge_scroll >= 0 ? edge_scroll : 30;
+    auto now = std::chrono::steady_clock::now();
+    if( now < last_cursor_pan + std::chrono::milliseconds( rate ) ) {
+        return false;
+    }
+    last_cursor_pan = now;
+
+    const input_event event = ctxt.get_raw_input();
+    if( event.type == input_event_t::mouse ) {
+        // In tiles mode, event.mouse_pos is in SDL window pixel coordinates and
+        // projected_window_width/height return the SDL window size in pixels.
+        // In curses mode, event.mouse_pos is in terminal cell coordinates and
+        // the terrain window may be offset by a sidebar.
+#if defined(TILES)
+        const int win_x = event.mouse_pos.x;
+        const int win_y = event.mouse_pos.y;
+        const int win_w = projected_window_width();
+        const int win_h = projected_window_height();
+#else
+        const int win_x = event.mouse_pos.x - getbegx( w_terrain );
+        const int win_y = event.mouse_pos.y - getbegy( w_terrain );
+        const int win_w = getmaxx( w_terrain );
+        const int win_h = getmaxy( w_terrain );
+#endif
+        const point threshold( win_w / 100 + 1, win_h / 100 + 1 );
+        tripoint_rel_ms delta( 0, 0, 0 );
+        if( win_x <= threshold.x ) {
+            delta.x() -= 1;
+        } else if( win_x >= win_w - threshold.x ) {
+            delta.x() += 1;
+        }
+        if( win_y <= threshold.y ) {
+            delta.y() -= 1;
+        } else if( win_y >= win_h - threshold.y ) {
+            delta.y() += 1;
+        }
+        if( delta.x() != 0 || delta.y() != 0 ) {
+            u.view_offset += delta;
+            last_cursor_pan_direction = delta;
+            return true;
+        }
+        last_cursor_pan_direction = tripoint_rel_ms::zero();
+        return false;
+    } else if( event.type == input_event_t::timeout ) {
+        if( last_cursor_pan_direction != tripoint_rel_ms::zero() ) {
+            u.view_offset += last_cursor_pan_direction;
+            return true;
+        }
+    }
+    return false;
+}
+
+void game::cursor_pan_recenter()
+{
+    if( !get_option<bool>( "CURSOR_PANNING" ) ) {
+        return;
+    }
+    u.view_offset.x() = driving_view_offset.x;
+    u.view_offset.y() = driving_view_offset.y;
+    last_cursor_pan_direction = tripoint_rel_ms::zero();
+}
+
 
 input_context get_default_mode_input_context()
 {

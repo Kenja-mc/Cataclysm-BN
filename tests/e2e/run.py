@@ -338,6 +338,41 @@ def test_right_click_pick_runs_the_action(g):
     assert zombie_hp(g) != before, "picking 'attack' from the right-click menu attacks:\n" + g.screen()
     g.lua("local m=gapi.get_monster_at(here(1,0)) if m then park(m) end out('ok')")
 
+def test_cursor_panning(g):
+    """Cursor panning: holding the mouse at the map edge pans the view; a key re-centres it."""
+    pan = Game(name="bn-e2e-cursor-pan", options={"CURSOR_PANNING": "true", "EDGE_SCROLL": "30"})
+    try:
+        start_new_game(pan)
+        arena(pan)
+        settle(pan)
+        x_before, y_before = pan.find("@")
+        # Hover at the left edge of the screen to trigger westward panning.
+        pan.hover(1, y_before)
+        # Wait for panning to occur (rate-limited at ~30ms, so 3s is plenty).
+        time.sleep(3)
+        x_after, y_after = pan.find("@")
+        assert x_after != x_before, \
+            f"view should have panned: @ at ({x_before},{y_before}) -> ({x_after},{y_after})"
+        # Press a movement key to re-centre the view.
+        pan.keys("d", delay=1.5)
+        x_recentre, y_recentre = pan.find("@")
+        assert abs(x_recentre - x_before) <= 1, \
+            f"view should have re-centred: @ at ({x_before},{y_before}) -> ({x_recentre},{y_recentre})"
+    finally:
+        pan.close()
+
+
+def test_cursor_panning_off(g):
+    """Cursor panning off: the view does not pan when the option is disabled."""
+    arena(g)
+    settle(g)
+    x_before, y_before = g.find("@")
+    g.hover(1, y_before)
+    time.sleep(3)
+    x_after, y_after = g.find("@")
+    assert x_after == x_before, \
+        f"view should not have panned: @ at ({x_before},{y_before}) -> ({x_after},{y_after})"
+
 
 def test_black_powder_rounds_stack(g):
     """Black powder handloads are a stack modifier, so they merge into the factory 9mm stack."""
@@ -809,7 +844,8 @@ TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_au
          test_aim_defaults, test_sound_marker_fading, test_smart_targeting, test_stance_toggle, test_contextual_interact_single_door, test_contextual_interact_multiple_doors,
          test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions, test_right_click_pick_runs_the_action,
          test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_old_full_keybindings_file, test_hud_box_options, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
-         test_smart_safe_mode, test_enemy_edge_arrows, test_enemy_edge_arrows_off]
+         test_smart_safe_mode, test_enemy_edge_arrows, test_enemy_edge_arrows_off,
+         test_cursor_panning, test_cursor_panning_off]
 
 
 def main():

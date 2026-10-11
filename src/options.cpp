@@ -2304,6 +2304,11 @@ void options_manager::add_options_interface()
     },
     30, 30, COPT_CURSES_HIDE );
 
+    add( "CURSOR_PANNING", interface, translate_marker( "Cursor panning" ),
+         translate_marker( "If true, in normal play holding the mouse at the edge of the map pans the view; clicks and hover act on the panned view.  Moving or pressing a key re-centres." ),
+         false
+      );
+
 }
 
 void options_manager::add_options_graphics()

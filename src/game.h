@@ -1311,6 +1311,16 @@ class game : public submap_load_listener
         /** This variant is suitable for the overmap. */
         tripoint_rel_omt mouse_edge_scrolling_overmap( input_context &ctxt );
 
+        /// Cursor panning: in normal play, holding the mouse at the map edge pans the view.
+        /// Returns true if the view was panned (so the caller can redraw).
+        bool cursor_pan_view( input_context &ctxt );
+        /// Re-centre the view after a turn-consuming action or movement.
+        void cursor_pan_recenter();
+        /// Last time the view was panned (rate limiter).
+        std::chrono::time_point<std::chrono::steady_clock> last_cursor_pan;
+        /// Last pan direction (to continue panning on timeout).
+        tripoint_rel_ms last_cursor_pan_direction;
+
         // called on map shifting
         void shift_destination_preview( const point_rel_ms &delta );
 

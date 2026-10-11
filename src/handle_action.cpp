@@ -2108,6 +2108,9 @@ bool game::handle_action()
         ZoneScopedN( "handle_action_gamemode_pre_action" );
         gamemode->pre_action( act );
     }
+    // Cursor panning: re-centre the view when the player takes a turn-consuming action.
+    cursor_pan_recenter();
+
 
     int soffset = 0;
     {
