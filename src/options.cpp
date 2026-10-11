@@ -2488,6 +2488,16 @@ void options_manager::add_options_graphics()
 
     get_option( "VEHICLE_EDIT_TILES" ).setPrerequisite( "USE_TILES" );
 
+    add( "VEHICLE_SMOOTH_ROTATION", graphics, translate_marker( "Smooth vehicle rotation" ),
+         translate_marker( "If true, parts of a vehicle that faces a direction other than north, south, "
+                           "east or west are drawn rotated by the exact direction of the vehicle instead of "
+                           "the closest cardinal one.  Tilesets that draw their own directional sprites are "
+                           "not affected." ),
+         true, COPT_CURSES_HIDE
+       );
+
+    get_option( "VEHICLE_SMOOTH_ROTATION" ).setPrerequisite( "USE_TILES" );
+
     add( "USE_CHARACTER_PREVIEW", graphics, translate_marker( "Enable character preview window" ),
          translate_marker( "If true, shows character preview window in traits tab on character creation.  "
                            "While having a window press 'z'/'Z' to perform zoom-in/zoom-out.  "

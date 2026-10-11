@@ -681,6 +681,16 @@ struct tile_search_result {
     std::string found_id;
 };
 
+/// How a tile is rotated when it is drawn.
+struct tile_rotation {
+    /// Rotation snapped to the angles the tileset authored: 0 = north, 1 = west, 2 = south,
+    /// 3 = east for single sprites, 4..8 for the flip and diagonal variants.
+    int snap = 0;
+    /// Exact clockwise rotation from north, in degrees. When set, a single sprite is drawn
+    /// rotated by this angle instead of the snapped one.
+    std::optional<int> exact;
+};
+
 struct tile_search_params {
     // String id of the tile to draw.
     const std::string &id;
@@ -814,7 +824,7 @@ class cata_tiles
          * @param p Point to draw the tile at.
          * @param loc_rand picked random int
          * @param is_fg is foreground layer
-         * @param rota rotation: { UP = 0, LEFT = 1, DOWN = 2, RIGHT = 3 }
+         * @param rota rotation of the tile
          * @param tint tint configuration (color, contrast, saturation)
          * @param ll light level
          * @param apply_visual_effects use night vision and underwater colors?
@@ -824,7 +834,7 @@ class cata_tiles
          * @return always true.
          */
         bool draw_sprite_at( const tile_type &tile, point_bub_ms p,
-                             unsigned int loc_rand, bool is_fg, int rota,
+                             unsigned int loc_rand, bool is_fg, const tile_rotation &rota,
                              const tint_config &tint, lit_level ll,
                              bool apply_visual_effects, int overlay_count,
                              int *height_3d, int retract = 0,
@@ -837,7 +847,7 @@ class cata_tiles
          * @param tile Tile to draw.
          * @param p Point to draw the tile at.
          * @param loc_rand picked random int
-         * @param rota rotation: { UP = 0, LEFT = 1, DOWN = 2, RIGHT = 3 }
+         * @param rota rotation of the tile
          * @param bg_tint background tint configuration
          * @param fg_tint foreground tint configuration
          * @param ll light level
@@ -847,7 +857,7 @@ class cata_tiles
          * @return always true.
          */
         bool draw_tile_at( const tile_type &tile, point_bub_ms p,
-                           unsigned int loc_rand, int rota,
+                           unsigned int loc_rand, const tile_rotation &rota,
                            const tint_config &bg_tint, const tint_config &fg_tint,
                            lit_level ll, bool apply_visual_effects, int &height_3d,
                            int overlay_count, int retract,
@@ -1210,6 +1220,9 @@ class cata_tiles
          */
         bool nv_goggles_activated = false;
         bool env_goggles_activated = false;
+
+        /// Draw single-sprite vehicle parts rotated by the exact heading of their vehicle.
+        bool vehicle_smooth_rotation = false;
 
         // Active warp hash for character rendering (0 if none)
         size_t active_warp_hash = TILESET_NO_WARP;
