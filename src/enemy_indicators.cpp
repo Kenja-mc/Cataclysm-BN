@@ -68,7 +68,7 @@ auto enabled() -> bool
     return get_option<bool>( "ENEMY_EDGE_ARROWS" );
 }
 
-auto map_arrows( const avatar &you, int width, int height ) -> std::vector<edge_arrow>
+auto map_arrows( avatar &you, int width, int height ) -> std::vector<edge_arrow>
 {
     if( !enabled() ) {
         return {};
@@ -85,7 +85,7 @@ auto map_arrows( const avatar &you, int width, int height ) -> std::vector<edge_
         }
         const auto nearest = hostile.nearest_monster.lock();
         const auto threatening = hostile.threatening ||
-                                 ( nearest && smart_safemode::can_reach_soon( *nearest, get_avatar() ) );
+                                 ( nearest && smart_safemode::can_reach_soon( *nearest, you ) );
         const auto &step = octant_steps[i];
         const auto in_by_one = hostile.hunting ? 0 : 1;
         const auto cells = std::min( steps_to_edge( step.x, half.x, width ),

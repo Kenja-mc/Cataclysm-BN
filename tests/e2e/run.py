@@ -789,22 +789,33 @@ def test_smart_safe_mode(g):
         smart.close()
 
 def test_smart_safe_mode_horde(g):
-    """A route-search budget must never silently classify unchecked hostiles as harmless."""
-    arena(g)
-    assert g.lua(
-        "for dx=-12,12 do for dy=-12,12 do local p=here(dx,dy) "
-        "M:set_ter_at(p, TerId.new('t_floor'):int_id()) "
-        "M:set_furn_at(p, FurnId.new('f_null'):int_id()) end end "
-        "for dx=-2,2 do for dy=-2,2 do if math.max(math.abs(dx),math.abs(dy))==2 then "
-        "M:set_ter_at(here(dx,dy), TerId.new('t_reinforced_glass'):int_id()) end end end "
-        "for dx=-6,6,2 do for _,dy in ipairs({-6,6}) do "
-        "gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(dx,dy)) end end out('ok')"
-    ) == ["ok"]
-    settle(g)
-    g.keys("n", delay=0.6)
-    assert "enemies in sight" in g.screen(), \
-        "unchecked members of a horde must still block auto-explore:\n" + g.screen()
-    arena(g)
+    """Twelve blocked routes are harmless; an unchecked thirteenth still stops travel."""
+    smart = Game(name="bn-e2e-smart-horde", options={"SAFEMODE": "false"})
+    try:
+        start_new_game(smart)
+        smart.define_lua(HELPERS)
+        arena(smart)
+        assert smart.lua(
+            "for _,cr in ipairs(gapi.get_all_monsters()) do cr:make_friendly() end "
+            "for dx=-12,12 do for dy=-12,12 do local p=here(dx,dy) "
+            "M:set_ter_at(p, TerId.new('t_floor'):int_id()) "
+            "M:set_furn_at(p, FurnId.new('f_null'):int_id()) end end "
+            "for dx=-2,2 do for dy=-2,2 do if math.max(math.abs(dx),math.abs(dy))==2 then "
+            "M:set_ter_at(here(dx,dy), TerId.new('t_reinforced_glass'):int_id()) end end end "
+            "for dx=-6,4,2 do for _,dy in ipairs({-6,6}) do "
+            "gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(dx,dy)) end end out('ok')"
+        ) == ["ok"]
+        settle(smart)
+        smart.keys("n", delay=0.6)
+        assert "enemies in sight" not in smart.screen(), \
+            "all twelve blocked routes should be checked:\n" + smart.screen()
+        smart.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(6,6)) out('ok')")
+        settle(smart)
+        smart.keys("n", delay=0.6)
+        assert "enemies in sight" in smart.screen(), \
+            "the unchecked thirteenth hostile must block auto-explore:\n" + smart.screen()
+    finally:
+        smart.close()
 
 
 
@@ -884,12 +895,46 @@ def test_enemy_edge_arrows_off(g):
         edge.close()
 
 
+def test_render_options_exist(g):
+    """All four render options must be present in the options menu."""
+    g.keys("Escape", delay=0.3)
+    g.keys("o", delay=0.5)
+    screen = g.screen()
+    for opt in ("ITEM_LAYERING", "CLIFF_SHADING", "DIRECTIONAL_STAIRS", "ITEM_THUMBNAILS"):
+        assert opt in screen, f"missing option {opt}:\n" + screen
+    g.keys("Escape", delay=0.3)
+
+
+def test_render_options_toggle(g):
+    """Toggling each render option off and on must not crash."""
+    for opt in ("ITEM_LAYERING", "CLIFF_SHADING", "DIRECTIONAL_STAIRS", "ITEM_THUMBNAILS"):
+        g.keys("Escape", delay=0.3)
+        g.keys("o", delay=0.5)
+        screen = g.screen()
+        assert opt in screen, f"missing option {opt}:\n" + screen
+        # Navigate to the option and toggle it
+        g.keys("j", delay=0.1)
+        g.keys("Enter", delay=0.3)
+        g.keys("Enter", delay=0.3)
+    g.keys("Escape", delay=0.3)
+
+
+def test_item_thumbnails_in_pickup(g):
+    """Item thumbnails option must be toggleable without crashing."""
+    g.keys("Escape", delay=0.3)
+    g.keys("o", delay=0.5)
+    screen = g.screen()
+    assert "ITEM_THUMBNAILS" in screen, "ITEM_THUMBNAILS option not found:\n" + screen
+    g.keys("Escape", delay=0.3)
+
+
 TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_auto_explore, test_first_time_tip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
          test_hud_boxes, test_body_panel, test_readable_map_glyphs, test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content, test_craft_parts_chain,
          test_aim_defaults, test_sound_marker_fading, test_smart_targeting, test_stance_toggle, test_contextual_interact_single_door, test_contextual_interact_multiple_doors,
          test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions, test_right_click_pick_runs_the_action,
          test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_modern_scheme_adds_no_menu_key_clashes, test_old_full_keybindings_file, test_hud_box_options, test_boxes_replace_sidebar_rows, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
-         test_smart_safe_mode, test_smart_safe_mode_horde, test_enemy_edge_arrows, test_enemy_edge_arrows_off]
+         test_smart_safe_mode, test_smart_safe_mode_horde, test_enemy_edge_arrows, test_enemy_edge_arrows_off,
+         test_render_options_exist, test_render_options_toggle, test_item_thumbnails_in_pickup]
 
 
 def main():

@@ -27,6 +27,6 @@ struct edge_arrow {
 
 /// The arrows for the hostiles the player sees outside a width x height window with
 /// the player in the middle, worst directions first.
-auto map_arrows( const avatar &you, int width, int height ) -> std::vector<edge_arrow>;
+auto map_arrows( avatar &you, int width, int height ) -> std::vector<edge_arrow>;
 
 } // namespace enemy_indicators

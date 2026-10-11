@@ -456,6 +456,10 @@ Xvfb :99 & DISPLAY=:99 build-scripts/run-linux-test-shards.ts --mode file-tags b
 Running every test in one process is not supported upstream either: some tests leave the map
 shifted for the next one.
 
+The hidden `[benchmark][smart_safemode]` cases measure 12 blocked route searches and the
+over-budget conservative stop separately. Monster-list timings are steady-state scans; they do
+not include the first-sighting safety check. Arrow timings include fresh-turn route work.
+
 ## End-to-end tests
 
 `tests/e2e/run.py` starts the terminal build inside tmux, creates a character and plays through the

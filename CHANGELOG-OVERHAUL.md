@@ -52,6 +52,7 @@ Upstream's own changes are in `docs/en/game/changelog`.
   search routes for at most 12 monsters; unchecked hostiles conservatively stop travel.
   When that budget is exhausted, the group stops travel immediately without spending time on
   route searches that cannot change the decision.
+  Benchmarks distinguish the 12-route bounded case from over-budget stops and steady-state scans.
 - The playtest harness includes a 120-zombie stress world. Tiles playtests use private options
   instead of changing the player's normal tiles configuration.
 - End-to-end games disable desktop URL openers and find the retained curses build directly.
