@@ -2236,6 +2236,25 @@ void item::magazine_info( std::vector<iteminfo> &info, const iteminfo_query *par
     insert_separation_line( info );
 }
 
+namespace
+{
+/// @brief Classify gun/ammo loudness volume into a plain-language hint, matching the sound-text bands used by @ref item::gun_noise.
+auto loudness_hint( int volume ) -> std::string
+{
+    if( volume <= 0 ) {
+        return _( "silent" );
+    } else if( volume < 100 ) {
+        return _( "quiet" );
+    } else if( volume < 150 ) {
+        return _( "loud" );
+    } else if( volume < 165 ) {
+        return _( "very loud" );
+    }
+    return _( "deafening" );
+}
+
+} // namespace
+
 void item::ammo_info( std::vector<iteminfo> &info, const iteminfo_query *parts, int /* batch */,
                       bool /* debug */ ) const
 {
@@ -2344,6 +2363,16 @@ void item::ammo_info( std::vector<iteminfo> &info, const iteminfo_query *parts, 
         if( parts->test( iteminfo_parts::AMMO_DAMAGE_RECOIL ) && ammo.recoil != 0 ) {
             info.emplace_back( "AMMO", _( "Recoil: " ), "",
                                iteminfo::lower_is_better | iteminfo::no_newline, ammo.recoil );
+        }
+    }
+    if( parts->test( iteminfo_parts::AMMO_LOUDNESS ) ) {
+        const islot_ammo &ammo = *ammo_data()->ammo;
+        if( ammo.loudness >= 0 ) {
+            const auto hint = loudness_hint( ammo.loudness );
+            info.emplace_back( "AMMO",
+                               _( "Loudness: " ),
+                               string_format( "<num> (%s)", hint.c_str() ),
+                               iteminfo::no_flags, static_cast<double>( ammo.loudness ) );
         }
     }
 
@@ -2750,6 +2779,14 @@ void item::gun_info( const item *mod, std::vector<iteminfo> &info, const iteminf
                                           "Uses <stat>%i</stat> charges of UPS per shot",
                                           mod->get_gun_ups_drain() ),
                                           mod->get_gun_ups_drain() ) );
+    }
+    if( parts->test( iteminfo_parts::GUN_LOUDNESS ) ) {
+        const auto noise = loaded_mod->gun_noise();
+        const auto hint = loudness_hint( noise.volume );
+        info.emplace_back( "GUN",
+                           _( "Loudness: " ),
+                           string_format( "<num> (%s)", hint.c_str() ),
+                           iteminfo::no_flags, static_cast<double>( noise.volume ) );
     }
 
     if( skill.ident() == skill_throw ) {
