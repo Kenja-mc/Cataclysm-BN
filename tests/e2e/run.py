@@ -561,48 +561,41 @@ def test_hud_box_options(g):
         assert not lines[0].startswith("╭"), "the weather box is off"
         bottom = [i for i, l in enumerate(lines) if l.startswith("╰")]
         assert bottom, "\n".join(lines)
-        box = "\n".join(l[:40] for l in lines[bottom[-1] - 3:bottom[-1] + 1])
+        top_edge = max(i for i, l in enumerate(lines[:bottom[-1]]) if l.startswith("╭"))
+        box = "\n".join(l[:40] for l in lines[top_edge:bottom[-1] + 1])
         assert "│ f " in box or "│ / " in box or "│ = " in box or "│ ) " in box, box
     finally:
         other.close()
 
-def test_weather_box_environment(g):
-    """Environment facts move from the Location panel into the weather box."""
+def test_boxes_replace_sidebar_rows(g):
+    """What the weather and weapon boxes show leaves the sidebar; turning the boxes off brings it back."""
+    spend_mana = "local a=gapi.get_avatar() a:get_magic():set_mana(1) out('ok')"
+    assert g.lua(spend_mana) == ["ok"]
     settle(g)
     s = g.screen()
     lines = s.splitlines()
-    # Weather box is on by default (top_left): weather, time, light, wind+moon, date.
-    # The map area is the left ~96 columns; the box sits in its top-left corner.
-    top = "\n".join(l[:40] for l in lines[:8])
-    assert any(icon in top for icon in ("☼", "☾", "☁", "☂", "↯", "❄", "◎", "▼")), "weather icon: " + top
-    assert "Light:" in top, "box should show light level: " + top
-    assert "Wind:" in top, "box should show wind: " + top
-    assert "Moon:" in top, "box should show moon phase: " + top
-    assert re.search(r"(Spring|Summer|Autumn|Winter), day \d+", top), "box should show date: " + top
-    # Sidebar is on the right (44 columns for "labels" layout). Location panel
-    # keeps Place and coordinates but drops Sky/Light/Date/Time when box is on.
-    # The fork's aligned sidebar pads labels to a fixed width: "Sky   :", "Date  :".
-    sidebar = [l[-44:] if len(l) >= 44 else l for l in lines]
-    assert any(re.search(r"Place\s*:", l) for l in sidebar), "Location panel should show Place: " + s
-    assert any(re.search(r"X,Y,Z\s*:", l) for l in sidebar), "Location panel should show coordinates: " + s
-    assert not any(re.search(r"Sky\s*:", l) for l in sidebar), "Location panel should not show Sky when box is on: " + s
-    assert not any(re.search(r"Light\s*:", l) for l in sidebar), "Location panel should not show Light when box is on: " + s
-    assert not any(re.search(r"Date\s*:", l) for l in sidebar), "Location panel should not show Date when box is on: " + s
-    assert not any(re.search(r"Time\s*:", l) for l in sidebar), "Location panel should not show Time when box is on: " + s
-    # Turn the weather box off: Location panel shows everything again.
-    off = Game(name="bn-e2e-env-off", options={"SAFEMODE": "false", "HUD_WEATHER_BOX": "off"})
+    boxes = "\n".join(l[:40] for l in lines[:16])
+    assert any(icon in boxes for icon in ("☼", "☾", "☁", "☂", "↯", "❄", "◎", "▼")), "weather icon: " + boxes
+    for fact in ("Light:", "Wind:", "Moon:", "Mana: 1/"):
+        assert fact in boxes, f"{fact} belongs in a box:\n" + boxes
+    assert re.search(r"(Spring|Summer|Autumn|Winter), day \d+", boxes), "box should show date: " + boxes
+    # tmux drops trailing blanks, so a short line is all map; the sidebar starts at column 96.
+    sidebar = "\n".join(l[96:] for l in lines)
+    assert re.search(r"Place\s*:", sidebar) and re.search(r"X,Y,Z\s*:", sidebar), s
+    for label in ("Sky", "Light", "Date", "Time", "Wield", "Style", "Mana"):
+        assert not re.search(label + r"\s*:", sidebar), f"{label} is in a box already:\n" + s
+    off = Game(name="bn-e2e-env-off", options={"SAFEMODE": "false", "HUD_WEATHER_BOX": "off", "HUD_COMBAT_BOX": "off"})
     try:
         start_new_game(off)
+        off.define_lua("")
+        assert off.lua(spend_mana) == ["ok"]
         off.keys("x", delay=0.6)
         s2 = off.screen()
-        lines2 = s2.splitlines()
-        top2 = "\n".join(l[:40] for l in lines2[:8])
-        assert "Light:" not in top2 and "Wind:" not in top2, "weather box should be off: " + top2
-        sidebar2 = [l[-44:] if len(l) >= 44 else l for l in lines2]
-        assert any(re.search(r"Sky\s*:", l) for l in sidebar2), "Location should show Sky when box is off: " + s2
-        assert any(re.search(r"Light\s*:", l) for l in sidebar2), "Location should show Light when box is off: " + s2
-        assert any(re.search(r"Date\s*:", l) for l in sidebar2), "Location should show Date when box is off: " + s2
-        assert any(re.search(r"Time\s*:", l) for l in sidebar2), "Location should show Time when box is off: " + s2
+        assert not s2.splitlines()[0].startswith("╭"), "boxes should be off:\n" + s2
+        sidebar2 = "\n".join(l[96:] for l in s2.splitlines())
+        for label in ("Sky", "Light", "Date", "Time", "Wield", "Style"):
+            assert re.search(label + r"\s*:", sidebar2), f"{label} should be back in the sidebar:\n" + s2
+        assert re.search(r"Mana\s*: 1/\d+", sidebar2), "mana reads current/max:\n" + s2
     finally:
         off.close()
 
@@ -850,7 +843,7 @@ TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_au
          test_hud_boxes, test_body_panel, test_readable_map_glyphs, test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content, test_craft_parts_chain,
          test_aim_defaults, test_sound_marker_fading, test_smart_targeting, test_stance_toggle, test_contextual_interact_single_door, test_contextual_interact_multiple_doors,
          test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions, test_right_click_pick_runs_the_action,
-         test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_old_full_keybindings_file, test_hud_box_options, test_weather_box_environment, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
+         test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_old_full_keybindings_file, test_hud_box_options, test_boxes_replace_sidebar_rows, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
          test_smart_safe_mode, test_enemy_edge_arrows, test_enemy_edge_arrows_off]
 
 
