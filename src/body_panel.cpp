@@ -55,28 +55,6 @@ auto wounds_of( const avatar &you, const bodypart_id &bp ) -> std::vector<wound>
     return out;
 }
 
-auto health_color( const avatar &you, const bodypart_id &bp ) -> nc_color
-{
-    const auto cur = you.get_part_hp_cur( bp );
-    const auto max = std::max( you.get_part_hp_max( bp ), 1 );
-    return cur <= 0 ? c_dark_gray : cur * 4 > max * 3 ? c_green : cur * 2 > max ? c_yellow :
-           cur * 4 > max ? c_light_red : c_red;
-}
-
-struct figure_part {
-    const char *bp;
-    point pos;
-    const char *glyph;
-};
-
-/// A front view, so the character's right arm is on the left of the screen.
-const auto figure = std::vector<figure_part> {
-    { "head", { 2, 0 }, "O" },
-    { "arm_r", { 1, 1 }, "/" }, { "torso", { 2, 1 }, "|" }, { "arm_l", { 3, 1 }, "\\" },
-    { "torso", { 2, 2 }, "|" },
-    { "leg_r", { 1, 3 }, "/" }, { "leg_l", { 3, 3 }, "\\" },
-};
-
 } // namespace
 
 namespace body_panel
@@ -85,11 +63,7 @@ namespace body_panel
 auto draw( avatar &you, const catacurses::window &w ) -> void
 {
     werase( w );
-    for( const auto &part : figure ) {
-        const auto bp = bodypart_id( part.bp );
-        mvwprintz( w, part.pos + point( 1, 0 ), health_color( you, bp ), part.glyph );
-    }
-    // Beside the figure: the worst problem of each hurt limb, then a hint for the full view.
+    // The worst problem of each hurt limb, then a hint for the full view.
     auto lines = std::vector<wound>();
     for( const auto &bp : you.get_all_body_parts( true ) ) {
         const auto found = wounds_of( you, bp );
@@ -106,9 +80,9 @@ auto draw( avatar &you, const catacurses::window &w ) -> void
         lines.resize( rows - 1 );
         lines.push_back( { string_format( _( "And %d more" ), more ), c_light_gray } );
     }
-    const auto text_x = 7;
+    const auto width = std::max( getmaxx( w ), 1 );
     for( int i = 0; i < static_cast<int>( lines.size() ) && i < rows; i++ ) {
-        trim_and_print( w, point( text_x, i ), getmaxx( w ) - text_x - 1, lines[i].color, lines[i].text );
+        trim_and_print( w, point( 0, i ), width, lines[i].color, lines[i].text );
     }
     // Looking the key up walks every binding, so only redo it when bindings change.
     static auto key = std::string();
@@ -118,7 +92,9 @@ auto draw( avatar &you, const catacurses::window &w ) -> void
         key_version = inp_mngr.bindings_version();
     }
     if( !key.empty() ) {
-        trim_and_print( w, point( text_x, rows ), getmaxx( w ) - text_x - 1, c_dark_gray,
+        // Right under the wounds, so a short list leaves no gap where the figure was.
+        const auto row = std::min( rows, static_cast<int>( lines.size() ) );
+        trim_and_print( w, point( 0, row ), width, c_dark_gray,
                         string_format( _( "%s: details" ), key ) );
     }
     wnoutrefresh( w );

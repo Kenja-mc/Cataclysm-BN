@@ -128,7 +128,7 @@ class Game:
 
 
 def in_game(screen):
-    return "X,Y,Z:" in screen and " move " in screen
+    return "X,Y,Z" in screen and " move " in screen
 
 
 def start_new_game(game, timeout=240):

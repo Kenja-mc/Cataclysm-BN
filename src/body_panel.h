@@ -7,8 +7,8 @@ namespace catacurses
 class window;
 } // namespace catacurses
 
-/// Project Zomboid style health view: a small body figure in the sidebar coloured by limb health,
-/// with wounds listed beside it, and a key that opens the full per-limb breakdown.
+/// Project Zomboid style health view: the sidebar lists every hurt limb and what is wrong with
+/// it, and a key opens the full per-limb breakdown.
 namespace body_panel
 {
 
