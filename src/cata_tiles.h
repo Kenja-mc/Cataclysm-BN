@@ -958,8 +958,13 @@ class cata_tiles
                              const bool ( &invisible )[5], int z_drop );
         bool draw_zombie_revival_indicators( const tripoint_bub_ms &pos, lit_level ll, int &height_3d,
                                              const bool ( &invisible )[5], int z_drop );
-        bool draw_item_thumbnail( const item &itm, const point &dest, int width, int height );
-        bool draw_item_thumbnail( const itype_id &id, const point &dest, int width, int height );
+        struct thumbnail_params {
+            point dest;
+            int width;
+            int height;
+        };
+        bool draw_item_thumbnail( const item &itm, const thumbnail_params &params );
+        bool draw_item_thumbnail( const itype_id &id, const thumbnail_params &params );
         void draw_entity_with_overlays( const Character &ch, const tripoint_bub_ms &p, lit_level ll,
                                         int &height_3d, bool as_independent_entity = false );
 

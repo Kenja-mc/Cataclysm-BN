@@ -53,6 +53,7 @@
 #include "vehicle/vehicle_selector.h"
 #include "vehicle/vpart_position.h"
 #if defined(TILES)
+#include "cached_options.h"
 #include "sdltiles.h"
 #endif
 
@@ -786,6 +787,13 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
             wnoutrefresh( w_item_info );
 
             const std::string pickup_chars = ctxt.get_available_single_char_hotkeys( all_pickup_chars );
+            // Reserve 2-cell icon space when thumbnails active
+            int icon_cells = 0;
+#if defined(TILES)
+            if( use_tiles && item_thumbnails_enabled ) {
+                icon_cells = 2;
+            }
+#endif
 
             werase( w_pickup );
             for( int cur_it = start; cur_it < start + maxitems; cur_it++ ) {
@@ -798,7 +806,7 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
                     }
 
                     if( cur_it < static_cast<int>( pickup_chars.size() ) ) {
-                        mvwputch( w_pickup, point( 0, 1 + ( cur_it % maxitems ) ), icolor,
+                        mvwputch( w_pickup, point( icon_cells, 1 + ( cur_it % maxitems ) ), icolor,
                                   static_cast<char>( pickup_chars[cur_it] ) );
                     } else if( cur_it < static_cast<int>( pickup_chars.size() ) + static_cast<int>
                                ( pickup_chars.size() ) *
@@ -806,10 +814,10 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
                         int p = cur_it - pickup_chars.size();
                         int p1 = p / pickup_chars.size();
                         int p2 = p % pickup_chars.size();
-                        mvwprintz( w_pickup, point( 0, 1 + ( cur_it % maxitems ) ), icolor, "`%c%c",
+                        mvwprintz( w_pickup, point( icon_cells, 1 + ( cur_it % maxitems ) ), icolor, "`%c%c",
                                    static_cast<char>( pickup_chars[p1] ), static_cast<char>( pickup_chars[p2] ) );
                     } else {
-                        mvwputch( w_pickup, point( 0, 1 + ( cur_it % maxitems ) ), icolor, ' ' );
+                        mvwputch( w_pickup, point( icon_cells, 1 + ( cur_it % maxitems ) ), icolor, ' ' );
                     }
                     if( getitem[true_it].parent ) {
                         const pickup_count &parent = getitem[*getitem[true_it].parent];
@@ -875,12 +883,12 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
                 // Register tile thumbnail for this pickup list item
                 if( use_tiles && item_thumbnails_enabled ) {
                     const window_dimensions dim = get_window_dimensions( w_pickup );
-                    const point thumb_px(
-                        dim.window_pos_pixel.x,
-                        dim.window_pos_pixel.y + ( 1 + ( cur_it % maxitems ) ) * fontheight
-                    );
-                    register_item_thumbnail( thumb_px, fontwidth, fontheight,
-                                            this_item.typeId().str() );
+                    register_item_thumbnail( item_thumbnail_opts{
+                        .pos = { dim.window_pos_pixel.x, dim.window_pos_pixel.y + ( 1 + ( cur_it % maxitems ) ) * fontheight },
+                        .width = 2 * fontwidth,
+                        .height = fontheight,
+                        .item_id = this_item.typeId().str()
+                    } );
                 }
 #endif
                 }

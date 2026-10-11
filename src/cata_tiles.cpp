@@ -5451,8 +5451,8 @@ bool cata_tiles::draw_furniture( const tripoint_bub_ms &p, const lit_level ll, i
     return false;
 }
 
-bool cata_tiles::draw_item_on_furniture( const tripoint_bub_ms &p, const lit_level ll, int &height_3d,
-                                         const bool ( &invisible )[5], int z_drop )
+auto cata_tiles::draw_item_on_furniture( const tripoint_bub_ms &p, const lit_level ll, int &height_3d,
+                                          const bool ( &invisible )[5], int z_drop ) -> bool
 {
     if( !item_layering_enabled || invisible[0] ) {
         return false;
@@ -5462,25 +5462,110 @@ bool cata_tiles::draw_item_on_furniture( const tripoint_bub_ms &p, const lit_lev
     if( !f ) {
         return false;
     }
-    // Don't draw items on mannequins (handled separately)
+    // Mannequins handle their own items
     if( f.id() == furn_f_mannequin ) {
         return false;
     }
+    // Respect field's display_items flag
+    const field_type_id &fld = here.field_at( p ).displayed_field_type();
+    if( !fld.obj().display_items ) {
+        return false;
+    }
+    // Visibility/perception check
     if( !here.sees_some_items( p, g->u ) ) {
         return false;
     }
+    // Handle item overrides (from memory/forecast systems)
+    const auto it_override = item_override.find( p );
+    if( it_override != item_override.end() ) {
+        const auto &[it_id, mon_id, hilite] = it_override->second;
+        const auto *it_type = &*it_id;
+        if( !it_type ) {
+            return false;
+        }
+        const std::string disp_id = it_id == itype_corpse && mon_id
+                                    ? "corpse_" + mon_id.str()
+                                    : it_id.str();
+        const tile_search_params tile{ disp_id, C_ITEM, it_type->get_item_type_string(), 0, 0 };
+        const bool drawn = draw_from_id_string(
+                               tile, p, tint_config{}, tint_config{},
+                               ll, false, z_drop, false, height_3d );
+        if( drawn && hilite ) {
+            draw_item_highlight( p );
+        }
+        return drawn;
+    }
+    // Draw actual item on furniture surface
     const maptile &tile = here.maptile_at( p );
     const item &itm = tile.get_uppermost_item();
     if( !itm.type ) {
         return false;
     }
-    // Draw the actual item sprite on top of the furniture
-    const itype_id it_id = itm.typeId();
+    // Build display ID with variant/corpse support
     const mtype *const mon = itm.get_mtype();
     const mtype_id mon_id = mon ? mon->id : mtype_id::NULL_ID();
     const bool hilite = tile.get_item_count() > 1;
-    auto variant_sprite = std::string();
-    variant_sprite = item_variants::sprite( itm );
+    std::string variant_sprite = item_variants::sprite( itm );
+    if( !variant_sprite.empty() && !find_tile_with_season( variant_sprite ) ) {
+        variant_sprite.clear();
+    }
+    const std::string disp_id = !variant_sprite.empty() ? variant_sprite
+                                : itm.typeId() == itype_corpse && mon_id
+                                ? "corpse_" + mon_id.str()
+                                : itm.typeId().str();
+    // Small 3D height offset to show item above furniture surface
+    const int surf_offset = 1;
+    const int saved_height = height_3d;
+    height_3d += surf_offset;
+    const auto [bgCol, fgCol] = get_item_color( itm, here, p );
+    const tile_search_params tile{ disp_id, C_ITEM, itm.type->get_item_type_string(), 0, 0 };
+    const bool drawn = draw_from_id_string(
+                           tile, p, bgCol, fgCol,
+                           ll, false, z_drop, false, height_3d );
+    height_3d = saved_height;
+    if( drawn && hilite ) {
+        draw_item_highlight( p );
+    }
+    return drawn;
+}
+
+auto cata_tiles::draw_cliff_overlay( const tripoint_bub_ms &p, const lit_level ll, int &height_3d,
+                                     const bool ( &invisible )[5], int z_drop ) -> bool
+{
+    if( !cliff_shading_enabled || invisible[0] ) {
+        return false;
+    }
+    map &here = get_map();
+    const ter_id &t = here.ter( p );
+    if( !t || t == t_open_air ) {
+        return false;
+    }
+    // Check same-z neighbors for open air (platform edge = cliff)
+    const point cardinals[4] = { point_south, point_east, point_west, point_north };
+    for( const point &dir : cardinals ) {
+        const tripoint_bub_ms neighbor{ p.xy() + dir, p.z() };
+        if( here.inbounds( neighbor ) && here.ter( neighbor ) == t_open_air ) {
+            // Draw cliff edge shadow along the bottom
+            const point screen_pos = player_to_screen( p.xy() );
+            const int sh = std::max( 1, tile_height / 10 );
+            geometry->rect( renderer, point( screen_pos.x, screen_pos.y + tile_height - sh ),
+                            tile_width, sh, SDL_Color{ 0, 0, 0, 80 } );
+            return true;
+        }
+    }
+    return false;
+}
+
+auto cata_tiles::draw_item_thumbnail( const item &itm, const thumbnail_params &params ) -> bool
+{
+    if( !item_thumbnails_enabled || !itm.type ) {
+        return false;
+    }
+    // Build the display ID considering variants and corpses
+    const itype_id it_id = itm.typeId();
+    const mtype *const mon = itm.get_mtype();
+    const mtype_id mon_id = mon ? mon->id : mtype_id::NULL_ID();
+    std::string variant_sprite = item_variants::sprite( itm );
     if( !variant_sprite.empty() && !find_tile_with_season( variant_sprite ) ) {
         variant_sprite.clear();
     }
@@ -5488,75 +5573,7 @@ bool cata_tiles::draw_item_on_furniture( const tripoint_bub_ms &p, const lit_lev
                                 : it_id == itype_corpse && mon_id
                                 ? "corpse_" + mon_id.str()
                                 : it_id.str();
-    const std::string it_category = itm.type->get_item_type_string();
-    const auto [bgCol, fgCol] = get_item_color( itm, here, p );
-    const tile_search_params tile { disp_id, C_ITEM, it_category, 0, 0 };
-    const bool drawn = draw_from_id_string(
-                           tile, p, bgCol, fgCol,
-                           ll, false, z_drop, false, height_3d );
-    if( drawn && hilite ) {
-        draw_item_highlight( p );
-    }
-    return drawn;
-}
-
-bool cata_tiles::draw_cliff_overlay( const tripoint_bub_ms &p, const lit_level ll, int &height_3d,
-                                      const bool ( &invisible )[5], int z_drop )
-{
-    if( !cliff_shading_enabled || invisible[0] ) {
-        return false;
-    }
-    map &here = get_map();
-    const ter_id &t = here.ter( p );
-    if( !t ) {
-        return false;
-    }
-    // Check if there's a cliff below (z-1 is solid/lower)
-    if( p.z() <= -OVERMAP_DEPTH ) {
-        return false;
-    }
-    const tripoint_bub_ms below_pos{ p.xy(), p.z() - 1 };
-    if( !here.inbounds( below_pos ) ) {
-        return false;
-    }
-    const ter_id &below_ter = here.ter( below_pos );
-    if( !below_ter ) {
-        return false;
-    }
-    // Below tile is not a solid wall or rock formation — no cliff edge
-    if( !below_ter.obj().has_flag( TFLAG_WALL ) && !below_ter.obj().has_flag( TFLAG_CLIMBABLE ) ) {
-        return false;
-    }
-    // Only draw cliff edge if the current tile itself is not a wall or climbable
-    // (wall atop wall does not create visible cliff between them)
-    if( t.obj().has_flag( TFLAG_WALL ) || t.obj().has_flag( TFLAG_CLIMBABLE ) ) {
-        return false;
-    }
-    // Calculate screen position for the cliff edge shadow
-    const point screen_pos = player_to_screen( p.xy() );
-    const int shadow_height = std::max( 1, tile_height / 10 );
-    const auto renderer_copy = renderer;
-    geometry->rect( renderer_copy, point( screen_pos.x, screen_pos.y + tile_height - shadow_height ),
-                    tile_width, shadow_height, SDL_Color{ 0, 0, 0, 80 } );
-    return true;
-}
-
-bool cata_tiles::draw_item_thumbnail( const item &itm, const point &dest, int width, int height )
-{
-    return draw_item_thumbnail( itm.typeId(), dest, width, height );
-}
-
-bool cata_tiles::draw_item_thumbnail( const itype_id &id, const point &dest, int width, int height )
-{
-    if( !item_thumbnails_enabled ) {
-        return false;
-    }
-    if( !id.is_valid() ) {
-        return false;
-    }
-    const std::string item_id = id.str();
-    const std::string &it_category = id->get_item_type_string();
-    const tile_search_params tile_params { item_id, C_ITEM, it_category, 0, 0 };
+    const tile_search_params tile_params{ disp_id, C_ITEM, itm.type->get_item_type_string(), 0, 0 };
     auto search_result = tile_type_search( tile_params );
     if( search_result == std::nullopt ) {
         return false;
@@ -5573,11 +5590,34 @@ bool cata_tiles::draw_item_thumbnail( const itype_id &id, const point &dest, int
     if( !sprite_tex ) {
         return false;
     }
-    SDL_Rect dst_rect;
-    dst_rect.x = dest.x;
-    dst_rect.y = dest.y;
-    dst_rect.w = width;
-    dst_rect.h = height;
+    SDL_Rect dst_rect{ params.dest.x, params.dest.y, params.width, params.height };
+    sprite_tex->render_copy( renderer, &dst_rect );
+    return true;
+}
+
+auto cata_tiles::draw_item_thumbnail( const itype_id &id, const thumbnail_params &params ) -> bool
+{
+    if( !item_thumbnails_enabled || !id.is_valid() ) {
+        return false;
+    }
+    const tile_search_params tile_params{ id.str(), C_ITEM, id->get_item_type_string(), 0, 0 };
+    auto search_result = tile_type_search( tile_params );
+    if( search_result == std::nullopt ) {
+        return false;
+    }
+    const tile_type &tt = *search_result.value().tt;
+    const auto &sprite_list = tt.sprite.fg;
+    auto picked = sprite_list.pick( 0 );
+    if( !picked || picked->empty() ) {
+        return false;
+    }
+    const int tile_idx = picked->front();
+    const auto [sprite_tex, warp_offset] = tileset_ptr->get_or_default(
+            tile_idx, TILESET_NO_MASK, tileset_fx_type::none, TILESET_NO_COLOR, TILESET_NO_WARP, point_zero );
+    if( !sprite_tex ) {
+        return false;
+    }
+    SDL_Rect dst_rect{ params.dest.x, params.dest.y, params.width, params.height };
     sprite_tex->render_copy( renderer, &dst_rect );
     return true;
 }
@@ -7431,70 +7471,12 @@ void cata_tiles::get_terrain_orientation( const tripoint_bub_ms &p, int &rota, i
     get_rotation_and_subtile( val, rota, subtile );
 }
 
-void cata_tiles::get_stairs_orientation( const tripoint_bub_ms &p, int &rota, int &subtile,
-        const bool ( &invisible )[5] )
+void cata_tiles::get_stairs_orientation( const tripoint_bub_ms &, int &rota, int &subtile,
+        const bool ( & )[5] )
 {
-    map &here = get_map();
-    const ter_id &tid = here.ter( p );
-    if( !tid ) {
-        rota = 0;
-        subtile = 0;
-        return;
-    }
-
-    // Determine which adjacent tiles are walkable (floor, stairs, etc.)
-    // Order: south, east, west, north (matching neighborhood array)
-    bool walkable[4] = { false, false, false, false };
-    const point dirs[4] = { point_south, point_east, point_west, point_north };
-    for( int i = 0; i < 4; ++i ) {
-        const tripoint_bub_ms neighbor = p + dirs[i];
-        if( !here.inbounds( neighbor ) ) {
-            continue;
-        }
-        const ter_id &neighbor_ter = here.ter( neighbor );
-        if( neighbor_ter && !neighbor_ter.obj().has_flag( TFLAG_WALL ) &&
-            !neighbor_ter.obj().has_flag( TFLAG_CLIMBABLE ) ) {
-            walkable[i] = true;
-        }
-    }
-
-    // Count walkable directions
-    int count = 0;
-    for( int i = 0; i < 4; ++i ) {
-        if( walkable[i] ) {
-            count++;
-        }
-    }
-
-    if( count == 0 ) {
-        // No walkable neighbors - use default orientation
-        rota = 0;
-        subtile = 0;
-        return;
-    }
-
-    if( count == 1 ) {
-        // Single walkable direction - orient toward it
-        for( int i = 0; i < 4; ++i ) {
-            if( walkable[i] ) {
-                rota = i;
-                subtile = 0;
-                return;
-            }
-        }
-    }
-
-    // Multiple walkable directions - use stable fallback (south if walkable, else first)
-    if( walkable[0] ) {
-        rota = 0;
-    } else {
-        for( int i = 0; i < 4; ++i ) {
-            if( walkable[i] ) {
-                rota = i;
-                break;
-            }
-        }
-    }
+    // Neighbor terrain data may be hidden (FOW).  Shipped stair sprites are
+    // non-rotatable, so default orientation is the only correct fallback.
+    rota = 0;
     subtile = 0;
 }
 

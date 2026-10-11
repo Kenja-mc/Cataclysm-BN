@@ -30,7 +30,13 @@ void rescale_tileset( float size );
 bool save_screenshot( const std::string &file_path );
 void toggle_fullscreen_window();
 extern void repoint_overmap_tilecontext();
-void register_item_thumbnail( point pos, int width, int height, const std::string &item_id );
+struct item_thumbnail_opts {
+    point pos;
+    int width;
+    int height;
+    std::string item_id;
+};
+void register_item_thumbnail( const item_thumbnail_opts &opts );
 struct window_dimensions {
     point scaled_font_size;
     point window_pos_cell;

@@ -1623,14 +1623,15 @@ static void draw_pending_thumbnails()
         if( !id.is_valid() ) {
             continue;
         }
-        tilecontext->draw_item_thumbnail( id, thumb.pos, thumb.width, thumb.height );
+        const cata_tiles::thumbnail_params tp{ thumb.pos, thumb.width, thumb.height };
+        tilecontext->draw_item_thumbnail( id, tp );
     }
     pending_thumbnails.clear();
 }
 
-void register_item_thumbnail( point pos, int width, int height, const std::string &item_id )
+void register_item_thumbnail( const item_thumbnail_opts &opts )
 {
-    pending_thumbnails.push_back( { pos, width, height, item_id } );
+    pending_thumbnails.push_back( { opts.pos, opts.width, opts.height, opts.item_id } );
 }
 
 void cata_cursesport::curses_drawwindow( const catacurses::window &w )
