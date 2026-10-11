@@ -349,8 +349,8 @@ static void npc_temp_orders_menu( const std::vector<npc *> &npc_list )
 
 }
 
-// Follower command palette: view and change follower rules without entering dialogue.
-// Option-gated on NPC_UI. Uses existing npc_follower_rules setters.
+namespace {
+
 enum follower_palette_entry {
     PALETTE_DONE,
     PALETTE_ENGAGEMENT,
@@ -364,161 +364,195 @@ enum follower_palette_entry {
     PALETTE_ALLOW_BASH,
     PALETTE_ALLOW_PULP,
     PALETTE_ALLOW_PICK_UP,
-    PALETTE_COPY_RULES,
-    PALETTE_CLEAR_OVERRIDES
+    PALETTE_COPY_RULES
 };
-static void follower_command_palette( const std::vector<npc *> &npc_list )
+
+constexpr auto engagement_steps = std::array<combat_engagement, 7> { {
+    combat_engagement::NONE, combat_engagement::CLOSE, combat_engagement::WEAK,
+    combat_engagement::HIT, combat_engagement::ALL, combat_engagement::FREE_FIRE,
+    combat_engagement::NO_MOVE
+} };
+constexpr auto aim_steps = std::array<aim_rule, 4> { {
+    aim_rule::WHEN_CONVENIENT, aim_rule::SPRAY, aim_rule::PRECISE, aim_rule::STRICTLY_PRECISE
+} };
+constexpr auto cbm_reserve_steps = std::array<cbm_reserve_rule, 5> { {
+    cbm_reserve_rule::CBM_RESERVE_ALL, cbm_reserve_rule::CBM_RESERVE_MOST,
+    cbm_reserve_rule::CBM_RESERVE_SOME, cbm_reserve_rule::CBM_RESERVE_LITTLE,
+    cbm_reserve_rule::CBM_RESERVE_NONE
+} };
+constexpr auto cbm_recharge_steps = std::array<cbm_recharge_rule, 5> { {
+    cbm_recharge_rule::CBM_RECHARGE_ALL, cbm_recharge_rule::CBM_RECHARGE_MOST,
+    cbm_recharge_rule::CBM_RECHARGE_SOME, cbm_recharge_rule::CBM_RECHARGE_LITTLE,
+    cbm_recharge_rule::CBM_RECHARGE_NONE
+} };
+
+// CBM enum values are percentages, so the next value must come from the step list.
+template<typename T, size_t N>
+auto next_step( const T current, const std::array<T, N> &steps ) -> T
 {
-    if( npc_list.empty() ) {
+    namespace ranges = std::ranges;
+    const auto index = static_cast<size_t>( ranges::find( steps, current ) - steps.begin() );
+    return steps[( index + 1 ) % N];
+}
+
+auto engagement_label( const combat_engagement rule ) -> std::string
+{
+    switch( rule ) {
+        case combat_engagement::NONE: return _( "Don't fight" );
+        case combat_engagement::CLOSE: return _( "Close" );
+        case combat_engagement::WEAK: return _( "Weak" );
+        case combat_engagement::HIT: return _( "Only if attacked" );
+        case combat_engagement::ALL: return _( "All hostiles" );
+        case combat_engagement::FREE_FIRE: return _( "Free fire (no move)" );
+        case combat_engagement::NO_MOVE: return _( "No move" );
+    }
+    return {};
+}
+
+auto aim_label( const aim_rule rule ) -> std::string
+{
+    switch( rule ) {
+        case aim_rule::WHEN_CONVENIENT: return _( "When convenient" );
+        case aim_rule::SPRAY: return _( "Spray" );
+        case aim_rule::PRECISE: return _( "Precise" );
+        case aim_rule::STRICTLY_PRECISE: return _( "Strictly precise" );
+    }
+    return {};
+}
+
+auto cbm_reserve_label( const cbm_reserve_rule rule ) -> std::string
+{
+    switch( rule ) {
+        case cbm_reserve_rule::CBM_RESERVE_ALL: return _( "All (100%)" );
+        case cbm_reserve_rule::CBM_RESERVE_MOST: return _( "Most (75%)" );
+        case cbm_reserve_rule::CBM_RESERVE_SOME: return _( "Some (50%)" );
+        case cbm_reserve_rule::CBM_RESERVE_LITTLE: return _( "Little (25%)" );
+        case cbm_reserve_rule::CBM_RESERVE_NONE: return _( "None" );
+    }
+    return {};
+}
+
+auto cbm_recharge_label( const cbm_recharge_rule rule ) -> std::string
+{
+    switch( rule ) {
+        case cbm_recharge_rule::CBM_RECHARGE_ALL: return _( "All (90%)" );
+        case cbm_recharge_rule::CBM_RECHARGE_MOST: return _( "Most (75%)" );
+        case cbm_recharge_rule::CBM_RECHARGE_SOME: return _( "Some (50%)" );
+        case cbm_recharge_rule::CBM_RECHARGE_LITTLE: return _( "Little (25%)" );
+        case cbm_recharge_rule::CBM_RECHARGE_NONE: return _( "None (10%)" );
+    }
+    return {};
+}
+
+// Flips what the follower does now. A temporary order on the same rule would hide the flip,
+// so that order is cleared with it.
+auto palette_toggle_rule( npc &guy, const ally_rule rule ) -> void
+{
+    guy.rules.toggle_flag( rule );
+    guy.rules.clear_override( rule );
+    guy.rules.disable_override( rule );
+    guy.wield_better_weapon();
+}
+
+// Follower command palette: one follower's rules without entering dialogue.
+// Option-gated on NPC_UI. Writes the same npc_follower_rules fields the dialogue topics write.
+auto follower_command_palette( const std::vector<npc *> &npc_list ) -> void
+{
+    const int picked = npc_select_menu( npc_list, _( "Whose rules?" ), false );
+    if( picked < 0 ) {
         return;
     }
-    npc *guy = npc_list.front();
+    npc &guy = *npc_list[picked];
 
     bool done = false;
     uilist nmenu;
 
     while( !done ) {
         nmenu.reset();
-        nmenu.text = _( "Follower commands" );
+        nmenu.text = string_format( _( "Follower commands: %s" ), guy.name );
         nmenu.desc_enabled = true;
+        const auto hp = guy.hp_description();
+        nmenu.footer_text = guy.short_description() + "\n" + hp.first;
 
-        // Status line
-        std::string status = string_format( _( "%s — %s" ), guy->name, guy->short_description() );
-        auto hp = guy->hp_description();
-        status += "\n" + hp.first;
-        nmenu.footer_text = status;
-
-        // Combat engagement
-        std::string eng_label = _( "Combat engagement: " );
-        switch( guy->rules.engagement ) {
-            case combat_engagement::NONE: eng_label += _( "Don't fight" ); break;
-            case combat_engagement::CLOSE: eng_label += _( "Close" ); break;
-            case combat_engagement::WEAK: eng_label += _( "Weak" ); break;
-            case combat_engagement::HIT: eng_label += _( "Only if attacked" ); break;
-            case combat_engagement::ALL: eng_label += _( "All hostiles" ); break;
-            case combat_engagement::FREE_FIRE: eng_label += _( "Free fire (no move)" ); break;
-            case combat_engagement::NO_MOVE: eng_label += _( "No move" ); break;
+        nmenu.addentry( PALETTE_ENGAGEMENT, true, 'e', string_format( _( "Combat engagement: %s" ),
+                        engagement_label( guy.rules.engagement ) ) );
+        nmenu.addentry( PALETTE_AIM, true, 'a', string_format( _( "Aim rule: %s" ),
+                        aim_label( guy.rules.aim ) ) );
+        if( guy.has_bionics() ) {
+            nmenu.addentry( PALETTE_CBM_RESERVE, true, 'r', string_format( _( "CBM reserve: %s" ),
+                            cbm_reserve_label( guy.rules.cbm_reserve ) ) );
+            nmenu.addentry( PALETTE_CBM_RECHARGE, true, 'c', string_format( _( "CBM recharge: %s" ),
+                            cbm_recharge_label( guy.rules.cbm_recharge ) ) );
         }
-        nmenu.addentry( PALETTE_ENGAGEMENT, true, 'e', eng_label );
-
-        // Aim rule
-        std::string aim_label = _( "Aim rule: " );
-        switch( guy->rules.aim ) {
-            case aim_rule::WHEN_CONVENIENT: aim_label += _( "When convenient" ); break;
-            case aim_rule::SPRAY: aim_label += _( "Spray" ); break;
-            case aim_rule::PRECISE: aim_label += _( "Precise" ); break;
-            case aim_rule::STRICTLY_PRECISE: aim_label += _( "Strictly precise" ); break;
-        }
-        nmenu.addentry( PALETTE_AIM, true, 'a', aim_label );
-
-        // CBM reserve
-        std::string cbmr_label = _( "CBM reserve: " );
-        switch( guy->rules.cbm_reserve ) {
-            case cbm_reserve_rule::CBM_RESERVE_ALL: cbmr_label += _( "All (100%)" ); break;
-            case cbm_reserve_rule::CBM_RESERVE_MOST: cbmr_label += _( "Most (75%)" ); break;
-            case cbm_reserve_rule::CBM_RESERVE_SOME: cbmr_label += _( "Some (50%)" ); break;
-            case cbm_reserve_rule::CBM_RESERVE_LITTLE: cbmr_label += _( "Little (25%)" ); break;
-            case cbm_reserve_rule::CBM_RESERVE_NONE: cbmr_label += _( "None" ); break;
-        }
-        nmenu.addentry( PALETTE_CBM_RESERVE, true, 'r', cbmr_label );
-
-        // CBM recharge
-        std::string cbmc_label = _( "CBM recharge: " );
-        switch( guy->rules.cbm_recharge ) {
-            case cbm_recharge_rule::CBM_RECHARGE_ALL: cbmc_label += _( "All (90%)" ); break;
-            case cbm_recharge_rule::CBM_RECHARGE_MOST: cbmc_label += _( "Most (75%)" ); break;
-            case cbm_recharge_rule::CBM_RECHARGE_SOME: cbmc_label += _( "Some (50%)" ); break;
-            case cbm_recharge_rule::CBM_RECHARGE_LITTLE: cbmc_label += _( "Little (25%)" ); break;
-            case cbm_recharge_rule::CBM_RECHARGE_NONE: cbmc_label += _( "None (10%)" ); break;
-        }
-        nmenu.addentry( PALETTE_CBM_RECHARGE, true, 'c', cbmc_label );
-
-        // Toggle rules
-        nmenu.addentry( PALETTE_USE_GUNS, true, 'g', guy->rules.has_flag( ally_rule::use_guns ) ?
+        nmenu.addentry( PALETTE_USE_GUNS, true, 'g',
+                        guy.rules.has_flag( ally_rule::use_guns ) ?
                         _( "Use guns: ON" ) : _( "Use guns: OFF" ) );
-        nmenu.addentry( PALETTE_USE_SILENT, true, 's', guy->rules.has_flag( ally_rule::use_silent ) ?
+        nmenu.addentry( PALETTE_USE_SILENT, true, 's',
+                        guy.rules.has_flag( ally_rule::use_silent ) ?
                         _( "Use silent: ON" ) : _( "Use silent: OFF" ) );
-        nmenu.addentry( PALETTE_ALLOW_SLEEP, true, 'l', guy->rules.has_flag( ally_rule::allow_sleep ) ?
+        nmenu.addentry( PALETTE_ALLOW_SLEEP, true, 'l',
+                        guy.rules.has_flag( ally_rule::allow_sleep ) ?
                         _( "Allow sleep: ON" ) : _( "Allow sleep: OFF" ) );
-        nmenu.addentry( PALETTE_FOLLOW_CLOSE, true, 'f', guy->rules.has_flag( ally_rule::follow_close ) ?
+        nmenu.addentry( PALETTE_FOLLOW_CLOSE, true, 'f',
+                        guy.rules.has_flag( ally_rule::follow_close ) ?
                         _( "Follow close: ON" ) : _( "Follow close: OFF" ) );
-        nmenu.addentry( PALETTE_ALLOW_BASH, true, 'b', guy->rules.has_flag( ally_rule::allow_bash ) ?
+        nmenu.addentry( PALETTE_ALLOW_BASH, true, 'b',
+                        guy.rules.has_flag( ally_rule::allow_bash ) ?
                         _( "Allow bash: ON" ) : _( "Allow bash: OFF" ) );
-        nmenu.addentry( PALETTE_ALLOW_PULP, true, 'p', guy->rules.has_flag( ally_rule::allow_pulp ) ?
+        nmenu.addentry( PALETTE_ALLOW_PULP, true, 'p',
+                        guy.rules.has_flag( ally_rule::allow_pulp ) ?
                         _( "Allow pulp: ON" ) : _( "Allow pulp: OFF" ) );
-        nmenu.addentry( PALETTE_ALLOW_PICK_UP, true, 'u', guy->rules.has_flag( ally_rule::allow_pick_up ) ?
+        nmenu.addentry( PALETTE_ALLOW_PICK_UP, true, 'u',
+                        guy.rules.has_flag( ally_rule::allow_pick_up ) ?
                         _( "Allow pickup: ON" ) : _( "Allow pickup: OFF" ) );
-
-        // Copy rules from another follower
         if( npc_list.size() > 1 ) {
-            nmenu.addentry( PALETTE_COPY_RULES, true, 'y', _( "Copy rules from another follower" ) );
+            nmenu.addentry( PALETTE_COPY_RULES, true, 'y',
+                            _( "Copy rules from another follower" ) );
         }
-
-        // Clear overrides
-        nmenu.addentry( PALETTE_CLEAR_OVERRIDES, true, 'o', _( "Clear temporary overrides" ) );
-
-        // Done
         nmenu.addentry( PALETTE_DONE, true, 'd', _( "Done" ) );
-
         nmenu.query();
 
         switch( nmenu.ret ) {
-            case PALETTE_ENGAGEMENT: {
-                // Cycle engagement
-                int cur = static_cast<int>( guy->rules.engagement );
-                int next = ( cur + 1 ) % 7;
-                guy->rules.engagement = static_cast<combat_engagement>( next );
-                guy->invalidate_range_cache();
+            case PALETTE_ENGAGEMENT:
+                guy.rules.engagement = next_step( guy.rules.engagement, engagement_steps );
+                guy.invalidate_range_cache();
                 break;
-            }
-            case PALETTE_AIM: {
-                int cur = static_cast<int>( guy->rules.aim );
-                int next = ( cur + 1 ) % 4;
-                guy->rules.aim = static_cast<aim_rule>( next );
-                guy->invalidate_range_cache();
+            case PALETTE_AIM:
+                guy.rules.aim = next_step( guy.rules.aim, aim_steps );
+                guy.invalidate_range_cache();
                 break;
-            }
-            case PALETTE_CBM_RESERVE: {
-                int cur = static_cast<int>( guy->rules.cbm_reserve );
-                int next = ( cur + 1 ) % 5;
-                guy->rules.cbm_reserve = static_cast<cbm_reserve_rule>( next );
+            case PALETTE_CBM_RESERVE:
+                guy.rules.cbm_reserve = next_step( guy.rules.cbm_reserve, cbm_reserve_steps );
                 break;
-            }
-            case PALETTE_CBM_RECHARGE: {
-                int cur = static_cast<int>( guy->rules.cbm_recharge );
-                int next = ( cur + 1 ) % 5;
-                guy->rules.cbm_recharge = static_cast<cbm_recharge_rule>( next );
+            case PALETTE_CBM_RECHARGE:
+                guy.rules.cbm_recharge = next_step( guy.rules.cbm_recharge, cbm_recharge_steps );
                 break;
-            }
-            case PALETTE_USE_GUNS: guy->rules.toggle_flag( ally_rule::use_guns ); break;
-            case PALETTE_USE_SILENT: guy->rules.toggle_flag( ally_rule::use_silent ); break;
-            case PALETTE_ALLOW_SLEEP: guy->rules.toggle_flag( ally_rule::allow_sleep ); break;
-            case PALETTE_FOLLOW_CLOSE: guy->rules.toggle_flag( ally_rule::follow_close ); break;
-            case PALETTE_ALLOW_BASH: guy->rules.toggle_flag( ally_rule::allow_bash ); break;
-            case PALETTE_ALLOW_PULP: guy->rules.toggle_flag( ally_rule::allow_pulp ); break;
-            case PALETTE_ALLOW_PICK_UP: guy->rules.toggle_flag( ally_rule::allow_pick_up ); break;
+            case PALETTE_USE_GUNS: palette_toggle_rule( guy, ally_rule::use_guns ); break;
+            case PALETTE_USE_SILENT: palette_toggle_rule( guy, ally_rule::use_silent ); break;
+            case PALETTE_ALLOW_SLEEP: palette_toggle_rule( guy, ally_rule::allow_sleep ); break;
+            case PALETTE_FOLLOW_CLOSE: palette_toggle_rule( guy, ally_rule::follow_close ); break;
+            case PALETTE_ALLOW_BASH: palette_toggle_rule( guy, ally_rule::allow_bash ); break;
+            case PALETTE_ALLOW_PULP: palette_toggle_rule( guy, ally_rule::allow_pulp ); break;
+            case PALETTE_ALLOW_PICK_UP: palette_toggle_rule( guy, ally_rule::allow_pick_up ); break;
             case PALETTE_COPY_RULES: {
-                // Pick another follower to copy rules from
-                std::vector<npc *> others;
-                for( npc *p : npc_list ) {
-                    if( p != guy ) {
-                        others.push_back( p );
-                    }
-                }
-                if( !others.empty() ) {
-                    const int sel = npc_select_menu( others, _( "Copy rules from whom?" ) );
-                    if( sel >= 0 && sel < static_cast<int>( others.size() ) ) {
-                        guy->rules = others[sel]->rules;
-                    }
+                const auto is_other = [&guy]( const npc * p ) { return p != &guy; };
+                const auto others = npc_list | std::views::filter( is_other )
+                                    | std::ranges::to<std::vector>();
+                const int sel = npc_select_menu( others, _( "Copy rules from whom?" ), false );
+                if( sel >= 0 ) {
+                    guy.rules = others[sel]->rules;
+                    guy.invalidate_range_cache();
                 }
                 break;
             }
-            case PALETTE_CLEAR_OVERRIDES: guy->rules.clear_overrides(); break;
-            case PALETTE_DONE: done = true; break;
-            default: done = true; break;
+            default:
+                done = true;
+                break;
         }
     }
 }
+
+} // namespace
 
 static void tell_veh_stop_following()
 {
@@ -705,7 +739,7 @@ void game::chat()
                         _( "Tell everyone on your team to relax (Clear Overrides)" ) );
         nmenu.addentry( NPC_CHAT_ORDERS, true, 'o', _( "Tell everyone on your team to temporarily…" ) );
         if( get_option<bool>( "NPC_UI" ) ) {
-            nmenu.addentry( NPC_CHAT_FOLLOWER_PALETTE, true, 'F',
+            nmenu.addentry( NPC_CHAT_FOLLOWER_PALETTE, true, 'P',
                             _( "Follower command palette…" ) );
         }
     }
