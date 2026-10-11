@@ -30,6 +30,8 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - 132 ASCII item pictures from CDDA (CC-BY-SA 3.0) for 134 items, shown in the item description.
 - The **Overhaul soundpack** (Kenney, CC0) for footsteps, melee, impacts, reloads, menus and
   vehicle doors; the Otopack stays the default when it is installed.
+- A playtest harness, `tests/e2e/playtest.py`: 13 scenarios that set up a fork feature in a fresh
+  game and hand it to you in the terminal or the tiles window.
 
 ### Fixed
 
