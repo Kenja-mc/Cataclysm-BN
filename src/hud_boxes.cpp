@@ -194,22 +194,22 @@ auto weather_lines( const avatar &you ) -> std::vector<line>
         out.push_back( { glyph( weather_icon( w.weather_id.str() ) ), w.weather_id->color,
                          w.weather_id->name.translated(), w.weather_id->color } );
     }
-    auto second = time_text( you );
+    const auto indent = std::string( utf8_width( out.front().icon ), ' ' );
+    auto time_line = time_text( you );
     if( has_thermometer( you ) ) {
-        second += "  " + print_temperature( w.get_temperature( you.abs_pos() ) );
+        time_line += "  " + print_temperature( w.get_temperature( you.abs_pos() ) );
     }
-    out.push_back( { std::string( utf8_width( out.front().icon ), ' ' ), c_light_gray, second, c_light_gray } );
-    const auto light = get_light_level( character_funcs::fine_detail_vision_mod( you ) );
-    out.push_back( { std::string(), c_light_gray,
-                     string_format( _( "Light: %s" ), light.first ), light.second } );
-    const auto wind = wind_text( you );
-    const auto moon = moon_phase_name( get_moon_phase( calendar::turn ) );
-    out.push_back( { std::string(), c_light_gray,
-                     string_format( _( "Wind: %s  Moon: %s" ), wind.text, moon ), wind.color } );
-    out.push_back( { std::string(), c_light_gray,
-                     string_format( _( "%s, day %d" ),
-                                    calendar::name_season( season_of_year( calendar::turn ) ),
+    out.push_back( { indent, c_light_gray, time_line, c_light_gray } );
+    out.push_back( { indent, c_light_gray,
+                     string_format( _( "%s, day %d" ), calendar::name_season( season_of_year( calendar::turn ) ),
                                     day_of_season<int>( calendar::turn ) + 1 ), c_light_gray } );
+    const auto light = get_light_level( character_funcs::fine_detail_vision_mod( you ) );
+    out.push_back( { indent, c_light_gray, string_format( _( "Light: %s" ), light.first ), light.second } );
+    out.push_back( { indent, c_light_gray,
+                     string_format( _( "Moon: %s" ), moon_phase_name( get_moon_phase( calendar::turn ) ) ),
+                     c_light_gray } );
+    const auto wind = wind_text( you );
+    out.push_back( { indent, c_light_gray, string_format( _( "Wind: %s" ), wind.text ), wind.color } );
     return out;
 }
 

@@ -4,7 +4,7 @@
 #include "panels_utility.h"
 #include "translations.h"
 
-std::string moon_phase_name( const moon_phase phase )
+auto moon_phase_name( const moon_phase phase ) -> std::string
 {
     switch( static_cast<int>( phase ) ) {
         case 0:
