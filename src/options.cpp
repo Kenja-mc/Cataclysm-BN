@@ -1945,6 +1945,11 @@ void options_manager::add_options_interface()
          true
        );
 
+    add( "CRAFTING_PART_CHAINS", interface, translate_marker( "Crafting part chains" ),
+         translate_marker( "If true, the crafting menu marks a missing component you could craft right now and offers to jump to that recipe." ),
+         true
+       );
+
     add( "CONTEXTUAL_INTERACT", interface,
          translate_marker( "Contextual interact" ),
          translate_marker( "If true, Space (interact) does the only sensible adjacent action without asking for a direction, and lists what each direction does when there are several." ),

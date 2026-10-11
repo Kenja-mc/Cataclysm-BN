@@ -10,6 +10,7 @@
 #include "character.h"
 #include "character_functions.h"
 #include "color.h"
+#include "craft_chain.h"
 #include "crafting.h"
 #include "crafting_quality.h"
 #include "cursesdef.h"
@@ -433,9 +434,34 @@ static std::vector<std::string> recipe_info(
     const std::string qry_comps,
     const int batch_size,
     const int fold_width,
-    const nc_color &color )
+    const nc_color &color,
+    const recipe_subset &available_recipes )
 {
     std::ostringstream oss;
+
+    const inventory &crafting_inv = crafter.crafting_inventory();
+    const bool can_craft_this = avail.can_craft;
+    if( !can_craft_this && !recp.is_nested() ) {
+        for( const std::string &line : recp.simple_requirements().blocker_lines(
+                 crafting_inv, recp.get_component_filter(), batch_size ) ) {
+            oss << colorize( line, c_red ) << "\n";
+        }
+        if( !avail.has_all_skills ) {
+            if( !recp.skill_used.is_null()
+                && crafter.get_skill_level( recp.skill_used ) < recp.difficulty ) {
+                oss << string_format(
+                         _( "Needs %s %d (you have %d)\n" ), recp.skill_used.obj().name(),
+                         recp.difficulty, crafter.get_skill_level( recp.skill_used ) );
+            }
+            for( const auto &[ skill, level ] : recp.required_skills ) {
+                if( crafter.get_skill_level( skill ) < level ) {
+                    oss << string_format(
+                             _( "Needs %s %d (you have %d)\n" ), skill.obj().name(), level,
+                             crafter.get_skill_level( skill ) );
+                }
+            }
+        }
+    }
 
     oss << string_format( _( "Primary skill: %s\n" ),
                           recp.primary_skill_string( &crafter, false ) );
@@ -555,7 +581,6 @@ static std::vector<std::string> recipe_info(
                           _( "Reasonable" ) );
 
     std::string nearby_string;
-    const inventory &crafting_inv = crafter.crafting_inventory();
     const int nearby_amount = crafting_inv.count_item( recp.result() );
     if( nearby_amount == 0 ) {
         nearby_string = "<color_light_gray>0</color>";
@@ -567,7 +592,6 @@ static std::vector<std::string> recipe_info(
     }
     oss << string_format( _( "Nearby: %s\n" ), nearby_string );
 
-    const bool can_craft_this = avail.can_craft;
     if( can_craft_this && !avail.can_craft_non_rotten ) {
         oss << _( "<color_red>Will use rotten ingredients</color>\n" );
     }
@@ -606,8 +630,16 @@ static std::vector<std::string> recipe_info(
         const requirement_data &req = recp.simple_requirements();
         const std::vector<std::string> tools = req.get_folded_tools_list(
                 fold_width, color, crafting_inv, batch_size );
+        const auto part_chains = get_option<bool>( "CRAFTING_PART_CHAINS" );
+        const auto query = craft_chain::part_query{
+            .goal = recp, .crafting_inv = crafting_inv, .known_recipes = available_recipes,
+        };
+        const auto can_craft = [&]( const item_comp &comp ) {
+            return part_chains && craft_chain::can_craft_part( query, comp );
+        };
         const std::vector<std::string> comps = req.get_folded_components_list(
-                fold_width, color, crafting_inv, recp.get_component_filter(), batch_size, qry_comps );
+            fold_width, color, crafting_inv, recp.get_component_filter(), batch_size, qry_comps,
+            {}, can_craft );
         result.insert( result.end(), tools.begin(), tools.end() );
         result.insert( result.end(), comps.begin(), comps.end() );
     }
@@ -663,6 +695,7 @@ static input_context make_crafting_context( bool highlight_unread_recipes )
     ctxt.register_action( "HIDE_SHOW_RECIPE" );
     ctxt.register_action( "COMPARE" );
     ctxt.register_action( "TOGGLE_UNAVAILABLE" );
+    ctxt.register_action( "CRAFT_PARTS", to_translation( "Craft parts first" ) );
     ctxt.register_action( "ASSIGN_NPC_CRAFT", to_translation( "Assign nearest NPC to craft" ) );
     if( highlight_unread_recipes ) {
         ctxt.register_action( "TOGGLE_RECIPE_UNREAD" );
@@ -692,7 +725,8 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
             const std::string qry_comps,
             const int batch_size,
             const int fold_width,
-            const nc_color & color
+            const nc_color & color,
+            const recipe_subset & available_recipes
     ) -> const std::vector<std::string> & { // *NOPAD*
         if( recipe_info_cache.recp != &recp
             || recipe_info_cache.qry_comps != qry_comps
@@ -704,7 +738,8 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
             recipe_info_cache.batch_size = batch_size;
             recipe_info_cache.fold_width = fold_width;
             recipe_info_cache.text = recipe_info(
-                recp, avail, crafter, show_unavailable, qry_comps, batch_size, fold_width, color );
+                recp, avail, crafter, show_unavailable, qry_comps, batch_size, fold_width,
+                color, available_recipes );
         }
         return recipe_info_cache.text;
     };
@@ -782,6 +817,11 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
     std::vector<std::string> keybinding_tips;
     int keybinding_x = 0;
     ui_adaptor ui;
+    // Recomputed from the input loop when the selection changes, so the key hints below can
+    // mention CRAFT_PARTS only while it can do something.
+    const recipe *parts_hint_for = nullptr;
+    bool parts_hint_available = false;
+
     ui.on_screen_resize( [&]( ui_adaptor & ui ) {
         const int freeWidth = TERMX - FULL_SCREEN_WIDTH;
         isWide = ( TERMX > FULL_SCREEN_WIDTH && freeWidth > 15 );
@@ -821,6 +861,9 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
         add_action_desc( "CYCLE_BATCH", pgettext( "crafting gui", "Batch" ) );
         add_action_desc( "COMPARE", pgettext( "crafting gui", "Compare" ) );
         add_action_desc( "TOGGLE_UNAVAILABLE", pgettext( "crafting gui", "Show unavailable" ) );
+        if( get_option<bool>( "CRAFTING_PART_CHAINS" ) && parts_hint_available ) {
+            add_action_desc( "CRAFT_PARTS", pgettext( "crafting gui", "Craft parts first" ) );
+        }
         add_action_desc( "HELP_KEYBINDINGS", pgettext( "crafting gui", "Keybindings" ) );
         keybinding_x = isWide ? 5 : 2;
         keybinding_tips = foldstring( enumerate_as_string( act_descs, enumeration_conjunction::none ),
@@ -1030,7 +1073,8 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
                 }
 
                 const std::vector<std::string> &info = cached_recipe_info(
-                        recp, avail, crafter, show_unavailable, qry_comps, batch_size, fold_width, color );
+                        recp, avail, crafter, show_unavailable, qry_comps, batch_size, fold_width,
+                        color, available_recipes );
 
                 const int total_lines = info.size();
                 if( recipe_info_scroll < 0 ) {
@@ -1112,16 +1156,17 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
         }
     } );
 
+    const recipe *jump_to = nullptr;
     do {
         const auto &shown_recipes = show_unavailable ? all_recipes : available_recipes;
         if( recalc ) {
             // When we switch tabs, redraw the header
             recalc = false;
-            const recipe *prev_rcp = nullptr;
-            if( keepline && line >= 0 && static_cast<size_t>( line ) < current.size() ) {
+            const recipe *prev_rcp = jump_to;
+            if( prev_rcp == nullptr && keepline && line >= 0
+                && static_cast<size_t>( line ) < current.size() ) {
                 prev_rcp = current[line];
             }
-
             show_hidden = false;
             available.clear();
 
@@ -1420,7 +1465,7 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
             }
 
             line = 0;
-            if( keepline && prev_rcp ) {
+            if( prev_rcp ) {
                 // point to previously selected recipe
                 int rcp_idx = 0;
                 for( const recipe *const rcp : current ) {
@@ -1431,6 +1476,7 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
                     ++rcp_idx;
                 }
             }
+            jump_to = nullptr;
         }
         keepline = false;
 
@@ -1758,6 +1804,7 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
                 keepline = true;
             }
             recalc = true;
+            parts_hint_for = nullptr;
         } else if( action == "TOGGLE_FAVORITE" ) {
             keepline = true;
             recalc = filterstring.empty() && subtab.cur() == "CSC_*_FAVORITE";
@@ -1880,11 +1927,49 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
 
             recalc = true;
             recalc_unread = highlight_unread_recipes;
+        } else if( action == "CRAFT_PARTS" ) {
+            if( current.empty() || !get_option<bool>( "CRAFTING_PART_CHAINS" ) ) {
+                continue;
+            }
+            const auto *part = craft_chain::find_part_recipe( {
+                .goal = *current[line], .crafting_inv = crafter.crafting_inventory(),
+                .known_recipes = available_recipes, .goal_batch = batch ? line + 1 : 1,
+            } );
+            if( part == nullptr ) {
+                popup( _( "No craftable parts for that recipe." ) );
+                continue;
+            }
+            if( uistate.hidden_recipes.contains( part->ident() ) ) {
+                popup( _( "That recipe is hidden, so it cannot be shown here." ) );
+                continue;
+            }
+            // Leaving batch mode keeps the menu's single-selection semantics.
+            batch = false;
+            // Filter to the part and select it, the same way RELATED_RECIPES moves the cursor.
+            filterstring = part->result_name();
+            recalc_unread = highlight_unread_recipes;
+            jump_to = part;
+            recalc = true;
         }
         if( line < 0 ) {
             line = current.size() - 1;
         } else if( line >= static_cast<int>( current.size() ) ) {
             line = 0;
+        }
+
+        // Refresh the "craft parts" hint; its text is only built on resize.
+        const recipe *const hovered = !current.empty() && line >= 0 ? current[line] : nullptr;
+        if( hovered != parts_hint_for ) {
+            parts_hint_for = hovered;
+            const bool wanted = hovered != nullptr && get_option<bool>( "CRAFTING_PART_CHAINS" )
+                                && craft_chain::find_part_recipe( {
+                .goal = *hovered, .crafting_inv = crafter.crafting_inventory(),
+                .known_recipes = available_recipes, .goal_batch = batch ? line + 1 : 1,
+            } ) != nullptr;
+            if( wanted != parts_hint_available ) {
+                parts_hint_available = wanted;
+                ui.mark_resize();
+            }
         }
     } while( !done );
 
