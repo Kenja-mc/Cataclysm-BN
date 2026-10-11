@@ -25,6 +25,12 @@ start while a hostile is in view, it stops like any other auto-travel (danger, o
 when nothing unexplored is left nearby it says "Nothing left to explore nearby." The classic scheme
 gives it no key; bind one yourself, or pick it from the Enter action menu, which lists every action.
 
+**Smart safe mode** (Options → Interface, on by default): safe mode, the "spotted" interruption and
+auto-explore ignore a hostile that cannot get to you soon: one that is fleeing, one that cannot move
+and is not next to you, or one with no walking route to you within twice the safe-mode distance (a
+zombie behind a fence or in a locked room). A monster with a ranged or leaping attack, such as a
+turret or a spitter, always counts, and so does anything next to you.
+
 The welcome card also mentions click-to-walk, and a first tip suggests a starter goal: find water,
 food and a weapon, because houses usually have all three.
 
@@ -64,7 +70,10 @@ Walking into a closed door still opens it.
 - Turn it off under Options → Interface → Mouse tile selection to get the old two-click travel back.
 
 When aiming: `f`/Enter fires, `x` aims one step, `u` `i` `o` pick aimed, careful or precise shots
-(more care, left to right), `r` switches ammo, `F` or `m` switches fire mode.
+(more care, left to right), `r` switches ammo, `F` or `m` switches fire mode. With **smarter
+targeting** (Options → Interface, on by default), aiming starts on a hostile that is next to you or
+already hunting you, targets behind an ally come last, and the aim panel says "Ally in the line of
+fire: …" when someone friendly stands in the way.
 
 On the overmap: `=`/`-` zoom, `R` toggles weather, `x` sets a waypoint. In the tiles version's
 main view the mouse wheel zooms and `Ctrl+N` toggles the pixel minimap, because their upstream keys
@@ -90,6 +99,17 @@ key set back to its upstream default. A file saved by an older version, without 
 every key: entries in it that only repeat upstream's default are ignored, so it cannot undo the
 scheme.
 
+**Contextual interact** (Options → Interface → Contextual interact, on by default in the modern
+scheme): when you press Space and only one adjacent tile has a sensible non-combat action (open or
+close a door, pick up items, examine furniture), it does that action without asking for a
+direction. When several tiles have actions, the direction prompt lists what each direction would do
+("East: open the closed wood door"). It never auto-attacks. The use menu (`u`) opens on the item
+you used last.
+
+**Stances**, as in Quasimorph: in the modern scheme `F2` toggles running, `F3` crouching and `F4`
+lying prone; the weapon box shows the stance you are in (walking, running, crouching, prone). `"`
+opens the movement mode menu in both schemes.
+
 Your first new game opens with a short welcome card listing these keys (Options → Interface →
 Show welcome card brings it back). Like Caves of Qud's Classic and Roleplay modes, it then asks how
 death works: _Permadeath_ (the default) or _Roleplay_, which offers to reload your last save when
@@ -109,6 +129,9 @@ prompts with Y and N makes `y`/`n` answer at once instead; the classic control s
 
 ## Look
 
+The terminal version stays pure text. The tiles version adds effects that only make sense with
+pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
+
 - **Color theme** (Options → Graphics). The default, _Terminal_, takes your terminal's palette and
   background, so the game follows whatever theme your desktop uses (Omarchy, base16, pywal and so
   on). _Tokyo Night_, _Catppuccin_, _Gruvbox_ and _Everforest_ are built in for terminals that
@@ -122,6 +145,23 @@ prompts with Y and N makes `y`/`n` answer at once instead; the classic control s
   Borders are drawn as real Unicode in UTF-8 terminals, which many terminals render better than the
   old line-drawing character set. Map walls keep square corners.
 - Quieter main menu and a clearer pick-up list.
+- **Status effect animations** (tiles view only). Every creature in sight — you, NPCs, monsters —
+  carries a small looping overlay for a state it is in: a blood drip that falls down while it
+  bleeds, flames while it burns, a poison icon while it is poisoned or sick, the dizzy stars and
+  spiral while it is stunned or dazed, a bobbing "zz" while it sleeps, and a snowflake while it
+  is cold. Monsters never got these; the overlays are the ones the tileset already draws on
+  characters, with the loops taken from the wall clock, so they move even while you stand still.
+  Options → Graphics → Status effect animations turns them off.
+- **Fading sound markers**: the `?` for a sound you heard but cannot see stays for a few turns and
+  dims as it ages, so you can see where noises came from (Options → Interface → Sound marker turns;
+  1 gives the upstream behaviour, where it vanishes after your next action).
+- **Fuller default tileset**: 12 sprites the bundled tileset lacked (atlatl, sewing machine,
+  concrete ramps, treetops and others) come from the CDDA tilesets (CC-BY-SA 3.0, credits in
+  `gfx/MSX++UnDeadPeopleEdition/fork_fill_CREDITS.md`).
+- **Overhaul soundpack**, the default when the Otopack is not installed: footsteps, melee swings
+  and hits, bullet impacts, reloads, bites, bionic zaps, menus and vehicle doors from Kenney's CC0
+  packs. Gunshots, deaths and ambience stay silent rather than use a sound that does not fit.
+  Sources in `data/sound/Overhaul/CREDITS.md`.
 
 - **Weather and weapon boxes** (terminal view) sit in the map's top-left corner: the weather with an icon, the time
   (exact with a watch) and the temperature (with a thermometer); and what you fight with, its ammo
@@ -165,6 +205,10 @@ that is optional:
   is kept and the emptied copies go away. Duct tape, thread and other counted items already stack.
 - The crafting menu's full-description search (`d:`) remembers each recipe's description for the
   turn, so refining a search no longer rebuilds every item (from CDDA #77914).
+- **Crafting part chains**: the recipe panel starts with what is missing ("Missing: long string
+  (6)"). A missing component you could craft right now from what you have is tagged "(can make)",
+  and `p` (modern scheme) jumps to that part's recipe. Options → Interface → Crafting part chains
+  turns the tag and the key off.
 
 - **Fewer battery types.** The light-minus, high-capacity and disposable variants are folded into
   three cells: light (150 charge), medium (750) and heavy (1500). Atomic cells stay as the rare

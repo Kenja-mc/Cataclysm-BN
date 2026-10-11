@@ -4,6 +4,36 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-11
+
+### Added
+
+- **Smart safe mode**: safe mode, the "spotted" interruption and auto-explore ignore hostiles that
+  cannot reach you soon (fleeing, immobile and not adjacent, or with no walking route). Ranged and
+  leaping attackers always count.
+- **Smarter targeting**: aiming starts on the hostile next to you or hunting you, ranks targets
+  behind an ally last and warns "Ally in the line of fire".
+- **Stances**: `F2` run, `F3` crouch, `F4` prone in the modern scheme; the weapon box shows the
+  stance.
+- **Contextual interact**: Space does the only sensible action next to you without asking for a
+  direction, and lists what each direction does when there are several. `u` opens on the item you
+  used last.
+- **Crafting part chains**: the recipe panel starts with what is missing, tags a missing part you
+  can craft now "(can make)" and `p` (modern scheme) jumps to its recipe.
+- **Fading sound markers**: the `?` of an unseen sound stays for a few turns and dims (Options →
+  Interface → Sound marker turns).
+- **Status effect animations** in the tiles version: creatures in view carry a small looping
+  overlay for what they are going through — a blood drip that falls, flames, a poison icon, the
+  dizzy stars and spiral, a bobbing "zz", a snowflake. Monsters get them too, which they never
+  had. Options → Graphics → Status effect animations turns it off.
+- 12 sprites the default tileset lacked, from the CDDA tilesets (CC-BY-SA 3.0).
+- The **Overhaul soundpack** (Kenney, CC0) for footsteps, melee, impacts, reloads, menus and
+  vehicle doors; the Otopack stays the default when it is installed.
+
+### Fixed
+
+- The item action menu no longer opens empty after saying you have no usable items.
+
 ## 2026-10-10
 
 ### Added
