@@ -12,6 +12,8 @@ Upstream's own changes are in `docs/en/game/changelog`.
   and aircraft takeoff speed in the same corner-box style as weather and combat. It appears aboard
   a vehicle or during remote control, starts at the bottom right, and replaces the duplicate Vehicle
   sidebar panel. Options → Interface → Vehicle box chooses another corner or restores the old panel.
+- **Pixel minimap zoom**: 1x, 2x or 4x, independent of the main map. The optional **Pixel minimap
+  item markers** setting shows perceived loot in gold, without revealing hidden or sealed items.
 - **Monster health bars** (tiles): a small bar under every hurt monster in view, as fuzzy as the
   look-around list shows it. Options → Graphics → Monster health bars turns it off.
 - **Enemy edge arrows**: a hostile you can see that sits outside the map window gets an arrow at the

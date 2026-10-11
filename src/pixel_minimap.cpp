@@ -624,10 +624,10 @@ auto pixel_minimap::render_items( const tripoint_bub_ms &center ) -> void
                 continue;
             }
             const auto tile_pos = projector->get_tile_pos( { x, y }, view_tiles_count );
-            const auto marker_rect = SDL_Rect{
-                .x = tile_pos.x + ( tile_size.x - marker_size ) / 2,
-                .y = tile_pos.y + ( tile_size.y - marker_size ) / 2,
-                .w = marker_size, .h = marker_size
+            const auto marker_rect = SDL_FRect{
+                .x = static_cast<float>( tile_pos.x + ( tile_size.x - marker_size ) / 2 ),
+                .y = static_cast<float>( tile_pos.y + ( tile_size.y - marker_size ) / 2 ),
+                .w = static_cast<float>( marker_size ), .h = static_cast<float>( marker_size )
             };
             RenderFillRect( renderer, &marker_rect );
         }

@@ -173,6 +173,9 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   hostile is hunting you, one cell in when it is only trailing. Only hostiles you can already see
   get an arrow, so it shows nothing new about the world, only where to look. Options → Interface →
   Enemy edge arrows turns it off.
+- **Pixel minimap zoom** (tiles): choose 1x, 2x or 4x under Options → Graphics without changing
+  the main map's zoom. **Pixel minimap item markers**, off by default, adds gold dots for loot you
+  can currently see. Items behind walls or inside sealed furniture do not get markers.
 - **Fuller default tileset**: 12 sprites the bundled tileset lacked (atlatl, sewing machine,
   concrete ramps, treetops and others) come from the CDDA tilesets (CC-BY-SA 3.0, credits in
   `gfx/MSX++UnDeadPeopleEdition/fork_fill_CREDITS.md`).
