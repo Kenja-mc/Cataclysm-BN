@@ -107,8 +107,6 @@ auto group_threatens( const auto &mons, avatar &you ) -> bool
     }
     auto need_route = std::array<const monster *, max_route_searches> {};
     auto route_count = 0;
-    auto unexamined = false;
-    const auto distance = [&]( const monster * mon ) { return rl_dist( you.bub_pos(), mon->bub_pos() ); };
     for( const auto *mon : mons ) {
         const auto answer = answer_without_route( *mon, you );
         if( answer == true ) {
@@ -117,20 +115,15 @@ auto group_threatens( const auto &mons, avatar &you ) -> bool
         if( answer ) {
             continue;
         }
-        if( route_count < max_route_searches ) {
-            need_route[route_count++] = mon;
-        } else {
-            unexamined = true;
-            const auto farthest = std::ranges::max_element( need_route, std::less{}, distance );
-            if( distance( mon ) < distance( *farthest ) ) {
-                *farthest = mon;
-            }
+        if( route_count == max_route_searches ) {
+            return true;
         }
+        need_route[route_count++] = mon;
     }
     const auto candidates = need_route | std::views::take( route_count );
     return std::ranges::any_of( candidates, [&]( const monster * mon ) {
         return route_reaches( *mon, you, proximity() );
-    } ) || unexamined;
+    } );
 }
 
 } // namespace
