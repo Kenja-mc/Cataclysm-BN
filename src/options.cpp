@@ -1972,7 +1972,7 @@ void options_manager::add_options_interface()
        );
 
     add( "HUD_WEATHER_BOX", interface, translate_marker( "Weather box" ),
-         translate_marker( "A small box on the map showing the weather, the time and, with a thermometer, the temperature." ),
+         translate_marker( "A small box on the map showing the environment: weather, time, light, wind, moon phase, season and, with a thermometer, the temperature.  The Location sidebar panel skips these while the box is on." ),
     {
         { "top_left", translate_marker( "Top left" ) }, { "top_right", translate_marker( "Top right" ) },
         { "bottom_left", translate_marker( "Bottom left" ) }, { "bottom_right", translate_marker( "Bottom right" ) },

@@ -37,9 +37,9 @@
 #include "overmap/overmap.h"
 #include "overmap/overmap_ui.h"
 #include "overmap/overmapbuffer.h"
+#include "overmap/overmapbuffer_registry.h"
 #include "panels_utility.h"
 #include "path_info.h"
-#include "player.h"
 #include "pldata.h"
 #include "point.h"
 #include "sounds.h"
@@ -380,6 +380,7 @@ window_panel::window_panel( std::function<void( avatar &, const catacurses::wind
     default_toggle = default_toggle_;
     always_draw = force_draw;
     render = std::move( render_func );
+    height_override = nullptr;
 }
 
 // ====================================
@@ -412,6 +413,9 @@ static std::pair<nc_color, std::string> per_string( const avatar &p )
 
 int window_panel::get_height() const
 {
+    if( height_override ) {
+        return height_override();
+    }
     if( height != -1 ) {
         return height;
     } else if( pixel_minimap_option ) {
@@ -425,6 +429,10 @@ int window_panel::get_height() const
 int window_panel::get_width() const
 {
     return width;
+}
+void window_panel::set_height_override( std::function<int()> override )
+{
+    height_override = std::move( override );
 }
 
 std::string window_panel::get_name() const
@@ -597,29 +605,7 @@ static std::string get_moon_graphic()
 
 static std::string get_moon()
 {
-    const int iPhase = static_cast<int>( get_moon_phase( calendar::turn ) );
-    switch( iPhase ) {
-        case 0:
-            return _( "New moon" );
-        case 1:
-            return _( "Waxing crescent" );
-        case 2:
-            return _( "Half moon" );
-        case 3:
-            return _( "Waxing gibbous" );
-        case 4:
-            return _( "Full moon" );
-        case 5:
-            return _( "Waning gibbous" );
-        case 6:
-            return _( "Half moon" );
-        case 7:
-            return _( "Waning crescent" );
-        case 8:
-            return _( "Dark moon" );
-        default:
-            return "";
-    }
+    return moon_phase_name( get_moon_phase( calendar::turn ) );
 }
 
 static std::string time_approx()
@@ -1582,6 +1568,12 @@ static void draw_stat_wide( avatar &u, const catacurses::window &w )
     wnoutrefresh( w );
 }
 
+/// The weather box shows the environment facts; the Location panel drops them while it is on.
+static bool weather_box_on()
+{
+    return get_option<std::string>( "HUD_WEATHER_BOX" ) != "off";
+}
+
 static void draw_loc_labels( const avatar &u, const catacurses::window &w, bool minimap )
 {
     werase( w );
@@ -1601,6 +1593,10 @@ static void draw_loc_labels( const avatar &u, const catacurses::window &w, bool 
                                             u.abs_omt_pos().z() ) );
     } else {
         wprintz( w, c_white, string_format( "%d, %d, %d", coord.x(), coord.y(), coord.z() ) );
+    }
+    if( weather_box_on() ) {
+        wnoutrefresh( w );
+        return;
     }
 
     // display weather
@@ -2491,7 +2487,9 @@ static std::vector<window_panel> initialize_default_label_narrow_panels()
                       spell_panel );
     ret.emplace_back( draw_stat_narrow, translate_marker( "Stats" ), 3, 32, true );
     ret.emplace_back( draw_veh_padding, translate_marker( "Vehicle" ), 2, 32, true, veh_panel );
-    ret.emplace_back( draw_loc_narrow, translate_marker( "Location" ), 6, 32, true );
+    auto loc = window_panel( draw_loc_narrow, translate_marker( "Location" ), 6, 32, true );
+    loc.set_height_override( []() { return weather_box_on() ? 2 : 6; } );
+    ret.push_back( std::move( loc ) );
     ret.emplace_back( draw_wind, translate_marker( "Wind" ), 1, 32, false );
     ret.emplace_back( draw_weapon_labels, translate_marker( "Weapon" ), 2, 32, true );
     ret.emplace_back( draw_weightvolume_narrow, translate_marker( "Wgt/Vol" ), 2, 32,
@@ -2530,7 +2528,9 @@ static std::vector<window_panel> initialize_default_label_panels()
                       spell_panel );
     ret.emplace_back( draw_stat_wide, translate_marker( "Stats" ), 2, 44, true );
     ret.emplace_back( draw_veh_padding, translate_marker( "Vehicle" ), 2, 44, true, veh_panel );
-    ret.emplace_back( draw_loc_wide_map, translate_marker( "Location" ), 6, 44, true );
+    auto loc = window_panel( draw_loc_wide_map, translate_marker( "Location" ), 6, 44, true );
+    loc.set_height_override( []() { return weather_box_on() ? 2 : 6; } );
+    ret.push_back( std::move( loc ) );
     ret.emplace_back( draw_wind, translate_marker( "Wind" ), 1, 44, false );
     ret.emplace_back( draw_loc_wide, translate_marker( "Location Alt" ), 6, 44, false );
     ret.emplace_back( draw_weapon_labels, translate_marker( "Weapon" ), 2, 44, true );
