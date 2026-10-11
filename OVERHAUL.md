@@ -157,6 +157,12 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 - **Fading sound markers**: the `?` for a sound you heard but cannot see stays for a few turns and
   dims as it ages, so you can see where noises came from (Options → Interface → Sound marker turns;
   1 gives the upstream behaviour, where it vanishes after your next action).
+- **Enemy edge arrows**: when a hostile you can see is outside the map window — the view is offset
+  or zoomed, or it is simply past the edge — an arrow at the edge of the view points at it, red when
+  it can reach you soon and yellow when it cannot. The arrow sits on the edge itself when the
+  hostile is hunting you, one cell in when it is only trailing. Only hostiles you can already see
+  get an arrow, so it shows nothing new about the world, only where to look. Options → Interface →
+  Enemy edge arrows turns it off.
 - **Fuller default tileset**: 12 sprites the bundled tileset lacked (atlatl, sewing machine,
   concrete ramps, treetops and others) come from the CDDA tilesets (CC-BY-SA 3.0, credits in
   `gfx/MSX++UnDeadPeopleEdition/fork_fill_CREDITS.md`).

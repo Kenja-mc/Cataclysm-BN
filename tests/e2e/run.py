@@ -764,12 +764,52 @@ def test_contextual_interact_multiple_doors(g):
     g.keys("Escape", delay=0.5)
 
 
+def test_enemy_edge_arrows(g):
+    """A hostile you can see but that sits outside the map window gets an edge arrow."""
+    edge = Game(name="bn-e2e-edge", cols=80, rows=24, options={"SAFEMODE": "false"})
+    try:
+        start_new_game(edge)
+        edge.define_lua(HELPERS)
+        arena(edge)
+        # A straight corridor east: the zombie stays visible but out of the map window.
+        edge.lua("for dx=6,60 do for dy=-1,1 do M:set_ter_at(here(dx,dy), TerId.new('t_floor'):int_id()) "
+                 "M:set_furn_at(here(dx,dy), FurnId.new('f_null'):int_id()) end end "
+                 "gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(30,0)) out('ok')")
+        settle(edge)
+        screen = edge.screen()
+        arrows = ("\u2192", "\u2197", "\u2198")
+        assert any(a in screen for a in arrows), "no east arrow for the off-screen zombie:\n" + screen
+        # Yellow, not red: it can walk to the player but not within safe-mode distance.
+        row = next((l for l in edge.screen_colors().splitlines() if any(a in l for a in arrows)), None)
+        assert row is not None, edge.screen_colors()
+        assert "38;5;3" in row or "38;5;11" in row, "yellow arrow expected, got:\n" + row
+    finally:
+        edge.close()
+
+
+def test_enemy_edge_arrows_off(g):
+    """The option puts the plain map back."""
+    edge = Game(name="bn-e2e-edge-off", cols=80, rows=24,
+                options={"SAFEMODE": "false", "ENEMY_EDGE_ARROWS": "false"})
+    try:
+        start_new_game(edge)
+        edge.define_lua(HELPERS)
+        arena(edge)
+        edge.lua("for dx=6,60 do for dy=-1,1 do M:set_ter_at(here(dx,dy), TerId.new('t_floor'):int_id()) "
+                 "M:set_furn_at(here(dx,dy), FurnId.new('f_null'):int_id()) end end "
+                 "gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(30,0)) out('ok')")
+        settle(edge)
+        assert not any(a in edge.screen() for a in ("\u2192", "\u2197", "\u2198")), edge.screen()
+    finally:
+        edge.close()
+
+
 TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_auto_explore, test_first_time_tip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
          test_hud_boxes, test_body_panel, test_readable_map_glyphs, test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content, test_craft_parts_chain,
          test_aim_defaults, test_sound_marker_fading, test_smart_targeting, test_stance_toggle, test_contextual_interact_single_door, test_contextual_interact_multiple_doors,
          test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions, test_right_click_pick_runs_the_action,
          test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_old_full_keybindings_file, test_hud_box_options, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
-         test_smart_safe_mode]
+         test_smart_safe_mode, test_enemy_edge_arrows, test_enemy_edge_arrows_off]
 
 
 def main():
