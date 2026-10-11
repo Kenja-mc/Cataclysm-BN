@@ -35771,6 +35771,25 @@
         { "offset": 3584, "bold": true, "color": "MAGENTA" },
         { "offset": 3840, "bold": true, "color": "YELLOW" }
       ]
+    },
+    {
+      "file": "fork_fill.png",
+      "sprite_width": 32,
+      "sprite_height": 32,
+      "tiles": [
+        { "id": "atlatl", "fg": 23832 },
+        { "id": "sewing_machine", "fg": 23833 },
+        { "id": "bionic_general", "fg": 23834 },
+        { "id": "t_concrete_ramp_down_high", "fg": 23836 },
+        { "id": "t_concrete_ramp_down_low", "fg": 23837 },
+        { "id": "t_concrete_ramp_up_high", "fg": 23838 },
+        { "id": "t_concrete_ramp_up_low", "fg": 23839 },
+        { "id": "lighthouse_z3", "fg": 23840 },
+        { "id": "t_treetop", "fg": 23848 },
+        { "id": "t_treetop_dead", "fg": 23849 },
+        { "id": "t_treetop_evergreen", "fg": 23850 },
+        { "id": "t_nether_glass_floor", "fg": 23851 }
+      ]
     }
   ]
 }
