@@ -11,7 +11,11 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def find_binary():
-    for candidate in (ROOT / "cataclysm-bn", ROOT / "build" / "src" / "cataclysm-bn"):
+    for candidate in (
+        ROOT / "out/build/linux-curses/src/cataclysm-bn",
+        ROOT / "cataclysm-bn",
+        ROOT / "build/src/cataclysm-bn",
+    ):
         if candidate.exists():
             return candidate
     raise SystemExit("cataclysm-bn binary not found; build the curses target first")
@@ -29,7 +33,13 @@ class Game:
         if keybindings:
             (config / "keybindings.json").write_text((ROOT / keybindings).read_text())
         subprocess.run(["tmux", "kill-session", "-t", name], stderr=subprocess.DEVNULL)
-        cmd = f"cd {ROOT} && LANG=C.UTF-8 LC_ALL=C.UTF-8 TERM=xterm-256color {os.environ.get('GAME_WRAPPER', '')} {find_binary()} --basepath {ROOT}/ --userdir {self.userdir}/"
+        # Wiki and guide keys open a URL; a stub opener keeps the browser off the desktop.
+        stub_bin = self.userdir / "bin"
+        stub_bin.mkdir(exist_ok=True)
+        (stub_bin / "xdg-open").write_text("#!/bin/sh\nexit 0\n")
+        (stub_bin / "xdg-open").chmod(0o755)
+        env = f"PATH={stub_bin}:$PATH BROWSER=true LANG=C.UTF-8 LC_ALL=C.UTF-8 TERM=xterm-256color"
+        cmd = f"cd {ROOT} && env -u DISPLAY -u WAYLAND_DISPLAY {env} {os.environ.get('GAME_WRAPPER', '')} {find_binary()} --basepath {ROOT}/ --userdir {self.userdir}/"
         subprocess.run(["tmux", "new-session", "-d", "-s", name, "-x", str(cols), "-y", str(rows), cmd], check=True)
 
     def screen(self):

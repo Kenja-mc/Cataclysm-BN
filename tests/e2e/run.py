@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """End-to-end checks for the overhaul, played through the real curses binary in tmux."""
+import json
 import re
 import sys
 import time
 import traceback
 from pathlib import Path
 
-from tmux_game import Game, start_new_game
+from tmux_game import ROOT, Game, start_new_game
 
 from helpers import *
 
@@ -444,6 +445,31 @@ def test_mre_unpacks_its_entree(g):
     assert count_carried(g, "mre_ration") == 0
 
 
+def keys_by_category(files):
+    """Category -> key -> actions bound to it, later files replacing an action's bindings."""
+    actions = {}
+    for path in files:
+        for entry in json.loads(Path(path).read_text()):
+            if entry.get("type") == "keybinding":
+                actions[(entry.get("category", "default"), entry["id"])] = [
+                    k for b in entry.get("bindings", []) if b.get("input_method") == "keyboard"
+                    for k in (b["key"] if isinstance(b["key"], list) else [b["key"]])]
+    by_category = {}
+    for (category, action), keys in actions.items():
+        for key in keys:
+            by_category.setdefault(category, {}).setdefault(key, set()).add(action)
+    return by_category
+
+
+def test_modern_scheme_adds_no_menu_key_clashes(g):
+    """No menu gets a key the modern scheme binds to two of its actions; upstream's own pairs stay."""
+    base = sorted(str(p) for p in (ROOT / "data/raw/keybindings").glob("*.json"))
+    clashes = lambda files: {(c, k, frozenset(a)) for c, keys in keys_by_category(files).items()
+                             for k, a in keys.items() if len(a) > 1}
+    new = clashes(base + [str(ROOT / "data/raw/control_schemes/modern.json")]) - clashes(base)
+    assert not new, "\n".join(f"{c}: {k} -> {sorted(a)}" for c, k, a in sorted(new, key=str))
+
+
 def test_classic_control_scheme(g):
     """Options → Control scheme → Classic brings back vi-keys and bump attacks."""
     classic = Game(name="bn-e2e-classic", options={"SAFEMODE": "false", "CONTROL_SCHEME": "classic"})
@@ -762,7 +788,6 @@ def test_smart_safe_mode(g):
     finally:
         smart.close()
 
-
 def test_contextual_interact_single_door(g):
     """Space opens a single adjacent closed door without asking for a direction."""
     arena(g)
@@ -843,7 +868,7 @@ TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_au
          test_hud_boxes, test_body_panel, test_readable_map_glyphs, test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content, test_craft_parts_chain,
          test_aim_defaults, test_sound_marker_fading, test_smart_targeting, test_stance_toggle, test_contextual_interact_single_door, test_contextual_interact_multiple_doors,
          test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions, test_right_click_pick_runs_the_action,
-         test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_old_full_keybindings_file, test_hud_box_options, test_boxes_replace_sidebar_rows, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
+         test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_modern_scheme_adds_no_menu_key_clashes, test_old_full_keybindings_file, test_hud_box_options, test_boxes_replace_sidebar_rows, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
          test_smart_safe_mode, test_enemy_edge_arrows, test_enemy_edge_arrows_off]
 
 
