@@ -172,7 +172,8 @@ static item *inv_internal( player &u, const inventory_selector_preset &preset,
                            const std::string &title, int radius,
                            const std::string &none_message,
                            const std::string &hint = std::string(),
-                           bool include_fake_items = false )
+                           bool include_fake_items = false,
+                           const std::optional<itype_id> &preselect = std::nullopt )
 {
     inventory_pick_selector inv_s( u, preset );
 
@@ -231,6 +232,9 @@ static item *inv_internal( player &u, const inventory_selector_preset &preset,
         }
         init_selection = false;
         has_init_type = false;
+        if( preselect ) {
+            inv_s.select_item_type( *preselect );
+        }
 
         if( inv_s.empty() ) {
             const std::string msg = none_message.empty()
@@ -919,12 +923,12 @@ class activatable_inventory_preset : public pickup_inventory_preset
         const player &p;
 };
 
-item *game_menus::inv::use( avatar &you )
+item *game_menus::inv::use( avatar &you, const std::optional<itype_id> &preselect )
 {
     return inv_internal( you, activatable_inventory_preset( you ),
                          _( "Use item" ), 1,
                          _( "You don't have any items you can use." ),
-                         std::string(), true );
+                         std::string(), true, preselect );
 }
 
 class gunmod_inventory_preset : public inventory_selector_preset

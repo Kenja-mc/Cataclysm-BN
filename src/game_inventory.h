@@ -80,7 +80,7 @@ item *read( player &pl );
 /** Menu for stealing stuff. */
 item *steal( avatar &you, player &victim );
 /** Item activation menu. */
-item *use( avatar &you );
+item *use( avatar &you, const std::optional<itype_id> &preselect = std::nullopt );
 /** Item wielding/unwielding menu. */
 item *wield( avatar &you );
 /** Item wielding/unwielding menu. */
