@@ -8,9 +8,10 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Added
 
-- **Smart safe mode**: safe mode, the "spotted" interruption and auto-explore ignore hostiles that
-  cannot reach you soon (fleeing, immobile and not adjacent, or with no walking route). Ranged and
-  leaping attackers always count.
+- **Smart safe mode**: safe mode, the "spotted" interruption, noise interruptions and auto-explore
+  ignore hostiles that cannot reach you soon (fleeing, immobile and not adjacent, or with no route;
+  doors they can smash count as open). Ranged and leaping attackers always count; noises from
+  monsters that are not hostile never interrupt.
 - **Smarter targeting**: aiming starts on the hostile next to you or hunting you, ranks targets
   behind an ally last and warns "Ally in the line of fire".
 - **Stances**: `F2` run, `F3` crouch, `F4` prone in the modern scheme; the weapon box shows the

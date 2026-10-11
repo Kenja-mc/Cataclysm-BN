@@ -35,9 +35,11 @@ namespace smart_safemode
 
 auto threatens( const monster &mon, avatar &you ) -> bool
 {
-    if( !get_option<bool>( "SMART_SAFEMODE" ) ) {
-        return true;
-    }
+    return !get_option<bool>( "SMART_SAFEMODE" ) || can_reach_soon( mon, you );
+}
+
+auto can_reach_soon( const monster &mon, avatar &you ) -> bool
+{
     if( mon.is_fleeing( you ) ) {
         return false;
     }
