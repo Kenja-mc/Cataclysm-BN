@@ -4,6 +4,7 @@
 #include "avatar.h"
 #include "avatar_action.h"
 #include "avatar_functions.h"
+#include "combine_items.h"
 #include "crafting.h"
 #include "game_inventory.h"
 #include "input.h"
@@ -210,6 +211,13 @@ bool run(
         salvage::prompt_salvage_single( you, itm );
         return true;
     } );
+
+    if( combine_items::is_eligible( itm ) && !combine_items::partners( you, itm ).empty() ) {
+        add_entry( "COMBINE", hint_rating::good, [&]() {
+            combine_items::combine( you, itm );
+            return true;
+        } );
+    }
 
     add_entry( "DISASSEMBLE", rate_action_disassemble( you, itm ), [&]() {
         crafting::disassemble( you, itm );
