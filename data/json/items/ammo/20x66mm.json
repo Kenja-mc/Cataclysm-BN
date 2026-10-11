@@ -1,6 +1,7 @@
 [
   {
     "id": "20x66_beanbag",
+    "ascii_picture": "20x66_beanbag",
     "copy-from": "20x66_shot_abstract",
     "type": "AMMO",
     "name": { "str": "20x66mm beanbag" },
@@ -59,6 +60,7 @@
   },
   {
     "id": "20x66_flare",
+    "ascii_picture": "20x66_flare",
     "copy-from": "20x66_shot_abstract",
     "type": "AMMO",
     "name": { "str": "20x66mm flare" },

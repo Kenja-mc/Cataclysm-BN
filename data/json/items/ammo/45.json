@@ -1,6 +1,7 @@
 [
   {
     "id": "45_acp",
+    "ascii_picture": "45_jhp",
     "copy-from": "45_jhp",
     "type": "AMMO",
     "name": { "str": ".45 ACP FMJ" },

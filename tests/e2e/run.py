@@ -642,10 +642,54 @@ def test_combine_partly_used_tools(g):
     g.keys("Escape", "Escape", delay=0.6)
 
 
+def test_item_kind_thumbnail(g):
+    """Items with no picture of their own get a small kind thumbnail above the item stats."""
+    arena(g)
+    give(g, "flashlight")
+    g.keys("i", "/", delay=1)
+    g.type("flashlight")
+    g.keys("Enter", "Enter", delay=1.5)
+    lines = g.screen().splitlines()
+    # The tool thumbnail's handle, drawn at the left edge of the item info column.
+    art = [i for i, l in enumerate(lines) if "\\______" in l]
+    assert art, "tool thumbnail missing from the item info:\n" + g.screen()
+    name = [i for i, l in enumerate(lines) if "flashlight" in l.lower()]
+    assert name, "item name missing from the item info:\n" + g.screen()
+    assert name[0] < art[0], "the thumbnail belongs above the item name:\n" + g.screen()
+    g.keys("Escape", delay=0.6)
+    g.keys("Escape", delay=0.6)
+
+    # An item with a picture of its own keeps that picture and gets no thumbnail.
+    give(g, "9mm")
+    g.keys("i", "/", delay=1)
+    g.type("9x19")
+    g.keys("Enter", "Enter", delay=1.5)
+    lines = g.screen().splitlines()
+    own = [i for i, l in enumerate(lines) if "º" in l]
+    assert own, "the 9mm round's own picture is missing:\n" + g.screen()
+    assert "\\______" not in g.screen(), "an item with its own art must not get a thumbnail:\n" + g.screen()
+    g.keys("Escape", delay=0.6)
+    g.keys("Escape", delay=0.6)
+
+    off = Game(name="bn-e2e-thumb", options={"SAFEMODE": "false", "ASCII_ITEM_THUMBNAILS": "false"})
+    try:
+        start_new_game(off)
+        off.define_lua(HELPERS)
+        off.keys("x", delay=0.6)
+        give(off, "flashlight")
+        off.keys("i", "/", delay=1)
+        off.type("flashlight")
+        off.keys("Enter", "Enter", delay=1.5)
+        assert "\\______" not in off.screen(), "the option is off, so no thumbnail:\n" + off.screen()
+        off.keys("Escape", "Escape", delay=0.6)
+    finally:
+        off.close()
+
+
 TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_auto_explore, test_first_time_tip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
          test_hud_boxes, test_body_panel, test_readable_map_glyphs, test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
          test_aim_defaults, test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions, test_right_click_pick_runs_the_action,
-         test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_old_full_keybindings_file, test_hud_box_options, test_gun_loudness_in_item_info, test_combine_partly_used_tools]
+         test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_old_full_keybindings_file, test_hud_box_options, test_gun_loudness_in_item_info, test_combine_partly_used_tools, test_item_kind_thumbnail]
 
 
 def main():

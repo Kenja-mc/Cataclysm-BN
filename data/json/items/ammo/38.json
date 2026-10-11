@@ -1,6 +1,7 @@
 [
   {
     "id": "38_fmj",
+    "ascii_picture": "38_special",
     "copy-from": "38_special",
     "type": "AMMO",
     "name": { "str": ".38 FMJ" },

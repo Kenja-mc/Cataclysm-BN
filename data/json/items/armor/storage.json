@@ -673,6 +673,7 @@
   },
   {
     "id": "plastic_shopping_bag",
+    "ascii_picture": "bag_plastic",
     "type": "ARMOR",
     "name": { "str": "plastic shopping bag" },
     "description": "A bag used to carry groceries home.",

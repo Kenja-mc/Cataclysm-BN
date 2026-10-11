@@ -1,6 +1,7 @@
 [
   {
     "id": "combatnail",
+    "ascii_picture": "combatnail",
     "copy-from": "nail",
     "type": "AMMO",
     "name": { "str": "flechette" },
@@ -12,6 +13,7 @@
   },
   {
     "id": "nail",
+    "ascii_picture": "nail",
     "type": "AMMO",
     "category": "scrap_metal",
     "name": { "str": "nail" },

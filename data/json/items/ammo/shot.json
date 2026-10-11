@@ -25,6 +25,7 @@
   },
   {
     "id": "shot_00",
+    "ascii_picture": "shot_00",
     "copy-from": "shot_abstract",
     "type": "AMMO",
     "name": { "str": "00 shot" },
@@ -33,6 +34,7 @@
   },
   {
     "id": "shot_beanbag",
+    "ascii_picture": "shot_beanbag",
     "copy-from": "shot_abstract",
     "type": "AMMO",
     "name": { "str": "shotgun beanbag" },
@@ -47,6 +49,7 @@
   },
   {
     "id": "shot_bird",
+    "ascii_picture": "shot_bird",
     "copy-from": "shot_00",
     "type": "AMMO",
     "name": { "str": "birdshot" },
@@ -61,6 +64,7 @@
   },
   {
     "id": "shot_dragon",
+    "ascii_picture": "shot_dragon",
     "copy-from": "shot_abstract",
     "type": "AMMO",
     "name": { "str": "dragon's breath shell" },
@@ -75,6 +79,7 @@
   },
   {
     "id": "shot_flechette",
+    "ascii_picture": "shot_flechette",
     "copy-from": "shot_00",
     "type": "AMMO",
     "name": { "str": "flechette shell" },
@@ -101,6 +106,7 @@
   },
   {
     "id": "shot_scrap",
+    "ascii_picture": "shot_scrap",
     "copy-from": "shot_00",
     "type": "AMMO",
     "name": { "str": "00 shot, scrap loaded" },
@@ -113,6 +119,7 @@
   },
   {
     "id": "shot_slug",
+    "ascii_picture": "shot_slug",
     "copy-from": "shot_abstract",
     "type": "AMMO",
     "name": { "str": "shotgun slug" },

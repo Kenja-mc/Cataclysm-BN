@@ -2,6 +2,7 @@
   {
     "type": "AMMO",
     "id": "atgm_heat",
+    "ascii_picture": "atgm_heat",
     "price": "700 USD",
     "price_postapoc": "50 USD",
     "name": { "str": "152mm ATGM HEAT" },

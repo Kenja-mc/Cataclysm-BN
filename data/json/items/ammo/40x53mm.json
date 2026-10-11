@@ -23,6 +23,7 @@
   },
   {
     "id": "40x53mm_m1001",
+    "ascii_picture": "40x53mm_m1001",
     "copy-from": "40x53mm_grenade",
     "type": "AMMO",
     "name": { "str": "40x53mm M1001 flechette" },
@@ -39,6 +40,7 @@
   },
   {
     "id": "40x53mm_m430a1",
+    "ascii_picture": "40x53mm_m430a1",
     "copy-from": "40x53mm_grenade",
     "type": "AMMO",
     "name": { "str": "40x53mm M430A1 HEDP" },
@@ -51,6 +53,7 @@
   },
   {
     "id": "40x53mm_buckshot_m169",
+    "ascii_picture": "40x53mm_improvised",
     "copy-from": "40x53mm_grenade",
     "type": "AMMO",
     "name": { "str": "improvised 40x53mm buckshot" },
@@ -66,6 +69,7 @@
   },
   {
     "id": "40x53mm_slug_m169",
+    "ascii_picture": "40x53mm_improvised",
     "copy-from": "40x53mm_grenade",
     "type": "AMMO",
     "name": { "str": "improvised 40x53mm slug" },

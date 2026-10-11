@@ -648,6 +648,7 @@
   },
   {
     "id": "mp3",
+    "ascii_picture": "mp3",
     "type": "TOOL",
     "category": "electronics",
     "name": { "str": "mp3 player (off)", "str_pl": "mp3 players (off)" },
