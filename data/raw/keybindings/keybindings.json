@@ -745,6 +745,13 @@
   },
   {
     "type": "keybinding",
+    "id": "CRAFT_PARTS",
+    "category": "CRAFTING",
+    "name": "Craft the parts first",
+    "bindings": []
+  },
+  {
+    "type": "keybinding",
     "id": "LEVEL_UP",
     "name": "Go Up",
     "bindings": [ { "input_method": "keyboard", "key": "PPAGE" }, { "input_method": "keyboard", "key": "<" } ]

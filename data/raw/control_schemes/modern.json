@@ -419,6 +419,13 @@
   },
   {
     "type": "keybinding",
+    "id": "CRAFT_PARTS",
+    "category": "CRAFTING",
+    "name": "Craft the parts first",
+    "bindings": [ { "input_method": "keyboard", "key": "p" } ]
+  },
+  {
+    "type": "keybinding",
     "name": "Move View North",
     "category": "DEFAULTMODE",
     "id": "shift_n",

@@ -10,6 +10,7 @@
 #include <memory>
 #include <set>
 #include <stack>
+#include <type_traits>
 #include <unordered_set>
 #include <utility>
 
@@ -450,6 +451,69 @@ std::string requirement_data::list_missing() const
     return buffer;
 }
 
+namespace
+{
+/// How much of `comp` the inventory holds, for the count shown next to a missing item.
+auto held_amount( const item_comp &comp, const inventory &crafting_inv,
+                  const std::function<bool( const item & )> &filter ) -> int
+{
+    return item::count_by_charges( comp.type )
+           ? crafting_inv.charges_of( comp.type, INT_MAX, filter )
+           : crafting_inv.amount_of( comp.type, false, INT_MAX, filter );
+}
+} // namespace
+
+std::vector<std::string> requirement_data::blocker_lines( const inventory &crafting_inv,
+        const std::function<bool( const item & )> &filter, int batch ) const
+{
+    auto lines = std::vector<std::string>();
+
+    for( const auto &group : components ) {
+        const item_comp *missing = nullptr;
+        int missing_held = 0;
+        for( const item_comp &comp : group ) {
+            if( comp.has( crafting_inv, filter, batch ) ) {
+                // This alternative is available, so the group is not a blocker.
+                missing = nullptr;
+                break;
+            }
+            // A group offers alternatives; name the one the player is closest to finishing.
+            const int held = held_amount( comp, crafting_inv, filter );
+            if( missing == nullptr || held > missing_held ) {
+                missing = &comp;
+                missing_held = held;
+            }
+        }
+        if( missing != nullptr ) {
+            lines.push_back( string_format( _( "Missing: %s" ),
+                                            missing->to_string( batch, missing_held ) ) );
+            break;
+        }
+    }
+
+    for( const auto &group : qualities ) {
+        const auto missing = std::ranges::find_if( group, [&]( const quality_requirement & q ) {
+            return !q.has( crafting_inv, filter, batch );
+        } );
+        if( missing != group.end() ) {
+            lines.push_back( string_format( _( "Missing: %s" ), missing->to_string( batch, 0 ) ) );
+            break;
+        }
+    }
+
+    for( const auto &group : tools ) {
+        const auto missing = std::ranges::find_if( group, [&]( const tool_comp & t ) {
+            return !t.has( crafting_inv, filter, batch );
+        } );
+        if( missing != group.end() ) {
+            lines.push_back( string_format( _( "Missing: %s" ), missing->to_string( batch ) ) );
+            break;
+        }
+    }
+
+    return lines;
+}
+
 void quality_requirement::check_consistency( const std::string &display_name ) const
 {
     if( !type.is_valid() ) {
@@ -616,7 +680,8 @@ void requirement_data::reset()
 
 std::vector<std::string> requirement_data::get_folded_components_list( int width, nc_color col,
         const inventory &crafting_inv, const std::function<bool( const item & )> &filter, int batch,
-        const std::string &hilite, requirement_display_flags flags ) const
+        const std::string &hilite, requirement_display_flags flags,
+        std::function<bool( const item_comp & )> can_craft ) const
 {
     std::vector<std::string> out_buffer;
     if( components.empty() ) {
@@ -625,7 +690,7 @@ std::vector<std::string> requirement_data::get_folded_components_list( int width
     out_buffer.push_back( colorize( _( "Components required:" ), col ) );
 
     std::vector<std::string> folded_buffer =
-        get_folded_list( width, crafting_inv, filter, components, batch, hilite, flags );
+        get_folded_list( width, crafting_inv, filter, components, batch, hilite, flags, can_craft );
     out_buffer.insert( out_buffer.end(), folded_buffer.begin(), folded_buffer.end() );
 
     return out_buffer;
@@ -635,7 +700,8 @@ template<typename T>
 std::vector<std::string> requirement_data::get_folded_list( int width,
         const inventory &crafting_inv, const std::function<bool( const item & )> &filter,
         const std::vector< std::vector<T> > &objs, int batch, const std::string &hilite,
-        requirement_display_flags flags ) const
+        requirement_display_flags flags,
+        std::function<bool( const item_comp & )> can_craft ) const
 {
     // hack: ensure 'cached' availability is up to date
     can_make_with_inventory( crafting_inv, filter );
@@ -660,7 +726,7 @@ std::vector<std::string> requirement_data::get_folded_list( int width,
                     qty = crafting_inv.amount_of( item_id, false, INT_MAX, filter );
                 }
             }
-            const std::string text = component.to_string( batch, qty );
+            std::string text = component.to_string( batch, qty );
 
             if( std::find( buffer_has.begin(), buffer_has.end(), text + color_tag ) != buffer_has.end() ) {
                 continue;
@@ -668,6 +734,12 @@ std::vector<std::string> requirement_data::get_folded_list( int width,
 
             if( !hilite.empty() && lcmatch( text, hilite ) ) {
                 color = yellow_background( color );
+            }
+            if constexpr( std::is_same_v<T, item_comp> ) {
+                if( can_craft && !has_one && !component.has( crafting_inv, filter, batch )
+                    && can_craft( component ) ) {
+                    text += std::string( " " ) + _( "(can make)" );
+                }
             }
 
             if( !no_unavailable || component.has( crafting_inv, filter, batch ) ) {

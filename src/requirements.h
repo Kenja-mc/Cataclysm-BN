@@ -339,7 +339,8 @@ struct requirement_data {
         std::vector<std::string> get_folded_components_list( int width, nc_color col,
                 const inventory &crafting_inv, const std::function<bool( const item & )> &filter,
                 int batch = 1, const std::string &hilite = "",
-                requirement_display_flags = requirement_display_flags::none ) const;
+                requirement_display_flags = requirement_display_flags::none,
+                std::function<bool( const item_comp & )> can_craft = nullptr ) const;
 
         std::vector<std::string> get_folded_tools_list( int width, nc_color col,
                 const inventory &crafting_inv, int batch = 1 ) const;
@@ -362,6 +363,15 @@ struct requirement_data {
          * This simplifies the requirement but may make the requirement stricter.
          */
         void consolidate();
+
+        /**
+         * Lines describing why this requirement is not satisfied: the first missing
+         * component group, tool and quality, each with the count the player holds.
+         * Empty when nothing is missing.
+         */
+        std::vector<std::string> blocker_lines( const inventory &crafting_inv,
+                                                const std::function<bool( const item & )> &filter,
+                                                int batch = 1 ) const;
 
         /**
          * Compares if two requiremen_data are the same, but does not compare the requirement ids.
@@ -406,7 +416,8 @@ struct requirement_data {
                 const std::function<bool( const item & )> &filter,
                 const std::vector< std::vector<T> > &objs, int batch = 1,
                 const std::string &hilite = "",
-                requirement_display_flags = requirement_display_flags::none ) const;
+                requirement_display_flags = requirement_display_flags::none,
+                std::function<bool( const item_comp & )> can_craft = nullptr ) const;
 
         template<typename T>
         static bool any_marked_available( const std::vector<T> &comps );
