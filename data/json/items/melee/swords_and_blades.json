@@ -1724,6 +1724,7 @@
     "type": "GENERIC",
     "category": "weapons",
     "id": "lajatang",
+    "ascii_picture": "lajatang",
     "symbol": "/",
     "color": "brown",
     "weapon_category": [ "GLAIVES" ],

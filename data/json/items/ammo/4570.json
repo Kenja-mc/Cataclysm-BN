@@ -1,6 +1,7 @@
 [
   {
     "id": "4570_sp",
+    "ascii_picture": "4570_sp",
     "type": "AMMO",
     "name": { "str": ".45-70 SP" },
     "description": ".45-70 Government ammunition loaded with a 305 grain soft point round.  One of the oldest cartridges still in use, it is still a favorite for large game hunting at short ranges.",
@@ -26,6 +27,7 @@
   },
   {
     "id": "4570_pen",
+    "ascii_picture": "4570_pen",
     "copy-from": "4570_sp",
     "type": "AMMO",
     "name": { "str": ".45-70 +P penetrator" },

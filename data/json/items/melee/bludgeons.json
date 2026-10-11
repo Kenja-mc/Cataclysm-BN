@@ -170,6 +170,7 @@
   },
   {
     "id": "bokken",
+    "ascii_picture": "bokken",
     "type": "GENERIC",
     "category": "weapons",
     "weapon_category": [ "1H_SWORDS", "JAPANESE_SWORDS" ],
