@@ -180,7 +180,8 @@ struct scheme_companion {
 auto scheme_companions( const bool classic ) -> std::vector<scheme_companion>
 {
     return { { .id = "BUMP_ATTACK", .value = classic }, { .id = "FORCE_CAPITAL_YN", .value = classic },
-        { .id = "YN_HOTKEYS", .value = classic }, { .id = "MOUSE_TILE_SELECTION", .value = !classic } };
+        { .id = "YN_HOTKEYS", .value = classic }, { .id = "MOUSE_TILE_SELECTION", .value = !classic },
+        { .id = "CONTEXTUAL_INTERACT", .value = !classic } };
 }
 
 } // namespace
@@ -1941,6 +1942,12 @@ void options_manager::add_options_interface()
 
     add( "MOUSE_TILE_SELECTION", interface, translate_marker( "Mouse tile selection" ),
          translate_marker( "If true, hovering a map tile highlights it, previews the route and says what a click does.  Left click attacks, opens, picks up, examines or walks there; right click lists every option." ),
+         true
+       );
+
+    add( "CONTEXTUAL_INTERACT", interface,
+         translate_marker( "Contextual interact" ),
+         translate_marker( "If true, Space (interact) does the only sensible adjacent action without asking for a direction, and lists what each direction does when there are several." ),
          true
        );
 

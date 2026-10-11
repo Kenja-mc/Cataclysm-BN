@@ -1424,7 +1424,7 @@ void avatar_action::use_item( avatar &you, item *loc )
 {
 
     if( !loc ) {
-        loc = game_menus::inv::use( you );
+        loc = game_menus::inv::use( you, you.last_item );
 
         if( !loc ) {
             add_msg( _( "Never mind." ) );

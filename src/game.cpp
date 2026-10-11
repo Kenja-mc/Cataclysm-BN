@@ -8670,6 +8670,76 @@ void game::examine()
         return;
     }
 
+    // Contextual interact (CONTEXTUAL_INTERACT option): when only one adjacent tile has a
+    // sensible non-combat action, do it without asking for a direction. When several do, list
+    // what each direction would do in the prompt. Never auto-attacks.
+    if( get_option<bool>( "CONTEXTUAL_INTERACT" ) ) {
+        const auto usable = [&]( const tile_selection::choice & c ) {
+            return !c.travel && c.act != ACTION_ATTACK && c.act != ACTION_FIRE &&
+                   !( c.act == ACTION_PICKUP && u.is_mounted() );
+        };
+        const auto run = [&]( const tile_selection::choice & c, const tripoint_bub_ms & pos ) {
+            const auto act = tile_selection::resolve( u, m, c, pos );
+            if( act >= ACTION_MOVE_FORTH && act <= ACTION_MOVE_FORTH_LEFT ) {
+                avatar_action::move( u, m, get_delta_from_movement_action( act, iso_rotate::yes ) );
+            } else if( act == ACTION_EXAMINE ) {
+                u.manual_examine = true;
+                examine( pos );
+                u.manual_examine = false;
+            } else if( act == ACTION_PICKUP ) {
+                pickup( pos );
+            } else if( act == ACTION_CLOSE ) {
+                doors::close_door( m, u, pos );
+            }
+            return act != ACTION_NULL;
+        };
+        struct directed_choice {
+            tripoint_bub_ms pos;
+            tile_selection::choice c;
+        };
+        // Your own tile counts too: a vehicle or furniture under you is examined there.
+        const auto choices_for = [&]( const tripoint_bub_ms & p ) {
+            auto out = tile_selection::choices_at( u, p ) | std::views::filter( usable )
+                       | std::ranges::to<std::vector>();
+            if( p == u.bub_pos() && can_examine_at( p ) ) {
+                out.push_back( { .act = ACTION_EXAMINE, .label = string_format( _( "examine the %s" ), m.name( p ) ) } );
+            }
+            return out;
+        };
+        auto options = std::vector<directed_choice>();
+        for( const tripoint_bub_ms &p : m.points_in_radius( u.bub_pos(), 1 ) ) {
+            if( m.obstructed_by_vehicle_rotation( u.bub_pos(), p ) ) {
+                continue;
+            }
+            for( const auto &c : choices_for( p ) ) {
+                options.push_back( { .pos = p, .c = c } );
+            }
+        }
+
+        if( options.size() == 1 && run( options.front().c, options.front().pos ) ) {
+            return;
+        }
+
+        if( options.size() > 1 ) {
+            auto full_prompt = std::string( _( "Interact with which tile?" ) );
+            for( const auto &dc : options ) {
+                full_prompt += "\n";
+                const auto where = dc.pos == u.bub_pos() ? std::string( _( "Here" ) ) :
+                                   direction_name( direction_from( u.bub_pos().xy(), dc.pos.xy() ) );
+                full_prompt += string_format( _( "%s: %s" ), where, dc.c.label );
+            }
+            const auto target = choose_adjacent( full_prompt, false );
+            if( !target ) {
+                return;
+            }
+            for( const auto &c : choices_for( *target ) ) {
+                if( run( c, *target ) ) {
+                    return;
+                }
+            }
+        }
+    }
+
     const std::optional<tripoint_bub_ms> examp_ = choose_adjacent_highlight( _( "Examine where?" ),
             _( "There is nothing that can be examined nearby." ),
             ACTION_EXAMINE, false );
