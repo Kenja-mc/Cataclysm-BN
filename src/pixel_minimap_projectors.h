@@ -3,6 +3,14 @@
 #include "coordinates.h"
 #include "sdl_wrappers.h"
 
+struct pixel_minimap_projector_options {
+    point tile_basis_tiles_count;
+    point geometry_tiles_count;
+    SDL_Rect max_screen_rect;
+    bool square_pixels;
+    int zoom;
+};
+
 class pixel_minimap_projector
 {
     public:
@@ -19,9 +27,7 @@ class pixel_minimap_projector
 class pixel_minimap_ortho_projector : public pixel_minimap_projector
 {
     public:
-        pixel_minimap_ortho_projector( point tile_basis_tiles_count,
-                                       const SDL_Rect &max_screen_rect,
-                                       bool square_pixels, int zoom );
+        explicit pixel_minimap_ortho_projector( const pixel_minimap_projector_options &opts );
 
         point get_tile_size() const override;
         point get_tiles_size( point tiles_count ) const override;
@@ -36,10 +42,7 @@ class pixel_minimap_ortho_projector : public pixel_minimap_projector
 class pixel_minimap_iso_projector : public pixel_minimap_projector
 {
     public:
-        pixel_minimap_iso_projector( point tile_basis_tiles_count,
-                                     point geometry_tiles_count,
-                                     const SDL_Rect &max_screen_rect,
-                                     bool square_pixels, int zoom );
+        explicit pixel_minimap_iso_projector( const pixel_minimap_projector_options &opts );
 
         point get_tile_size() const override;
         point get_tiles_size( point tiles_count ) const override;

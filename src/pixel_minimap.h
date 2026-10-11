@@ -67,10 +67,11 @@ class pixel_minimap
         void render( const tripoint_bub_ms &center );
         void render_cache( const tripoint_bub_ms &center );
         void render_critters( const tripoint_bub_ms &center );
-        void render_items( const tripoint_bub_ms &center );
+        auto render_items( const tripoint_bub_ms &center ) -> void;
 
 
-        std::unique_ptr<pixel_minimap_projector> create_projector( const SDL_Rect &max_screen_rect ) const;
+        auto create_projector( const SDL_Rect &max_screen_rect ) const ->
+        std::unique_ptr<pixel_minimap_projector>;
 
     private:
         const SDL_Renderer_Ptr &renderer;
@@ -95,6 +96,7 @@ class pixel_minimap
 
         std::unique_ptr<pixel_minimap_projector> projector;
         int built_mapsize = 0;
+        int built_zoom = 0;
 
         //the minimap texture pool which is used to reduce new texture allocation spam
         class shared_texture_pool;

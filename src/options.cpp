@@ -2637,10 +2637,10 @@ void options_manager::add_options_graphics()
 
     add( "PIXEL_MINIMAP_ZOOM", graphics, translate_marker( "Pixel minimap zoom" ),
          translate_marker( "Zoom level for the pixel minimap." ), {
-        { "1", translate_marker( "1x" ) },
-        { "2", translate_marker( "2x" ) },
-        { "4", translate_marker( "4x" ) }
-        }, "1", COPT_CURSES_HIDE
+        { "1x", translate_marker( "1x" ) },
+        { "2x", translate_marker( "2x" ) },
+        { "4x", translate_marker( "4x" ) }
+        }, "1x", COPT_CURSES_HIDE
        );
 
     add( "PIXEL_MINIMAP_ITEM_MARKERS", graphics, translate_marker( "Pixel minimap item markers" ),

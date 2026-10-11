@@ -168,12 +168,12 @@ pixel_minimap_mode pixel_minimap_mode_from_string( const std::string &mode )
     return pixel_minimap_mode::solid;
 }
 
-pixel_minimap_zoom pixel_minimap_zoom_from_string( const std::string &zoom )
+auto pixel_minimap_zoom_from_string( const std::string &zoom ) -> pixel_minimap_zoom
 {
-    if( zoom == "2" ) {
+    if( zoom == "2x" ) {
         return pixel_minimap_zoom::zoom_2x;
     }
-    if( zoom == "4" ) {
+    if( zoom == "4x" ) {
         return pixel_minimap_zoom::zoom_4x;
     }
     return pixel_minimap_zoom::zoom_1x;

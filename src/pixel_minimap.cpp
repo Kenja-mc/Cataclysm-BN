@@ -55,16 +55,12 @@ static auto view_tiles_count = total_tiles_count;
 // whose tile_size happens to match even though view_tiles_count changed.
 static auto built_view_tiles_count = point {0, 0};
 
-// Integer tile-pixel scale of each zoom level: 1x -> 1, 2x -> 2, 4x -> 4.  Used both to
-// shrink the geographic tile grid (fewer tiles shown) and to enlarge the projected tile.
-
-static int zoom_tile_scale( pixel_minimap_zoom zoom )
+auto zoom_tile_scale( const pixel_minimap_zoom zoom ) -> int
 {
     return 1 << static_cast<int>( zoom );
 }
-// The 1x base geographic extent the projector's tile size is derived from (set in draw()).
 
-static point base_view_tiles_count = total_tiles_count;
+auto base_view_tiles_count = total_tiles_count;
 
 point get_pixel_size( point tile_size, pixel_minimap_mode mode )
 {
@@ -408,7 +404,7 @@ void pixel_minimap::process_cache( const tripoint_bub_ms &center )
 void pixel_minimap::set_screen_rect( const SDL_Rect &screen_rect )
 {
     const auto current_mapsize = get_map().getmapsize();
-    const int zoom = zoom_tile_scale( settings.zoom );
+    const auto zoom = zoom_tile_scale( settings.zoom );
     if( this->screen_rect == screen_rect && main_tex && tex_pool && projector
         && built_view_tiles_count == view_tiles_count && built_mapsize == current_mapsize
         && built_zoom == zoom ) {
@@ -603,36 +599,35 @@ auto pixel_minimap::render_items( const tripoint_bub_ms &center ) -> void
         return;
     }
 
-    const auto &access_cache = get_map().access_cache( center.z() );
     const auto &here = get_map();
-    const SDL_Color item_color = SDL_Color{ 0xFF, 0xD7, 0x00, 0xFF }; // gold
+    const auto &you = get_avatar();
+    const auto &access_cache = here.access_cache( center.z() );
+    const auto &visibility = here.get_visibility_variables_cache();
+    constexpr auto item_color = SDL_Color{ .r = 0xFF, .g = 0xD7, .b = 0x00, .a = 0xFF };
+    const auto tile_size = projector->get_tile_size();
+    const auto marker_size = std::max( 1, tile_size.x / 3 );
     SetRenderDrawColor( renderer, item_color.r, item_color.g, item_color.b, item_color.a );
 
-    for( int y = 0; y < view_tiles_count.y; y++ ) {
-        for( int x = 0; x < view_tiles_count.x; x++ ) {
-            const tripoint p = tripoint{ center.x() - view_tiles_count.x / 2 + x,
-                                         center.y() - view_tiles_count.y / 2 + y,
-                                         center.z()
-                                       };
-            const tripoint_bub_ms bp( p );
-            if( !access_cache.inbounds( bp.xy() ) ) {
+    for( auto y = 0; y < view_tiles_count.y; y++ ) {
+        for( auto x = 0; x < view_tiles_count.x; x++ ) {
+            const auto pos = tripoint_bub_ms( center.x() - view_tiles_count.x / 2 + x,
+                                              center.y() - view_tiles_count.y / 2 + y, center.z() );
+            if( !access_cache.inbounds( pos.xy() ) ) {
                 continue;
             }
-            const lit_level lighting = access_cache.visibility_cache[access_cache.idx( p.x, p.y )];
+            const auto lighting = access_cache.visibility_cache[access_cache.idx( pos.x(), pos.y() )];
             if( lighting == lit_level::DARK || lighting == lit_level::BLANK ) {
                 continue;
             }
-            if( here.get_visibility( lighting, here.get_visibility_variables_cache() ) != VIS_CLEAR
-                || !here.sees_some_items( bp, get_avatar() ) ) {
+            if( here.get_visibility( lighting, visibility ) != VIS_CLEAR ||
+                !here.sees_some_items( pos, you ) ) {
                 continue;
             }
             const auto tile_pos = projector->get_tile_pos( { x, y }, view_tiles_count );
-            const point tile_size = projector->get_tile_size();
-            const int marker_size = std::max( 1, tile_size.x / 3 );
-            const SDL_Rect marker_rect = SDL_Rect{
-                tile_pos.x + ( tile_size.x - marker_size ) / 2,
-                tile_pos.y + ( tile_size.y - marker_size ) / 2,
-                marker_size, marker_size
+            const auto marker_rect = SDL_Rect{
+                .x = tile_pos.x + ( tile_size.x - marker_size ) / 2,
+                .y = tile_pos.y + ( tile_size.y - marker_size ) / 2,
+                .w = marker_size, .h = marker_size
             };
             RenderFillRect( renderer, &marker_rect );
         }
@@ -661,18 +656,18 @@ void pixel_minimap::draw( const SDL_Rect &screen_rect, const tripoint_bub_ms &ce
     constexpr auto min_view_diameter = 2 * min_view_radius;
     base_view_tiles_count = {
         std::max( 1, std::min( total_tiles_count.x,
-            total_tiles_count.x > min_view_diameter
-                ? static_cast<int>( screen_rect.w / 2 )
-                : static_cast<int>( screen_rect.w / 3 ) ) ),
+        total_tiles_count.x > min_view_diameter
+        ? static_cast<int>( screen_rect.w / 2 )
+        : static_cast<int>( screen_rect.w / 3 ) ) ),
         std::max( 1, std::min( total_tiles_count.y,
-            total_tiles_count.y > min_view_diameter
-                ? static_cast<int>( screen_rect.h / 2 )
-                : static_cast<int>( screen_rect.h / 3 ) ) )
+        total_tiles_count.y > min_view_diameter
+        ? static_cast<int>( screen_rect.h / 2 )
+        : static_cast<int>( screen_rect.h / 3 ) ) )
     };
     // Zoom-in (2x/4x): show fewer tiles, each shown at an exact integer multiple of the
     // 1x pixel size (the projector multiplies tile_size by the same divisor).  The on-screen
     // minimap therefore stays about the same size while revealing less of the map.
-    const int zoom = zoom_tile_scale( settings.zoom );
+    const auto zoom = zoom_tile_scale( settings.zoom );
     view_tiles_count = {
         std::max( 1, base_view_tiles_count.x / zoom ),
         std::max( 1, base_view_tiles_count.y / zoom )
@@ -700,25 +695,22 @@ void pixel_minimap::draw_beacon( const SDL_Rect &rect, const SDL_Color &color )
     }
 }
 
-std::unique_ptr<pixel_minimap_projector> pixel_minimap::create_projector(
-    const SDL_Rect &max_screen_rect )
-const
+auto pixel_minimap::create_projector( const SDL_Rect &max_screen_rect ) const
+-> std::unique_ptr<pixel_minimap_projector>
 {
-    const int zoom = zoom_tile_scale( settings.zoom );
+    const auto projection = pixel_minimap_projector_options{
+        .tile_basis_tiles_count = base_view_tiles_count,
+        .geometry_tiles_count = view_tiles_count,
+        .max_screen_rect = max_screen_rect,
+        .square_pixels = settings.square_pixels,
+        .zoom = zoom_tile_scale( settings.zoom )
+    };
     switch( type ) {
         case pixel_minimap_type::ortho:
-            return std::unique_ptr<pixel_minimap_projector> {
-                new pixel_minimap_ortho_projector( base_view_tiles_count, max_screen_rect,
-                                                   settings.square_pixels, zoom )
-            };
-
+            return std::make_unique<pixel_minimap_ortho_projector>( projection );
         case pixel_minimap_type::iso:
-            return std::unique_ptr<pixel_minimap_projector> {
-                new pixel_minimap_iso_projector( base_view_tiles_count, view_tiles_count,
-                                                 max_screen_rect, settings.square_pixels, zoom )
-            };
+            return std::make_unique<pixel_minimap_iso_projector>( projection );
     }
-
     return nullptr;
 }
 
