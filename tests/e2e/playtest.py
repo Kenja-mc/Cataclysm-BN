@@ -11,6 +11,7 @@ next to the player, and then:
   - with --no-attach the screen is printed and the session closed (for checking scenarios).
 """
 import argparse
+import json
 import os
 import shutil
 import subprocess
@@ -173,6 +174,25 @@ SCENARIOS = [
             "Options > Graphics > Status effect animations turns them off.",
         ],
     },
+    {
+        "id": "stress",
+        "about": "A horde of 120 zombies around you behind reinforced glass: smart features must not lag",
+        "options": {"SAFEMODE": "true"},
+        "setup": "arena() for dx=-2,2 do for dy=-2,2 do if math.max(math.abs(dx),math.abs(dy))==2 then "
+                 "M:set_ter_at(here(dx,dy), TerId.new('t_reinforced_glass'):int_id()) end end end "
+                 "local n=0 for r=6,40,3 do for dx=-r,r,4 do for _,dy in ipairs({-r,r}) do if n<120 then "
+                 "M:set_ter_at(here(dx,dy), TerId.new('t_floor'):int_id()) "
+                 "M:set_furn_at(here(dx,dy), FurnId.new('f_null'):int_id()) "
+                 "if gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(dx,dy)) then n=n+1 end "
+                 "end end end end ",
+        "check": [
+            "The horde surrounds you but cannot break the glass; compare turn responsiveness with the",
+            "smart options off (Options > Interface: Smart safe mode, Enemy edge arrows).",
+            "Wait a few turns (x), then rest or wait an hour: no stutter. A large horde can stop safe",
+            "mode conservatively when the per-update route-search budget is exhausted.",
+            "On a small terminal, edge arrows point at the off-screen part of the horde in yellow.",
+        ],
+    },
 ]
 
 
@@ -238,9 +258,17 @@ def main():
         g.wait_for("[Load]", timeout=60)
         subprocess.run(["tmux", "kill-session", "-t", g.name], stderr=subprocess.DEVNULL)
         world = next(p.name for p in (g.userdir / "save").iterdir() if p.is_dir())
+        # The tiles build reads its options from XDG_CONFIG_HOME, not --userdir; give it the
+        # scenario's options there so it neither ignores them nor touches your own config.
+        xdg = g.userdir / "xdg"
+        shutil.copytree(g.userdir / "config", xdg / "cataclysm-bn")
+        options_file = xdg / "cataclysm-bn" / "options.json"
+        options_file.write_text(json.dumps(
+            [o for o in json.loads(options_file.read_text()) if o["name"] != "USE_TILES"]
+            + [{"info": "", "default": "", "name": "USE_TILES", "value": "true"}]))
         # The tiles binary loads the first save of the world given by --world.
         return subprocess.run([str(tiles_binary()), "--basepath", f"{ROOT}/", "--userdir", f"{g.userdir}/",
-                               "--world", world], cwd=ROOT).returncode
+                               "--world", world], cwd=ROOT, env={**os.environ, "XDG_CONFIG_HOME": str(xdg)}).returncode
     if sys.stdin.isatty() and "TMUX" not in os.environ:
         os.execvp("tmux", ["tmux", "attach", "-t", g.name])
     print(f"Attach with: tmux attach -t {g.name}")
