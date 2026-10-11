@@ -8,20 +8,20 @@ Flow for each case:
      map, character and options.
   3. The tiles binary runs inside a systemd scope capped at 12G with no swap, on a private Xvfb
      display chosen by the X server (never :98 or the real desktop), rendering with lavapipe.
-  4. Screenshots come from that private display; checks read observed pixels only.
+  4. Markers are found by diffing whole-window captures: each zoom is captured with markers off and
+     on from the same saved world; the only changed pixels must be gold, and the new gold is the marker set.
 
 Usage:
   python3 tests/e2e/tiles.py minimap [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
 
 --root is the game tree (data and the curses build); --binary is the tiles executable.
-Artifacts (screenshots, logs, fixture asserts, result.json) stay in --out on success and failure.
+Artifacts (window captures, marker crops, logs, fixture asserts, result.json) stay in --out.
 """
 import argparse
 import ctypes
 import itertools
 import json
 import os
-import re
 import select
 import shutil
 import signal
@@ -45,10 +45,9 @@ DEFAULT_LAVAPIPE_ICD = Path.home() / ".local/lavapipe/usr/share/vulkan/icd.d/lvp
 MEMORY_CAP = "MemoryMax=12G"
 SWAP_CAP = "MemorySwapMax=0"
 WINDOW_TITLE_PREFIX = "Cataclysm"
-# Logged by pixel_minimap when it rebuilds its screen rectangle: client pixels, x y w h.
-MINIMAP_RECT_RE = re.compile(r"pixel minimap rect x=(-?\d+) y=(-?\d+) w=(\d+) h=(\d+)")
 GOLD = (255, 215, 0)
 GOLD_TOLERANCE = 12
+ZOOMS = ("1x", "2x", "4x")
 
 # Frame made deterministic: no animation, beacon blink, rain or static noise.
 DETERMINISTIC_OPTIONS = {
@@ -65,11 +64,14 @@ DETERMINISTIC_OPTIONS = {
 }
 
 # Fixture offsets relative to the avatar, (dx, dy).
-VISIBLE_ITEMS = {"east": (3, 0), "west": (-3, 2), "north": (0, -4)}
-HIDDEN_BEHIND_WALL = (8, 0)  # items here, sight blocked by the wall column at dx=6
-SEALED_JAR = (-6, -3)        # glass jar with a rock sealed inside
-# Whether the sealed jar's tile carries a gold marker. Set from the agreed marker contract.
-SEALED_JAR_MARKED = False
+GROUND_ITEMS = {"east": (3, 0), "west": (-3, 2), "north": (0, -4)}  # open floor, loose rock
+GROUND_JAR = (-6, -3)     # glass jar on open floor with a rock sealed inside: a perceived item, marked
+SEALED_SAFE = (0, 3)      # f_safe_c with a rock inside: outer tile seen, contents inaccessible, unmarked
+HIDDEN_BEHIND_WALL = (8, 0)  # loose rock, sight blocked by the wall column at dx=6: unmarked
+WALL_TILE = (6, 0)
+# Tiles that must carry a new gold marker. Everything else stays unmarked.
+MARKED = {"east": GROUND_ITEMS["east"], "west": GROUND_ITEMS["west"], "north": GROUND_ITEMS["north"],
+          "jar": GROUND_JAR}
 
 
 @dataclass
@@ -77,17 +79,6 @@ class Check:
     name: str
     ok: bool
     detail: str
-
-
-@dataclass
-class Observation:
-    label: str
-    png: str = ""
-    crop_png: str = ""
-    rect: tuple = ()
-    components: list = field(default_factory=list)
-    pitch: tuple = ()
-    checks: list = field(default_factory=list)
 
 
 class Failure(AssertionError):
@@ -102,7 +93,7 @@ def require(cond, message):
 # ---------------------------------------------------------------- X11 via ctypes (no compiled helper)
 
 class X11:
-    """Xlib and XTest through ctypes, bound to one display name: the private one given to it."""
+    """Xlib and XTest through ctypes, bound only to the private display it is given."""
 
     def __init__(self, display):
         self.xlib = ctypes.CDLL("libX11.so.6")
@@ -162,7 +153,7 @@ class X11:
         return None
 
     def focus(self, win, x, y):
-        """Moves the pointer onto (x, y) of the root and gives win the keyboard focus (no window manager)."""
+        """Moves the pointer to root (x, y) and gives win the keyboard focus (no window manager here)."""
         self.xtst.XTestFakeMotionEvent(self.dpy, -1, x, y, 0)
         self.xlib.XSetInputFocus(self.dpy, win, 2, 0)
         self.xlib.XSync(self.dpy, 0)
@@ -227,7 +218,7 @@ def stop_process(proc, timeout=10):
             proc.wait(timeout)
 
 
-# ---------------------------------------------------------------- screenshots and pixels
+# ---------------------------------------------------------------- captures and pixels
 
 def capture(display, window_id, png):
     subprocess.run(["magick", "import", "-display", display, "-window", f"0x{window_id:x}", str(png)],
@@ -235,23 +226,36 @@ def capture(display, window_id, png):
     return Path(png)
 
 
-def raw_rgb(png, x, y, w, h):
-    result = subprocess.run(["magick", str(png), "-crop", f"{w}x{h}+{x}+{y}", "+repage", "-depth", "8", "rgb:-"],
-                            check=True, capture_output=True)
-    require(len(result.stdout) == w * h * 3, f"crop {w}x{h}+{x}+{y} of {png} gave {len(result.stdout)} bytes")
-    return result.stdout
+def frame_is_drawn(png):
+    mean = subprocess.run(["magick", "identify", "-format", "%[fx:mean]", str(png)],
+                          check=True, capture_output=True, text=True).stdout
+    return float(mean) > 0.01
 
 
-def is_gold(rgb, i):
-    return all(abs(rgb[i + c] - GOLD[c]) <= GOLD_TOLERANCE for c in range(3))
+def frame_rgb(png):
+    """(width, height, raw 8-bit RGB bytes) of a whole capture."""
+    size = subprocess.run(["magick", "identify", "-format", "%w %h", str(png)],
+                          check=True, capture_output=True, text=True).stdout.split()
+    w, h = int(size[0]), int(size[1])
+    data = subprocess.run(["magick", str(png), "-depth", "8", "rgb:-"], check=True, capture_output=True).stdout
+    require(len(data) == w * h * 3, f"{png} decoded to {len(data)} bytes for {w}x{h}")
+    return w, h, data
 
 
-def gold_components(rgb, w, h):
-    """4-connected blobs of gold pixels, each with its bounding box and centre."""
+def gold_mask(rgb):
+    """1 for each pixel within GOLD_TOLERANCE of the marker gold, else 0."""
+    r, g, b = rgb[0::3], rgb[1::3], rgb[2::3]
+    return bytearray(1 if (abs(r[i] - GOLD[0]) <= GOLD_TOLERANCE and abs(g[i] - GOLD[1]) <= GOLD_TOLERANCE
+                           and abs(b[i] - GOLD[2]) <= GOLD_TOLERANCE) else 0
+                     for i in range(len(r)))
+
+
+def blobs_of(mask, w, h):
+    """4-connected blobs of set pixels with bounding boxes and centres."""
     seen = bytearray(w * h)
     blobs = []
     for start in range(w * h):
-        if seen[start] or not is_gold(rgb, start * 3):
+        if seen[start] or not mask[start]:
             continue
         seen[start] = 1
         stack, xs, ys = [start], [], []
@@ -263,7 +267,7 @@ def gold_components(rgb, w, h):
             for nx, ny in ((px - 1, py), (px + 1, py), (px, py - 1), (px, py + 1)):
                 if 0 <= nx < w and 0 <= ny < h:
                     q = ny * w + nx
-                    if not seen[q] and is_gold(rgb, q * 3):
+                    if not seen[q] and mask[q]:
                         seen[q] = 1
                         stack.append(q)
         x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
@@ -272,7 +276,14 @@ def gold_components(rgb, w, h):
     return blobs
 
 
-# ---------------------------------------------------------------- minimap geometry
+def crop_to(png, blob, out, margin=4):
+    x0 = max(0, blob["x0"] - margin)
+    y0 = max(0, blob["y0"] - margin)
+    subprocess.run(["magick", str(png), "-crop", f"{blob['w'] + 2 * margin}x{blob['h'] + 2 * margin}+{x0}+{y0}",
+                    "+repage", str(out)], check=True, capture_output=True)
+
+
+# ---------------------------------------------------------------- marker grid
 
 def solve_line(xs, ys):
     """Least squares y = a + b*x; returns (a, b)."""
@@ -285,9 +296,9 @@ def solve_line(xs, ys):
 
 
 def fit_marker_grid(blobs, expected):
-    """Pairs each expected tile with a blob so that centres sit on one grid: x = ox + dx*tx, y = oy + dy*ty.
+    """Pairs each expected tile with one blob so the centres sit on one grid, x = ox + dx*tx, y = oy + dy*ty.
 
-    Every assignment of blobs to expected tiles is tried; the one with the smallest residual wins.
+    Every assignment of blobs to expected tiles is tried; the smallest worst-case residual wins.
     """
     names = list(expected)
     best = None
@@ -308,35 +319,48 @@ def fit_marker_grid(blobs, expected):
 # ---------------------------------------------------------------- curses fixture
 
 FIXTURE_LUA = (
-    # Open floor east and west; one opaque wall column at dx=6 blocks sight of (8,0).
+    # Walled-in open interior: floor and nothing else out to radius 11, an opaque ring at radius 12
+    # so no native loot beyond the room can be seen, and an opaque column at dx=6 that hides (8,0).
     "function minimap_fixture() "
-    "for dx=5,9 do for dy=-2,2 do local p=here(dx,dy) M:set_ter_at(p, TerId.new('t_floor'):int_id()) "
+    "for dx=-11,11 do for dy=-11,11 do local p=here(dx,dy) M:set_ter_at(p, TerId.new('t_floor'):int_id()) "
     "M:set_furn_at(p, FurnId.new('f_null'):int_id()) M:clear_items_at(p) end end "
+    "for dx=-12,12 do for dy=-12,12 do if math.abs(dx)==12 or math.abs(dy)==12 then local p=here(dx,dy) "
+    "M:set_ter_at(p, TerId.new('t_wall'):int_id()) M:set_furn_at(p, FurnId.new('f_null'):int_id()) "
+    "M:clear_items_at(p) end end end "
     "for dy=-2,2 do M:set_ter_at(here(6,dy), TerId.new('t_wall'):int_id()) end "
-    "for dx=-7,-5 do for dy=-4,-2 do local p=here(dx,dy) M:set_ter_at(p, TerId.new('t_floor'):int_id()) "
-    "M:set_furn_at(p, FurnId.new('f_null'):int_id()) M:clear_items_at(p) end end "
     "out('fixture') end "
-    # A glass jar on the ground with a rock sealed inside.
-    "function sealed_jar(dx,dy) local p=here(dx,dy) M:create_item_at(p, ItypeId.new('jar_glass'), -1) "
+    # A glass jar on open floor with a rock sealed inside it.
+    "function ground_jar(dx,dy) local p=here(dx,dy) M:create_item_at(p, ItypeId.new('jar_glass'), -1) "
     "local jar=nil for _,it in pairs(M:get_items_at(p)) do if it:get_type():str()=='jar_glass' then jar=it end end "
-    "jar:add_item_with_id(ItypeId.new('rock'), -1) out(jar:has_item_with_id('rock')) end "
+    "jar:add_item_with_id(ItypeId.new('rock'), 1) out(jar:has_item_with_id(ItypeId.new('rock'))) end "
+    # Sight, opacity, items, sealed-container flags, and game clock. Every value comes from a bound method.
     "function minimap_sight() local a=gapi.get_avatar() "
-    "out(a:sees(here(3,0)), a:sees(here(-3,2)), a:sees(here(0,-4)), a:sees(here(-6,-3)), a:sees(here(8,0)), "
-    "M:has_ter_flag_at('TRANSPARENT', here(6,0)), M:has_items_at(here(3,0)), M:has_items_at(here(-3,2)), "
-    "M:has_items_at(here(0,-4)), M:has_items_at(here(-6,-3)), M:has_items_at(here(8,0))) end"
+    "out(a:sees(here(3,0)), a:sees(here(-3,2)), a:sees(here(0,-4)), a:sees(here(-6,-3)), a:sees(here(0,3)), "
+    "a:sees(here(8,0)), M:has_ter_flag_at('TRANSPARENT', here(6,0)), "
+    "M:has_items_at(here(3,0)), M:has_items_at(here(-3,2)), M:has_items_at(here(0,-4)), "
+    "M:has_items_at(here(-6,-3)), M:has_items_at(here(0,3)), M:has_items_at(here(8,0)), "
+    "M:has_flag_at('CONTAINER', here(0,3)), M:has_flag_at('SEALED', here(0,3)), "
+    "gapi.current_turn():hour_of_day()) end"
 )
+# Expected values, in the order minimap_sight() returns them.
 SIGHT_ASSERTS = [
     ("sees east (3,0)", "true"),
     ("sees west (-3,2)", "true"),
     ("sees north (0,-4)", "true"),
     ("sees jar (-6,-3)", "true"),
+    ("sees safe (0,3)", "true"),
     ("hidden (8,0) not seen", "false"),
     ("wall (6,0) not transparent", "false"),
     ("items east (3,0)", "true"),
     ("items west (-3,2)", "true"),
     ("items north (0,-4)", "true"),
     ("items jar (-6,-3)", "true"),
+    ("items safe (0,3)", "true"),
     ("items hidden (8,0)", "true"),
+    # Sealed container: could_see_items() is false when CONTAINER and SEALED both hold on the tile.
+    ("safe is CONTAINER", "true"),
+    ("safe is SEALED", "true"),
+    ("game hour is INITIAL_TIME 12", "12"),
 ]
 
 
@@ -345,10 +369,11 @@ def build_fixture(game, work):
     game.define_lua(HELPERS + " " + FIXTURE_LUA)
     arena(game)
     require(game.lua("minimap_fixture()") == ["fixture"], "fixture setup did not finish:\n" + game.screen())
-    for dx, dy in VISIBLE_ITEMS.values():
+    for dx, dy in GROUND_ITEMS.values():
         spawn(game, dx, dy, "rock")
     spawn(game, *HIDDEN_BEHIND_WALL, "rock")
-    require(game.lua(f"sealed_jar({SEALED_JAR[0]},{SEALED_JAR[1]})") == ["true"],
+    spawn(game, *SEALED_SAFE, "rock", 1, "f_safe_c")
+    require(game.lua(f"ground_jar({GROUND_JAR[0]},{GROUND_JAR[1]})") == ["true"],
             "jar did not take the sealed rock:\n" + game.screen())
     settle(game)
     sight = game.lua("minimap_sight()")
@@ -371,18 +396,8 @@ def patch_options(path, values):
     path.write_text(json.dumps(rows))
 
 
-def minimap_rects(xdg):
-    found = []
-    for log in xdg.rglob("debug.log"):
-        found += [tuple(int(v) for v in m.groups()) for m in MINIMAP_RECT_RE.finditer(log.read_text(errors="replace"))]
-    return found
-
-
 def wait_for_frame(session, proc, run, timeout):
-    """Waits until the minimap has drawn and two consecutive window captures match.
-
-    Returns (window id, minimap rect in window pixels, screenshot path).
-    """
+    """Waits until the game window exists, has drawn, and two consecutive captures match. Returns the PNG."""
     deadline = time.time() + timeout
     x11 = X11(session.display)
     try:
@@ -393,15 +408,14 @@ def wait_for_frame(session, proc, run, timeout):
                 raise Failure(f"tiles exited early with {proc.returncode}; see {run / 'tiles.log'}")
             if window is None:
                 window = x11.find_window(WINDOW_TITLE_PREFIX)
-            rects = minimap_rects(run / "xdg")
-            if window is not None and rects:
+            if window is not None:
                 shot = capture(session.display, window, run / "frame.png")
                 data = shot.read_bytes()
-                if data == previous:
-                    return window, rects[-1], shot
+                if data == previous and frame_is_drawn(shot):
+                    return shot
                 previous = data
             time.sleep(1.0)
-        raise Failure(f"timed out after {timeout}s waiting for the minimap frame; see {run / 'tiles.log'}")
+        raise Failure(f"timed out after {timeout}s waiting for a drawn frame; see {run / 'tiles.log'}")
     finally:
         x11.close()
 
@@ -424,9 +438,9 @@ class Session:
         self.world = None
 
     def start(self):
-        # tmux inherited from an outer session would address that server; isolate it before any tmux call.
+        # An outer tmux would be addressed through TMUX; isolate tmux before any tmux call.
         os.environ.pop("TMUX", None)
-        os.environ["TMUX_TMPDIR"] = str((self.work / "tmux").as_posix())
+        os.environ["TMUX_TMPDIR"] = str(self.work / "tmux")
         (self.work / "tmux").mkdir(parents=True, exist_ok=True)
         require(self.tiles_binary.exists(), f"tiles binary not found: {self.tiles_binary}")
         require(self.icd.exists(), f"lavapipe ICD not found: {self.icd} (pass --vk-icd)")
@@ -441,7 +455,9 @@ class Session:
 
     def build_world(self):
         tmux_game.ROOT = self.root
-        game = Game(name="bn-tiles-e2e-fixture", options={"SAFEMODE": "false"}, userdir=self.curses_userdir)
+        # INITIAL_TIME 12 starts the world at noon, so the fixture is lit the same way on every run.
+        game = Game(name="bn-tiles-e2e-fixture", options={"SAFEMODE": "false", "INITIAL_TIME": "12"},
+                    userdir=self.curses_userdir)
         try:
             start_new_game(game)
             build_fixture(game, self.work)
@@ -453,7 +469,7 @@ class Session:
         self.world = saves[0].name
 
     def launch(self, label, tiles_options):
-        """Runs the tiles binary on a fresh copy of the fixture and returns its observation."""
+        """Runs the tiles binary on a fresh copy of the fixture; returns the path of the window capture."""
         run = self.work / "runs" / label
         userdir = run / "userdir"
         xdg = run / "xdg"
@@ -484,17 +500,10 @@ class Session:
                str(self.tiles_binary), "--basepath", f"{self.root}/", "--userdir", f"{userdir}/",
                "--world", self.world]
         proc = subprocess.Popen(cmd, cwd=self.root, env=env, stdout=log, stderr=log)
-        obs = Observation(label=label)
         try:
-            window, rect, shot = wait_for_frame(self, proc, run, self.timeout)
-            obs.rect = rect
-            obs.png = str(self.artifacts / f"{label}.png")
-            shutil.copy(shot, obs.png)
-            obs.crop_png = str(self.artifacts / f"{label}-minimap.png")
-            # The capture is the game window itself, so the rect is already in image coordinates.
-            crop = raw_rgb(obs.png, rect[0], rect[1], rect[2], rect[3])
-            subprocess.run(["magick", "-size", f"{rect[2]}x{rect[3]}", "-depth", "8", "rgb:-", obs.crop_png],
-                           input=crop, check=True, capture_output=True)
+            shot = wait_for_frame(self, proc, run, self.timeout)
+            kept = self.artifacts / f"{label}.png"
+            shutil.copy(shot, kept)
         finally:
             subprocess.run(["systemctl", "--user", "stop", unit + ".scope"], check=False, capture_output=True)
             try:
@@ -503,93 +512,100 @@ class Session:
                 stop_process(proc)
             log.close()
             shutil.copy(run / "tiles.log", self.artifacts / f"{label}-tiles.log")
-            for found in (xdg / "cataclysm-bn").glob("debug.log"):
-                shutil.copy(found, self.artifacts / f"{label}-debug.log")
-        return obs
+        return kept
 
 
 # ---------------------------------------------------------------- minimap case
 
-def expected_marked(names):
-    """Tiles that must carry a gold marker. Hidden items and the sealed jar follow the agreed contract."""
-    marked = {name: VISIBLE_ITEMS[name] for name in names if name in VISIBLE_ITEMS}
-    if "jar" in names and SEALED_JAR_MARKED:
-        marked["jar"] = SEALED_JAR
-    return marked
-
-
-def check_minimap_run(obs, markers_on, names):
-    rx, ry, rw, rh = obs.rect
-    blobs = gold_components(raw_rgb(obs.png, rx, ry, rw, rh), rw, rh)
-    obs.components = blobs
-    if not markers_on:
-        obs.checks.append(Check("markers off: no gold on the minimap", not blobs,
-                                f"{len(blobs)} gold blobs"))
-        return
-    expected = expected_marked(names)
-    obs.checks.append(Check("marker count", len(blobs) == len(expected),
-                            f"expected {len(expected)}, saw {len(blobs)}: {blobs}"))
-    require(len(blobs) == len(expected), f"expected {len(expected)} gold markers, saw {len(blobs)}")
+def analyse_zoom(zoom, off_png, on_png, artifacts):
+    """Compares a markers-off and a markers-on capture of the same frame and checks the marker set."""
+    checks = []
+    w, h, off = frame_rgb(off_png)
+    w2, h2, on = frame_rgb(on_png)
+    require((w, h) == (w2, h2), f"{zoom}: off and on captures differ in size: {w}x{h} vs {w2}x{h2}")
+    off_gold = gold_mask(off)
+    on_gold = gold_mask(on)
+    n = w * h
+    r1, g1, b1 = off[0::3], off[1::3], off[2::3]
+    r2, g2, b2 = on[0::3], on[1::3], on[2::3]
+    changed = [i for i in range(n) if r1[i] != r2[i] or g1[i] != g2[i] or b1[i] != b2[i]]
+    not_gold = [i for i in changed if not on_gold[i]]
+    checks.append(Check("only gold pixels change between markers off and on", not not_gold,
+                        f"{len(changed)} changed pixels, {len(not_gold)} not gold, first at "
+                        f"{[(i % w, i // w) for i in not_gold[:5]]}"))
+    new_gold = bytearray(1 if (on_gold[i] and not off_gold[i]) else 0 for i in range(n))
+    blobs = blobs_of(new_gold, w, h)
+    for k, blob in enumerate(blobs):
+        crop_to(on_png, blob, artifacts / f"{zoom}-marker-{k}.png")
+    expected = MARKED
+    checks.append(Check("marker count", len(blobs) == len(expected),
+                        f"expected {len(expected)}, saw {len(blobs)}"))
+    result = {"zoom": zoom, "blobs": blobs, "checks": checks}
+    if len(blobs) != len(expected):
+        return result
     grid = fit_marker_grid(blobs, expected)
-    obs.pitch = (grid["tx"], grid["ty"])
+    result.update(ox=grid["ox"], oy=grid["oy"], tx=grid["tx"], ty=grid["ty"])
     tol = 0.5 * max(grid["tx"], grid["ty"]) + 1
-    obs.checks.append(Check("markers sit on one tile grid", grid["residual"] <= tol,
-                            f"residual {grid['residual']:.2f}px, pitch {grid['tx']:.2f}x{grid['ty']:.2f}px"))
+    checks.append(Check("markers sit on one tile grid", grid["residual"] <= tol,
+                        f"residual {grid['residual']:.2f}px, pitch {grid['tx']:.2f}x{grid['ty']:.2f}px"))
     cells = {(round((b["cx"] - grid["ox"]) / grid["tx"]), round((b["cy"] - grid["oy"]) / grid["ty"])): b
              for b in blobs}
     want = set(expected.values())
     unexpected = sorted(set(cells) - want)
     missing = sorted(want - set(cells))
-    obs.checks.append(Check("markers only on visible tiles",
-                            not unexpected and not missing,
-                            f"unexpected {unexpected}, missing {missing}"))
-    hidden_marked = HIDDEN_BEHIND_WALL in cells
-    obs.checks.append(Check("item behind the wall stays unmarked", not hidden_marked,
-                            f"tile {HIDDEN_BEHIND_WALL} marked: {hidden_marked}"))
+    checks.append(Check("markers only on the perceived tiles", not unexpected and not missing,
+                        f"unexpected {unexpected}, missing {missing}"))
+    checks.append(Check("sealed safe stays unmarked", SEALED_SAFE not in cells,
+                        f"tile {SEALED_SAFE} marked: {SEALED_SAFE in cells}"))
+    checks.append(Check("item behind the wall stays unmarked", HIDDEN_BEHIND_WALL not in cells,
+                        f"tile {HIDDEN_BEHIND_WALL} marked: {HIDDEN_BEHIND_WALL in cells}"))
     marker_px = max(1, int(grid["tx"]) // 3)
     sized = all(abs(b["w"] - marker_px) <= 1 and abs(b["h"] - marker_px) <= 1 for b in blobs)
-    obs.checks.append(Check("marker size tracks tile pitch", sized,
-                            f"expected ~{marker_px}px, saw {[(b['w'], b['h']) for b in blobs]}"))
-    centred = (abs(grid["ox"] - (rx + rw / 2)) <= 1.5 * grid["tx"] + 1
-               and abs(grid["oy"] - (ry + rh / 2)) <= 1.5 * grid["ty"] + 1)
-    obs.checks.append(Check("tile grid origin is the minimap centre", centred,
-                            f"origin ({grid['ox']:.1f}, {grid['oy']:.1f}), centre ({rx + rw / 2:.1f}, {ry + rh / 2:.1f})"))
+    checks.append(Check("marker size tracks tile pitch", sized,
+                        f"expected ~{marker_px}px, saw {[(b['w'], b['h']) for b in blobs]}"))
+    return result
 
 
 def case_minimap(session):
-    all_names = ["east", "west", "north", "jar"]
-    runs = [
-        ("01-markers-off-1x", {"PIXEL_MINIMAP_ITEM_MARKERS": "false", "PIXEL_MINIMAP_ZOOM": "1x"}, False, all_names),
-        ("02-markers-on-1x", {"PIXEL_MINIMAP_ITEM_MARKERS": "true", "PIXEL_MINIMAP_ZOOM": "1x"}, True, all_names),
-        ("03-markers-on-2x", {"PIXEL_MINIMAP_ITEM_MARKERS": "true", "PIXEL_MINIMAP_ZOOM": "2x"}, True, all_names),
-        ("04-markers-on-4x", {"PIXEL_MINIMAP_ITEM_MARKERS": "true", "PIXEL_MINIMAP_ZOOM": "4x"}, True, all_names),
-    ]
+    captures = {}
     failures = []
-    observations = {}
-    for label, options, markers_on, names in runs:
+    for zoom in ZOOMS:
+        for on in (False, True):
+            label = f"{zoom}-markers-{'on' if on else 'off'}"
+            try:
+                captures[label] = session.launch(label, {"PIXEL_MINIMAP_ITEM_MARKERS": "true" if on else "false",
+                                                         "PIXEL_MINIMAP_ZOOM": zoom})
+            except (Failure, subprocess.CalledProcessError) as exc:
+                failures.append(f"{label}: {exc}")
+    analyses = {}
+    for zoom in ZOOMS:
+        off, on = captures.get(f"{zoom}-markers-off"), captures.get(f"{zoom}-markers-on")
+        if off is None or on is None:
+            continue
         try:
-            obs = session.launch(label, options)
-            observations[label] = obs
-            check_minimap_run(obs, markers_on, names)
+            analyses[zoom] = analyse_zoom(zoom, off, on, session.artifacts)
         except (Failure, subprocess.CalledProcessError) as exc:
-            failures.append(f"{label}: {exc}")
-    base = observations.get("02-markers-on-1x")
-    if base and base.pitch:
-        for label, factor in (("03-markers-on-2x", 2), ("04-markers-on-4x", 4)):
-            obs = observations.get(label)
-            if not obs or not obs.pitch:
-                continue
-            ratio_x = obs.pitch[0] / base.pitch[0]
-            ratio_y = obs.pitch[1] / base.pitch[1]
-            ok = abs(ratio_x - factor) <= 0.2 * factor and abs(ratio_y - factor) <= 0.2 * factor
-            obs.checks.append(Check(f"zoom scales the grid {factor}x", ok,
-                                    f"ratio x {ratio_x:.2f}, y {ratio_y:.2f}"))
+            failures.append(f"{zoom}: {exc}")
+    base = analyses.get("1x")
+    for zoom, factor in (("2x", 2), ("4x", 4)):
+        obs = analyses.get(zoom)
+        if not base or not obs or "tx" not in base or "tx" not in obs:
+            continue
+        ratio_x, ratio_y = obs["tx"] / base["tx"], obs["ty"] / base["ty"]
+        obs["checks"].append(Check(f"zoom {zoom} scales the grid {factor}x", abs(ratio_x - factor) <= 0.2 * factor
+                                   and abs(ratio_y - factor) <= 0.2 * factor,
+                                   f"ratio x {ratio_x:.2f}, y {ratio_y:.2f}"))
+        origin_ok = (abs(obs["ox"] - base["ox"]) <= max(2.0, base["tx"])
+                     and abs(obs["oy"] - base["oy"]) <= max(2.0, base["ty"]))
+        obs["checks"].append(Check(f"zoom {zoom} keeps the same origin", origin_ok,
+                                   f"origin ({obs['ox']:.1f}, {obs['oy']:.1f}) vs 1x "
+                                   f"({base['ox']:.1f}, {base['oy']:.1f})"))
     report = {}
-    for label, obs in observations.items():
-        report[label] = {"png": obs.png, "minimap_crop": obs.crop_png, "rect": obs.rect,
-                         "pitch": obs.pitch, "components": obs.components,
-                         "checks": [c.__dict__ for c in obs.checks]}
-        failures += [f"{label}: {c.name}: {c.detail}" for c in obs.checks if not c.ok]
+    for zoom, obs in analyses.items():
+        report[zoom] = {k: v for k, v in obs.items() if k != "checks"} | {
+            "checks": [c.__dict__ for c in obs["checks"]]}
+        failures += [f"{zoom}: {c.name}: {c.detail}" for c in obs["checks"] if not c.ok]
+    report["captures"] = {k: str(v) for k, v in captures.items()}
     return failures, report
 
 
@@ -616,7 +632,7 @@ def main(argv=None):
         session.start()
         session.build_world()
         failures, report = CASES[args.case](session)
-    except Exception as exc:  # reported, and the work tree is kept with the artifacts
+    except Exception as exc:  # reported; the work tree is kept with the artifacts
         failures.append(f"{type(exc).__name__}: {exc}")
         (artifacts / "exception.txt").write_text(traceback.format_exc())
     finally:
