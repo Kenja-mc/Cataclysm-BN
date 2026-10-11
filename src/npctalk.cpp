@@ -391,7 +391,11 @@ template<typename T, size_t N>
 auto next_step( const T current, const std::array<T, N> &steps ) -> T
 {
     namespace ranges = std::ranges;
-    const auto index = static_cast<size_t>( ranges::find( steps, current ) - steps.begin() );
+    const auto found = ranges::find( steps, current );
+    if( found == steps.end() ) {
+        return steps.front();
+    }
+    const auto index = static_cast<size_t>( found - steps.begin() );
     return steps[( index + 1 ) % N];
 }
 
@@ -448,9 +452,14 @@ auto cbm_recharge_label( const cbm_recharge_rule rule ) -> std::string
 // so that order is cleared with it.
 auto palette_toggle_rule( npc &guy, const ally_rule rule ) -> void
 {
-    guy.rules.toggle_flag( rule );
+    const auto enable = !guy.rules.has_flag( rule );
     guy.rules.clear_override( rule );
     guy.rules.disable_override( rule );
+    if( enable ) {
+        guy.rules.set_flag( rule );
+    } else {
+        guy.rules.clear_flag( rule );
+    }
     guy.wield_better_weapon();
 }
 
@@ -458,14 +467,14 @@ auto palette_toggle_rule( npc &guy, const ally_rule rule ) -> void
 // Option-gated on NPC_UI. Writes the same npc_follower_rules fields the dialogue topics write.
 auto follower_command_palette( const std::vector<npc *> &npc_list ) -> void
 {
-    const int picked = npc_select_menu( npc_list, _( "Whose rules?" ), false );
+    const auto picked = npc_select_menu( npc_list, _( "Whose rules?" ), false );
     if( picked < 0 ) {
         return;
     }
-    npc &guy = *npc_list[picked];
+    auto &guy = *npc_list[picked];
 
-    bool done = false;
-    uilist nmenu;
+    auto done = false;
+    auto nmenu = uilist{};
 
     while( !done ) {
         nmenu.reset();
@@ -538,7 +547,7 @@ auto follower_command_palette( const std::vector<npc *> &npc_list ) -> void
                 const auto is_other = [&guy]( const npc * p ) { return p != &guy; };
                 const auto others = npc_list | std::views::filter( is_other )
                                     | std::ranges::to<std::vector>();
-                const int sel = npc_select_menu( others, _( "Copy rules from whom?" ), false );
+                const auto sel = npc_select_menu( others, _( "Copy rules from whom?" ), false );
                 if( sel >= 0 ) {
                     guy.rules = others[sel]->rules;
                     guy.invalidate_range_cache();
