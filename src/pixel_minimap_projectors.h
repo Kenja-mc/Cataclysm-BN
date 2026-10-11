@@ -19,9 +19,9 @@ class pixel_minimap_projector
 class pixel_minimap_ortho_projector : public pixel_minimap_projector
 {
     public:
-        pixel_minimap_ortho_projector( point total_tiles_count,
+        pixel_minimap_ortho_projector( point tile_basis_tiles_count,
                                        const SDL_Rect &max_screen_rect,
-                                       bool square_pixels );
+                                       bool square_pixels, int zoom );
 
         point get_tile_size() const override;
         point get_tiles_size( point tiles_count ) const override;
@@ -36,9 +36,10 @@ class pixel_minimap_ortho_projector : public pixel_minimap_projector
 class pixel_minimap_iso_projector : public pixel_minimap_projector
 {
     public:
-        pixel_minimap_iso_projector( point total_tiles_count,
+        pixel_minimap_iso_projector( point tile_basis_tiles_count,
+                                     point geometry_tiles_count,
                                      const SDL_Rect &max_screen_rect,
-                                     bool square_pixels );
+                                     bool square_pixels, int zoom );
 
         point get_tile_size() const override;
         point get_tiles_size( point tiles_count ) const override;

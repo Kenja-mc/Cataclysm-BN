@@ -5,12 +5,26 @@
 #include <algorithm>
 
 pixel_minimap_ortho_projector::pixel_minimap_ortho_projector(
-    point total_tiles_count,
+    point tile_basis_tiles_count,
     const SDL_Rect &max_screen_rect,
-    bool square_pixels )
+    bool square_pixels, int zoom )
 {
-    tile_size.x = std::max( max_screen_rect.w / total_tiles_count.x, 1 );
-    tile_size.y = std::max( max_screen_rect.h / total_tiles_count.y, 1 );
+    tile_size.x = std::max( max_screen_rect.w / tile_basis_tiles_count.x, 1 ) * zoom;
+    tile_size.y = std::max( max_screen_rect.h / tile_basis_tiles_count.y, 1 ) * zoom;
+
+    if( square_pixels ) {
+        tile_size.x = tile_size.y = std::min( tile_size.x, tile_size.y );
+    }
+}
+pixel_minimap_iso_projector::pixel_minimap_iso_projector(
+    point tile_basis_tiles_count,
+    point geometry_tiles_count,
+    const SDL_Rect &max_screen_rect,
+    bool square_pixels, int zoom ) :
+    total_tiles_count( geometry_tiles_count )
+{
+    tile_size.x = std::max( max_screen_rect.w / ( 2 * tile_basis_tiles_count.x - 1 ), 2 ) * zoom;
+    tile_size.y = std::max( max_screen_rect.h / tile_basis_tiles_count.y, 2 ) * zoom;
 
     if( square_pixels ) {
         tile_size.x = tile_size.y = std::min( tile_size.x, tile_size.y );
@@ -48,20 +62,6 @@ point pixel_minimap_ortho_projector::get_tile_pos( point p,
     return { p.x * tile_size.x, p.y * tile_size.y };
 }
 
-pixel_minimap_iso_projector::pixel_minimap_iso_projector(
-    point total_tiles_count,
-    const SDL_Rect &max_screen_rect,
-    bool square_pixels ) :
-
-    total_tiles_count( total_tiles_count )
-{
-    tile_size.x = std::max( max_screen_rect.w / ( 2 * total_tiles_count.x - 1 ), 2 );
-    tile_size.y = std::max( max_screen_rect.h / total_tiles_count.y, 2 );
-
-    if( square_pixels ) {
-        tile_size.x = tile_size.y = std::min( tile_size.x, tile_size.y );
-    }
-}
 
 SDL_Rect pixel_minimap_iso_projector::get_chunk_rect(
     point p,
