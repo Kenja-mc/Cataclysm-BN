@@ -1907,6 +1907,11 @@ void options_manager::add_options_interface()
          translate_marker( "How many turns a ? marker for a sound you heard but couldn't see stays on the map, fading as it ages.  1 clears it after your next action, as upstream does." ),
          1, 10, 3 );
 
+    add( "ENEMY_EDGE_ARROWS", interface, translate_marker( "Enemy edge arrows" ),
+         translate_marker( "An arrow at the map edge for every hostile you can see that is off-screen, pointing at it: red when it can reach you soon, yellow when it cannot.  An arrow sits on the edge itself when the hostile is hunting you, one cell in when it is only trailing." ),
+         true
+       );
+
     add(
         "OVERMAP_COORDINATE_FORMAT",
         interface,

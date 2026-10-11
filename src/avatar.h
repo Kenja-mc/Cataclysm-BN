@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -60,6 +61,18 @@ struct monster_visible_info {
     // Used by the combat bubble trigger to avoid oscillation: only monsters that
     // would still be loaded after the bubble shrinks are counted.
     int combat_hostile_count = 0;
+
+    // Hostiles the player sees that are outside the map window, one entry per
+    // compass direction (0-7, same as unique_types and visible_count_by_dir).
+    // The map-edge arrows read these.
+    struct offscreen_hostile {
+        int count = 0;
+        // One of them can walk a route to the player soon.
+        bool threatening = false;
+        // One of them is hunting the player rather than trailing or wandering.
+        bool hunting = false;
+    };
+    std::array<offscreen_hostile, 8> offscreen_hostiles = {};
 };
 
 class avatar : public player
@@ -267,6 +280,9 @@ class avatar : public player
         bool invoke_item( item *, const std::string & ) override;
 
         monster_visible_info &get_mon_visible() {
+            return mon_visible;
+        }
+        const monster_visible_info &get_mon_visible() const {
             return mon_visible;
         }
 

@@ -38,6 +38,11 @@ auto threatens( const monster &mon, avatar &you ) -> bool
     if( !get_option<bool>( "SMART_SAFEMODE" ) ) {
         return true;
     }
+    return reaches_soon( mon, you );
+}
+
+auto reaches_soon( const monster &mon, avatar &you ) -> bool
+{
     if( mon.is_fleeing( you ) ) {
         return false;
     }
