@@ -32,6 +32,7 @@
 #include <vector>
 
 class Character;
+class Creature;
 struct char_trait_data;
 using mutation = std::pair<const trait_id, char_trait_data>;
 class monster;
@@ -942,6 +943,9 @@ class cata_tiles
                          const bool ( &invisible )[5], int z_drop );
         bool draw_critter_at( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
                               const bool ( &invisible )[5], int z_drop );
+        /** Draws the looping status effect overlays (bleeding, burning, ...) of one creature. */
+        void draw_status_effects( const Creature &critter, const tripoint_bub_ms &p,
+                                  lit_level ll, int z_drop );
         bool draw_zone_mark( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
                              const bool ( &invisible )[5], int z_drop );
         bool draw_zombie_revival_indicators( const tripoint_bub_ms &pos, lit_level ll, int &height_3d,

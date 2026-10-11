@@ -35790,6 +35790,36 @@
         { "id": "t_treetop_evergreen", "fg": 23850 },
         { "id": "t_nether_glass_floor", "fg": 23851 }
       ]
+    },
+    {
+      "//": "range 23856 to 23875",
+      "file": "fork_fx.png",
+      "sprite_width": 64,
+      "sprite_height": 80,
+      "sprite_offset_x": -16,
+      "sprite_offset_y": -48,
+      "tiles": [
+        { "id": "overlay_fx_bleed_0", "bg": 23856, "rotates": false },
+        { "id": "overlay_fx_bleed_1", "bg": 23857, "rotates": false },
+        { "id": "overlay_fx_bleed_2", "bg": 23858, "rotates": false },
+        { "id": "overlay_fx_bleed_3", "bg": 23859, "rotates": false },
+        { "id": "overlay_fx_toxic_0", "bg": 23860, "rotates": false },
+        { "id": "overlay_fx_toxic_1", "bg": 23861, "rotates": false },
+        { "id": "overlay_fx_toxic_2", "bg": 23862, "rotates": false },
+        { "id": "overlay_fx_toxic_3", "bg": 23863, "rotates": false },
+        { "id": "overlay_fx_dizzy_0", "bg": 23864, "rotates": false },
+        { "id": "overlay_fx_dizzy_1", "bg": 23865, "rotates": false },
+        { "id": "overlay_fx_dizzy_2", "bg": 23866, "rotates": false },
+        { "id": "overlay_fx_dizzy_3", "bg": 23867, "rotates": false },
+        { "id": "overlay_fx_sleep_0", "bg": 23868, "rotates": false },
+        { "id": "overlay_fx_sleep_1", "bg": 23869, "rotates": false },
+        { "id": "overlay_fx_sleep_2", "bg": 23870, "rotates": false },
+        { "id": "overlay_fx_sleep_3", "bg": 23871, "rotates": false },
+        { "id": "overlay_fx_cold_0", "bg": 23872, "rotates": false },
+        { "id": "overlay_fx_cold_1", "bg": 23873, "rotates": false },
+        { "id": "overlay_fx_cold_2", "bg": 23874, "rotates": false },
+        { "id": "overlay_fx_cold_3", "bg": 23875, "rotates": false }
+      ]
     }
   ]
 }
