@@ -18,7 +18,8 @@
     "volume": "500 ml",
     "material": [ "wheat" ],
     "fun": 12,
-    "charges": 4
+    "charges": 4,
+    "looks_like": "sandwich_t"
   },
   {
     "type": "COMESTIBLE",

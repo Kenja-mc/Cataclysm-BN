@@ -313,7 +313,8 @@
     "phase": "liquid",
     "flags": [ "EATEN_COLD", "NO_COOKING_BUFF" ],
     "fun": -15,
-    "vitamins": [ [ "junk_allergen", 10 ] ]
+    "vitamins": [ [ "junk_allergen", 10 ] ],
+    "looks_like": "syrup"
   },
   {
     "type": "COMESTIBLE",
@@ -363,7 +364,8 @@
     "phase": "liquid",
     "flags": [ "EATEN_COLD", "NO_COOKING_BUFF" ],
     "fun": -15,
-    "vitamins": [ [ "junk_allergen", 10 ] ]
+    "vitamins": [ [ "junk_allergen", 10 ] ],
+    "looks_like": "syrup"
   },
   {
     "type": "COMESTIBLE",
@@ -413,7 +415,8 @@
     "phase": "liquid",
     "flags": [ "EATEN_COLD", "NO_COOKING_BUFF" ],
     "fun": -15,
-    "vitamins": [ [ "junk_allergen", 10 ] ]
+    "vitamins": [ [ "junk_allergen", 10 ] ],
+    "looks_like": "syrup"
   },
   {
     "type": "COMESTIBLE",
@@ -613,7 +616,8 @@
     "phase": "liquid",
     "flags": [ "EATEN_COLD", "NO_COOKING_BUFF" ],
     "fun": -15,
-    "vitamins": [ [ "vitC", 630 ], [ "junk_allergen", 10 ] ]
+    "vitamins": [ [ "vitC", 630 ], [ "junk_allergen", 10 ] ],
+    "looks_like": "syrup"
   },
   {
     "type": "COMESTIBLE",
@@ -657,7 +661,8 @@
     "phase": "liquid",
     "flags": [ "EATEN_COLD", "NO_COOKING_BUFF" ],
     "fun": -15,
-    "vitamins": [ [ "junk_allergen", 10 ] ]
+    "vitamins": [ [ "junk_allergen", 10 ] ],
+    "looks_like": "syrup"
   },
   {
     "type": "COMESTIBLE",
@@ -882,7 +887,8 @@
     "phase": "liquid",
     "flags": [ "EATEN_COLD", "NO_COOKING_BUFF" ],
     "fun": -15,
-    "vitamins": [ [ "junk_allergen", 10 ] ]
+    "vitamins": [ [ "junk_allergen", 10 ] ],
+    "looks_like": "syrup"
   },
   {
     "type": "COMESTIBLE",
@@ -1098,7 +1104,8 @@
     "phase": "liquid",
     "flags": [ "EATEN_COLD", "NO_COOKING_BUFF" ],
     "fun": -15,
-    "vitamins": [ [ "junk_allergen", 10 ] ]
+    "vitamins": [ [ "junk_allergen", 10 ] ],
+    "looks_like": "syrup"
   },
   {
     "type": "COMESTIBLE",
@@ -1191,7 +1198,8 @@
     "phase": "liquid",
     "flags": [ "EATEN_COLD", "NO_COOKING_BUFF" ],
     "fun": -15,
-    "vitamins": [ [ "vitC", 300 ], [ "calcium", 18 ], [ "junk_allergen", 10 ] ]
+    "vitamins": [ [ "vitC", 300 ], [ "calcium", 18 ], [ "junk_allergen", 10 ] ],
+    "looks_like": "syrup"
   },
   {
     "type": "COMESTIBLE",
@@ -1239,7 +1247,8 @@
     "phase": "liquid",
     "flags": [ "EATEN_COLD", "NO_COOKING_BUFF" ],
     "fun": -15,
-    "vitamins": [ [ "junk_allergen", 10 ] ]
+    "vitamins": [ [ "junk_allergen", 10 ] ],
+    "looks_like": "syrup"
   },
   {
     "type": "COMESTIBLE",

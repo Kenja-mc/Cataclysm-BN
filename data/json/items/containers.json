@@ -370,7 +370,8 @@
     "color": "brown",
     "contains": "40 L",
     "seals": true,
-    "flags": [ "ALLOWS_REMOTE_USE" ]
+    "flags": [ "ALLOWS_REMOTE_USE" ],
+    "looks_like": "box_large"
   },
   {
     "id": "box_large",

@@ -784,7 +784,8 @@
     "copy-from": "seed",
     "description": "A chunk of compost laden with spores and mycelium, for growing your own mushrooms.  You'll need to \"plant\" these on tree trunks, or dedicated mushroom racks, for it to grow.",
     "seed_data": { "plant_name": "mushroom", "fruit": "mushroom", "required_terrain_flag": "MUSHROOM_PLANTABLE", "grow": "14 days" },
-    "extend": { "flags": [ "CAN_PLANT_UNDERGROUND" ] }
+    "extend": { "flags": [ "CAN_PLANT_UNDERGROUND" ] },
+    "looks_like": "mushroom"
   },
   {
     "type": "COMESTIBLE",
@@ -807,7 +808,8 @@
       "grow": "14 days"
     },
     "extend": { "flags": [ "CAN_PLANT_UNDERGROUND" ] },
-    "vitamins": [ [ "veggy_allergen", 1 ] ]
+    "vitamins": [ [ "veggy_allergen", 1 ] ],
+    "looks_like": "mushroom_morel"
   },
   {
     "type": "COMESTIBLE",

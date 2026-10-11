@@ -180,7 +180,8 @@
     "consume_divisor": 110,
     "dispersion_modifier": 75,
     "loudness_modifier": -35,
-    "flags": [ "DISABLE_SIGHTS", "CONSUMABLE" ]
+    "flags": [ "DISABLE_SIGHTS", "CONSUMABLE" ],
+    "looks_like": "suppressor"
   },
   {
     "id": "suppressor",

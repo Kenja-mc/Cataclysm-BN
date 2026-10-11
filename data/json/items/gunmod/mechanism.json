@@ -409,6 +409,7 @@
     "location": "mechanism",
     "mod_targets": [ "ar15", "m4a1", "m16a4", "ar_pistol", "h&k416a5", "m27iar" ],
     "install_time": "30 m",
-    "min_skills": [ [ "mechanics", 3 ], [ "fabrication", 2 ] ]
+    "min_skills": [ [ "mechanics", 3 ], [ "fabrication", 2 ] ],
+    "looks_like": "receiver"
   }
 ]

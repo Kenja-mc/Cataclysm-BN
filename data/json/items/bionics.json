@@ -1370,7 +1370,8 @@
     "name": { "str": "Taste Fouler" },
     "description": "A broken and mis-wired module that would cause food and drink to taste terrible.",
     "weight": "100 g",
-    "difficulty": 7
+    "difficulty": 7,
+    "looks_like": "bio_night"
   },
   {
     "id": "bio_sleep_shutdown",
@@ -1379,7 +1380,8 @@
     "name": { "str_sp": "Sleep Mode Shutdown CBM" },
     "description": "This CBM completely shuts down all communication between the user's brain and the rest of their body when they fall asleep, preventing them from waking up under any circumstance until their natural sleep cycle completes.  An inability to trigger its effects manually makes it useless as an anesthesia substitute.",
     "weight": "100 g",
-    "difficulty": 10
+    "difficulty": 10,
+    "looks_like": "bio_night"
   },
   {
     "id": "bn_bio_solar",
@@ -1388,7 +1390,8 @@
     "name": { "str": "Solar Panels CBM" },
     "description": "Installed on your back is a set of retractable solar panels.  When in direct sunlight, they will automatically deploy and slowly recharge your power level.",
     "price": "3500 USD",
-    "difficulty": 4
+    "difficulty": 4,
+    "looks_like": "bio_solar"
   },
   {
     "id": "afs_bio_missiles",

@@ -422,7 +422,8 @@
     "symbol": "#",
     "color": "light_gray",
     "use_action": { "type": "deploy_furn", "furn_type": "f_chair_folding" },
-    "flags": [ "FRAGILE_MELEE" ]
+    "flags": [ "FRAGILE_MELEE" ],
+    "looks_like": "camp_chair"
   },
   {
     "id": "metal_charcoal_kiln",

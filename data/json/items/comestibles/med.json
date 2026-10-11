@@ -42,7 +42,8 @@
     "symbol": "!",
     "color": "green",
     "use_action": { "type": "unpack", "group": "individual_first_aid_kit" },
-    "flags": [ "NO_REPAIR", "NO_SALVAGE" ]
+    "flags": [ "NO_REPAIR", "NO_SALVAGE" ],
+    "looks_like": "ifak"
   },
   {
     "id": "melatonin_tablet",
