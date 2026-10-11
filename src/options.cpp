@@ -1902,6 +1902,9 @@ void options_manager::add_options_interface()
     {  { "decibels", translate_marker( "Decibels" ) }, { "relative_decibels", translate_marker( "Relative Decibels" ) }, { "tiles", translate_marker( "Rough Tiles" ) } },
     "tiles"
        );
+    add( "SOUND_MARKER_TURNS", interface, translate_marker( "Sound marker turns" ),
+         translate_marker( "How many turns a ? marker for a sound you heard but couldn't see stays on the map, fading as it ages.  1 clears it after your next action, as upstream does." ),
+         1, 10, 3 );
 
     add(
         "OVERMAP_COORDINATE_FORMAT",
