@@ -2575,6 +2575,34 @@ void options_manager::add_options_graphics()
 
     get_option( "STATE_MODIFIERS" ).setPrerequisite( "USE_TILES" );
 
+    add( "ITEM_LAYERING", graphics, translate_marker( "Item layering on furniture" ),
+         translate_marker( "If true, items on top of furniture are drawn on top of the furniture sprite.  If false, items are not drawn on furniture." ),
+         true, COPT_CURSES_HIDE
+       );
+
+    get_option( "ITEM_LAYERING" ).setPrerequisite( "USE_TILES" );
+
+    add( "CLIFF_SHADING", graphics, translate_marker( "Cliff edge shading" ),
+         translate_marker( "If true, cliff edges between z-levels are shaded to show height differences." ),
+         true, COPT_CURSES_HIDE
+       );
+
+    get_option( "CLIFF_SHADING" ).setPrerequisite( "USE_TILES" );
+
+    add( "DIRECTIONAL_STAIRS", graphics, translate_marker( "Directional stairs" ),
+         translate_marker( "If true, stairs and ramps orient based on adjacent walkable tiles." ),
+         true, COPT_CURSES_HIDE
+       );
+
+    get_option( "DIRECTIONAL_STAIRS" ).setPrerequisite( "USE_TILES" );
+
+    add( "ITEM_THUMBNAILS", graphics, translate_marker( "Item thumbnails in UI" ),
+         translate_marker( "If true, item sprites are shown in inventory and pickup UI." ),
+         true, COPT_CURSES_HIDE
+       );
+
+    get_option( "ITEM_THUMBNAILS" ).setPrerequisite( "USE_TILES" );
+
     add_empty_line();
 
     add( "PIXEL_MINIMAP", graphics, translate_marker( "Pixel minimap" ),
@@ -4519,6 +4547,10 @@ void options_manager::cache_to_globals()
     prevent_occlusion_max_dist = ::get_option<float>( "PREVENT_OCCLUSION_MAX_DIST" );
     static_z_effect = ::get_option<bool>( "STATICZEFFECT" );
     overmap_transparency = ::get_option<bool>( "OVERMAP_TRANSPARENCY" );
+    item_layering_enabled = ::get_option<bool>( "ITEM_LAYERING" );
+    cliff_shading_enabled = ::get_option<bool>( "CLIFF_SHADING" );
+    directional_stairs_enabled = ::get_option<bool>( "DIRECTIONAL_STAIRS" );
+    item_thumbnails_enabled = ::get_option<bool>( "ITEM_THUMBNAILS" );
     PICKUP_RANGE = ::get_option<int>( "PICKUP_RANGE" );
 
     monster_lod_enabled       = ::get_option<bool>( "MONSTER_LOD_ENABLED" );

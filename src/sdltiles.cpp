@@ -1608,6 +1608,34 @@ static bool draw_window( Font_Ptr &font, const catacurses::window &w )
     return draw_window( font, w, point( win->pos.x * ::fontwidth, win->pos.y * ::fontheight ) );
 }
 
+struct pending_thumbnail {
+    point pos;
+    int width;
+    int height;
+    std::string item_id;
+};
+static std::vector<pending_thumbnail> pending_thumbnails;
+
+static void draw_pending_thumbnails()
+{
+    for( const auto &thumb : pending_thumbnails ) {
+        const itype_id id( thumb.item_id );
+        const it_type *it_type = item::find_type( id );
+        if( !it_type ) {
+            continue;
+        }
+        item dummy_item( id, calendar::turn_zero );
+        dummy_item.type = it_type;
+        tilecontext->draw_item_thumbnail( dummy_item, thumb.pos, thumb.width, thumb.height );
+    }
+    pending_thumbnails.clear();
+}
+
+void register_item_thumbnail( point pos, int width, int height, const std::string &item_id )
+{
+    pending_thumbnails.push_back( { pos, width, height, item_id } );
+}
+
 void cata_cursesport::curses_drawwindow( const catacurses::window &w )
 {
     if( clear_display_buffer_before_redraw ) {
@@ -1780,6 +1808,7 @@ void cata_cursesport::curses_drawwindow( const catacurses::window &w )
     if( update ) {
         needupdate = true;
     }
+    draw_pending_thumbnails();
 }
 
 static int alt_buffer = 0;

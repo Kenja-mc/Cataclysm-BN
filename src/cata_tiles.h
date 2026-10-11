@@ -939,6 +939,12 @@ class cata_tiles
                         const bool ( &invisible )[5], int z_drop );
         bool draw_field_or_item( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
                                  const bool ( &invisible )[5], int z_drop );
+        bool draw_item_on_furniture( const tripoint_bub_ms &p, const lit_level ll, int &height_3d,
+                                    const bool ( &invisible )[5], int z_drop );
+        bool draw_cliff_overlay( const tripoint_bub_ms &p, const lit_level ll, int &height_3d,
+                                 const bool ( &invisible )[5], int z_drop );
+        void get_stairs_orientation( const tripoint_bub_ms &p, int &rota, int &subtile,
+                                    const bool ( &invisible )[5] );
         bool draw_vpart( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
                          const bool ( &invisible )[5], int z_drop );
         bool draw_critter_at( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
@@ -952,6 +958,7 @@ class cata_tiles
                              const bool ( &invisible )[5], int z_drop );
         bool draw_zombie_revival_indicators( const tripoint_bub_ms &pos, lit_level ll, int &height_3d,
                                              const bool ( &invisible )[5], int z_drop );
+        bool draw_item_thumbnail( const item &itm, const point &dest, int width, int height );
         void draw_entity_with_overlays( const Character &ch, const tripoint_bub_ms &p, lit_level ll,
                                         int &height_3d, bool as_independent_entity = false );
 

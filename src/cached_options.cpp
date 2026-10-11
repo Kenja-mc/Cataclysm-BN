@@ -60,4 +60,9 @@ time_duration activity_skip_stat_update_ticks = 1_seconds;
 
 FungalOptions fungal_opt;
 
+bool item_layering_enabled = true;
+bool cliff_shading_enabled = true;
+bool directional_stairs_enabled = true;
+bool item_thumbnails_enabled = true;
+
 error_log_format_t error_log_format = error_log_format_t::human_readable;
