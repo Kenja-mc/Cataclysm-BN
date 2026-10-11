@@ -25,6 +25,7 @@
 #include "monster.h"
 #include "mtype.h"
 #include "npc.h"
+#include "options.h"
 #include "overmap/omdata.h"
 #include "overmap/overmapbuffer.h"
 #include "overmap/overmapbuffer_registry.h"
@@ -2851,7 +2852,9 @@ void sounds::process_sound_markers( Character *who )
 
             // Then place the sound marker in a random one.
             if( !unseen_points.empty() ) {
-                sound_markers.emplace( random_entry( unseen_points ), element.sound );
+                auto marker = element.sound;
+                marker.created_at = calendar::turn;
+                sound_markers.insert_or_assign( random_entry( unseen_points ), std::move( marker ) );
             }
         }
     }
@@ -2975,20 +2978,26 @@ void sounds::clear_floodfill_que( const bool &soundperf )
 
 void sounds::reset_markers()
 {
-    sound_markers.clear();
+    // A setting of 1 keeps upstream's behaviour: markers last until the player's next action.
+    const auto keep = get_option<int>( "SOUND_MARKER_TURNS" );
+    std::erase_if( sound_markers, [&]( const auto & mark ) {
+        return keep <= 1 || calendar::turn - mark.second.created_at >= time_duration::from_turns( keep - 1 );
+    } );
 }
 
-std::vector<tripoint_bub_ms> sounds::get_footstep_markers()
+auto sounds::get_footstep_markers() -> std::vector<footstep_marker>
 {
-    // Optimization, make this static and clear it in reset_markers?
-    std::vector<tripoint_bub_ms> footsteps;
-    footsteps.reserve( sound_markers.size() );
-    for( const auto &mark : sound_markers ) {
-        if( !g->u.sees( mark.first ) ) {
-            footsteps.push_back( mark.first );
-        }
-    }
-    return footsteps;
+    using namespace std::views;
+    return sound_markers
+           | filter( []( const auto & mark ) { return !g->u.sees( mark.first ); } )
+    | transform( []( const auto & mark ) {
+        return footstep_marker{
+            .pos = mark.first,
+            .age = to_turns<int>( calendar::turn - mark.second.created_at ),
+            .category = mark.second.category,
+        };
+    } )
+    | std::ranges::to<std::vector>();
 }
 
 std::pair< std::vector<tripoint_bub_ms>, std::vector<tripoint_bub_ms>> sounds::get_monster_sounds()

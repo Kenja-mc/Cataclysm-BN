@@ -14,6 +14,7 @@
 #include "point.h"
 
 #include "coordinates.h"
+#include "calendar.h"
 #include "enum_traits.h"
 #include "units_angle.h"
 
@@ -78,8 +79,14 @@ void process_sound_markers( Character *who );
 auto direction_index_to_sound_source( const tripoint_bub_ms &source,
                                       const tripoint_bub_ms &listener ) -> uint8_t;
 
-// Return list of points that have sound events the player can hear.
-std::vector<tripoint_bub_ms> get_footstep_markers();
+/// A sound the player heard from a spot it can't see, `age` turns ago.
+struct footstep_marker {
+    tripoint_bub_ms pos;
+    int age = 0;
+    sound_t category = sound_t::background;
+};
+// Sounds the player heard from spots it can't see.
+auto get_footstep_markers() -> std::vector<footstep_marker>;
 // Return a vector of all sound events not from monsters, and all sound events from monsters.
 std::pair< std::vector<tripoint_bub_ms>, std::vector<tripoint_bub_ms>> get_monster_sounds();
 // retrieve the sound event(s?) at a location.
@@ -603,6 +610,8 @@ struct sound_event {
     // NPC and monster faction of the source creature, if applicable. Do not set for sounds not from creatures.
     faction_id faction = faction_id( "no_faction" );
     mfaction_str_id monfaction = mfaction_str_id( "" );
+    /** When the marker was created, for fading sound markers on the map. */
+    time_point created_at;
 };
 
 

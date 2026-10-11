@@ -4586,15 +4586,35 @@ void game::disp_NPCs()
 }
 
 // A little helper to draw footstep glyphs.
+namespace
+{
+/// Colour of a heard-sound marker: by kind, dimmer as it ages.
+auto footstep_color( const sounds::footstep_marker &mark ) -> nc_color
+{
+    if( mark.age >= 2 ) {
+        return c_dark_gray;
+    }
+    using sounds::sound_t;
+    const auto violent = mark.category == sound_t::combat || mark.category == sound_t::alarm ||
+                         mark.category == sound_t::destructive_activity;
+    const auto talk = mark.category == sound_t::speech || mark.category == sound_t::electronic_speech ||
+                      mark.category == sound_t::alert || mark.category == sound_t::order;
+    if( mark.age == 1 ) {
+        return violent ? c_red : talk ? c_cyan : c_brown;
+    }
+    return violent ? c_light_red : talk ? c_light_cyan : c_yellow;
+}
+} // namespace
+
 static void draw_footsteps( const catacurses::window &window, const tripoint_rel_ms &offset )
 {
-    for( const auto &footstep : sounds::get_footstep_markers() ) {
-        char glyph = '?';
-        if( footstep.z() != offset.z() ) { // Here z isn't an offset, but a coordinate
-            glyph = footstep.z() > offset.z() ? '^' : 'v';
+    for( const auto &mark : sounds::get_footstep_markers() ) {
+        auto glyph = '?';
+        if( mark.pos.z() != offset.z() ) { // Here z isn't an offset, but a coordinate
+            glyph = mark.pos.z() > offset.z() ? '^' : 'v';
         }
 
-        mvwputch( window, footstep.xy().raw() + offset.xy().raw(), c_yellow, glyph );
+        mvwputch( window, mark.pos.xy().raw() + offset.xy().raw(), footstep_color( mark ), glyph );
     }
 }
 

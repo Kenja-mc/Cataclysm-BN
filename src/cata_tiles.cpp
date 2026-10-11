@@ -7164,26 +7164,13 @@ void cata_tiles::draw_footsteps_frame( const tripoint_bub_ms &center )
     static const std::string id_footstep_above = "footstep_above";
     static const std::string id_footstep_below = "footstep_below";
 
-    for( const tripoint_bub_ms &pos : sounds::get_footstep_markers() ) {
-        if( pos.z() == center.z() ) {
-            draw_from_id_string(
-            {id_footstep, C_NONE, empty_string, 0, 0},
-            pos, std::nullopt, std::nullopt,
-            lit_level::LIT, false, 0, false
-            );
-        } else if( pos.z() > center.z() ) {
-            draw_from_id_string(
-            {id_footstep_above, C_NONE, empty_string, 0, 0},
-            pos, std::nullopt, std::nullopt,
-            lit_level::LIT, false, 0, false
-            );
-        } else {
-            draw_from_id_string(
-            {id_footstep_below, C_NONE, empty_string, 0, 0},
-            pos, std::nullopt, std::nullopt,
-            lit_level::LIT, false, 0, false
-            );
-        }
+    for( const auto &mark : sounds::get_footstep_markers() ) {
+        const auto &id = mark.pos.z() == center.z() ? id_footstep :
+                         mark.pos.z() > center.z() ? id_footstep_above : id_footstep_below;
+        // Older markers fade into the shadows.
+        const auto light = mark.age == 0 ? lit_level::LIT : lit_level::LOW;
+        draw_from_id_string( {id, C_NONE, empty_string, 0, 0}, mark.pos, std::nullopt, std::nullopt,
+                             light, false, 0, false );
     }
 }
 /* END OF ANIMATION FUNCTIONS */
