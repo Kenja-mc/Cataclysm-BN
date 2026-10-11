@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 
 #include <map>
 #include <utility>
@@ -26,9 +27,9 @@ struct production_info {
     /// Whether a producer can be crafted right now, per producer recipe.
     std::map<const recipe *, bool> craftable;
     /// Real units of a component type that one batch of a producer yields.
-    std::map<std::pair<const recipe *, itype_id>, int> units;
+    std::map<std::pair<const recipe *, itype_id>, std::int64_t> units;
 
-    void clear()
+    auto clear() -> void
     {
         producers.clear();
         craftable.clear();
@@ -77,6 +78,6 @@ auto find_known_producer( const part_query &query, const item_comp &comp ) -> co
 /// actual result charges, container contents and byproducts.  The real items
 /// are only built once per producer and component when the query has a cache.
 auto units_per_batch( const part_query &query, const recipe &producer,
-                      const itype_id &type ) -> int;
+                      const itype_id &type ) -> std::int64_t;
 
 } // namespace craft_chain

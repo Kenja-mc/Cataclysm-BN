@@ -693,16 +693,19 @@ static std::vector<std::string> recipe_info(
                     const std::int64_t missing = std::max<std::int64_t>( 0, needed - have );
                     // Real output units, so charged, contained and byproduct
                     // results all count towards one batch of the part.
-                    const int units = std::max( 1, craft_chain::units_per_batch( query, *part,
-                                                comp.type ) );
-                    const int batches = static_cast<int>( ( missing + units - 1 ) / units );
+                    const std::int64_t units = craft_chain::units_per_batch( query, *part,
+                                               comp.type );
+                    if( units <= 0 ) {
+                        continue;
+                    }
+                    const std::int64_t batches = ( missing + units - 1 ) / units;
                     std::ostringstream part_oss;
                     if( producer != nullptr ) {
                         part_oss << colorize( _( "Part: " ), c_white )
                                  << colorize( producer->result_name(), c_light_blue )
-                                 << colorize( string_format( _( " (make %d more, ~%s)" ),
-                                                             static_cast<int>( missing ),
-                                                             craft_time_string( *producer, batches ) ),
+                                 << colorize( string_format( _( " (make %s more, ~%s)" ),
+                                                             std::to_string( missing ),
+                                                             craft_time_string( *producer, static_cast<int>( batches ) ) ),
                                               c_white );
                     } else {
                         part_oss << colorize( _( "Part (blocked): " ), c_white )
@@ -715,7 +718,7 @@ static std::vector<std::string> recipe_info(
                     const auto &part_req = part->simple_requirements();
                     const auto &part_filter = part->get_component_filter( recipe_filter_flags::none );
                     for( const std::string &line : part_req.blocker_lines( crafting_inv, part_filter,
-                            batches ) ) {
+                            static_cast<int>( batches ) ) ) {
                         const std::string colored = colorize( "  " + line, c_red );
                         std::vector<std::string> preq_lines = foldstring( colored, fold_width );
                         result.insert( result.end(), preq_lines.begin(), preq_lines.end() );

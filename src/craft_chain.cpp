@@ -28,33 +28,30 @@ auto craftable_now( const inventory &crafting_inv, const recipe &producer ) -> b
 auto producers_for( const craft_chain::part_query &query, const itype_id &type )
 -> craft_chain::part_producers
 {
-    const std::vector<const recipe *> *candidates = nullptr;
-    std::vector<const recipe *> searched;
+    auto searched = std::vector<const recipe *>();
+    const auto *candidates = &searched;
     if( query.cache != nullptr ) {
         if( auto it = query.cache->producers.find( type ); it != query.cache->producers.end() ) {
             candidates = &it->second;
         }
     }
-    if( candidates == nullptr ) {
+    if( candidates == &searched ) {
         searched = query.known_recipes.search_result( type );
         // Nested category stubs and obsolete recipes never produce a part.
-        std::erase_if( searched, [&]( const recipe * r ) {
-            return r == nullptr || r->obsolete || r->is_nested();
-        } );
+        std::erase_if( searched, []( const auto *r ) { return r == nullptr || r->obsolete || r->is_nested(); } );
         // Recipes whose result is the component itself are preferred over ones
         // that only make it as a byproduct.
-        std::ranges::stable_sort( searched, std::ranges::greater(), [&]( const recipe * r ) {
-            return r->result() == type;
-        } );
+        std::ranges::stable_sort( searched, std::ranges::greater(),
+        [&]( const auto *r ) { return r->result() == type; } );
         if( query.cache != nullptr ) {
-            candidates = &query.cache->producers.emplace( type, searched ).first->second;
+            candidates = &query.cache->producers.emplace( type, std::move( searched ) ).first->second;
         } else {
             candidates = &searched;
         }
     }
 
     auto out = craft_chain::part_producers{};
-    for( const recipe *r : *candidates ) {
+    for( const auto *r : *candidates ) {
         // The goal recipe is never a producer of its own missing part.
         if( r == &query.goal || r->ident() == query.goal.ident() ) {
             continue;
@@ -62,7 +59,7 @@ auto producers_for( const craft_chain::part_query &query, const itype_id &type )
         if( out.known == nullptr ) {
             out.known = r;
         }
-        bool craftable = false;
+        auto craftable = false;
         if( query.cache == nullptr ) {
             craftable = craftable_now( query.crafting_inv, *r );
         } else if( auto it = query.cache->craftable.find( r ); it != query.cache->craftable.end() ) {
@@ -81,14 +78,14 @@ auto producers_for( const craft_chain::part_query &query, const itype_id &type )
 
 /// How many units of `type` these crafted items carry, looking inside a
 /// produced container so contained results count towards the component too.
-auto units_of_type( const std::vector<detached_ptr<item>> &items, const itype_id &type ) -> int
+auto units_of_type( const std::vector<detached_ptr<item>> &items, const itype_id &type ) -> std::int64_t
 {
-    int units = 0;
+    std::int64_t units = 0;
     for( const auto &it : items ) {
         if( it->typeId() == type ) {
             units += it->count_by_charges() ? it->charges : 1;
         } else if( it->is_container() ) {
-            for( const item *contained : it->contents.all_items_top() ) {
+            for( const auto *contained : it->contents.all_items_top() ) {
                 if( contained->typeId() == type ) {
                     units += contained->count_by_charges() ? contained->charges : 1;
                 }
@@ -145,7 +142,7 @@ auto find_known_producer( const part_query &query, const item_comp &comp ) -> co
 }
 
 auto units_per_batch( const part_query &query, const recipe &producer,
-                      const itype_id &type ) -> int
+                      const itype_id &type ) -> std::int64_t
 {
     const auto key = std::make_pair( &producer, type );
     if( query.cache != nullptr ) {
@@ -154,8 +151,8 @@ auto units_per_batch( const part_query &query, const recipe &producer,
         }
     }
     // One batch, built the way crafting itself builds it.
-    const int units = units_of_type( producer.create_results( 1 ), type ) +
-                      units_of_type( producer.create_byproducts( 1 ), type );
+    const auto units = units_of_type( producer.create_results( 1 ), type ) +
+                       units_of_type( producer.create_byproducts( 1 ), type );
     if( query.cache != nullptr ) {
         query.cache->units.emplace( key, units );
     }
