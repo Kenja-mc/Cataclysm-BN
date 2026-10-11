@@ -16,6 +16,12 @@ enum class pixel_minimap_type {
     iso
 };
 
+enum class pixel_minimap_mode {
+    solid,
+    squares,
+    dots
+};
+
 enum class pixel_minimap_zoom {
     zoom_1x,
     zoom_2x,
