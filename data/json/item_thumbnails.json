@@ -1,0 +1,152 @@
+[
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_gun_pistol",
+    "picture": [ " ,------------.", "|  o       o  |===", " `------------'", "     |  |", "     '--'" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_gun_rifle",
+    "picture": [ " ,---------.", "|  o     o   |=====", " `---------'", "      |  |", "      '--'" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_gun_shotgun",
+    "picture": [ " ,---------.", "|  o     o   |=====", " |   ____   |", " `---------'", "       |  |", "       '--'" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_gun_smg",
+    "picture": [ " ,-------.", "|  o    o  |=======", " `-------'", "    |    |", "    '----'" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_gun_launcher",
+    "picture": [ "  ,---------.", " /  o     o  \\======", " |  =====  |", " \\___________/", "     |  |" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_gun_bow",
+    "picture": [ "   ,--.", "  / || \\------->", " /  ||  \\", "  `----'" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_melee_blade",
+    "picture": [ "     /|", "    / |", "   /  |", "  /   |====", " /    |", " \\____|" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_melee_blunt",
+    "picture": [ "     .-.", "    (   )", "   /     \\", "  |       |", "  |       |", "   '-----'" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_melee_spear",
+    "picture": [ "    /|", "   / |", "  /  |_______", " /   |", " |   |", " \\___|" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_armor_head",
+    "picture": [ "  ,--------.", " /  o     o  \\", " |  '---'  |", "  \\________/" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_armor_torso",
+    "picture": [ "  ,--------.", " /  .----.  \\", " |  |    |  |", "  \\_|____|_/" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_armor_full",
+    "picture": [ "   ,-----.", "  /  o o  \\", " |  |   |  |", " '--|   |--'", " /  \\___/  \\" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_armor_legs",
+    "picture": [ " |  |     |  |", " |  |     |  |", " |  |     |  |", " |__|     |__|" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_armor_feet",
+    "picture": [ " ____      ____", "|    |____|    |", "|____|    |____|" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_armor_hands",
+    "picture": [ " ____    ____", "|    |  |    |", "|____|  |____|" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_food",
+    "picture": [ "  ,--------.", " /  ~~~~~~~  \\", "|  o  o  o  |", " \\__________/" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_drink",
+    "picture": [ "   ,---.", "  | ~~~~~ |", "  | ~~~~~ |", "   '---'" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_book",
+    "picture": [ " ,-----------.", "|=============|", "|             |", "|=============|", " `-----------'" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_container",
+    "picture": [ " ,-----------.", "| +-----+ |", "| |     | |", " `-----------'" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_tool",
+    "picture": [ "   ,---.", "  /     \\______", "  \\           |", "   \\_________/" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_ammo",
+    "picture": [ " ___   ___   ___", "|   | |   | |   |", "|___| |___| |___|" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_magazine",
+    "picture": [ " ,--------.", "| |====| |", "| |    | |", " `-------'" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_med",
+    "picture": [ "   ,----.", "  / +  + \\", " |  +  +  |", "  '------'" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_battery",
+    "picture": [ " ,--------.", "|  |    |  |", "|  +----+  |", " `--------'" ]
+  },
+  {
+    "//": "Generic item thumbnails drawn at the top of the item info when the item has no picture of its own. Kept small on purpose so the item name and stats stay on the first screen.",
+    "type": "ascii_art",
+    "id": "thumb_generic",
+    "picture": [ " ,--------.", "|  ??????  |", " `--------'" ]
+  }
+]

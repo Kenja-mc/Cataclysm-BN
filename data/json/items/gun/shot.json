@@ -366,6 +366,7 @@
   },
   {
     "id": "remington_1100",
+    "ascii_picture": "remington1100",
     "copy-from": "shotgun_base",
     "type": "GUN",
     "name": { "str": "Remington 1100 competition" },

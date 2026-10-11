@@ -26,6 +26,7 @@
   },
   {
     "id": "762_51",
+    "ascii_picture": "308",
     "copy-from": "308",
     "type": "AMMO",
     "name": { "str": "7.62x51mm NATO M80" },
@@ -39,6 +40,7 @@
   },
   {
     "id": "762_51_incendiary",
+    "ascii_picture": "762_51_incendiary",
     "copy-from": "762_51",
     "type": "AMMO",
     "name": { "str": "7.62x51mm NATO tracer" },

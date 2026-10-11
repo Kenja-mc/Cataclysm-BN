@@ -2442,6 +2442,13 @@ void options_manager::add_options_graphics()
          true, COPT_NO_HIDE
        );
 
+    add( "ASCII_ITEM_THUMBNAILS", graphics, translate_marker( "Item kind thumbnails" ),
+         translate_marker( "Shows a small picture of the item kind at the top of the item description, "
+                           "for items that have no picture of their own." ),
+         true, COPT_NO_HIDE
+       );
+    get_option( "ASCII_ITEM_THUMBNAILS" ).setPrerequisite( "ENABLE_ASCII_ART_ITEM" );
+
     add_empty_line();
 
     add( "USE_TILES", graphics, translate_marker( "Use tiles" ),

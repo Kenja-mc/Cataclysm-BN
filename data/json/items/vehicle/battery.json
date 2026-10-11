@@ -1,6 +1,7 @@
 [
   {
     "id": "battery_car",
+    "ascii_picture": "battery_car",
     "type": "MAGAZINE",
     "category": "battery",
     "name": { "str": "car battery", "str_pl": "car batteries" },
@@ -20,6 +21,7 @@
   },
   {
     "id": "battery_motorbike",
+    "ascii_picture": "battery_motorbike",
     "copy-from": "battery_car",
     "type": "MAGAZINE",
     "name": { "str": "motorbike battery", "str_pl": "motorbike batteries" },
@@ -33,6 +35,7 @@
   },
   {
     "id": "battery_motorbike_small",
+    "ascii_picture": "battery_motorbike_small",
     "copy-from": "battery_car",
     "type": "MAGAZINE",
     "name": { "str": "small motorbike battery", "str_pl": "small motorbike batteries" },
@@ -47,6 +50,7 @@
   {
     "type": "GENERIC",
     "id": "it_battery_mount",
+    "ascii_picture": "it_battery_mount",
     "name": { "str": "storage battery case" },
     "description": "An empty case that can hold a storage battery, complete with charging controller chip, connecting wires, and mechanisms to help lift the battery to be mounted into position.",
     "weight": "1231 g",
@@ -76,6 +80,7 @@
   },
   {
     "id": "medium_storage_battery",
+    "ascii_picture": "medium_storage_battery",
     "copy-from": "storage_battery",
     "type": "MAGAZINE",
     "name": { "str": "medium storage battery", "str_pl": "medium storage batteries" },
@@ -98,6 +103,7 @@
   },
   {
     "id": "small_storage_battery",
+    "ascii_picture": "small_storage_battery",
     "copy-from": "storage_battery",
     "type": "MAGAZINE",
     "name": { "str": "small storage battery", "str_pl": "small storage batteries" },

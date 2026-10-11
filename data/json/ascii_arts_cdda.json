@@ -1,0 +1,1843 @@
+[
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "10mm_fmj",
+    "picture": [ "<color_yellow>,", "º" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "12mm",
+    "picture": [ "<color_dark_gray>.", "<color_light_gray>X</color>", "\"" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "20x66_beanbag",
+    "picture": [ "<color_white>╒╕", "<color_light_red>││", "╙╜" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "20x66_flare",
+    "picture": [ "<color_yellow>╒╕", "<color_light_red>││", "╙╜" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "223",
+    "picture": [ "<color_yellow>,", "‼", "\"" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "22_lr",
+    "picture": [ "<color_yellow>.", "╨" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "22_ratshot",
+    "picture": [ "<color_cyan>.", "<color_yellow>╨" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "2lcanteen",
+    "picture": [
+      "    <color_light_gray>,__",
+      "  <color_dark_gray>_<color_light_gray>o┴</color>╨<color_light_gray>┴</color>┐_",
+      ".'<color_white>/</color><color_light_gray>/</color>     '.",
+      "│ <color_white>│</color><color_light_gray>|</color>   ┌. │",
+      "│ <color_white>│</color><color_light_gray>|</color>   │ ││",
+      "│ <color_white>│</color><color_light_gray>|</color>   │ ││",
+      "│ <color_white>│</color><color_light_gray>|</color>    '┘│",
+      "│ <color_white>│</color><color_light_gray>|</color>      │",
+      "'─<color_white>│</color><color_light_gray>┼</color>──────'",
+      "  <color_white>││",
+      "  ││",
+      "  ││",
+      "  ││",
+      "  ││",
+      "  ││",
+      "  ││",
+      "  ││",
+      "  ││",
+      "  ''"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "3006",
+    "picture": [ "<color_yellow>;", "‼", "\"" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "3006_incendiary",
+    "picture": [ "<color_white>;", "<color_yellow>‼", "\"" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "3006fmj",
+    "picture": [ "<color_dark_gray>;", "<color_yellow>‼", "\"" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "300_winmag",
+    "picture": [ "<color_yellow>;", "‼", "\"" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "300blk",
+    "picture": [ "<color_yellow>,", "‼", "\"" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "308",
+    "picture": [ "<color_yellow>;", "‼", "\"" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "30gal_drum",
+    "picture": [
+      "<color_light_gray>(<color_yellow>1:2</color>)</color>",
+      "<color_light_gray>(=======╗╔=======)",
+      " <color_dark_gray>│     <color_light_gray>~°°'</color>     │",
+      " │              │",
+      " <==============>",
+      " │              │",
+      " │              │",
+      " │              │",
+      " │              │",
+      " <==============>",
+      " │              │",
+      " │              │",
+      " ╩══════════════╩"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "32_acp",
+    "picture": [ "<color_yellow>,", "º" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "357mag_fmj",
+    "picture": [ "<color_yellow>,", "‼" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "357sig_fmj",
+    "picture": [ "<color_yellow>,", "º" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "36navy",
+    "picture": [ "<color_white>î" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "380_FMJ",
+    "picture": [ "<color_yellow>,", "º" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "38_special",
+    "picture": [ "<color_yellow>,", "‼" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "40sw",
+    "picture": [ "<color_yellow>,", "º" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "40x46mm_m1006",
+    "picture": [ "<color_light_green>/^\\", "<color_dark_gray>║ ║", "<color_white>║ ║", "~~~" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "40x46mm_m433",
+    "picture": [ "<color_yellow>/^\\", "<color_light_gray>║ ║", "<color_green>║ ║", "~~~" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "40x46mm_m576",
+    "picture": [ "<color_dark_gray>í^ì", "<color_green>║ ║", "~~~" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "40x46mm_m651",
+    "picture": [ "<color_light_gray>.-.", "│ │", "║<color_red>─</color>║", "║ ║", "<color_green>║ ║", "~~~" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "40x53mm_improvised",
+    "picture": [ "<color_light_gray>┌=┐", "<color_green>║ ║", "╨─╨" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "40x53mm_m1001",
+    "picture": [ "<color_yellow>/^\\", "<color_dark_gray>║ ║", "<color_green>║ ║", "╨─╨" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "40x53mm_m430a1",
+    "picture": [ "<color_yellow>/^\\", "<color_light_gray>║ ║", "<color_green>║ ║", "╨─╨" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "44army",
+    "picture": [ "<color_light_gray>,", "<color_white>I" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "44fmj",
+    "picture": [ "<color_yellow>,", "‼" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "44magnum",
+    "picture": [ "<color_light_gray>,", "<color_yellow>‼" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "4570_pen",
+    "picture": [ "<color_yellow>.", "‼", "\"" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "4570_sp",
+    "picture": [ "<color_light_gray>,", "<color_yellow>‼", "\"" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "45_jhp",
+    "picture": [ "<color_yellow>,", "º" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "45colt_jhp",
+    "picture": [ "<color_light_gray>,", "<color_yellow>‼" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "50_incendiary",
+    "picture": [ "<color_red>/\\", "<color_yellow>||", "││", "││", "└┘" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "50_mk211",
+    "picture": [ "<color_light_green>/<color_white>\\", "<color_yellow>||", "││", "││", "└┘" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "50bmg",
+    "picture": [ "<color_yellow>/\\", "||", "││", "││", "└┘" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "50match",
+    "picture": [ "<color_light_gray>/\\", "<color_yellow>||", "││", "││", "└┘" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "50ss",
+    "picture": [ "<color_dark_gray>/\\", "<color_yellow>||", "││", "││", "└┘" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "556",
+    "picture": [ "<color_light_green>,", "<color_yellow>‼", "\"" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "556_incendiary",
+    "picture": [ "<color_red>,", "<color_yellow>‼", "\"" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "55gal_drum",
+    "picture": [
+      "<color_light_gray>(<color_yellow>1:2</color>)</color>",
+      "<color_light_gray>(=========╗╔=========)",
+      " <color_dark_gray>│       <color_light_gray>~°°'</color>       │",
+      " │                  │",
+      " │                  │",
+      " <==================>",
+      " │                  │",
+      " │                  │",
+      " │                  │",
+      " │                  │",
+      " │                  │",
+      " <==================>",
+      " │                  │",
+      " │                  │",
+      " │                  │",
+      " ╩══════════════════╩"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "66mm_HEAT",
+    "picture": [
+      "     <color_light_gray>A",
+      "    <color_green>/ \\",
+      "   /   \\",
+      "   │<color_yellow>≈≈≈</color>│",
+      "   │   │",
+      "   \\   /",
+      "    \\ /",
+      "    <color_yellow>│ │",
+      "    [ ]",
+      "    │ │",
+      "    │ │",
+      "    │ │",
+      "    │ │",
+      "    'W'",
+      "    / \\",
+      "  .'/|\\'.",
+      ".'.'.^.'.'.",
+      "└'└'   '┘'┘"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "762_51_incendiary",
+    "picture": [ "<color_red>;", "<color_yellow>‼", "\"" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "762_54R",
+    "picture": [ "<color_yellow>;", "‼" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "762_m87",
+    "picture": [ "<color_light_gray>;", "<color_yellow>‼" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "84x246mm_he",
+    "picture": [
+      "  <color_light_gray>,.",
+      " /  \\",
+      "|┴┴┴┴|",
+      "<color_green>│<color_yellow>≈≈≈≈</color>│",
+      "│    │",
+      "<color_dark_gray>║    ║",
+      "║<color_white>≈≈≈≈</color>║",
+      "║    ║",
+      "║    ║",
+      "║    ║",
+      "║    ║",
+      "║    ║",
+      "║    ║",
+      "╩════╩"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "84x246mm_hedp",
+    "picture": [
+      "<color_dark_gray>  /\\",
+      " /  \\",
+      "/____\\",
+      "│    │",
+      "│<color_yellow>≈≈≈≈</color>│",
+      "│<color_white>_<color_yellow>][</color>_</color>│",
+      "║    ║",
+      "║<color_white>≈≈≈≈</color>║",
+      "║    ║",
+      "║ <color_white>][</color> ║",
+      "║ <color_white>][</color> ║",
+      "║ <color_white>][</color> ║",
+      "║ <color_white>][</color> ║",
+      "║    ║",
+      "╩════╩"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "84x246mm_smoke",
+    "picture": [
+      "  <color_light_gray>,.",
+      " /  \\",
+      "<color_light_green>|    |",
+      "│    │",
+      "│<color_dark_gray>≈≈≈≈</color>│",
+      "│    │",
+      "│    │",
+      "<color_dark_gray>║    ║",
+      "║<color_white>≈≈≈≈</color>║",
+      "║    ║",
+      "║    ║",
+      "║    ║",
+      "║    ║",
+      "║    ║",
+      "║    ║",
+      "╩════╩"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "8mm_caseless",
+    "picture": [ "<color_light_red>_", "║", "\"" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "9mm",
+    "picture": [ "<color_yellow>,", "º" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "atgm_heat",
+    "picture": [
+      " <color_dark_gray>______________",
+      " •============]",
+      "  [====()=====•",
+      "  <color_green>│      -┬─╦╧.",
+      "  │       │ ╠╤'",
+      "  │      -┴╥╫│",
+      "  │        ║║│",
+      "  │<color_white>NOSE END</color>║║│",
+      "  <color_yellow>│<color_dark_gray> ~|╡|~_╡</color>│││",
+      "  │<color_dark_gray> / ││~ │</color>│││</color>",
+      "  │        ║║│",
+      "  │        ║║│",
+      "  │        ║║│",
+      "  │   <color_dark_gray>.--.</color> ║║│",
+      "  │  <color_dark_gray>| D  |</color>║║│",
+      "  │  <color_dark_gray>| 'î |</color>║║│",
+      "  │   <color_dark_gray>'--'</color> ║║│",
+      "  │        ║║│",
+      "  │        ║║│",
+      "  │        ║║│",
+      "  │ <color_white>§§§</color>    ║║│",
+      "  │ <color_white>§§§</color>    ║║│",
+      "  │ <color_white>§§§ -=\\</color>║║├─┐",
+      "  │ <color_white>§§§ -=/</color>║║║ │",
+      "  │ <color_white>§§§</color>    ║║├┬┘",
+      "  │ <color_white>§§§</color>    []=│",
+      "  │   <color_white>§</color>    ║║├┘",
+      "  │   <color_white>§</color>    ║║│",
+      "  │        ║║│",
+      "  │        ║║│",
+      "  │        ║║│",
+      "  │        ║║│",
+      "  <color_red>│        │││",
+      "  │        │││</color>",
+      "  │        ║║│",
+      "  │        ║║│",
+      "  │        ║║│",
+      "  │        ║║│",
+      "  │        ║║│",
+      "  │        ║║│",
+      "  │        ║║│",
+      " .╧════╤╤══╩╩╧.",
+      " '╤════╧╧════╤'",
+      " <color_dark_gray>~~~~~~~~~~~~~~"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "badge_deputy",
+    "picture": [
+      "",
+      "                   ⚪",
+      "                  / \\",
+      "                 /   \\",
+      "                /     \\",
+      "      ⚪ _______/       \\_______ ⚪",
+      "       \\                        /",
+      "        \\                      /",
+      "         \\    ════════════    /",
+      "          \\      DEPUTY      /",
+      "         /       SHERIFF     \\",
+      "        /     ════════════    \\",
+      "       /                       \\",
+      "      /_______           _______\\",
+      "     ⚪         \\       /         ⚪",
+      "                \\     /",
+      "                 \\   /",
+      "                  \\ /",
+      "                   ⚪"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "bag_body_bag",
+    "picture": [
+      "<color_light_gray>(<color_yellow>1:2</color>)</color>",
+      "                <color_dark_gray>___",
+      "              .|───|.",
+      "   ┌──────────┼┼───┼┼──────────┐",
+      "   ││~~~~~~~~~~~~║~~~~~~~~~~~~││",
+      "   ││            ║            ││",
+      "   ││            ║            ││",
+      "   ││            ║            ││",
+      "   ││            ║            ││",
+      "  _││            ║            ││_",
+      ".|─┼┤            ║            ├┼─|.",
+      "││ ││            ║            ││ ││",
+      "'|─┼┤            ║            ├┼─|'",
+      "  ~││            ║            ││~",
+      "   ││            ║            ││",
+      "   ││            ║            ││",
+      "   ││            ║            ││",
+      "   ││            ║            ││",
+      "   ││            ║            ││",
+      "   ││            ║            ││",
+      "  _││            ║            ││_",
+      ".|─┼┤            ║            ├┼─|.",
+      "││ ││            8            ││ ││",
+      "'|─┼┤            ║            ├┼─|'",
+      "  ~││            ║            ││~",
+      "   ││            ║            ││",
+      "   ││            ║            ││",
+      "   ││            ║            ││",
+      "   ││            ║            ││",
+      "   ││            ║            ││",
+      "   ││            ║            ││",
+      "  _││            ║            ││_",
+      ".|─┼┤            ║            ├┼─|.",
+      "││ ││            ║            ││ ││",
+      "'|─┼┤            ║            ├┼─|'",
+      "  ~││            ║            ││~",
+      "   ││            ║            ││",
+      "   ││            ║            ││",
+      "   ││            ║            ││",
+      "   ││            ║            ││",
+      "   ││____________║____________││",
+      "   └──────────┼┼───┼┼──────────┘",
+      "              '|───|'",
+      "                ~~~"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "bag_canvas",
+    "picture": [
+      "         <color_brown>╒╤═╤╤═╤╤<color_white>.</color>",
+      "       .'/| ││ |\\<color_white>\\\\</color>",
+      "      / / / || \\ <color_white>││</color>\\",
+      "     / / |  /\\  |<color_white>│</color>\\<color_white>\\</color>\\",
+      "    / /  / |  |  <color_white>\\ │</color> \\",
+      "   / '  |  |  |  <color_white>│</color>'<color_white>│</color>\\ \\",
+      "   │    '     '  <color_white>│ │</color>  │",
+      "   │             <color_white>│ │</color>  │",
+      "  /              <color_white>│ *</color>   \\",
+      "  │              <color_white>* </color>    │",
+      "  │                    │",
+      "  │                    │",
+      " /                      \\",
+      " │                      │",
+      " │                      │",
+      " │                      │",
+      "/                        \\",
+      "│                        │",
+      "│                        │",
+      "'────────────────────────'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "bag_canvas_small",
+    "picture": [ "<color_brown>.=<color_white>*.</color>", "/ \\<color_white>'</color>", "'~'" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "bag_iv",
+    "picture": [
+      "<color_white>┌─┬───┬─┐",
+      "│  ~º~  │",
+      "│ <color_dark_gray> ~~ ≈</color> │",
+      "│ <color_dark_gray>≈≈≈ ≈</color> │",
+      "│ <color_dark_gray>≈≈≈ ≈</color> │",
+      "│       │",
+      "'-┬‼─‼┬-'",
+      "  \"<color_yellow>║</color>~<color_light_blue>║</color>\"",
+      "     <color_light_blue>\""
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "bag_plastic",
+    "picture": [
+      "   <color_white>,─.     .─.",
+      "  /.'/     |'/|",
+      " // |       \\ '\\",
+      " | \\│       ,\\\\ |.",
+      "/   '\\.-──-'─'.  │",
+      "|\\               \\",
+      "│   THANK  YOU   │",
+      "│   THANK  YOU  /|",
+      "\\   <color_red>THANK  YOU</color>   │",
+      ";'  THANK  YOU   /",
+      "│   THANK  YOU  .|",
+      "|,               \\",
+      "/<color_red>Have a nice day!</color>/",
+      "'--───--─────---'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "bag_zipper",
+    "picture": [
+      "<color_light_green>:==========:",
+      "<color_white>│          │",
+      "|          │",
+      "│          │",
+      "|          │",
+      "│          |",
+      "└───---───-┘"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "balloon",
+    "picture": [ " <color_red>,.", "/\\ \\", "\\.'/", " ||", " ││", " ~~" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "battery_car",
+    "picture": [
+      " <color_red>_</color>               <color_dark_gray>_</color>",
+      "<color_light_cyan>┌<color_red>\"</color>───────────────<color_dark_gray>\"</color>┐",
+      "[=================]",
+      "<color_dark_gray>║   <color_light_blue>┌─────────┐</color>   ║",
+      "║   <color_light_blue>│<color_white>Duralast </color>│</color>   ║",
+      "║   <color_light_blue>│  <color_light_cyan>Iridium</color>│</color>   ║",
+      "║   <color_light_cyan>╘═≈≈≈≈≈≈≈═╛</color>   ║",
+      "║                 ║",
+      "╙─────\"\"\"\"\"\"\"─────╜"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "battery_motorbike",
+    "picture": [
+      "<color_light_cyan>╓<color_red>▄</color>┬─────┬<color_light_gray>▄</color>╖",
+      "<color_dark_gray>│<color_white>Duralast</color> │",
+      "│  <color_light_cyan>Iridium</color>│",
+      "│<color_light_cyan>═≈≈≈≈≈≈≈═</color>│",
+      "└─────────┘"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "battery_motorbike_small",
+    "picture": [
+      " <color_light_cyan>_______",
+      "├<color_red>▀</color>└───┘<color_light_gray>▀</color>┤",
+      "<color_dark_gray>│ <color_light_cyan>≈≈≈≈≈</color> │",
+      "└───────┘"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "beaker",
+    "picture": [ "<color_white>╥───┐", "│≈ ≡│", "│▀ ≡│", "'───'" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "bokken",
+    "picture": [
+      "                                         ",
+      "                <color_brown>|\\                       ",
+      "                | \\                      ",
+      "                |  \\                     ",
+      "                |  |                     ",
+      "                |  |                     ",
+      "                |  |                     ",
+      "                |  |                     ",
+      "                |  |                     ",
+      "                |  |                     ",
+      "                |  |                     ",
+      "                |  |                     ",
+      "                |  |                     ",
+      "                |  |                     ",
+      "                |  |                     ",
+      "                |  |                     ",
+      "                |  |                     ",
+      "                |  |                     ",
+      "                |  |                     ",
+      "                |  |                     ",
+      "                |  |                     ",
+      "               (____)                    ",
+      "                [__]                     ",
+      "                [__]                     ",
+      "                [__]                     ",
+      "                [__]                     ",
+      "                [__]                     ",
+      "                [__]                     "
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "bottle_plastic_small",
+    "picture": [
+      " <color_dark_gray>╓─╖",
+      "<color_white>,'~'.",
+      "│<color_dark_gray>≈≈≈</color>│",
+      "│   │",
+      "'───'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "bottle_twoliter",
+    "picture": [
+      "   <color_white>__",
+      "   ][",
+      " ,'  '.",
+      "/      \\",
+      "|<color_light_gray>______</color>|",
+      "<color_light_gray>│      │",
+      "│ <color_light_blue>≈≈≈≈</color> │",
+      "│ <color_light_blue>≈≈≈≈</color> │",
+      "│      │",
+      "│______│</color>",
+      "│ .  . │",
+      "'─'──'─'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "bowl_clay",
+    "picture": [
+      "<color_brown>.────────.",
+      "<color_white>}========{*</color>",
+      "/|/'\\|\\./\\<color_white>|\\</color>",
+      "  '.__.'  <color_white>'</color>"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "box_cigarette",
+    "picture": [
+      "<color_red>┌───┐",
+      "│,^.│",
+      "<color_white>│<color_dark_gray>≈≈≈</color>│",
+      "└───┘"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "box_large",
+    "picture": [
+      "<color_light_gray>(<color_yellow>1:3</color>)</color>",
+      "<color_brown>┌───────────────────┐",
+      "│                   │",
+      "│                   │",
+      "│                   │",
+      "│                   │",
+      "│                   │",
+      "│                   │",
+      "└───────────────────┘"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "box_small",
+    "picture": [
+      "<color_brown>┌────────────┐",
+      "│            │",
+      "│            │",
+      "│            │",
+      "│            │",
+      "└────────────┘"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "bucket",
+    "picture": [
+      "     <color_light_gray>_.<color_brown>(=≡≡=)</color>._",
+      "   .'          '.",
+      "  /              \\",
+      " |                |",
+      "'┤________________├'",
+      " |                |",
+      " \\================/",
+      "  |              |",
+      "  \\              /",
+      "   |            |",
+      "   \\            /",
+      "    ~~~~~~~~~~~~"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "camelbak",
+    "picture": [
+      "<color_dark_gray>.      .──.",
+      ".\\\\_  .|  |.  _/'.",
+      " Yo.~'-\\__/-'~.oY",
+      " \\'\\  _.--._  /'/",
+      " │ |.'      '.| │",
+      " │ /\\░░░░░░░░/\\ │",
+      " │ ||'.≈≈≈≈.'|| │",
+      " |/  \\ ~~~~ / | |",
+      "  \\  |      | |/",
+      " (│   \\    /  |│)",
+      "  │   |    |  |│",
+      "  |    \\  /   /|",
+      "   \\   |  |  //",
+      "   |  /    \\ ||",
+      "  (\\ /      \\\\/)",
+      "    '~──────~'°"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "can_drink",
+    "picture": [
+      "<color_light_gray>:===:",
+      "<color_light_blue>│<color_light_gray>≈≈≈</color>│",
+      "│   │",
+      "│   │</color>",
+      "'═══'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "can_food",
+    "picture": [ "<color_light_gray>______", "<color_blue>│ <color_light_blue>≈≈</color> │</color>", "└────┘" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "can_food_big",
+    "picture": [
+      "<color_light_gray>┬──────────┬",
+      "<color_blue>│          │",
+      "│  <color_white>≈≈≈≈≈≈</color>  │",
+      "│          │</color>",
+      "<color_dark_gray>│   <color_yellow>≈≈≈≈</color>   │</color>",
+      "┴──────────┴"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "can_medium",
+    "picture": [
+      "<color_light_gray>______",
+      "<color_red>│    │",
+      "│<color_white>≈≈≈≈</color>│</color>",
+      "<color_white>│ <color_red>≈≈</color> │",
+      "<color_light_gray>┴────┴"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "canteen",
+    "picture": [
+      "   <color_green>╓╥╖",
+      " .-╧=╧º.",
+      "/       \\",
+      "│       │",
+      "│       │",
+      "│       │",
+      "|       |",
+      "'───────'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "canteen_wood",
+    "picture": [
+      "       <color_white>*<color_brown>Ω<color_white>--._</color>",
+      "     _.┴-┴._ <color_white>\\</color>",
+      "   .'-'~~T'-'.<color_white>|</color>",
+      " <color_white>.</color>// |     | \\\\<color_white>.</color>",
+      "<color_white>/</color>|│  │        │|<color_white>\\</color>",
+      "<color_white>│</color>|│    |  │   │|<color_white>│</color>",
+      "<color_white>│</color> \\\\|     |  // <color_white>│</color>",
+      "<color_white>│</color>  '.-.___.-.'  <color_white>│</color>",
+      "<color_white>│</color>    '~─-─~'    <color_white>│</color>",
+      "<color_white>│               │",
+      "\\               /",
+      " |             |",
+      " │             │",
+      " │             │",
+      " \\             /",
+      "  |           |",
+      "  │           │",
+      "  \\           /",
+      "   |         |",
+      "   \\         /",
+      "    '.     .'",
+      "      '-─-'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "carton_sealed",
+    "picture": [
+      "<color_white>╒═════╕</color>",
+      "<color_light_cyan>│~<color_white>(_)</color>~│",
+      "│~~~~~│",
+      "<color_blue>│ <color_white>≈≈≈</color> │",
+      "<color_white>│     │",
+      "│ <color_light_cyan>≈≈≈</color> │",
+      "│ <color_light_cyan>~~~</color> │",
+      "│  <color_dark_gray>~</color>oo│",
+      "└─────┘"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "clay_canister",
+    "picture": [ " <color_brown>┌─┐", ",' '.", "│   │", "│   │", "'───'" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "clay_hydria",
+    "picture": [
+      "      <color_brown>===========__",
+      "       \\       /',.'.",
+      "       /       \\'  ||",
+      "   _.-'         '-.L|",
+      " .'      _____      '.",
+      "/      .'.---.'.      \\",
+      "│      ''     ''      │",
+      "\\                     /",
+      " \\                   /",
+      "  \\                 /",
+      "   \\               /",
+      "    '.           .'",
+      "      '.       .'",
+      "        >-───-<",
+      "       '~~~~~~~'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "clay_watercont",
+    "picture": [
+      "     <color_brown>.────────────.",
+      "     \\\\/./\\'|\\.//./",
+      "      <color_white>}=========={*:.</color>",
+      "     /'//'.|\\'\\ /.\\ <color_white>\\\\</color>",
+      "   .'~' ~' ' ~'~' ~'.<color_white>\\\\</color>",
+      "  /                  \\<color_white>\\'</color>",
+      " /                    \\<color_white>'</color>",
+      " |                    |",
+      "/                      \\",
+      "│                      │",
+      "│                      │",
+      "│                      │",
+      "\\                      /",
+      " |                    |",
+      " │                    │",
+      " \\                    /",
+      "  |                  |",
+      "  │                  │",
+      "  \\                  /",
+      "   |                |",
+      "   \\                /",
+      "    |              |",
+      "    \\              /",
+      "     '────────────'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "combatnail",
+    "picture": [ "<color_light_gray>↓" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "condiment_bottle_sealed",
+    "picture": [
+      "<color_white>.─────.",
+      "\\.---./",
+      "|│<color_dark_gray>≈≈≈</color>│|",
+      "/\\   /\\",
+      "\\ '-' /",
+      " |───|",
+      " ╘═=═╛"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "condom",
+    "picture": [ "<color_dark_gray>╔↔↔↔╗", "║( )║", "╚↔↔↔╝" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "cup_plastic",
+    "picture": [ "<color_white>┌───┐", "│   │", "|   |", "'==='" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "flask_glass",
+    "picture": [
+      "  <color_white>.<color_dark_gray>n</color>.",
+      "  <color_white>|<color_dark_gray>\"</color>|",
+      "  ) (",
+      " / =≡\\",
+      "/■ =≡ \\",
+      "'─────'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "flask_hip",
+    "picture": [
+      "   <color_light_gray>_",
+      "╓──~==╖",
+      "║     ║",
+      "║     ║",
+      "║  <color_dark_gray>≈</color>  ║",
+      "╙─────╜"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "flintlock_ammo",
+    "picture": [ "<color_white>_", "U", "\"" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "gradcylinder",
+    "picture": [
+      " <color_white>\\ |",
+      " │≡│",
+      " │≡│",
+      " │≡│",
+      " │≡│",
+      " │≡│",
+      " │≡│",
+      " │≡│",
+      "-╧═╧-"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "it_battery_mount",
+    "picture": [
+      "<color_light_gray>■════0══════════════0════■",
+      "║<color_dark_gray>    │    │    │    │    </color>║",
+      "0<color_dark_gray>────┼────┼────┼────┼────</color>0",
+      "║<color_dark_gray>    │    │    │    │    </color>║",
+      "║<color_dark_gray>────┼────┼────┼────┼────</color>║",
+      "║<color_dark_gray>    │    │    │    │    </color>║",
+      "║<color_dark_gray>────┼────┼────┼────┼────</color>║",
+      "║<color_dark_gray>    │    │    │    │    </color>║",
+      "0<color_dark_gray>────┼────┼────┼────┼────</color>0",
+      "║<color_dark_gray>    │    │    │    │    </color>║",
+      "■<color_dark_gray>════╪════╪════╪════╪════</color>■",
+      "║<color_dark_gray>    │    │    │    │    </color>║",
+      "0<color_dark_gray>────┼────┼────┼────┼────</color>0",
+      "║<color_dark_gray>    │    │    │    │    </color>║",
+      "║<color_dark_gray>────┼────┼────┼────┼────</color>║",
+      "║<color_dark_gray>    │    │    │    │    </color>║",
+      "║<color_dark_gray>────┼────┼────┼────┼────</color>║",
+      "║<color_dark_gray>    │    │    │    │    </color>║",
+      "0<color_dark_gray>────┼────┼────┼────┼────</color>0",
+      "║<color_dark_gray>    │    │    │    │    </color>║",
+      "■════0══════════════0════■",
+      "      \\_<color_light_gray>()</color>_.──._<color_light_gray>()</color>_/",
+      "         <color_dark_gray>│      │",
+      "         │.====.│",
+      "         //    \\\\",
+      "    <color_light_gray>()</color>──'││    ││\\",
+      "         \\\\    // │",
+      "          '====' <color_light_gray>()</color>"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "jar_3l_glass_sealed",
+    "picture": [
+      "  <color_yellow>≡≡≡≡≡≡",
+      " <color_white>/      \\",
+      "| ≈≈≈≈≈≈ |",
+      "│  ≈≈≈   │",
+      "│        │",
+      "│        │",
+      "│        │",
+      "│        │",
+      "|        |",
+      " '──────'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "jar_glass_sealed",
+    "picture": [
+      "<color_yellow>≡≡≡≡≡≡",
+      "<color_white>│≈≈≈≈│",
+      "│≈≈  │",
+      "│    │",
+      "│    │",
+      "'────'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "jerrycan",
+    "picture": [
+      "   <color_dark_gray>.,</color> <color_red>.─────────.",
+      " <color_dark_gray>.</color><color_yellow>'</color> .' (~~~~~~~'.'.",
+      " <color_dark_gray>'</color>.'~~7~~~~~~~'. '.\\",
+      ".'≈≈.'.'\"\"\"\"\"'. './ \\",
+      "│≈.'.'▲DANGER  '. '.|",
+      "|'.'§ ▲FLAMMABLE '. |",
+      "│ |§§             | │",
+      "│ |§§             | │",
+      "| \\ § ▲           / |",
+      " \\ '-------------' /",
+      "  '───────────────'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "jerrycan_big",
+    "picture": [
+      "         <color_green>___________",
+      "   __   /.────────. ~'.",
+      " .:¬,' / |     _.'     |",
+      "  \\~_\\─' '────~        │",
+      " .-'      ----      .  │",
+      "|   '.    20 L     /   │",
+      "│     '.          /    │",
+      "│       |._______/     │",
+      "│       │'    './      │",
+      "│       │      │       │",
+      "│       │      │       │",
+      "│      /'.    .│       │",
+      "│     /~~~~~~~'|       │",
+      "│    /          '.     │",
+      "|   /             '.   |",
+      "'. '                  .'",
+      "  '-────────────────-'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "jug_clay",
+    "picture": [
+      "<color_brown>.──────.",
+      " <color_white>}===={*.</color>",
+      "/\\./|\\'\\<color_white>\\\\</color>",
+      "│      │<color_white>|'</color>",
+      "│      │",
+      "│      │",
+      "|      |",
+      "\\      /",
+      " \\    /",
+      " ╘════╛"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "jug_plastic",
+    "picture": [
+      "    <color_light_cyan>┌─┐",
+      "  <color_white>_.╨~╨._",
+      "/'  .-~-.\\.",
+      "│  │    ││|",
+      "│  '-._,|││",
+      "│ <color_light_cyan>.~'-._</color> '\\",
+      "│ <color_light_cyan>│ <color_white>≈≈≈</color> |</color> │",
+      "│ <color_blue>\\_____/</color> │",
+      "\\_\\_______/"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "keg",
+    "picture": [
+      "<color_light_gray>.───────────────────────.",
+      "│        .─┬─┬─.        │",
+      "│       |-'~~~'-|       │",
+      "│        '~~~~~'        │",
+      "}──'─────────────────'──{",
+      "│                       │",
+      "│                       │",
+      "/───────────────────────\\",
+      "\\───────────────────────/",
+      "│                       │",
+      "│                       │",
+      "│=======================│",
+      "│                       │",
+      "│                       │",
+      "/───────────────────────\\",
+      "\\───────────────────────/",
+      "│                       │",
+      "│                       │",
+      "}──.─────────────────.──{",
+      "│_______________________│",
+      " '─────────────────────'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "lajatang",
+    "picture": [
+      "<color_light_gray>",
+      "     .                  .",
+      "    ..                  ..",
+      "    ..                  ..",
+      "    ...                ...",
+      "    ....              ....",
+      "     ....            ....",
+      "       .....      .....",
+      "         ............",
+      "           ........</color>",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||",
+      "              <color_brown>||</color>",
+      "           <color_light_gray>........",
+      "         ............",
+      "       .....      .....",
+      "     ....            ....",
+      "    ....              ....",
+      "    ...                ...",
+      "    ..                  ..",
+      "    ..                  ..",
+      "     .                  ."
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "large_stomach_sealed",
+    "picture": [
+      "         <color_yellow>.<color_white>*:-.</color>",
+      "        /   '.<color_white>\\</color>",
+      " .<color_white>*</color>._.-'      \\<color_white>'</color>",
+      "/   '         │",
+      "|             |",
+      "'.           /",
+      "  '~-──────-'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "m235tpa",
+    "picture": [
+      "    <color_red>,-.",
+      "   /   \\",
+      "   ║<color_yellow>═══</color>║",
+      "   ║<color_dark_gray>≈≈≈</color>║",
+      "   ║   ║",
+      "   |   |",
+      "   │   │",
+      "   │   │",
+      "   \\   /",
+      "    ║ ║",
+      "    <color_yellow>\\═/",
+      "    │ │",
+      "    │ │",
+      "    │ │",
+      "    │ │",
+      "    │ │",
+      "    'W'",
+      "    / \\",
+      "  .'/|\\'.",
+      ".'.'.^.'.'.",
+      "└'└'   '┘'┘"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "medium_storage_battery",
+    "picture": [
+      "<color_light_cyan>╒<color_light_gray>■══■</color>╤<color_light_gray>■══■</color>╕",
+      "│ <color_white>≈≈</color> │ <color_white>≈≈</color> │",
+      "│    │    │",
+      "│    │    │",
+      "<color_light_gray>╚════╩════╝"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "metal_tank",
+    "picture": [
+      " <color_light_gray>.─────────────────────.",
+      "|-----------------------|",
+      "│                       │",
+      "│                       │",
+      "│                       │",
+      "│                       │",
+      "│                       │",
+      "│                       │",
+      "│                       │",
+      "│                       │",
+      "│                       │",
+      "│                       │",
+      "│                       │",
+      "│                       │",
+      "│                       │",
+      "│                       │",
+      "│                       │",
+      "│                       │",
+      "│          .─.          │",
+      "│         |   |         │",
+      "│          '─'          │",
+      "|-----------------------|",
+      " '─────────────────────'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "metal_tank_little",
+    "picture": [
+      "<color_light_gray>   ___",
+      " .─┴─┴─.",
+      "|-------|",
+      "│       │",
+      "│       │",
+      "│       │",
+      "│       │",
+      "|-------|",
+      " '─────'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "mp3",
+    "picture": [
+      "",
+      "",
+      "<color_white>            /\\         /\\",
+      "           /  \\       /  \\",
+      "          /    \\     /    \\",
+      "         /      \\   /      \\",
+      "         ║       \\ /       ║",
+      "      ___║        |        ║___",
+      "     |   /        |        \\   |",
+      "     |__/         |         \\__|",
+      "                  |",
+      "                  |",
+      "                  |",
+      "     ╔═══════════════════════════╗",
+      "     ║  ╔═════════════════════╗  ║",
+      "     ║  ║                     ║  ║",
+      "     ║  ║                     ║  ║",
+      "     ║  ║                     ║  ║",
+      "     ║  ║                     ║  ║",
+      "     ║  ║                     ║  ║",
+      "     ║  ║                     ║  ║",
+      "     ║  ║                     ║  ║",
+      "     ║  ║                     ║  ║",
+      "     ║  ╚═════════════════════╝  ║",
+      "     ║                           ║",
+      "     ║         .........         ║",
+      "     ║      ...         ...      ║",
+      "     ║     .     MENU      .     ║",
+      "     ║    .      .....      .    ║",
+      "     ║   .      .     .      .   ║",
+      "     ║   .  ⏮  .   ⏯   .  ⏭  .   ║",
+      "     ║   .      .     .      .   ║",
+      "     ║    .      .....      .    ║",
+      "     ║     .               .     ║",
+      "     ║      ...   VOL   ...      ║",
+      "     ║         .........         ║",
+      "     ║                           ║",
+      "     ╚═╦═════════════════════════╝",
+      "       ║          |",
+      "       \\          |",
+      "        \\        /",
+      "         \\      /",
+      "          \\    /",
+      "           \\  /",
+      "            \\/"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "nail",
+    "picture": [ "<color_light_gray>┬", "│", "│" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "paintball",
+    "picture": [ "<color_red>o" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "plastic_bag_vac",
+    "picture": [
+      "<color_white>┌┬───────┬┐",
+      "╞╪═══════╪╡",
+      "││       ││",
+      "││       ││",
+      "││       ││",
+      "││       ││",
+      "││       ││",
+      "││       ││",
+      "││_______││",
+      "└─────────┘"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "plastic_bucket",
+    "picture": [
+      "<color_white>:≡≡≡≡≡≡≡≡≡≡≡≡:",
+      " ║          ║",
+      " ║          ║",
+      " ║          ║",
+      " ║          ║",
+      " ║          ║",
+      " ║          ║",
+      " ╙──────────╜"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "remington1100",
+    "picture": [
+      "                ",
+      " <color_dark_gray>╔▓▌            ",
+      " ╠░▌            ",
+      " ╠░▌            ",
+      " ╠░▌            ",
+      " ╠░▌            ",
+      " ╠░▌            ",
+      " ╠░▌            ",
+      " ╠░▌            ",
+      " ╠░▌            ",
+      " ╠░▌            ",
+      " ╠░▌            ",
+      " ╠░▌            ",
+      " ╠░▌            ",
+      " ╠░▌            ",
+      " ╠░▌            ",
+      " ╠░▌            ",
+      " ╠░▌            ",
+      " ╠░▌            ",
+      " ╠░▌            ",
+      " ╠░▌▄▄          ",
+      " ╠░▌░░          ",
+      " ╠░</color><color_brown>▓▒▒▌         ",
+      " </color><color_dark_gray>╠░</color><color_brown>▒▒░▌         ",
+      " </color><color_dark_gray>╠░</color><color_brown>▒▒░▌         ",
+      " </color><color_light_gray>╠</color><color_dark_gray>░</color><color_brown>▒▒░▌         ",
+      " </color><color_dark_gray>╠░</color><color_brown>▒▒░▌         ",
+      " </color><color_dark_gray>╠░</color><color_brown>▒▒░▌         ",
+      " </color><color_dark_gray>╠░</color><color_brown>▒▒░▌         ",
+      " </color><color_dark_gray>╠░</color><color_brown>▒▒░▌         ",
+      " </color><color_dark_gray>╠░</color><color_brown>▒▒░▌         ",
+      " </color><color_dark_gray>╠░</color><color_brown>▒▒░▌         ",
+      " </color><color_dark_gray>╠░</color><color_brown>▓▒░▌         ",
+      " </color><color_dark_gray>▐▒▐</color><color_brown>▒▒▌         ",
+      " </color><color_dark_gray>▐▒○▒▒          ",
+      " ▐▒▐▒▒          ",
+      " ▐▒▐▒░          ",
+      " ▐▒▒▒░▀┐        ",
+      " ▐◙▒▒░</color><color_light_gray>~▐        ",
+      " </color><color_dark_gray>▐▒▒▒░▀</color><color_light_gray>▀        ",
+      "  </color><color_dark_gray>░▒</color><color_brown>█░          ",
+      "   ░▒▒░         ",
+      "    ░▒▒░▄       ",
+      "     ░▒▒░▒      ",
+      "     ░░▒░░      ",
+      "    ▐▒▒▓▒░      ",
+      "    ▐▒█▓▒▒      ",
+      "     ▒▓█▒░░     ",
+      "     ▒▓▓▓▒▒▄    ",
+      "     █▒▓▓▓▒▒▌   ",
+      "     ▐▒▓█▓▓▒░▄  ",
+      "     ▐▒▓▓█▓▒▒░</color><color_dark_gray>° ",
+      "      </color><color_brown>█▓▓▓▓▓▒░░ ",
+      "      </color><color_dark_gray>▒▒▒░░░▀▀▀▀"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "shot_00",
+    "picture": [ "<color_red>║║", "║║", "<color_yellow>╨╨" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "shot_beanbag",
+    "picture": [ "<color_white>║║", "║║", "<color_yellow>╨╨" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "shot_bird",
+    "picture": [ "<color_red>║║", "║║", "<color_yellow>╨╨" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "shot_dragon",
+    "picture": [ "<color_yellow>║║", "║║", "<color_yellow>╨╨" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "shot_flechette",
+    "picture": [ "<color_white>║║", "║║", "<color_yellow>╨╨" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "shot_scrap",
+    "picture": [ "<color_red>║║", "║║", "<color_yellow>╨╨" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "shot_slug",
+    "picture": [ "<color_light_green>║║", "║║", "<color_yellow>╨╨" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "signal_flare",
+    "picture": [ "<color_red>││", "║║", "╨╨" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "small_storage_battery",
+    "picture": [
+      "<color_light_cyan>┌<color_light_gray>•</color>──<color_light_gray>•</color>┐",
+      "│ <color_white>≈≈</color> │",
+      "│    │",
+      "│    │",
+      "└────┘"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "stomach_sealed",
+    "picture": [
+      "      <color_yellow>.<color_white>*:-.</color>",
+      "     /   '.<color_white>\\</color>",
+      ".<color_white>*</color>./'      \\<color_white>'</color>",
+      "|  '       |",
+      "'.        /",
+      "  '~-───-'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "styrofoam_cup",
+    "picture": [ "   <color_white>║", "   ║", "=======", "│     │", "\\     /", " |   |", " \\   /", " └───┘" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "survival_kit_box",
+    "picture": [
+      "<color_light_gray>[Tº============ºT]",
+      "'║              ║'",
+      " ╙──────────────╜"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "test_tube",
+    "picture": [ "<color_dark_gray>.,", "<color_white>││", "││", "││", "''" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "test_tube_micro",
+    "picture": [ "<color_white>._", " V" ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "thermos",
+    "picture": [
+      " <color_light_gray>.───.",
+      "/     \\",
+      "|     |",
+      "│<color_dark_gray>~~~~~</color>│",
+      "│ <color_dark_gray>[<color_red>≈</color>]</color> │",
+      "│     │",
+      "│     │",
+      "│     │",
+      "│     │",
+      "│     │",
+      "│_____│",
+      "└─────┘"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "waterskin",
+    "picture": [
+      "      <color_brown>\\~/",
+      "      <color_white>}={*.</color>",
+      "     //'|\\<color_white>\\\\</color>",
+      "  _./     \\._",
+      " /<color_white>•</color>/       \\<color_white>*</color>\\",
+      " <color_white>/</color>/         \\|",
+      "<color_white>/</color>/           \\<color_white>\\</color>",
+      "<color_white>│</color>│           │<color_white>│</color>",
+      "<color_white>│</color>\\           /<color_white>│</color>",
+      "<color_white>│</color> \\_       _/ <color_white>│</color>",
+      "<color_white>│</color>   ~─────~   <color_white>│",
+      "\\             /",
+      " |           |",
+      " │           │",
+      " │           │",
+      " \\           /",
+      "  |         |",
+      "  │         │",
+      "  \\         /",
+      "   |       |",
+      "   \\       /",
+      "    '.   .'",
+      "      '~'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "wooden_barrel",
+    "picture": [
+      "  <color_light_gray>____________________________",
+      "  │          (•  •           │</color>",
+      "  <color_brown>│<color_light_gray>~~~~~~~~~~~~~~~~~~~~~~~~~~</color>│",
+      "  │<color_light_gray>__________________________</color>│",
+      " <color_light_gray>/~          (•  •           ~\\</color>",
+      " │<color_light_gray>~~~~~~~~~~~~~~~~~~~~~~~~~~~~</color>│",
+      " │                            │",
+      " │                            │",
+      "/<color_light_gray>______________________________</color>\\",
+      "<color_light_gray>│            (•  •             │</color>",
+      "│<color_light_gray>~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</color>│",
+      "│                              │",
+      "│              __              │",
+      "│             |  |             │",
+      "│              ~~              │",
+      "│                              │",
+      "│<color_light_gray>______________________________</color>│",
+      "<color_light_gray>│             •  •)            │</color>",
+      "\\<color_light_gray>~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</color>/",
+      " │                            │",
+      " │                            │",
+      " │<color_light_gray>____________________________</color>│",
+      " <color_light_gray>\\_           •  •)          _/</color>",
+      "  │<color_light_gray>~~~~~~~~~~~~~~~~~~~~~~~~~~</color>│",
+      "  │<color_light_gray>__________________________</color>│",
+      "  <color_light_gray>│           •  •)          │",
+      "  '~~~~~~~~~~~~~~~~~~~~~~~~~~'"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "wrapper",
+    "picture": [
+      "<color_white>┌-─--────-───-─--────---───-──┐",
+      "│                             │",
+      "│                             │",
+      "│                             │",
+      "│                             │",
+      "│                             │",
+      "│                             │",
+      "│                             │",
+      "│                             │",
+      "│                             │",
+      "│                             │",
+      "│                             │",
+      "│                             │",
+      "│                             │",
+      "│                             │",
+      "│                             │",
+      "│                             │",
+      "│                             │",
+      "│                             │",
+      "│                             │",
+      "└─---────--───-──--──-─-──--─-┘"
+    ]
+  },
+  {
+    "//": "Ported from Cataclysm: Dark Days Ahead (https://github.com/CleverRaven/Cataclysm-DDA, data/json/ascii_art/). CC-BY-SA 3.0, the same license as this repository.",
+    "type": "ascii_art",
+    "id": "wristwatch",
+    "picture": [
+      "",
+      "             _____",
+      "            /     \\",
+      "            │  o  │",
+      "            │     │",
+      "            │  o  │",
+      "            │     │",
+      "            │  o  │",
+      "            │     │",
+      "            │  o  │",
+      "            │     │",
+      "            │  o  │",
+      "            │     │",
+      "            │     │",
+      "            │     │",
+      "            │     │",
+      "            │     │",
+      "           .........",
+      "        ...   12    ...",
+      "       .   11  │   1   .",
+      "      . 10     │      2 .",
+      "     .         │         .",
+      "     . 9       └───     3.",
+      "     .                   .",
+      "      . 8             4 .",
+      "       .   7       5   .",
+      "        ...    6    ...",
+      "           .........",
+      "            │     │",
+      "            │     │",
+      "            │     │",
+      "            │     │",
+      "            │     │",
+      "            │     │",
+      "            │     │",
+      "            │     │",
+      "            │     │",
+      "            │     │",
+      "            │     │",
+      "            │     │",
+      "            │     │",
+      "            └─────┘",
+      "            ║  ║  ║",
+      "            ╚══╩══╝"
+    ]
+  }
+]

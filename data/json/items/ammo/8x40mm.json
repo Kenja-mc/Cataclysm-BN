@@ -41,6 +41,7 @@
   },
   {
     "id": "8mm_caseless",
+    "ascii_picture": "8mm_caseless",
     "type": "AMMO",
     "name": { "str_sp": "8x40mm caseless" },
     "//": "Cased ammo tends to be roughly $1/shot, more or less.  Rivtech ammo, being New and Proprietary and Expensive, $2-2.50 or so.",

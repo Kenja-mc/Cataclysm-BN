@@ -1,6 +1,7 @@
 [
   {
     "id": "2lcanteen",
+    "ascii_picture": "2lcanteen",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "2.5L canteen" },
@@ -33,6 +34,7 @@
   },
   {
     "id": "30gal_drum",
+    "ascii_picture": "30gal_drum",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "steel drum (100L)", "str_pl": "steel drums (100L)" },
@@ -53,6 +55,7 @@
   },
   {
     "id": "55gal_drum",
+    "ascii_picture": "55gal_drum",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "steel drum (200L)", "str_pl": "steel drums (200L)" },
@@ -73,6 +76,7 @@
   },
   {
     "id": "bag_canvas",
+    "ascii_picture": "bag_canvas",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "canvas sack" },
@@ -91,6 +95,7 @@
   },
   {
     "id": "bag_canvas_small",
+    "ascii_picture": "bag_canvas_small",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "canvas bag" },
@@ -127,6 +132,7 @@
   },
   {
     "id": "bag_zipper",
+    "ascii_picture": "bag_zipper",
     "copy-from": "bag_plastic",
     "type": "CONTAINER",
     "category": "container",
@@ -150,6 +156,7 @@
   },
   {
     "id": "bag_body_bag",
+    "ascii_picture": "bag_body_bag",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "body bag" },
@@ -170,6 +177,7 @@
   },
   {
     "id": "bag_iv",
+    "ascii_picture": "bag_iv",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "IV bag" },
@@ -231,6 +239,7 @@
   },
   {
     "id": "condiment_bottle_sealed",
+    "ascii_picture": "condiment_bottle_sealed",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "condiment bottle" },
@@ -269,6 +278,7 @@
   },
   {
     "id": "bottle_plastic_small",
+    "ascii_picture": "bottle_plastic_small",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "small plastic bottle" },
@@ -287,6 +297,7 @@
   },
   {
     "id": "bottle_twoliter",
+    "ascii_picture": "bottle_twoliter",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "large plastic bottle" },
@@ -304,6 +315,7 @@
   },
   {
     "id": "bowl_clay",
+    "ascii_picture": "bowl_clay",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "clay bowl" },
@@ -324,6 +336,7 @@
   },
   {
     "id": "box_cigarette",
+    "ascii_picture": "box_cigarette",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "pack" },
@@ -340,6 +353,7 @@
   },
   {
     "id": "box_small",
+    "ascii_picture": "box_small",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "small cardboard box", "str_pl": "small cardboard boxes" },
@@ -375,6 +389,7 @@
   },
   {
     "id": "box_large",
+    "ascii_picture": "box_large",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "large cardboard box", "str_pl": "large cardboard boxes" },
@@ -394,6 +409,7 @@
   },
   {
     "id": "bucket",
+    "ascii_picture": "bucket",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "bucket" },
@@ -411,6 +427,7 @@
   },
   {
     "id": "camelbak",
+    "ascii_picture": "camelbak",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "hydration pack" },
@@ -432,6 +449,7 @@
   },
   {
     "id": "can_drink",
+    "ascii_picture": "can_drink",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "aluminum can" },
@@ -465,6 +483,7 @@
   },
   {
     "id": "carton_sealed",
+    "ascii_picture": "carton_sealed",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "paper carton" },
@@ -498,6 +517,7 @@
   },
   {
     "id": "plastic_bag_vac",
+    "ascii_picture": "plastic_bag_vac",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "vacuum-packed bag" },
@@ -517,6 +537,7 @@
   },
   {
     "id": "can_food",
+    "ascii_picture": "can_food",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "small tin can" },
@@ -548,6 +569,7 @@
   },
   {
     "id": "can_medium",
+    "ascii_picture": "can_medium",
     "copy-from": "can_food",
     "type": "CONTAINER",
     "name": { "str": "medium tin can" },
@@ -572,6 +594,7 @@
   },
   {
     "id": "canteen",
+    "ascii_picture": "canteen",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "plastic canteen" },
@@ -603,6 +626,7 @@
   },
   {
     "id": "thermos",
+    "ascii_picture": "thermos",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "thermos", "str_pl": "thermoses" },
@@ -620,6 +644,7 @@
   },
   {
     "id": "clay_canister",
+    "ascii_picture": "clay_canister",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "clay canister" },
@@ -640,6 +665,7 @@
   },
   {
     "id": "clay_hydria",
+    "ascii_picture": "clay_hydria",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "clay hydria" },
@@ -660,6 +686,7 @@
   },
   {
     "id": "clay_watercont",
+    "ascii_picture": "clay_watercont",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "large clay pot" },
@@ -679,6 +706,7 @@
   },
   {
     "id": "cup_plastic",
+    "ascii_picture": "cup_plastic",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "plastic cup" },
@@ -708,6 +736,7 @@
   },
   {
     "id": "flask_glass",
+    "ascii_picture": "flask_glass",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "glass flask" },
@@ -729,6 +758,7 @@
   },
   {
     "id": "test_tube",
+    "ascii_picture": "test_tube",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "test tube" },
@@ -750,6 +780,7 @@
   },
   {
     "id": "beaker",
+    "ascii_picture": "beaker",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "beaker" },
@@ -769,6 +800,7 @@
   },
   {
     "id": "gradcylinder",
+    "ascii_picture": "gradcylinder",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "graduated cylinder" },
@@ -788,6 +820,7 @@
   },
   {
     "id": "test_tube_micro",
+    "ascii_picture": "test_tube_micro",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "microcentrifuge tube" },
@@ -807,6 +840,7 @@
   },
   {
     "id": "flask_hip",
+    "ascii_picture": "flask_hip",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "hip flask" },
@@ -849,6 +883,7 @@
   },
   {
     "id": "jar_3l_glass_sealed",
+    "ascii_picture": "jar_3l_glass_sealed",
     "copy-from": "jar_3l_glass",
     "type": "CONTAINER",
     "name": { "str": "sealed 3L glass jar" },
@@ -880,6 +915,7 @@
   },
   {
     "id": "jar_glass_sealed",
+    "ascii_picture": "jar_glass_sealed",
     "copy-from": "jar_glass",
     "type": "CONTAINER",
     "name": { "str": "sealed glass jar" },
@@ -892,6 +928,7 @@
   },
   {
     "id": "jerrycan",
+    "ascii_picture": "jerrycan",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "plastic jerrycan" },
@@ -910,6 +947,7 @@
   },
   {
     "id": "jerrycan_big",
+    "ascii_picture": "jerrycan_big",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "steel jerrycan" },
@@ -930,6 +968,7 @@
   },
   {
     "id": "jug_clay",
+    "ascii_picture": "jug_clay",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "clay jug" },
@@ -949,6 +988,7 @@
   },
   {
     "id": "jug_plastic",
+    "ascii_picture": "jug_plastic",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "gallon jug" },
@@ -967,6 +1007,7 @@
   },
   {
     "id": "keg",
+    "ascii_picture": "keg",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "aluminum keg" },
@@ -987,6 +1028,7 @@
   },
   {
     "id": "large_stomach_sealed",
+    "ascii_picture": "large_stomach_sealed",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "large sealed stomach" },
@@ -1007,6 +1049,7 @@
   },
   {
     "id": "metal_tank",
+    "ascii_picture": "metal_tank",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "metal tank (60L)", "str_pl": "metal tanks (60L)" },
@@ -1027,6 +1070,7 @@
   },
   {
     "id": "metal_tank_little",
+    "ascii_picture": "metal_tank_little",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "metal tank (2L)", "str_pl": "metal tanks (2L)" },
@@ -1047,6 +1091,7 @@
   },
   {
     "id": "canteen_wood",
+    "ascii_picture": "canteen_wood",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "wooden canteen" },
@@ -1067,6 +1112,7 @@
   },
   {
     "id": "stomach_sealed",
+    "ascii_picture": "stomach_sealed",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "sealed stomach" },
@@ -1087,6 +1133,7 @@
   },
   {
     "id": "waterskin",
+    "ascii_picture": "waterskin",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "small waterskin" },
@@ -1153,6 +1200,7 @@
   },
   {
     "id": "wooden_barrel",
+    "ascii_picture": "wooden_barrel",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "wooden barrel" },
@@ -1187,6 +1235,7 @@
   },
   {
     "id": "wrapper",
+    "ascii_picture": "wrapper",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "paper wrapper" },
@@ -1205,6 +1254,7 @@
   },
   {
     "id": "styrofoam_cup",
+    "ascii_picture": "styrofoam_cup",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "styrofoam cup" },
@@ -1222,6 +1272,7 @@
   },
   {
     "id": "plastic_bucket",
+    "ascii_picture": "plastic_bucket",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "plastic tub" },
@@ -1239,6 +1290,7 @@
   },
   {
     "id": "condom",
+    "ascii_picture": "condom",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "condom" },
@@ -1259,6 +1311,7 @@
   },
   {
     "id": "balloon",
+    "ascii_picture": "balloon",
     "type": "CONTAINER",
     "category": "scrap_plastic",
     "looks_like": "condom",
@@ -1269,6 +1322,7 @@
   },
   {
     "id": "can_food_big",
+    "ascii_picture": "can_food_big",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "large tin can" },
@@ -1299,6 +1353,7 @@
   },
   {
     "id": "survival_kit_box",
+    "ascii_picture": "survival_kit_box",
     "type": "CONTAINER",
     "category": "container",
     "name": { "str": "survival kit box", "str_pl": "survival kit boxes" },

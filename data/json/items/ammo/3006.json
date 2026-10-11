@@ -1,6 +1,7 @@
 [
   {
     "id": "3006",
+    "ascii_picture": "3006",
     "type": "AMMO",
     "name": { "str": ".30-06 Springfield" },
     "description": ".30-06 Springfield rounds with 165gr soft point bullets.  The .30-06 cartridge has excellent accuracy, range, and stopping power making it popular with hunters and snipers for well over a century.",
@@ -25,6 +26,7 @@
   },
   {
     "id": "3006_incendiary",
+    "ascii_picture": "3006_incendiary",
     "copy-from": "3006",
     "type": "AMMO",
     "name": { "str": ".30-06 M14A1 tracer" },
@@ -33,6 +35,7 @@
   },
   {
     "id": "3006fmj",
+    "ascii_picture": "3006fmj",
     "copy-from": "3006",
     "type": "AMMO",
     "name": { "str": ".30-06 M2 AP" },

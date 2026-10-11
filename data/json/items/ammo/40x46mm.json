@@ -23,6 +23,7 @@
   },
   {
     "id": "40x46mm_m1006",
+    "ascii_picture": "40x46mm_m1006",
     "copy-from": "40x46mm_grenade",
     "type": "AMMO",
     "name": { "str": "40x46mm M1006 stun" },
@@ -36,6 +37,7 @@
   },
   {
     "id": "40x46mm_m433",
+    "ascii_picture": "40x46mm_m433",
     "copy-from": "40x46mm_grenade",
     "type": "AMMO",
     "name": { "str": "40x46mm M433 HEDP" },
@@ -48,6 +50,7 @@
   },
   {
     "id": "40x46mm_m576",
+    "ascii_picture": "40x46mm_m576",
     "copy-from": "40x46mm_grenade",
     "type": "AMMO",
     "name": { "str": "40x46mm M576 buckshot" },
@@ -63,6 +66,7 @@
   },
   {
     "id": "40x46mm_m651",
+    "ascii_picture": "40x46mm_m651",
     "copy-from": "40x46mm_grenade",
     "type": "AMMO",
     "name": { "str": "40x46mm M651 teargas" },

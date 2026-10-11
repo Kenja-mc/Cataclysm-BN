@@ -46,6 +46,7 @@
 #include "item_group.h"
 #include "iteminfo_format_utils.h"
 #include "iteminfo_query.h"
+#include "item_thumbnail.h"
 #include "itype.h"
 #include "iuse.h"
 #include "iuse_actor.h"
@@ -4618,6 +4619,14 @@ std::vector<iteminfo> item::info( const iteminfo_query &parts_ref, int batch,
     std::vector<iteminfo> info;
 
     if( !is_null() ) {
+        if( get_option<bool>( "ASCII_ITEM_THUMBNAILS" ) ) {
+            if( const std::optional<ascii_art_id> thumb = thumbnail_for( *this ) ) {
+                for( const std::string &line : thumb->obj().picture ) {
+                    info.emplace_back( "DESCRIPTION", line );
+                }
+                info.emplace_back( "DESCRIPTION", "" );
+            }
+        }
         basic_info( info, parts, batch, debug );
     }
 

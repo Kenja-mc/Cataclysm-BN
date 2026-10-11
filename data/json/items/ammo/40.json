@@ -1,6 +1,7 @@
 [
   {
     "id": "40fmj",
+    "ascii_picture": "40sw",
     "copy-from": "40sw",
     "type": "AMMO",
     "name": { "str": ".40 S&W FMJ" },

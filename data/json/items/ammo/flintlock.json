@@ -1,6 +1,7 @@
 [
   {
     "id": "flintlock_ammo",
+    "ascii_picture": "flintlock_ammo",
     "type": "AMMO",
     "name": { "str": "paper cartridge" },
     "description": "A paper cartridge containing black powder and a metallic projectile.  Historically used to reload muzzleloaders in a more reasonable time.",
@@ -25,6 +26,7 @@
   },
   {
     "id": "flintlock_shot",
+    "ascii_picture": "flintlock_ammo",
     "type": "AMMO",
     "name": { "str": "paper shot cartridge" },
     "description": "A paper cartridge containing black powder and metallic shot.  Historically used to reload muzzleloaders in a more reasonable time.",
