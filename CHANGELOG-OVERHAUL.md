@@ -49,6 +49,9 @@ Upstream's own changes are in `docs/en/game/changelog`.
 ### Fixed
 
 - The item action menu no longer opens empty after saying you have no usable items.
+- Smart safe mode no longer treats a hostile far beyond its distance as close when nothing stands
+  between you.
+- The tiles version no longer crashes when started with `--world` to load a save directly.
 
 ## 2026-10-10
 
