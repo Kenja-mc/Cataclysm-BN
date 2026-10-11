@@ -1795,7 +1795,7 @@ void options_manager::add_options_general()
     const auto soundpacks = build_soundpacks_list();
     const auto bundled_soundpack = "otopack bn";
     const auto default_soundpack = SOUNDPACKS.contains( bundled_soundpack ) ? bundled_soundpack :
-                                   "basic";
+                                   SOUNDPACKS.contains( "overhaul" ) ? "overhaul" : "basic";
     add( "SOUNDPACKS", general, translate_marker( "Choose soundpack" ),
          translate_marker( "Choose the soundpack you want to use.  Requires restart." ),
          soundpacks, default_soundpack, COPT_NO_SOUND_HIDE
