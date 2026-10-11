@@ -33,6 +33,10 @@ ranged or leaping attack, such as a turret or a spitter, always counts, and so d
 to you. While you craft, read or wait, a noise from such a monster, or from one that is not
 hostile, does not stop you to ask "Heard …!".
 
+Threat checks are lazy and cached for a turn. A group gets at most 12 route searches; unchecked
+hostiles still stop travel rather than being treated as harmless. A large sealed horde can
+therefore cause an extra safe-mode stop. Changes to passability discard the cached answers.
+
 The welcome card also mentions click-to-walk, and a first tip suggests a starter goal: find water,
 food and a weapon, because houses usually have all three.
 

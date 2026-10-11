@@ -67,10 +67,13 @@ struct monster_visible_info {
     // The map-edge arrows read these.
     struct offscreen_hostile {
         int count = 0;
-        // One of them can walk a route to the player soon.
+        // A hostile survivor among them is within safe-mode distance.
         bool threatening = false;
         // One of them is hunting the player rather than trailing or wandering.
         bool hunting = false;
+        // The nearest monster among them; the arrow asks whether it can reach the player only
+        // when it is drawn, because that runs a route search.
+        weak_ptr_fast<monster> nearest_monster;
     };
     std::array<offscreen_hostile, 8> offscreen_hostiles = {};
 };
