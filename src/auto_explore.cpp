@@ -33,7 +33,7 @@ auto default_known( const avatar &you, const tripoint_bub_ms &p ) -> bool
 
 } // namespace
 
-auto nearest_frontier( const frontier_options &opts ) -> std::optional<tripoint_bub_ms>
+auto frontiers( const frontier_options &opts, const size_t count ) -> std::vector<tripoint_bub_ms>
 {
     auto &here = opts.here;
     const auto &you = opts.you;
@@ -44,10 +44,11 @@ auto nearest_frontier( const frontier_options &opts ) -> std::optional<tripoint_
     auto visited = std::vector<bool>( static_cast<size_t>( side * side ), false );
     const auto index = [&]( const tripoint_bub_ms & p ) { return static_cast<size_t>( ( p.y() - start.y() + opts.max_dist ) * side + ( p.x() - start.x() + opts.max_dist ) ); };
 
-    // Plain BFS: with uniform step cost the first frontier dequeued is the nearest one.
+    // Plain BFS: with uniform step cost frontiers come out nearest first.
+    auto found = std::vector<tripoint_bub_ms>();
     auto queue = std::vector<tripoint_bub_ms> { start };
     visited[index( start )] = true;
-    for( auto head = size_t{ 0 }; head < queue.size(); ++head ) {
+    for( auto head = size_t{ 0 }; head < queue.size() && found.size() < count; ++head ) {
         const auto cur = queue[head];
         auto touches_unknown = false;
         for( const tripoint &delta : eight_horizontal_neighbors ) {
@@ -64,27 +65,34 @@ auto nearest_frontier( const frontier_options &opts ) -> std::optional<tripoint_
             queue.push_back( next );
         }
         if( touches_unknown && cur != start ) {
-            return cur;
+            found.push_back( cur );
         }
     }
-    return std::nullopt;
+    return found;
+}
+
+auto nearest_frontier( const frontier_options &opts ) -> std::optional<tripoint_bub_ms>
+{
+    const auto found = frontiers( opts, 1 );
+    return found.empty() ? std::nullopt : std::optional( found.front() );
 }
 
 auto set_route_to_frontier( const frontier_options &opts ) -> bool
 {
-    const auto target = nearest_frontier( opts );
-    if( !target ) {
-        return false;
-    }
     auto &you = opts.you;
-    const auto route = opts.here.route( you.bub_pos(), *target, you.get_legacy_pathfinding_settings(),
-                                        you.get_legacy_path_avoid() );
-    if( route.empty() ) {
-        return false;
+    // The pathfinder can refuse a frontier the flood fill reached (e.g. a tile it avoids), so
+    // fall back to the next nearest ones.
+    constexpr auto attempts = size_t{ 8 };
+    for( const auto &target : frontiers( opts, attempts ) ) {
+        const auto route = opts.here.route( you.bub_pos(), target, you.get_legacy_pathfinding_settings(),
+                                            you.get_legacy_path_avoid() );
+        if( !route.empty() ) {
+            // The main loop takes the steps; consuming one here would desync next_expected_position.
+            you.set_destination( route );
+            return true;
+        }
     }
-    // The main loop takes the steps; consuming one here would desync next_expected_position.
-    you.set_destination( route );
-    return true;
+    return false;
 }
 
 auto handle( avatar &you ) -> void
