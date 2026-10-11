@@ -229,6 +229,32 @@ def test_recraft_after_reload(g):
     assert wait_until(lambda: made() == 2), g.screen()
 
 
+def test_craft_parts_chain(g):
+    """An uncraftable recipe says what is missing, marks a part you can make and jumps to its recipe."""
+    arena(g)
+    give(g, "string_6", 6)  # one long string's worth; a short rope needs six long strings
+    settle(g)
+    g.keys("k", delay=1.5)
+    g.keys("f", delay=0.8)
+    g.type("short rope", delay=1.0)
+    g.keys("Enter", delay=1.5)
+    assert "Missing" in g.screen(), "the recipe info should say what is missing:\n" + g.screen()
+
+    def find_tag():
+        for _ in range(4):
+            if "can make" in g.screen():
+                return True
+            g.keys("]", delay=0.5)
+        return False
+
+    # Short rope has several recipes; the string one carries the tag.
+    tagged = find_tag() or (g.keys("Down", delay=0.8), find_tag())[1]
+    assert tagged, "the part the player can make should be tagged:\n" + g.screen()
+    g.keys("p", delay=1.2)
+    assert "long string" in g.screen().lower(), "the parts key should select the part's recipe:\n" + g.screen()
+    g.keys("Escape", delay=0.6)
+
+
 def load_first_save(g, timeout=120):
     """After save-and-quit the main menu reopens on Load; Enter picks the world, then the character."""
     deadline = time.time() + timeout
@@ -519,7 +545,9 @@ def test_vehicle_screen_diagonals(g):
     g.keys("Enter", delay=1.5)
     g.keys("Enter", delay=1.5)
     g.keys("Space", delay=1.5)
-    g.keys("x", delay=1.5)
+    # Contextual interact goes straight to the bicycle when nothing else is in reach.
+    if "which tile?" in g.screen() or "Examine where?" in g.screen():
+        g.keys("x", delay=1.5)
     g.keys("e", delay=2)  # "Examine vehicle"
     try:
         start = g.screen()
@@ -542,6 +570,29 @@ def test_hud_boxes(g):
     assert lines[0].startswith("╭"), top
     assert any(icon in top for icon in ("☼", "☾", "☁", "☂", "↯", "❄", "◎", "▼")), "weather icon: " + top
     assert any(icon in top for icon in ("✶", "⚔", "⌖", "➶")), "weapon icon: " + top
+
+
+
+def test_stance_toggle(g):
+    """F3 toggles crouch: the HUD box shows the stance and the avatar's move mode changes."""
+    arena(g)
+    settle(g)
+    # Start walking.
+    g.lua("gapi.get_avatar():set_movement_mode(CharacterMoveMode.walk) out('ok')")
+    g.keys("x", delay=0.6)
+    s = g.screen()
+    assert "Walking" in s, "HUD box should show Walking:\n" + s
+    assert g.lua("out(tostring(gapi.get_avatar():get_movement_mode() == CharacterMoveMode.walk))") == ["true"]
+    # Press F3 to crouch.
+    g.keys("F3", delay=0.8)
+    s = g.screen()
+    assert "Crouching" in s, "HUD box should show Crouching after F3:\n" + s
+    assert g.lua("out(tostring(gapi.get_avatar():get_movement_mode() == CharacterMoveMode.crouch))") == ["true"]
+    # Press F3 again to return to walking.
+    g.keys("F3", delay=0.8)
+    s = g.screen()
+    assert "Walking" in s, "HUD box should show Walking after second F3:\n" + s
+    assert g.lua("out(tostring(gapi.get_avatar():get_movement_mode() == CharacterMoveMode.walk))") == ["true"]
 
 
 def test_hud_box_options(g):
@@ -642,10 +693,128 @@ def test_combine_partly_used_tools(g):
     g.keys("Escape", "Escape", delay=0.6)
 
 
+def test_sound_marker_fading(g):
+    """Sound markers from unseen footsteps fade after the configured number of turns."""
+    arena(g)
+    # A wall keeps the zombie out of sight; it walks along a corridor behind it, so its
+    # footsteps are heard but not seen.
+    g.lua("for dy=-9,9 do M:set_ter_at(here(6,dy), TerId.new('t_wall'):int_id()) "
+          "for dx=7,9 do M:set_ter_at(here(dx,dy), TerId.new('t_floor'):int_id()) "
+          "M:set_furn_at(here(dx,dy), FurnId.new('f_null'):int_id()) end end out('ok')")
+    g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(8,6)) "
+          "gapi.get_monster_at(here(8,6)):wander_to(here(8,-8), 100) out('ok')")
+
+    def map_area():
+        return "\n".join(line[:90] for line in g.screen().splitlines()[4:])
+
+    assert wait_until(lambda: (g.keys("x", delay=0.6), "?" in map_area())[1], timeout=25), \
+        "unseen footsteps should create a '?' marker:\n" + g.screen()
+    g.lua("for dx=7,9 do for dy=-9,9 do local m=gapi.get_monster_at(here(dx,dy)) if m then park(m) end end end out('ok')")
+    for _ in range(4):
+        g.keys("x", delay=0.6)
+    assert "?" not in map_area(), "sound markers should have faded:\n" + g.screen()
+
+
+def test_smart_targeting(g):
+    """Aiming starts on the hostile with a clear firing line and names an ally standing in the way."""
+    arena(g)
+    assert g.lua("local u=gapi.get_avatar() u:add_item(gapi.create_item(ItypeId.new('model_10_revolver'), -1)) "
+                 "u:add_item(gapi.create_item(ItypeId.new('38_special'), 8)) " + REVOLVER
+                 + "out(u:wield(w))") == ["true"]
+    for _ in range(6):
+        g.keys("r", delay=1)
+        g.keys("r", delay=2)
+    g.keys("Escape", delay=1)
+    loaded = g.lua(REVOLVER + "out(w.charges)")
+    assert loaded and int(loaded[0]) > 0, "the revolver should be loaded\n" + g.screen()
+    # A hostile 4 tiles east has a friendly dog 2 tiles east in the firing line; a second
+    # hostile 4 tiles west has a clear line.
+    assert g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(4,0)) "
+                 "local d=gapi.place_monster_at(MonsterTypeId.new('mon_dog'), here(2,0)) d:make_friendly() "
+                 "gapi.place_monster_at(MonsterTypeId.new('mon_zombie_rot'), here(-4,0)) out('ok')") == ["ok"]
+    g.keys("f", delay=2)
+    s = g.screen()
+    assert "Firing" in s, "aiming should open the targeting window\n" + s
+    assert "decayed zombie" in s, "aiming should start on the hostile with a clear line:\n" + s
+    assert "Ally in the line of fire" not in s, s
+    g.keys("Tab", delay=2)
+    s = g.screen()
+    assert "Ally in the line of fire: Labrador mutt" in s, \
+        "cycling to the blocked hostile should name the ally in the way:\n" + s
+    g.keys("Escape", delay=1)
+    g.lua("for dx=-8,8 do for dy=-8,8 do local m=gapi.get_monster_at(here(dx,dy)) if m then park(m) end end end out('ok')")
+
+
+def test_smart_safe_mode(g):
+    """A hostile you can see but that has no way to reach you does not block auto-explore."""
+    smart = Game(name="bn-e2e-smart-safe", options={"SAFEMODE": "true"})
+    try:
+        start_new_game(smart)
+        smart.define_lua(HELPERS)
+        arena(smart)
+        # A glass cell keeps the zombie in sight but without a route to the player.
+        smart.lua("for dx=-1,1 do for dy=-1,1 do if dx ~= 0 or dy ~= 0 then "
+                  "M:set_ter_at(here(6+dx,dy), TerId.new('t_reinforced_glass'):int_id()) end end end "
+                  "M:set_ter_at(here(6,0), TerId.new('t_floor'):int_id()) "
+                  "gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(6,0)) out('ok')")
+        settle(smart)
+        smart.keys("x", delay=0.6)
+        start = bub_pos(smart)
+        smart.keys("n", delay=0.6)
+        assert wait_until(lambda: bub_pos(smart) != start, timeout=15), \
+            "auto-explore should run with a zombie locked in a glass cell:\n" + smart.screen()
+        smart.keys("Escape", delay=0.3)
+        # A zombie with a clear route still stops it.
+        arena(smart)
+        smart.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(3,0)) out('ok')")
+        smart.keys("x", delay=0.6)
+        smart.keys("n", delay=0.6)
+        assert wait_until(lambda: "enemies in sight" in smart.screen(), timeout=10), \
+            "a zombie that can reach you should stop auto-explore:\n" + smart.screen()
+    finally:
+        smart.close()
+
+
+def test_contextual_interact_single_door(g):
+    """Space opens a single adjacent closed door without asking for a direction."""
+    arena(g)
+    # Place a closed door at (1,0) - directly east of the player at (0,0)
+    g.lua("M:set_ter_at(here(1,0), TerId.new('t_door_c'):int_id()) "
+          "M:set_furn_at(here(1,0), FurnId.new('f_null'):int_id()) out('ok')")
+    settle(g)
+    # Press Space - should open the door without a direction prompt
+    g.keys("Space", delay=1.5)
+    # The door should now be open (t_door_o)
+    result = g.lua("out(M:get_ter_at(here(1,0)):str_id():str())")
+    assert result == ["t_door_o"], f"door should be open, got: {result}"
+    # There should be no direction prompt visible
+    assert "Examine where?" not in g.screen(), "should not ask for direction with single door"
+
+
+def test_contextual_interact_multiple_doors(g):
+    """With two adjacent interactable tiles, Space shows a direction prompt listing actions."""
+    arena(g)
+    # Place closed doors at (1,0) and (-1,0)
+    g.lua("M:set_ter_at(here(1,0), TerId.new('t_door_c'):int_id()) "
+          "M:set_furn_at(here(1,0), FurnId.new('f_null'):int_id()) "
+          "M:set_ter_at(here(-1,0), TerId.new('t_door_c'):int_id()) "
+          "M:set_furn_at(here(-1,0), FurnId.new('f_null'):int_id()) out('ok')")
+    settle(g)
+    # Press Space - should show a direction prompt listing both doors
+    g.keys("Space", delay=1.5)
+    s = g.screen()
+    assert "Interact with which tile?" in s, f"should show direction prompt:\n{s}"
+    assert "open" in s.lower(), f"should mention open action:\n{s}"
+    # Cancel the prompt
+    g.keys("Escape", delay=0.5)
+
+
 TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_auto_explore, test_first_time_tip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
-         test_hud_boxes, test_body_panel, test_readable_map_glyphs, test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
-         test_aim_defaults, test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions, test_right_click_pick_runs_the_action,
-         test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_old_full_keybindings_file, test_hud_box_options, test_gun_loudness_in_item_info, test_combine_partly_used_tools]
+         test_hud_boxes, test_body_panel, test_readable_map_glyphs, test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content, test_craft_parts_chain,
+         test_aim_defaults, test_sound_marker_fading, test_smart_targeting, test_stance_toggle, test_contextual_interact_single_door, test_contextual_interact_multiple_doors,
+         test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions, test_right_click_pick_runs_the_action,
+         test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_old_full_keybindings_file, test_hud_box_options, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
+         test_smart_safe_mode]
 
 
 def main():
