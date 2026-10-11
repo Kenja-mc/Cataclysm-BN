@@ -128,7 +128,8 @@ class Game:
 
 
 def in_game(screen):
-    return "X,Y,Z" in screen and " move " in screen
+    # Small terminals cut the controls strip off the sidebar, so fall back to the weapon line.
+    return "X,Y,Z" in screen and (" move " in screen or "Wield :" in screen)
 
 
 def start_new_game(game, timeout=240):
