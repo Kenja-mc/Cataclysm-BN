@@ -117,6 +117,15 @@ class X11:
         x.XFree.argtypes = [ctypes.c_void_p]
         x.XSetInputFocus.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.c_int, ctypes.c_ulong]
         x.XSync.argtypes = [ctypes.c_void_p, ctypes.c_int]
+        x.XInternAtom.restype = ctypes.c_ulong
+        x.XInternAtom.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int]
+        x.XGetWindowProperty.restype = ctypes.c_int
+        x.XGetWindowProperty.argtypes = [
+            ctypes.c_void_p, ctypes.c_ulong, ctypes.c_ulong, ctypes.c_long, ctypes.c_long,
+            ctypes.c_int, ctypes.c_ulong, ctypes.POINTER(ctypes.c_ulong),
+            ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_ulong),
+            ctypes.POINTER(ctypes.c_ulong), ctypes.POINTER(ctypes.c_void_p),
+        ]
         t = self.xtst
         t.XTestFakeKeyEvent.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_int, ctypes.c_ulong]
         t.XTestFakeButtonEvent.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_int, ctypes.c_ulong]
@@ -126,6 +135,7 @@ class X11:
         self.dpy = x.XOpenDisplay(display.encode())
         require(self.dpy, f"could not open private display {display}")
         self.root = x.XDefaultRootWindow(self.dpy)
+        self.name_atom = x.XInternAtom(self.dpy, b"_NET_WM_NAME", 0)
 
     def close(self):
         if self.dpy:
@@ -137,12 +147,24 @@ class X11:
         stack = [self.root]
         while stack:
             win = stack.pop()
-            name = ctypes.c_void_p()
-            if self.xlib.XFetchName(self.dpy, win, ctypes.byref(name)) and name.value:
-                title = ctypes.string_at(name.value).decode(errors="replace")
-                self.xlib.XFree(name)
-                if title.startswith(prefix):
-                    return win
+            title = None
+            actual_type, count, after = ctypes.c_ulong(), ctypes.c_ulong(), ctypes.c_ulong()
+            fmt = ctypes.c_int()
+            value = ctypes.c_void_p()
+            status = self.xlib.XGetWindowProperty(
+                self.dpy, win, self.name_atom, 0, 1024, 0, 0, ctypes.byref(actual_type),
+                ctypes.byref(fmt), ctypes.byref(count), ctypes.byref(after), ctypes.byref(value))
+            if status == 0 and value.value:
+                if fmt.value == 8:
+                    title = ctypes.string_at(value.value, count.value).decode(errors="replace")
+                self.xlib.XFree(value)
+            if title is None:
+                name = ctypes.c_void_p()
+                if self.xlib.XFetchName(self.dpy, win, ctypes.byref(name)) and name.value:
+                    title = ctypes.string_at(name.value).decode(errors="replace")
+                    self.xlib.XFree(name)
+            if title is not None and title.startswith(prefix):
+                return win
             root_ret, parent_ret = ctypes.c_ulong(), ctypes.c_ulong()
             children = ctypes.POINTER(ctypes.c_ulong)()
             count = ctypes.c_uint()
@@ -410,7 +432,7 @@ def wait_for_frame(session, proc, run, timeout):
                 window = x11.find_window(WINDOW_TITLE_PREFIX)
             if window is not None:
                 shot = capture(session.display, window, run / "frame.png")
-                data = shot.read_bytes()
+                data = frame_rgb(shot)
                 if data == previous and frame_is_drawn(shot):
                     return shot
                 previous = data
@@ -493,6 +515,9 @@ class Session:
             "LC_ALL": "C.UTF-8",
             "VK_DRIVER_FILES": str(self.icd),
         }
+        for key in ("XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS"):
+            if key in os.environ:
+                env[key] = os.environ[key]
         unit = f"bn-tiles-e2e-{os.getpid()}-{label}"
         log = (run / "tiles.log").open("w")
         cmd = ["systemd-run", "--user", "--scope", "--quiet", f"--unit={unit}",
