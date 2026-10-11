@@ -417,6 +417,46 @@ auto clamp_range_to_reality_bubble( const tripoint_bub_ms &src, const int range 
     return std::min( std::max( 1, range ), max_range );
 }
 
+/// Whether @p cr counts as an ally of the player: a friendly creature of any kind, or an NPC
+/// that is not hostile (a follower, a passive companion and so on).
+auto is_player_ally( const Creature &cr, const Character &you ) -> bool
+{
+    const auto att = cr.attitude_to( you );
+    return att == Attitude::A_FRIENDLY || ( cr.is_npc() && att != Attitude::A_HOSTILE );
+}
+
+/// First ally of the player standing between the shooter and @p target along the firing line.
+auto find_ally_in_line_of_fire( const map &here, const Character &you,
+                                const tripoint_bub_ms &target ) -> Creature * // *NOPAD*
+{
+    const auto from = you.bub_pos();
+    for( const tripoint_bub_ms &p : here.find_clear_path( from, target ) ) {
+        if( p == from || p == target ) {
+            continue;
+        }
+        if( Creature *cr = g->critter_at<Creature>( p, true );
+            cr != nullptr && you.sees( *cr ) && is_player_ally( *cr, you ) ) {
+            return cr;
+        }
+    }
+    return nullptr;
+}
+
+/// Whether @p cr would come after you right now: it is adjacent to you, or already hunting you.
+auto is_immediate_threat( const Character &you, Creature *cr ) -> bool
+{
+    if( rl_dist( cr->bub_pos(), you.bub_pos() ) <= 1 ) {
+        return true;
+    }
+    if( monster *const mon = dynamic_cast<monster *>( cr ) ) {
+        return mon->attack_target() == &you;
+    }
+    if( npc *const np = dynamic_cast<npc *>( cr ) ) {
+        return np->current_target() == &you;
+    }
+    return false;
+}
+
 } // namespace
 
 class target_ui
@@ -605,6 +645,13 @@ class target_ui
 
         // List friendly creatures currently occupying line of fire.
         std::vector<weak_ptr_fast<Creature>> list_friendlies_in_lof();
+
+        // First ally of the player standing between the shooter and 'target' along the
+        // firing line, or nullptr if the line is clear.
+        Creature *ally_in_line_of_fire( const tripoint_bub_ms &target ); // *NOPAD*
+
+        // Prints a warning if an ally stands in the firing line to the current cursor position.
+        void panel_ally_warning( int &text_y );
 
         // Toggle snap-to-target
         void toggle_snap_to_target();
@@ -3560,13 +3607,25 @@ void target_ui::update_target_list()
 
     map &here = get_map();
     const auto player_pos = you->bub_pos();
+    const bool smart_targeting = get_option<bool>( "SMART_TARGETING" );
 
-    std::ranges::sort( targets, {}, [&]( const Creature * c ) -> std::tuple<bool, bool, bool, int> {
+    std::map<const Creature *, bool> ally_blocked;
+    if( smart_targeting ) {
+        for( const Creature *const cr : targets ) {
+            ally_blocked.emplace( cr, find_ally_in_line_of_fire( here, *you, cr->bub_pos() ) != nullptr );
+        }
+    }
+    const auto blocked_by_ally = [&ally_blocked]( const Creature * c ) -> bool {
+        const auto it = ally_blocked.find( c );
+        return it != ally_blocked.end() && it->second;
+    };
+
+    std::ranges::sort( targets, {}, [&]( const Creature * c ) -> std::tuple<bool, bool, bool, bool, int> {
         const auto target_pos = c->bub_pos();
         const auto z_diff = std::abs( player_pos.z() - target_pos.z() );
         const auto is_hostile = c->attitude_to( *you ) == Attitude::A_HOSTILE;
         const auto has_los = here.sees( player_pos, target_pos, range );
-        return { !has_los, !is_hostile, z_diff, rl_dist_exact( target_pos, player_pos ) };
+        return { !has_los, !is_hostile, blocked_by_ally( c ), z_diff, rl_dist_exact( target_pos, player_pos ) };
     } );
 }
 
@@ -3583,8 +3642,19 @@ tripoint_bub_ms target_ui::choose_initial_target()
         return cr->bub_pos();
     }
 
-    // Try closest creature
+    // Try the most urgent creature: a hostile that is adjacent to you or already hunting you
+    // comes before any other target.
     if( !targets.empty() ) {
+        if( get_option<bool>( "SMART_TARGETING" ) ) {
+            const auto threat = std::ranges::find_if( targets, [&]( Creature * c ) {
+                return c->attitude_to( *you ) == Attitude::A_HOSTILE && is_immediate_threat( *you, c );
+            } );
+            if( threat != targets.end() ) {
+                return ( *threat )->bub_pos();
+            }
+        }
+
+        // Try closest creature
         return targets[0]->bub_pos();
     }
 
@@ -3755,6 +3825,25 @@ void target_ui::toggle_snap_to_target()
         set_view_offset( dst - src );
     }
     snap_to_target = !snap_to_target;
+}
+
+Creature *target_ui::ally_in_line_of_fire( const tripoint_bub_ms &target )
+{
+    if( !get_option<bool>( "SMART_TARGETING" ) ) {
+        return nullptr;
+    }
+    return find_ally_in_line_of_fire( get_map(), *you, target );
+}
+
+void target_ui::panel_ally_warning( int &text_y )
+{
+    if( dst == src || dst_critter == nullptr ) {
+        return;
+    }
+    if( Creature *ally = ally_in_line_of_fire( dst ); ally != nullptr ) {
+        const std::string str = string_format( _( "Ally in the line of fire: %s" ), ally->get_name() );
+        trim_and_print( w_target, point( 1, text_y++ ), getmaxx( w_target ) - 2, c_light_red, str );
+    }
 }
 
 void target_ui::cycle_targets( int direction )
@@ -4147,6 +4236,8 @@ void target_ui::draw_ui_window()
     bool fill_with_blank_if_no_target = !tiny;
     panel_target_info( text_y, fill_with_blank_if_no_target );
     text_y += compact ? 0 : 1;
+
+    panel_ally_warning( text_y );
 
     if( mode == TargetMode::Turrets ) {
         panel_turret_list( text_y );

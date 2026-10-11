@@ -2004,6 +2004,11 @@ void options_manager::add_options_interface()
          true
        );
 
+    add( "SMART_TARGETING", interface, translate_marker( "Smarter targeting" ),
+         translate_marker( "If true, aiming offers a hostile that is next to you or already hunting you first, ranks targets with an ally in the line of fire last, and warns you when an ally stands in the way." ),
+         true
+       );
+
     add( "QUERY_DISASSEMBLE", interface, translate_marker( "Query on disassembly while butchering" ),
          translate_marker( "If true, will query before disassembling items while butchering." ),
          true
