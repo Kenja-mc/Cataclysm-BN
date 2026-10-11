@@ -157,6 +157,9 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 - **Fading sound markers**: the `?` for a sound you heard but cannot see stays for a few turns and
   dims as it ages, so you can see where noises came from (Options → Interface → Sound marker turns;
   1 gives the upstream behaviour, where it vanishes after your next action).
+- **Monster health bars** (tiles view): a small bar under every hurt monster in view, using the same
+  coarse reading the look-around list gives rather than exact hit points. Options → Graphics →
+  Monster health bars turns it off.
 - **Enemy edge arrows**: when a hostile you can see is outside the map window — the view is offset
   or zoomed, or it is simply past the edge — an arrow at the edge of the view points at it, red when
   it can reach you soon and yellow when it cannot. The arrow sits on the edge itself when the

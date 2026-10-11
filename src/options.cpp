@@ -2382,6 +2382,10 @@ void options_manager::add_options_graphics()
 
     get_option( "TILE_EFFECT_ANIMATIONS" ).setPrerequisite( "ANIMATIONS" );
 
+    add( "MONSTER_HEALTH_BARS", graphics, translate_marker( "Monster health bars" ),
+         translate_marker( "If true, a small health bar runs under every hurt monster in view, as fuzzy as the look-around list shows it." ),
+         true, COPT_CURSES_HIDE );
+
     add( "BULLETS_AS_LASERS", graphics, translate_marker( "Draw bullets as lines" ),
          translate_marker( "If true, bullets are drawn as lines of images, and the animation lasts only one frame." ),
          true
