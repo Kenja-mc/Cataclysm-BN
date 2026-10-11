@@ -2635,6 +2635,20 @@ void options_manager::add_options_graphics()
 
     get_option( "PIXEL_MINIMAP_BLINK" ).setPrerequisite( "PIXEL_MINIMAP" );
 
+    add( "PIXEL_MINIMAP_ZOOM", graphics, translate_marker( "Pixel minimap zoom" ),
+         translate_marker( "Zoom level for the pixel minimap.  Values greater than 1.0 zoom in, values less than 1.0 zoom out.  1.0 uses the default auto-fit." ),
+         0.25f, 4.0f, 1.0f, COPT_CURSES_HIDE
+       );
+
+    get_option( "PIXEL_MINIMAP_ZOOM" ).setPrerequisite( "PIXEL_MINIMAP" );
+
+    add( "PIXEL_MINIMAP_ITEM_MARKERS", graphics, translate_marker( "Pixel minimap item markers" ),
+         translate_marker( "Show gold markers on the pixel minimap for tiles with visible items." ),
+         false, COPT_CURSES_HIDE
+       );
+
+    get_option( "PIXEL_MINIMAP_ITEM_MARKERS" ).setPrerequisite( "PIXEL_MINIMAP" );
+
     add( "ZOOM_STEP_COUNT", graphics, translate_marker( "Zoom steps" ),
          translate_marker( "Number of steps between zoom levels." ),
          1, 7, 1, COPT_CURSES_HIDE );
@@ -4296,7 +4310,9 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
             if( iter.first == "PIXEL_MINIMAP_HEIGHT"
                 || iter.first == "PIXEL_MINIMAP_RATIO"
                 || iter.first == "PIXEL_MINIMAP_MODE"
-                || iter.first == "PIXEL_MINIMAP_SCALE_TO_FIT" ) {
+                || iter.first == "PIXEL_MINIMAP_SCALE_TO_FIT"
+                || iter.first == "PIXEL_MINIMAP_ZOOM"
+                || iter.first == "PIXEL_MINIMAP_ITEM_MARKERS" ) {
                 pixel_minimap_changed = true;
 
             } else if( iter.first == "TILES" || iter.first == "USE_TILES" || iter.first == "STATICZEFFECT" ||

@@ -411,6 +411,8 @@ void cata_tiles::on_options_changed()
                                      get_option<int>( "PIXEL_MINIMAP_BLINK" ) : 0;
     settings.square_pixels = get_option<bool>( "PIXEL_MINIMAP_RATIO" );
     settings.scale_to_fit = get_option<bool>( "PIXEL_MINIMAP_SCALE_TO_FIT" );
+    settings.zoom = get_option<float>( "PIXEL_MINIMAP_ZOOM" );
+    settings.item_markers = get_option<bool>( "PIXEL_MINIMAP_ITEM_MARKERS" );
 
     minimap->set_settings( settings );
 }

@@ -29,6 +29,10 @@ struct pixel_minimap_settings {
     int beacon_blink_interval = 0;
     bool square_pixels = true;
     bool scale_to_fit = false;
+    // Zoom factor: 1.0 = auto (default), >1 = zoom in, <1 = zoom out
+    float zoom = 1.0f;
+    // Show yellow markers on tiles with visible items
+    bool item_markers = false;
 };
 
 class pixel_minimap
@@ -63,6 +67,8 @@ class pixel_minimap
         void render( const tripoint_bub_ms &center );
         void render_cache( const tripoint_bub_ms &center );
         void render_critters( const tripoint_bub_ms &center );
+        void render_items( const tripoint_bub_ms &center );
+
 
         std::unique_ptr<pixel_minimap_projector> create_projector( const SDL_Rect &max_screen_rect ) const;
 

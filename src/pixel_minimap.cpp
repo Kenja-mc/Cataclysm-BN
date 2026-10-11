@@ -15,6 +15,7 @@
 #    include "map/map.h"
 #    include "map/mapdata.h"
 #    include "math_defines.h"
+#    include "item.h"
 #    include "monster.h"
 #    include "pixel_minimap_projectors.h"
 #    include "sdl_utils.h"
@@ -467,8 +468,8 @@ void pixel_minimap::render( const tripoint_bub_ms &center )
     RenderClear( renderer );
 
     render_cache( center );
+    render_items( center );
     render_critters( center );
-
     //set display buffer to main screen
     set_displaybuffer_rendertarget();
     //paint intermediate texture to screen
@@ -579,6 +580,46 @@ void pixel_minimap::render_critters( const tripoint_bub_ms &center )
     }
 }
 
+
+void pixel_minimap::render_items( const tripoint_bub_ms &center )
+{
+    if( !settings.item_markers ) {
+        return;
+    }
+
+    const map &here = get_map();
+    const tripoint_bub_ms player_pos = get_avatar().bub_pos();
+    const SDL_Color item_color = SDL_Color{ 0xFF, 0xD7, 0x00, 0xFF }; // gold
+
+    for( int y = 0; y < view_tiles_count.y; y++ ) {
+        for( int x = 0; x < view_tiles_count.x; x++ ) {
+            const tripoint p = tripoint{ center.x() - view_tiles_count.x / 2 + x,
+                                         center.y() - view_tiles_count.y / 2 + y,
+                                         center.z()
+                                       };
+            const tripoint_bub_ms bp( p );
+            if( !here.inbounds( bp ) ) {
+                continue;
+            }
+            if( !here.has_items( bp ) ) {
+                continue;
+            }
+            if( !here.sees_some_items( bp, player_pos ) ) {
+                continue;
+            }
+            const auto tile_pos = projector->get_tile_pos( { x, y }, view_tiles_count );
+            const point tile_size = projector->get_tile_size();
+            const int marker_size = std::max( 1, tile_size.x / 3 );
+            const SDL_Rect marker_rect = SDL_Rect{
+                tile_pos.x + ( tile_size.x - marker_size ) / 2,
+                tile_pos.y + ( tile_size.y - marker_size ) / 2,
+                marker_size, marker_size
+            };
+            SetRenderDrawColor( renderer, item_color.r, item_color.g, item_color.b, item_color.a );
+            RenderFillRect( renderer, &marker_rect );
+        }
+    }
+}
 //the main call for drawing the pixel minimap to the screen
 void pixel_minimap::draw( const SDL_Rect &screen_rect, const tripoint_bub_ms &center )
 {
@@ -602,11 +643,11 @@ void pixel_minimap::draw( const SDL_Rect &screen_rect, const tripoint_bub_ms &ce
     constexpr auto min_view_diameter = 2 * min_view_radius;
     view_tiles_count = {
         total_tiles_count.x > min_view_diameter
-        ? std::min( total_tiles_count.x, screen_rect.w / 2 )
-        : screen_rect.w / 3,
+        ? std::min( total_tiles_count.x, static_cast<int>( screen_rect.w / 2 / settings.zoom ) )
+        : static_cast<int>( screen_rect.w / 3 / settings.zoom ),
         total_tiles_count.y > min_view_diameter
-        ? std::min( total_tiles_count.y, screen_rect.h / 2 )
-        : screen_rect.h / 3
+        ? std::min( total_tiles_count.y, static_cast<int>( screen_rect.h / 2 / settings.zoom ) )
+        : static_cast<int>( screen_rect.h / 3 / settings.zoom )
     };
 
     set_screen_rect( screen_rect );
