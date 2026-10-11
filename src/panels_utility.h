@@ -4,7 +4,8 @@
 #include "calendar.h"
 #include "color.h"
 
-std::string moon_phase_name( const moon_phase phase );
+/// Translated name of the moon phase, as the sidebar shows it.
+auto moon_phase_name( moon_phase phase ) -> std::string;
 
 std::string trunc_ellipse( const std::string &input, unsigned int trunc );
 
