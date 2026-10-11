@@ -65,6 +65,7 @@
 #    include "string_formatter.h"
 #    include "string_id.h"
 #    include "string_utils.h"
+#    include "tile_effects.h"
 #    include "tileray.h"
 #    include "translations.h"
 #    include "trap.h"
@@ -6020,6 +6021,9 @@ bool cata_tiles::draw_critter_at( const tripoint_bub_ms &p, lit_level ll, int &h
                     sees_player = pl->sees( g-> u );
                     attitude = pl->attitude_to( g-> u );
                 }
+            } else {
+                // Monsters have no overlay pass of their own, so draw their loops here.
+                draw_status_effects( critter, p, ll, z_drop );
             }
         } else {
             // invisible
@@ -6427,6 +6431,20 @@ void cata_tiles::draw_entity_with_overlays( const Character &ch, const tripoint_
         return false;
     };
 
+    // Status effects that this module animates are drawn once, from a wall clock frame,
+    // instead of one static tile per effect in the loop below; monsters get the same
+    // overlay from the hook in draw_critter_at.
+    if( tile_effects::enabled() ) {
+        const tile_effects::overlay_options opt{ .critter = ch, .pos = p };
+        if( const std::string *frame_id = tile_effects::overlay_tile_id( opt,
+                                            idle_animations.current_frame() ) ) {
+            const tile_search_params tile{ *frame_id, C_NONE, "", corner, 0 };
+            draw_from_id_string( tile, p, std::nullopt, std::nullopt, ll, false, 0,
+                                 as_independent_entity );
+            idle_animations.mark_present();
+        }
+    }
+
     // next up, draw all the overlays
     const auto overlays = ch.get_overlay_ids();
     for( const auto &[overlay_id, entry] : overlays ) {
@@ -6435,6 +6453,11 @@ void cata_tiles::draw_entity_with_overlays( const Character &ch, const tripoint_
 
         std::string draw_id = overlay_id;
         bool found = false;
+
+        if( overlay_id.starts_with( "effect_" ) && tile_effects::enabled() &&
+            tile_effects::owns_effect( std::string_view{ overlay_id }.substr( 7 ) ) ) {
+            continue;
+        }
 
         if( !std::visit( should_override, entry ) ) {
             // Legacy hair color injection: try to find a tile with the hair color in the name

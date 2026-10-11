@@ -2371,6 +2371,12 @@ void options_manager::add_options_graphics()
 
     get_option( "SKIP_EXPLOSION_ANIMATION_AFTER" ).setPrerequisite( "ANIMATIONS" );
 
+    add( "TILE_EFFECT_ANIMATIONS", graphics, translate_marker( "Status effect animations" ),
+         translate_marker( "If true, creatures in view show small looping overlays for visible states: bleeding drips, burning, poisoned or sick, stunned, asleep and cold. Requires animations." ),
+         true, COPT_CURSES_HIDE );
+
+    get_option( "TILE_EFFECT_ANIMATIONS" ).setPrerequisite( "ANIMATIONS" );
+
     add( "BULLETS_AS_LASERS", graphics, translate_marker( "Draw bullets as lines" ),
          translate_marker( "If true, bullets are drawn as lines of images, and the animation lasts only one frame." ),
          true
