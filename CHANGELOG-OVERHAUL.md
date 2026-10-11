@@ -4,6 +4,22 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-11
+
+### Added
+
+- **ASCII pictures for 134 more items**, ported from Cataclysm: Dark Days Ahead (CC-BY-SA 3.0, the
+  same license as this fork). Ammunition, containers, canisters, flasks, batteries, drums and a few
+  guns and melee weapons now have a picture of their own in the item description, next to the 71
+  pictures Bright Nights already had.
+- **Item kind thumbnails**: items with no picture of their own now show a small picture of what
+  they are (a pistol, a rifle, a shotgun, an SMG, a launcher, a bow; a blade, a blunt weapon or a
+  spear; armor for the head, torso, whole body, legs, feet or hands; food, drink, a book, a
+  container, a tool, ammunition, a magazine, medicine, a battery; a plain box for anything else).
+  It sits at the top of the item description, above the item name, and stays small enough that the
+  name and the stats stay on the first screen. Options → Graphics → Item kind thumbnails turns it
+  off, and it needs Enable ASCII art in item descriptions.
+
 ## 2026-10-10
 
 ### Added
