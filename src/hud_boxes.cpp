@@ -2,12 +2,14 @@
 
 #include <algorithm>
 #include <cstring>
+#include <cstdint>
 #include <optional>
 #if !defined(TILES) && !defined(_WIN32)
 #include <langinfo.h>
 #endif
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "avatar.h"
@@ -28,6 +30,9 @@
 #include "string_formatter.h"
 #include "translations.h"
 #include "weather/weather.h"
+#include "units_utility.h"
+#include "vehicle/vehicle.h"
+#include "vehicle/vehicle_part.h"
 
 namespace
 {
@@ -79,7 +84,7 @@ auto has_thermometer( const avatar &you ) -> bool
 
 enum class icon {
     sun, moon, cloud, rain, storm, snow, strange, underground, fists, melee, gun, bow, style,
-    walk, run, crouch, prone, mana
+    walk, run, crouch, prone, mana, compass, fuel, battery
 };
 
 /// One glyph per icon for each icon set. Nerd Font glyphs are Material Design icons (the fist is Font Awesome).
@@ -126,6 +131,12 @@ auto glyph( const icon i ) -> std::string
             return pick( "━", "━", "-" );
         case icon::mana:
             return pick( "✦", "✦", "+" );
+        case icon::compass:
+            return pick( "⊕", "\U000F018B", "+" );
+        case icon::fuel:
+            return pick( "⛽", "\U000F0298", "F" );
+        case icon::battery:
+            return pick( "⚡", "\U000F0079", "B" );
     }
     return "?";
 }
@@ -181,8 +192,8 @@ auto wind_text( const avatar &you ) -> wind_info
     const oter_id &cur_om_ter = ACTIVE_OVERMAP_BUFFER.ter( you.abs_omt_pos() );
     const weather_manager &weather = get_weather();
     const double windpower = get_local_windpower( weather.windspeed, cur_om_ter,
-                                you.abs_pos(), weather.winddirection,
-                                weather::is_sheltered( get_map(), you.bub_pos() ) );
+                             you.abs_pos(), weather.winddirection,
+                             weather::is_sheltered( get_map(), you.bub_pos() ) );
     return { get_wind_desc( windpower ) + " " + get_wind_arrow( weather.winddirection ),
              get_wind_color( windpower ) };
 }
@@ -230,7 +241,8 @@ auto combat_lines( const avatar &you ) -> std::vector<line>
         kind = !weapon.is_gun() ? icon::melee :
                weapon.gun_skill() == skill_id( "archery" ) ? icon::bow : icon::gun;
     }
-    const auto name = you.is_armed() ? character_funcs::fmt_wielded_weapon( you ) : std::string( _( "fists" ) );
+    const auto name = you.is_armed() ? character_funcs::fmt_wielded_weapon( you ) : std::string(
+                          _( "fists" ) );
     out.push_back( { glyph( kind ), c_light_cyan, name, c_light_gray } );
     const auto style = you.martial_arts_data->selected_style_name( you );
     if( !style.empty() ) {
@@ -261,6 +273,79 @@ auto combat_lines( const avatar &you ) -> std::vector<line>
     return out;
 }
 
+auto vehicle_lines( const avatar &you ) -> std::vector<line>
+{
+    auto out = std::vector<line>();
+    auto *veh = g->remoteveh();
+    if( veh == nullptr && you.in_vehicle ) {
+        veh = veh_pointer_or_null( get_map().veh_at( you.bub_pos() ) );
+    }
+    if( veh == nullptr ) {
+        return out;
+    }
+    out.reserve( 6 );
+    static const auto fuel_type_battery = itype_id( "battery" );
+    static const auto fuel_type_muscle = itype_id( "muscle" );
+
+    out.push_back( { .icon = glyph( icon::compass ), .icon_color = c_light_gray,
+                     .text = string_format( _( "Azimuth: %s" ), veh->face.to_string_azimuth_from_north() ),
+                     .text_color = c_light_gray } );
+    const auto indent = std::string( utf8_width( out.front().icon ), ' ' );
+    const auto strain = veh->strain();
+    const auto speed_color = strain <= 0 ? c_light_blue :
+                             strain <= 0.2 ? c_yellow : strain <= 0.4 ? c_light_red : c_red;
+    out.push_back( { .icon = indent, .icon_color = speed_color,
+                     .text = string_format( _( "Speed: %d %s" ),
+                                            static_cast<int>( convert_velocity( veh->velocity, VU_VEHICLE ) ),
+                                            velocity_units( VU_VEHICLE ) ),
+                     .text_color = speed_color } );
+    if( veh->cruise_on ) {
+        out.push_back( { .icon = indent, .icon_color = c_light_gray,
+                         .text = string_format( _( "Cruise: %d %s" ),
+                                                static_cast<int>( convert_velocity( veh->cruise_velocity, VU_VEHICLE ) ),
+                                                velocity_units( VU_VEHICLE ) ),
+                         .text_color = c_light_gray } );
+    }
+    out.push_back( { .icon = indent, .icon_color = c_light_gray,
+                     .text = veh->engine_on ? _( "Engine: on" ) : _( "Engine: off" ),
+                     .text_color = veh->engine_on ? c_light_green : c_light_gray } );
+
+    auto engine_fuel = std::optional<itype_id>();
+    for( auto e = size_t{ 0 }; e < veh->engines.size(); ++e ) {
+        if( veh->is_perpetual_type( e ) || veh->is_engine_type( e, fuel_type_muscle ) ) {
+            continue;
+        }
+        const auto &fuel = veh->parts[veh->engines[e]].fuel_current();
+        if( fuel.is_null() ) {
+            continue;
+        }
+        if( !engine_fuel || veh->is_engine_on( e ) ) {
+            engine_fuel = fuel;
+        }
+        if( veh->is_engine_on( e ) ) {
+            break;
+        }
+    }
+    const auto percentage = [&]( const itype_id & fuel ) {
+        const auto capacity = veh->fuel_capacity( fuel );
+        return capacity > 0 ? static_cast<int>(
+                   static_cast<int64_t>( veh->fuel_left( fuel ) ) * 100 / capacity ) : 0;
+    };
+    if( engine_fuel && *engine_fuel != fuel_type_battery ) {
+        const auto percent = percentage( *engine_fuel );
+        out.push_back( { .icon = glyph( icon::fuel ), .icon_color = c_light_gray,
+                         .text = string_format( _( "%s: %d%%" ), item::nname( *engine_fuel ), percent ),
+                         .text_color = percent > 20 ? c_light_gray : percent > 5 ? c_yellow : c_red } );
+    }
+    if( veh->fuel_capacity( fuel_type_battery ) > 0 ) {
+        const auto percent = percentage( fuel_type_battery );
+        const auto color = percent > 20 ? c_light_cyan : percent > 5 ? c_yellow : c_red;
+        out.push_back( { .icon = glyph( icon::battery ), .icon_color = color,
+                         .text = string_format( _( "Battery: %d%%" ), percent ), .text_color = color } );
+    }
+    return out;
+}
+
 /// Draws the lines in a bordered box whose top-left corner is `at`.
 struct box_spec {
     point at;
@@ -286,10 +371,12 @@ auto draw_box( const catacurses::window &w, const box_spec &box ) -> void
         mvwprintz( w, row + point( 1, 0 ), c_black, std::string( inner + 2, ' ' ) );
         mvwprintz( w, row + point( 2, 0 ), lines[i].icon_color, lines[i].icon );
         const auto icon_w = utf8_width( lines[i].icon );
-        trim_and_print( w, row + point( 3 + icon_w, 0 ), inner - icon_w - 1, lines[i].text_color, lines[i].text );
+        trim_and_print( w, row + point( 3 + icon_w, 0 ), inner - icon_w - 1, lines[i].text_color,
+                        lines[i].text );
         mvwprintz( w, row + point( inner + 3, 0 ), c_dark_gray, frame.vertical );
     }
-    mvwprintz( w, at + point( 0, lines.size() + 1 ), c_dark_gray, bar( frame.bottom_left, frame.bottom_right ) );
+    mvwprintz( w, at + point( 0, lines.size() + 1 ), c_dark_gray, bar( frame.bottom_left,
+               frame.bottom_right ) );
 }
 
 } // namespace
@@ -299,10 +386,11 @@ namespace hud_boxes
 
 auto mana_matters( const Character &you ) -> bool
 {
-    if( get_option<bool>( "ALWAYS_SHOW_MANA" ) || you.magic->available_mana() < you.magic->max_mana( you ) ) {
+    if( get_option<bool>( "ALWAYS_SHOW_MANA" ) ||
+        you.magic->available_mana() < you.magic->max_mana( you ) ) {
         return true;
     }
-    return std::ranges::any_of( you.magic->spells(), [&]( const spell_id &sp ) {
+    return std::ranges::any_of( you.magic->spells(), [&]( const spell_id & sp ) {
         return you.magic->get_spell( sp ).energy_source() == mana_energy;
     } );
 }
@@ -343,6 +431,19 @@ auto combat_box_shows_mana( const Character &you ) -> bool
     return combat_box_shown() && roomy() && mana_matters( you );
 }
 
+auto vehicle_box_shown() -> bool
+{
+    if( is_draw_tiles_mode() ) {
+        return false;
+    }
+    const auto corner = get_option<std::string>( "HUD_VEHICLE_BOX" );
+    if( corner == "off" ) {
+        return false;
+    }
+    const auto &you = get_avatar();
+    return g->remoteveh() != nullptr || you.in_vehicle;
+}
+
 auto draw( const avatar &you, const catacurses::window &w ) -> void
 {
     struct box {
@@ -355,6 +456,14 @@ auto draw( const avatar &you, const catacurses::window &w ) -> void
     }
     if( const auto corner = get_option<std::string>( "HUD_COMBAT_BOX" ); corner != "off" ) {
         boxes.push_back( { corner, combat_lines( you ) } );
+    }
+    if( const auto corner = get_option<std::string>( "HUD_VEHICLE_BOX" ); corner != "off" ) {
+        if( g->remoteveh() != nullptr || you.in_vehicle ) {
+            auto lines = vehicle_lines( you );
+            if( !lines.empty() ) {
+                boxes.push_back( { .corner = corner, .lines = std::move( lines ) } );
+            }
+        }
     }
     const auto width = getmaxx( w );
     const auto height = getmaxy( w );
