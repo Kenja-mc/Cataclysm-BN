@@ -52,6 +52,9 @@
 #include "vehicle/vehicle_part.h"
 #include "vehicle/vehicle_selector.h"
 #include "vehicle/vpart_position.h"
+#if defined(TILES)
+#include "sdltiles.h"
+#endif
 
 #include <algorithm>
 #include <array>
@@ -868,6 +871,18 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
 
                     trim_and_print( w_pickup, point( 6, 1 + ( cur_it % maxitems ) ), pickupW - 4, icolor,
                                     item_name );
+#if defined(TILES)
+                // Register tile thumbnail for this pickup list item
+                if( use_tiles && item_thumbnails_enabled ) {
+                    const window_dimensions dim = get_window_dimensions( w_pickup );
+                    const point thumb_px(
+                        dim.window_pos_pixel.x,
+                        dim.window_pos_pixel.y + ( 1 + ( cur_it % maxitems ) ) * fontheight
+                    );
+                    register_item_thumbnail( thumb_px, fontwidth, fontheight,
+                                            this_item.typeId().str() );
+                }
+#endif
                 }
             }
 

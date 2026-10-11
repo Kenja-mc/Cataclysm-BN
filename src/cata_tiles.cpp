@@ -5462,7 +5462,10 @@ bool cata_tiles::draw_item_on_furniture( const tripoint_bub_ms &p, const lit_lev
     if( !f ) {
         return false;
     }
-    // Check if furniture has items on it
+    // Don't draw items on mannequins (handled separately)
+    if( f.id() == furn_f_mannequin ) {
+        return false;
+    }
     if( !here.sees_some_items( p, g->u ) ) {
         return false;
     }
@@ -5471,26 +5474,30 @@ bool cata_tiles::draw_item_on_furniture( const tripoint_bub_ms &p, const lit_lev
     if( !itm.type ) {
         return false;
     }
-    // Don't draw items on mannequins (handled separately)
-    if( f.id() == furn_f_mannequin ) {
-        return false;
+    // Draw the actual item sprite on top of the furniture
+    const itype_id it_id = itm.typeId();
+    const mtype *const mon = itm.get_mtype();
+    const mtype_id mon_id = mon ? mon->id : mtype_id::NULL_ID();
+    const bool hilite = tile.get_item_count() > 1;
+    auto variant_sprite = std::string();
+    variant_sprite = item_variants::sprite( itm );
+    if( !variant_sprite.empty() && !find_tile_with_season( variant_sprite ) ) {
+        variant_sprite.clear();
     }
-    const std::string item_id = itm.typeId().str();
-    const std::string furn_id_str = f.id().str();
-    // Look for a layering sprite: item_on_furniture pattern
-    std::string layering_id = item_id + "_on_" + furn_id_str;
-    std::string draw_id;
-    if( find_overlay_looks_like( false, layering_id, draw_id ) ) {
-        auto [bgCol, fgCol] = get_item_color( itm, here, p );
-        auto overlay_height_3d = height_3d;
-        const tile_search_params tile_params { draw_id, C_NONE, empty_string, 0, 0 };
-        const bool drawn = draw_from_id_string(
-                               tile_params, p, bgCol, fgCol,
-                               ll, false, z_drop, false, overlay_height_3d );
-        height_3d = std::max( height_3d, overlay_height_3d );
-        return drawn;
+    const std::string disp_id = !variant_sprite.empty() ? variant_sprite
+                                : it_id == itype_corpse && mon_id
+                                ? "corpse_" + mon_id.str()
+                                : it_id.str();
+    const std::string it_category = itm.type->get_item_type_string();
+    const auto [bgCol, fgCol] = get_item_color( itm, here, p );
+    const tile_search_params tile { disp_id, C_ITEM, it_category, 0, 0 };
+    const bool drawn = draw_from_id_string(
+                           tile, p, bgCol, fgCol,
+                           ll, false, z_drop, false, height_3d );
+    if( drawn && hilite ) {
+        draw_item_highlight( p );
     }
-    return false;
+    return drawn;
 }
 
 bool cata_tiles::draw_cliff_overlay( const tripoint_bub_ms &p, const lit_level ll, int &height_3d,
@@ -5516,36 +5523,39 @@ bool cata_tiles::draw_cliff_overlay( const tripoint_bub_ms &p, const lit_level l
     if( !below_ter ) {
         return false;
     }
-    // Only draw cliff if the below tile is solid (wall, rock, etc.)
+    // Below tile is not a solid wall or rock formation — no cliff edge
     if( !below_ter.obj().has_flag( TFLAG_WALL ) && !below_ter.obj().has_flag( TFLAG_CLIMBABLE ) ) {
         return false;
     }
-    // Draw cliff overlay sprite
-    const std::string cliff_id = "cliff_face";
-    std::string draw_id;
-    if( find_overlay_looks_like( false, cliff_id, draw_id ) ) {
-        const auto [bgCol, fgCol] = get_terrain_color( t.obj(), here, p );
-        auto overlay_height_3d = height_3d;
-        const tile_search_params tile_params { draw_id, C_NONE, empty_string, 0, 0 };
-        const bool drawn = draw_from_id_string(
-                               tile_params, p, bgCol, fgCol,
-                               ll, false, z_drop, false, overlay_height_3d );
-        height_3d = std::max( height_3d, overlay_height_3d );
-        return drawn;
+    // Only draw cliff edge if the current tile itself is not a wall or climbable
+    // (wall atop wall does not create visible cliff between them)
+    if( t.obj().has_flag( TFLAG_WALL ) || t.obj().has_flag( TFLAG_CLIMBABLE ) ) {
+        return false;
     }
-    return false;
+    // Calculate screen position for the cliff edge shadow
+    const point screen_pos = player_to_screen( p.xy() );
+    const int shadow_height = std::max( 1, tile_height / 10 );
+    const auto renderer_copy = renderer;
+    geometry->rect( renderer_copy, point( screen_pos.x, screen_pos.y + tile_height - shadow_height ),
+                    tile_width, shadow_height, SDL_Color{ 0, 0, 0, 80 } );
+    return true;
 }
 
 bool cata_tiles::draw_item_thumbnail( const item &itm, const point &dest, int width, int height )
 {
+    return draw_item_thumbnail( itm.typeId(), dest, width, height );
+}
+
+bool cata_tiles::draw_item_thumbnail( const itype_id &id, const point &dest, int width, int height )
+{
     if( !item_thumbnails_enabled ) {
         return false;
     }
-    if( !itm.type ) {
+    if( !id.is_valid() ) {
         return false;
     }
-    const std::string item_id = itm.typeId().str();
-    const std::string &it_category = itm.type->get_item_type_string();
+    const std::string item_id = id.str();
+    const std::string &it_category = id->get_item_type_string();
     const tile_search_params tile_params { item_id, C_ITEM, it_category, 0, 0 };
     auto search_result = tile_type_search( tile_params );
     if( search_result == std::nullopt ) {
@@ -5563,17 +5573,12 @@ bool cata_tiles::draw_item_thumbnail( const item &itm, const point &dest, int wi
     if( !sprite_tex ) {
         return false;
     }
-    int src_w = 0, src_h = 0;
-    std::tie( src_w, src_h ) = sprite_tex->dimension();
-    if( src_w <= 0 || src_h <= 0 ) {
-        return false;
-    }
     SDL_Rect dst_rect;
     dst_rect.x = dest.x;
     dst_rect.y = dest.y;
     dst_rect.w = width;
     dst_rect.h = height;
-    sprite_tex->render_copy_ex( renderer, &dst_rect, 0, nullptr, );
+    sprite_tex->render_copy( renderer, &dst_rect );
     return true;
 }
 
@@ -5770,6 +5775,11 @@ bool cata_tiles::draw_field_or_item( const tripoint_bub_ms &p, const lit_level l
                 for( const auto *itm : here.i_at( p ) ) {
                     ret_draw_items = draw_mannequin_item( *itm ) || ret_draw_items;
                 }
+                it_type = nullptr;
+                hilite = false;
+            } else if( item_layering_enabled && here.furn( p ) ) {
+                // Items on furniture are already drawn by draw_item_on_furniture layer.
+                // Skip them here to avoid double-drawing.
                 it_type = nullptr;
                 hilite = false;
             } else {
@@ -7486,6 +7496,7 @@ void cata_tiles::get_stairs_orientation( const tripoint_bub_ms &p, int &rota, in
         }
     }
     subtile = 0;
+}
 
 void cata_tiles::get_rotation_and_subtile( const char val, int &rotation, int &subtile )
 {

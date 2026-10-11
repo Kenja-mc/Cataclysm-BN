@@ -1620,13 +1620,10 @@ static void draw_pending_thumbnails()
 {
     for( const auto &thumb : pending_thumbnails ) {
         const itype_id id( thumb.item_id );
-        const it_type *it_type = item::find_type( id );
-        if( !it_type ) {
+        if( !id.is_valid() ) {
             continue;
         }
-        item dummy_item( id, calendar::turn_zero );
-        dummy_item.type = it_type;
-        tilecontext->draw_item_thumbnail( dummy_item, thumb.pos, thumb.width, thumb.height );
+        tilecontext->draw_item_thumbnail( id, thumb.pos, thumb.width, thumb.height );
     }
     pending_thumbnails.clear();
 }

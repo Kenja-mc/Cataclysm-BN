@@ -31,6 +31,9 @@
 #include "ui_manager.h"
 #include "units_utility.h"
 #include "vehicle/vehicle.h"
+#if defined(TILES)
+#include "sdltiles.h"
+#endif
 #include "vehicle/vehicle_part.h"
 #include "vehicle/vehicle_selector.h"
 #include "vehicle/vpart_position.h"
@@ -953,6 +956,14 @@ void inventory_column::draw( const catacurses::window &win, point pos ) const
         return displayed_width > real_width ? displayed_width - real_width : 0;
     };
 
+    // Compute window pixel origin for thumbnail registration (TILES only)
+    point win_px_origin = point_zero;
+#if defined(TILES)
+    if( use_tiles && item_thumbnails_enabled ) {
+        const window_dimensions dim = get_window_dimensions( win );
+        win_px_origin = dim.window_pos_pixel;
+    }
+#endif
     // Do the actual drawing
     for( size_t index = page_offset, line = 0; index < entries.size() &&
          line < entries_per_page; ++index, ++line ) {
@@ -1052,8 +1063,36 @@ void inventory_column::draw( const catacurses::window &win, point pos ) const
                     mvwputch( win, point( xx, yy ), c_light_green, '#' );
                 }
             }
+            // Register tile thumbnail for this item entry
+#if defined(TILES)
+            if( use_tiles && item_thumbnails_enabled ) {
+                const item *any_item = entry.any_item();
+                if( any_item && any_item->type ) {
+                    const point thumb_px(
+                        win_px_origin.x + pos.x * fontwidth,
+                        win_px_origin.y + yy * fontheight
+                    );
+                    register_item_thumbnail( thumb_px, fontwidth, fontheight,
+                                            any_item->typeId().str() );
+                }
+            }
+#endif
         }
     }
+            // Register tile thumbnail for this item entry
+#if defined(TILES)
+            if( use_tiles && item_thumbnails_enabled ) {
+                const item *any_item = entry.any_item();
+                if( any_item && any_item->type ) {
+                    const point thumb_px(
+                        win_px_origin.x + pos.x * fontwidth,
+                        win_px_origin.y + yy * fontheight
+                    );
+                    register_item_thumbnail( thumb_px, fontwidth, fontheight,
+                                            any_item->typeId().str() );
+                }
+            }
+#endif
 
     if( pages_count() > 1 ) {
         mvwprintw( win, pos + point( 0, height - 1 ), _( "Page %d/%d" ), page_index() + 1, pages_count() );
