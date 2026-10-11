@@ -4,6 +4,16 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-11
+
+### Added
+
+- **Smooth vehicle rotation** (Options → Graphics, tiles only): a vehicle that drives at a
+  direction other than north, south, east or west is drawn as one rotated vehicle. Each of its
+  parts is turned by the exact heading and grown just enough to reach the part next to it, which
+  replaces the staircase of axis-aligned sprites. Tilesets that draw their own directional
+  sprites keep them and isometric tilesets are unchanged.
+
 ## 2026-10-10
 
 ### Added

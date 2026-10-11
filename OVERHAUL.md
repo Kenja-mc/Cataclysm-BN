@@ -136,6 +136,11 @@ prompts with Y and N makes `y`/`n` answer at once instead; the classic control s
   already shows the sound level; turn it back on from the sidebar options.
 - Gun and ammo info show **loudness**: the noise of one shot and a word for it (quiet, loud, very
   loud, deafening). An unloaded gun shows its default ammo, like the other stats.
+- **Smooth vehicle rotation** (Options → Graphics, tiles only): a vehicle that faces a direction
+  other than north, south, east or west is drawn as one rotated vehicle. Each of its parts is
+  turned by the exact heading and grown just enough to reach the next part, so the staircase of
+  axis-aligned sprites disappears. Tilesets that draw their own directional sprites keep them,
+  and isometric tilesets are unchanged. Turn it off to get the old axis-aligned drawing.
 
 ## Items and storage
 
