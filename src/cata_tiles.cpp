@@ -168,6 +168,17 @@ pixel_minimap_mode pixel_minimap_mode_from_string( const std::string &mode )
     return pixel_minimap_mode::solid;
 }
 
+pixel_minimap_zoom pixel_minimap_zoom_from_string( const std::string &zoom )
+{
+    if( zoom == "2" ) {
+        return pixel_minimap_zoom::zoom_2x;
+    }
+    if( zoom == "4" ) {
+        return pixel_minimap_zoom::zoom_4x;
+    }
+    return pixel_minimap_zoom::zoom_1x;
+}
+
 struct draw_zone_overlay_options {
     const SDL_Renderer_Ptr &renderer;
     SDL_Rect rect;
@@ -411,7 +422,7 @@ void cata_tiles::on_options_changed()
                                      get_option<int>( "PIXEL_MINIMAP_BLINK" ) : 0;
     settings.square_pixels = get_option<bool>( "PIXEL_MINIMAP_RATIO" );
     settings.scale_to_fit = get_option<bool>( "PIXEL_MINIMAP_SCALE_TO_FIT" );
-    settings.zoom = get_option<float>( "PIXEL_MINIMAP_ZOOM" );
+    settings.zoom = pixel_minimap_zoom_from_string( get_option<std::string>( "PIXEL_MINIMAP_ZOOM" ) );
     settings.item_markers = get_option<bool>( "PIXEL_MINIMAP_ITEM_MARKERS" );
 
     minimap->set_settings( settings );

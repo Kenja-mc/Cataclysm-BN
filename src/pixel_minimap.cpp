@@ -587,9 +587,9 @@ void pixel_minimap::render_items( const tripoint_bub_ms &center )
         return;
     }
 
-    const map &here = get_map();
-    const tripoint_bub_ms player_pos = get_avatar().bub_pos();
-    const SDL_Color item_color = SDL_Color{ 0xFF, 0xD7, 0x00, 0xFF }; // gold
+    const auto &access_cache = get_map().access_cache( center.z() );
+    const auto &here = get_map();
+    const SDL_Color item_color = SDL_Color{ 0xFF, 0xD7, 0x00, 0xFF };
 
     for( int y = 0; y < view_tiles_count.y; y++ ) {
         for( int x = 0; x < view_tiles_count.x; x++ ) {
@@ -598,13 +598,14 @@ void pixel_minimap::render_items( const tripoint_bub_ms &center )
                                          center.z()
                                        };
             const tripoint_bub_ms bp( p );
-            if( !here.inbounds( bp ) ) {
+            if( !access_cache.inbounds( bp.xy() ) ) {
+                continue;
+            }
+            const lit_level lighting = access_cache.visibility_cache[access_cache.idx( p.x, p.y )];
+            if( lighting == lit_level::DARK || lighting == lit_level::BLANK ) {
                 continue;
             }
             if( !here.has_items( bp ) ) {
-                continue;
-            }
-            if( !here.sees_some_items( bp, player_pos ) ) {
                 continue;
             }
             const auto tile_pos = projector->get_tile_pos( { x, y }, view_tiles_count );
@@ -639,15 +640,19 @@ void pixel_minimap::draw( const SDL_Rect &screen_rect, const tripoint_bub_ms &ce
     // view_tiles_count is the geographic tile grid the projector and renderer use.
     // Large bubble: clip to screen/2 (tile_size >= 2); small bubble: screen/3 (tile_size >= 3).
     // Out-of-bubble area is rendered as black.
+    // Zoom reduces the number of tiles shown (zoom-in only: 1x, 2x, 4x).
     constexpr auto min_view_radius = 60;
     constexpr auto min_view_diameter = 2 * min_view_radius;
+    const int zoom_divisor = 1 << static_cast<int>( settings.zoom );
     view_tiles_count = {
-        total_tiles_count.x > min_view_diameter
-        ? std::min( total_tiles_count.x, static_cast<int>( screen_rect.w / 2 / settings.zoom ) )
-        : static_cast<int>( screen_rect.w / 3 / settings.zoom ),
-        total_tiles_count.y > min_view_diameter
-        ? std::min( total_tiles_count.y, static_cast<int>( screen_rect.h / 2 / settings.zoom ) )
-        : static_cast<int>( screen_rect.h / 3 / settings.zoom )
+        std::max( 1, std::min( total_tiles_count.x,
+            total_tiles_count.x > min_view_diameter
+                ? static_cast<int>( screen_rect.w / 2 ) / zoom_divisor
+                : static_cast<int>( screen_rect.w / 3 ) / zoom_divisor ) ),
+        std::max( 1, std::min( total_tiles_count.y,
+            total_tiles_count.y > min_view_diameter
+                ? static_cast<int>( screen_rect.h / 2 ) / zoom_divisor
+                : static_cast<int>( screen_rect.h / 3 ) / zoom_divisor ) )
     };
 
     set_screen_rect( screen_rect );

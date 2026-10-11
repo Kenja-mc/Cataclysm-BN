@@ -16,10 +16,10 @@ enum class pixel_minimap_type {
     iso
 };
 
-enum class pixel_minimap_mode {
-    solid,
-    squares,
-    dots
+enum class pixel_minimap_zoom {
+    zoom_1x,
+    zoom_2x,
+    zoom_4x
 };
 
 struct pixel_minimap_settings {
@@ -29,8 +29,8 @@ struct pixel_minimap_settings {
     int beacon_blink_interval = 0;
     bool square_pixels = true;
     bool scale_to_fit = false;
-    // Zoom factor: 1.0 = auto (default), >1 = zoom in, <1 = zoom out
-    float zoom = 1.0f;
+    // Zoom level: 1x (default), 2x, 4x
+    pixel_minimap_zoom zoom = pixel_minimap_zoom::zoom_1x;
     // Show yellow markers on tiles with visible items
     bool item_markers = false;
 };

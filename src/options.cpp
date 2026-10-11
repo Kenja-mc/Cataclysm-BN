@@ -2636,11 +2636,12 @@ void options_manager::add_options_graphics()
     get_option( "PIXEL_MINIMAP_BLINK" ).setPrerequisite( "PIXEL_MINIMAP" );
 
     add( "PIXEL_MINIMAP_ZOOM", graphics, translate_marker( "Pixel minimap zoom" ),
-         translate_marker( "Zoom level for the pixel minimap.  Values greater than 1.0 zoom in, values less than 1.0 zoom out.  1.0 uses the default auto-fit." ),
-         0.25f, 4.0f, 1.0f, COPT_CURSES_HIDE
+         translate_marker( "Zoom level for the pixel minimap." ), {
+        { "1", translate_marker( "1x" ) },
+        { "2", translate_marker( "2x" ) },
+        { "4", translate_marker( "4x" ) }
+        }, "1", COPT_CURSES_HIDE
        );
-
-    get_option( "PIXEL_MINIMAP_ZOOM" ).setPrerequisite( "PIXEL_MINIMAP" );
 
     add( "PIXEL_MINIMAP_ITEM_MARKERS", graphics, translate_marker( "Pixel minimap item markers" ),
          translate_marker( "Show gold markers on the pixel minimap for tiles with visible items." ),
