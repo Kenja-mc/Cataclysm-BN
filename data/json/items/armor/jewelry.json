@@ -654,7 +654,8 @@
     "description": "A shiny gold and blue shield marking the bearer as the most feared of Feds - an IRS Special Agent.",
     "material": [ "gold" ],
     "price_postapoc": "5 USD",
-    "proportional": { "weight": 2 }
+    "proportional": { "weight": 2 },
+    "looks_like": "badge_detective"
   },
   {
     "id": "jewelry_bracelet",

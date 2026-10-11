@@ -53,6 +53,7 @@
       "ammo_effects": [ "NO_PENETRATE_OBSTACLES", "LASER", "FUSION_ARM_POWERSHOT_SMALL" ],
       "durability": 10
     },
-    "flags": [ "IRREMOVABLE", "USE_PARENT_GUN" ]
+    "flags": [ "IRREMOVABLE", "USE_PARENT_GUN" ],
+    "looks_like": "unbio_blaster_gun"
   }
 ]

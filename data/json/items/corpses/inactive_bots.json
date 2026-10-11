@@ -308,7 +308,8 @@
       "moves": 150,
       "skills": [ "electronics", "computer" ]
     },
-    "flags": [ "ALLOWS_REMOTE_USE" ]
+    "flags": [ "ALLOWS_REMOTE_USE" ],
+    "looks_like": "bot_talon_m202a1"
   },
   {
     "id": "bot_talon_m2hb",
@@ -333,7 +334,8 @@
       "moves": 150,
       "skills": [ "electronics", "computer" ]
     },
-    "flags": [ "ALLOWS_REMOTE_USE" ]
+    "flags": [ "ALLOWS_REMOTE_USE" ],
+    "looks_like": "bot_talon_m202a1"
   },
   {
     "id": "bot_nursebot",
@@ -872,7 +874,8 @@
       "moves": 100,
       "skills": [ "electronics", "computer" ]
     },
-    "flags": [ "ALLOWS_REMOTE_USE" ]
+    "flags": [ "ALLOWS_REMOTE_USE" ],
+    "looks_like": "bot_turret"
   },
   {
     "id": "bot_mech_recon",

@@ -223,6 +223,7 @@
     "color": "light_red",
     "quench": 6,
     "fun": -5,
-    "brewable": { "time": "12 hours", "results": [ "sake", "yeast" ] }
+    "brewable": { "time": "12 hours", "results": [ "sake", "yeast" ] },
+    "looks_like": "brew_vodka"
   }
 ]

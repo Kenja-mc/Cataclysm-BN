@@ -115,7 +115,8 @@
     ],
     "sight_dispersion": 8,
     "aim_speed": 9,
-    "flags": [ "DISABLE_SIGHTS", "ZOOM" ]
+    "flags": [ "DISABLE_SIGHTS", "ZOOM" ],
+    "looks_like": "holo_sight"
   },
   {
     "id": "improve_sights",

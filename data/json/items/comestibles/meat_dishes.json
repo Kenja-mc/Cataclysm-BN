@@ -1637,6 +1637,7 @@
     "description": "Crispy fried clam strips, golden-brown and delicious.  A New England specialty.",
     "calories": 55,
     "fun": 8,
-    "flags": [ "EATEN_HOT" ]
+    "flags": [ "EATEN_HOT" ],
+    "looks_like": "fish_fried"
   }
 ]

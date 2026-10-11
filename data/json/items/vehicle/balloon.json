@@ -16,6 +16,7 @@
     "to_hit": -3,
     "category": "veh_parts",
     "explosion": { "damage": 100, "radius": 2 },
-    "explode_in_fire": true
+    "explode_in_fire": true,
+    "looks_like": "balloon"
   }
 ]

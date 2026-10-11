@@ -138,7 +138,8 @@
     "symbol": ";",
     "color": "light_gray",
     "use_action": "C4_BREACHING",
-    "flags": [ "GRENADE", "ALLOWS_REMOTE_USE" ]
+    "flags": [ "GRENADE", "ALLOWS_REMOTE_USE" ],
+    "looks_like": "c4"
   },
   {
     "id": "c4_breaching_armed",
@@ -163,7 +164,8 @@
       "no_deactivate_msg": "You've already set the %s's timer, you might want to get away from it.",
       "explosion": { "damage": 200, "radius": 1 }
     },
-    "flags": [ "TRADER_AVOID", "ALLOWS_REMOTE_USE" ]
+    "flags": [ "TRADER_AVOID", "ALLOWS_REMOTE_USE" ],
+    "looks_like": "c4armed"
   },
   {
     "id": "dynamite",

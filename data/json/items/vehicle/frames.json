@@ -107,7 +107,8 @@
     "material": [ "plastic" ],
     "price": "35 USD",
     "price_postapoc": "1 USD",
-    "copy-from": "foldframe"
+    "copy-from": "foldframe",
+    "looks_like": "frame"
   },
   {
     "type": "GENERIC",
@@ -119,7 +120,8 @@
     "material": [ "carbon_fiber" ],
     "price": "35 USD",
     "price_postapoc": "1 USD",
-    "copy-from": "foldframe"
+    "copy-from": "foldframe",
+    "looks_like": "frame"
   },
   {
     "type": "GENERIC",

@@ -856,7 +856,8 @@
     "storage": "15 L",
     "material_thickness": 2,
     "valid_mods": [ "resized_large", "resized_small" ],
-    "flags": [ "BELTED", "WATER_FRIENDLY", "ALLOWS_WINGS" ]
+    "flags": [ "BELTED", "WATER_FRIENDLY", "ALLOWS_WINGS" ],
+    "looks_like": "basket"
   },
   {
     "id": "suitcase_l",

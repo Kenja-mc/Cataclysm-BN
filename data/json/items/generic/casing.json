@@ -140,7 +140,8 @@
     "volume": "55ml",
     "material": "steel",
     "symbol": "=",
-    "color": "dark_gray"
+    "color": "dark_gray",
+    "looks_like": "40mm_casing"
   },
   {
     "id": "40x53mm_casing",
@@ -152,7 +153,8 @@
     "volume": "64ml",
     "material": "steel",
     "symbol": "=",
-    "color": "dark_gray"
+    "color": "dark_gray",
+    "looks_like": "40mm_casing"
   },
   {
     "id": "44_casing",

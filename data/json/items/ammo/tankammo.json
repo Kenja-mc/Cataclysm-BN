@@ -18,7 +18,8 @@
     "ammo_type": "25mm",
     "default_ammo": "25mm_hei",
     "capacity": 100,
-    "linkage": "ammolink25mm"
+    "linkage": "ammolink25mm",
+    "looks_like": "belt40mm"
   },
   {
     "id": "ammolink25mm",
@@ -53,7 +54,8 @@
     "speed": 1100,
     "loudness": 182,
     "effects": [ "AMMO_25MM_HEI", "INCENDIARY", "NO_PENETRATE_OBSTACLES" ],
-    "explode_in_fire": true
+    "explode_in_fire": true,
+    "looks_like": "40mm_frag"
   },
   {
     "type": "AMMO",
@@ -77,7 +79,8 @@
     "count": 15,
     "speed": 1345,
     "loudness": 183,
-    "effects": [ "COOKOFF" ]
+    "effects": [ "COOKOFF" ],
+    "looks_like": "40mm_frag"
   },
   {
     "type": "AMMO",
@@ -100,7 +103,8 @@
     "count": 10,
     "speed": 1100,
     "loudness": 182,
-    "effects": [ "COOKOFF", "RECYCLED" ]
+    "effects": [ "COOKOFF", "RECYCLED" ],
+    "looks_like": "40mm_frag"
   },
   {
     "id": "25mm_he_reloaded",
@@ -117,7 +121,8 @@
     },
     "extend": { "effects": [ "CUSTOM_EXPLOSION", "NO_PENETRATE_OBSTACLES" ] },
     "explode_in_fire": true,
-    "explosion": { "damage": 25, "radius": 2 }
+    "explosion": { "damage": 25, "radius": 2 },
+    "looks_like": "25mm_slug"
   },
   {
     "type": "AMMO",
@@ -192,7 +197,8 @@
     "count": 1,
     "speed": 1478,
     "loudness": 186,
-    "effects": [ "COOKOFF", "RECYCLED" ]
+    "effects": [ "COOKOFF", "RECYCLED" ],
+    "looks_like": "120mm_HEAT"
   },
   {
     "id": "105mm_he_reloaded",
@@ -211,7 +217,8 @@
     },
     "extend": { "effects": [ "CUSTOM_EXPLOSION", "NO_PENETRATE_OBSTACLES" ] },
     "explode_in_fire": true,
-    "explosion": { "damage": 150, "radius": 4 }
+    "explosion": { "damage": 150, "radius": 4 },
+    "looks_like": "120mm_HEAT"
   },
   {
     "type": "AMMO",
@@ -237,7 +244,8 @@
     "loudness": 186,
     "effects": [ "CUSTOM_EXPLOSION", "NO_PENETRATE_OBSTACLES" ],
     "explode_in_fire": true,
-    "explosion": { "damage": 150, "radius": 3 }
+    "explosion": { "damage": 150, "radius": 3 },
+    "looks_like": "120mm_HEAT"
   },
   {
     "type": "AMMO",
@@ -261,7 +269,8 @@
     "count": 1,
     "speed": 1630,
     "loudness": 187,
-    "effects": [ "COOKOFF", "INCENDIARY" ]
+    "effects": [ "COOKOFF", "INCENDIARY" ],
+    "looks_like": "120mm_HEAT"
   },
   {
     "type": "AMMO",
@@ -285,7 +294,8 @@
     "count": 1,
     "speed": 1410,
     "loudness": 186,
-    "effects": [ "COOKOFF", "SHOT", "RECYCLED" ]
+    "effects": [ "COOKOFF", "SHOT", "RECYCLED" ],
+    "looks_like": "120mm_HEAT"
   },
   {
     "type": "AMMO",
@@ -308,7 +318,8 @@
     "count": 1,
     "speed": 1200,
     "loudness": 186,
-    "effects": [ "COOKOFF", "RECYCLED" ]
+    "effects": [ "COOKOFF", "RECYCLED" ],
+    "looks_like": "120mm_HEAT"
   },
   {
     "id": "120mm_usable_he_reloaded",
@@ -325,7 +336,8 @@
     },
     "extend": { "effects": [ "CUSTOM_EXPLOSION", "NO_PENETRATE_OBSTACLES" ] },
     "explode_in_fire": true,
-    "explosion": { "damage": 200, "radius": 6 }
+    "explosion": { "damage": 200, "radius": 6 },
+    "looks_like": "120mm_usable_slug"
   },
   {
     "type": "AMMO",
@@ -350,7 +362,8 @@
     "loudness": 190,
     "effects": [ "CUSTOM_EXPLOSION", "NO_PENETRATE_OBSTACLES" ],
     "explode_in_fire": true,
-    "explosion": { "damage": 200, "radius": 5 }
+    "explosion": { "damage": 200, "radius": 5 },
+    "looks_like": "120mm_HEAT"
   },
   {
     "type": "AMMO",
@@ -374,7 +387,8 @@
     "speed": 1000,
     "loudness": 190,
     "effects": [ "AMMO_155MM_FRAG", "NO_PENETRATE_OBSTACLES" ],
-    "explode_in_fire": true
+    "explode_in_fire": true,
+    "looks_like": "120mm_HEAT"
   },
   {
     "type": "AMMO",
@@ -397,7 +411,8 @@
     "count": 1,
     "speed": 1000,
     "loudness": 190,
-    "effects": [ "COOKOFF", "SHOT", "RECYCLED" ]
+    "effects": [ "COOKOFF", "SHOT", "RECYCLED" ],
+    "looks_like": "120mm_HEAT"
   },
   {
     "type": "AMMO",
@@ -419,7 +434,8 @@
     "count": 1,
     "speed": 1000,
     "loudness": 190,
-    "effects": [ "COOKOFF", "RECYCLED" ]
+    "effects": [ "COOKOFF", "RECYCLED" ],
+    "looks_like": "120mm_HEAT"
   },
   {
     "id": "155mm_he_reloaded",
@@ -436,7 +452,8 @@
     },
     "extend": { "effects": [ "CUSTOM_EXPLOSION", "NO_PENETRATE_OBSTACLES" ] },
     "explode_in_fire": true,
-    "explosion": { "damage": 250, "radius": 10 }
+    "explosion": { "damage": 250, "radius": 10 },
+    "looks_like": "155mm_slug"
   },
   {
     "type": "AMMO",
@@ -458,7 +475,8 @@
     "count": 1,
     "speed": 1000,
     "loudness": 190,
-    "effects": [ "COOKOFF", "RECYCLED", "MININUKE_MOD", "NO_PENETRATE_OBSTACLES" ]
+    "effects": [ "COOKOFF", "RECYCLED", "MININUKE_MOD", "NO_PENETRATE_OBSTACLES" ],
+    "looks_like": "120mm_HEAT"
   },
   {
     "type": "GENERIC",
@@ -467,7 +485,8 @@
     "name": { "str_sp": "25mm casing" },
     "description": "A canister from a spent 25mm shell.",
     "volume": "135 ml",
-    "weight": "20 g"
+    "weight": "20 g",
+    "looks_like": "40mm_casing"
   },
   {
     "type": "GENERIC",
@@ -501,7 +520,8 @@
     "description": "A spent 120mm case base converted into an improved casing, by welding new case walls of appropriate dimensions to the base.  Hopefully the welds are good, or else it might be a better fit for a pipe bomb instead.",
     "material": "steel",
     "volume": "6 L",
-    "weight": "900 g"
+    "weight": "900 g",
+    "looks_like": "40mm_casing"
   },
   {
     "type": "AMMO",

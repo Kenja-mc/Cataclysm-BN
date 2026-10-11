@@ -1199,7 +1199,8 @@
     "calories": 30,
     "quench": 1,
     "fun": -10,
-    "material": [ "iflesh" ]
+    "material": [ "iflesh" ],
+    "looks_like": "insect_sample"
   },
   {
     "id": "clam",
@@ -1214,6 +1215,7 @@
     "calories": 35,
     "quench": 3,
     "fun": -2,
-    "material": [ "flesh" ]
+    "material": [ "flesh" ],
+    "looks_like": "fish"
   }
 ]

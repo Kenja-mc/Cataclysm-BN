@@ -64,7 +64,8 @@
     "qualities": [ [ "CONTAIN", 1 ], [ "CHURN", 2 ], [ "BOIL", 1 ] ],
     "symbol": "H",
     "color": "light_cyan",
-    "flags": [ "ALLOWS_REMOTE_USE" ]
+    "flags": [ "ALLOWS_REMOTE_USE" ],
+    "looks_like": "churn"
   },
   {
     "id": "can_sealer",

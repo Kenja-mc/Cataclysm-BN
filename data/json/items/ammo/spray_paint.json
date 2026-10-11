@@ -16,6 +16,7 @@
     "stack_size": 20,
     "ammo_type": "spray_paint",
     "phase": "liquid",
-    "flags": [ "DESTROY_ON_DROP", "IRREMOVABLE" ]
+    "flags": [ "DESTROY_ON_DROP", "IRREMOVABLE" ],
+    "looks_like": "spray_can"
   }
 ]

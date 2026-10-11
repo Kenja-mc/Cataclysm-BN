@@ -127,6 +127,7 @@
     "install_time": "20 m",
     "volume_multiplier": 0.8,
     "handling_modifier": -5,
-    "flags": [ "NEEDS_UNFOLD" ]
+    "flags": [ "NEEDS_UNFOLD" ],
+    "looks_like": "barrel_big"
   }
 ]

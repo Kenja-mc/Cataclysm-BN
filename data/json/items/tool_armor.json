@@ -1554,7 +1554,8 @@
     "coverage": 15,
     "material_thickness": 2,
     "magazines": [ [ "battery", [ "light_battery_cell" ] ] ],
-    "magazine_well": "250 ml"
+    "magazine_well": "250 ml",
+    "looks_like": "goggles_nv"
   },
   {
     "id": "goggles_nv_enhanced_on",
@@ -1575,7 +1576,8 @@
     "covers": [ "eyes" ],
     "warmth": 25,
     "encumbrance": 20,
-    "magazine_well": "250 ml"
+    "magazine_well": "250 ml",
+    "looks_like": "goggles_nv_on"
   },
   {
     "id": "goggles_ir",
