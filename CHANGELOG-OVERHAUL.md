@@ -55,6 +55,8 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - The playtest harness includes a 120-zombie stress world. Tiles playtests use private options
   instead of changing the player's normal tiles configuration.
 - End-to-end games disable desktop URL openers and find the retained curses build directly.
+- The modern keyboard diagram is generated from the binding files, includes stance keys and
+  Shift actions, and highlights key conflicts instead of silently hiding them.
 
 ### Fixed
 
