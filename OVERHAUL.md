@@ -177,10 +177,13 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   packs. Gunshots, deaths and ambience stay silent rather than use a sound that does not fit.
   Sources in `data/sound/Overhaul/CREDITS.md`.
 
-- **Weather and weapon boxes** (terminal view) sit in the map's top-left corner: the weather with an icon, the time
-  (exact with a watch) and the temperature (with a thermometer); and what you fight with, its ammo
+- **Weather and weapon boxes** (terminal view) sit in a corner of the map: the weather with an icon, the time
+  (exact with a watch), the temperature (with a thermometer), light level, wind (description and arrow,
+  colored by strength), moon phase, and the season with day number; and what you fight with, its ammo
   and your fighting style. Options → Interface → Weather box / Weapon box moves each to any corner
   or turns it off, and Box icons picks Unicode, [Nerd Font](https://www.nerdfonts.com/) or ASCII.
+  While the weather box is on, the Location sidebar panel drops Sky, Light, Date and Time (it keeps
+  Place and coordinates); turn the box off and the panel shows everything again.
 - **Body panel** (inspired by Project Zomboid's health screen): the sidebar lists every hurt limb
   and what is wrong with it (bleeding, infected, bitten, broken, bandaged, disinfected). `H` opens
   the full view with every limb's health and what to do about wounds. Hide it like any panel from

@@ -1,7 +1,10 @@
 #pragma once
 
 #include <string>
+#include "calendar.h"
 #include "color.h"
+
+std::string moon_phase_name( const moon_phase phase );
 
 std::string trunc_ellipse( const std::string &input, unsigned int trunc );
 

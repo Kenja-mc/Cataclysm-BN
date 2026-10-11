@@ -2,6 +2,33 @@
 #include "catacharset.h"
 #include "color.h"
 #include "panels_utility.h"
+#include "translations.h"
+
+std::string moon_phase_name( const moon_phase phase )
+{
+    switch( static_cast<int>( phase ) ) {
+        case 0:
+            return _( "New moon" );
+        case 1:
+            return _( "Waxing crescent" );
+        case 2:
+            return _( "Half moon" );
+        case 3:
+            return _( "Waxing gibbous" );
+        case 4:
+            return _( "Full moon" );
+        case 5:
+            return _( "Waning gibbous" );
+        case 6:
+            return _( "Half moon" );
+        case 7:
+            return _( "Waning crescent" );
+        case 8:
+            return _( "Dark moon" );
+        default:
+            return "";
+    }
+}
 
 std::string trunc_ellipse( const std::string &input, unsigned int trunc )
 {
