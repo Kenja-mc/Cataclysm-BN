@@ -450,7 +450,8 @@ shifted for the next one.
 
 `tests/e2e/run.py` starts the terminal build inside tmux, creates a character and plays through the
 new controls, quick stack and sort pile by sending real key presses and reading the screen. It
-needs `tmux` and a built `cataclysm-bn` binary (at the repo root or in `build/src`):
+needs `tmux` and a built `cataclysm-bn` binary (in `out/build/linux-curses/src`, at the repo root or
+in `build/src`):
 
 ```sh
 python3 tests/e2e/run.py

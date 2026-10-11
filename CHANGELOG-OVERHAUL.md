@@ -46,6 +46,10 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - A playtest harness, `tests/e2e/playtest.py`: 13 scenarios that set up a fork feature in a fresh
   game and hand it to you in the terminal or the tiles window.
 
+### Changed
+
+- End-to-end games disable desktop URL openers and find the retained curses build directly.
+
 ### Fixed
 
 - The item action menu no longer opens empty after saying you have no usable items.

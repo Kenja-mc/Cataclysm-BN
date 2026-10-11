@@ -1,5 +1,6 @@
 #include "catch/catch.hpp"
 #include "filesystem.h"
+#include "game.h"
 #include "input.h"
 #include "options_helpers.h"
 #include "path_info.h"
@@ -7,6 +8,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iterator>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -41,7 +43,45 @@ auto contains_key(const std::vector<char>& keys, const char key) -> bool {
     return std::ranges::find(keys, key) != keys.end();
 }
 
+/// Keyboard inputs that trigger more than one action registered in the main game, each with
+/// the actions it triggers.
+auto main_game_key_clashes() -> std::map<std::vector<int>, std::vector<std::string>> {
+    auto ctxt = get_default_mode_input_context();
+    auto actions_by_key = std::map<std::vector<int>, std::vector<std::string>>();
+    for (const auto& action : ctxt.get_registered_actions_copy()) {
+        for (const auto& event : inp_mngr.get_input_for_action(action, "DEFAULTMODE")) {
+            if (event.type == input_event_t::keyboard) {
+                auto& actions = actions_by_key[event.sequence];
+                if (!std::ranges::contains(actions, action)) { actions.push_back(action); }
+            }
+        }
+    }
+    std::erase_if(actions_by_key, [](const auto& entry) { return entry.second.size() < 2; });
+    return actions_by_key;
+}
+
+auto describe(const std::map<std::vector<int>, std::vector<std::string>>& clashes) -> std::string {
+    auto out = std::string();
+    for (const auto& [keys, actions] : clashes) {
+        out += inp_mngr.get_keyname(keys.front(), input_event_t::keyboard) + ":";
+        for (const auto& action : actions) { out += " " + action; }
+        out += "\n";
+    }
+    return out;
+}
+
 } // namespace
+
+// The classic scheme keeps upstream's bindings, clashes included (h and w also open the guide
+// and the wiki there), so only the modern scheme is held to this.
+TEST_CASE("no key triggers two main game actions in the modern scheme", "[input][keybindings]") {
+    auto restore_keybindings = user_keybindings_file_guard();
+    auto modern = override_option("CONTROL_SCHEME", "modern");
+    inp_mngr.init();
+    const auto clashes = main_game_key_clashes();
+    INFO(describe(clashes));
+    CHECK(clashes.empty());
+}
 
 TEST_CASE("deleted local keybindings fall back to global bindings", "[input][keybindings]") {
     auto restore_keybindings = user_keybindings_file_guard();
