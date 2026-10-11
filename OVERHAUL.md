@@ -418,6 +418,9 @@ python3 tests/e2e/playtest.py safe_mode --no-attach  # print the screen and clos
 Each run starts a new game in `/tmp/bn-playtest/<scenario>/` with the curses binary, runs the
 scenario's Lua next to the player and prints what to check. `--scheme classic` tries the classic
 keys. `--tiles` saves, then opens the save in `cataclysm-bn-tiles`.
+The `stress` scenario puts 120 zombies around reinforced glass for checking smart safe mode and
+edge-arrow responsiveness. The tiles launch uses a private `XDG_CONFIG_HOME` under the scenario
+directory, so playtesting does not overwrite your normal tiles options.
 
 ## Building
 

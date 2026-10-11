@@ -43,13 +43,15 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - **Mana** reads `current/max` like weight and volume.
 - The **Overhaul soundpack** (Kenney, CC0) for footsteps, melee, impacts, reloads, menus and
   vehicle doors; the Otopack stays the default when it is installed.
-- A playtest harness, `tests/e2e/playtest.py`: 13 scenarios that set up a fork feature in a fresh
+- A playtest harness, `tests/e2e/playtest.py`: 14 scenarios that set up a fork feature in a fresh
   game and hand it to you in the terminal or the tiles window.
 
 ### Changed
 
 - Smart threat checks run only when needed and reuse route answers within a turn. Group checks
   search routes for at most 12 monsters; unchecked hostiles conservatively stop travel.
+- The playtest harness includes a 120-zombie stress world. Tiles playtests use private options
+  instead of changing the player's normal tiles configuration.
 - End-to-end games disable desktop URL openers and find the retained curses build directly.
 
 ### Fixed
