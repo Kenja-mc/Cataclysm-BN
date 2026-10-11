@@ -789,10 +789,10 @@ def test_enemy_edge_arrows(g):
         screen = edge.screen()
         assert any(a in screen for a in EDGE_ARROWS), "no east arrow for the off-screen zombie:\n" + screen
         # Yellow, not red: it can walk to the player but not within twice the safe-mode distance.
-        row = next((l for l in edge.screen_colors().splitlines() if any(a in l for a in EDGE_ARROWS)), None)
+        # Only the east arrow: arena() parks stray monsters to the south-east, which may be close.
+        row = next((l for l in edge.screen_colors().splitlines() if "\u2192" in l), None)
         assert row is not None, edge.screen_colors()
-        assert any(f"\x1b[{c}m{a}" in row for c in ("33", "93") for a in EDGE_ARROWS), \
-            "yellow arrow expected, got:\n" + repr(row)
+        assert any(f"\x1b[{c}m\u2192" in row for c in ("33", "93")), "yellow arrow expected, got:\n" + repr(row)
     finally:
         edge.close()
 

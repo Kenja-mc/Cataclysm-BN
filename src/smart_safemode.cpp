@@ -52,8 +52,12 @@ auto can_reach_soon( const monster &mon, avatar &you ) -> bool
     if( mon.type->has_flag( MF_IMMOBILE ) || mon.type->speed <= 0 ) {
         return false;
     }
-    // The monster's own settings, so a zombie that can smash or open your door can reach you.
     const auto proximity = safe_mode_proximity <= 0 ? g_max_view_distance : safe_mode_proximity;
+    // map::route returns a clear straight line at any distance, so the distance cap goes first.
+    if( rl_dist( you.bub_pos(), mon.bub_pos() ) > 2 * proximity ) {
+        return false;
+    }
+    // The monster's own settings, so a zombie that can smash or open your door can reach you.
     auto settings = mon.get_legacy_pathfinding_settings();
     settings.max_dist = 2 * proximity;
     settings.max_length = 4 * proximity;
