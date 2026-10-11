@@ -18,6 +18,9 @@ direction?" prompt.
 
 ![Modern control scheme](docs/fork/images/controls-modern.svg)
 
+Regenerate the diagram from the binding files with `python3 build-scripts/gen_controls_svg.py`.
+Shift actions and the stance keys are included; conflicting bindings are highlighted in red.
+
 `n` **auto-explores**: each press walks you to the nearest spot you can reach that borders ground
 you have not seen yet, on your current floor. It goes around walls, closed doors, known traps and
 dangerous fields rather than through them, so open a door yourself to explore past it. It refuses to
