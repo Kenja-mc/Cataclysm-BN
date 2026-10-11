@@ -1,0 +1,662 @@
+[
+  {
+    "type": "sound_effect",
+    "id": "plmove",
+    "variant": "walk_grass",
+    "volume": 75,
+    "files": [
+      "footsteps/grass_000.ogg",
+      "footsteps/grass_001.ogg",
+      "footsteps/grass_002.ogg",
+      "footsteps/grass_003.ogg",
+      "footsteps/grass_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "plmove",
+    "variant": "walk_dirt",
+    "volume": 75,
+    "files": [
+      "footsteps/carpet_000.ogg",
+      "footsteps/carpet_001.ogg",
+      "footsteps/carpet_002.ogg",
+      "footsteps/carpet_003.ogg",
+      "footsteps/carpet_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "plmove",
+    "variant": "walk_tarmac",
+    "volume": 75,
+    "files": [
+      "footsteps/concrete_000.ogg",
+      "footsteps/concrete_001.ogg",
+      "footsteps/concrete_002.ogg",
+      "footsteps/concrete_003.ogg",
+      "footsteps/concrete_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "plmove",
+    "variant": "walk_metal",
+    "volume": 75,
+    "files": [
+      "footsteps/wood_000.ogg",
+      "footsteps/wood_001.ogg",
+      "footsteps/wood_002.ogg",
+      "footsteps/wood_003.ogg",
+      "footsteps/wood_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "plmove",
+    "variant": "walk_barefoot",
+    "volume": 75,
+    "files": [
+      "footsteps/concrete_000.ogg",
+      "footsteps/concrete_001.ogg",
+      "footsteps/concrete_002.ogg",
+      "footsteps/concrete_003.ogg",
+      "footsteps/concrete_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "plmove",
+    "variant": "clear_obstacle",
+    "volume": 70,
+    "files": [ "ui/scratch_001.ogg", "ui/scratch_002.ogg", "ui/scratch_003.ogg", "ui/scratch_004.ogg", "ui/scratch_005.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "fire_gun",
+    "variant": "brass_eject",
+    "volume": 70,
+    "files": [
+      "impact/tin_medium_000.ogg",
+      "impact/tin_medium_001.ogg",
+      "impact/tin_medium_002.ogg",
+      "impact/tin_medium_003.ogg",
+      "impact/tin_medium_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "fire_gun",
+    "variant": "bio_lightning",
+    "volume": 85,
+    "files": [
+      "digital/zap1.ogg",
+      "digital/zap2.ogg",
+      "digital/zapThreeToneDown.ogg",
+      "digital/zapThreeToneUp.ogg",
+      "digital/zapTwoTone.ogg",
+      "digital/zapTwoTone2.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "fire_gun",
+    "variant": "bio_lightning_tail",
+    "volume": 70,
+    "files": [ "digital/laser1.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "reload",
+    "variant": "ak47",
+    "volume": 80,
+    "files": [ "ui/click_001.ogg", "ui/click_002.ogg", "ui/click_003.ogg", "ui/click_004.ogg", "ui/click_005.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "reload",
+    "variant": "ak74",
+    "volume": 80,
+    "files": [ "ui/click_001.ogg", "ui/click_002.ogg", "ui/click_003.ogg", "ui/click_004.ogg", "ui/click_005.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "reload",
+    "variant": "ar_pistol",
+    "volume": 80,
+    "files": [ "ui/click_001.ogg", "ui/click_002.ogg", "ui/click_003.ogg", "ui/click_004.ogg", "ui/click_005.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "reload",
+    "variant": "crossbow",
+    "volume": 80,
+    "files": [ "ui/click_001.ogg", "ui/click_002.ogg", "ui/click_003.ogg", "ui/click_004.ogg", "ui/click_005.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "reload",
+    "variant": "famas",
+    "volume": 80,
+    "files": [ "ui/click_001.ogg", "ui/click_002.ogg", "ui/click_003.ogg", "ui/click_004.ogg", "ui/click_005.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "reload",
+    "variant": "flamethrower",
+    "volume": 80,
+    "files": [ "ui/click_001.ogg", "ui/click_002.ogg", "ui/click_003.ogg", "ui/click_004.ogg", "ui/click_005.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "reload",
+    "variant": "m4a1",
+    "volume": 80,
+    "files": [ "ui/click_001.ogg", "ui/click_002.ogg", "ui/click_003.ogg", "ui/click_004.ogg", "ui/click_005.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "reload",
+    "variant": "uzi",
+    "volume": 80,
+    "files": [ "ui/click_001.ogg", "ui/click_002.ogg", "ui/click_003.ogg", "ui/click_004.ogg", "ui/click_005.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "reload",
+    "variant": "default",
+    "volume": 80,
+    "files": [ "ui/click_001.ogg", "ui/click_002.ogg", "ui/click_003.ogg", "ui/click_004.ogg", "ui/click_005.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "reload",
+    "variant": "start",
+    "volume": 80,
+    "files": [ "ui/click_001.ogg", "ui/click_002.ogg", "ui/click_003.ogg", "ui/click_004.ogg", "ui/click_005.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "reload",
+    "variant": "end",
+    "volume": 80,
+    "files": [ "ui/toggle_001.ogg", "ui/toggle_002.ogg", "ui/toggle_003.ogg", "ui/toggle_004.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "melee_swing",
+    "variant": "small_bash",
+    "volume": 85,
+    "files": [
+      "impact/plank_medium_000.ogg",
+      "impact/plank_medium_001.ogg",
+      "impact/plank_medium_002.ogg",
+      "impact/plank_medium_003.ogg",
+      "impact/plank_medium_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "melee_swing",
+    "variant": "big_bash",
+    "volume": 85,
+    "files": [
+      "impact/wood_heavy_000.ogg",
+      "impact/wood_heavy_001.ogg",
+      "impact/wood_heavy_002.ogg",
+      "impact/wood_heavy_003.ogg",
+      "impact/wood_heavy_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "melee_swing",
+    "variant": "small_cutting",
+    "volume": 85,
+    "files": [
+      "impact/wood_light_000.ogg",
+      "impact/wood_light_001.ogg",
+      "impact/wood_light_002.ogg",
+      "impact/wood_light_003.ogg",
+      "impact/wood_light_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "melee_swing",
+    "variant": "big_cutting",
+    "volume": 85,
+    "files": [
+      "impact/metal_heavy_000.ogg",
+      "impact/metal_heavy_001.ogg",
+      "impact/metal_heavy_002.ogg",
+      "impact/metal_heavy_003.ogg",
+      "impact/metal_heavy_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "melee_swing",
+    "variant": "default",
+    "volume": 85,
+    "files": [
+      "impact/plank_medium_000.ogg",
+      "impact/plank_medium_001.ogg",
+      "impact/plank_medium_002.ogg",
+      "impact/plank_medium_003.ogg",
+      "impact/plank_medium_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "melee_hit_flesh",
+    "variant": "small_bash",
+    "volume": 85,
+    "files": [
+      "impact/punch_medium_000.ogg",
+      "impact/punch_medium_001.ogg",
+      "impact/punch_medium_002.ogg",
+      "impact/punch_medium_003.ogg",
+      "impact/punch_medium_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "melee_hit_flesh",
+    "variant": "big_bash",
+    "volume": 85,
+    "files": [
+      "impact/punch_heavy_000.ogg",
+      "impact/punch_heavy_001.ogg",
+      "impact/punch_heavy_002.ogg",
+      "impact/punch_heavy_003.ogg",
+      "impact/punch_heavy_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "melee_hit_flesh",
+    "variant": "small_cutting",
+    "volume": 85,
+    "files": [
+      "impact/glass_light_000.ogg",
+      "impact/glass_light_001.ogg",
+      "impact/glass_light_002.ogg",
+      "impact/glass_light_003.ogg",
+      "impact/glass_light_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "melee_hit_flesh",
+    "variant": "big_cutting",
+    "volume": 85,
+    "files": [
+      "impact/punch_heavy_000.ogg",
+      "impact/punch_heavy_001.ogg",
+      "impact/punch_heavy_002.ogg",
+      "impact/punch_heavy_003.ogg",
+      "impact/punch_heavy_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "melee_hit_flesh",
+    "variant": "default",
+    "volume": 85,
+    "files": [
+      "impact/punch_medium_000.ogg",
+      "impact/punch_medium_001.ogg",
+      "impact/punch_medium_002.ogg",
+      "impact/punch_medium_003.ogg",
+      "impact/punch_medium_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "melee_hit_metal",
+    "variant": "small_bash",
+    "volume": 85,
+    "files": [
+      "impact/metal_light_000.ogg",
+      "impact/metal_light_001.ogg",
+      "impact/metal_light_002.ogg",
+      "impact/metal_light_003.ogg",
+      "impact/metal_light_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "melee_hit_metal",
+    "variant": "big_bash",
+    "volume": 85,
+    "files": [
+      "impact/metal_medium_000.ogg",
+      "impact/metal_medium_001.ogg",
+      "impact/metal_medium_002.ogg",
+      "impact/metal_medium_003.ogg",
+      "impact/metal_medium_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "melee_hit_metal",
+    "variant": "small_cutting",
+    "volume": 85,
+    "files": [
+      "impact/glass_medium_000.ogg",
+      "impact/glass_medium_001.ogg",
+      "impact/glass_medium_002.ogg",
+      "impact/glass_medium_003.ogg",
+      "impact/glass_medium_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "melee_hit_metal",
+    "variant": "big_cutting",
+    "volume": 85,
+    "files": [
+      "impact/metal_heavy_000.ogg",
+      "impact/metal_heavy_001.ogg",
+      "impact/metal_heavy_002.ogg",
+      "impact/metal_heavy_003.ogg",
+      "impact/metal_heavy_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "melee_hit_metal",
+    "variant": "default",
+    "volume": 85,
+    "files": [
+      "impact/metal_medium_000.ogg",
+      "impact/metal_medium_001.ogg",
+      "impact/metal_medium_002.ogg",
+      "impact/metal_medium_003.ogg",
+      "impact/metal_medium_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "bullet_hit",
+    "variant": "hit_flesh",
+    "volume": 80,
+    "files": [
+      "impact/soft_medium_000.ogg",
+      "impact/soft_medium_001.ogg",
+      "impact/soft_medium_002.ogg",
+      "impact/soft_medium_003.ogg",
+      "impact/soft_medium_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "bullet_hit",
+    "variant": "hit_wall",
+    "volume": 80,
+    "files": [
+      "impact/plate_medium_000.ogg",
+      "impact/plate_medium_001.ogg",
+      "impact/plate_medium_002.ogg",
+      "impact/plate_medium_003.ogg",
+      "impact/plate_medium_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "bullet_hit",
+    "variant": "hit_metal",
+    "volume": 80,
+    "files": [
+      "impact/metal_medium_000.ogg",
+      "impact/metal_medium_001.ogg",
+      "impact/metal_medium_002.ogg",
+      "impact/metal_medium_003.ogg",
+      "impact/metal_medium_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "deal_damage",
+    "variant": "hurt_f",
+    "volume": 70,
+    "files": [
+      "impact/punch_medium_000.ogg",
+      "impact/punch_medium_001.ogg",
+      "impact/punch_medium_002.ogg",
+      "impact/punch_medium_003.ogg",
+      "impact/punch_medium_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "deal_damage",
+    "variant": "hurt_m",
+    "volume": 70,
+    "files": [
+      "impact/punch_medium_000.ogg",
+      "impact/punch_medium_001.ogg",
+      "impact/punch_medium_002.ogg",
+      "impact/punch_medium_003.ogg",
+      "impact/punch_medium_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "mon_bite",
+    "variant": "bite_hit",
+    "volume": 70,
+    "files": [
+      "impact/glass_light_000.ogg",
+      "impact/glass_light_001.ogg",
+      "impact/glass_light_002.ogg",
+      "impact/glass_light_003.ogg",
+      "impact/glass_light_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "mon_bite",
+    "variant": "bite_miss",
+    "volume": 60,
+    "files": [ "ui/scratch_001.ogg", "ui/scratch_002.ogg", "ui/scratch_003.ogg", "ui/scratch_004.ogg", "ui/scratch_005.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "melee_attack",
+    "variant": "monster_melee_hit",
+    "volume": 70,
+    "files": [
+      "impact/punch_heavy_000.ogg",
+      "impact/punch_heavy_001.ogg",
+      "impact/punch_heavy_002.ogg",
+      "impact/punch_heavy_003.ogg",
+      "impact/punch_heavy_004.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "bionics",
+    "variant": "elec_discharge",
+    "volume": 90,
+    "files": [
+      "digital/zap1.ogg",
+      "digital/zap2.ogg",
+      "digital/zapThreeToneDown.ogg",
+      "digital/zapThreeToneUp.ogg",
+      "digital/zapTwoTone.ogg",
+      "digital/zapTwoTone2.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "bionics",
+    "variant": "acid_discharge",
+    "volume": 90,
+    "files": [ "digital/laser1.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "bionics",
+    "variant": "elec_crackle_low",
+    "volume": 90,
+    "files": [
+      "digital/zap1.ogg",
+      "digital/zap2.ogg",
+      "digital/zapThreeToneDown.ogg",
+      "digital/zapThreeToneUp.ogg",
+      "digital/zapTwoTone.ogg",
+      "digital/zapTwoTone2.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "bionics",
+    "variant": "elec_crackle_med",
+    "volume": 90,
+    "files": [
+      "digital/zap1.ogg",
+      "digital/zap2.ogg",
+      "digital/zapThreeToneDown.ogg",
+      "digital/zapThreeToneUp.ogg",
+      "digital/zapTwoTone.ogg",
+      "digital/zapTwoTone2.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "bionics",
+    "variant": "elec_crackle_high",
+    "volume": 90,
+    "files": [
+      "digital/zap1.ogg",
+      "digital/zap2.ogg",
+      "digital/zapThreeToneDown.ogg",
+      "digital/zapThreeToneUp.ogg",
+      "digital/zapTwoTone.ogg",
+      "digital/zapTwoTone2.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "bionics",
+    "variant": "elec_blast",
+    "volume": 90,
+    "files": [
+      "digital/zap1.ogg",
+      "digital/zap2.ogg",
+      "digital/zapThreeToneDown.ogg",
+      "digital/zapThreeToneUp.ogg",
+      "digital/zapTwoTone.ogg",
+      "digital/zapTwoTone2.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "bionics",
+    "variant": "elec_blast_muffled",
+    "volume": 90,
+    "files": [
+      "digital/zap1.ogg",
+      "digital/zap2.ogg",
+      "digital/zapThreeToneDown.ogg",
+      "digital/zapThreeToneUp.ogg",
+      "digital/zapTwoTone.ogg",
+      "digital/zapTwoTone2.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "bionics",
+    "variant": "pixelated",
+    "volume": 90,
+    "files": [ "digital/glitch_001.ogg", "digital/glitch_002.ogg", "digital/glitch_003.ogg", "digital/glitch_004.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "misc",
+    "variant": "timber",
+    "volume": 90,
+    "files": [ "rpg/chop.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "menu_move",
+    "variant": "default",
+    "volume": 100,
+    "files": [
+      "ui/select_001.ogg",
+      "ui/select_002.ogg",
+      "ui/select_003.ogg",
+      "ui/select_004.ogg",
+      "ui/select_005.ogg",
+      "ui/select_006.ogg",
+      "ui/select_007.ogg",
+      "ui/select_008.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "menu_error",
+    "variant": "default",
+    "volume": 100,
+    "files": [
+      "ui/error_001.ogg",
+      "ui/error_002.ogg",
+      "ui/error_003.ogg",
+      "ui/error_004.ogg",
+      "ui/error_005.ogg",
+      "ui/error_006.ogg",
+      "ui/error_007.ogg",
+      "ui/error_008.ogg"
+    ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "vehicle",
+    "variant": "gear_shift",
+    "volume": 70,
+    "files": [ "ui/click_001.ogg", "ui/click_002.ogg", "ui/click_003.ogg", "ui/click_004.ogg", "ui/click_005.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "vehicle_open",
+    "variant": "default",
+    "volume": 80,
+    "files": [ "ui/open_001.ogg", "ui/open_002.ogg", "ui/open_003.ogg", "ui/open_004.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "vehicle_close",
+    "variant": "default",
+    "volume": 80,
+    "files": [ "ui/close_001.ogg", "ui/close_002.ogg", "ui/close_003.ogg", "ui/close_004.ogg" ]
+  },
+  {
+    "type": "sound_effect_preload",
+    "preload": [
+      { "id": "bionics", "variant": "all" },
+      { "id": "bullet_hit", "variant": "all" },
+      { "id": "deal_damage", "variant": "all" },
+      { "id": "fire_gun", "variant": "all" },
+      { "id": "melee_attack", "variant": "all" },
+      { "id": "melee_hit_flesh", "variant": "all" },
+      { "id": "melee_hit_metal", "variant": "all" },
+      { "id": "melee_swing", "variant": "all" },
+      { "id": "menu_error", "variant": "all" },
+      { "id": "menu_move", "variant": "all" },
+      { "id": "misc", "variant": "all" },
+      { "id": "mon_bite", "variant": "all" },
+      { "id": "plmove", "variant": "all" },
+      { "id": "reload", "variant": "all" },
+      { "id": "vehicle", "variant": "all" },
+      { "id": "vehicle_close", "variant": "all" },
+      { "id": "vehicle_open", "variant": "all" }
+    ]
+  },
+  {
+    "type": "playlist",
+    "playlists": [  ]
+  }
+]
