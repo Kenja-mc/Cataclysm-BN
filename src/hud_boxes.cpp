@@ -34,7 +34,9 @@ auto unicode_locale() -> bool
 #if defined(TILES) || defined(_WIN32)
     return true;
 #else
-    return std::strcmp( nl_langinfo( CODESET ), "UTF-8" ) == 0;
+    // The code set is fixed once the game has set its locale.
+    static const auto utf8 = std::strcmp( nl_langinfo( CODESET ), "UTF-8" ) == 0;
+    return utf8;
 #endif
 }
 
@@ -72,7 +74,8 @@ auto has_thermometer( const avatar &you ) -> bool
 }
 
 enum class icon {
-    sun, moon, cloud, rain, storm, snow, strange, underground, fists, melee, gun, bow, style
+    sun, moon, cloud, rain, storm, snow, strange, underground, fists, melee, gun, bow, style,
+    walk, run, crouch, prone
 };
 
 /// One glyph per icon for each icon set. Nerd Font glyphs are Material Design icons (the fist is Font Awesome).
@@ -109,6 +112,14 @@ auto glyph( const icon i ) -> std::string
             return pick( "➶", "\U000F1841", ")" );
         case icon::style:
             return pick( "☯", "\U000F082C", "*" );
+        case icon::walk:
+            return pick( "•", "•", "." );
+        case icon::run:
+            return pick( "▶", "▶", ">" );
+        case icon::crouch:
+            return pick( "▼", "▼", "v" );
+        case icon::prone:
+            return pick( "━", "━", "-" );
     }
     return "?";
 }
@@ -186,6 +197,23 @@ auto combat_lines( const avatar &you ) -> std::vector<line>
     if( !style.empty() ) {
         out.push_back( { glyph( icon::style ), c_light_blue, style, c_light_gray } );
     }
+    auto stance_icon = icon::walk;
+    auto stance_color = c_light_gray;
+    auto stance_text = _( "Walking" );
+    if( you.movement_mode_is( CMM_RUN ) ) {
+        stance_icon = icon::run;
+        stance_color = c_red;
+        stance_text = _( "Running" );
+    } else if( you.movement_mode_is( CMM_CROUCH ) ) {
+        stance_icon = icon::crouch;
+        stance_color = c_light_blue;
+        stance_text = _( "Crouching" );
+    } else if( you.movement_mode_is( CMM_PRONE ) ) {
+        stance_icon = icon::prone;
+        stance_color = c_brown;
+        stance_text = _( "Prone" );
+    }
+    out.push_back( { glyph( stance_icon ), stance_color, stance_text, stance_color } );
     return out;
 }
 
