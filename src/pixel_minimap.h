@@ -16,10 +16,10 @@ enum class pixel_minimap_type {
     iso
 };
 
-enum class pixel_minimap_mode {
-    solid,
-    squares,
-    dots
+enum class pixel_minimap_zoom {
+    zoom_1x,
+    zoom_2x,
+    zoom_4x
 };
 
 struct pixel_minimap_settings {
@@ -29,6 +29,10 @@ struct pixel_minimap_settings {
     int beacon_blink_interval = 0;
     bool square_pixels = true;
     bool scale_to_fit = false;
+    // Zoom level: 1x (default), 2x, 4x
+    pixel_minimap_zoom zoom = pixel_minimap_zoom::zoom_1x;
+    // Show yellow markers on tiles with visible items
+    bool item_markers = false;
 };
 
 class pixel_minimap
@@ -63,8 +67,11 @@ class pixel_minimap
         void render( const tripoint_bub_ms &center );
         void render_cache( const tripoint_bub_ms &center );
         void render_critters( const tripoint_bub_ms &center );
+        auto render_items( const tripoint_bub_ms &center ) -> void;
 
-        std::unique_ptr<pixel_minimap_projector> create_projector( const SDL_Rect &max_screen_rect ) const;
+
+        auto create_projector( const SDL_Rect &max_screen_rect ) const ->
+        std::unique_ptr<pixel_minimap_projector>;
 
     private:
         const SDL_Renderer_Ptr &renderer;
@@ -89,6 +96,7 @@ class pixel_minimap
 
         std::unique_ptr<pixel_minimap_projector> projector;
         int built_mapsize = 0;
+        int built_zoom = 0;
 
         //the minimap texture pool which is used to reduce new texture allocation spam
         class shared_texture_pool;
