@@ -10,6 +10,7 @@ from pathlib import Path
 from tmux_game import ROOT, Game, start_new_game
 
 from helpers import *
+from vehicle_box import TESTS as VEHICLE_BOX_TESTS
 
 
 
@@ -935,6 +936,7 @@ TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_au
          test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_modern_scheme_adds_no_menu_key_clashes, test_old_full_keybindings_file, test_hud_box_options, test_boxes_replace_sidebar_rows, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
          test_smart_safe_mode, test_smart_safe_mode_horde, test_enemy_edge_arrows, test_enemy_edge_arrows_off,
          test_render_options_exist, test_render_options_toggle, test_item_thumbnails_in_pickup]
+TESTS += VEHICLE_BOX_TESTS
 
 
 def main():
