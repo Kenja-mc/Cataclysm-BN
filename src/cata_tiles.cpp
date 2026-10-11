@@ -17,6 +17,7 @@
 #    include "debug.h"
 #    include "dynamic_atlas.h"
 #    include "enchantments/enchantment_vision.h"
+#    include "enemy_indicators.h"
 #    include "filesystem.h"
 #    include "flag.h"
 #    include "fstream_utils.h"
@@ -4135,6 +4136,15 @@ void cata_tiles::draw( point dest, const tripoint_bub_ms &center, int width, int
             draw_sct_frame( overlay_strings );
             void_sct();
         }
+        // Hostiles the player sees outside the window: an arrow at the edge of the
+        // drawn area, projected from the centre the way the rest of the view is.
+        const auto centre = player_to_screen( center.xy() );
+        const auto half = point( ( centre.x - dest.x ) / tile_width, ( centre.y - dest.y ) / tile_height );
+        for( const auto &arrow : enemy_indicators::map_arrows( g->u, 2 * half.x + 1, 2 * half.y + 1 ) ) {
+            overlay_strings.emplace( player_to_screen( center.xy() + arrow.offset ),
+                                     formatted_text( arrow.glyph, static_cast<int>( arrow.color ),
+                                             text_alignment::left ) );
+        }
         if( do_draw_zones ) {
             void_zones();
         }
@@ -6007,6 +6017,7 @@ bool cata_tiles::draw_critter_at( const tripoint_bub_ms &p, lit_level ll, int &h
                     result = draw_from_id_string(
                                  tile, p, bgCol, fgCol,
                                  ll, false, z_drop, false, height_3d );
+                    draw_monster_health_bar( *m, p );
                     sees_player = m->sees( g->u );
                     attitude = m->attitude_to( g-> u );
                 }
@@ -6061,6 +6072,38 @@ bool cata_tiles::draw_critter_at( const tripoint_bub_ms &p, lit_level ll, int &h
     }
     return result;
 
+}
+
+void cata_tiles::draw_monster_health_bar( const monster &mon, const tripoint_bub_ms &p )
+{
+    // Only the same information the look-around list gives: no bar at all for an
+    // unwounded monster, and no bar while the player cannot judge health.
+    if( !get_option<bool>( "MONSTER_HEALTH_BARS" ) || g->u.has_trait( trait_INATTENTIVE ) ) {
+        return;
+    }
+    const auto hp = mon.get_hp();
+    const auto max_hp = mon.get_hp_max();
+    if( hp <= 0 || hp >= max_hp ) {
+        return;
+    }
+
+    auto bar_color = c_white;
+    auto bar_text = std::string();
+    mon.get_HP_Bar( bar_color, bar_text );
+
+    const auto screen = player_to_screen( p.xy() );
+    // A short bar at the bottom of the tile, so the sprite stays readable.
+    const auto bar_width = tile_iso ? tile_width * 3 / 4 : tile_width;
+    const auto bar_left = screen.x + ( tile_width - bar_width ) / 2;
+    const auto bar_height = std::max( 2, tile_height / 16 );
+    const auto bar_top = screen.y + tile_height - bar_height - std::max( 1, tile_height / 16 );
+    const auto filled = std::clamp<int>( static_cast<int>( bar_width * static_cast<float>( hp ) /
+                       static_cast<float>( max_hp ) ), 1, bar_width );
+
+    geometry->rect( renderer, point( bar_left, bar_top ), bar_width, bar_height,
+                    SDL_Color{ 0, 0, 0, 255 } );
+    geometry->rect( renderer, point( bar_left, bar_top ), filled, bar_height,
+                    curses_color_to_SDL( bar_color ) );
 }
 
 bool cata_tiles::draw_zone_mark( const tripoint_bub_ms &p, lit_level ll, int &height_3d,

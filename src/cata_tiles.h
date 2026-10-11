@@ -943,6 +943,8 @@ class cata_tiles
                          const bool ( &invisible )[5], int z_drop );
         bool draw_critter_at( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
                               const bool ( &invisible )[5], int z_drop );
+        /** Draws a health bar under a hurt monster, as fuzzy as the look-around list. */
+        void draw_monster_health_bar( const monster &mon, const tripoint_bub_ms &p );
         /** Draws the looping status effect overlays (bleeding, burning, ...) of one creature. */
         void draw_status_effects( const Creature &critter, const tripoint_bub_ms &p,
                                   lit_level ll, int z_drop );
