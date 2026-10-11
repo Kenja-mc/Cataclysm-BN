@@ -234,7 +234,7 @@ def load_first_save(g, timeout=120):
     deadline = time.time() + timeout
     while time.time() < deadline:
         s = g.screen()
-        if "X,Y,Z:" in s and " move " in s:
+        if "X,Y,Z" in s and " move " in s:
             return
         if "»" in s:
             g.keys("Enter", delay=2)
@@ -562,10 +562,16 @@ def test_hud_box_options(g):
 
 
 def test_body_panel(g):
-    """Zomboid style body panel: wounds next to a small figure, H opens the full view."""
+    """Zomboid style body panel: the wounded limbs list, H opens the full view."""
     arena(g)
     settle(g)
-    assert "No wounds" in g.screen(), g.screen()
+    s = g.screen()
+    assert "No wounds" in s, s
+    body = next(l for l in s.splitlines() if "No wounds" in l)
+    coord = next(l for l in s.splitlines() if "X,Y,Z" in l)
+    # The wound list starts on the same label grid as the Location panel, with no figure beside it.
+    assert body.index("No wounds") == coord.index("X,Y,Z"), body + "\n" + coord
+    assert any(l.rstrip().endswith(": details") for l in s.splitlines()), s
     g.lua("gapi.get_avatar():add_effect(EffectTypeId.new('bleed'), TimeDuration.from_minutes(30), BodyPartTypeId.new('arm_l'), 1) out('ok')")
     settle(g)
     assert "bleeding" in g.screen(), g.screen()
@@ -574,6 +580,8 @@ def test_body_panel(g):
     g.keys("Escape", delay=0.8)
     g.lua("gapi.get_avatar():remove_effect(EffectTypeId.new('bleed'), BodyPartTypeId.new('arm_l')) out('ok')")
     assert "bleeding" in details and "disinfectant" in details, details
+    settle(g)
+    assert "No wounds" in g.screen(), g.screen()
 
 
 def test_readable_map_glyphs(g):
@@ -596,10 +604,48 @@ def test_rounded_frames(g):
     assert "╭" in s and "╯" in s, "inventory window should have rounded corners"
 
 
+def test_gun_loudness_in_item_info(g):
+    """A gun's item info says how loud a shot is, from the same noise the game makes when firing."""
+    arena(g)
+    give(g, "m9")
+    g.keys("i", "/", delay=1)
+    g.type("Beretta")
+    g.keys("Enter", "Enter", delay=1.5)
+    for _ in range(25):
+        if "Loudness:" in g.screen():
+            break
+        g.keys("PageDown", delay=0.3)
+    s = g.screen()
+    m = re.search(r"Loudness: (\d+) \((silent|quiet|loud|very loud|deafening)\)", s)
+    assert m, f"gun loudness line not found in item info:\n{s}"
+    assert int(m.group(1)) > 0, s
+    g.keys("Escape", delay=0.6)
+    g.keys("Escape", delay=0.6)
+
+
+def test_combine_partly_used_tools(g):
+    """Partly used tools that nothing refills pour into one, keeping every charge."""
+    arena(g)
+    g.lua("local u=gapi.get_avatar() u:create_item(ItypeId.new('matches'),1):set_charges(5) "
+          "u:create_item(ItypeId.new('matches'),1):set_charges(7) out('ok')")
+    assert count_carried(g, "matches") == 2
+    g.keys("i", "/", delay=1)
+    g.type("matchbook")
+    g.keys("Enter", "Enter", delay=1.2)
+    g.wait_for("Combine", timeout=10)
+    g.keys("C", delay=1)
+    assert wait_until(lambda: count_carried(g, "matches") == 1, 30), g.screen()
+    charges = g.lua("for _,it in ipairs(gapi.get_avatar():all_items(false)) do "
+                    "if it:get_type():str()=='matches' then out(it.charges) end end")
+    assert charges == ["12"], charges
+    assert "You combine 2 matchbooks into one." in g.screen(), g.screen()
+    g.keys("Escape", "Escape", delay=0.6)
+
+
 TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_auto_explore, test_first_time_tip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
          test_hud_boxes, test_body_panel, test_readable_map_glyphs, test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content,
          test_aim_defaults, test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions, test_right_click_pick_runs_the_action,
-         test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_old_full_keybindings_file, test_hud_box_options]
+         test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_old_full_keybindings_file, test_hud_box_options, test_gun_loudness_in_item_info, test_combine_partly_used_tools]
 
 
 def main():
