@@ -1,6 +1,7 @@
 [
   {
     "id": "50_incendiary",
+    "ascii_picture": "50_incendiary",
     "copy-from": "50bmg",
     "type": "AMMO",
     "name": { "str": ".50 BMG M17 tracer" },
@@ -11,6 +12,7 @@
   },
   {
     "id": "50bmg",
+    "ascii_picture": "50bmg",
     "type": "AMMO",
     "name": { "str": ".50 BMG M33 Ball" },
     "description": ".50 BMG ammunition with mild steel cored 660gr FMJ bullets.  The .50 BMG is a very powerful rifle round designed for anti-aircraft use, later adapted to anti-vehicular and anti-personnel roles.  Its stupendous energy and armor piercing capabilities make it one of the most deadly rounds available, offset only by its drastic recoil and noise.",
@@ -35,6 +37,7 @@
   },
   {
     "id": "50match",
+    "ascii_picture": "50match",
     "copy-from": "50bmg",
     "type": "AMMO",
     "name": { "str": ".50 BMG Match", "str_pl": ".50 BMG Matches" },
@@ -48,6 +51,7 @@
   },
   {
     "id": "50ss",
+    "ascii_picture": "50ss",
     "copy-from": "50bmg",
     "type": "AMMO",
     "name": { "str": ".50 BMG M2 AP" },
@@ -61,6 +65,7 @@
   },
   {
     "id": "50_mk211",
+    "ascii_picture": "50_mk211",
     "copy-from": "50bmg",
     "type": "AMMO",
     "name": { "str": ".50 BMG Raufoss Mk 211" },

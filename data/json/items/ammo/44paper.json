@@ -1,6 +1,7 @@
 [
   {
     "id": "44army",
+    "ascii_picture": "44army",
     "type": "AMMO",
     "name": { "str": ".44 paper cartridge" },
     "description": "A paper cartridge containing a premeasured amount of black powder and a .44 projectile.",

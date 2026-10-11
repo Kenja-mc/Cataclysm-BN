@@ -2,6 +2,7 @@
   {
     "type": "AMMO",
     "id": "84x246mm_he",
+    "ascii_picture": "84x246mm_he",
     "price": "700 USD",
     "price_postapoc": "120 USD",
     "//": "Milspec ammo such as grenades and rockets: not available to the general public, so Expensive.",
@@ -26,6 +27,7 @@
   {
     "type": "AMMO",
     "id": "84x246mm_hedp",
+    "ascii_picture": "84x246mm_hedp",
     "copy-from": "84x246mm_he",
     "price": "700 USD",
     "price_postapoc": "120 USD",
@@ -43,6 +45,7 @@
   {
     "type": "AMMO",
     "id": "84x246mm_smoke",
+    "ascii_picture": "84x246mm_smoke",
     "copy-from": "84x246mm_he",
     "price": "450 USD",
     "price_postapoc": "120 USD",

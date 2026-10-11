@@ -25,6 +25,7 @@
   },
   {
     "id": "762_m87",
+    "ascii_picture": "762_m87",
     "copy-from": "762_m43",
     "type": "AMMO",
     "name": { "str": "7.62x39mm M67" },

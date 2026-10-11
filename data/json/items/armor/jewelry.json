@@ -431,6 +431,7 @@
   },
   {
     "id": "wristwatch",
+    "ascii_picture": "wristwatch",
     "type": "ARMOR",
     "name": { "str": "wrist watch", "str_pl": "wrist watches" },
     "description": "A simple wristwatch on a plastic band.  Tells the time and has an alarm clock feature.",
@@ -497,6 +498,7 @@
   },
   {
     "id": "badge_deputy",
+    "ascii_picture": "badge_deputy",
     "copy-from": "badge_abstract",
     "type": "ARMOR",
     "name": { "str": "deputy badge" },
