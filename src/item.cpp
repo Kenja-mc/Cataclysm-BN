@@ -4565,7 +4565,7 @@ void item::final_info( std::vector<iteminfo> &info, const iteminfo_query &parts_
             }
         }
     }
-    if( get_option<bool>( "ENABLE_ASCII_ART_ITEM" ) ) {
+    if( parts->test( iteminfo_parts::DESCRIPTION ) && get_option<bool>( "ENABLE_ASCII_ART_ITEM" ) ) {
         const ascii_art_id art = type->picture_id;
         if( art.is_valid() ) {
             for( const std::string &line : art->picture ) {
