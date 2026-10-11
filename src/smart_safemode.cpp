@@ -52,7 +52,7 @@ auto cached_reach() -> reach_cache & // *NOPAD*
     return cache;
 }
 
-auto route_reaches( const monster &mon, avatar &you, const int proximity ) -> bool
+auto route_reaches( const monster &mon, const avatar &you, const int proximity ) -> bool
 {
     auto &answers = cached_reach().answers;
     const auto &source_settings = mon.get_legacy_pathfinding_settings();

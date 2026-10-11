@@ -14,6 +14,7 @@
 #include "type_id.h"
 
 #include <algorithm>
+#include <ranges>
 #include <vector>
 
 namespace {
@@ -87,7 +88,16 @@ TEST_CASE("smart safe mode reach test with a horde", "[.][benchmark][smart_safem
             return reachable_count(horde, you);
         };
         const auto seen = std::vector<const monster*>(horde.begin(), horde.end());
-        BENCHMARK("any_threatens for 100 zombies coming into view, player walled in") {
+        auto bounded =
+            horde | std::views::take(13) | std::ranges::to<std::vector<const monster*>>();
+        CHECK(smart_safemode::any_threatens(bounded, you));
+        bounded.pop_back();
+        CHECK_FALSE(smart_safemode::any_threatens(bounded, you));
+        BENCHMARK("any_threatens for exactly 12 zombies, all bounded routes blocked") {
+            calendar::turn += 1_turns;
+            return smart_safemode::any_threatens(bounded, you);
+        };
+        BENCHMARK("any_threatens for 100 zombies, conservative budget stop without routes") {
             calendar::turn += 1_turns;
             return smart_safemode::any_threatens(seen, you);
         };
@@ -113,13 +123,13 @@ TEST_CASE("monster info update with a horde in sight", "[.][benchmark][smart_saf
     SECTION("smart safe mode and edge arrows off") {
         const override_option smart("SMART_SAFEMODE", "false");
         const override_option arrows("ENEMY_EDGE_ARROWS", "false");
-        BENCHMARK("mon_info_update, 100 zombies, smart features off") { return update(); };
+        BENCHMARK("steady mon_info_update, 100 zombies, smart features off") { return update(); };
     }
     SECTION("smart safe mode and edge arrows on") {
         const override_option smart("SMART_SAFEMODE", "true");
         const override_option arrows("ENEMY_EDGE_ARROWS", "true");
-        BENCHMARK("mon_info_update, 100 zombies, smart features on") { return update(); };
-        BENCHMARK("mon_info_update and drawing the edge arrows, 100 zombies") {
+        BENCHMARK("steady mon_info_update, 100 zombies, smart features on") { return update(); };
+        BENCHMARK("steady monster scan plus fresh-turn edge-arrow routes, 100 zombies") {
             update();
             return enemy_indicators::map_arrows(get_avatar(), 21, 11).size();
         };
