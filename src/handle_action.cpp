@@ -2108,8 +2108,6 @@ bool game::handle_action()
         ZoneScopedN( "handle_action_gamemode_pre_action" );
         gamemode->pre_action( act );
     }
-    // Cursor panning: re-centre the view when the player takes a turn-consuming action.
-    cursor_pan_recenter();
 
 
     int soffset = 0;
@@ -3256,5 +3254,10 @@ bool game::handle_action()
     u.movecounter = ( !u.is_dead_state() ? action_moves_spent : 0 );
     dbg( DL::Info ) << string_format( "%s: [%d] %d - %d = %d", action_ident( act ),
                                       to_turn<int>( calendar::turn ), before_action_moves, u.movecounter, u.moves );
+    // Cursor panning: re-centre the view after a genuine turn-consuming action.
+    // TIMEOUT is excluded because it may originate from idle panning, not player intent.
+    if( act != ACTION_TIMEOUT && action_moves_spent > 0 ) {
+        cursor_pan_recenter();
+    }
     return ( !u.is_dead_state() );
 }

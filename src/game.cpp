@@ -228,6 +228,7 @@ class computer;
 
 #if defined(TILES)
 #include "cata_tiles.h"
+#include "sdltiles.h"
 #endif // TILES
 
 #if !(defined(_WIN32) || defined(TILES))
@@ -3597,55 +3598,89 @@ bool game::cursor_pan_view( input_context &ctxt )
     if( !get_option<bool>( "CURSOR_PANNING" ) ) {
         return false;
     }
-    const int edge_scroll = get_option<int>( "EDGE_SCROLL" );
-    const int rate = edge_scroll >= 0 ? edge_scroll : 30;
-    auto now = std::chrono::steady_clock::now();
-    if( now < last_cursor_pan + std::chrono::milliseconds( rate ) ) {
-        return false;
-    }
-    last_cursor_pan = now;
-
-    const input_event event = ctxt.get_raw_input();
+    const input_event &event = ctxt.get_raw_input();
+    // Determine edge position before rate-limiting so a centre-mouse event
+    // always resets the stale direction, preventing unwanted timeout-panning.
     if( event.type == input_event_t::mouse ) {
-        // In tiles mode, event.mouse_pos is in SDL window pixel coordinates and
-        // projected_window_width/height return the SDL window size in pixels.
-        // In curses mode, event.mouse_pos is in terminal cell coordinates and
-        // the terrain window may be offset by a sidebar.
 #if defined(TILES)
-        const int win_x = event.mouse_pos.x;
-        const int win_y = event.mouse_pos.y;
-        const int win_w = projected_window_width();
-        const int win_h = projected_window_height();
-#else
-        const int win_x = event.mouse_pos.x - getbegx( w_terrain );
-        const int win_y = event.mouse_pos.y - getbegy( w_terrain );
-        const int win_w = getmaxx( w_terrain );
-        const int win_h = getmaxy( w_terrain );
-#endif
-        const point threshold( win_w / 100 + 1, win_h / 100 + 1 );
+        const window_dimensions dim = get_window_dimensions( w_terrain );
+        const point win_min = dim.window_pos_pixel;
+        const point win_size = dim.window_size_pixel;
+        const point win_max = win_min + win_size;
+        if( event.mouse_pos.x < win_min.x || event.mouse_pos.x >= win_max.x ||
+            event.mouse_pos.y < win_min.y || event.mouse_pos.y >= win_max.y ) {
+            last_cursor_pan_direction = tripoint_rel_ms::zero();
+            return false;
+        }
+        const int ppc_x = win_size.x / std::max( 1, dim.window_size_cell.x );
+        const int ppc_y = win_size.y / std::max( 1, dim.window_size_cell.y );
+        const point thr(
+            ( dim.window_size_cell.x / 100 + 1 ) * ppc_x,
+            ( dim.window_size_cell.y / 100 + 1 ) * ppc_y
+        );
+        const int rel_x = event.mouse_pos.x - win_min.x;
+        const int rel_y = event.mouse_pos.y - win_min.y;
         tripoint_rel_ms delta( 0, 0, 0 );
-        if( win_x <= threshold.x ) {
+        if( rel_x <= thr.x ) {
             delta.x() -= 1;
-        } else if( win_x >= win_w - threshold.x ) {
+        } else if( rel_x >= win_size.x - thr.x ) {
             delta.x() += 1;
         }
-        if( win_y <= threshold.y ) {
+        if( rel_y <= thr.y ) {
             delta.y() -= 1;
-        } else if( win_y >= win_h - threshold.y ) {
+        } else if( rel_y >= win_size.y - thr.y ) {
             delta.y() += 1;
         }
-        if( delta.x() != 0 || delta.y() != 0 ) {
-            u.view_offset += delta;
-            last_cursor_pan_direction = delta;
-            return true;
+#else
+        const int win_left = getbegx( w_terrain );
+        const int win_top = getbegy( w_terrain );
+        const int win_w = getmaxx( w_terrain );
+        const int win_h = getmaxy( w_terrain );
+        if( event.mouse_pos.x < win_left || event.mouse_pos.x >= win_left + win_w ||
+            event.mouse_pos.y < win_top || event.mouse_pos.y >= win_top + win_h ) {
+            last_cursor_pan_direction = tripoint_rel_ms::zero();
+            return false;
         }
-        last_cursor_pan_direction = tripoint_rel_ms::zero();
-        return false;
-    } else if( event.type == input_event_t::timeout ) {
-        if( last_cursor_pan_direction != tripoint_rel_ms::zero() ) {
-            u.view_offset += last_cursor_pan_direction;
-            return true;
+        const int rel_x = event.mouse_pos.x - win_left;
+        const int rel_y = event.mouse_pos.y - win_top;
+        const point thr( win_w / 100 + 1, win_h / 100 + 1 );
+        tripoint_rel_ms delta( 0, 0, 0 );
+        if( rel_x <= thr.x ) {
+            delta.x() -= 1;
+        } else if( rel_x >= win_w - 1 - thr.x ) {
+            delta.x() += 1;
         }
+        if( rel_y <= thr.y ) {
+            delta.y() -= 1;
+        } else if( rel_y >= win_h - 1 - thr.y ) {
+            delta.y() += 1;
+        }
+#endif
+        // Not at edge: reset direction so TIMEOUT does not continue panning.
+        if( delta.x() == 0 && delta.y() == 0 ) {
+            last_cursor_pan_direction = tripoint_rel_ms::zero();
+            return false;
+        }
+        // At edge: rate-limit the actual displacement.
+        const int edge_scroll = get_option<int>( "EDGE_SCROLL" );
+        const int rate = edge_scroll >= 0 ? edge_scroll : 30;
+        const auto now = std::chrono::steady_clock::now();
+        if( now < last_cursor_pan + std::chrono::milliseconds( rate ) ) {
+            return false;
+        }
+        last_cursor_pan = now;
+
+        u.view_offset += delta;
+        ter_view_p = u.bub_pos() + u.view_offset;
+        last_cursor_pan_direction = delta;
+        return true;
+    }
+    if( event.type == input_event_t::timeout &&
+        last_cursor_pan_direction != tripoint_rel_ms::zero() ) {
+        const tripoint_rel_ms &dir = last_cursor_pan_direction;
+        u.view_offset += dir;
+        ter_view_p = u.bub_pos() + u.view_offset;
+        return true;
     }
     return false;
 }
