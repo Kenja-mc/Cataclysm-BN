@@ -5590,7 +5590,6 @@ auto game::mon_info_update() -> void
     mon_info_cache_dirty = false;
 
     int newseen = 0;
-    int threatening_newseen = 0;
     const auto iProxyDist = ( safe_mode_proximity <= 0 ) ? g_max_view_distance : safe_mode_proximity;
 
     monster_visible_info &mon_visible = u.get_mon_visible();
@@ -5613,9 +5612,7 @@ auto game::mon_info_update() -> void
     mon_visible.nearby_hostile_count = 0;
     mon_visible.combat_hostile_count = 0;
     mon_visible.offscreen_hostiles = {};
-    // The nearest off-screen hostile per compass direction. The route check below
-    // walks the map, so it runs once per direction instead of once per monster.
-    auto nearest_offscreen = std::array<const monster *, 8> {};
+    // Distance to the nearest off-screen hostile per compass direction.
     auto offscreen_nearest = std::array<int, 8> {};
     const int combat_bubble_range = SEEX * ( get_option<int>( "COMBAT_BUBBLE_SIZE" ) + 1 );
 
@@ -5721,8 +5718,8 @@ auto game::mon_info_update() -> void
             auto &offscreen = mon_visible.offscreen_hostiles[compass_index];
             offscreen.count++;
             offscreen.hunting = offscreen.hunting || MATT_ATTACK == matt;
-            if( nearest_offscreen[compass_index] == nullptr || mon_dist < offscreen_nearest[compass_index] ) {
-                nearest_offscreen[compass_index] = &critter;
+            if( offscreen.nearest_monster.expired() || mon_dist < offscreen_nearest[compass_index] ) {
+                offscreen.nearest_monster = mon_ptr;
                 offscreen_nearest[compass_index] = mon_dist;
             }
         }
@@ -5763,9 +5760,6 @@ auto game::mon_info_update() -> void
 
                     if( !passmon ) {
                         newseen++;
-                        if( smart_safemode::threatens( critter, u ) ) {
-                            threatening_newseen++;
-                        }
                         new_seen_mon.push_back( mon_ptr );
                     }
                 }
@@ -5834,13 +5828,6 @@ auto game::mon_info_update() -> void
         process_npc( guy );
     }
 
-    for( int i = 0; i < 8; i++ ) {
-        if( const monster *mon = nearest_offscreen[i] ) {
-            mon_visible.offscreen_hostiles[i].threatening =
-                mon_visible.offscreen_hostiles[i].threatening || smart_safemode::can_reach_soon( *mon, u );
-        }
-    }
-
     if( newseen > mostseen ) {
         if( newseen - mostseen == 1 ) {
             if( !new_seen_mon.empty() ) {
@@ -5871,7 +5858,10 @@ auto game::mon_info_update() -> void
             cancel_activity_or_ignore_query( distraction_type::hostile_spotted_far, _( "Monsters spotted!" ) );
         }
         turnssincelastmon = 0;
-        if( safe_mode == SAFE_MODE_ON && threatening_newseen > 0 ) {
+        // Hostile survivors always count; monsters only when they can reach you soon.
+        const auto survivor_seen = std::cmp_less( new_seen_mon.size(), newseen );
+        if( safe_mode == SAFE_MODE_ON &&
+            ( survivor_seen || smart_safemode::any_threatens( new_seen_mon, u ) ) ) {
             set_safe_mode( SAFE_MODE_STOP );
         }
     } else if( calendar::turn > previous_turn && get_option<bool>( "AUTOSAFEMODE" ) &&

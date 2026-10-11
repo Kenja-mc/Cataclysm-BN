@@ -7,7 +7,9 @@
 #endif
 
 #include "avatar.h"
+#include "monster.h"
 #include "options.h"
+#include "smart_safemode.h"
 
 namespace
 {
@@ -81,6 +83,9 @@ auto map_arrows( const avatar &you, int width, int height ) -> std::vector<edge_
         if( hostile.count == 0 ) {
             continue;
         }
+        const auto nearest = hostile.nearest_monster.lock();
+        const auto threatening = hostile.threatening ||
+                                 ( nearest && smart_safemode::can_reach_soon( *nearest, get_avatar() ) );
         const auto &step = octant_steps[i];
         const auto in_by_one = hostile.hunting ? 0 : 1;
         const auto cells = std::min( steps_to_edge( step.x, half.x, width ),
@@ -88,7 +93,7 @@ auto map_arrows( const avatar &you, int width, int height ) -> std::vector<edge_
         arrows.push_back( {
             .offset = point( step.x * std::max( cells, 0 ), step.y * std::max( cells, 0 ) ),
             .glyph = glyphs[i],
-            .color = hostile.threatening ? c_red : c_yellow
+            .color = threatening ? c_red : c_yellow
         } );
     }
     return arrows;

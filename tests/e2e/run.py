@@ -788,6 +788,26 @@ def test_smart_safe_mode(g):
     finally:
         smart.close()
 
+def test_smart_safe_mode_horde(g):
+    """A route-search budget must never silently classify unchecked hostiles as harmless."""
+    arena(g)
+    assert g.lua(
+        "for dx=-12,12 do for dy=-12,12 do local p=here(dx,dy) "
+        "M:set_ter_at(p, TerId.new('t_floor'):int_id()) "
+        "M:set_furn_at(p, FurnId.new('f_null'):int_id()) end end "
+        "for dx=-2,2 do for dy=-2,2 do if math.max(math.abs(dx),math.abs(dy))==2 then "
+        "M:set_ter_at(here(dx,dy), TerId.new('t_reinforced_glass'):int_id()) end end end "
+        "for dx=-6,6,2 do for _,dy in ipairs({-6,6}) do "
+        "gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(dx,dy)) end end out('ok')"
+    ) == ["ok"]
+    settle(g)
+    g.keys("n", delay=0.6)
+    assert "enemies in sight" in g.screen(), \
+        "unchecked members of a horde must still block auto-explore:\n" + g.screen()
+    arena(g)
+
+
+
 def test_contextual_interact_single_door(g):
     """Space opens a single adjacent closed door without asking for a direction."""
     arena(g)
@@ -869,7 +889,7 @@ TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_au
          test_aim_defaults, test_sound_marker_fading, test_smart_targeting, test_stance_toggle, test_contextual_interact_single_door, test_contextual_interact_multiple_doors,
          test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions, test_right_click_pick_runs_the_action,
          test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_modern_scheme_adds_no_menu_key_clashes, test_old_full_keybindings_file, test_hud_box_options, test_boxes_replace_sidebar_rows, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
-         test_smart_safe_mode, test_enemy_edge_arrows, test_enemy_edge_arrows_off]
+         test_smart_safe_mode, test_smart_safe_mode_horde, test_enemy_edge_arrows, test_enemy_edge_arrows_off]
 
 
 def main():

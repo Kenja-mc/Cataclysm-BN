@@ -86,6 +86,7 @@
 #include "rot.h"
 #include "safe_reference.h"
 #include "scent_map.h"
+#include "smart_safemode.h"
 #include "sounds.h"
 #include "string_formatter.h"
 #include "string_id.h"
@@ -705,6 +706,7 @@ void map::set_floor_cache_dirty(const int zlev) {
 }
 
 void map::set_vehicle_cache_dirty(const int zlev) {
+    smart_safemode::invalidate_reach_cache();
     if (inbounds_z(zlev)) { get_cache(zlev).vehicle_caches_dirty = true; }
     if (inbounds_z(zlev + 1)) { get_cache(zlev + 1).vehicle_floor_cache_dirty = true; }
 }
@@ -9476,6 +9478,7 @@ sound_cache::sound_cache() = default;
 
 void map::set_pathfinding_cache_dirty(const int zlev) {
     if (!inbounds_z(zlev)) { return; }
+    smart_safemode::invalidate_reach_cache();
     get_mapbuffer().mark_submap_caches_dirty({
         .begin = abs_sub,
         .end = abs_sub + point_rel_sm(my_MAPSIZE, my_MAPSIZE),
@@ -9486,6 +9489,7 @@ void map::set_pathfinding_cache_dirty(const int zlev) {
 
 void map::set_pathfinding_cache_dirty(const tripoint_bub_ms& p) {
     if (!inbounds(p)) { return; }
+    smart_safemode::invalidate_reach_cache();
     const auto abs_sm = map_local_to_abs(*this, project_to<coords::sm>(p));
     get_mapbuffer().mark_submap_caches_dirty({
         .begin = abs_sm.xy(),

@@ -1,6 +1,7 @@
 #include "auto_explore.h"
 
 #include <algorithm>
+#include <ranges>
 #include <vector>
 
 #include "avatar.h"
@@ -100,11 +101,12 @@ auto set_route_to_frontier( const frontier_options &opts ) -> bool
 
 auto handle( avatar &you ) -> void
 {
-    const auto threatening = [&]( const Creature * cr ) {
-        const auto *mon = dynamic_cast<const monster *>( cr );
-        return mon == nullptr || smart_safemode::threatens( *mon, you );
-    };
-    if( std::ranges::any_of( you.get_hostile_creatures( g_max_view_distance ), threatening ) ) {
+    const auto hostiles = you.get_hostile_creatures( g_max_view_distance );
+    const auto as_monster = []( const Creature * cr ) { return dynamic_cast<const monster *>( cr ); };
+    const auto monsters = hostiles | std::views::transform( as_monster ) |
+                          std::ranges::to<std::vector>();
+    const auto survivor = std::ranges::contains( monsters, nullptr );
+    if( survivor || smart_safemode::any_threatens( monsters, you ) ) {
         add_msg( m_info, _( "You can't explore with enemies in sight." ) );
         return;
     }

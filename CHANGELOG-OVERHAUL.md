@@ -48,6 +48,8 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Changed
 
+- Smart threat checks run only when needed and reuse route answers within a turn. Group checks
+  search routes for at most 12 monsters; unchecked hostiles conservatively stop travel.
 - End-to-end games disable desktop URL openers and find the retained curses build directly.
 
 ### Fixed
