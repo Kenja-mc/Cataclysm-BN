@@ -465,6 +465,7 @@
     "power_draw": 10000,
     "use_action": { "target": "l-stick", "msg": "The l-stick(tm)'s light fades away.", "menu_text": "Turn off", "type": "transform" },
     "flags": [ "LIGHT_300", "DURABLE_MELEE", "TRADER_AVOID", "SHEATH_SPEAR" ],
+    "light_color": "#e6e6ff",
     "magazine_well": "500 ml"
   },
   {

@@ -64,7 +64,8 @@
       "menu_text": "Close cover",
       "type": "transform"
     },
-    "flags": [ "LIGHT_8", "LEAK_DAM", "RADIOACTIVE", "DURABLE_MELEE", "ALLOWS_REMOTE_USE" ]
+    "flags": [ "LIGHT_8", "LEAK_DAM", "RADIOACTIVE", "DURABLE_MELEE", "ALLOWS_REMOTE_USE" ],
+    "light_color": "#b8ffc0"
   },
   {
     "id": "atomic_light_off",
@@ -138,7 +139,8 @@
       { "type": "firestarter", "moves": 100 },
       { "target": "candle", "msg": "The candle winks out.", "menu_text": "Extinguish", "type": "transform" }
     ],
-    "flags": [ "LIGHT_8", "WATER_EXTINGUISH", "TRADER_AVOID", "WIND_EXTINGUISH", "FIRESTARTER" ]
+    "flags": [ "LIGHT_8", "WATER_EXTINGUISH", "TRADER_AVOID", "WIND_EXTINGUISH", "FIRESTARTER" ],
+    "light_color": "#ffb05f"
   },
   {
     "id": "electric_lantern",
@@ -177,7 +179,8 @@
     "power_draw": 3500,
     "revert_to": "electric_lantern",
     "use_action": { "menu_text": "Turn off", "type": "transform", "target": "electric_lantern", "msg": "You turn the lamp off." },
-    "flags": [ "RADIO_MODABLE", "LIGHT_20", "TRADER_AVOID", "ALLOWS_REMOTE_USE" ]
+    "flags": [ "RADIO_MODABLE", "LIGHT_20", "TRADER_AVOID", "ALLOWS_REMOTE_USE" ],
+    "light_color": "#e6e6ff"
   },
   {
     "id": "flashlight",
@@ -214,7 +217,8 @@
     "power_draw": 10000,
     "revert_to": "flashlight",
     "use_action": { "menu_text": "Turn off", "type": "transform", "msg": "You turn the flashlight off.", "target": "flashlight" },
-    "flags": [ "LIGHT_300", "TRADER_AVOID", "BELT_CLIP" ]
+    "flags": [ "LIGHT_300", "TRADER_AVOID", "BELT_CLIP" ],
+    "light_color": "#e6e6ff"
   },
   {
     "id": "gasoline_lantern",
@@ -255,7 +259,8 @@
     "turns_per_charge": 60,
     "revert_to": "gasoline_lantern",
     "use_action": { "target": "gasoline_lantern", "msg": "The lantern is extinguished.", "menu_text": "Turn off", "type": "transform" },
-    "flags": [ "LIGHT_20", "TRADER_AVOID", "ALLOWS_REMOTE_USE" ]
+    "flags": [ "LIGHT_20", "TRADER_AVOID", "ALLOWS_REMOTE_USE" ],
+    "light_color": "#ffb05f"
   },
   {
     "id": "glowstick",
@@ -315,7 +320,8 @@
     "turns_per_charge": 30,
     "revert_to": "glowstick_dead",
     "revert_msg": "The glowstick fades out.",
-    "flags": [ "LIGHT_8", "TRADER_AVOID", "SLEEP_IGNORE" ]
+    "flags": [ "LIGHT_8", "TRADER_AVOID", "SLEEP_IGNORE" ],
+    "light_color": "#66ccff"
   },
   {
     "id": "handflare",
@@ -353,7 +359,8 @@
     "use_action": { "type": "firestarter", "moves": 50 },
     "thrown_damage": [ { "damage_type": "heat", "amount": 8 } ],
     "attacks": [ { "id": "BASH", "to_hit": 0, "damage": { "values": [ { "damage_type": "heat", "amount": 4 } ] } } ],
-    "flags": [ "FIRE", "LIGHT_240", "CHARGEDIM", "TRADER_AVOID", "FIRESTARTER" ]
+    "flags": [ "FIRE", "LIGHT_240", "CHARGEDIM", "TRADER_AVOID", "FIRESTARTER" ],
+    "light_color": "#ffffff"
   },
   {
     "id": "heavy_flashlight",
@@ -397,7 +404,8 @@
       "msg": "You turn the heavy duty flashlight off.",
       "target": "heavy_flashlight"
     },
-    "flags": [ "LIGHT_500", "DURABLE_MELEE", "BELT_CLIP" ]
+    "flags": [ "LIGHT_500", "DURABLE_MELEE", "BELT_CLIP" ],
+    "light_color": "#e6e6ff"
   },
   {
     "abstract": "lightstrip_base",
@@ -423,7 +431,8 @@
     "power_draw": 1000,
     "revert_to": "lightstrip_inactive",
     "revert_msg": "The lightstrip dies.",
-    "flags": [ "LIGHT_4", "NO_UNLOAD", "NO_RELOAD" ]
+    "flags": [ "LIGHT_4", "NO_UNLOAD", "NO_RELOAD" ],
+    "light_color": "#b8ffc0"
   },
   {
     "//": "This doesn't make too much sense, flavor-wise, but it's the best I can come up with.  Put it on the todo list.",
@@ -482,7 +491,8 @@
     "turns_per_charge": 240,
     "revert_to": "oil_lamp",
     "use_action": { "target": "oil_lamp", "msg": "The lantern is extinguished.", "menu_text": "Turn off", "type": "transform" },
-    "flags": [ "LIGHT_20", "TRADER_AVOID", "FIRE", "ALLOWS_REMOTE_USE", "WATER_EXTINGUISH" ]
+    "flags": [ "LIGHT_20", "TRADER_AVOID", "FIRE", "ALLOWS_REMOTE_USE", "WATER_EXTINGUISH" ],
+    "light_color": "#ffb05f"
   },
   {
     "id": "oxylamp",
@@ -517,7 +527,8 @@
     "turns_per_charge": 240,
     "revert_to": "oxylamp",
     "use_action": { "menu_text": "Turn off", "type": "transform", "msg": "The %s is extinguished", "target": "oxylamp" },
-    "flags": [ "LIGHT_30" ]
+    "flags": [ "LIGHT_30" ],
+    "light_color": "#ffe0b3"
   },
   {
     "id": "reading_light",
@@ -554,7 +565,8 @@
     "power_draw": 4000,
     "revert_to": "reading_light",
     "use_action": { "target": "reading_light", "msg": "You switch off the reading light.", "menu_text": "Turn off", "type": "transform" },
-    "flags": [ "LIGHT_20" ]
+    "flags": [ "LIGHT_20" ],
+    "light_color": "#b8ffc0"
   },
   {
     "id": "smart_lamp",
@@ -595,6 +607,7 @@
     "revert_to": "smart_lamp",
     "use_action": { "target": "smart_lamp", "msg": "Your smart lamp turned off", "menu_text": "Turn off", "type": "transform" },
     "flags": [ "RADIO_ACTIVATION", "RADIOSIGNAL_2", "LIGHT_240", "TRADER_AVOID" ],
+    "light_color": "#b8ffc0",
     "magazine_well": "250 ml"
   },
   {

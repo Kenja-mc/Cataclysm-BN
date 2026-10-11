@@ -49,6 +49,7 @@
       "msg": "The candle winks out inside the lantern.",
       "menu_text": "Extinguish"
     },
+    "light_color": "#ffb05f",
     "flags": [ "LIGHT_6", "TRADER_AVOID" ]
   },
   {
