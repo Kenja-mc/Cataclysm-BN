@@ -398,6 +398,27 @@
   },
   {
     "type": "keybinding",
+    "id": "toggle_run",
+    "category": "DEFAULTMODE",
+    "name": "Toggle Run",
+    "bindings": [ { "input_method": "keyboard", "key": "F2" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "toggle_crouch",
+    "category": "DEFAULTMODE",
+    "name": "Toggle Crouch",
+    "bindings": [ { "input_method": "keyboard", "key": "F3" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "toggle_prone",
+    "category": "DEFAULTMODE",
+    "name": "Toggle Prone",
+    "bindings": [ { "input_method": "keyboard", "key": "F4" } ]
+  },
+  {
+    "type": "keybinding",
     "name": "Move View North",
     "category": "DEFAULTMODE",
     "id": "shift_n",
