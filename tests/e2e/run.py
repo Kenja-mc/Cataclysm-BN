@@ -838,13 +838,46 @@ def test_enemy_edge_arrows_off(g):
     finally:
         edge.close()
 
+def test_follower_command_palette(g):
+    """Chat menu → follower command palette shows and changes rules without dialogue."""
+    arena(g)
+    # Spawn a follower NPC close enough to hear the player
+    assert g.lua(
+        "local npc = M:place_npc(here(2,0), 'farmer') "
+        "npc:set_attitude(NpcAttitude.NPCATT_WAIT) "
+        "npc:set_faction_id(FactionId.new('your_followers')) "
+        "out('ok')"
+    ) == ["ok"]
+    settle(g)
+    # Open chat menu (modern scheme: 'y')
+    g.keys("y", delay=1)
+    screen = g.screen()
+    assert "Follower command palette" in screen, "palette entry missing from chat menu:\n" + screen
+    # Press 'F' for palette
+    g.keys("F", delay=1)
+    screen = g.screen()
+    assert "Follower commands" in screen, "palette did not open:\n" + screen
+    assert "Combat engagement" in screen, "engagement label missing:\n" + screen
+    # Change engagement (cycle from NONE to CLOSE)
+    g.keys("e", delay=0.5)
+    screen = g.screen()
+    assert "Close" in screen, "engagement did not change to Close:\n" + screen
+    # Toggle use_guns
+    g.keys("g", delay=0.5)
+    screen = g.screen()
+    assert "Use guns: ON" in screen, "use_guns did not toggle ON:\n" + screen
+    # Exit palette
+    g.keys("d", delay=0.5)
+    # Exit chat menu
+    g.keys("Escape", delay=0.5)
+
 
 TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_auto_explore, test_first_time_tip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
          test_hud_boxes, test_body_panel, test_readable_map_glyphs, test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content, test_craft_parts_chain,
          test_aim_defaults, test_sound_marker_fading, test_smart_targeting, test_stance_toggle, test_contextual_interact_single_door, test_contextual_interact_multiple_doors,
          test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions, test_right_click_pick_runs_the_action,
          test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_old_full_keybindings_file, test_hud_box_options, test_boxes_replace_sidebar_rows, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
-         test_smart_safe_mode, test_enemy_edge_arrows, test_enemy_edge_arrows_off]
+         test_smart_safe_mode, test_enemy_edge_arrows, test_enemy_edge_arrows_off, test_follower_command_palette]
 
 
 def main():

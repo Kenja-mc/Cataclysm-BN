@@ -1961,6 +1961,11 @@ void options_manager::add_options_interface()
          true
        );
 
+    add( "NPC_UI", interface, translate_marker( "NPC interface" ),
+         translate_marker( "If true, the chat menu offers a follower command palette for viewing and changing follower rules without entering dialogue." ),
+         true
+       );
+
     add( "BUMP_ATTACK", interface, translate_marker( "Attack by walking into enemies" ),
          translate_marker( "If true, moving into a hostile creature attacks it.  If false, use the attack command instead, so a stray step never starts a fight." ),
          false
