@@ -764,42 +764,44 @@ def test_contextual_interact_multiple_doors(g):
     g.keys("Escape", delay=0.5)
 
 
+EDGE_ARROWS = ("\u2192", "\u2197", "\u2198")
+
+
+def zombie_down_a_corridor(name, options):
+    """An 80x24 game with a zombie 30 tiles east down a lit corridor: visible, but off the map window."""
+    edge = Game(name=name, cols=80, rows=24, options={"SAFEMODE": "false", **options})
+    start_new_game(edge)
+    edge.define_lua(HELPERS + " function corridor() for dx=5,40 do for dy=-1,1 do local p=here(dx,dy) "
+                    "M:set_ter_at(p, TerId.new('t_floor'):int_id()) M:set_furn_at(p, FurnId.new('f_null'):int_id()) "
+                    "end end gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(30,0)) "
+                    "out(gapi.get_monster_at(here(30,0)) ~= nil) end")
+    arena(edge)
+    assert edge.lua("corridor()") == ["true"], edge.screen()
+    settle(edge)
+    return edge
+
+
 def test_enemy_edge_arrows(g):
     """A hostile you can see but that sits outside the map window gets an edge arrow."""
-    edge = Game(name="bn-e2e-edge", cols=80, rows=24, options={"SAFEMODE": "false"})
+    # A short safe-mode distance keeps the zombie 30 tiles away out of "reaches you soon".
+    edge = zombie_down_a_corridor("bn-e2e-edge", {"SAFEMODEPROXIMITY": "10"})
     try:
-        start_new_game(edge)
-        edge.define_lua(HELPERS)
-        arena(edge)
-        # A straight corridor east: the zombie stays visible but out of the map window.
-        edge.lua("for dx=6,60 do for dy=-1,1 do M:set_ter_at(here(dx,dy), TerId.new('t_floor'):int_id()) "
-                 "M:set_furn_at(here(dx,dy), FurnId.new('f_null'):int_id()) end end "
-                 "gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(30,0)) out('ok')")
-        settle(edge)
         screen = edge.screen()
-        arrows = ("\u2192", "\u2197", "\u2198")
-        assert any(a in screen for a in arrows), "no east arrow for the off-screen zombie:\n" + screen
-        # Yellow, not red: it can walk to the player but not within safe-mode distance.
-        row = next((l for l in edge.screen_colors().splitlines() if any(a in l for a in arrows)), None)
+        assert any(a in screen for a in EDGE_ARROWS), "no east arrow for the off-screen zombie:\n" + screen
+        # Yellow, not red: it can walk to the player but not within twice the safe-mode distance.
+        row = next((l for l in edge.screen_colors().splitlines() if any(a in l for a in EDGE_ARROWS)), None)
         assert row is not None, edge.screen_colors()
-        assert "38;5;3" in row or "38;5;11" in row, "yellow arrow expected, got:\n" + row
+        assert any(f"\x1b[{c}m{a}" in row for c in ("33", "93") for a in EDGE_ARROWS), \
+            "yellow arrow expected, got:\n" + repr(row)
     finally:
         edge.close()
 
 
 def test_enemy_edge_arrows_off(g):
     """The option puts the plain map back."""
-    edge = Game(name="bn-e2e-edge-off", cols=80, rows=24,
-                options={"SAFEMODE": "false", "ENEMY_EDGE_ARROWS": "false"})
+    edge = zombie_down_a_corridor("bn-e2e-edge-off", {"ENEMY_EDGE_ARROWS": "false"})
     try:
-        start_new_game(edge)
-        edge.define_lua(HELPERS)
-        arena(edge)
-        edge.lua("for dx=6,60 do for dy=-1,1 do M:set_ter_at(here(dx,dy), TerId.new('t_floor'):int_id()) "
-                 "M:set_furn_at(here(dx,dy), FurnId.new('f_null'):int_id()) end end "
-                 "gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(30,0)) out('ok')")
-        settle(edge)
-        assert not any(a in edge.screen() for a in ("\u2192", "\u2197", "\u2198")), edge.screen()
+        assert not any(a in edge.screen() for a in EDGE_ARROWS), edge.screen()
     finally:
         edge.close()
 
