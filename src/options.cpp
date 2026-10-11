@@ -1951,7 +1951,7 @@ void options_manager::add_options_interface()
        );
 
     add( "CRAFTING_PART_CHAINS", interface, translate_marker( "Crafting part chains" ),
-         translate_marker( "If true, the crafting menu marks a missing component you could craft right now and offers to jump to that recipe." ),
+         translate_marker( "If true, the crafting menu marks a missing component you could craft right now, distinguishes craftable parts from missing uncraftable ones, shows a parts panel with the part recipe and estimated extra crafting time, and offers to jump to that recipe." ),
          true
        );
 

@@ -205,9 +205,16 @@ def test_craft_parts_chain(g):
     # Short rope has several recipes; the string one carries the tag.
     tagged = find_tag() or (g.keys("Down", delay=0.8), find_tag())[1]
     assert tagged, "the part the player can make should be tagged:\n" + g.screen()
+    # List-level marker should appear on the tagged recipe row
+    assert "parts:make" in g.screen(), "the recipe row should carry a [parts:make] marker:\n" + g.screen()
+    # Panel should show the part name and a time estimate
+    s = g.screen()
+    assert "Part:" in s and "turns" in s, "the panel should show part recipe and time:\n" + s
     g.keys("p", delay=1.2)
     assert "long string" in g.screen().lower(), "the parts key should select the part's recipe:\n" + g.screen()
-    g.keys("Escape", delay=0.6)
+    # After jumping, the panel should show the part name and time estimate
+    s = g.screen()
+    assert "Part:" in s and "turns" in s, "the panel should show part recipe and time after jump:\n" + s
 
 
 def load_first_save(g, timeout=120):
