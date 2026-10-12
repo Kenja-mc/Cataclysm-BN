@@ -224,3 +224,16 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Crashes: starting an activity near NPCs, recraft after reload (upstream #10083), collapsed office
   tower mapgen (upstream #9875), electromagnetic unit (upstream #9354).
 - NPC "Size up stats" hunger (upstream #10447) and repeated mutation attack damage (upstream #1287).
+## 2026-10-12
+
+### Added
+
+- **Install the fork as a launchable app**: `bin/install-cataclysm-bn.sh` installs launcher
+  wrappers, desktop entries, an icon and a metainfo file into `~/.local`, plus a basepath config
+  at `~/.config/cataclysm-bn/basepath` and the `bin/feedback` workflow.
+
+### Fixed
+
+- Launcher crash on desktop launch: the launcher wrapper now reads the basepath config file,
+  skipping comment lines, and `cataclysm-bn-tiles` reports "no DISPLAY set" instead of failing
+  silently when no display is available.

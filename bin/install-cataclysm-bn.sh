@@ -93,7 +93,11 @@ set -eu
 BINARY="$binary"
 if [ -z "\${CATACLYSM_BN_BASEPATH:-}" ]; then
   if [ -f "$HOME/.config/cataclysm-bn/basepath" ]; then
-    export CATACLYSM_BN_BASEPATH="\$(sed 's/[[:space:]]*\$//' "\$HOME/.config/cataclysm-bn/basepath")"
+    # Skip comment lines and blanks; take the last path line; strip trailing whitespace.
+    export CATACLYSM_BN_BASEPATH="\$(grep -v '^[[:space:]]*#' "\$HOME/.config/cataclysm-bn/basepath" | \
+
+        grep -v '^[[:space:]]*$' | tail -n 1 | sed 's/[[:space:]]*$//')"
+
   fi
 fi
 if [ -z "\${CATACLYSM_BN_BASEPATH:-}" ]; then
@@ -103,6 +107,12 @@ if [ -z "\${CATACLYSM_BN_BASEPATH:-}" ]; then
   printf '  or run: %s\n' "$SCRIPT_DIR/install-cataclysm-bn.sh" >&2
   printf '  to have this script create a config.\n' >&2
 fi
+  if [ "\$(basename "\$0")" = "cataclysm-bn-tiles" ]; then
+    if [ -z "\${DISPLAY:-}" ]; then
+      printf 'cataclysm-bn-tiles: no DISPLAY set; launch from a terminal or ensure a display is running.\\n' >&2
+      exit 1
+    fi
+  fi
 exec "\$BINARY" --basepath "\${CATACLYSM_BN_BASEPATH}/" --userdir "\$HOME/.local/share/cataclysm-bn" "\$@"
 WRAPPER
 
