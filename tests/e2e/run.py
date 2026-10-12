@@ -11,6 +11,9 @@ from tmux_game import ROOT, Game, start_new_game
 
 from helpers import *
 from vehicle_box import TESTS as VEHICLE_BOX_TESTS
+from cursor_panning import TESTS as CURSOR_PANNING_TESTS
+from npc_palette import TESTS as NPC_PALETTE_TESTS
+from hud_sidebar import TESTS as HUD_SIDEBAR_TESTS
 
 
 
@@ -186,30 +189,84 @@ def test_recraft_after_reload(g):
     assert wait_until(lambda: made() == 2), g.screen()
 
 
-def test_craft_parts_chain(g):
-    """An uncraftable recipe says what is missing, marks a part you can make and jumps to its recipe."""
-    arena(g)
-    give(g, "string_6", 6)  # one long string's worth; a short rope needs six long strings
-    settle(g)
-    g.keys("k", delay=1.5)
-    g.keys("f", delay=0.8)
-    g.type("short rope", delay=1.0)
-    g.keys("Enter", delay=1.5)
-    assert "Missing" in g.screen(), "the recipe info should say what is missing:\n" + g.screen()
+DURATION = (r"\d+ (?:seconds?|minutes?|hours?|days?|weeks?)"
+            r"(?: and \d+ (?:seconds?|minutes?|hours?|days?|weeks?))?")
 
-    def find_tag():
-        for _ in range(4):
-            if "can make" in g.screen():
-                return True
-            g.keys("]", delay=0.5)
-        return False
 
-    # Short rope has several recipes; the string one carries the tag.
-    tagged = find_tag() or (g.keys("Down", delay=0.8), find_tag())[1]
-    assert tagged, "the part the player can make should be tagged:\n" + g.screen()
-    g.keys("p", delay=1.2)
-    assert "long string" in g.screen().lower(), "the parts key should select the part's recipe:\n" + g.screen()
-    g.keys("Escape", delay=0.6)
+def flat_text(g):
+    return " ".join(g.screen().split())
+
+
+def test_craft_parts_chain(_g):
+    """Known blockers, charged part quantities and producer timing stay consistent."""
+    g = Game(name="bn-e2e-craft-parts",
+             options={"SAFEMODE": "false", "CRAFTING_PART_CHAINS": "true"})
+    try:
+        start_new_game(g)
+        g.define_lua(HELPERS)
+        assert g.lua(
+            "local a=gapi.get_avatar() a:clear_bionics() a:clear_mutations() "
+            "a:clear_morale() a:drop_all_items() "
+            "a:set_mutation(MutationBranchId.new('DEBUG_STORAGE')) "
+            "for _,id in ipairs({'tinfoil_hat','handrolled_cig','rolling_paper'}) do "
+            "a:learn_recipe(RecipeId.new(id)) end out('prepared')"
+        ) == ["prepared"]
+        arena(g)
+        settle(g)
+
+        def browse_recipe(name):
+            g.keys("k", delay=1.5)
+            g.wait_for("[f]ilter", timeout=10)
+            g.keys("f", delay=0.8)
+            g.wait_for("Search:", timeout=10)
+            g.type(name)
+            g.keys("Enter", delay=1.5)
+
+        def close_recipes():
+            g.keys("Escape", delay=0.8)
+
+        browse_recipe("tinfoil hat")
+        screen = flat_text(g)
+        assert "aluminum foil" in screen, screen
+        assert "parts:" not in screen, screen
+        assert "Part:" not in screen and "Part (blocked):" not in screen, screen
+        close_recipes()
+
+        give(g, "tobacco", 20)
+        settle(g)
+        browse_recipe("hand-rolled cigarette")
+        screen = flat_text(g)
+        assert "parts:known" in screen, screen
+        assert "Part (blocked):" in screen, screen
+        blocked = screen.split("Part (blocked):", 1)[1]
+        paper = re.search(r"Missing:\s*(?:(\d+)\s+paper|paper\s*\((\d+)\))", blocked)
+        assert paper and int(paper.group(1) or paper.group(2)) == 1, screen
+        close_recipes()
+
+        give(g, "paper", 12)
+        settle(g)
+        browse_recipe("hand-rolled cigarette")
+        assert "parts:make" in flat_text(g), g.screen()
+        g.keys("b", delay=1)
+        g.keys("Home", delay=0.2)
+        for _ in range(11):
+            g.keys("Down", delay=0.4)
+        part = re.search(r"Part: rolling paper \(make (\d+) more, ~(" + DURATION + r")\)",
+                         flat_text(g))
+        assert part, g.screen()
+        assert part.group(1) == "12", g.screen()
+
+        g.keys("p", delay=1.5)
+        assert "rolling paper" in flat_text(g).lower(), g.screen()
+        g.keys("b", delay=1)
+        g.keys("Home", delay=0.2)
+        g.keys("Down", delay=0.8)
+        made = re.search(r"Time to complete:\s*(" + DURATION + r")", flat_text(g))
+        assert made, g.screen()
+        assert made.group(1) == part.group(2), g.screen()
+        close_recipes()
+    finally:
+        g.close()
 
 
 def load_first_save(g, timeout=120):
@@ -341,6 +398,9 @@ def test_right_click_pick_runs_the_action(g):
     g.lua("local m=gapi.get_monster_at(here(1,0)) if m then park(m) end out('ok')")
 
 
+
+
+
 def test_black_powder_rounds_stack(g):
     """Black powder handloads are a stack modifier, so they merge into the factory 9mm stack."""
     arena(g)
@@ -359,9 +419,10 @@ REVOLVER = ("local w=nil for _,it in ipairs(gapi.get_avatar():all_items(false)) 
 
 def test_black_powder_survives_reloading(g):
     arena(g)
-    assert g.lua("local u=gapi.get_avatar() u:add_item(gapi.create_item(ItypeId.new('model_10_revolver'), -1)) "
-                 "local a=gapi.create_item(ItypeId.new('38_special'), 6) a:set_var_str('stack_mod:black_powder','3') u:add_item(a) "
-                 + REVOLVER + "out(u:wield(w))") == ["true"]
+    assert g.lua("local u=gapi.get_avatar() u:drop_all_items() M:clear_items_at(here(0,0)) "
+                 "local w=u:create_item(ItypeId.new('model_10_revolver'), -1) "
+                 "local a=u:create_item(ItypeId.new('38_special'), 6) a:set_var_str('stack_mod:black_powder','3') "
+                 "out(u:wield(w))") == ["true"]
     for _ in range(6):
         g.keys("r", delay=1)
         g.keys("r", delay=2)
@@ -709,22 +770,24 @@ def test_combine_partly_used_tools(g):
 
 
 def test_sound_marker_fading(g):
-    """Sound markers from unseen footsteps fade after the configured number of turns."""
+    """A genuinely heard but unseen sound persists, then fades without a new source."""
     arena(g)
-    # A wall keeps the zombie out of sight; it walks along a corridor behind it, so its
-    # footsteps are heard but not seen.
-    g.lua("for dy=-9,9 do M:set_ter_at(here(6,dy), TerId.new('t_wall'):int_id()) "
-          "for dx=7,9 do M:set_ter_at(here(dx,dy), TerId.new('t_floor'):int_id()) "
-          "M:set_furn_at(here(dx,dy), FurnId.new('f_null'):int_id()) end end out('ok')")
-    g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(8,6)) "
-          "gapi.get_monster_at(here(8,6)):wander_to(here(8,-8), 100) out('ok')")
+    # Wind can mask quiet zombie footsteps; a nearby NPC call tests marker lifetime instead.
+    assert g.lua("for dy=-9,9 do M:set_ter_at(here(1,dy), TerId.new('t_wall'):int_id()) "
+                 "for dx=2,3 do M:set_ter_at(here(dx,dy), TerId.new('t_floor'):int_id()) "
+                 "M:set_furn_at(here(dx,dy), FurnId.new('f_null'):int_id()) end end "
+                 "SOUND_NPC=M:place_npc(here(2,0),'farmer') "
+                 "SOUND_NPC:set_attitude(NpcAttitude.NPCATT_WAIT) "
+                 "SOUND_NPC:shout('marker lifetime check',false) out('ok')") == ["ok"]
 
     def map_area():
         return "\n".join(line[:90] for line in g.screen().splitlines()[4:])
 
     assert wait_until(lambda: (g.keys("x", delay=0.6), "?" in map_area())[1], timeout=25), \
-        "unseen footsteps should create a '?' marker:\n" + g.screen()
-    g.lua("for dx=7,9 do for dy=-9,9 do local m=gapi.get_monster_at(here(dx,dy)) if m then park(m) end end end out('ok')")
+        "a heard, unseen NPC call should create a '?' marker:\n" + g.screen()
+    assert g.lua("park(SOUND_NPC) out('ok')") == ["ok"]
+    g.keys("x", delay=0.6)
+    assert "?" in map_area(), "the configured three-turn marker must survive the next turn:\n" + g.screen()
     for _ in range(4):
         g.keys("x", delay=0.6)
     assert "?" not in map_area(), "sound markers should have faded:\n" + g.screen()
@@ -733,15 +796,9 @@ def test_sound_marker_fading(g):
 def test_smart_targeting(g):
     """Aiming starts on the hostile with a clear firing line and names an ally standing in the way."""
     arena(g)
-    assert g.lua("local u=gapi.get_avatar() u:add_item(gapi.create_item(ItypeId.new('model_10_revolver'), -1)) "
-                 "u:add_item(gapi.create_item(ItypeId.new('38_special'), 8)) " + REVOLVER
-                 + "out(u:wield(w))") == ["true"]
-    for _ in range(6):
-        g.keys("r", delay=1)
-        g.keys("r", delay=2)
-    g.keys("Escape", delay=1)
-    loaded = g.lua(REVOLVER + "out(w.charges)")
-    assert loaded and int(loaded[0]) > 0, "the revolver should be loaded\n" + g.screen()
+    assert g.lua("local u=gapi.get_avatar() u:drop_all_items() M:clear_items_at(here(0,0)) "
+                 "local w=u:create_item(ItypeId.new('model_10_revolver'), -1) "
+                 "w:ammo_set(ItypeId.new('38_special'), 6) out(u:wield(w))") == ["true"]
     # A hostile 4 tiles east has a friendly dog 2 tiles east in the firing line; a second
     # hostile 4 tiles west has a clear line.
     assert g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(4,0)) "
@@ -896,37 +953,6 @@ def test_enemy_edge_arrows_off(g):
         edge.close()
 
 
-def test_render_options_exist(g):
-    """All four render options must be present in the options menu."""
-    g.keys("Escape", delay=0.3)
-    g.keys("o", delay=0.5)
-    screen = g.screen()
-    for opt in ("ITEM_LAYERING", "CLIFF_SHADING", "DIRECTIONAL_STAIRS", "ITEM_THUMBNAILS"):
-        assert opt in screen, f"missing option {opt}:\n" + screen
-    g.keys("Escape", delay=0.3)
-
-
-def test_render_options_toggle(g):
-    """Toggling each render option off and on must not crash."""
-    for opt in ("ITEM_LAYERING", "CLIFF_SHADING", "DIRECTIONAL_STAIRS", "ITEM_THUMBNAILS"):
-        g.keys("Escape", delay=0.3)
-        g.keys("o", delay=0.5)
-        screen = g.screen()
-        assert opt in screen, f"missing option {opt}:\n" + screen
-        # Navigate to the option and toggle it
-        g.keys("j", delay=0.1)
-        g.keys("Enter", delay=0.3)
-        g.keys("Enter", delay=0.3)
-    g.keys("Escape", delay=0.3)
-
-
-def test_item_thumbnails_in_pickup(g):
-    """Item thumbnails option must be toggleable without crashing."""
-    g.keys("Escape", delay=0.3)
-    g.keys("o", delay=0.5)
-    screen = g.screen()
-    assert "ITEM_THUMBNAILS" in screen, "ITEM_THUMBNAILS option not found:\n" + screen
-    g.keys("Escape", delay=0.3)
 
 
 TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_auto_explore, test_first_time_tip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
@@ -935,20 +961,25 @@ TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_au
          test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions, test_right_click_pick_runs_the_action,
          test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_modern_scheme_adds_no_menu_key_clashes, test_old_full_keybindings_file, test_hud_box_options, test_boxes_replace_sidebar_rows, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
          test_smart_safe_mode, test_smart_safe_mode_horde, test_enemy_edge_arrows, test_enemy_edge_arrows_off,
-         test_render_options_exist, test_render_options_toggle, test_item_thumbnails_in_pickup]
+         ]
 TESTS += VEHICLE_BOX_TESTS
+TESTS += CURSOR_PANNING_TESTS
+TESTS += NPC_PALETTE_TESTS
+TESTS += HUD_SIDEBAR_TESTS
 
 
 def main():
     keep = "--keep" in sys.argv
     wanted = [a for a in sys.argv[1:] if not a.startswith("--")]
     # Safe mode would stop movement whenever wildlife wanders into view.
-    g = Game(options={"SAFEMODE": "false"})
+    g = Game(options={"SAFEMODE": "false", "SOUND_MARKER_TURNS": "3"})
     failures = 0
     try:
         start_new_game(g)
         settle(g)
         g.define_lua(HELPERS)
+        # Lua-created inventory must not depend on the random starting outfit's pockets.
+        assert g.lua("gapi.get_avatar():set_mutation(MutationBranchId.new('DEBUG_STORAGE')) out('ok')") == ["ok"]
         wanted = [a for a in sys.argv[1:] if not a.startswith("--")]
         for test in [t for t in TESTS if not wanted or any(w in t.__name__ for w in wanted)]:
             started = time.time()

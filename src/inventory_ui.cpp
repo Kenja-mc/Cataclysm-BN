@@ -31,6 +31,9 @@
 #include "ui_manager.h"
 #include "units_utility.h"
 #include "vehicle/vehicle.h"
+#if defined(TILES)
+#include "sdltiles.h"
+#endif
 #include "vehicle/vehicle_part.h"
 #include "vehicle/vehicle_selector.h"
 #include "vehicle/vpart_position.h"
@@ -919,6 +922,10 @@ size_t inventory_column::get_entry_indent( const inventory_entry &entry ) const
     }
 
     size_t res = 2;
+#if defined(TILES)
+    // Item rows start with the thumbnail gutter, so the invlet and names shift together.
+    res += static_cast<size_t>( item_thumbnail_gutter_cells() );
+#endif
     if( get_option<bool>( "ITEM_SYMBOLS" ) ) {
         res += 2;
     }
@@ -1030,11 +1037,15 @@ void inventory_column::draw( const catacurses::window &win, point pos ) const
         }
 
         if( entry.is_item() ) {
-            int xx = pos.x;
+            auto icon_cells = 0;
+#if defined(TILES)
+            icon_cells = item_thumbnail_gutter_cells();
+#endif
+            auto xx = pos.x + icon_cells;
             if( entry.get_invlet() != '\0' ) {
-                mvwputch( win, point( pos.x, yy ), entry.get_invlet_color(), entry.get_invlet() );
+                mvwputch( win, point( xx, yy ), entry.get_invlet_color(), entry.get_invlet() );
             } else if( entry.invlet_hint ) {
-                mvwputch( win, point( pos.x, yy ), entry.invlet_hint->color,
+                mvwputch( win, point( xx, yy ), entry.invlet_hint->color,
                           entry.invlet_hint->invlet );
             }
             xx += 2;
@@ -1052,6 +1063,13 @@ void inventory_column::draw( const catacurses::window &win, point pos ) const
                     mvwputch( win, point( xx, yy ), c_light_green, '#' );
                 }
             }
+#if defined(TILES)
+            if( const auto *any_item = entry.any_item() ) {
+                register_item_thumbnail( win, *any_item, {
+                    .cell = point( pos.x, yy ), .size = point( icon_cells, 1 )
+                } );
+            }
+#endif
         }
     }
 

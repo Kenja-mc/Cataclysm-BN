@@ -501,7 +501,7 @@ input_context game::get_player_input( std::string &action )
                 } else {
                     ctxt.reset_timeout();
                 }
-                keep_waiting = handle_mouseview( ctxt, action );
+                keep_waiting = handle_mouseview( ctxt, action, needs_timed_poll ? 125 : -1 );
             }
             if( !keep_waiting || uquit == QUIT_WATCH ||
                 ( action == "TIMEOUT" && current_turn.has_timeout_elapsed() ) ) {
@@ -518,13 +518,18 @@ input_context game::get_player_input( std::string &action )
         }
         SCT.vSCT.clear();
 
-        if( realtime_turns || uquit == QUIT_WATCH ) {
-            ctxt.set_timeout( 125 );
+        if( realtime_turns || uquit == QUIT_WATCH || get_option<bool>( "CURSOR_PANNING" ) ) {
+            if( realtime_turns || uquit == QUIT_WATCH ) {
+                ctxt.set_timeout( 125 );
+            } else {
+                ctxt.reset_timeout();
+            }
             while( true ) {
                 auto keep_waiting = false;
                 {
                     ZoneScopedN( "get_player_input_noanim_handle_mouseview" );
-                    keep_waiting = handle_mouseview( ctxt, action );
+                    keep_waiting = handle_mouseview( ctxt, action,
+                                                   realtime_turns || uquit == QUIT_WATCH ? 125 : -1 );
                 }
                 if( !keep_waiting ) {
                     break;
@@ -538,7 +543,7 @@ input_context game::get_player_input( std::string &action )
             {
                 ZoneScopedN( "get_player_input_noanim_blocking_handle_mouseview" );
                 ctxt.reset_timeout();
-                handle_mouseview( ctxt, action );
+                handle_mouseview( ctxt, action, -1 );
             }
         }
     }
@@ -2109,6 +2114,7 @@ bool game::handle_action()
         gamemode->pre_action( act );
     }
 
+
     int soffset = 0;
     {
         ZoneScopedN( "handle_action_move_view_option" );
@@ -3253,5 +3259,10 @@ bool game::handle_action()
     u.movecounter = ( !u.is_dead_state() ? action_moves_spent : 0 );
     dbg( DL::Info ) << string_format( "%s: [%d] %d - %d = %d", action_ident( act ),
                                       to_turn<int>( calendar::turn ), before_action_moves, u.movecounter, u.moves );
+    // Cursor panning: re-centre the view after a genuine turn-consuming action.
+    // TIMEOUT is excluded because it may originate from idle panning, not player intent.
+    if( act != ACTION_TIMEOUT && action_moves_spent > 0 ) {
+        cursor_pan_recenter();
+    }
     return ( !u.is_dead_state() );
 }

@@ -101,6 +101,7 @@
     "power_draw": 2500,
     "revert_to": "cell_phone",
     "use_action": { "target": "cell_phone", "msg": "You stop lighting up the screen.", "menu_text": "Turn off", "type": "transform" },
+    "light_color": "#e6e6ff",
     "flags": [ "WATCH", "LIGHT_8", "TRADER_AVOID" ]
   },
   {
@@ -155,6 +156,7 @@
     "revert_to": "laptop",
     "use_action": { "target": "control_laptop", "msg": "You stop lighting up the screen.", "menu_text": "Turn off", "type": "transform" },
     "flags": [ "WATCH", "LIGHT_20", "TRADER_AVOID", "RECHARGE", "NO_UNLOAD", "NO_RELOAD" ],
+    "light_color": "#e6e6ff",
     "relic_data": { "passive_effects": [ { "id": "DRONE_CAM" } ] }
   },
   {
@@ -300,7 +302,8 @@
       "NO_RELOAD",
       "THERMOMETER",
       "FANCY"
-    ]
+    ],
+    "light_color": "#e6e6ff"
   },
   {
     "type": "TOOL_ARMOR",
@@ -644,6 +647,7 @@
     "power_draw": 5000,
     "revert_to": "laptop",
     "use_action": { "target": "laptop", "msg": "You stop lighting up the screen.", "menu_text": "Turn off", "type": "transform" },
+    "light_color": "#e6e6ff",
     "flags": [ "WATCH", "LIGHT_20", "TRADER_AVOID", "RECHARGE", "NO_UNLOAD", "NO_RELOAD" ]
   },
   {
@@ -827,6 +831,7 @@
       "menu_text": "Turn off flashlight",
       "type": "transform"
     },
+    "light_color": "#e6e6ff",
     "flags": [ "WATCH", "LIGHT_20", "TRADER_AVOID", "ALARMCLOCK", "RECHARGE", "NO_UNLOAD", "NO_RELOAD" ]
   },
   {
@@ -899,6 +904,7 @@
       "menu_text": "Turn off flashlight",
       "type": "transform"
     },
+    "light_color": "#b8ffc0",
     "flags": [ "WATCH", "LIGHT_25", "TRADER_AVOID", "ALARMCLOCK", "NO_UNLOAD", "NO_RELOAD" ]
   },
   {

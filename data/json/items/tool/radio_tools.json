@@ -63,6 +63,7 @@
     "description": "This remote-controlled car is on, and draining its batteries just like a real electric car!  Use a remote control to drive it around.",
     "turns_per_charge": 5,
     "use_action": "RADIOCARON",
+    "light_color": "#e6e6ff",
     "flags": [ "LIGHT_8", "RADIO_CONTROLLED", "TRADER_AVOID" ]
   },
   {

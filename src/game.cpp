@@ -228,6 +228,7 @@ class computer;
 
 #if defined(TILES)
 #include "cata_tiles.h"
+#include "sdltiles.h"
 #endif // TILES
 
 #if !(defined(_WIN32) || defined(TILES))
@@ -3460,19 +3461,28 @@ void game::handle_key_blocking_activity()
 
 // Checks input to see if mouse was moved and handles the mouse view box accordingly.
 // Returns true if input requires breaking out into a game action.
-bool game::handle_mouseview( input_context &ctxt, std::string &action )
+auto game::handle_mouseview( input_context &ctxt, std::string &action,
+                             const int poll_timeout ) -> bool
 {
     ZoneScopedN( "handle_mouseview" );
     std::optional<tripoint_bub_ms> liveview_pos;
+    const auto cursor_panning = get_option<bool>( "CURSOR_PANNING" );
+    const auto edge_scroll = cursor_panning ? get_option<int>( "EDGE_SCROLL" ) : -1;
+    const auto pan_timeout = edge_scroll;
 
     do {
         {
             ZoneScopedN( "handle_mouseview_handle_input" );
-            action = ctxt.handle_input();
+            const auto panning = cursor_panning && edge_scroll >= 0 &&
+                                 last_cursor_pan_direction != tripoint_rel_ms::zero();
+            const auto timeout = panning
+                                 ? ( poll_timeout < 0 ? pan_timeout : std::min( poll_timeout, pan_timeout ) )
+                                 : poll_timeout;
+            action = ctxt.handle_input( timeout );
         }
         if( action == "MOUSE_MOVE" ) {
             ZoneScopedN( "handle_mouseview_mouse_move" );
-            const std::optional<tripoint_bub_ms> mouse_pos = ctxt.get_coordinates( w_terrain );
+            const auto mouse_pos = ctxt.get_coordinates( w_terrain );
             if( mouse_pos && ( !liveview_pos || *mouse_pos != *liveview_pos ) ) {
                 liveview_pos = mouse_pos;
                 liveview.show( *liveview_pos );
@@ -3481,18 +3491,31 @@ bool game::handle_mouseview( input_context &ctxt, std::string &action )
                 liveview.hide();
             }
             tile_selection::hover( u, m, mouse_pos );
+            if( cursor_pan_view( ctxt ) ) {
+                const auto panned_pos = ctxt.get_coordinates( w_terrain );
+                tile_selection::hover( u, m, panned_pos );
+            }
             {
                 ZoneScopedN( "handle_mouseview_redraw" );
                 ui_manager::redraw();
             }
         }
     } while( action == "MOUSE_MOVE" ); // Freeze animation when moving the mouse
+    // Cursor panning: continue panning when the cursor rests at the edge.
+    if( action == "TIMEOUT" && cursor_pan_view( ctxt ) ) {
+        const std::optional<tripoint_bub_ms> panned_pos = ctxt.get_coordinates( w_terrain );
+        tile_selection::hover( u, m, panned_pos );
+        ui_manager::redraw();
+    }
 
     if( action != "TIMEOUT" ) {
         // Keyboard event, break out of animation loop
         ZoneScopedN( "handle_mouseview_hide_liveview" );
         liveview.hide();
         tile_selection::clear_hover();
+        if( ctxt.get_raw_input().type == input_event_t::keyboard ) {
+            cursor_pan_recenter();
+        }
         return false;
     }
 
@@ -3580,6 +3603,104 @@ tripoint_rel_omt game::mouse_edge_scrolling_overmap( input_context &ctxt )
     last_mouse_edge_scroll_vector_terrain = tripoint_rel_ms::zero();
     return ret.first;
 }
+
+auto game::cursor_pan_view( input_context &ctxt ) -> bool
+{
+    if( !get_option<bool>( "CURSOR_PANNING" ) ) {
+        return false;
+    }
+    const auto edge_scroll = get_option<int>( "EDGE_SCROLL" );
+    if( edge_scroll < 0 ) {
+        last_cursor_pan_direction = tripoint_rel_ms::zero();
+        return false;
+    }
+    const auto &event = ctxt.get_raw_input();
+    if( event.type == input_event_t::mouse ) {
+#if defined(TILES)
+        const auto dim = get_window_dimensions( w_terrain );
+        const auto win_min = dim.window_pos_pixel;
+        const auto win_size = dim.window_size_pixel;
+        const auto win_max = win_min + win_size;
+        if( event.mouse_pos.x < win_min.x || event.mouse_pos.x >= win_max.x ||
+            event.mouse_pos.y < win_min.y || event.mouse_pos.y >= win_max.y ) {
+            last_cursor_pan_direction = tripoint_rel_ms::zero();
+            return false;
+        }
+        const auto ppc_x = win_size.x / std::max( 1, dim.window_size_cell.x );
+        const auto ppc_y = win_size.y / std::max( 1, dim.window_size_cell.y );
+        const auto thr = point(
+                             ( dim.window_size_cell.x / 100 + 1 ) * ppc_x,
+                             ( dim.window_size_cell.y / 100 + 1 ) * ppc_y );
+        const auto rel_x = event.mouse_pos.x - win_min.x;
+        const auto rel_y = event.mouse_pos.y - win_min.y;
+        auto delta = tripoint_rel_ms::zero();
+        if( rel_x <= thr.x ) {
+            delta.x() -= 1;
+        } else if( rel_x >= win_size.x - thr.x ) {
+            delta.x() += 1;
+        }
+        if( rel_y <= thr.y ) {
+            delta.y() -= 1;
+        } else if( rel_y >= win_size.y - thr.y ) {
+            delta.y() += 1;
+        }
+#else
+        const auto win_left = getbegx( w_terrain );
+        const auto win_top = getbegy( w_terrain );
+        const auto win_w = getmaxx( w_terrain );
+        const auto win_h = getmaxy( w_terrain );
+        if( event.mouse_pos.x < win_left || event.mouse_pos.x >= win_left + win_w ||
+            event.mouse_pos.y < win_top || event.mouse_pos.y >= win_top + win_h ) {
+            last_cursor_pan_direction = tripoint_rel_ms::zero();
+            return false;
+        }
+        const auto rel_x = event.mouse_pos.x - win_left;
+        const auto rel_y = event.mouse_pos.y - win_top;
+        const auto thr = point( win_w / 100 + 1, win_h / 100 + 1 );
+        auto delta = tripoint_rel_ms::zero();
+        if( rel_x <= thr.x ) {
+            delta.x() -= 1;
+        } else if( rel_x >= win_w - 1 - thr.x ) {
+            delta.x() += 1;
+        }
+        if( rel_y <= thr.y ) {
+            delta.y() -= 1;
+        } else if( rel_y >= win_h - 1 - thr.y ) {
+            delta.y() += 1;
+        }
+#endif
+        last_cursor_pan_direction = delta;
+    } else if( event.type != input_event_t::timeout ) {
+        return false;
+    }
+    if( last_cursor_pan_direction == tripoint_rel_ms::zero() ) {
+        return false;
+    }
+    const auto now = std::chrono::steady_clock::now();
+    if( now < last_cursor_pan + std::chrono::milliseconds( edge_scroll ) ) {
+        return false;
+    }
+    last_cursor_pan = now;
+    u.view_offset += last_cursor_pan_direction;
+    ter_view_p = u.bub_pos() + u.view_offset;
+    invalidate_main_ui_adaptor();
+    return true;
+}
+
+auto game::cursor_pan_recenter() -> void
+{
+    if( !get_option<bool>( "CURSOR_PANNING" ) || get_option<int>( "EDGE_SCROLL" ) < 0 ) {
+        return;
+    }
+    if( u.view_offset.x() != driving_view_offset.x || u.view_offset.y() != driving_view_offset.y ) {
+        u.view_offset.x() = driving_view_offset.x;
+        u.view_offset.y() = driving_view_offset.y;
+        ter_view_p = u.bub_pos() + u.view_offset;
+        invalidate_main_ui_adaptor();
+    }
+    last_cursor_pan_direction = tripoint_rel_ms::zero();
+}
+
 
 input_context get_default_mode_input_context()
 {

@@ -1,5 +1,6 @@
 """Vehicle HUD contracts exercised through actual vehicles and driving controls."""
 import re
+import subprocess
 
 from helpers import HELPERS, Game, arena, settle, start_new_game
 
@@ -43,6 +44,13 @@ def test_vehicle_box(_game):
         assert fuel and 0 < int(fuel[1]) <= 100, screen
         assert "Battery: 100%" in screen, screen
         assert "fuel:" not in screen, "Vehicle sidebar must step aside:\n" + screen
+        subprocess.run(["tmux", "resize-window", "-t", game.name, "-x", "80", "-y", "25"], check=True)
+        settle(game)
+        screen = game.screen()
+        assert "Azimuth: 0°" in screen and "Speed: 0 mph" in screen, screen
+        assert re.search(r"gasoline: \d+%", screen, re.IGNORECASE) and "Battery: 100%" in screen, screen
+        subprocess.run(["tmux", "resize-window", "-t", game.name, "-x", "140", "-y", "45"], check=True)
+        settle(game)
         # Fuel exhaustion remains visible rather than making its row disappear.
         assert int(game.lua("out(M:drain_vehicle_fuel_at(here(0,0),'CONTROLS',ItypeId.new('gasoline'),1000000000))")[0]) > 0
         assert int(game.lua("out(M:get_vehicle_fuel_left_at(here(0,0),'CONTROLS',ItypeId.new('gasoline')))")[0]) == 0
@@ -64,6 +72,7 @@ def test_vehicle_box_electric(_game):
         assert len(re.findall(r"(?:battery|batteries):\s*\d+%", screen, re.IGNORECASE)) == 1, "Electric fuel and battery must not duplicate:\n" + screen
         # The same corner already holds weather/combat; all three must survive stacking.
         assert "Walking" in screen and "Azimuth:" in screen, screen
+        assert "wasd move" in screen and "throttle" not in screen, screen
         game.keys("^", delay=1)
         game.keys("w", delay=1)
         settle(game)
@@ -73,6 +82,15 @@ def test_vehicle_box_electric(_game):
         assert speed and int(speed[1]) > 0, "Driving must update actual speed:\n" + screen
         cruise = re.search(r"Cruise: (\d+) mph", screen)
         assert cruise and int(cruise[1]) > 0, screen
+        assert "ws throttle" in screen and "ad steer" in screen and "wasd move" not in screen, screen
+        game.keys("s", delay=1)
+        settle(game)
+        game.keys("^", delay=1)
+        game.wait_for("Let go of controls")
+        game.keys("Enter", delay=1)
+        settle(game)
+        screen = game.screen()
+        assert "wasd move" in screen and "throttle" not in screen and "ad steer" not in screen, screen
     finally:
         game.close()
 

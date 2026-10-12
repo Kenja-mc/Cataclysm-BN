@@ -1,5 +1,7 @@
 #include "crafting_gui.h"
 
+#include <cstdint>
+
 #include "avatar.h"
 #include "cached_options.h"
 #include "calendar.h"
@@ -380,9 +382,9 @@ auto expand_nested_recipes( std::vector<const recipe *> &out_current,
     } );
 
     std::ranges::stable_sort( children, [
-                               &availability_cache, &crafter = opts.crafter,
-                               unread_recipes_first = opts.unread_recipes_first,
-                               highlight_unread_recipes = opts.highlight_unread_recipes
+                                  &availability_cache, &crafter = opts.crafter,
+                                  unread_recipes_first = opts.unread_recipes_first,
+                                  highlight_unread_recipes = opts.highlight_unread_recipes
     ]( const recipe * const a, const recipe * const b ) {
         if( highlight_unread_recipes && unread_recipes_first ) {
             const auto a_read = uistate.read_recipes.count( a->ident() );
@@ -426,20 +428,43 @@ auto nested_toggle( const recipe_id &rec, bool &recalc, bool &keepline ) -> void
 }
 } // namespace
 
-static std::vector<std::string> recipe_info(
-    const recipe &recp,
-    const availability &avail,
-    Character &crafter,
-    bool show_unavailable,
-    const std::string qry_comps,
-    const int batch_size,
-    const int fold_width,
-    const nc_color &color,
-    const recipe_subset &available_recipes )
+namespace
 {
+
+struct recipe_info_options {
+    const recipe &recp;
+    const availability &avail;
+    Character &crafter;
+    bool show_unavailable;
+    const std::string &qry_comps;
+    int batch_size;
+    int fold_width;
+    const nc_color &color;
+    const recipe_subset &available_recipes;
+    craft_chain::production_info &prod_cache;
+};
+
+auto recipe_info( const recipe_info_options &opts ) -> std::vector<std::string>
+{
+    const auto &recp = opts.recp;
+    const auto &avail = opts.avail;
+    auto &crafter = opts.crafter;
+    const auto show_unavailable = opts.show_unavailable;
+    const auto &qry_comps = opts.qry_comps;
+    const auto batch_size = opts.batch_size;
+    const auto fold_width = opts.fold_width;
+    const auto &color = opts.color;
+    const auto &available_recipes = opts.available_recipes;
+    auto &prod_cache = opts.prod_cache;
     std::ostringstream oss;
 
     const inventory &crafting_inv = crafter.crafting_inventory();
+    // Friendly duration of the batches of `r`, at the crafter's own speed.
+    const auto craft_time_string = [&crafter]( const recipe & r, const int batches ) {
+        const auto expected_turns = crafter.expected_time_to_craft( r, batches )
+                                    / to_moves<int>( 1_turns );
+        return to_string( time_duration::from_turns( expected_turns ) );
+    };
     const bool can_craft_this = avail.can_craft;
     if( !can_craft_this && !recp.is_nested() ) {
         for( const std::string &line : recp.simple_requirements().blocker_lines(
@@ -450,14 +475,14 @@ static std::vector<std::string> recipe_info(
             if( !recp.skill_used.is_null()
                 && crafter.get_skill_level( recp.skill_used ) < recp.difficulty ) {
                 oss << string_format(
-                         _( "Needs %s %d (you have %d)\n" ), recp.skill_used.obj().name(),
-                         recp.difficulty, crafter.get_skill_level( recp.skill_used ) );
+                        _( "Needs %s %d (you have %d)\n" ), recp.skill_used.obj().name(),
+                        recp.difficulty, crafter.get_skill_level( recp.skill_used ) );
             }
             for( const auto &[ skill, level ] : recp.required_skills ) {
                 if( crafter.get_skill_level( skill ) < level ) {
                     oss << string_format(
-                             _( "Needs %s %d (you have %d)\n" ), skill.obj().name(), level,
-                             crafter.get_skill_level( skill ) );
+                            _( "Needs %s %d (you have %d)\n" ), skill.obj().name(), level,
+                            crafter.get_skill_level( skill ) );
                 }
             }
         }
@@ -470,10 +495,8 @@ static std::vector<std::string> recipe_info(
                           recp.required_skills_string( &crafter, false, false ) );
 
     if( !recp.is_nested() ) {
-        const int expected_turns = crafter.expected_time_to_craft( recp, batch_size )
-                                   / to_moves<int>( 1_turns );
         oss << string_format( _( "Time to complete: <color_cyan>%s</color>\n" ),
-                              to_string( time_duration::from_turns( expected_turns ) ) );
+                              craft_time_string( recp, batch_size ) );
 
     }
 
@@ -483,8 +506,7 @@ static std::vector<std::string> recipe_info(
     {
         const auto verbose_multipliers = get_option<bool>( "VERBOSE_CRAFTING_SPEED_MODIFIERS" );
         auto multiplier_color = [&]( int percent ) -> std::string {
-            if( percent > 100 )
-            {
+            if( percent > 100 ) {
                 return "green";
             }
             if( percent < 100 )
@@ -633,15 +655,105 @@ static std::vector<std::string> recipe_info(
         const auto part_chains = get_option<bool>( "CRAFTING_PART_CHAINS" );
         const auto query = craft_chain::part_query{
             .goal = recp, .crafting_inv = crafting_inv, .known_recipes = available_recipes,
+            .goal_batch = batch_size, .cache = part_chains ? &prod_cache : nullptr,
         };
-        const auto can_craft = [&]( const item_comp &comp ) {
+        const auto can_craft = [&]( const item_comp & comp ) {
             return part_chains && craft_chain::can_craft_part( query, comp );
         };
         const std::vector<std::string> comps = req.get_folded_components_list(
-            fold_width, color, crafting_inv, recp.get_component_filter(), batch_size, qry_comps,
-            {}, can_craft );
+                fold_width, color, crafting_inv, recp.get_component_filter(), batch_size, qry_comps,
+                {}, can_craft );
         result.insert( result.end(), tools.begin(), tools.end() );
         result.insert( result.end(), comps.begin(), comps.end() );
+
+        // Panel: the recipe for a missing part, with the real units one batch
+        // yields and an honest time for the batches still needed, followed by
+        // the prerequisites of those batches.  Known producers that cannot be
+        // crafted right now are shown as blocked, with what they are missing.
+        // Nothing here promises the whole goal can be crafted.
+        if( part_chains ) {
+            const auto &filter = recp.get_component_filter( recipe_filter_flags::none );
+            auto first_part = true;
+            for( const auto &group : recp.simple_requirements().get_components() ) {
+                const auto blocked = std::ranges::none_of( group, [&]( const item_comp & comp ) {
+                    return comp.has( crafting_inv, filter, batch_size );
+                } );
+                if( !blocked ) {
+                    continue;
+                }
+                for( const auto &comp : group ) {
+                    const auto *producer = craft_chain::find_part_recipe( query, comp );
+                    // A known producer can exist without being craftable right now.
+                    const auto *known_producer = producer != nullptr
+                                                 ? nullptr
+                                                 : craft_chain::find_known_producer( query, comp );
+                    const auto *part = producer != nullptr ? producer : known_producer;
+                    if( part == nullptr ) {
+                        continue;
+                    }
+                    if( !first_part ) {
+                        result.push_back( std::string() );
+                    }
+                    first_part = false;
+                    // Units are wide: counts and batch sizes are a product.
+                    const auto needed = static_cast<std::int64_t>( comp.count ) * batch_size;
+                    auto have = std::int64_t{ 0 };
+                    if( comp.get_component_type() == component_type::ITEM ) {
+                        if( item::count_by_charges( comp.type ) ) {
+                            have = crafting_inv.charges_of( comp.type, INT_MAX, filter );
+                        } else {
+                            have = crafting_inv.amount_of( comp.type, false, INT_MAX, filter );
+                        }
+                    }
+                    const auto missing = std::max<std::int64_t>( 0, needed - have );
+                    // Real output units, so charged, contained and byproduct
+                    // results all count towards one batch of the part.
+                    const auto units = craft_chain::units_per_batch( query, *part, comp.type );
+                    if( units <= 0 ) {
+                        continue;
+                    }
+                    const auto batches = missing / units + ( missing % units != 0 );
+                    // ponytail: totals through 50 producer batches, expand when native estimates support larger bounded totals.
+                    const auto per_batch = batches > 50;
+                    const auto estimate_batches = per_batch ? 1 : static_cast<int>( batches );
+                    auto part_oss = std::ostringstream();
+                    if( producer != nullptr ) {
+                        part_oss << colorize( _( "Part: " ), c_white )
+                                 << colorize( producer->result_name(), c_light_blue )
+                                 << colorize( per_batch
+                                              ? string_format( _( " (make %s more: %s batches, ~%s per batch)" ),
+                                                               std::to_string( missing ), std::to_string( batches ),
+                                                               craft_time_string( *producer, estimate_batches ) )
+                                              : string_format( _( " (make %s more, ~%s)" ),
+                                                               std::to_string( missing ),
+                                                               craft_time_string( *producer, estimate_batches ) ),
+                                              c_white );
+                    } else {
+                        part_oss << colorize( _( "Part (blocked): " ), c_white )
+                                 << colorize( known_producer->result_name(), c_brown );
+                        if( per_batch ) {
+                            part_oss << string_format( _( " (%s batches)" ), std::to_string( batches ) );
+                        }
+                    }
+                    const auto part_lines = foldstring( part_oss.str(), fold_width );
+                    result.insert( result.end(), part_lines.begin(), part_lines.end() );
+                    if( per_batch ) {
+                        const auto note = foldstring( _( "  Prerequisites per batch:" ), fold_width );
+                        result.insert( result.end(), note.begin(), note.end() );
+                    }
+                    // What the part still needs for the batches above: components
+                    // with their alternatives, tools and qualities alike.
+                    const auto &part_req = part->simple_requirements();
+                    const auto &part_filter = part->get_component_filter( recipe_filter_flags::none );
+                    for( const auto &line : part_req.blocker_lines( crafting_inv, part_filter,
+                            estimate_batches ) ) {
+                        const auto colored = colorize( "  " + line, c_red );
+                        const auto preq_lines = foldstring( colored, fold_width );
+                        result.insert( result.end(), preq_lines.begin(), preq_lines.end() );
+                    }
+                }
+            }
+        }
     }
 
     oss = std::ostringstream();
@@ -649,8 +761,8 @@ static std::vector<std::string> recipe_info(
         oss << _( "Recipe not memorized yet\n" );
         oss << _( "id: " ) << recp.ident() << "\n";
         const std::set<itype_id> books_with_recipe = show_unavailable
-                ? crafting::get_books_for_recipe( &recp )
-                : crafting::get_books_for_recipe( crafter, crafting_inv, &recp );
+            ? crafting::get_books_for_recipe( &recp )
+            : crafting::get_books_for_recipe( crafter, crafting_inv, &recp );
         const std::string enumerated_books =
             enumerate_as_string( books_with_recipe.begin(), books_with_recipe.end(),
         []( const itype_id & type_id ) {
@@ -672,6 +784,8 @@ static std::vector<std::string> recipe_info(
 
     return result;
 }
+
+} // namespace
 
 static input_context make_crafting_context( bool highlight_unread_recipes )
 {
@@ -716,30 +830,26 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
     } recipe_info_cache;
     int recipe_info_scroll = 0;
 
-    const auto cached_recipe_info =
-        [&](
-            const recipe & recp,
-            const availability & avail,
-            Character & crafter,
-            bool show_unavailable,
-            const std::string qry_comps,
-            const int batch_size,
-            const int fold_width,
-            const nc_color & color,
-            const recipe_subset & available_recipes
-    ) -> const std::vector<std::string> & { // *NOPAD*
+    // Part lookups are cached here and shared across every goal the menu shows,
+    // so browsing a long list never searches the same component twice.  Cleared
+    // when the menu regenerates (inventory, crafter or known recipes changed).
+    auto prod_cache = craft_chain::production_info{};
+
+    const auto cached_recipe_info = [&]( const recipe_info_options & opts )
+    -> const std::vector<std::string> & { // *NOPAD*
+        const auto &recp = opts.recp;
+        const auto &qry_comps = opts.qry_comps;
+        const auto batch_size = opts.batch_size;
+        const auto fold_width = opts.fold_width;
         if( recipe_info_cache.recp != &recp
             || recipe_info_cache.qry_comps != qry_comps
             || recipe_info_cache.batch_size != batch_size
-            || recipe_info_cache.fold_width != fold_width )
-        {
+            || recipe_info_cache.fold_width != fold_width ) {
             recipe_info_cache.recp = &recp;
             recipe_info_cache.qry_comps = qry_comps;
             recipe_info_cache.batch_size = batch_size;
             recipe_info_cache.fold_width = fold_width;
-            recipe_info_cache.text = recipe_info(
-                recp, avail, crafter, show_unavailable, qry_comps, batch_size, fold_width,
-                color, available_recipes );
+            recipe_info_cache.text = recipe_info( opts );
         }
         return recipe_info_cache.text;
     };
@@ -900,6 +1010,9 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
     std::vector<const recipe *> current;
     std::vector<int> indent;
     std::vector<availability> available;
+    // Lazily computed part markers, keyed by recipe pointer; cleared on recalc
+    // (recalc fires when inventory changes, e.g. picking up items or crafting).
+    std::unordered_map<const recipe *, std::string> part_markers;
     int line = 0;
     bool unread_recipes_first = false;
     bool user_moved_line = false;
@@ -925,7 +1038,8 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
     // Open on something useful rather than an empty favorites list.
     if( available_recipes.favorite().empty() ) {
         if( !available_recipes.recent().empty() ) {
-            for( size_t i = 0; i < craft_subcat_list[tab.cur()].size() && subtab.cur() != "CSC_*_RECENT"; i++ ) {
+            for( size_t i = 0; i < craft_subcat_list[tab.cur()].size() &&
+                 subtab.cur() != "CSC_*_RECENT"; i++ ) {
                 subtab.next();
             }
         } else {
@@ -1050,7 +1164,63 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
                 mvwprintz( w_data, print_from + offset, new_recipe_str_col, "%s", new_recipe_str );
                 rcp_name_trim_width -= new_recipe_str_width + 1;
             }
+            // List-level part marker: flag recipes whose missing components
+            // include one that can be crafted right now (can_make) or has a known
+            // producer that is unavailable (known).  Lazily computed for visible
+            // rows only; cache cleared on recalc (inventory/menu generation).
+            std::string part_marker;
+            if( !batch && !current[i]->is_nested() && get_option<bool>( "CRAFTING_PART_CHAINS" )
+                && !available[i].can_craft ) {
+                auto it = part_markers.find( current[i] );
+                if( it == part_markers.end() ) {
+                    const auto marker_query = craft_chain::part_query{
+                        .goal = *current[i], .crafting_inv = crafting_inv,
+                        .known_recipes = available_recipes, .cache = &prod_cache,
+                    };
+                    const auto &filter = current[i]->get_component_filter(
+                                             recipe_filter_flags::none );
+                    auto can_make = false;
+                    auto has_known = false;
+                    for( const auto &group : current[i]->simple_requirements().get_components() ) {
+                        const auto blocked = std::ranges::none_of( group,
+                        [&]( const item_comp & comp ) {
+                            return comp.has( crafting_inv, filter, 1 );
+                        } );
+                        if( !blocked ) {
+                            continue;
+                        }
+                        for( const auto &comp : group ) {
+                            if( comp.has( crafting_inv, filter, 1 ) ) {
+                                continue;
+                            }
+                            if( !can_make && craft_chain::can_craft_part( marker_query, comp ) ) {
+                                can_make = true;
+                            }
+                            if( !has_known && craft_chain::has_known_unavailable_producer( marker_query, comp ) ) {
+                                has_known = true;
+                            }
+                        }
+                    }
+                    std::string marker;
+                    if( can_make ) {
+                        marker = _( " [parts:make]" );
+                    } else if( has_known ) {
+                        marker = _( " [parts:known]" );
+                    }
+                    it = part_markers.emplace( current[i], marker ).first;
+                }
+                part_marker = it->second;
+            }
+            // Trim the recipe name so the marker stays on screen next to it.
+            const int part_marker_width = utf8_width( part_marker );
+            if( part_marker_width > 0 ) {
+                rcp_name_trim_width = std::max( 0, rcp_name_trim_width - part_marker_width );
+            }
             trim_and_print( w_data, print_from, rcp_name_trim_width, col, tmp_name );
+            if( part_marker_width > 0 ) {
+                trim_and_print( w_data, print_from + point( rcp_name_trim_width, 0 ),
+                                part_marker_width, col, part_marker );
+            }
         }
 
         const int batch_size = batch ? line + 1 : 1;
@@ -1072,9 +1242,18 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
                     qry_comps = qry.substr( 2 );
                 }
 
-                const std::vector<std::string> &info = cached_recipe_info(
-                        recp, avail, crafter, show_unavailable, qry_comps, batch_size, fold_width,
-                        color, available_recipes );
+                const auto &info = cached_recipe_info( {
+                    .recp = recp,
+                    .avail = avail,
+                    .crafter = crafter,
+                    .show_unavailable = show_unavailable,
+                    .qry_comps = qry_comps,
+                    .batch_size = batch_size,
+                    .fold_width = fold_width,
+                    .color = color,
+                    .available_recipes = available_recipes,
+                    .prod_cache = prod_cache
+                } );
 
                 const int total_lines = info.size();
                 if( recipe_info_scroll < 0 ) {
@@ -1462,6 +1641,12 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
                 std::back_inserter( available ), [&]( const recipe * e ) {
                     return availability_cache.at( e );
                 } );
+
+                // Clear the lazy part state: markers are computed on demand for
+                // visible rows only, and the shared producer cache is only valid
+                // for the inventory and crafter this menu regeneration used.
+                part_markers.clear();
+                prod_cache.clear();
             }
 
             line = 0;
@@ -1934,6 +2119,7 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
             const auto *part = craft_chain::find_part_recipe( {
                 .goal = *current[line], .crafting_inv = crafter.crafting_inventory(),
                 .known_recipes = available_recipes, .goal_batch = batch ? line + 1 : 1,
+                .cache = &prod_cache,
             } );
             if( part == nullptr ) {
                 popup( _( "No craftable parts for that recipe." ) );
@@ -1962,9 +2148,10 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
         if( hovered != parts_hint_for ) {
             parts_hint_for = hovered;
             const bool wanted = hovered != nullptr && get_option<bool>( "CRAFTING_PART_CHAINS" )
-                                && craft_chain::find_part_recipe( {
+            && craft_chain::find_part_recipe( {
                 .goal = *hovered, .crafting_inv = crafter.crafting_inventory(),
                 .known_recipes = available_recipes, .goal_batch = batch ? line + 1 : 1,
+                .cache = &prod_cache,
             } ) != nullptr;
             if( wanted != parts_hint_available ) {
                 parts_hint_available = wanted;

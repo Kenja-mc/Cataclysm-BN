@@ -2633,6 +2633,7 @@
         "type": "transform"
       }
     ],
+    "light_color": "#ffb05f",
     "flags": [ "LITCIG", "TOBACCO", "LIGHT_4", "TRADER_AVOID", "FIRESTARTER" ]
   },
   {
@@ -2655,6 +2656,7 @@
         "type": "transform"
       }
     ],
+    "light_color": "#ffb05f",
     "flags": [ "LITCIG", "MARIJUANA", "TOBACCO", "LIGHT_4", "TRADER_AVOID", "FIRESTARTER" ]
   },
   {
@@ -2699,6 +2701,7 @@
         "type": "transform"
       }
     ],
+    "light_color": "#ffb05f",
     "flags": [ "LITCIG", "TOBACCO", "LIGHT_4", "TRADER_AVOID", "FIRESTARTER" ]
   },
   {
@@ -2731,6 +2734,7 @@
         "type": "transform"
       }
     ],
+    "light_color": "#ffb05f",
     "flags": [ "LITCIG", "MARIJUANA", "LIGHT_4", "TRADER_AVOID", "FIRESTARTER" ]
   },
   {

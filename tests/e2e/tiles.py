@@ -31,6 +31,7 @@ import tempfile
 import time
 import traceback
 from dataclasses import dataclass, field
+from contextlib import contextmanager
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -457,6 +458,13 @@ def wait_for_frame(session, proc, run, timeout):
         x11.close()
 
 
+@dataclass(frozen=True)
+class RunningGame:
+    proc: subprocess.Popen
+    run: Path
+    frame: Path
+
+
 class Session:
     """One CLI run: private work tree, private Xvfb, and the saved fixture that every launch copies."""
 
@@ -505,8 +513,9 @@ class Session:
         require(len(saves) == 1, f"expected one saved world, found {saves}")
         self.world = saves[0].name
 
-    def launch(self, label, tiles_options):
-        """Runs the tiles binary on a fresh copy of the fixture; returns the path of the window capture."""
+    @contextmanager
+    def running_game(self, label, tiles_options):
+        """Keeps a fixture copy running for real input and captures; owns process cleanup."""
         run = self.work / "runs" / label
         userdir = run / "userdir"
         xdg = run / "xdg"
@@ -542,8 +551,7 @@ class Session:
         proc = subprocess.Popen(cmd, cwd=self.root, env=env, stdout=log, stderr=log)
         try:
             shot = wait_for_frame(self, proc, run, self.timeout)
-            kept = self.artifacts / f"{label}.png"
-            shutil.copy(shot, kept)
+            yield RunningGame(proc=proc, run=run, frame=shot)
         finally:
             subprocess.run(["systemctl", "--user", "stop", unit + ".scope"], check=False, capture_output=True)
             try:
@@ -552,6 +560,11 @@ class Session:
                 stop_process(proc)
             log.close()
             shutil.copy(run / "tiles.log", self.artifacts / f"{label}-tiles.log")
+
+    def launch(self, label, tiles_options):
+        with self.running_game(label, tiles_options) as live:
+            kept = self.artifacts / f"{label}.png"
+            shutil.copy(live.frame, kept)
         return kept
 
 

@@ -30,6 +30,17 @@ void rescale_tileset( float size );
 bool save_screenshot( const std::string &file_path );
 void toggle_fullscreen_window();
 extern void repoint_overmap_tilecontext();
+class item;
+/// Cells reserved for a thumbnail, or zero when thumbnails are disabled.
+auto item_thumbnail_gutter_cells() -> int;
+
+struct item_thumbnail_options {
+    point cell;
+    point size;
+};
+
+auto register_item_thumbnail( const catacurses::window &win, const item &itm,
+                              const item_thumbnail_options &opts ) -> void;
 struct window_dimensions {
     point scaled_font_size;
     point window_pos_cell;

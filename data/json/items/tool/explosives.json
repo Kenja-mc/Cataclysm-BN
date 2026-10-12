@@ -1074,7 +1074,8 @@
       "WATER_EXTINGUISH",
       "ACT_ON_RANGED_HIT",
       "DESTROY_ON_DECHARGE"
-    ]
+    ],
+    "light_color": "#ffb05f"
   },
   {
     "id": "improvised_pipebomb",

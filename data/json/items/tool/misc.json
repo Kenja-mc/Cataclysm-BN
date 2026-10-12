@@ -312,6 +312,7 @@
     "power_draw": 1000000,
     "emits": [ "emit_hot_air2_blast" ],
     "flags": [ "ALLOWS_REMOTE_USE", "LIGHT_2" ],
+    "light_color": "#ff6633",
     "revert_to": "large_space_heater",
     "use_action": { "target": "large_space_heater", "msg": "You turn off the heater.", "menu_text": "Turn off", "type": "transform" },
     "magazine_well": "1000 ml"
@@ -522,6 +523,7 @@
     "power_draw": 500000,
     "emits": [ "emit_hot_air2_stream" ],
     "flags": [ "ALLOWS_REMOTE_USE", "LIGHT_2" ],
+    "light_color": "#ff6633",
     "revert_to": "small_space_heater",
     "use_action": { "target": "small_space_heater", "msg": "You turn off the heater.", "menu_text": "Turn off", "type": "transform" },
     "magazine_well": "500 ml"
@@ -706,6 +708,7 @@
     "symbol": "/",
     "color": "light_gray",
     "techniques": [ "WBLOCK_3", "WIDE" ],
+    "light_color": "#ffb05f",
     "flags": [ "FIRE", "LIGHT_240", "TRADER_AVOID" ]
   },
   {

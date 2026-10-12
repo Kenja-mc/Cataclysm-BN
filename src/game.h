@@ -1091,7 +1091,7 @@ class game : public submap_load_listener
 
         // Input related
         // Handles box showing items under mouse
-        bool handle_mouseview( input_context &ctxt, std::string &action );
+        auto handle_mouseview( input_context &ctxt, std::string &action, int poll_timeout ) -> bool;
 
         // On-request draw functions
         void display_faction_epilogues();
@@ -1310,6 +1310,16 @@ class game : public submap_load_listener
         tripoint_rel_ms mouse_edge_scrolling_terrain( input_context &ctxt );
         /** This variant is suitable for the overmap. */
         tripoint_rel_omt mouse_edge_scrolling_overmap( input_context &ctxt );
+
+        /// Cursor panning: in normal play, holding the mouse at the map edge pans the view.
+        /// Returns true if the view was panned (so the caller can redraw).
+        auto cursor_pan_view( input_context &ctxt ) -> bool;
+        /// Re-centre the view after a turn-consuming action or movement.
+        auto cursor_pan_recenter() -> void;
+        /// Last time the view was panned (rate limiter).
+        std::chrono::time_point<std::chrono::steady_clock> last_cursor_pan;
+        /// Last pan direction (to continue panning on timeout).
+        tripoint_rel_ms last_cursor_pan_direction = tripoint_rel_ms::zero();
 
         // called on map shifting
         void shift_destination_preview( const point_rel_ms &delta );
