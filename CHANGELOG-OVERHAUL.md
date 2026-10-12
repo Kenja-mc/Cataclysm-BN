@@ -12,8 +12,27 @@ Upstream's own changes are in `docs/en/game/changelog`.
   and aircraft takeoff speed in the same corner-box style as weather and combat. It appears aboard
   a vehicle or during remote control, starts at the bottom right, and replaces the duplicate Vehicle
   sidebar panel. Options → Interface → Vehicle box chooses another corner or restores the old panel.
+- **Fork guide and database**: regenerate the pinned guide from this checkout's game data, mods
+  and licensed tiles, publish it alongside the docs, and use it as the configurable in-game guide
+  default. Dataset versions link to their fork commit; local game-data changes are marked dirty.
+- **Upstream feature watch**: daily commit reports in issue #3, with candidate headings for human
+  review and a checkpoint that advances only after the complete report is recorded.
+- **Future-work tickets**: agentic UI/UX QA in CI (#1) and optional simple co-op (#2).
 - **Pixel minimap zoom**: 1x, 2x or 4x, independent of the main map. The optional **Pixel minimap
   item markers** setting shows perceived loot in gold, without revealing hidden or sealed items.
+- **Item layering on furniture** (tiles): raise item sprites slightly above furniture, with an
+  option to restore the original height.
+- **Cliff edge shading** (orthographic tiles): show perceived drops without hiding ground textures
+  or revealing unseen openings.
+- **Directional stairs** (tiles): orient stairs and ramps toward visible walkable openings,
+  keeping oversized sprites anchored to their tile.
+- **Item thumbnails in UI** (tiles): real item, variant and corpse sprites in inventory and pickup
+  lists, with clipped drawing and no stale thumbnails after filtering.
+- **Mood lighting** (tiles): native light tints for lamps and other emitters, without changing
+  brightness, range or fuel use. Colored lighting can be turned off in Graphics options.
+- **Cursor panning**, off by default: edge hover pans normal play, clicks use the panned view,
+  centre/sidebar hover stops scrolling, and keyboard input recenters. Uses the existing Edge
+  scrolling speed setting.
 - **Monster health bars** (tiles): a small bar under every hurt monster in view, as fuzzy as the
   look-around list shows it. Options → Graphics → Monster health bars turns it off.
 - **Enemy edge arrows**: a hostile you can see that sits outside the map window gets an arrow at the
@@ -31,8 +50,12 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - **Contextual interact**: Space does the only sensible action next to you without asking for a
   direction, and lists what each direction does when there are several. `u` opens on the item you
   used last.
-- **Crafting part chains**: the recipe panel starts with what is missing, tags a missing part you
-  can craft now "(can make)" and `p` (modern scheme) jumps to its recipe.
+- **Follower command palette**: `y`, then `P` selects a nearby follower and edits their combat,
+  aiming and behavior rules without dialogue. Bionic settings appear only when relevant.
+  Options → Interface → NPC interface restores the original chat menu.
+- **Crafting part preview**: distinguish craftable and blocked known producers, show missing units
+  and native producer time, and open the producer with `p` in the modern scheme. Larger quantities
+  show time and prerequisites per batch. This is not a recursive inventory-allocation plan.
 - **Fading sound markers**: the `?` of an unseen sound stays for a few turns and dims (Options →
   Interface → Sound marker turns).
 - **Status effect animations** in the tiles version: creatures in view carry a small looping
@@ -71,6 +94,11 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Smart safe mode no longer treats a hostile far beyond its distance as close when nothing stands
   between you.
 - The tiles version no longer crashes when started with `--world` to load a save directly.
+- Weather boxes no longer duplicate wind in roomy sidebar layouts or the clock in narrow classic
+  layouts. Narrow classic layouts retain the date and thermometer reading.
+- The Controls strip keeps `? all keys` near movement and has room for the existing hints.
+- Driving hints show throttle and steering instead of walking controls, then switch back when
+  the controls are released. Vehicle readings no longer truncate their values at 80 × 25.
 
 ## 2026-10-10
 

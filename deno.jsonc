@@ -23,6 +23,8 @@
     },
     "docs:translation-warning": "deno run --allow-read --allow-run=git,gh --allow-env=GH_TOKEN,GITHUB_TOKEN,PATH scripts/docs_translation_warning.ts",
     "affected-files": "deno run --allow-read --allow-write --allow-run=git --allow-env=PATH scripts/affected_files.ts",
+    "guide:data": "deno run --allow-read --allow-write --allow-run=git,convert scripts/generate-guide-data.ts",
+    "guide:build": "deno run --allow-read --allow-write --allow-run=git,pnpm,tar --allow-env scripts/build-guide.ts",
   },
   "test": { "include": ["scripts", ".agents"] },
   "lint": {
@@ -55,7 +57,6 @@
     "@std/front-matter": "jsr:@std/front-matter@^1.0.9",
     "@std/fs": "jsr:@std/fs@^1.0.19",
     "@std/path": "jsr:@std/path@^1.1.2",
-    "@std/yaml": "jsr:@std/yaml@^1.0.10",
     "@valibot/valibot": "jsr:@valibot/valibot@^1.1.0",
     "@zip-js/zip-js": "jsr:@zip-js/zip-js@^2.8.26",
     "markdown-table": "npm:markdown-table@3.0.4",

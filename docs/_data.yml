@@ -1,9 +1,9 @@
 menu_links:
   - text: Github Repository
-    href: https://github.com/cataclysmbn/Cataclysm-BN
+    href: https://github.com/Kenja-mc/Cataclysm-BN
     icon: github-logo
   - text: BN Item Guide
-    href: https://cataclysmbn-guide.com/
+    href: https://kenja-mc.github.io/Cataclysm-BN/guide/
     icon: book
   - text: Discord
     href: https://discord.gg/XW7XhXuZ89
@@ -13,7 +13,7 @@ menu_links:
     icon: reddit-logo
 
 repo:
-  url: https://github.com/cataclysmbn/Cataclysm-BN
+  url: https://github.com/Kenja-mc/Cataclysm-BN
   path: /docs
 
 extra_head: |
