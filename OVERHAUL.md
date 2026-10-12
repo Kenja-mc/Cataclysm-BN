@@ -92,8 +92,17 @@ In the vehicle screen, WASD and Q E Z C move the cursor like everywhere else. Th
 letters used to start moved to Shift: `W` crew, `A` label, `S` siphon, `D` unload, `E` rename,
 `C` change tire, and `Z`/`X` zoom in and out.
 
-A **Controls** strip at the bottom of the sidebar always shows the most used keys. It reads the
-live keybindings, so it stays correct if you rebind anything.
+A **Controls** strip at the bottom of the sidebar shows the most used keys. `? all keys` stays
+near the movement hints, and five rows keep the other hints visible. It reads live keybindings,
+so action hints stay correct if you rebind them.
+While driving, the movement hints become `ws throttle` and `ad steer`. Releasing the controls
+restores the walking hints.
+
+**Follower commands**: `y` opens chat, then `P` opens the command palette. Choose a follower
+when more than one is nearby. Change engagement, aiming, gun use, movement and item rules
+without entering dialogue; bionic reserve and recharge appear only for followers with bionics.
+Rules belong to the selected follower, and the palette can copy another follower's rules.
+Options → Interface → NPC interface turns it off and keeps the original chat commands.
 
 **Classic controls** are one option away: Options → Interface → Control scheme → Classic restores
 the original vi-keys and numpad layout, turns bump attacks back on and makes Y/N prompts want
@@ -173,9 +182,29 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   hostile is hunting you, one cell in when it is only trailing. Only hostiles you can already see
   get an arrow, so it shows nothing new about the world, only where to look. Options → Interface →
   Enemy edge arrows turns it off.
+- **Cursor panning**, off by default: hold the mouse at the map edge to pan during normal play.
+  Hover and clicks follow the panned view. Returning to the middle or moving into the sidebar
+  stops scrolling; pressing a key recenters the view without making hover consume a turn.
+  Options → Interface → Cursor panning enables it; Edge scrolling chooses the speed or disables it.
 - **Pixel minimap zoom** (tiles): choose 1x, 2x or 4x under Options → Graphics without changing
   the main map's zoom. **Pixel minimap item markers**, off by default, adds gold dots for loot you
   can currently see. Items behind walls or inside sealed furniture do not get markers.
+- **Item layering on furniture** (tiles): items sit slightly above tables and other furniture,
+  using the same item, corpse and variant sprites as the map. Turn it off under Options → Graphics
+  to restore the original sprite height.
+- **Cliff edge shading** (orthographic tiles): a narrow dark edge marks a visible drop into open
+  air without covering the ground texture. Hidden openings are not revealed. Options → Graphics →
+  Cliff edge shading restores the original view.
+- **Directional stairs** (tiles): stairs and ramps face an adjacent visible walkable opening.
+  Rotation stays anchored to the tile, including tilesets with oversized sprites. Turn it off
+  under Options → Graphics to use the original orientation.
+- **Item thumbnails in UI** (tiles): inventory and pickup rows show the item's real sprite,
+  including jewelry variants and corpses. Filtering clears old thumbnails, and sprites stay inside
+  their list window. Options → Graphics → Item thumbnails in UI turns them off.
+- **Mood lighting** (tiles): atomic lamps cast green light, blue glowsticks cast blue light, and
+  candles and fuel lanterns cast warm light. Other colored emitters use the same native lighting
+  path. Brightness, range, fuel use and game rules are unchanged. Options → Graphics → Colored
+  lighting turns the tints off.
 - **Fuller default tileset**: 12 sprites the bundled tileset lacked (atlatl, sewing machine,
   concrete ramps, treetops and others) come from the CDDA tilesets (CC-BY-SA 3.0, credits in
   `gfx/MSX++UnDeadPeopleEdition/fork_fill_CREDITS.md`).
@@ -194,9 +223,10 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   you use magic, your mana as `current/max`. Values carry the same colors as in the sidebar.
   Options → Interface → Weather box / Weapon box moves each to any corner or turns it off, and Box
   icons picks Unicode, [Nerd Font](https://www.nerdfonts.com/) or ASCII. The sidebar does not
-  repeat what a box shows: with the weather box on it drops Sky, Light, Date and Time (the Location
-  panel keeps Place and coordinates); with the weapon box on it drops the Weapon and Mana panels.
-  Turn a box off and its rows come back.
+  repeat what a box shows: weather and clock stay in the box, and roomy maps also move Light,
+  Date and Wind there. Narrow maps keep those facts in the sidebar; the classic date row also
+  retains temperature. The weapon box replaces the Weapon and Mana panels. Turn a box off and
+  its rows come back.
 - **Vehicle box** (terminal view) appears when you board a vehicle or control one remotely. It shows
   azimuth (degrees clockwise from north), current speed, cruise target, engine state, the selected
   engine's fuel percentage and battery charge. Aircraft keep their takeoff-speed readout. Low fuel
@@ -205,6 +235,7 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   corner. Options → Interface → Vehicle box moves it to any corner or turns it off. While it is on,
   the Vehicle sidebar panel steps aside; turn it off to restore that panel. Native tiles readouts
   are unchanged.
+  Speed, azimuth and fuel values stay readable at the minimum supported 80 × 25 terminal size.
 - **Body panel** (inspired by Project Zomboid's health screen): the sidebar lists every hurt limb
   and what is wrong with it (bleeding, infected, bitten, broken, bandaged, disinfected). `H` opens
   the full view with every limb's health and what to do about wounds. Hide it like any panel from
@@ -243,10 +274,14 @@ that is optional:
   is kept and the emptied copies go away. Duct tape, thread and other counted items already stack.
 - The crafting menu's full-description search (`d:`) remembers each recipe's description for the
   turn, so refining a search no longer rebuilds every item (from CDDA #77914).
-- **Crafting part chains**: the recipe panel starts with what is missing ("Missing: long string
-  (6)"). A missing component you could craft right now from what you have is tagged "(can make)",
-  and `p` (modern scheme) jumps to that part's recipe. Options → Interface → Crafting part chains
-  turns the tag and the key off.
+- **Crafting part preview**: the panel starts with missing materials. `[parts:make]` marks a
+  missing component with a known producer that can make one batch now; `[parts:known]` marks a
+  known producer blocked by its materials, tools or qualities. `p` in the modern scheme opens the
+  producer recipe. The selected recipe shows the missing units, producer prerequisites and native
+  time estimate; charged outputs and byproducts count towards the units. Above 50 producer batches,
+  it shows the batch count and time and prerequisites per batch instead of a misleading total.
+  This is an immediate-producer preview, not a recursive plan or a promise that the inventory can
+  supply every batch. Options → Interface → Crafting part chains restores the original panel.
 
 - **Fewer battery types.** The light-minus, high-capacity and disposable variants are folded into
   three cells: light (150 charge), medium (750) and heavy (1500). Atomic cells stay as the rare
@@ -452,6 +487,21 @@ The fork follows upstream `main` with plain merges. When upstream adds black pow
 (`bp_*`) or items the fork folded into variants, fold them the same way: the new items become
 migrations so old saves keep working, and loot entries keep the black powder `stack_modifier`.
 
+The **Upstream feature candidates** workflow runs daily or on manual dispatch and appends new
+upstream commits to [the review tracker](https://github.com/Kenja-mc/Cataclysm-BN/issues/3).
+Likely additions are grouped separately, but every new commit is retained for review. Checklists
+are not approvals: reject balance changes and choose useful UI, control or item-folding changes
+manually. CI preserves checklist edits, advances its checkpoint only after posting every report,
+and never ports code automatically. Close the tracker to stop reporting.
+
+## Future work
+
+- [Agentic UI/UX QA in CI](https://github.com/Kenja-mc/Cataclysm-BN/issues/1): review real
+  terminal and tiles captures with human triage; deterministic end-to-end checks remain the gate.
+- [Simple seamless co-op](https://github.com/Kenja-mc/Cataclysm-BN/issues/2): evaluate the BN
+  co-op port and related projects before choosing an implementation. No multiplayer behavior is
+  enabled by this ticket.
+
 ## Unit tests
 
 Upstream's Catch2 suite (`cata_test`) must pass. Upstream CI runs it in file shards on a software
@@ -481,3 +531,53 @@ in `build/src`):
 ```sh
 python3 tests/e2e/run.py
 ```
+
+The tiles checks also need the tiles binary, ImageMagick's `magick`, Xvfb, the X11/XTest libraries
+and a software Vulkan driver:
+
+```sh
+python3 tests/e2e/tiles.py minimap --vk-icd /path/to/lvp_icd.json
+python3 tests/e2e/rendering.py --vk-icd /path/to/lvp_icd.json
+python3 tests/e2e/lighting.py --vk-icd /path/to/lvp_icd.json
+```
+
+Run these sequentially with no other heavy work. They use private displays, saves and options;
+their artifacts show the actual native ON/OFF pixels, not mocked widgets.
+The shared curses inventory fixture has debug storage independent of random starting clothes.
+The checks also isolate reload inventories and use an unseen NPC call for sound-marker lifetime,
+so earlier weapons, automatic over-capacity drops and wind-masked footsteps do not change the fixture.
+The targeting fixture starts with a real bound, loaded gun; the separate reload check drives
+the reload UI. Lua setup refuses to type into the game if its console did not open.
+
+## Performance checks
+
+In a native debug world with all recipes unlocked, opening the weapon category (528 entries)
+took 20.9 ms with the part preview and 21.7 ms without it. Warm medians over five further opens
+were 14.6 and 15.5 ms. These include tmux input/capture overhead; they do not establish that the
+preview is faster. The 250-producer-batch case showed the native 7 minute 30 second per-batch
+estimate without expanding a recursive plan.
+
+Smart threat checks limit fresh route work to 12 searches and reuse turn results. The native
+benchmark measured 100 sealed searches at 73.7 ms, the bounded 12-search case at 6.59 ms, and
+100 conservative over-budget stops at 607 ns. A warm monster-list scan measured 104 µs with the
+option off and 108 µs with it on. A new turn still pays for fresh routes; the warm number does
+not describe first sighting. No additional unmeasured refactor was justified by the runtime and
+menu audits.
+
+## Fork guide
+
+The [fork guide](https://kenja-mc.github.io/Cataclysm-BN/guide/) uses this repository's item,
+recipe, terrain, monster and mod data, rather than upstream's database. `J` opens it in the modern
+scheme; Options → Interface → Hitchhiker's Guide URL can still point to another guide.
+The documentation workflow rebuilds the guide when game data, tiles or guide scripts change.
+Each dataset identifies its source commit; local exports with modified game data are marked
+`-dirty`. `stable`, `nightly` and `latest` resolve to the same current fork snapshot, not three
+different game releases. Moving aliases fetch current data before showing cached copies;
+offline cached data remains available. Tile sheets retain their supplied credit and license files.
+The GPL-3.0 guide app publishes its license and the modified corresponding source alongside the
+site, including the fork's source-link, routing, cache freshness and sitemap changes.
+
+To build it locally, install Deno, Node.js, pnpm and ImageMagick, then run `deno task guide:data`
+and `deno task guide:build`. The app is pinned to
+[`ushkinaz/cbn-guide@2bb50621`](https://github.com/ushkinaz/cbn-guide/tree/2bb50621d52e5ed7707631cb60b9a5d128b8670b).
+`DATA_BASE_URL` can override the deployed dataset URL for a private preview.

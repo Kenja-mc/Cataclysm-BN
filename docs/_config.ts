@@ -4,6 +4,7 @@ import wiki from "wiki/mod.ts"
 import date from "lume/plugins/date.ts"
 import redirects from "lume/plugins/redirects.ts"
 import relativeUrls from "lume/plugins/relative_urls.ts"
+import basePath from "lume/plugins/base_path.ts"
 
 import { ko } from "npm:date-fns/locale/ko"
 
@@ -12,7 +13,7 @@ import { translationFallback } from "./plugins/translation_fallback.ts"
 import "./plugins/prism.ts"
 import { languages } from "./plugins/languages.ts"
 
-const site = lume()
+const site = lume({ location: new URL("https://kenja-mc.github.io/Cataclysm-BN/") })
 
 site
   .ignore("README.md")
@@ -29,6 +30,7 @@ site
   .copy("media.css")
   .copy("tools")
   .copy("redirect.js")
+  .use(basePath())
 
 site.remoteFile("prism.css", "npm:prismjs/themes/prism.min.css")
 
