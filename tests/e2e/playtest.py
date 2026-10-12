@@ -16,12 +16,13 @@ import os
 import shutil
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from helpers import HELPERS, settle  # noqa: E402
-from tmux_game import ROOT, Game, start_new_game  # noqa: E402
+from tmux_game import ROOT, Game, find_binary, start_new_game  # noqa: E402
 ZOMBIE = "gapi.place_monster_at(MonsterTypeId.new('{id}'), here({x},{y})) "
 
 SCENARIOS = [
@@ -221,6 +222,58 @@ def prepare(scenario, scheme):
         raise SystemExit(f"scenario setup failed: {result}")
     settle(g)
     return g
+def record_session(g, scenario, scheme):
+    """Write a reproducible session record into the scenario's userdir and a persistent log.
+
+    SESSION.md in the scenario userdir travels with the save while the game is running;
+    an identical record is archived under ~/.local/share/cataclysm-bn/playtests/ so
+    --no-attach runs are not lost.
+    """
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M")
+    try:
+        sha = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "--short", "HEAD"],
+                                      text=True).strip()
+        branch = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "--abbrev-ref", "HEAD"],
+                                         text=True).strip()
+    except subprocess.CalledProcessError:
+        sha = "unknown"
+        branch = "unknown"
+
+    binary = find_binary()
+    lines = [
+        f"# Playtest session: {scenario['id']} — {scenario['about']}",
+        "",
+        f"- **Scenario:** {scenario['id']}",
+        f"- **Scheme:** {scheme or 'modern'}",
+        f"- **Binary:** {binary}",
+        f"- **Commit SHA:** {sha}",
+        f"- **Branch:** {branch}",
+        f"- **Started:** {ts}",
+        "",
+        "## Checklist",
+    ]
+    for check in scenario["check"]:
+        lines.append(f"  - [ ] {check}   (result: )  (notes: )")
+    lines.append("")
+    lines.append("## Notes / feedback")
+    lines.append("Write what you observed, what passed or failed, and any bugs or suggestions here.")
+    lines.append("")
+    lines.append("---")
+    try:
+        options = [f"{o['name']}={o['value']}"
+                   for o in json.loads((g.userdir / "config" / "options.json").read_text())]
+    except Exception:
+        options = []
+    lines.append(f"- options: {options}")
+    lines.append(f"- basepath: {ROOT}/")
+    lines.append(f"- game data: {g.userdir}")
+
+    content = "\n".join(lines) + "\n"
+    (g.userdir / "SESSION.md").write_text(content)
+
+    playtests = Path.home() / ".local" / "share" / "cataclysm-bn" / "playtests"
+    playtests.mkdir(parents=True, exist_ok=True)
+    (playtests / f"{scenario['id']}-{sha[:7]}-{ts.replace(':', '-')}").write_text(content)
 
 
 def main():
@@ -242,6 +295,7 @@ def main():
     scenario = by_id[args.scenario]
 
     g = prepare(scenario, args.scheme)
+    record_session(g, scenario, args.scheme)
     print(f"\n{scenario['id']}: {scenario['about']}\nWhat to check:")
     for line in scenario["check"]:
         print(f"  - {line}")
