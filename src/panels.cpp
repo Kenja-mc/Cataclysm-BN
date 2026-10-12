@@ -357,8 +357,7 @@ auto make_lua_widget_panel( const cata::lua_sidebar_widgets::widget_entry &widge
     };
     auto render_func = [widget_id]() -> bool {
         const auto *entry = cata::lua_sidebar_widgets::find_widget( widget_id );
-        if( entry == nullptr )
-        {
+        if( entry == nullptr ) {
             return false;
         }
         return should_render_lua_widget( *entry );
@@ -1547,7 +1546,8 @@ static void draw_stat_wide( avatar &u, const catacurses::window &w )
     print_label( w, { .pos = point( col3, 0 ), .label = _( "Power" ) } );
     print_label( w, { .pos = point( col3, 1 ), .label = _( "Safe" ) } );
     mvwprintz( w, point( value2 + label_column_step, 0 ), pwr_pair.first, "%s", pwr_pair.second );
-    mvwprintz( w, point( value2 + label_column_step, 1 ), safe_color(), g->safe_mode ? _( "On" ) : _( "Off" ) );
+    mvwprintz( w, point( value2 + label_column_step, 1 ), safe_color(),
+               g->safe_mode ? _( "On" ) : _( "Off" ) );
     wnoutrefresh( w );
 }
 
@@ -1783,7 +1783,7 @@ static void draw_env_compact( avatar &u, const catacurses::window &w )
     }
     // display lighting
     const std::pair<std::string, nc_color> ll = get_light_level(
-                character_funcs::fine_detail_vision_mod( get_avatar() ) );
+            character_funcs::fine_detail_vision_mod( get_avatar() ) );
     mvwprintz( w, point( 8, 4 ), ll.second, ll.first );
     // wind
     const oter_id &cur_om_ter = ACTIVE_OVERMAP_BUFFER.ter( u.abs_omt_pos() );
@@ -2241,7 +2241,7 @@ static void draw_lighting_classic( const avatar &u, const catacurses::window &w 
     werase( w );
 
     const std::pair<std::string, nc_color> ll = get_light_level(
-                character_funcs::fine_detail_vision_mod( get_avatar() ) );
+            character_funcs::fine_detail_vision_mod( get_avatar() ) );
     const auto col = print_label( w, { .pos = point( label_column, 0 ), .label = _( "Lighting" ) },
                                   label_pad_classic );
     mvwprintz( w, point( col, 0 ), ll.second, "%s", ll.first );
@@ -2308,13 +2308,14 @@ static void draw_time_classic( const avatar &u, const catacurses::window &w )
                calendar::name_season( season_of_year( calendar::turn ) ) + "," );
     std::string day = std::to_string( day_of_season<int>( calendar::turn ) + 1 );
     mvwprintz( w, point( 8, 0 ), c_white, _( "Day " ) + day );
+    const auto show_time = !hud_boxes::weather_box_shown();
     // display time
-    if( u.has_watch() ) {
+    if( show_time && u.has_watch() ) {
         mvwprintz( w, point( 15, 0 ), c_light_gray, to_string_time_of_day( calendar::turn ) );
-    } else if( g->get_levz() >= 0 ) {
+    } else if( show_time && g->get_levz() >= 0 ) {
         wmove( w, point( 15, 0 ) );
         draw_time_graphic( w );
-    } else {
+    } else if( show_time ) {
         // NOLINTNEXTLINE(cata-text-style): the question mark does not end a sentence
         mvwprintz( w, point( 15, 0 ), c_light_gray, _( "Time: ???" ) );
     }
@@ -2412,7 +2413,7 @@ static std::vector<window_panel> initialize_default_classic_panels()
     ret.emplace_back( draw_weightvolume_classic, translate_marker( "Wgt/Vol" ), 2, 44,
                       true );
     ret.emplace_back( draw_time_classic, translate_marker( "Time" ), 1, 44, true, environment_panel );
-    ret.emplace_back( draw_wind, translate_marker( "Wind" ), 1, 44, false );
+    ret.emplace_back( draw_wind, translate_marker( "Wind" ), 1, 44, false, environment_panel );
     ret.emplace_back( draw_armor, translate_marker( "Armor" ), 5, 44, false );
     ret.emplace_back( draw_armor_comp, translate_marker( "comp.Armor" ), 1, 32, false );
     ret.emplace_back( draw_compass_padding, translate_marker( "Compass" ), 8, 44,
@@ -2427,7 +2428,7 @@ static std::vector<window_panel> initialize_default_classic_panels()
                       default_render, true );
 #endif // TILES
     ret.emplace_back( draw_ai_goal, "AI Needs", 1, 44, false );
-    ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 4, 44, true );
+    ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 5, 44, true );
     return ret;
 }
 
@@ -2459,7 +2460,7 @@ static std::vector<window_panel> initialize_default_compact_panels()
 #endif // TILES
     ret.emplace_back( draw_ai_goal, "AI Needs", 1, 32, false );
 
-    ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 4, 32, true );
+    ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 5, 32, true );
     return ret;
 }
 
@@ -2478,7 +2479,7 @@ static std::vector<window_panel> initialize_default_label_narrow_panels()
     auto loc = window_panel( draw_loc_narrow, translate_marker( "Location" ), 6, 32, true );
     loc.set_height_override( []() { return location_height( false ); } );
     ret.push_back( std::move( loc ) );
-    ret.emplace_back( draw_wind, translate_marker( "Wind" ), 1, 32, false );
+    ret.emplace_back( draw_wind, translate_marker( "Wind" ), 1, 32, false, environment_panel );
     ret.emplace_back( draw_weapon_labels, translate_marker( "Weapon" ), 2, 32, true, weapon_panel );
     ret.emplace_back( draw_weightvolume_narrow, translate_marker( "Wgt/Vol" ), 2, 32,
                       true );
@@ -2500,7 +2501,7 @@ static std::vector<window_panel> initialize_default_label_narrow_panels()
 #endif // TILES
     ret.emplace_back( draw_ai_goal, "AI Needs", 1, 32, false );
 
-    ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 4, 32, true );
+    ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 5, 32, true );
     return ret;
 }
 
@@ -2519,7 +2520,7 @@ static std::vector<window_panel> initialize_default_label_panels()
     auto loc = window_panel( draw_loc_wide_map, translate_marker( "Location" ), 6, 44, true );
     loc.set_height_override( []() { return location_height( true ); } );
     ret.push_back( std::move( loc ) );
-    ret.emplace_back( draw_wind, translate_marker( "Wind" ), 1, 44, false );
+    ret.emplace_back( draw_wind, translate_marker( "Wind" ), 1, 44, false, environment_panel );
     ret.emplace_back( draw_loc_wide, translate_marker( "Location Alt" ), 6, 44, false );
     ret.emplace_back( draw_weapon_labels, translate_marker( "Weapon" ), 2, 44, true, weapon_panel );
     ret.emplace_back( draw_weightvolume_labels, translate_marker( "Wgt/Vol" ), 2, 44,
@@ -2541,7 +2542,7 @@ static std::vector<window_panel> initialize_default_label_panels()
 #endif // TILES
     ret.emplace_back( draw_ai_goal, "AI Needs", 1, 44, false );
 
-    ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 4, 44, true );
+    ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 5, 44, true );
     return ret;
 }
 
@@ -2628,8 +2629,7 @@ auto panel_manager::sync_lua_panels() -> void
                                      const std::string & widget_id,
     const std::vector<window_panel> &layout ) -> std::optional<int> {
         const auto entry_it = find_saved_entry( entries, widget_id );
-        if( entry_it == entries.end() )
-        {
+        if( entry_it == entries.end() ) {
             return std::nullopt;
         }
         const auto entry_index = static_cast<size_t>(

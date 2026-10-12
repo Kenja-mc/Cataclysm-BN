@@ -693,6 +693,8 @@ struct tile_search_params {
     int subtile;
     // rotation: { UP = 0, LEFT = 1, DOWN = 2, RIGHT = 3 }
     int rota;
+    // Terrain that faces a side (stairs, ramps, slopes): rota applies although the tileset does not rotate it.
+    bool directional = false;
 };
 
 class cata_tiles
@@ -726,6 +728,8 @@ class cata_tiles
         void draw_minimap( point dest, const tripoint_bub_ms &center, int width, int height );
         bool minimap_requires_animation() const;
         void reset_minimap();
+        auto item_thumbnail_sprite( const item &itm ) -> std::optional<int>;
+        auto draw_item_thumbnail( int tile_idx, SDL_Rect dest ) -> void;
 
     protected:
         /** How many rows and columns of tiles fit into given dimensions **/
@@ -808,51 +812,28 @@ class cata_tiles
         void draw_om_tile_recursively( const tripoint_abs_omt omp, const std::string &id, int rotation,
                                        int subtile, int base_z_offset );
 
-        /**
-         * @brief Try to draw either foreground or background using the given reference.
-         *
-         * @param tile Tile to draw.
-         * @param p Point to draw the tile at.
-         * @param loc_rand picked random int
-         * @param is_fg is foreground layer
-         * @param rota rotation: { UP = 0, LEFT = 1, DOWN = 2, RIGHT = 3 }
-         * @param tint tint configuration (color, contrast, saturation)
-         * @param ll light level
-         * @param apply_visual_effects use night vision and underwater colors?
-         * @param overlay_count how blue the tile looks for lower z levels
-         * @param height_3d return parameter for height of the sprite (use nullptr to discard)
-         * @param warp_hash UV warp surface hash, or TILESET_NO_WARP
-         * @return always true.
-         */
-        bool draw_sprite_at( const tile_type &tile, point_bub_ms p,
-                             unsigned int loc_rand, bool is_fg, int rota,
-                             const tint_config &tint, lit_level ll,
-                             bool apply_visual_effects, int overlay_count,
-                             int *height_3d, int retract = 0,
-                             size_t warp_hash = TILESET_NO_WARP,
-                             const render_light_tint &light_tint = {} );
+        struct sprite_draw_options {
+            const tile_type &tile;
+            point_bub_ms p;
+            unsigned int loc_rand;
+            bool is_fg;
+            int rota;
+            const tint_config &tint;
+            lit_level ll;
+            bool apply_visual_effects;
+            int overlay_count;
+            int *height_3d;
+            int retract;
+            size_t warp_hash;
+            const render_light_tint &light_tint;
+            bool anchor_to_tile = false;
+        };
 
-        /**
-         * @brief Calls draw_sprite_at() twice each for foreground and background.
-         *
-         * @param tile Tile to draw.
-         * @param p Point to draw the tile at.
-         * @param loc_rand picked random int
-         * @param rota rotation: { UP = 0, LEFT = 1, DOWN = 2, RIGHT = 3 }
-         * @param bg_tint background tint configuration
-         * @param fg_tint foreground tint configuration
-         * @param ll light level
-         * @param apply_visual_effects use night vision and underwater colors?
-         * @param height_3d return parameter for height of the sprite
-         * @param overlay_count how blue the tile looks for lower z levels
-         * @return always true.
-         */
-        bool draw_tile_at( const tile_type &tile, point_bub_ms p,
-                           unsigned int loc_rand, int rota,
-                           const tint_config &bg_tint, const tint_config &fg_tint,
-                           lit_level ll, bool apply_visual_effects, int &height_3d,
-                           int overlay_count, int retract,
-                           const render_light_tint &light_tint = {} );
+        /// Draw a foreground or background sprite, accumulating its stacked height.
+        auto draw_sprite_at( const sprite_draw_options &params ) -> bool;
+
+        /// Draw the background, then the foreground described by params.
+        auto draw_tile_at( const sprite_draw_options &params, const tint_config &bg_tint ) -> bool;
 
         /**
          * @brief Draws a colored solid color tile at position, with optional blending
@@ -939,6 +920,21 @@ class cata_tiles
                         const bool ( &invisible )[5], int z_drop );
         bool draw_field_or_item( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
                                  const bool ( &invisible )[5], int z_drop );
+        struct top_item_draw {
+            const tripoint_bub_ms &pos;
+            int &height_3d;
+            const bool ( &invisible )[5];
+            lit_level ll;
+            int z_drop;
+            bool surface = false;
+        };
+        auto draw_top_item( const top_item_draw &params ) -> bool;
+        auto draw_cliff_edges( const tripoint_bub_ms &p, int terrain_height_3d,
+                               const bool ( &invisible )[5] ) -> void;
+        auto item_sprite_id( const item &itm, std::string &variant ) -> const std::string &; // *NOPAD*
+        auto sprite_id_for_type( const itype_id &type,
+                                 const mtype_id &mon ) -> const std::string &; // *NOPAD*
+        auto corpse_sprite_id( const mtype_id &mon ) -> const std::string &; // *NOPAD*
         bool draw_vpart( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
                          const bool ( &invisible )[5], int z_drop );
         bool draw_critter_at( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
@@ -1199,6 +1195,8 @@ class cata_tiles
         std::map<tripoint_bub_ms, bool> graffiti_override;
         std::map<tripoint_bub_ms, trap_id> trap_override;
         std::map<tripoint_bub_ms, field_type_id> field_override;
+        // Corpse sprite ids keyed by monster id, so corpse thumbnails and draws do not rebuild strings.
+        std::map<std::string, std::string> corpse_sprite_ids;
         // bool represents item highlight
         std::map<tripoint_bub_ms, std::tuple<itype_id, mtype_id, bool>> item_override;
         // int, angle, bool represents part_mod, veh_dir, and highlight respectively

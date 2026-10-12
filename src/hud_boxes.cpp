@@ -483,7 +483,7 @@ auto draw( const avatar &you, const catacurses::window &w ) -> void
         for( const auto &l : b.lines ) {
             inner = std::max( inner, utf8_width( l.icon ) + 1 + utf8_width( l.text, true ) );
         }
-        inner = std::min( inner, std::max( 8, width / 3 ) );
+        inner = std::min( inner, std::max( 8, width / 2 ) );
         const auto box_w = inner + 4;
         const auto box_h = static_cast<int>( b.lines.size() ) + 2;
         const auto right = b.corner.ends_with( "right" );

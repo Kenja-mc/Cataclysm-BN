@@ -2003,7 +2003,7 @@ void cata_tiles::set_draw_scale( float scale )
 
 std::optional<tile_search_result> cata_tiles::tile_type_search( const tile_search_params &tile )
 {
-    auto [id, category, subcategory, subtile, rota] = tile;
+    auto [id, category, subcategory, subtile, rota, directional] = tile;
     std::optional<tile_lookup_res> res = find_tile_looks_like( id, category );
     const tile_type *tt = nullptr;
     if( res ) {
@@ -3783,7 +3783,9 @@ void cata_tiles::draw( point dest, const tripoint_bub_ms &center, int width, int
                     const auto row_points = std::ranges::subrange( row_begin, row_end );
                     for( tile_render_info &p : row_points ) {
                         if( p.pos.z() == z ) {
+                            const auto terrain_height_3d = p.height_3d;
                             draw_terrain( p.pos, p.ll, p.height_3d, p.invisible, center.z() - p.pos.z() );
+                            draw_cliff_edges( p.pos, terrain_height_3d, p.invisible );
                             draw_zone_overlay_for( p );
                         }
                     }
@@ -4700,7 +4702,7 @@ bool cata_tiles::draw_from_id_string(
     }
 
     // make sure we aren't going to rotate the tile if it shouldn't be rotated
-    if( !display_tile.rotates
+    if( !display_tile.rotates && !tile.directional
         && tile.category != C_NONE
         && tile.category != C_MONSTER
         && tile.category != C_BULLET ) {
@@ -4761,17 +4763,42 @@ bool cata_tiles::draw_from_id_string(
     if( tile.category == C_OVERMAP_TERRAIN
         && display_tile.has_om_transparency
         && overmap_transparency ) {
-        draw_sprite_at( display_tile, screen_pos, loc_rand, /*fg:*/ true,
-                        true_rota, fg_tint, ll, apply_visual_effects,
-                        base_overlay_alpha * overlay_count, &height_3d, retract,
-                        TILESET_NO_WARP, light_tint );
+        draw_sprite_at( {
+            .tile = display_tile,
+            .p = screen_pos,
+            .loc_rand = loc_rand,
+            .is_fg = true,
+            .rota = true_rota,
+            .tint = fg_tint,
+            .ll = ll,
+            .apply_visual_effects = apply_visual_effects,
+            .overlay_count = base_overlay_alpha * overlay_count,
+            .height_3d = &height_3d,
+            .retract = retract,
+            .warp_hash = TILESET_NO_WARP,
+            .light_tint = light_tint,
+            .anchor_to_tile = tile.directional
+        } );
         return true;
     }
 
     //draw it!
-    draw_tile_at( display_tile, screen_pos, loc_rand, true_rota,
-                  bg_tint, fg_tint, ll, apply_visual_effects, height_3d,
-                  base_overlay_alpha * overlay_count, retract, light_tint );
+    draw_tile_at( {
+        .tile = display_tile,
+        .p = screen_pos,
+        .loc_rand = loc_rand,
+        .is_fg = true,
+        .rota = true_rota,
+        .tint = fg_tint,
+        .ll = ll,
+        .apply_visual_effects = apply_visual_effects,
+        .overlay_count = base_overlay_alpha * overlay_count,
+        .height_3d = &height_3d,
+        .retract = retract,
+        .warp_hash = TILESET_NO_WARP,
+        .light_tint = light_tint,
+        .anchor_to_tile = tile.directional
+    }, bg_tint );
 
     return true;
 }
@@ -4801,13 +4828,10 @@ void cata_tiles::draw_om_tile_recursively( const tripoint_abs_omt omp, const std
         ll, false, base_z_offset, false );
 }
 
-bool cata_tiles::draw_sprite_at( const tile_type &tile, point_bub_ms p,
-                                 unsigned int loc_rand, bool is_fg, int rota,
-                                 const tint_config &tint, lit_level ll,
-                                 bool apply_visual_effects, int overlay_count,
-                                 int *height_3d, int retract, size_t warp_hash,
-                                 const render_light_tint &light_tint )
+auto cata_tiles::draw_sprite_at( const sprite_draw_options &params ) -> bool
 {
+    const auto &[tile, p, loc_rand, is_fg, rota, tint, ll, apply_visual_effects,
+                 overlay_count, height_3d, retract, warp_hash, light_tint, anchor_to_tile] = params;
 
 
     const auto &sv_list_sprite = is_fg ? tile.sprite.fg : tile.sprite.bg;
@@ -4921,6 +4945,18 @@ bool cata_tiles::draw_sprite_at( const tile_type &tile, point_bub_ms p,
                     tileset_ptr->get_tile_width() ) + warp_offset_screen_y;
     destination.w = width * tile_width * tile.pixelscale / tileset_ptr->get_tile_width();
     destination.h = height * tile_height * tile.pixelscale / tileset_ptr->get_tile_height();
+    // Oversized artwork must turn around its map tile, not its transparent image padding.
+    auto tile_center = SDL_Point{};
+    const auto use_tile_center = anchor_to_tile && is_fg && rotate_sprite;
+    if( use_tile_center ) {
+        tile_center = {
+            .x = p.x() + tile_width / 2 - destination.x,
+            .y = p.y() + tile_height / 2 -
+            divide_round_down( height_3d_val * tile_width, tileset_ptr->get_tile_width() ) -
+            destination.y
+        };
+    }
+    const auto *rotation_center = use_tile_center ? &tile_center : nullptr;
 
     const auto should_apply_light_tint = light_tint.has_value() &&
                                          ( fx_type == tileset_fx_type::none ||
@@ -4939,7 +4975,8 @@ bool cata_tiles::draw_sprite_at( const tile_type &tile, point_bub_ms p,
         sprite_tex->set_blend_mode( SDL_BLENDMODE_ADD );
         sprite_tex->set_color_mod( light_tint.color.r, light_tint.color.g, light_tint.color.b );
         sprite_tex->set_alpha_mod( light_tint.alpha );
-        const auto ret = sprite_tex->render_copy_ex( renderer, &destination, rotation, nullptr, flip );
+        const auto ret = sprite_tex->render_copy_ex( renderer, &destination, rotation, rotation_center,
+                         flip );
 
         sprite_tex->set_color_mod( old_r, old_g, old_b );
         sprite_tex->set_alpha_mod( old_alpha );
@@ -4952,7 +4989,7 @@ bool cata_tiles::draw_sprite_at( const tile_type &tile, point_bub_ms p,
 
         // UV warping is now handled in get_or_default, so we just render normally
         sprite_tex->set_alpha_mod( 255 );
-        ret = sprite_tex->render_copy_ex( renderer, &destination, rotation, nullptr, flip );
+        ret = sprite_tex->render_copy_ex( renderer, &destination, rotation, rotation_center, flip );
         if( should_apply_light_tint && !render_dynamic_light_tint( rotation, flip ) ) {
             ret = 0;
         }
@@ -4964,7 +5001,7 @@ bool cata_tiles::draw_sprite_at( const tile_type &tile, point_bub_ms p,
                     effective_warp_hash, tile_offset );
             if( overlay_tex ) {
                 overlay_tex->set_alpha_mod( std::min( 192, overlay_count ) );
-                overlay_tex->render_copy_ex( renderer, &destination, rotation, nullptr, flip );
+                overlay_tex->render_copy_ex( renderer, &destination, rotation, rotation_center, flip );
                 overlay_tex->set_alpha_mod( 255 );
             }
         }
@@ -4989,10 +5026,11 @@ bool cata_tiles::draw_sprite_at( const tile_type &tile, point_bub_ms p,
                 }
                 break;
             case 2:
-                // 180 degrees, implemented with flips instead of rotation
+                // Flips ignore the custom pivot needed by tile-anchored artwork.
                 if( !tile_iso ) {
                     // never flip isometric tiles vertically
-                    ret = render( 0, static_cast<SDL_FlipMode>( SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL ) );
+                    ret = anchor_to_tile ? render( 180, SDL_FLIP_NONE ) :
+                          render( 0, static_cast<SDL_FlipMode>( SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL ) );
                 } else {
                     ret = render( 0, SDL_FLIP_NONE );
                 }
@@ -5062,20 +5100,25 @@ bool cata_tiles::draw_sprite_at( const tile_type &tile, point_bub_ms p,
     return true;
 }
 
-bool cata_tiles::draw_tile_at( const tile_type &tile, point_bub_ms p,
-                               unsigned int loc_rand, int rota,
-                               const tint_config &bg_tint,
-                               const tint_config &fg_tint, lit_level ll,
-                               bool apply_visual_effects, int &height_3d,
-                               int overlay_count, int retract,
-                               const render_light_tint &light_tint )
+auto cata_tiles::draw_tile_at( const sprite_draw_options &params,
+                               const tint_config &bg_tint ) -> bool
 {
-    draw_sprite_at( tile, p, loc_rand, /*fg:*/ false, rota, bg_tint, ll,
-                    apply_visual_effects, overlay_count, nullptr, retract,
-                    TILESET_NO_WARP, light_tint );
-    draw_sprite_at( tile, p, loc_rand, /*fg:*/ true, rota, fg_tint, ll,
-                    apply_visual_effects, overlay_count, &height_3d, retract,
-                    TILESET_NO_WARP, light_tint );
+    draw_sprite_at( {
+        .tile = params.tile,
+        .p = params.p,
+        .loc_rand = params.loc_rand,
+        .is_fg = false,
+        .rota = params.rota,
+        .tint = bg_tint,
+        .ll = params.ll,
+        .apply_visual_effects = params.apply_visual_effects,
+        .overlay_count = params.overlay_count,
+        .height_3d = nullptr,
+        .retract = params.retract,
+        .warp_hash = params.warp_hash,
+        .light_tint = params.light_tint
+    } );
+    draw_sprite_at( params );
     return true;
 }
 
@@ -5262,6 +5305,47 @@ bool cata_tiles::draw_block( const tripoint_bub_ms &p, SDL_Color color, int scal
     return true;
 }
 
+namespace
+{
+
+constexpr auto directional_terrain_ids = std::array<std::string_view, 8> {
+    "t_stairs_down", "t_stairs_up", "t_ramp_down_high", "t_ramp_down_low",
+    "t_ramp_up_high", "t_ramp_up_low", "t_slope_down", "t_slope_up"
+};
+
+auto is_directional_terrain( const std::string &id ) -> bool
+{
+    return directional_stairs_enabled && std::ranges::contains( directional_terrain_ids, id );
+}
+
+auto items_on_furniture_surface( const tripoint_bub_ms &p ) -> bool
+{
+    const auto furniture = get_map().furn( p );
+    return item_layering_enabled && furniture && furniture.id() != furn_f_mannequin;
+}
+
+auto stairs_facing( const ter_id( &neighbors )[4], const bool ( &invisible )[5],
+                    const tripoint_bub_ms &p ) -> int
+{
+    constexpr auto rota_of_neighbor = std::array{ 0, 1, 3, 2 };
+    const auto walkable = [&]( const auto i ) {
+        const auto &t = neighbors[i];
+        return !invisible[i + 1] && t && t != t_open_air && t->movecost > 0 &&
+               g->u.sees( p + neighborhood[i] );
+    };
+    if( walkable( 0 ) ) {
+        return rota_of_neighbor[0];
+    }
+    for( auto i = 1; i < 4; ++i ) {
+        if( walkable( i ) ) {
+            return rota_of_neighbor[i];
+        }
+    }
+    return 0;
+}
+
+} // namespace
+
 bool cata_tiles::draw_terrain( const tripoint_bub_ms &p, const lit_level ll, int &height_3d,
                                const bool ( &invisible )[5], int z_drop )
 {
@@ -5318,7 +5402,7 @@ bool cata_tiles::draw_terrain( const tripoint_bub_ms &p, const lit_level ll, int
                 return true;
             }
 
-            const auto tile = tile_search_params{ .id = tname, .category = C_TERRAIN, .subcategory = empty_string, .subtile = subtile, .rota = rotation };
+            const auto tile = tile_search_params{ .id = tname, .category = C_TERRAIN, .subcategory = empty_string, .subtile = subtile, .rota = rotation, .directional = is_directional_terrain( tname ) };
             return draw_from_id_string(
                        tile, p, bgCol, fgCol,
                        ll, true, z_drop, false, height_3d );
@@ -5343,7 +5427,10 @@ bool cata_tiles::draw_terrain( const tripoint_bub_ms &p, const lit_level ll, int
             // tile overrides are always shown with full visibility
             const lit_level lit = overridden ? lit_level::LIT : ll;
             const bool nv = !overridden;
-            const tile_search_params tile { tname, C_TERRAIN, empty_string, subtile, rotation };
+            const auto tile = tile_search_params{
+                .id = tname, .category = C_TERRAIN, .subcategory = empty_string,
+                .subtile = subtile, .rota = rotation, .directional = is_directional_terrain( tname )
+            };
             return draw_from_id_string(
                        tile, p, bgCol, fgCol,
                        lit, nv, z_drop, false, height_3d );
@@ -5353,7 +5440,11 @@ bool cata_tiles::draw_terrain( const tripoint_bub_ms &p, const lit_level ll, int
         const auto ret = get_ter_memory_at( p );
         if( ret.has_value() ) {
             const auto& [tile_id, subtile, rotation] = ret.value();
-            const tile_search_params tile { tile_id, C_TERRAIN, empty_string, subtile, rotation };
+            const auto tile = tile_search_params{
+                .id = tile_id, .category = C_TERRAIN, .subcategory = empty_string,
+                .subtile = subtile, .rota = rotation,
+                .directional = is_directional_terrain( tile_id )
+            };
             return draw_from_id_string(
                        tile, p, bgCol, fgCol,
                        lit_level::MEMORIZED, true, z_drop, false, height_3d );
@@ -5461,6 +5552,193 @@ bool cata_tiles::draw_furniture( const tripoint_bub_ms &p, const lit_level ll, i
         }
     }
     return false;
+}
+
+auto cata_tiles::draw_cliff_edges( const tripoint_bub_ms &p, const int terrain_height_3d,
+                                   const bool ( &invisible )[5] ) -> void
+{
+    // Iso footprints are diamonds, so rectangular edge strips would not sit on the tile edges.
+    if( !cliff_shading_enabled || tile_iso || invisible[0] ) {
+        return;
+    }
+    const auto &here = get_map();
+    const auto terrain = here.ter( p );
+    if( !terrain || terrain == t_open_air ) {
+        return;
+    }
+    // invisible[1 + i] and neighborhood[i] are both ordered south, east, west, north.
+    const auto open_air_edge = [&]( const int i ) {
+        if( invisible[1 + i] ) {
+            return false;
+        }
+        const auto q = p + neighborhood[i];
+        return here.inbounds( q ) && here.ter( q ) == t_open_air &&
+               g->u.sees( q ) && g->u.sees( p );
+    };
+    const auto visible_edges = std::array{
+        open_air_edge( 0 ), open_air_edge( 1 ), open_air_edge( 2 ), open_air_edge( 3 )
+    };
+    if( std::ranges::none_of( visible_edges, std::identity{} ) ) {
+        return;
+    }
+    constexpr auto state_flags = sdl_render_state_flags::draw_color |
+                                 sdl_render_state_flags::blend_mode;
+    const auto render_state = sdl_save_render_state<state_flags>( renderer.get() );
+    SetRenderDrawBlendMode( renderer, SDL_BLENDMODE_BLEND );
+    // Terrain sprites are lifted by their stacked height; the strips are lifted by the same amount.
+    const auto screen = player_to_screen( p.xy() ) +
+                        point( 0, divide_round_down( -terrain_height_3d * tile_width,
+                               tileset_ptr->get_tile_width() ) );
+    const auto strip_h = std::max( 1, tile_height / 10 );
+    const auto strip_w = std::max( 1, tile_width / 10 );
+    const auto shade = SDL_Color{ .r = 0, .g = 0, .b = 0, .a = 80 };
+    if( visible_edges[0] ) {
+        geometry->rect( renderer, point( screen.x, screen.y + tile_height - strip_h ), tile_width, strip_h,
+                        shade );
+    }
+    if( visible_edges[1] ) {
+        geometry->rect( renderer, point( screen.x + tile_width - strip_w, screen.y ), strip_w, tile_height,
+                        shade );
+    }
+    if( visible_edges[2] ) {
+        geometry->rect( renderer, screen, strip_w, tile_height, shade );
+    }
+    if( visible_edges[3] ) {
+        geometry->rect( renderer, screen, tile_width, strip_h, shade );
+    }
+    sdl_restore_render_state( renderer.get(), render_state );
+}
+
+auto cata_tiles::corpse_sprite_id( const mtype_id &mon ) -> const std::string & // *NOPAD*
+{
+    const auto &mon_str = mon.str();
+    auto it = corpse_sprite_ids.find( mon_str );
+    if( it == corpse_sprite_ids.end() ) {
+        it = corpse_sprite_ids.emplace( mon_str, "corpse_" + mon_str ).first;
+    }
+    return it->second;
+}
+
+auto cata_tiles::sprite_id_for_type( const itype_id &type,
+                                     const mtype_id &mon ) -> const std::string & // *NOPAD*
+{
+    if( type == itype_corpse && mon ) {
+        return corpse_sprite_id( mon );
+    }
+    return type.str();
+}
+
+auto cata_tiles::item_sprite_id( const item &itm,
+                                 std::string &variant ) -> const std::string & // *NOPAD*
+{
+    // Variants keep their old item ids, which tilesets may still have sprites for.
+    variant = item_variants::sprite( itm );
+    if( !variant.empty() && !find_tile_with_season( variant ) ) {
+        variant.clear();
+    }
+    if( !variant.empty() ) {
+        return variant;
+    }
+    const auto *mon = itm.get_mtype();
+    return sprite_id_for_type( itm.typeId(), mon ? mon->id : mtype_id::NULL_ID() );
+}
+
+
+
+auto cata_tiles::draw_top_item( const top_item_draw &params ) -> bool
+{
+    const auto &p = params.pos;
+    auto &height_3d = params.height_3d;
+    const auto &invisible = params.invisible;
+    auto &here = get_map();
+    const auto it_override = item_override.find( p );
+    const auto overridden = it_override != item_override.end();
+    auto itm = static_cast<const item *>( nullptr );
+    auto it_id = itype_id{};
+    auto mon_id = mtype_id{};
+    auto hilite = false;
+    if( overridden ) {
+        std::tie( it_id, mon_id, hilite ) = it_override->second;
+        if( it_id.is_null() ) {
+            return false;
+        }
+    } else if( !invisible[0] && here.sees_some_items( p, g->u ) ) {
+        const auto &tile = here.maptile_at( p );
+        itm = &tile.get_uppermost_item();
+        if( !itm->type ) {
+            return false;
+        }
+        hilite = tile.get_item_count() > 1;
+    } else {
+        return false;
+    }
+
+    auto variant = std::string{};
+    const auto &sprite_id = itm ? item_sprite_id( *itm, variant ) : sprite_id_for_type( it_id, mon_id );
+    const auto *type = itm ? itm->type : &*it_id;
+    const auto category = type->get_item_type_string();
+    auto bg_tint = tint_config{};
+    auto fg_tint = tint_config{};
+    if( itm ) {
+        std::tie( bg_tint, fg_tint ) = get_item_color( *itm, here, p );
+    }
+
+    const auto lit = overridden ? lit_level::LIT : params.ll;
+    const auto tile = tile_search_params{
+        .id = sprite_id, .category = C_ITEM, .subcategory = category, .subtile = 0, .rota = 0
+    };
+    auto drawn = false;
+    if( params.surface ) {
+        // Keep the extra furniture lift local, but retain the sprite's native stack contribution.
+        constexpr auto surface_offset = 1;
+        auto surface_height = height_3d + surface_offset;
+        drawn = draw_from_id_string( tile, p, bg_tint, fg_tint, lit, !overridden, params.z_drop, false,
+                                     surface_height );
+        height_3d = surface_height - surface_offset;
+    } else {
+        drawn = draw_from_id_string( tile, p, bg_tint, fg_tint, lit, !overridden, params.z_drop, false,
+                                     height_3d );
+    }
+    if( drawn && hilite ) {
+        draw_item_highlight( p );
+    }
+    return drawn;
+}
+
+auto cata_tiles::item_thumbnail_sprite( const item &itm ) -> std::optional<int>
+{
+    if( !itm.type ) {
+        return std::nullopt;
+    }
+    auto variant = std::string{};
+    const auto &sprite_id = item_sprite_id( itm, variant );
+    const auto category = itm.type->get_item_type_string();
+    const auto tile_params = tile_search_params{
+        .id = sprite_id, .category = C_ITEM, .subcategory = category, .subtile = 0, .rota = 0
+    };
+    const auto search_result = tile_type_search( tile_params );
+    if( !search_result ) {
+        return std::nullopt;
+    }
+    const auto picked = search_result->tt->sprite.fg.pick( 0 );
+    if( !picked || picked->empty() ) {
+        return std::nullopt;
+    }
+    return picked->front();
+}
+
+auto cata_tiles::draw_item_thumbnail( const int tile_idx, const SDL_Rect dest ) -> void
+{
+    const auto [sprite_tex, warp_offset] = tileset_ptr->get_or_default(
+            tile_idx, TILESET_NO_MASK, tileset_fx_type::none, TILESET_NO_COLOR, TILESET_NO_WARP, point_zero );
+    if( !sprite_tex ) {
+        return;
+    }
+    auto dst_rect = SDL_FRect{
+        .x = static_cast<float>( dest.x ), .y = static_cast<float>( dest.y ),
+        .w = static_cast<float>( dest.w ), .h = static_cast<float>( dest.h )
+    };
+    sprite_tex->render_copy( renderer, &dst_rect );
 }
 
 bool cata_tiles::draw_trap( const tripoint_bub_ms &p, const lit_level ll, int &height_3d,
@@ -5578,8 +5856,7 @@ bool cata_tiles::draw_field_or_item( const tripoint_bub_ms &p, const lit_level l
     const auto fld_override = field_override.find( p );
     const bool fld_overridden = fld_override != field_override.end();
     map &here = get_map();
-    const field_type_id &fld = fld_overridden ?
-                               fld_override->second : here.field_at( p ).displayed_field_type();
+    const auto fld = fld_overridden ? fld_override->second : here.field_at( p ).displayed_field_type();
 
     bool ret_draw_field = false;
     bool ret_draw_items = false;
@@ -5612,24 +5889,8 @@ bool cata_tiles::draw_field_or_item( const tripoint_bub_ms &p, const lit_level l
                              lit, nv, z_drop, false );
     }
     if( fld.obj().display_items ) {
-        const auto it_override = item_override.find( p );
-        const bool it_overridden = it_override != item_override.end();
-
-        tint_config bgCol;
-        tint_config fgCol;
-
-        itype_id it_id;
-        mtype_id mon_id;
-        bool hilite;
-        const itype *it_type;
-        auto variant_sprite = std::string();
-        if( it_overridden ) {
-            it_id = std::get<0>( it_override->second );
-            mon_id = std::get<1>( it_override->second );
-            hilite = std::get<2>( it_override->second );
-            it_type = &*it_id;
-        } else if( !invisible[0] && here.sees_some_items( p, g->u ) ) {
-            if( here.furn( p ).id() == furn_f_mannequin ) {
+        if( !item_override.contains( p ) && here.furn( p ).id() == furn_f_mannequin ) {
+            if( !invisible[0] && here.sees_some_items( p, g->u ) ) {
                 auto draw_mannequin_item = [&]( const item & itm ) {
                     if( itm.has_flag( flag_HIDDEN ) ) {
                         return false;
@@ -5656,45 +5917,12 @@ bool cata_tiles::draw_field_or_item( const tripoint_bub_ms &p, const lit_level l
                 for( const auto *itm : here.i_at( p ) ) {
                     ret_draw_items = draw_mannequin_item( *itm ) || ret_draw_items;
                 }
-                it_type = nullptr;
-                hilite = false;
-            } else {
-                const maptile &tile = here.maptile_at( p );
-                const item &itm = tile.get_uppermost_item();
-                const mtype *const mon = itm.get_mtype();
-                it_id = itm.typeId();
-                mon_id = mon ? mon->id : mtype_id::NULL_ID();
-                hilite = tile.get_item_count() > 1;
-                it_type = itm.type;
-                // Variants keep their old item ids, which tilesets may still have sprites for.
-                variant_sprite = item_variants::sprite( itm );
-                if( !variant_sprite.empty() && !find_tile_with_season( variant_sprite ) ) {
-                    variant_sprite.clear();
-                }
-
-                std::tie( bgCol, fgCol ) = get_item_color( itm, here, p );
             }
         } else {
-            it_type = nullptr;
-            hilite = false;
-        }
-
-        if( it_type && !it_id.is_null() ) {
-            const std::string disp_id = !variant_sprite.empty() ? variant_sprite
-                                        : it_id == itype_corpse && mon_id
-                                        ? "corpse_" + mon_id.str()
-                                        : it_id.str();
-            const std::string it_category = it_type->get_item_type_string();
-            const lit_level lit = it_overridden ? lit_level::LIT : ll;
-            const bool nv = !it_overridden;
-
-            const tile_search_params tile { disp_id, C_ITEM, it_category, 0, 0 };
-            ret_draw_items = draw_from_id_string(
-                                 tile, p, bgCol, fgCol,
-                                 lit, nv, z_drop, false, height_3d );
-            if( ret_draw_items && hilite ) {
-                draw_item_highlight( p );
-            }
+            ret_draw_items = draw_top_item( {
+                .pos = p, .height_3d = height_3d, .invisible = invisible, .ll = ll,
+                .z_drop = z_drop, .surface = items_on_furniture_surface( p )
+            } );
         }
     }
     return ret_draw_field && ret_draw_items;
@@ -7285,6 +7513,13 @@ void cata_tiles::get_terrain_orientation( const tripoint_bub_ms &p, int &rota, i
         ter( p + point_west, invisible[3] ),
         ter( p + point_north, invisible[4] )
     };
+
+    if( is_directional_terrain( tid.id().str() ) ) {
+        // Stairs and ramps face their walkable side and are never joined to neighbours.
+        rota = stairs_facing( neighborhood, invisible, p );
+        subtile = 0;
+        return;
+    }
 
     char val = 0;
 

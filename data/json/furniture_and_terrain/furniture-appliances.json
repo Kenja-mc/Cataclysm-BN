@@ -272,6 +272,7 @@
     "prompt": "Switch off the floor lamp.",
     "message": "You switch off the floor lamp.",
     "light_emitted": 160,
+    "light_color": "#ffd08a",
     "//": "Please keep steady_consumer to 300 s or more to avoid lag.",
     "active": [
       "steady_consumer",
@@ -356,6 +357,7 @@
     "message": "You switch off the floodlight.",
     "//": "Increased brightness and power draw over utility lights which don't draw grid power, but far less than vehicle ones",
     "light_emitted": 400,
+    "light_color": "#ffffff",
     "//2": "Please keep steady_consumer to 300 s or more to avoid lag.",
     "active": [
       "steady_consumer",
@@ -442,6 +444,7 @@
     "prompt": "Switch off the street light.",
     "message": "You switch off the street light.",
     "light_emitted": 320,
+    "light_color": "#ffd08a",
     "//": "Please keep steady_consumer to 300 s or more to avoid lag.",
     "active": [
       "steady_consumer",
@@ -2671,6 +2674,7 @@
     "transforms_into": "f_space_heater_off",
     "message": "You turn the heater off.",
     "light_emitted": 2,
+    "light_color": "#ff6633",
     "//": "Exception on steady_consumer for some furniture.",
     "active": [
       "steady_consumer",
@@ -2742,6 +2746,7 @@
     "transforms_into": "f_space_heater_large_off",
     "message": "You turn the heater off.",
     "light_emitted": 2,
+    "light_color": "#ff6633",
     "//": "Exception on steady_consumer for some furniture.",
     "active": [
       "steady_consumer",
@@ -2954,6 +2959,7 @@
     "prompt": "Switch off the ceiling lamp.",
     "message": "You switched off the ceiling lamp.",
     "light_emitted": 120,
+    "light_color": "#fff2cc",
     "active": [
       "steady_consumer",
       {
@@ -2991,7 +2997,8 @@
     "transforms_into": "f_olight_nogrid_off",
     "prompt": "Switch off the ceiling lamp.",
     "message": "You switched off the ceiling lamp.",
-    "light_emitted": 120
+    "light_emitted": 120,
+    "light_color": "#fff2cc"
   },
   {
     "type": "furniture",

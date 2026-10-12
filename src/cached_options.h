@@ -132,6 +132,12 @@ extern visibility_scaling_mode visibility_scaling;
 extern bool lazy_border_enabled;
 extern int retained_omt_cache_length;
 
+/// Optional native tiles presentation.
+extern bool item_layering_enabled;
+extern bool cliff_shading_enabled;
+extern bool directional_stairs_enabled;
+extern bool item_thumbnails_enabled;
+
 /**
  * Maximum number of fire-spread-loaded submaps allowed across all dimensions
  * simultaneously.  Cached from the FIRE_SPREAD_SUBMAP_CAP world option.

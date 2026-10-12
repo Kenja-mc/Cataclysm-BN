@@ -52,6 +52,9 @@
 #include "vehicle/vehicle_part.h"
 #include "vehicle/vehicle_selector.h"
 #include "vehicle/vpart_position.h"
+#if defined(TILES)
+#include "sdltiles.h"
+#endif
 
 #include <algorithm>
 #include <array>
@@ -687,10 +690,15 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
 
             pickupH = maxitems + pickupBorderRows;
 
+#if defined(TILES)
+            const auto icon_cells = item_thumbnail_gutter_cells();
+#else
+            const auto icon_cells = 0;
+#endif
             //find max length of item name and resize pickup window width
             for( const std::list<item_stack::iterator> &cur_list : stacked_here ) {
                 const item &this_item = **cur_list.front();
-                const int item_len = utf8_width( remove_color_tags( this_item.display_name() ) ) + 10;
+                const int item_len = utf8_width( remove_color_tags( this_item.display_name() ) ) + 10 + icon_cells;
                 if( item_len > pickupW && item_len < TERMX ) {
                     pickupW = item_len;
                 }
@@ -783,6 +791,10 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
             wnoutrefresh( w_item_info );
 
             const std::string pickup_chars = ctxt.get_available_single_char_hotkeys( all_pickup_chars );
+            auto icon_cells = 0;
+#if defined(TILES)
+            icon_cells = item_thumbnail_gutter_cells();
+#endif
 
             werase( w_pickup );
             for( int cur_it = start; cur_it < start + maxitems; cur_it++ ) {
@@ -795,7 +807,7 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
                     }
 
                     if( cur_it < static_cast<int>( pickup_chars.size() ) ) {
-                        mvwputch( w_pickup, point( 0, 1 + ( cur_it % maxitems ) ), icolor,
+                        mvwputch( w_pickup, point( icon_cells, 1 + ( cur_it % maxitems ) ), icolor,
                                   static_cast<char>( pickup_chars[cur_it] ) );
                     } else if( cur_it < static_cast<int>( pickup_chars.size() ) + static_cast<int>
                                ( pickup_chars.size() ) *
@@ -803,10 +815,10 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
                         int p = cur_it - pickup_chars.size();
                         int p1 = p / pickup_chars.size();
                         int p2 = p % pickup_chars.size();
-                        mvwprintz( w_pickup, point( 0, 1 + ( cur_it % maxitems ) ), icolor, "`%c%c",
+                        mvwprintz( w_pickup, point( icon_cells, 1 + ( cur_it % maxitems ) ), icolor, "`%c%c",
                                    static_cast<char>( pickup_chars[p1] ), static_cast<char>( pickup_chars[p2] ) );
                     } else {
-                        mvwputch( w_pickup, point( 0, 1 + ( cur_it % maxitems ) ), icolor, ' ' );
+                        mvwputch( w_pickup, point( icon_cells, 1 + ( cur_it % maxitems ) ), icolor, ' ' );
                     }
                     if( getitem[true_it].parent ) {
                         const pickup_count &parent = getitem[*getitem[true_it].parent];
@@ -866,8 +878,13 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
                         item_name = string_format( "<color_light_red>!</color> %s", item_name );
                     }
 
-                    trim_and_print( w_pickup, point( 6, 1 + ( cur_it % maxitems ) ), pickupW - 4, icolor,
-                                    item_name );
+                    trim_and_print( w_pickup, point( 6 + icon_cells, 1 + ( cur_it % maxitems ) ),
+                                    pickupW - 4 - icon_cells, icolor, item_name );
+#if defined(TILES)
+                    register_item_thumbnail( w_pickup, this_item, {
+                        .cell = point( 0, 1 + ( cur_it % maxitems ) ), .size = point( icon_cells, 1 )
+                    } );
+#endif
                 }
             }
 

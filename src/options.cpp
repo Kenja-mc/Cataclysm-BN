@@ -1509,12 +1509,12 @@ std::vector<options_manager::id_and_option> options_manager::build_tilesets_list
 
     // Load from data directory
     std::vector<options_manager::id_and_option> data_tilesets = load_tilesets_from(
-                PATH_INFO::gfxdir() );
+            PATH_INFO::gfxdir() );
     result.insert( result.end(), data_tilesets.begin(), data_tilesets.end() );
 
     // Load from user directory
     std::vector<options_manager::id_and_option> user_tilesets = load_tilesets_from(
-                PATH_INFO::user_gfx() );
+            PATH_INFO::user_gfx() );
     for( const options_manager::id_and_option &id : user_tilesets ) {
         if( !std::ranges::contains( result, id ) ) {
             result.emplace_back( id );
@@ -1606,14 +1606,12 @@ auto options_manager::parse_option_definition_entry( const JsonObject &jo ) -> v
 {
     const auto type = jo.get_string( "type" );
     const auto has_page = [&]( const std::string & page_id ) -> bool {
-        return std::ranges::any_of( pages_, [&]( const Page & page )
-        {
+        return std::ranges::any_of( pages_, [&]( const Page & page ) {
             return page.id_ == page_id;
         } );
     };
     const auto has_group = [&]( const std::string & group_id ) -> bool {
-        return std::ranges::any_of( groups_, [&]( const Group & group )
-        {
+        return std::ranges::any_of( groups_, [&]( const Group & group ) {
             return group.id_ == group_id;
         } );
     };
@@ -1867,7 +1865,7 @@ void options_manager::add_options_interface()
 
     add( "HHG_URL", interface, translate_marker( "Hitchhiker's Guide URL" ),
          translate_marker( "The URL opened by pressing the open HHG keybind." ),
-         "https://cataclysmbn-guide.com", 60
+         "https://kenja-mc.github.io/Cataclysm-BN/guide/", 60
        );
 
     add_empty_line();
@@ -1951,13 +1949,18 @@ void options_manager::add_options_interface()
        );
 
     add( "CRAFTING_PART_CHAINS", interface, translate_marker( "Crafting part chains" ),
-         translate_marker( "If true, the crafting menu marks a missing component you could craft right now and offers to jump to that recipe." ),
+         translate_marker( "If true, the crafting menu marks a missing component you could craft right now, distinguishes craftable parts from missing uncraftable ones, shows a parts panel with the part recipe and estimated extra crafting time, and offers to jump to that recipe." ),
          true
        );
 
     add( "CONTEXTUAL_INTERACT", interface,
          translate_marker( "Contextual interact" ),
          translate_marker( "If true, Space (interact) does the only sensible adjacent action without asking for a direction, and lists what each direction does when there are several." ),
+         true
+       );
+
+    add( "NPC_UI", interface, translate_marker( "NPC interface" ),
+         translate_marker( "If true, the chat menu offers a follower command palette for viewing and changing follower rules without entering dialogue." ),
          true
        );
 
@@ -1986,8 +1989,7 @@ void options_manager::add_options_interface()
     "top_left" );
 
     add( "HUD_COMBAT_BOX", interface, translate_marker( "Weapon box" ),
-         translate_marker( "A small box on the map showing what you fight with and your fighting style." ),
-    {
+    translate_marker( "A small box on the map showing what you fight with and your fighting style." ), {
         { "top_left", translate_marker( "Top left" ) }, { "top_right", translate_marker( "Top right" ) },
         { "bottom_left", translate_marker( "Bottom left" ) }, { "bottom_right", translate_marker( "Bottom right" ) },
         { "off", translate_marker( "Off" ) }
@@ -2305,13 +2307,18 @@ void options_manager::add_options_interface()
     "show", COPT_CURSES_HIDE );
 
     add( "EDGE_SCROLL", interface, translate_marker( "Edge scrolling" ),
-    translate_marker( "Edge scrolling with the mouse." ), {
+    translate_marker( "Mouse edge-scrolling speed for look mode, the overmap and optional main-map cursor panning." ), {
         std::make_tuple( -1, translate_marker( "Disabled" ) ),
         std::make_tuple( 100, translate_marker( "Slow" ) ),
         std::make_tuple( 30, translate_marker( "Normal" ) ),
         std::make_tuple( 10, translate_marker( "Fast" ) )
     },
-    30, 30, COPT_CURSES_HIDE );
+    30, 30 );
+
+    add( "CURSOR_PANNING", interface, translate_marker( "Cursor panning" ),
+         translate_marker( "If true, in normal play holding the mouse at the edge of the map pans the view; clicks and hover act on the panned view.  Moving or pressing a key re-centres.  Uses the Edge scrolling speed; Disabled stops panning." ),
+         false
+       );
 
 }
 
@@ -2584,6 +2591,34 @@ void options_manager::add_options_graphics()
 
     get_option( "STATE_MODIFIERS" ).setPrerequisite( "USE_TILES" );
 
+    add( "ITEM_LAYERING", graphics, translate_marker( "Item layering on furniture" ),
+         translate_marker( "If true, raise items on furniture slightly above the furniture sprite.  If false, use the original item height." ),
+         true, COPT_CURSES_HIDE
+       );
+
+    get_option( "ITEM_LAYERING" ).setPrerequisite( "USE_TILES" );
+
+    add( "CLIFF_SHADING", graphics, translate_marker( "Cliff edge shading" ),
+         translate_marker( "If true, shade visible cliff edges in orthographic tiles to show height differences." ),
+         true, COPT_CURSES_HIDE
+       );
+
+    get_option( "CLIFF_SHADING" ).setPrerequisite( "USE_TILES" );
+
+    add( "DIRECTIONAL_STAIRS", graphics, translate_marker( "Directional stairs" ),
+         translate_marker( "If true, orient stairs and ramps toward adjacent visible walkable tiles." ),
+         true, COPT_CURSES_HIDE
+       );
+
+    get_option( "DIRECTIONAL_STAIRS" ).setPrerequisite( "USE_TILES" );
+
+    add( "ITEM_THUMBNAILS", graphics, translate_marker( "Item thumbnails in UI" ),
+         translate_marker( "If true, item sprites are shown in inventory and pickup UI." ),
+         true, COPT_CURSES_HIDE
+       );
+
+    get_option( "ITEM_THUMBNAILS" ).setPrerequisite( "USE_TILES" );
+
     add_empty_line();
 
     add( "PIXEL_MINIMAP", graphics, translate_marker( "Pixel minimap" ),
@@ -2645,11 +2680,11 @@ void options_manager::add_options_graphics()
     get_option( "PIXEL_MINIMAP_BLINK" ).setPrerequisite( "PIXEL_MINIMAP" );
 
     add( "PIXEL_MINIMAP_ZOOM", graphics, translate_marker( "Pixel minimap zoom" ),
-         translate_marker( "Zoom level for the pixel minimap." ), {
+    translate_marker( "Zoom level for the pixel minimap." ), {
         { "1x", translate_marker( "1x" ) },
         { "2x", translate_marker( "2x" ) },
         { "4x", translate_marker( "4x" ) }
-        }, "1x", COPT_CURSES_HIDE
+    }, "1x", COPT_CURSES_HIDE
        );
 
     add( "PIXEL_MINIMAP_ITEM_MARKERS", graphics, translate_marker( "Pixel minimap item markers" ),
@@ -3906,8 +3941,8 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
     // temporary alias so the code below does not need to be changed
     options_container &OPTIONS = options;
     options_container &ACTIVE_WORLD_OPTIONS = world_options.has_value() ?
-            *world_options.value() :
-            OPTIONS;
+        *world_options.value() :
+        OPTIONS;
 
     if( !world_options_only ) {
         refresh_title_screen_option();
@@ -4014,8 +4049,7 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
         int curr_line_visible = 0;
         const auto is_visible = [&]( int i ) -> bool {
             const PageItem &it = page_items[i];
-            switch( it.type )
-            {
+            switch( it.type ) {
                 case ItemType::GroupHeader:
                     return true;
                 case ItemType::BlankLine:
@@ -4038,8 +4072,7 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
         const auto fmt_name_value = [&]( const PageItem & it, bool is_selected )
         -> std::pair<string_col, string_col> {
             const auto in_group_prefix = "  ";
-            switch( it.type )
-            {
+            switch( it.type ) {
                 case ItemType::BlankLine: {
                     std::string name = it.group.empty() ? "" : in_group_prefix;
                     return { string_col( name, c_white ), string_col() };
@@ -4232,8 +4265,7 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
 
         const auto is_selectable = [&]( int i ) -> bool {
             const PageItem &curr_item = page_items[i];
-            switch( curr_item.type )
-            {
+            switch( curr_item.type ) {
                 case ItemType::BlankLine:
                     return false;
                 case ItemType::GroupHeader:
@@ -4545,6 +4577,10 @@ void options_manager::cache_to_globals()
     prevent_occlusion_max_dist = ::get_option<float>( "PREVENT_OCCLUSION_MAX_DIST" );
     static_z_effect = ::get_option<bool>( "STATICZEFFECT" );
     overmap_transparency = ::get_option<bool>( "OVERMAP_TRANSPARENCY" );
+    item_layering_enabled = ::get_option<bool>( "ITEM_LAYERING" );
+    cliff_shading_enabled = ::get_option<bool>( "CLIFF_SHADING" );
+    directional_stairs_enabled = ::get_option<bool>( "DIRECTIONAL_STAIRS" );
+    item_thumbnails_enabled = ::get_option<bool>( "ITEM_THUMBNAILS" );
     PICKUP_RANGE = ::get_option<int>( "PICKUP_RANGE" );
 
     monster_lod_enabled       = ::get_option<bool>( "MONSTER_LOD_ENABLED" );

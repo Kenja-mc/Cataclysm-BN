@@ -1,4 +1,5 @@
 """Drives the curses build inside a detached tmux session."""
+import curses
 import json
 import os
 import shutil
@@ -52,7 +53,14 @@ class Game:
 
     def keys(self, *keys, delay=0.25):
         for k in keys:
-            subprocess.run(["tmux", "send-keys", "-t", self.name, k])
+            if k == "Home":
+                # tmux's Home sequence differs from xterm's terminfo.
+                curses.setupterm(term="xterm-256color")
+                code = curses.tigetstr("khome")
+                subprocess.run(["tmux", "send-keys", "-H", "-t", self.name, "--",
+                                *(f"{byte:02x}" for byte in code)], check=True)
+            else:
+                subprocess.run(["tmux", "send-keys", "-t", self.name, "--", k])
             time.sleep(delay)
 
     def type(self, text, delay=0.05):
@@ -60,23 +68,23 @@ class Game:
         chunk = ""
         for ch in text:
             if chunk and chunk[-1] == ch:
-                subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", chunk])
+                subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", chunk])
                 time.sleep(0.08)
                 chunk = ""
             chunk += ch
-        subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", chunk])
+        subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", chunk])
         time.sleep(delay)
 
     def click(self, x, y, button=0):
         """Mouse click at a screen cell, SGR (1006) encoded as xterm-256color terminfo expects."""
         for suffix in ("M", "m"):
-            subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", f"\x1b[<{button};{x + 1};{y + 1}{suffix}"])
+            subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", f"\x1b[<{button};{x + 1};{y + 1}{suffix}"])
             time.sleep(0.05)
         time.sleep(1)
 
     def hover(self, x, y):
         """Mouse motion with no button held, SGR encoded (button code 35)."""
-        subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", f"\x1b[<35;{x + 1};{y + 1}M"])
+        subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", f"\x1b[<35;{x + 1};{y + 1}M"])
         time.sleep(1)
 
     def find(self, ch):
@@ -103,6 +111,8 @@ class Game:
             if "to enter/edit command" in self.screen():
                 break
             self.keys("Escape", delay=0.5)
+        else:
+            raise AssertionError("could not open the Lua console; refusing to type code into the game\n" + self.screen())
         self.keys("Enter", delay=0.5)
         # Keep the echoed command short so its output is still on screen afterwards.
         self.type(f"OUT='{marker}' " + code)
@@ -138,8 +148,9 @@ class Game:
 
 
 def in_game(screen):
-    # Small terminals cut the controls strip off the sidebar, so fall back to the Location panel.
-    return "X,Y,Z" in screen and (" move " in screen or "Place :" in screen)
+    # Small terminals can cut off Controls; classic uses Location and stamina instead of coordinates.
+    return ("X,Y,Z" in screen and (" move " in screen or "Place :" in screen)) or (
+        "Location:" in screen and "Stm" in screen)
 
 
 def start_new_game(game, timeout=240):

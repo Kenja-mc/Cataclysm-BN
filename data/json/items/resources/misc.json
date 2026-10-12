@@ -240,6 +240,7 @@
     "material": [ "veggy" ],
     "symbol": ",",
     "color": "yellow",
+    "light_color": "#e6e6ff",
     "flags": [ "NO_SALVAGE", "LIGHT_300", "TRADER_AVOID" ]
   }
 ]

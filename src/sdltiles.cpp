@@ -1608,6 +1608,96 @@ static bool draw_window( Font_Ptr &font, const catacurses::window &w )
     return draw_window( font, w, point( win->pos.x * ::fontwidth, win->pos.y * ::fontheight ) );
 }
 
+namespace
+{
+
+struct pending_item_thumbnail {
+    std::weak_ptr<void> owner;
+    SDL_Rect dest;
+    int tile_idx;
+    point cache_pos;
+    point cache_size;
+};
+auto pending_item_thumbnails = std::vector<pending_item_thumbnail> {};
+constexpr auto item_thumbnail_cells = 2;
+
+} // namespace
+
+auto item_thumbnail_gutter_cells() -> int
+{
+    return use_tiles && item_thumbnails_enabled ? item_thumbnail_cells : 0;
+}
+
+auto register_item_thumbnail( const catacurses::window &win, const item &itm,
+                              const item_thumbnail_options &opts ) -> void
+{
+    if( !use_tiles || !item_thumbnails_enabled || !tilecontext || !win ) {
+        return;
+    }
+    const auto dim = get_window_dimensions( win );
+    const auto x0 = std::max( opts.cell.x, 0 );
+    const auto y0 = std::max( opts.cell.y, 0 );
+    const auto x1 = std::min( opts.cell.x + opts.size.x, dim.window_size_cell.x );
+    const auto y1 = std::min( opts.cell.y + opts.size.y, dim.window_size_cell.y );
+    if( x1 <= x0 || y1 <= y0 ) {
+        return;
+    }
+    const auto tile_idx = tilecontext->item_thumbnail_sprite( itm );
+    if( !tile_idx ) {
+        return;
+    }
+    pending_item_thumbnails.push_back( pending_item_thumbnail{
+        .owner = win.weak_ptr(),
+        .dest = SDL_Rect{
+            .x = dim.window_pos_pixel.x + x0 * fontwidth,
+            .y = dim.window_pos_pixel.y + y0 * fontheight,
+            .w = ( x1 - x0 ) * fontwidth, .h = ( y1 - y0 ) * fontheight
+        },
+        .tile_idx = *tile_idx,
+        .cache_pos = dim.window_pos_cell + point( x0, y0 ),
+        .cache_size = point( x1 - x0, y1 - y0 )
+    } );
+}
+
+namespace
+{
+
+auto draw_pending_item_thumbnails( const catacurses::window &w ) -> void
+{
+    if( !tilecontext ) {
+        pending_item_thumbnails.clear();
+        return;
+    }
+    const auto native = w.get<void>();
+    std::erase_if( pending_item_thumbnails, [native]( const auto & entry ) {
+        const auto owner = entry.owner.lock();
+        if( !owner ) {
+            return true;
+        }
+        if( owner.get() != native ) {
+            return false;
+        }
+        tilecontext->draw_item_thumbnail( entry.tile_idx, entry.dest );
+        // Graphical overlays must not leave cached blank cells hiding stale sprites.
+        const auto y0 = std::max( 0, entry.cache_pos.y );
+        const auto y1 = std::min( entry.cache_pos.y + entry.cache_size.y,
+                                  static_cast<int>( terminal_framebuffer.size() ) );
+        for( auto y = y0; y < y1; ++y ) {
+            auto &row = terminal_framebuffer[y].chars;
+            const auto x0 = std::max( 0, entry.cache_pos.x );
+            const auto x1 = std::min( entry.cache_pos.x + entry.cache_size.x,
+                                      static_cast<int>( row.size() ) );
+            for( auto &cell : row | std::views::drop( x0 ) | std::views::take( std::max( 0, x1 - x0 ) ) ) {
+                cell.ch.clear();
+            }
+        }
+        needupdate = true;
+        return true;
+    } );
+}
+
+} // namespace
+
 void cata_cursesport::curses_drawwindow( const catacurses::window &w )
 {
     if( clear_display_buffer_before_redraw ) {
@@ -1780,6 +1870,7 @@ void cata_cursesport::curses_drawwindow( const catacurses::window &w )
     if( update ) {
         needupdate = true;
     }
+    draw_pending_item_thumbnails( w );
 }
 
 static int alt_buffer = 0;
@@ -3804,6 +3895,7 @@ void catacurses::init_interface()
     WinCreate();
 
     dbg( DL::Info ) << "Initializing SDL Tiles context";
+    pending_item_thumbnails.clear();
     tilecontext = std::make_shared<cata_tiles>( renderer, geometry );
     const auto tilesName = get_option<std::string>( "TILES" );
     const auto omTilesName = get_option<std::string>( "OVERMAP_TILES" );

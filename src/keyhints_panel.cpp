@@ -4,9 +4,11 @@
 #include <vector>
 
 #include "action.h"
+#include "avatar.h"
 #include "catacharset.h"
 #include "color.h"
 #include "cursesdef.h"
+#include "game.h"
 #include "input.h"
 #include "options.h"
 #include "output.h"
@@ -42,45 +44,50 @@ auto joined_keys( const std::vector<action_id> &acts ) -> std::string
     return out;
 }
 
-auto collect_hints() -> std::vector<hint>
+auto collect_hints( const bool driving ) -> std::vector<hint>
 {
-    auto hints = std::vector<hint> {
-        { .keys = joined_keys( { ACTION_MOVE_FORTH, ACTION_MOVE_LEFT, ACTION_MOVE_BACK, ACTION_MOVE_RIGHT } ), .label = _( "move" ) },
-        { .keys = joined_keys( { ACTION_MOVE_FORTH_LEFT, ACTION_MOVE_FORTH_RIGHT, ACTION_MOVE_BACK_LEFT, ACTION_MOVE_BACK_RIGHT } ), .label = _( "diag" ) },
-    };
     const auto singles = std::vector<std::pair<action_id, std::string>> {
         { ACTION_PAUSE, _( "wait" ) }, { ACTION_EXAMINE, _( "interact" ) }, { ACTION_PICKUP_ALL, _( "pick up" ) },
         { ACTION_INVENTORY, _( "inventory" ) }, { ACTION_USE, _( "use" ) }, { ACTION_WIELD, _( "wield" ) },
         { ACTION_AUTOATTACK, _( "attack" ) }, { ACTION_FIRE, _( "fire" ) }, { ACTION_RELOAD_ITEM, _( "reload" ) }, { ACTION_CRAFT, _( "craft" ) },
         { ACTION_QUICK_STACK, _( "stash" ) }, { ACTION_SORT_PILE, _( "sort pile" ) }, { ACTION_MAP, _( "map" ) },
         // Look goes last: it is the first to drop off a full strip, and hovering the map covers it.
-        { ACTION_AUTO_EXPLORE, _( "explore" ) }, { ACTION_LOOK, _( "look" ) },
+        { ACTION_AUTO_EXPLORE, _( "explore" ) }, { ACTION_TOGGLE_PANEL_ADM, _( "sidebar" ) }, { ACTION_LOOK, _( "look" ) },
     };
+    auto hints = std::vector<hint>();
+    hints.reserve( singles.size() + 3 );
+    if( driving ) {
+        hints.push_back( { .keys = joined_keys( { ACTION_MOVE_FORTH, ACTION_MOVE_BACK } ), .label = _( "throttle" ) } );
+        hints.push_back( { .keys = joined_keys( { ACTION_MOVE_LEFT, ACTION_MOVE_RIGHT } ), .label = _( "steer" ) } );
+    } else {
+        hints.push_back( { .keys = joined_keys( { ACTION_MOVE_FORTH, ACTION_MOVE_LEFT, ACTION_MOVE_BACK, ACTION_MOVE_RIGHT } ), .label = _( "move" ) } );
+        hints.push_back( { .keys = joined_keys( { ACTION_MOVE_FORTH_LEFT, ACTION_MOVE_FORTH_RIGHT, ACTION_MOVE_BACK_LEFT, ACTION_MOVE_BACK_RIGHT } ), .label = _( "diag" ) } );
+    }
+    hints.push_back( { .keys = "?", .label = _( "all keys" ) } );
     for( const auto &[act, label] : singles ) {
         if( auto keys = first_key( act ); !keys.empty() ) {
             hints.push_back( { .keys = std::move( keys ), .label = label } );
         }
     }
-    if( auto keys = first_key( ACTION_TOGGLE_PANEL_ADM ); !keys.empty() ) {
-        hints.push_back( { .keys = std::move( keys ), .label = _( "sidebar" ) } );
-    }
-    hints.push_back( { .keys = "?", .label = _( "all keys" ) } );
     return hints;
 }
 
 } // namespace
 
-auto draw_keyhints( const avatar &/*you*/, const catacurses::window &w ) -> void
+auto draw_keyhints( const avatar &you, const catacurses::window &w ) -> void
 {
     werase( w );
     const auto width = getmaxx( w ) - 1;
     const auto height = getmaxy( w );
     auto pos = point( 1, 0 );
-    // Building the hints walks every binding; only redo it when the bindings change.
+    // Building the hints walks every binding; only redo it when bindings or driving mode change.
     static auto cached = std::vector<hint>();
     static auto cached_version = -1;
-    if( cached_version != inp_mngr.bindings_version() ) {
-        cached = collect_hints();
+    static auto cached_driving = false;
+    const auto driving = you.controlling_vehicle || g->remoteveh() != nullptr;
+    if( cached_version != inp_mngr.bindings_version() || cached_driving != driving ) {
+        cached = collect_hints( driving );
+        cached_driving = driving;
         cached_version = inp_mngr.bindings_version();
     }
     for( const auto &h : cached ) {
@@ -117,10 +124,12 @@ auto show_welcome_once() -> void
                              "%19$s%20$s"
                              "The Controls strip at the bottom of the sidebar always shows these keys, "
                              "and <color_light_cyan>?</color> on any screen lists every key." ),
-                          key( ACTION_MOVE_FORTH ), key( ACTION_MOVE_LEFT ), key( ACTION_MOVE_BACK ), key( ACTION_MOVE_RIGHT ),
+                          key( ACTION_MOVE_FORTH ), key( ACTION_MOVE_LEFT ), key( ACTION_MOVE_BACK ),
+                          key( ACTION_MOVE_RIGHT ),
                           key( ACTION_MOVE_FORTH_LEFT ), key( ACTION_MOVE_FORTH_RIGHT ), key( ACTION_MOVE_BACK_LEFT ),
                           key( ACTION_MOVE_BACK_RIGHT ), key( ACTION_PAUSE ), key( ACTION_EXAMINE ), key( ACTION_PICKUP_ALL ),
-                          key( ACTION_INVENTORY ), key( ACTION_USE ), key( ACTION_CRAFT ), key( ACTION_LOOK ), key( ACTION_MAP ),
+                          key( ACTION_INVENTORY ), key( ACTION_USE ), key( ACTION_CRAFT ), key( ACTION_LOOK ),
+                          key( ACTION_MAP ),
                           key( ACTION_QUICK_STACK ), key( ACTION_SORT_PILE ),
                           get_option<bool>( "MOUSE_TILE_SELECTION" ) ?
                           std::string( _( "The mouse works too: hover a tile to see what a click does, click to walk "
@@ -137,7 +146,8 @@ auto show_welcome_once() -> void
     death.selected = get_option<bool>( "PROMPT_ON_CHARACTER_DEATH" ) ? 1 : 0;
     death.query();
     if( death.ret == 0 || death.ret == 1 ) {
-        get_options().get_option( "PROMPT_ON_CHARACTER_DEATH" ).setValue( death.ret == 1 ? "true" : "false" );
+        get_options().get_option( "PROMPT_ON_CHARACTER_DEATH" ).setValue( death.ret == 1 ? "true" :
+                "false" );
     }
     get_options().get_option( "SHOW_WELCOME" ).setValue( "false" );
     get_options().save();
