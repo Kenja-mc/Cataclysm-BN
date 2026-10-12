@@ -1,0 +1,31 @@
+name: Upstream feature candidates
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: upstream-feature-watch
+  cancel-in-progress: false
+
+jobs:
+  report:
+    if: github.repository == 'Kenja-mc/Cataclysm-BN'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: build-scripts
+      - name: Check comparison and report boundaries
+        run: python3 build-scripts/upstream_features.py --self-check
+      - name: Record upstream candidates for human review
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: python3 build-scripts/upstream_features.py --repo "$GH_REPO"
