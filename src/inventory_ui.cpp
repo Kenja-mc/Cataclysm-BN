@@ -45,6 +45,8 @@
 #endif
 
 #include <algorithm>
+#include <array>
+#include <cctype>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -1575,6 +1577,40 @@ void inventory_selector::prepare_layout( size_t client_width, size_t client_heig
         elem->prepare_paging();
         custom_invlet = elem->reassign_custom_invlets( u, custom_invlet, '9' );
     }
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        auto available = ctxt.get_available_single_char_hotkeys( inv_chars.get_allowed_chars() );
+        auto allowed = std::array<bool, 128> {};
+        for( const auto letter : available ) {
+            allowed[static_cast<unsigned char>( letter )] = true;
+        }
+        // Only digits not bound to any action may keep their numeric invlet.
+        for( const auto digit : ctxt.get_available_single_char_hotkeys( "0123456789" ) ) {
+            allowed[static_cast<unsigned char>( digit )] = true;
+        }
+        for( const auto column : columns ) {
+            for( const auto entries : { &column->entries, &column->entries_hidden } ) {
+                for( const auto &entry : *entries ) {
+                    std::erase( available, static_cast<char>( entry.get_invlet() ) );
+                }
+            }
+        }
+        for( const auto column : columns ) {
+            for( const auto entries : { &column->entries, &column->entries_hidden } ) {
+                for( auto &entry : *entries ) {
+                    const auto letter = entry.get_invlet();
+                    const auto numeric = letter >= '0' && letter <= '9';
+                    if( !entry.is_item() || letter <= 0 || letter >= 128 || allowed[letter] ||
+                        ( !numeric && !inv_chars.valid( letter ) ) ) {
+                        continue;
+                    }
+                    const auto shifted = static_cast<char>( std::toupper( letter ) );
+                    entry.custom_invlet = available.contains( shifted ) ? shifted :
+                                          available.empty() ? '\0' : available.front();
+                    std::erase( available, static_cast<char>( entry.custom_invlet ) );
+                }
+            }
+        }
+    }
     assign_invlet_hints();
 
     refresh_active_column();
@@ -2023,7 +2059,9 @@ inventory_input inventory_selector::get_input()
 
     res.action = ctxt.handle_input();
     res.ch = ctxt.get_raw_input().get_first_input();
-    res.entry = find_entry_by_invlet( res.ch );
+    const auto bound_action = get_option<std::string>( "CONTROL_SCHEME" ) == "modern" &&
+                              res.action != "ANY_INPUT";
+    res.entry = bound_action ? nullptr : find_entry_by_invlet( res.ch );
 
     if( res.entry != nullptr && !res.entry->is_selectable() ) {
         res.entry = nullptr;

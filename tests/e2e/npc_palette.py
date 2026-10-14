@@ -43,7 +43,7 @@ def choose_palette(g, name):
         g.keys("Enter", delay=0.5)
         if "Follower commands: " + name in g.screen():
             return g.screen()
-        g.keys("d", delay=0.3)
+        g.keys("D", delay=0.3)
     raise AssertionError("could not choose " + name + "\n" + g.screen())
 
 
@@ -66,7 +66,7 @@ def test_follower_palette_changes_the_follower_rules(g):
 
         screen = open_palette(palette)
         for key, label in (("e", "Combat engagement: Close"), ("g", "Use guns: ON"),
-                           ("a", "Aim rule: When convenient"),
+                           ("A", "Aim rule: When convenient"),
                            ("r", "CBM reserve: Some (50%)"),
                            ("c", "CBM recharge: Some (50%)")):
             select_rule_state(palette, key, label)
@@ -75,7 +75,7 @@ def test_follower_palette_changes_the_follower_rules(g):
         assert "Combat engagement: Weak" in palette.screen(), palette.screen()
         palette.keys("g", delay=0.5)
         assert "Use guns: OFF" in palette.screen(), palette.screen()
-        palette.keys("a", delay=0.5)
+        palette.keys("A", delay=0.5)
         assert "Aim rule: Spray" in palette.screen(), palette.screen()
         palette.keys("c", delay=0.5)
         assert "CBM recharge: Little (25%)" in palette.screen(), palette.screen()
@@ -83,25 +83,25 @@ def test_follower_palette_changes_the_follower_rules(g):
         for label in ("CBM reserve: Little (25%)", "CBM reserve: None", "CBM reserve: All (100%)"):
             palette.keys("r", delay=0.5)
             assert label in palette.screen(), palette.screen()
-        palette.keys("d", delay=0.5)
+        palette.keys("D", delay=0.5)
 
         screen = open_palette(palette)
         for label in ("Combat engagement: Weak", "Use guns: OFF", "Aim rule: Spray",
                       "CBM reserve: All (100%)", "CBM recharge: Little (25%)"):
             assert label in screen, "change did not stick: " + label + "\n" + screen
-        palette.keys("d", delay=0.5)
+        palette.keys("D", delay=0.5)
 
         # A temporary order from the team menu holds the rule; flipping it in the palette takes effect.
         palette.keys("y", delay=1)
         palette.keys("o", delay=1)
         assert "Hold off on pulping zombies for a while" in palette.screen(), palette.screen()
         palette.keys("p", delay=0.5)
-        palette.keys("d", delay=0.5)
+        palette.keys("D", delay=0.5)
         screen = open_palette(palette)
         assert "Allow pulp: OFF" in screen, "temporary order missing from palette:\n" + screen
         palette.keys("p", delay=0.5)
         assert "Allow pulp: ON" in palette.screen(), "flip hidden by temporary order:\n" + palette.screen()
-        palette.keys("d", delay=0.5)
+        palette.keys("D", delay=0.5)
 
         # With two followers the palette first asks whose rules to show.
         assert palette.lua(SECOND_FOLLOWER) == ["ok"]
@@ -116,20 +116,20 @@ def test_follower_palette_changes_the_follower_rules(g):
         assert "CBM reserve:" not in second, second
         assert "Use guns: ON" in second or "Use guns: OFF" in second, second
         second_guns = "ON" if "Use guns: ON" in second else "OFF"
-        palette.keys("d", delay=0.3)
+        palette.keys("D", delay=0.3)
         choose_palette(palette, "Palette One")
         select_rule_state(palette, "g", "Use guns: " + second_guns)
         palette.keys("g", delay=0.5)
         first_guns = "OFF" if second_guns == "ON" else "ON"
         assert "Use guns: " + first_guns in palette.screen(), palette.screen()
-        palette.keys("d", delay=0.3)
+        palette.keys("D", delay=0.3)
         second = choose_palette(palette, "Palette Two")
         assert "Use guns: " + second_guns in second, "editing one follower changed another:\n" + second
-        palette.keys("d", delay=0.3)
+        palette.keys("D", delay=0.3)
         choose_palette(palette, "Palette One")
         palette.keys("y", delay=0.5)
         assert "Use guns: " + second_guns in palette.screen(), "copy did not update the chosen follower:\n" + palette.screen()
-        palette.keys("d", delay=0.3)
+        palette.keys("D", delay=0.3)
     finally:
         palette.close()
 
