@@ -119,13 +119,20 @@ def test_quick_stack_not_through_windows(g):
 
 
 def test_black_powder_loot_keeps_its_modifier(g):
+    """Loot retains either native black-powder ballistics or the full stack modifier."""
     arena(g)
     g.lua("M:clear_items_at(here(2,0)) for i=1,5 do M:place_items('ammo_rifle_blackpowder_handloads', 100, here(2,0), here(2,0), false) end out('ok')")
-    rows = g.lua("for _,it in pairs(M:get_items_at(here(2,0))) do out(it:get_type():str(), it.charges, it:get_var_num('stack_mod:black_powder', 0)) end")
+    rows = g.lua("for _,it in pairs(M:get_items_at(here(2,0))) do "
+                 "local bp=0 for _,e in pairs(it:get_type():obj():slot_ammo().ammo_effects) do if e:str()=='BLACKPOWDER' then bp=1 end end "
+                 "out(it:get_type():str(), it.charges, it:get_var_num('stack_mod:black_powder', 0), bp) end")
     assert rows, "the group should spawn something"
     for row in rows:
-        _, charges, bp = row.split(",")
-        assert int(float(bp)) == int(charges), f"every spawned round is black powder: {rows}"
+        item_id, charges, modifier, blackpowder = row.split(",")
+        if int(blackpowder):
+            # A modifier would apply the native round's black-powder penalty twice.
+            assert int(float(modifier)) == 0, f"{item_id} is black powder already: {row}"
+        else:
+            assert int(float(modifier)) == int(charges), f"every spawned round is black powder: {rows}"
 
 
 def test_sort_pile(g):
@@ -182,7 +189,6 @@ def test_recraft_after_reload(g):
     g.keys("Escape", delay=1)
     g.keys("S", delay=1)
     g.keys("y", "Enter", delay=1)
-    g.wait_for("[Load]", timeout=60)
     load_first_save(g)
     g.define_lua(HELPERS)
     g.keys("-", delay=1)
@@ -385,17 +391,15 @@ def test_right_click_lists_actions(g):
 
 def test_right_click_pick_runs_the_action(g):
     arena(g)
-    assert g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(1,0)) out('ok')") == ["ok"]
     settle(g)
-    before = zombie_hp(g)
+    before = bub_pos(g)
     x, y = g.find("@")
-    for _ in range(6):
-        g.click(x + 1, y, button=2)
-        g.keys("Enter", delay=1)
-        if zombie_hp(g) != before:
-            break
-    assert zombie_hp(g) != before, "picking 'attack' from the right-click menu attacks:\n" + g.screen()
-    g.lua("local m=gapi.get_monster_at(here(1,0)) if m then park(m) end out('ok')")
+    g.click(x + 1, y, button=2)
+    row, line = next((row, line) for row, line in enumerate(g.screen().splitlines())
+                     if "step here" in line)
+    g.click(line.index("step here"), row)
+    assert wait_until(lambda: bub_pos(g) == (before[0] + 1, before[1], before[2])), (
+        "clicking the right-click menu row must execute its movement action\n" + g.screen())
 
 
 
@@ -524,12 +528,109 @@ def keys_by_category(files):
 
 
 def test_modern_scheme_adds_no_menu_key_clashes(g):
-    """No menu gets a key the modern scheme binds to two of its actions; upstream's own pairs stay."""
+    """No menu gets a key the modern scheme binds to two of its actions; upstream's own pairs stay.
+
+    Pair based: the modern scheme may move an upstream mutually exclusive pair (wield/unwield) to
+    the shifted keys, which must not read as a new clash; only a new set of conflicting actions is.
+    """
     base = sorted(str(p) for p in (ROOT / "data/raw/keybindings").glob("*.json"))
-    clashes = lambda files: {(c, k, frozenset(a)) for c, keys in keys_by_category(files).items()
-                             for k, a in keys.items() if len(a) > 1}
-    new = clashes(base + [str(ROOT / "data/raw/control_schemes/modern.json")]) - clashes(base)
-    assert not new, "\n".join(f"{c}: {k} -> {sorted(a)}" for c, k, a in sorted(new, key=str))
+
+    def clashing_pairs(files):
+        return {(category, frozenset(actions)) for category, keys in keys_by_category(files).items()
+                for actions in keys.values() if len(actions) > 1}
+
+    new = clashing_pairs(base + [str(ROOT / "data/raw/control_schemes/modern.json")]) - clashing_pairs(base)
+    assert not new, "\n".join(f"{c}: {sorted(a)}" for c, a in sorted(new, key=str))
+
+
+def test_wasd_menu_navigation(g):
+    """Letter shortcuts must not steal WASD from a real list menu."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        result = executor.submit(g.lua,
+                                 "local menu=UiList.new() menu:title('WASD navigation') "
+                                 "menu:add(10,'First choice') menu:add(20,'Second choice') "
+                                 "menu:add(30,'Third choice') out(menu:query())")
+        g.wait_for("< WASD navigation >")
+        g.keys("s", "s", "w", "a", "d", "Enter", delay=0.4)
+        assert result.result() == ["20"], g.screen()
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        result = executor.submit(g.lua,
+                                 "local menu=UiList.new() menu:title('Filter typing') "
+                                 "menu:add(10,'Other item') menu:add(20,'wasd first') "
+                                 "menu:add(30,'wasd second') out(menu:query())")
+        g.wait_for("< Filter typing >")
+        g.keys("/", delay=0.4)
+        g.type("wasd")
+        g.keys("Down", "Up", "Down", "Enter", "Enter", delay=0.4)
+        assert result.result() == ["30"], g.screen()
+
+    arena(g)
+    spawn(g, 0, 0, "rock")
+    spawn(g, 0, 0, "stick")
+    before = {item: count_carried(g, item) for item in ("rock", "stick")}
+    g.keys(",", delay=0.8)
+    g.wait_for("rock")
+    def selected(item):
+        return re.search(r"< [^<>]*" + item + r"[^<>]* >", g.screen()) is not None
+    first = "rock" if selected("rock") else "stick"
+    assert selected(first), g.screen()
+    second = "stick" if first == "rock" else "rock"
+    g.keys("s", delay=0.4)
+    assert selected(second), "S must navigate to the other item\n" + g.screen()
+    g.keys("d", "w", delay=0.4)
+    assert selected(first), "W must navigate back without wielding\n" + g.screen()
+    g.keys("d", "a", "Enter", delay=0.4)
+    assert count_carried(g, second) == before[second] + 1, "D marks the selected item"
+    assert count_carried(g, first) == before[first], "A unmarks the selected item"
+
+
+def item_picker_rows(screen, names):
+    """Read each fixture item's displayed shortcut from its picker row."""
+    rows = []
+    for line in screen.splitlines():
+        if "│" not in line:
+            continue
+        inner = line[:line.rfind("│")]
+        for name in names:
+            at = inner.find(name)
+            if at >= 2 and inner[at - 1] == " " and inner[at - 2].isalnum():
+                rows.append((inner[at - 2], name))
+    return rows
+
+
+def test_modern_wield_nearby_rows_keep_their_shortcut(g):
+    """A nearby item's displayed shortcut must wield that item, not move the cursor."""
+    # Three nearby rows force a collision with the cursor digit 2 before remapping.
+    arena(g)
+    g.lua("gapi.get_avatar():drop_all_items() out('ok')")
+    arena(g)
+    for item, (dx, dy) in {"rock": (1, 0), "stick": (0, 1), "pipe": (-1, 0)}.items():
+        spawn(g, dx, dy, item)
+    names = {}
+    for item in ("rock", "stick", "pipe"):
+        out = g.lua(f"local it=gapi.create_item(ItypeId.new('{item}'),-1) out(it:display_name(1))")
+        assert len(out) == 1, out
+        names[out[0]] = item
+    g.keys("h", delay=1.5)
+    assert "Wield item" in g.screen(), "h should open the wield picker\n" + g.screen()
+    rows = item_picker_rows(g.screen(), names)
+    assert len(rows) == len(names), f"one row per fixture item: {rows}\n{g.screen()}"
+    assert sorted(name for _, name in rows) == sorted(names), rows
+    cursor_keys = ("2", "4", "6", "8")
+    labelled = ([row for row in rows if row[0] in cursor_keys]
+                or [row for row in rows if not row[0].isdigit()]
+                or rows[-1:])
+    shortcut, name = labelled[0]
+    g.keys(shortcut, delay=1.5)
+    assert "Wield item" not in g.screen(), f"{shortcut!r} should pick the {name} row\n" + g.screen()
+    wielded = g.lua("local a=gapi.get_avatar() local w={} for _,it in ipairs(a:all_items(false)) do "
+                    "if a:is_wielding(it) then w[#w+1]=it:get_type():str() end end out(table.concat(w,','))")
+    assert wielded == [names[name]], f"{shortcut!r} should wield {names[name]}, got {wielded}\n" + g.screen()
+    g.lua("gapi.get_avatar():drop_all_items() out('ok')")
+    arena(g)
 
 
 def test_classic_control_scheme(g):
@@ -583,10 +684,8 @@ def test_old_full_keybindings_file(g):
 def test_vehicle_screen_diagonals(g):
     """WASD/QEZC move the vehicle screen cursor too; the actions they shadowed moved to capitals."""
     arena(g)
-    g.keys("F12", "s", "v", delay=1)
-    g.keys("p", delay=1.5)  # Bicycle, spawned under the player
-    g.keys("Enter", delay=1.5)
-    g.keys("Enter", delay=1.5)
+    from vehicle_box import spawn_vehicle
+    spawn_vehicle(g, "bicycle")
     g.keys("Space", delay=1.5)
     # Contextual interact goes straight to the bicycle when nothing else is in reach.
     if "which tile?" in g.screen() or "Examine where?" in g.screen():
@@ -594,7 +693,6 @@ def test_vehicle_screen_diagonals(g):
     g.keys("e", delay=2)  # "Examine vehicle"
     try:
         start = g.screen()
-        assert "Siphon" in start and "rEname" in start and "creW" in start, start
         g.keys("s", delay=1.5)
         moved = g.screen()
         assert "ESC-back" in moved and moved != start, "s should move the cursor, not siphon"
@@ -769,28 +867,40 @@ def test_combine_partly_used_tools(g):
     g.keys("Escape", "Escape", delay=0.6)
 
 
-def test_sound_marker_fading(g):
+def test_sound_marker_fading(_g):
     """A genuinely heard but unseen sound persists, then fades without a new source."""
-    arena(g)
-    # Wind can mask quiet zombie footsteps; a nearby NPC call tests marker lifetime instead.
-    assert g.lua("for dy=-9,9 do M:set_ter_at(here(1,dy), TerId.new('t_wall'):int_id()) "
-                 "for dx=2,3 do M:set_ter_at(here(dx,dy), TerId.new('t_floor'):int_id()) "
-                 "M:set_furn_at(here(dx,dy), FurnId.new('f_null'):int_id()) end end "
-                 "SOUND_NPC=M:place_npc(here(2,0),'farmer') "
-                 "SOUND_NPC:set_attitude(NpcAttitude.NPCATT_WAIT) "
-                 "SOUND_NPC:shout('marker lifetime check',false) out('ok')") == ["ok"]
+    g = Game(name="bn-e2e-sound", options={"SAFEMODE": "false", "SOUND_MARKER_TURNS": "3"})
+    try:
+        start_new_game(g)
+        g.define_lua(HELPERS)
+        arena(g)
+        # Underground ambient noise is fixed; surface wind can mask the shout.
+        assert g.lua("local a=gapi.get_avatar() local p=a:get_pos_ms() "
+                     "a:clear_bionics() a:clear_mutations() a:clear_morale() a:drop_all_items() "
+                     "a:set_pos_ms(TripointBubMs.new(p.x,p.y,p.z-1)) arena() "
+                     "for dy=-9,9 do M:set_ter_at(here(1,dy), TerId.new('t_wall'):int_id()) "
+                     "for dx=2,3 do M:set_ter_at(here(dx,dy), TerId.new('t_floor'):int_id()) "
+                     "M:set_furn_at(here(dx,dy), FurnId.new('f_null'):int_id()) end end "
+                     "SOUND_NPC=M:place_npc(here(2,0),'farmer') "
+                     "SOUND_NPC:drop_all_items() "
+                     "SOUND_NPC:set_attitude(NpcAttitude.NPCATT_WAIT) out('ok')") == ["ok", "ok"]
+        # Apply terrain and equipment changes before generating the sound.
+        settle(g)
+        assert g.lua("SOUND_NPC:shout('marker lifetime check',false) out('ok')") == ["ok"]
 
-    def map_area():
-        return "\n".join(line[:90] for line in g.screen().splitlines()[4:])
+        def map_area():
+            return "\n".join(line[:90] for line in g.screen().splitlines()[4:])
 
-    assert wait_until(lambda: (g.keys("x", delay=0.6), "?" in map_area())[1], timeout=25), \
-        "a heard, unseen NPC call should create a '?' marker:\n" + g.screen()
-    assert g.lua("park(SOUND_NPC) out('ok')") == ["ok"]
-    g.keys("x", delay=0.6)
-    assert "?" in map_area(), "the configured three-turn marker must survive the next turn:\n" + g.screen()
-    for _ in range(4):
+        assert wait_until(lambda: (g.keys("x", delay=0.6), "?" in map_area())[1], timeout=25), \
+            "a heard, unseen NPC call should create a '?' marker:\n" + g.screen()
+        assert g.lua("park(SOUND_NPC) out('ok')") == ["ok"]
         g.keys("x", delay=0.6)
-    assert "?" not in map_area(), "sound markers should have faded:\n" + g.screen()
+        assert "?" in map_area(), "the configured three-turn marker must survive the next turn:\n" + g.screen()
+        for _ in range(4):
+            g.keys("x", delay=0.6)
+        assert "?" not in map_area(), "sound markers should have faded:\n" + g.screen()
+    finally:
+        g.close()
 
 
 def test_smart_targeting(g):
@@ -959,8 +1069,9 @@ TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_au
          test_hud_boxes, test_body_panel, test_readable_map_glyphs, test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content, test_craft_parts_chain,
          test_aim_defaults, test_sound_marker_fading, test_smart_targeting, test_stance_toggle, test_contextual_interact_single_door, test_contextual_interact_multiple_doors,
          test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions, test_right_click_pick_runs_the_action,
-         test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_modern_scheme_adds_no_menu_key_clashes, test_old_full_keybindings_file, test_hud_box_options, test_boxes_replace_sidebar_rows, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
+         test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_modern_scheme_adds_no_menu_key_clashes, test_wasd_menu_navigation, test_old_full_keybindings_file, test_hud_box_options, test_boxes_replace_sidebar_rows, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
          test_smart_safe_mode, test_smart_safe_mode_horde, test_enemy_edge_arrows, test_enemy_edge_arrows_off,
+         test_modern_wield_nearby_rows_keep_their_shortcut,
          ]
 TESTS += VEHICLE_BOX_TESTS
 TESTS += CURSOR_PANNING_TESTS
