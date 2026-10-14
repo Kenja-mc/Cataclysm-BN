@@ -1967,6 +1967,14 @@ void veh_interact::do_siphon() {
 
     auto act = [&](const vehicle_part& pt) {
         on_out_of_scope restore_ui([&]() { hide_ui(false); });
+        restore_on_out_of_scope<tripoint_rel_ms> prev_view_offset(get_avatar().view_offset);
+        get_avatar().view_offset = stored_view_offset;
+#if defined(TILES)
+        if (tile_preview) { tile_preview->clear(); }
+        on_out_of_scope restore_tiles([&]() {
+            if (tile_preview) { tile_preview->prepare(w_disp); }
+        });
+#endif
         hide_ui(true);
         const item& base = pt.get_base();
         const int idx = veh->find_part(base); // TODO!: Wtf is this way of finding the part number?
