@@ -158,6 +158,8 @@ struct visibility_variables {
     float visibility_range = 60.0f;
     float detail_range = 60.0f;
     float visibility_scale_factor = 1.0f;
+
+    auto operator==(const visibility_variables&) const -> bool = default;
 };
 
 struct bash_params {
@@ -2229,6 +2231,27 @@ protected:
     bool visibility_caches_dirty_ = true;
     std::size_t m_last_lightmap_source_signature = 0;
     bool m_last_lightmap_source_signature_valid = false;
+    struct completed_gpu_visibility {
+        uint64_t work_id = 0;
+        tripoint_bub_ms player_pos;
+        tripoint_rel_ms view_offset;
+        point_abs_sm origin;
+        dimension_id dimension;
+        visibility_variables variables;
+        int zlev = 0;
+        int cache_x = 0;
+        int cache_y = 0;
+        int max_view_distance = 0;
+        float visible_threshold = 0.0f;
+        uint32_t vision_block_mask = 0;
+        std::size_t lightmap_source_signature = 0;
+        float weather_sight_penalty = 0.0f;
+        bool trigdist = false;
+        std::vector<tripoint_abs_omt> seen_overmap_tiles;
+        std::vector<int> submap_visibility_counts;
+    };
+    completed_gpu_visibility m_completed_gpu_visibility;
+    bool m_seen_cache_gpu_only = false;
 
     // State for the directional sunlight system.  Rebuilt by update_solar_params().
     struct solar_params {
@@ -2421,10 +2444,13 @@ private:
         // 64-bit key: two tripoints packed as 29 bits each (12x + 12y + 5z).
         // Handles coordinates up to 4095 per axis — safe for g_mapsize up to ~340.
         int64_t key = 0;
+        uint32_t epoch = 0;
         char value = -1; // -1 = empty/miss
     };
-    static constexpr std::size_t vision_cache_slots = 1 << 17; // 131072 entries (~1.5 MB)
+    static constexpr std::size_t vision_cache_slots = 1 << 17; // 131072 entries
     mutable std::vector<vision_cache_slot> skew_vision_cache;
+    // The full epoch protects in-flight inserts when the slots' low 32 bits wrap.
+    uint64_t skew_vision_cache_epoch = 1;
     // shared_mutex allows concurrent cache reads (common case)
     // while still serialising inserts.  Use shared_lock for reads and
     // unique_lock for writes in map::sees().

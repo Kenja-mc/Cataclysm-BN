@@ -614,12 +614,14 @@ auto s_next_lighting_work_id = uint64_t{1};
 
 struct pending_gpu_visibility_work {
     bool active = false;
+    bool reusable = false;
     uint64_t id = 0;
     SDL_GPUDevice* device = nullptr;
     SDL_GPUFence* fence = nullptr;
     map const* m = nullptr;
     std::vector<int> visibility_download_levels;
     std::vector<int> camera_nonzero_levels_after_dispatch;
+    std::vector<GpuVehicleOptic> vehicle_optics;
     int cache_xy = 0;
     int player_x = 0;
     int player_y = 0;
@@ -629,6 +631,14 @@ struct pending_gpu_visibility_work {
 
 auto s_pending_visibility_work = pending_gpu_visibility_work{};
 auto s_next_visibility_work_id = uint64_t{1};
+auto s_completed_visibility_work_id = uint64_t{0};
+auto s_completed_visibility_map = static_cast<map const*>(nullptr);
+auto s_completed_visibility_optics = std::vector<GpuVehicleOptic>{};
+
+auto invalidate_visibility_reuse() -> void {
+    s_completed_visibility_work_id = 0;
+    s_pending_visibility_work.reusable = false;
+}
 
 struct pending_gpu_sight_pairs_work {
     bool active = false;
@@ -682,6 +692,7 @@ auto release_transfer_slot(SDL_GPUDevice* const device, gpu_transfer_slot& slot)
 }
 
 auto release_lighting_resources(SDL_GPUDevice* const device) -> void {
+    invalidate_visibility_reuse();
     release_pending_lighting_work(device);
     release_pending_visibility_work(device);
     release_pending_sight_pairs_work(device);
@@ -1873,6 +1884,7 @@ auto reset_input_residency_for_shape(int const cache_x, int const cache_y, int c
     if (inputs.cache_x == cache_x && inputs.cache_y == cache_y && inputs.z_count == z_count) {
         return;
     }
+    invalidate_visibility_reuse();
     inputs = lighting_input_residency{
         .cache_x = cache_x,
         .cache_y = cache_y,
@@ -2194,45 +2206,50 @@ auto find_vehicle_for_optics_origin(map const& m, tripoint_bub_ms const& origin)
     return it != origin_cache.vehicle_list.end() ? *it : nullptr;
 }
 
-auto collect_vehicle_optics(
-    map const& m, tripoint_bub_ms const& origin, int const target_z, bool requires_camera)
-    -> std::vector<GpuVehicleOptic> {
-    auto optics = std::vector<GpuVehicleOptic>{};
-    auto* const veh = find_vehicle_for_optics_origin(m, origin);
-    if (veh == nullptr) { return optics; }
+auto visit_visibility_vehicle_optics(run_gpu_visibility_params const& p, const auto& visit)
+    -> void {
+    auto origin = tripoint_bub_ms{p.player_x, p.player_y, p.player_zlev};
+    auto requires_camera = true;
+    if (const auto remote_vehicle = g->remoteveh()) {
+        origin = remote_vehicle->bub_ms_location();
+        requires_camera = false;
+    }
+    auto* const veh = find_vehicle_for_optics_origin(*p.m, origin);
+    if (veh == nullptr) { return; }
 
-    auto const& target_cache = m.get_cache_ref(target_z);
-    auto optic_parts = std::vector<int>{};
+    const auto& target_cache = p.m->get_cache_ref(p.zlev);
     auto cam_control = -1;
 
     for (vpart_reference const& part_ref : veh->get_avail_parts(VPFLAG_EXTENDS_VISION)) {
-        auto const optic_pos = part_ref.pos();
+        const auto optic_pos = part_ref.pos();
         if (!target_cache.inbounds(optic_pos.xy())) { continue; }
-        auto const is_camera_control = part_ref.info().has_flag("CAMERA_CONTROL");
-        auto const part_index = static_cast<int>(part_ref.part_index());
+        const auto is_camera_control = part_ref.info().has_flag("CAMERA_CONTROL");
+        const auto part_index = static_cast<int>(part_ref.part_index());
         if (is_camera_control) {
             if (square_dist(origin, optic_pos) <= 1 && veh->camera_on) { cam_control = part_index; }
-            continue;
         }
-        optic_parts.push_back(part_index);
     }
 
-    optics.reserve(optic_parts.size());
-    for (auto const part_index : optic_parts) {
-        auto const& part_info = veh->part_info(part_index);
-        auto const optic_pos = veh->bub_part_location(part_index);
+    for (const auto& part_ref : veh->get_avail_parts(VPFLAG_EXTENDS_VISION)) {
+        if (!target_cache.inbounds(part_ref.pos().xy())
+            || part_ref.info().has_flag("CAMERA_CONTROL")) {
+            continue;
+        }
+        const auto part_index = static_cast<int>(part_ref.part_index());
+        const auto& part_info = veh->part_info(part_index);
+        const auto optic_pos = veh->bub_part_location(part_index);
         if (!target_cache.inbounds(optic_pos.xy())) { continue; }
-        auto const is_camera = part_info.has_flag("CAMERA");
+        const auto is_camera = part_info.has_flag("CAMERA");
         if (is_camera) {
             if (requires_camera && cam_control < 0) { continue; }
-            auto const durability = std::max(part_info.durability, 1);
-            auto const raw_range = part_info.bonus * veh->part(part_index).hp() / durability;
-            auto const optic_range = std::clamp(raw_range, 0, g_max_view_distance);
+            const auto durability = std::max(part_info.durability, 1);
+            const auto raw_range = part_info.bonus * veh->part(part_index).hp() / durability;
+            const auto optic_range = std::clamp(raw_range, 0, g_max_view_distance);
             if (optic_range <= 0) { continue; }
-            optics.push_back(GpuVehicleOptic{
+            visit(GpuVehicleOptic{
                 .x = optic_pos.x(),
                 .y = optic_pos.y(),
-                .z_idx = target_z + OVERMAP_DEPTH,
+                .z_idx = p.zlev + OVERMAP_DEPTH,
                 .kind = vehicle_optic_camera,
                 .range = optic_range,
                 .offset_distance = 0,
@@ -2241,21 +2258,19 @@ auto collect_vehicle_optics(
             continue;
         }
 
-        auto const offset_distance = rl_dist(origin, optic_pos);
-        auto const optic_range = std::max(0, g_max_view_distance - offset_distance);
+        const auto offset_distance = rl_dist(origin, optic_pos);
+        const auto optic_range = std::max(0, g_max_view_distance - offset_distance);
         if (optic_range <= 0) { continue; }
-        optics.push_back(GpuVehicleOptic{
+        visit(GpuVehicleOptic{
             .x = optic_pos.x(),
             .y = optic_pos.y(),
-            .z_idx = target_z + OVERMAP_DEPTH,
+            .z_idx = p.zlev + OVERMAP_DEPTH,
             .kind = vehicle_optic_mirror,
             .range = optic_range,
             .offset_distance = offset_distance,
             ._pad = {},
         });
     }
-
-    return optics;
 }
 
 // Pack selected z-levels into a compact upload buffer.  Copy commands place
@@ -2445,6 +2460,7 @@ auto record_seen_rebuild(record_seen_rebuild_params const& p) -> void {
 
 auto prepare_lighting_transparency_output(prepare_lighting_transparency_output_params const& p)
     -> resident_transparency_output {
+    invalidate_visibility_reuse();
     if (p.device == nullptr || p.cache_x <= 0 || p.cache_y <= 0 || p.z_count <= 0) { return {}; }
     auto const z_idx = z_to_resident_index(p.zlev);
     if (z_idx < 0 || z_idx >= p.z_count) { return {}; }
@@ -2458,6 +2474,7 @@ auto prepare_lighting_transparency_output(prepare_lighting_transparency_output_p
 }
 
 auto mark_lighting_transparency_level_updated(int const zlev) -> void {
+    invalidate_visibility_reuse();
     auto& inputs = s_lighting_resources.inputs;
     auto const idx = z_to_resident_index(zlev);
     if (!resident_index_is_valid(idx, inputs.transparency_valid_levels)
@@ -2475,6 +2492,7 @@ auto lighting_transparency_level_is_valid(int const zlev) -> bool {
 }
 
 auto invalidate_lighting_transparency_levels(std::vector<int> const& levels) -> void {
+    invalidate_visibility_reuse();
     auto& inputs = s_lighting_resources.inputs;
     for (auto const z : levels) {
         auto const idx = z_to_resident_index(z);
@@ -2509,6 +2527,7 @@ auto shift_lighting_resident_inputs(shift_lighting_residency_params const& p) ->
     auto const shift_x_tiles = p.shift_x_submaps * SEEX;
     auto const shift_y_tiles = p.shift_y_submaps * SEEY;
     if (shift_x_tiles == 0 && shift_y_tiles == 0) { return true; }
+    invalidate_visibility_reuse();
 
     ensure_resource_device(p.device);
     reset_input_residency_for_shape(p.cache_x, p.cache_y, p.z_count);
@@ -2741,6 +2760,7 @@ auto daylight_diffusion_decay_for_pass(int const pass) -> float {
 auto begin_gpu_lighting(SDL_GPUDevice* const device, run_gpu_lighting_params const& p)
     -> gpu_lighting_work {
     ZoneScopedN("begin_gpu_lighting");
+    invalidate_visibility_reuse();
 
     if (p.m == nullptr || p.dirty_levels == nullptr) { return {}; }
     if (s_pending_lighting_work.active) {
@@ -3804,6 +3824,7 @@ auto run_gpu_lighting(SDL_GPUDevice* const device, run_gpu_lighting_params const
 auto begin_gpu_visibility(SDL_GPUDevice* const device, run_gpu_visibility_params const& p)
     -> gpu_visibility_work {
     ZoneScopedN("begin_gpu_visibility");
+    invalidate_visibility_reuse();
 
     if (p.m == nullptr) { return {}; }
     if (s_pending_visibility_work.active) {
@@ -3856,13 +3877,11 @@ auto begin_gpu_visibility(SDL_GPUDevice* const device, run_gpu_visibility_params
     auto const visibility_download_bytes =
         static_cast<Uint32>(visibility_download_levels.size()) * uint_level_bytes;
     auto const visibility_download_total_bytes = visibility_download_bytes;
-    auto veh_optic_pos = tripoint_bub_ms{p.player_x, p.player_y, p.player_zlev};
-    bool requires_camera = true;
-    if (const auto remote_vehicle = g->remoteveh()) {
-        veh_optic_pos = remote_vehicle->bub_ms_location();
-        requires_camera = false;
-    }
-    auto vehicle_optics = collect_vehicle_optics(*p.m, veh_optic_pos, p.zlev, requires_camera);
+    auto vehicle_optics = std::move(s_completed_visibility_optics);
+    vehicle_optics.clear();
+    visit_visibility_vehicle_optics(p, [&vehicle_optics](const auto& optic) {
+        vehicle_optics.push_back(optic);
+    });
     if (!vehicle_optics.empty() && !ensure_vehicle_optics_pipeline(device)) { return {}; }
     auto camera_zero = make_camera_zero_plan(all_levels, p.zlev, !vehicle_optics.empty());
     auto const camera_clear_ranges = make_z_level_ranges(camera_zero.upload_levels);
@@ -4138,6 +4157,7 @@ auto begin_gpu_visibility(SDL_GPUDevice* const device, run_gpu_visibility_params
     if (s_next_visibility_work_id == 0) { s_next_visibility_work_id = 1; }
     s_pending_visibility_work = pending_gpu_visibility_work{
         .active = true,
+        .reusable = true,
         .id = work_id,
         .device = device,
         .fence = fence,
@@ -4145,6 +4165,7 @@ auto begin_gpu_visibility(SDL_GPUDevice* const device, run_gpu_visibility_params
         .visibility_download_levels = std::move(visibility_download_levels),
         .camera_nonzero_levels_after_dispatch = std::move(
             camera_zero.nonzero_levels_after_dispatch),
+        .vehicle_optics = std::move(vehicle_optics),
         .cache_xy = cache_xy,
         .player_x = p.player_x,
         .player_y = p.player_y,
@@ -4228,8 +4249,37 @@ auto finish_gpu_visibility(SDL_GPUDevice* const device, gpu_visibility_work cons
     }
     s_lighting_resources.camera_valid = true;
     s_lighting_resources.camera_nonzero_levels = pending.camera_nonzero_levels_after_dispatch;
+    s_completed_visibility_work_id = pending.reusable ? pending.id : 0;
+    s_completed_visibility_map = pending.m;
+    s_completed_visibility_optics = std::move(pending.vehicle_optics);
     TracyPlot("GPU Visibility Pending Work", int64_t{0});
     return true;
+}
+
+auto can_reuse_gpu_visibility(
+    SDL_GPUDevice* const device, gpu_visibility_work const& work,
+    run_gpu_visibility_params const& p) -> bool {
+    if (work.id == 0 || work.id != s_completed_visibility_work_id
+        || p.m != s_completed_visibility_map || device != s_lighting_resources.device
+        || s_pending_lighting_work.active || s_pending_visibility_work.active
+        || s_pending_sight_pairs_work.active) {
+        return false;
+    }
+    auto index = std::size_t{0};
+    auto equal = true;
+    visit_visibility_vehicle_optics(p, [&index, &equal](const auto& optic) {
+        if (index >= s_completed_visibility_optics.size()) {
+            equal = false;
+        } else {
+            const auto& previous = s_completed_visibility_optics[index];
+            equal = equal && optic.x == previous.x && optic.y == previous.y
+                 && optic.z_idx == previous.z_idx && optic.kind == previous.kind
+                 && optic.range == previous.range
+                 && optic.offset_distance == previous.offset_distance;
+        }
+        ++index;
+    });
+    return equal && index == s_completed_visibility_optics.size();
 }
 
 auto run_gpu_visibility(SDL_GPUDevice* const device, run_gpu_visibility_params const& p) -> bool {

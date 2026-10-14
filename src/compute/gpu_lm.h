@@ -295,6 +295,12 @@ auto begin_gpu_visibility(SDL_GPUDevice* device, run_gpu_visibility_params const
 // into level_cache::visibility_cache for requested z-levels.
 auto finish_gpu_visibility(SDL_GPUDevice* device, gpu_visibility_work const& work) -> bool;
 
+/// Check resident inputs and exact vehicle optics for a completed result.
+/// The caller must also check map dirtiness and all observer/classification parameters.
+auto can_reuse_gpu_visibility(
+    SDL_GPUDevice* device, gpu_visibility_work const& work, run_gpu_visibility_params const& p)
+    -> bool;
+
 // Synchronous compatibility wrapper for current callers.
 auto run_gpu_visibility(SDL_GPUDevice* device, run_gpu_visibility_params const& p) -> bool;
 
