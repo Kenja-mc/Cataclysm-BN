@@ -3884,7 +3884,7 @@ void target_ui::set_view_offset( const tripoint_rel_ms &new_offset )
     if( changed_z ) {
         // We need to do a bunch of cache updates since we're
         // looking at a different z-level.
-        get_map().invalidate_map_cache( new_.z() );
+        get_map().invalidate_map_cache( src.z() + new_.z() );
     }
 }
 
