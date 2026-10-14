@@ -6309,9 +6309,91 @@ auto map::update_visibility_cache(const int zlev, const std::function<void()>& w
 #if defined(CATA_SDL)
     if (cata_compute::uses_sdl_gpu_compute()) {
         SDL_GPUDevice* const gpu_device = cata_gpu::get_device();
-        auto const mark_overmap_seen_from_visibility = [this](const level_cache& vc_cache) {
-            auto sm_squares_seen =
-                std::vector<int>(static_cast<size_t>(my_MAPSIZE) * my_MAPSIZE, 0);
+        const auto& level = get_cache_ref(zlev);
+        auto next_visibility = completed_gpu_visibility{
+            .player_pos = player_pos,
+            .view_offset = g->u.view_offset,
+            .origin = get_abs_sub(),
+            .dimension = bound_dimension_,
+            .variables = visibility_variables_cache,
+            .zlev = zlev,
+            .cache_x = level.cache_x,
+            .cache_y = level.cache_y,
+            .max_view_distance = g_max_view_distance,
+            .visible_threshold = g_visible_threshold,
+            .vision_block_mask = vision_transparency_block_mask(),
+            .lightmap_source_signature = m_last_lightmap_source_signature,
+            .weather_sight_penalty = get_weather().weather_id->sight_penalty,
+            .trigdist = trigdist,
+        };
+        const auto& previous = m_completed_gpu_visibility;
+        const auto rebuild_seen_cache =
+            m_last_seen_cache_origin != player_pos
+            || (m_seen_cache_gpu_only
+                && (previous.trigdist != next_visibility.trigdist
+                    || previous.max_view_distance != next_visibility.max_view_distance
+                    || previous.vision_block_mask != next_visibility.vision_block_mask));
+        auto visibility_params = cata_gpu::run_gpu_visibility_params{
+            .m = this,
+            .zlev = zlev,
+            .player_x = player_pos.x(),
+            .player_y = player_pos.y(),
+            .player_zlev = player_pos.z(),
+            .g_light_level = visibility_variables_cache.g_light_level,
+            .u_clairvoyance = visibility_variables_cache.u_clairvoyance,
+            .u_unimpaired_range = visibility_variables_cache.u_unimpaired_range,
+            .vision_threshold = visibility_variables_cache.vision_threshold,
+            .visibility_scale_factor = visibility_variables_cache.visibility_scale_factor,
+            .detail_range = visibility_variables_cache.detail_range,
+            .vision_block_mask = next_visibility.vision_block_mask,
+            .rebuild_seen_cache = rebuild_seen_cache,
+        };
+        const auto mark_overmap_seen = [this]() {
+            for (const auto& p : m_completed_gpu_visibility.seen_overmap_tiles) {
+                get_overmapbuffer(bound_dimension_).set_seen(p, true);
+            }
+        };
+
+        // Dirty flags cover rebuilt inputs; the GPU token also rejects residency mutations.
+        if (!rebuild_seen_cache && previous.work_id != 0 && !visibility_caches_dirty()
+            && previous.player_pos == next_visibility.player_pos
+            && previous.view_offset == next_visibility.view_offset
+            && previous.origin == next_visibility.origin
+            && previous.dimension == next_visibility.dimension
+            && previous.zlev == next_visibility.zlev && previous.cache_x == next_visibility.cache_x
+            && previous.cache_y == next_visibility.cache_y
+            && previous.max_view_distance == next_visibility.max_view_distance
+            && previous.visible_threshold == next_visibility.visible_threshold
+            && previous.vision_block_mask == next_visibility.vision_block_mask
+            && previous.weather_sight_penalty == next_visibility.weather_sight_penalty
+            && previous.trigdist == next_visibility.trigdist
+            && previous.variables == next_visibility.variables
+            && m_last_lightmap_source_signature_valid
+            && previous.lightmap_source_signature == next_visibility.lightmap_source_signature
+            && std::ranges::all_of(
+                std::views::iota(-OVERMAP_DEPTH, OVERMAP_HEIGHT + 1),
+                [this](const auto z) {
+                    const auto& cache = get_cache_ref(z);
+                    return !cache.visibility_cache_dirty && !cache.seen_cache_dirty
+                        && !cache.lightmap_dirty && cache.transparency_cache_dirty.none()
+                        && cache.floor_cache_dirty.none() && cache.outside_cache_dirty.none()
+                        && !cache.vehicle_caches_dirty && !cache.vehicle_floor_cache_dirty;
+                })
+            && current_lightmap_source_signature() == previous.lightmap_source_signature
+            && cata_gpu::
+                can_reuse_gpu_visibility(gpu_device, {.id = previous.work_id}, visibility_params)) {
+            if (while_gpu_pending) { while_gpu_pending(); }
+            // Replay discovery writes, including after an external overmap visibility reset.
+            mark_overmap_seen();
+            return;
+        }
+        m_completed_gpu_visibility.work_id = 0;
+        const auto aggregate_overmap_seen_from_visibility = [this](const level_cache& vc_cache) {
+            auto& seen_tiles = m_completed_gpu_visibility.seen_overmap_tiles;
+            seen_tiles.clear();
+            auto& sm_squares_seen = m_completed_gpu_visibility.submap_visibility_counts;
+            sm_squares_seen.resize(static_cast<size_t>(my_MAPSIZE) * my_MAPSIZE);
+            std::ranges::fill(sm_squares_seen, 0);
             for (const auto x : std::views::iota(0, vc_cache.cache_x)) {
                 for (const auto y : std::views::iota(0, vc_cache.cache_y)) {
                     const auto ll = vc_cache.visibility_cache[vc_cache.idx(x, y)];
@@ -6323,8 +6405,7 @@ auto map::update_visibility_cache(const int zlev, const std::function<void()>& w
                 if (sm_squares_seen[p.x() * my_MAPSIZE + p.y()] > 36) {
                     const auto abs_sm = bub_to_abs(p);
                     const auto abs_omt(project_to<coords::omt>(abs_sm));
-                    get_overmapbuffer(bound_dimension_)
-                        .set_seen(tripoint_abs_omt(abs_omt.xy(), 0), true);
+                    seen_tiles.emplace_back(abs_omt.xy(), 0);
                 }
             }
         };
@@ -6332,25 +6413,9 @@ auto map::update_visibility_cache(const int zlev, const std::function<void()>& w
         auto visibility_download_levels = std::vector<int>{};
         std::ranges::copy(std::views::iota(-OVERMAP_DEPTH, OVERMAP_HEIGHT + 1),
                           std::back_inserter(visibility_download_levels));
-        const auto rebuild_seen_cache = m_last_seen_cache_origin != player_pos;
-        const auto gpu_visibility_work = cata_gpu::begin_gpu_visibility(
-            gpu_device,
-            {
-                .m = this,
-                .download_levels = &visibility_download_levels,
-                .zlev = zlev,
-                .player_x = player_pos.x(),
-                .player_y = player_pos.y(),
-                .player_zlev = player_pos.z(),
-                .g_light_level = visibility_variables_cache.g_light_level,
-                .u_clairvoyance = visibility_variables_cache.u_clairvoyance,
-                .u_unimpaired_range = visibility_variables_cache.u_unimpaired_range,
-                .vision_threshold = visibility_variables_cache.vision_threshold,
-                .visibility_scale_factor = visibility_variables_cache.visibility_scale_factor,
-                .detail_range = visibility_variables_cache.detail_range,
-                .vision_block_mask = vision_transparency_block_mask(),
-                .rebuild_seen_cache = rebuild_seen_cache,
-            });
+        visibility_params.download_levels = &visibility_download_levels;
+        const auto gpu_visibility_work =
+            cata_gpu::begin_gpu_visibility(gpu_device, visibility_params);
         if (gpu_visibility_work.id == 0) {
             debugmsg("SDL_GPU visibility dispatch failed; see debug.log for details");
             return;
@@ -6366,14 +6431,26 @@ auto map::update_visibility_cache(const int zlev, const std::function<void()>& w
             auto& origin_cache = get_cache(player_pos.z());
             std::fill(origin_cache.camera_cache.begin(), origin_cache.camera_cache.end(), 0.0f);
             m_last_seen_cache_origin = player_pos;
+            for (const auto z : visibility_download_levels) {
+                get_cache(z).seen_cache_dirty = false;
+            }
+            m_seen_cache_gpu_only = true;
         }
         mark_visibility_caches_clean();
-        mark_overmap_seen_from_visibility(get_cache_ref(zlev));
+        next_visibility.work_id = gpu_visibility_work.id;
+        next_visibility.seen_overmap_tiles = std::move(
+            m_completed_gpu_visibility.seen_overmap_tiles);
+        next_visibility.submap_visibility_counts = std::move(
+            m_completed_gpu_visibility.submap_visibility_counts);
+        m_completed_gpu_visibility = std::move(next_visibility);
+        aggregate_overmap_seen_from_visibility(get_cache_ref(zlev));
+        mark_overmap_seen();
         return;
     }
 #endif
 
     (void)while_gpu_pending;
+    m_completed_gpu_visibility.work_id = 0;
 
     auto sm_squares_seen = std::vector<int>(static_cast<size_t>(my_MAPSIZE) * my_MAPSIZE, 0);
 
@@ -6947,10 +7024,14 @@ auto map::sees(
     // P-6 / PERF-LOSS-1: shared_lock for the cache lookup so concurrent readers
     // don't serialize against each other.  The ray trace runs fully unlocked.
     const auto slot_idx = std::hash<int64_t>{}(key) & (vision_cache_slots - 1);
+    auto epoch = uint64_t{0};
     {
         std::shared_lock<std::shared_mutex> lock(*skew_vision_cache_mutex);
         const auto& slot = skew_vision_cache[slot_idx];
-        if (slot.key == key && slot.value >= 0) { return slot.value > 0; }
+        epoch = skew_vision_cache_epoch;
+        if (slot.epoch == static_cast<uint32_t>(epoch) && slot.key == key && slot.value >= 0) {
+            return slot.value > 0;
+        }
     }
 
     bool visible = true;
@@ -6976,7 +7057,12 @@ auto map::sees(
                   });
         {
             std::unique_lock<std::shared_mutex> lock(*skew_vision_cache_mutex);
-            skew_vision_cache[slot_idx] = {key, static_cast<char>(visible ? 1 : 0)};
+            if (epoch == skew_vision_cache_epoch) {
+                skew_vision_cache[slot_idx] =
+                    {.key = key,
+                     .epoch = static_cast<uint32_t>(epoch),
+                     .value = static_cast<char>(visible ? 1 : 0)};
+            }
         }
         return visible;
     }
@@ -7012,7 +7098,12 @@ auto map::sees(
         });
     {
         std::unique_lock<std::shared_mutex> lock(*skew_vision_cache_mutex);
-        skew_vision_cache[slot_idx] = {key, static_cast<char>(visible ? 1 : 0)};
+        if (epoch == skew_vision_cache_epoch) {
+            skew_vision_cache[slot_idx] =
+                {.key = key,
+                 .epoch = static_cast<uint32_t>(epoch),
+                 .value = static_cast<char>(visible ? 1 : 0)};
+        }
     }
     return visible;
 }
@@ -8570,7 +8661,16 @@ void map::build_map_cache(const int zlev, bool skip_lightmap) {
     TracyPlot("Map CPU LM Valid Levels", static_cast<int64_t>(valid_lm_levels));
     TracyPlot("Map CPU LM Stale Levels",
               static_cast<int64_t>(OVERMAP_HEIGHT - -OVERMAP_DEPTH + 1 - valid_lm_levels));
-    bool seen_cache_dirty = false;
+    auto seen_cache_dirty = false;
+    auto vehicle_obscured_cache_rebuilt = false;
+#if defined(CATA_SDL)
+    if (!use_sdl_gpu_compute && m_seen_cache_gpu_only) {
+        // GPU seen results are resident only; a backend change must rebuild the CPU arrays.
+        seen_cache_dirty = true;
+        m_seen_cache_gpu_only = false;
+        m_completed_gpu_visibility.work_id = 0;
+    }
+#endif
     bool gpu_transparency_dirty = false;
     bool gpu_floor_dirty = false;
     bool gpu_vehicle_floor_dirty = false;
@@ -8704,6 +8804,7 @@ void map::build_map_cache(const int zlev, bool skip_lightmap) {
                 {
                     ZoneScopedN("Phase3_vehicles_cache");
                     do_vehicle_caching(z);
+                    vehicle_obscured_cache_rebuilt = true;
                 }
             }
             if (get_cache(z).vehicle_floor_cache_dirty) {
@@ -8844,7 +8945,18 @@ void map::build_map_cache(const int zlev, bool skip_lightmap) {
     }
 
     seen_cache_dirty |= build_vision_transparency_cache(get_player_character());
-    if (seen_cache_dirty) { skew_vision_cache.assign(vision_cache_slots, vision_cache_slot{}); }
+    // Cached sight lines in map::sees are keyed on transparency, vehicle-obscured,
+    // and floor caches, so retiring the epoch on any of their rebuilds is required.
+    const auto sight_lines_stale =
+        seen_cache_dirty || vehicle_obscured_cache_rebuilt
+        || !gpu_transparency_dirty_levels.empty();
+    if (sight_lines_stale) {
+        const auto lock = std::unique_lock<std::shared_mutex>(*skew_vision_cache_mutex);
+        if (static_cast<uint32_t>(++skew_vision_cache_epoch) == 0) {
+            std::ranges::fill(skew_vision_cache, vision_cache_slot{});
+            ++skew_vision_cache_epoch;
+        }
+    }
     const auto need_seen_rebuild =
         seen_cache_dirty || force_seen_rebuild_for_gpu_residency || m_last_seen_cache_origin != p;
     TracyPlot("Map Need Seen Rebuild", need_seen_rebuild ? int64_t{1} : int64_t{0});
