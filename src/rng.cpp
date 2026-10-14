@@ -39,8 +39,13 @@ units::angle random_direction()
     return rng_float( 0_pi_radians, 2_pi_radians );
 }
 
-double normal_roll( double mean, double stddev )
+auto normal_roll( double mean, double stddev ) -> double
 {
+    // std::normal_distribution requires a positive standard deviation and aborts
+    // under _GLIBCXX_ASSERTIONS otherwise, so degenerate rolls just give the mean.
+    if( !( stddev > 0.0 ) ) {
+        return mean;
+    }
     static std::normal_distribution<double> rng_normal_dist;
     return rng_normal_dist( rng_get_engine(), std::normal_distribution<>::param_type( mean, stddev ) );
 }
@@ -119,17 +124,17 @@ int djb2_hash( const unsigned char *input )
     return hash;
 }
 
-double rng_normal( double lo, double hi )
+auto rng_normal( double lo, double hi ) -> double
 {
     if( lo > hi ) {
         std::swap( lo, hi );
     }
 
-    const double stddev = ( hi - lo ) / 4;
+    const auto stddev = ( hi - lo ) / 4;
     if( stddev == 0.0 ) {
         return hi;
     }
-    double val = normal_roll( ( hi + lo ) / 2, stddev );
+    auto val = normal_roll( ( hi + lo ) / 2, stddev );
     return clamp( val, lo, hi );
 }
 
