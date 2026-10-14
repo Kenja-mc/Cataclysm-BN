@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "action.h"
@@ -21,6 +22,13 @@ struct tip {
     const char *id;
     std::function<bool( const avatar & )> applies;
     std::function<std::string()> text;
+    /// The avatar value that records this tip as seen, derived from `id`.
+    std::string seen_key;
+
+    tip( const char *id_in, std::function<bool( const avatar & )> applies_in,
+         std::function<std::string()> text_in )
+        : id( id_in ), applies( std::move( applies_in ) ), text( std::move( text_in ) ),
+          seen_key( std::string( "tip_seen_" ) + id ) {}
 };
 
 auto key( const action_id act ) -> std::string
@@ -95,9 +103,8 @@ auto check( avatar &you ) -> void
         return;
     }
     for( const auto &t : tips() ) {
-        const auto seen = std::string( "tip_seen_" ) + t.id;
-        if( you.get_value( seen ).empty() && t.applies( you ) ) {
-            you.set_value( seen, "1" );
+        if( you.get_value( t.seen_key ).empty() && t.applies( you ) ) {
+            you.set_value( t.seen_key, "1" );
             add_msg( game_message_params{ m_info, gmf_bypass_cooldown }, _( "Tip: %s" ), t.text() );
             return;
         }
