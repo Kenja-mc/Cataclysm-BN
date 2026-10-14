@@ -8892,9 +8892,33 @@ void game::examine()
         }
     }
 
-    const std::optional<tripoint_bub_ms> examp_ = choose_adjacent_highlight( _( "Examine where?" ),
-            _( "There is nothing that can be examined nearby." ),
-            ACTION_EXAMINE, false );
+    // Interactable tiles are highlighted, but any adjacent tile may be picked to have
+    // it described (e.g. "That is a dirt"); choose_adjacent_highlight would reject the rest.
+    std::vector<tripoint_bub_ms> valid;
+    for( const tripoint_bub_ms &p : m.points_in_radius( u.bub_pos(), 1 ) ) {
+        if( !m.obstructed_by_vehicle_rotation( u.bub_pos(), p ) && can_examine_at( p ) ) {
+            valid.emplace_back( p );
+        }
+    }
+    const bool auto_select = get_option<bool>( "AUTOSELECT_SINGLE_VALID_TARGET" );
+    if( valid.empty() && auto_select ) {
+        add_msg( _( "There is nothing that can be examined nearby." ) );
+        return;
+    }
+    std::optional<tripoint_bub_ms> examp_;
+    if( valid.size() == 1 && auto_select ) {
+        examp_ = valid.front();
+    } else {
+        const auto draw_highlight = [&]() {
+            for( const tripoint_bub_ms &p : valid ) {
+                m.drawsq( w_terrain, p, drawsq_params().highlight( true ) );
+            }
+        };
+        const shared_ptr_fast<game::draw_callback_t> hilite_cb =
+            make_shared_fast<game::draw_callback_t>( draw_highlight );
+        add_draw_callback( hilite_cb );
+        examp_ = choose_adjacent( _( "Examine where?" ), false );
+    }
     if( !examp_ ) {
         return;
     }
