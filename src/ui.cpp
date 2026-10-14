@@ -1,12 +1,14 @@
 #include "ui.h"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cctype>
 #include <climits>
 #include <cstdlib>
 #include <iterator>
 #include <memory>
+#include <string_view>
 
 #include "avatar.h"
 #include "cata_utility.h"
@@ -15,6 +17,7 @@
 #include "game.h"
 #include "ime.h"
 #include "input.h"
+#include "options.h"
 #include "output.h"
 #include "player.h"
 #include "string_input_popup.h"
@@ -23,8 +26,6 @@
 
 #if defined(__ANDROID__)
 #include <SDL3/SDL.h>
-
-#include "options.h"
 #endif
 
 catacurses::window new_centered_win( int nlines, int ncols )
@@ -222,6 +223,9 @@ input_context uilist::create_main_input_context() const
     if( categories.size() > 1 || dynamic_categories ) {
         ctxt.register_action( "LEFT", to_translation( "Previous category" ) );
         ctxt.register_action( "RIGHT", to_translation( "Next category" ) );
+    } else if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        ctxt.register_action( "LEFT" );
+        ctxt.register_action( "RIGHT" );
     }
     ctxt.register_action( "PAGE_UP", to_translation( "Fast scroll up" ) );
     ctxt.register_action( "PAGE_DOWN", to_translation( "Fast scroll down" ) );
@@ -233,6 +237,11 @@ input_context uilist::create_main_input_context() const
         ctxt.register_action( "QUIT" );
     }
     ctxt.register_action( "SELECT" );
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "FILTER" );
     ctxt.register_action( "ANY_INPUT" );
@@ -263,7 +272,12 @@ input_context uilist::create_filter_input_context() const
     ctxt.register_action( "HELP_KEYBINDINGS" );
     ctxt.register_action( "ANY_INPUT" );
     // uilist actions
-    ctxt.register_updown();
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        ctxt.register_action( "TEXT.UP" );
+        ctxt.register_action( "TEXT.DOWN" );
+    } else {
+        ctxt.register_updown();
+    }
     ctxt.register_action( "PAGE_UP", to_translation( "Fast scroll up" ) );
     ctxt.register_action( "PAGE_DOWN", to_translation( "Fast scroll down" ) );
     ctxt.register_action( "HOME", to_translation( "Go to first entry" ) );
@@ -581,7 +595,30 @@ void uilist::setup()
     pad_right = pad_right_setup.fun ? pad_right_setup.fun() : 0;
     int pad = pad_left + pad_right + 2;
     int descwidth_final = 0; // for description width guard
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    constexpr auto navigation_keys = std::string_view( "wasd" );
+    auto shifted_shortcuts = std::array<bool, 4> {};
+    if( modern ) {
+        for( const auto &entry : entries ) {
+            const auto index = navigation_keys.find( entry.hotkey );
+            if( index != std::string_view::npos ) {
+                shifted_shortcuts[index] = true;
+            }
+        }
+        std::erase_if( hotkeys, [navigation_keys]( const auto key ) { return navigation_keys.contains( key ); } );
+    }
     for( size_t i = 0; i < entries.size(); i++ ) {
+        if( modern ) {
+            const auto index = navigation_keys.find( entries[i].hotkey );
+            if( index != std::string_view::npos ) {
+                entries[i].hotkey = std::toupper( entries[i].hotkey );
+            } else if( entries[i].hotkey > 0 && entries[i].hotkey < 128 ) {
+                const auto shifted_index = navigation_keys.find( std::tolower( entries[i].hotkey ) );
+                if( shifted_index != std::string_view::npos && shifted_shortcuts[shifted_index] ) {
+                    entries[i].hotkey = -1;
+                }
+            }
+        }
         int txtwidth = utf8_width( remove_color_tags( entries[i].txt ) );
         int ctxtwidth = utf8_width( remove_color_tags( entries[i].ctxt ) );
         if( txtwidth > max_entry_len ) {
@@ -622,15 +659,13 @@ void uilist::setup()
             entries[ i ].text_color = text_color;
         }
     }
-    size_t next_free_hotkey = 0;
-    for( auto it = autoassign.begin(); it != autoassign.end() &&
-         next_free_hotkey < hotkeys.size(); ++it ) {
+    auto next_free_hotkey = size_t{ 0 };
+    for( const auto entry_index : autoassign ) {
         while( next_free_hotkey < hotkeys.size() ) {
-            const int setkey = hotkeys[next_free_hotkey];
-            next_free_hotkey++;
+            const auto setkey = hotkeys[next_free_hotkey++];
             if( !keymap.contains( setkey ) ) {
-                entries[*it].hotkey = setkey;
-                keymap[setkey] = *it;
+                entries[entry_index].hotkey = setkey;
+                keymap[setkey] = entry_index;
                 break;
             }
         }
@@ -836,6 +871,9 @@ void uilist::show( ui_adaptor &ui )
     for( int fei = vshift, si = 0; si < vmax; fei++, si++ ) {
         if( fei < static_cast<int>( fentries.size() ) ) {
             int ei = fentries [ fei ];
+            entries[ei].drawn_rect = inclusive_rectangle<point>(
+                                         point( pad_left + 1, estart + si ),
+                                         point( w_width - pad_right - 2, estart + si ) );
             nc_color co;
             nc_color hk_co;
             if( ei == selected ) {
@@ -939,13 +977,13 @@ void uilist::show( ui_adaptor &ui )
 
 int uilist::scroll_amount_from_action( const std::string &action )
 {
-    if( action == "UP" ) {
+    if( action == "UP" || action == "TEXT.UP" ) {
         return -1;
     } else if( action == "PAGE_UP" ) {
         return ( -vmax + 1 );
     } else if( action == "SCROLL_UP" ) {
         return -3;
-    } else if( action == "DOWN" ) {
+    } else if( action == "DOWN" || action == "TEXT.DOWN" ) {
         return 1;
     } else if( action == "PAGE_DOWN" ) {
         return vmax - 1;
@@ -1054,6 +1092,7 @@ void uilist::query( bool loop, int timeout )
     ret = UILIST_WAIT_INPUT;
 
     input_context ctxt = create_main_input_context();
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
 
     shared_ptr_fast<ui_adaptor> ui = create_or_get_ui_adaptor();
 
@@ -1075,10 +1114,39 @@ void uilist::query( bool loop, int timeout )
 
         if( scrollby( scroll_amount_from_action( ret_act ) ) ) {
             /* nothing */
+        } else if( modern && event.type == input_event_t::mouse &&
+                   ( ret_act == "SELECT" || ret_act == "MOUSE_MOVE" ) ) {
+            const auto mouse = ctxt.get_coordinates( window );
+            if( mouse ) {
+                const auto cell = mouse->xy().raw() + point( getmaxx( window ), getmaxy( window ) ) / 2;
+                const auto end = std::min( vshift + vmax, static_cast<int>( fentries.size() ) );
+                for( auto filtered_index = vshift; filtered_index < end; ++filtered_index ) {
+                    const auto entry_index = fentries[filtered_index];
+                    const auto &entry = entries[entry_index];
+                    if( !entry.drawn_rect || !entry.drawn_rect->contains( cell ) ) {
+                        continue;
+                    }
+                    if( entry.enabled || allow_disabled || hilight_disabled ) {
+                        selected = entry_index;
+                        fselected = filtered_index;
+                        if( callback != nullptr ) {
+                            callback->select( this );
+                        }
+                        if( ret_act == "SELECT" && ( entry.enabled || allow_disabled ) ) {
+                            ret = entry.retval;
+                        }
+                    }
+                    break;
+                }
+            }
         } else if( filtering && ret_act == "FILTER" ) {
             inputfilter();
         } else if( categories.size() > 1 && ( ret_act == "LEFT" || ret_act == "RIGHT" ) ) {
             cycle_category( ret_act == "RIGHT" );
+        } else if( modern && ( ret_act == "LEFT" || ret_act == "RIGHT" ) &&
+                   !( allow_additional && std::ranges::any_of( additional_actions,
+        [this]( const auto & action ) { return action.first == ret_act; } ) ) ) {
+            /* A list without categories has no horizontal navigation. */
         } else if( ret_act == "ANY_INPUT" && iter != keymap.end() ) {
             // only handle "ANY_INPUT" since "HELP_KEYBINDINGS" is already
             // handled by the input context and the caller might want to handle
@@ -1106,7 +1174,7 @@ void uilist::query( bool loop, int timeout )
                 // disabled
                 ret = entries[selected].retval;
             }
-        } else if( allow_cancel && ret_act == "QUIT" ) {
+        } else if( allow_cancel && ( ret_act == "QUIT" || ret_act == "SEC_SELECT" ) ) {
             ret = UILIST_CANCEL;
         } else if( ret_act == "TIMEOUT" ) {
             ret = UILIST_TIMEOUT;

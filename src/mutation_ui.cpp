@@ -3,6 +3,7 @@
 #include <algorithm> //std::min
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <unordered_map>
 
 #include "character.h"
@@ -10,6 +11,7 @@
 #include "input.h"
 #include "inventory.h"
 #include "mutation.h"
+#include "options.h"
 #include "output.h"
 #include "popup.h"
 #include "string_formatter.h"
@@ -18,9 +20,14 @@
 #include "ui_manager.h"
 #include "value_ptr.h"
 
-// '!' and '=' are uses as default bindings in the menu
-const invlet_wrapper
-mutation_chars( "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\"#&()*+./:;@[\\]^_{|}" );
+namespace
+{
+// '!' and '=' are used as default bindings in the menu.
+const auto classic_mutation_chars = invlet_wrapper(
+                                        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\"#&()*+./:;@[\\]^_{|}" );
+const auto modern_mutation_chars = invlet_wrapper(
+                                       "bcefghijklmnopqrtuvxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\"#&()*+./:;@[\\]^_{|}" );
+} // namespace
 
 static void draw_exam_window( const catacurses::window &win, const int border_y )
 {
@@ -129,6 +136,25 @@ void show_mutations_ui( Character &who )
 
 detail::mutations_ui_result detail::show_mutations_ui_internal( Character &who )
 {
+    auto ctxt = input_context( "MUTATIONS" );
+    ctxt.register_updown();
+    ctxt.register_action( "ANY_INPUT" );
+    ctxt.register_action( "TOGGLE_EXAMINE" );
+    ctxt.register_action( "TOGGLE_SPRITE" );
+    ctxt.register_action( "REASSIGN" );
+    ctxt.register_action( "NEXT_TAB" );
+    ctxt.register_action( "PREV_TAB" );
+    ctxt.register_action( "CONFIRM" );
+    ctxt.register_action( "HELP_KEYBINDINGS" );
+    ctxt.register_action( "QUIT" );
+
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) != "classic";
+    auto available_chars = std::optional<invlet_wrapper> {};
+    if( modern ) {
+        available_chars.emplace(
+            ctxt.get_available_single_char_hotkeys( modern_mutation_chars.get_allowed_chars() ).c_str() );
+    }
+    const auto &mutation_chars = modern ? *available_chars : classic_mutation_chars;
     std::vector<trait_id> passive;
     std::vector<trait_id> active;
     for( std::pair<const trait_id, char_trait_data> &mut : who.my_mutations ) {
@@ -136,6 +162,16 @@ detail::mutations_ui_result detail::show_mutations_ui_internal( Character &who )
             passive.push_back( mut.first );
         } else {
             active.push_back( mut.first );
+        }
+        // Saved conflicting shortcuts become usable Shift aliases, or another free letter.
+        if( modern && mut.second.key != ' ' && !mutation_chars.valid( mut.second.key ) ) {
+            const auto shifted = mut.second.key + 'A' - 'a';
+            if( mut.second.key >= 'a' && mut.second.key <= 'z' && mutation_chars.valid( shifted ) &&
+                !trait_by_invlet( who.my_mutations, shifted ) ) {
+                mut.second.key = shifted;
+            } else {
+                mut.second.key = ' ';
+            }
         }
         // New mutations are initialized with no key at all, so we have to do this here.
         if( mut.second.key == ' ' ) {
@@ -236,17 +272,6 @@ detail::mutations_ui_result detail::show_mutations_ui_internal( Character &who )
     } );
     ui.mark_resize();
 
-    input_context ctxt( "MUTATIONS" );
-    ctxt.register_updown();
-    ctxt.register_action( "ANY_INPUT" );
-    ctxt.register_action( "TOGGLE_EXAMINE" );
-    ctxt.register_action( "TOGGLE_SPRITE" );
-    ctxt.register_action( "REASSIGN" );
-    ctxt.register_action( "NEXT_TAB" );
-    ctxt.register_action( "PREV_TAB" );
-    ctxt.register_action( "CONFIRM" );
-    ctxt.register_action( "HELP_KEYBINDINGS" );
-    ctxt.register_action( "QUIT" );
 #if defined(__ANDROID__)
     for( const auto &p : passive ) {
         ctxt.register_manual_key( who.my_mutations[p].key, p.obj().name() );
@@ -365,7 +390,8 @@ detail::mutations_ui_result detail::show_mutations_ui_internal( Character &who )
         bool handled = false;
         const std::string action = ctxt.handle_input();
         const input_event evt = ctxt.get_raw_input();
-        if( evt.type == input_event_t::keyboard && !evt.sequence.empty() ) {
+        if( ( !modern || action == "ANY_INPUT" ) &&
+            evt.type == input_event_t::keyboard && !evt.sequence.empty() ) {
             const int ch = evt.get_first_input();
             if( ch == ' ' ) { //skip if space is pressed (space is used as an empty hotkey)
                 continue;

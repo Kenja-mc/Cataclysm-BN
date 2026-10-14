@@ -19,7 +19,7 @@ def vehicle_game(name, **options):
 
 
 def spawn_vehicle(game, prototype="car"):
-    game.keys("F12", "s", "v", delay=0.6)
+    game.keys("F12", "S", "v", delay=0.6)
     game.wait_for("Choose vehicle to spawn")
     game.keys("/", delay=0.4)
     game.type(f"({prototype})")

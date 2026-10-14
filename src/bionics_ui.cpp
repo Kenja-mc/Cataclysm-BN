@@ -4,6 +4,7 @@
 #include <array>
 #include <cstddef>
 #include <memory>
+#include <optional>
 
 #include "bionics.h"
 #include "catacharset.h"
@@ -29,12 +30,18 @@
 static const std::string flag_SAFE_FUEL_OFF( "SAFE_FUEL_OFF" );
 static const flag_id flag_MULTIINSTALL( "MULTIINSTALL" );
 
-// '!', '-' and '=' are uses as default bindings in the menu
-const invlet_wrapper
-bionic_chars( "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\"#&()*+./:;@[\\]^_{|}" );
-
 namespace
 {
+// '!', '-' and '=' are used as default bindings in the menu.
+auto get_bionic_chars() -> const invlet_wrapper &
+{
+    static const auto classic_chars = invlet_wrapper(
+                                          "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\"#&()*+./:;@[\\]^_{|}" );
+    static const auto modern_chars = invlet_wrapper(
+                                         "bcefghijklmnopqrtuvxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\"#&()*+./:;@[\\]^_{|}" );
+    return get_option<std::string>( "CONTROL_SCHEME" ) == "classic" ? classic_chars : modern_chars;
+}
+
 enum bionic_tab_mode {
     TAB_ACTIVE,
     TAB_PASSIVE
@@ -179,7 +186,7 @@ static bionic *bionic_by_invlet( bionic_collection &bionics, const int ch )
 
 char get_free_invlet( bionic_collection &bionics )
 {
-    for( auto &inv_char : bionic_chars ) {
+    for( const auto &inv_char : get_bionic_chars() ) {
         if( bionic_by_invlet( bionics, inv_char ) == nullptr ) {
             return inv_char;
         }
@@ -554,7 +561,49 @@ nc_color get_bionic_text_color( const bionic &bio, const bool isHighlightedBioni
 
 void show_bionics_ui( Character &who )
 {
+    auto ctxt = input_context( "BIONICS" );
+    ctxt.register_updown();
+    ctxt.register_action( "ANY_INPUT" );
+    ctxt.register_action( "TOGGLE_EXAMINE" );
+    ctxt.register_action( "REASSIGN" );
+    ctxt.register_action( "NEXT_TAB" );
+    ctxt.register_action( "PREV_TAB" );
+    ctxt.register_action( "CONFIRM" );
+    ctxt.register_action( "QUIT" );
+    ctxt.register_action( "HELP_KEYBINDINGS" );
+    ctxt.register_action( "TOGGLE_SAFE_FUEL" );
+    ctxt.register_action( "TOGGLE_SPRITE" );
+    ctxt.register_action( "TOGGLE_AUTO_START" );
+    ctxt.register_action( "SORT" );
+
     bionic_collection &bionics = *who.my_bionics;
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) != "classic";
+    auto available_chars = std::optional<invlet_wrapper> {};
+    if( modern ) {
+        available_chars.emplace(
+            ctxt.get_available_single_char_hotkeys( get_bionic_chars().get_allowed_chars() ).c_str() );
+    }
+    const auto &bionic_chars = modern ? *available_chars : get_bionic_chars();
+    if( modern ) {
+        for( auto &bio : bionics ) {
+            if( bio.invlet != ' ' && !bionic_chars.valid( bio.invlet ) ) {
+                const auto shifted = bio.invlet + 'A' - 'a';
+                if( bio.invlet >= 'a' && bio.invlet <= 'z' && bionic_chars.valid( shifted ) &&
+                    !bionic_by_invlet( bionics, shifted ) ) {
+                    bio.invlet = shifted;
+                } else {
+                    // Keep the CBM even when there are no usable shortcuts left.
+                    bio.invlet = ' ';
+                    for( const auto letter : bionic_chars ) {
+                        if( !bionic_by_invlet( bionics, letter ) ) {
+                            bio.invlet = letter;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
     sorted_bionics passive = filtered_bionics( bionics, TAB_PASSIVE );
     sorted_bionics active = filtered_bionics( bionics, TAB_ACTIVE );
     bionic *bio_last = nullptr;
@@ -633,21 +682,6 @@ void show_bionics_ui( Character &who )
     //generate the tab title string and a count of the bionics owned
     bionic_menu_mode menu_mode = ACTIVATING;
     int max_scroll_position = 0;
-
-    input_context ctxt( "BIONICS" );
-    ctxt.register_updown();
-    ctxt.register_action( "ANY_INPUT" );
-    ctxt.register_action( "TOGGLE_EXAMINE" );
-    ctxt.register_action( "REASSIGN" );
-    ctxt.register_action( "NEXT_TAB" );
-    ctxt.register_action( "PREV_TAB" );
-    ctxt.register_action( "CONFIRM" );
-    ctxt.register_action( "QUIT" );
-    ctxt.register_action( "HELP_KEYBINDINGS" );
-    ctxt.register_action( "TOGGLE_SAFE_FUEL" );
-    ctxt.register_action( "TOGGLE_SPRITE" );
-    ctxt.register_action( "TOGGLE_AUTO_START" );
-    ctxt.register_action( "SORT" );
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
         if( hide ) {

@@ -51,6 +51,7 @@
 #include <istream>
 #include <memory>
 #include <optional>
+#include <string_view>
 enum class main_menu_opts : int {
     MOTD = 0,
     NEWCHAR = 1,
@@ -128,6 +129,48 @@ static int utf8_width_notags( const char *s )
     }
     return w;
 }
+
+namespace
+{
+auto menu_hotkeys( std::string &item ) -> std::vector<std::string>
+{
+    auto hotkeys = get_hotkeys( item );
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "classic" || hotkeys.empty() ) {
+        return hotkeys;
+    }
+
+    // Keep the translated label and its shortcut hint in sync with the Shift-only aliases.
+    auto changed = false;
+    for( auto &key : hotkeys ) {
+        if( key.size() == 1 && std::string_view( "wasd" ).find( key[0] ) != std::string_view::npos ) {
+            key[0] += 'A' - 'a';
+            changed = true;
+        }
+    }
+    if( !changed ) {
+        return hotkeys;
+    }
+    for( auto it = hotkeys.begin(); it != hotkeys.end(); ) {
+        if( std::find( hotkeys.begin(), it, *it ) != it ) {
+            it = hotkeys.erase( it );
+        } else {
+            ++it;
+        }
+    }
+    auto marker = std::string( "<" );
+    for( const auto &key : hotkeys ) {
+        if( marker.size() > 1 ) {
+            marker += '|';
+        }
+        marker += key;
+    }
+    marker += '>';
+    const auto start = item.find( '<' );
+    const auto end = item.find( '>', start );
+    item.replace( start, end - start + 1, marker );
+    return hotkeys;
+}
+} // namespace
 
 std::vector<int> main_menu::print_menu_items( const catacurses::window &w_in,
         const std::vector<std::string> &vItems,
@@ -525,14 +568,14 @@ void main_menu::init_strings()
         _( "Defend against waves of incoming enemies.  This game mode hasn't been updated in a while and may contain bugs." ) );
     vNewGameHotkeys.clear();
     vNewGameHotkeys.reserve( vNewGameSubItems.size() );
-    for( const std::string &item : vNewGameSubItems ) {
-        vNewGameHotkeys.push_back( get_hotkeys( item ) );
+    for( auto &item : vNewGameSubItems ) {
+        vNewGameHotkeys.push_back( menu_hotkeys( item ) );
     }
 
     // determine hotkeys from translated menu item text
     vMenuHotkeys.clear();
-    for( const std::string &item : vMenuItems ) {
-        vMenuHotkeys.push_back( get_hotkeys( item ) );
+    for( auto &item : vMenuItems ) {
+        vMenuHotkeys.push_back( menu_hotkeys( item ) );
     }
 
     vWorldSubItems.clear();
@@ -546,6 +589,10 @@ void main_menu::init_strings()
     vWorldSubItems.emplace_back( pgettext( "Main Menu|World", "<= Return" ) );
 
     vWorldHotkeys = { 'm', 'e', 's', 't', 'r', 'd', 'f', 'q' };
+    if( get_option<std::string>( "CONTROL_SCHEME" ) != "classic" ) {
+        vWorldHotkeys[2] = 'S';
+        vWorldHotkeys[5] = 'D';
+    }
 
     vSettingsSubItems.clear();
     vSettingsSubItems.emplace_back( pgettext( "Main Menu|Settings", "<O|o>ptions" ) );
@@ -556,8 +603,8 @@ void main_menu::init_strings()
     vSettingsSubItems.emplace_back( pgettext( "Main Menu|Settings", "Colo<r|R>s" ) );
 
     vSettingsHotkeys.clear();
-    for( const std::string &item : vSettingsSubItems ) {
-        vSettingsHotkeys.push_back( get_hotkeys( item ) );
+    for( auto &item : vSettingsSubItems ) {
+        vSettingsHotkeys.push_back( menu_hotkeys( item ) );
     }
 
     vdaytip = get_random_tip_of_the_day();
@@ -713,37 +760,39 @@ bool main_menu::opening_screen()
         std::string action = ctxt.handle_input();
         input_event sInput = ctxt.get_raw_input();
 
-        // check automatic menu shortcuts
-        for( int i = 0; static_cast<size_t>( i ) < vMenuHotkeys.size(); ++i ) {
-            for( const std::string &hotkey : vMenuHotkeys[i] ) {
-                if( sInput.text == hotkey && sel1 != i ) {
-                    sel1 = i;
-                    sel2 = i == getopt( main_menu_opts::LOADCHAR ) ? last_world_pos : 0;
-                    sel_line = 0;
-                    if( i == getopt( main_menu_opts::HELP ) ) {
-                        action = "CONFIRM";
-                    } else if( i == getopt( main_menu_opts::QUIT ) ) {
-                        action = "QUIT";
+        // Classic retains its raw-letter precedence; Modern lets navigation win.
+        if( get_option<std::string>( "CONTROL_SCHEME" ) == "classic" || action == "ANY_INPUT" ) {
+            for( int i = 0; static_cast<size_t>( i ) < vMenuHotkeys.size(); ++i ) {
+                for( const std::string &hotkey : vMenuHotkeys[i] ) {
+                    if( sInput.text == hotkey && sel1 != i ) {
+                        sel1 = i;
+                        sel2 = i == getopt( main_menu_opts::LOADCHAR ) ? last_world_pos : 0;
+                        sel_line = 0;
+                        if( i == getopt( main_menu_opts::HELP ) ) {
+                            action = "CONFIRM";
+                        } else if( i == getopt( main_menu_opts::QUIT ) ) {
+                            action = "QUIT";
+                        }
                     }
                 }
             }
-        }
-        if( sel1 == getopt( main_menu_opts::SETTINGS ) ) {
-            for( int i = 0; static_cast<size_t>( i ) < vSettingsSubItems.size(); ++i ) {
-                for( const std::string &hotkey : vSettingsHotkeys[i] ) {
-                    if( sInput.text == hotkey ) {
-                        sel2 = i;
-                        action = "CONFIRM";
+            if( sel1 == getopt( main_menu_opts::SETTINGS ) ) {
+                for( int i = 0; static_cast<size_t>( i ) < vSettingsSubItems.size(); ++i ) {
+                    for( const std::string &hotkey : vSettingsHotkeys[i] ) {
+                        if( sInput.text == hotkey ) {
+                            sel2 = i;
+                            action = "CONFIRM";
+                        }
                     }
                 }
             }
-        }
-        if( sel1 == getopt( main_menu_opts::NEWCHAR ) ) {
-            for( int i = 0; static_cast<size_t>( i ) < vNewGameSubItems.size(); ++i ) {
-                for( const std::string &hotkey : vNewGameHotkeys[i] ) {
-                    if( sInput.text == hotkey ) {
-                        sel2 = i;
-                        action = "CONFIRM";
+            if( sel1 == getopt( main_menu_opts::NEWCHAR ) ) {
+                for( int i = 0; static_cast<size_t>( i ) < vNewGameSubItems.size(); ++i ) {
+                    for( const std::string &hotkey : vNewGameHotkeys[i] ) {
+                        if( sInput.text == hotkey ) {
+                            sel2 = i;
+                            action = "CONFIRM";
+                        }
                     }
                 }
             }
