@@ -1558,7 +1558,7 @@ std::optional<tripoint_bub_ms> input_context::get_coordinates( const catacurses:
         view_offset = g->ter_view_p.xy();
     }
 
-    const point_bub_ms p = view_offset - ( view_size / 2 - coordinate );
+    const point_bub_ms p = view_offset + point_rel_ms( coordinate - win_min - view_size / 2 );
     return tripoint_bub_ms( p, g->get_levz() );
 }
 #endif

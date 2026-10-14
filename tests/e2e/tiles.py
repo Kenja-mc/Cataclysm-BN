@@ -13,6 +13,7 @@ Flow for each case:
 
 Usage:
   python3 tests/e2e/tiles.py minimap [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
+  python3 tests/e2e/tiles.py mouse [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
 
 --root is the game tree (data and the curses build); --binary is the tiles executable.
 Artifacts (window captures, marker crops, logs, fixture asserts, result.json) stay in --out.
@@ -121,6 +122,10 @@ class X11:
         x.XFree.argtypes = [ctypes.c_void_p]
         x.XSetInputFocus.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.c_int, ctypes.c_ulong]
         x.XSync.argtypes = [ctypes.c_void_p, ctypes.c_int]
+        x.XTranslateCoordinates.argtypes = [
+            ctypes.c_void_p, ctypes.c_ulong, ctypes.c_ulong, ctypes.c_int, ctypes.c_int,
+            ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_ulong),
+        ]
         x.XInternAtom.restype = ctypes.c_ulong
         x.XInternAtom.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int]
         x.XGetWindowProperty.restype = ctypes.c_int
@@ -183,6 +188,15 @@ class X11:
         self.xtst.XTestFakeMotionEvent(self.dpy, -1, x, y, 0)
         self.xlib.XSetInputFocus(self.dpy, win, 2, 0)
         self.xlib.XSync(self.dpy, 0)
+
+    def focus_local(self, win, x, y):
+        """Moves to a window-local pixel without assuming SDL placed the window at root (0, 0)."""
+        root_x, root_y, child = ctypes.c_int(), ctypes.c_int(), ctypes.c_ulong()
+        require(self.xlib.XTranslateCoordinates(self.dpy, win, self.root, x, y,
+                                                ctypes.byref(root_x), ctypes.byref(root_y),
+                                                ctypes.byref(child)),
+                "could not translate window-local pointer position")
+        self.focus(win, root_x.value, root_y.value)
 
     def key(self, *names, delay=0.1):
         """Presses the keysyms together (e.g. 'Shift_L', 'a'), then releases them in reverse order."""
@@ -257,7 +271,7 @@ def frame_is_game_world(rgb):
     width, height, pixels = rgb
     green = 0
     for y in range(min(height, 32)):
-        for x in range(width // 2, width):
+        for x in range(width):
             offset = 3 * (y * width + x)
             r, g, b = pixels[offset:offset + 3]
             green += r < 16 and g >= 96 and b < 16
@@ -657,7 +671,84 @@ def case_minimap(session):
     return failures, report
 
 
-CASES = {"minimap": case_minimap}
+def case_mouse(session):
+    """Same visible adjacent tile, 2x scaling, on both sides of a nonzero terrain origin."""
+    # The harness owns this isolated config. Bind a real game save action so assertions read the
+    # serialized avatar, not a screenshot guess or a mocked input/coordinate implementation.
+    bindings = session.curses_userdir / "config" / "keybindings.json"
+    rows = json.loads(bindings.read_text()) if bindings.exists() else []
+    rows = [row for row in rows if not (row.get("category") == "DEFAULTMODE"
+                                      and row.get("id") == "quicksave")]
+    rows.append({"type": "keybinding", "id": "quicksave", "category": "DEFAULTMODE",
+                 "bindings": [{"input_method": "keyboard", "key": "F6"}]})
+    bindings.write_text(json.dumps(rows))
+    options = {
+        "CONTROL_SCHEME": "modern", "MOUSE_TILE_SELECTION": "true", "CURSOR_PANNING": "false",
+        "SCALING_FACTOR": "2", "FULLSCREEN": "borderless", "TILES": "UNDEAD_PEOPLE_BASE",
+        "FONT_WIDTH": "8", "FONT_HEIGHT": "16", "FONT_SIZE": "16",
+        "TERMINAL_X": "160", "TERMINAL_Y": "60",
+    }
+    observations = {}
+    hover_panel = None
+    for side in ("right", "left"):
+        label = f"mouse-2x-{side}"
+        with session.running_game(label, {**options, "SIDEBAR_POSITION": side}) as live:
+            x11 = X11(session.display)
+            try:
+                win = x11.find_window(WINDOW_TITLE_PREFIX)
+                require(win is not None, f"{label}: game window disappeared")
+                width, height, before = frame_rgb(live.frame)
+                # The isolated fork layout has 44 sidebar cells, UndeadPeople tiles are 32px.
+                # At 2x scale the visible map origin is 704px for the left sidebar, 0 otherwise.
+                sidebar_width, tile_size = 44 * 8 * 2, 32 * 2
+                terrain_width = width - sidebar_width
+                require(terrain_width >= 3 * tile_size, f"{label}: terrain too narrow")
+                origin = sidebar_width if side == "left" else 0
+                avatar_x = origin + (terrain_width // tile_size // 2) * tile_size + tile_size // 2
+                avatar_y = (height // tile_size // 2) * tile_size + tile_size // 2
+                sidebar_x = 0 if side == "left" else terrain_width
+                x11.focus_local(win, avatar_x + tile_size, avatar_y)
+                time.sleep(1)
+                hover_png = capture(session.display, win, session.artifacts / f"{label}-hover.png")
+                _, _, hovered = frame_rgb(hover_png)
+                def panel(rgb):
+                    # Mouse View is a fixed-width sidebar panel; compare its actual rendered
+                    # terrain description and action hint, not just the presence of changed pixels.
+                    return b"".join(rgb[3 * (y * width + sidebar_x):
+                                        3 * (y * width + sidebar_x + sidebar_width)]
+                                    for y in range(height // 2))
+                actual_panel = panel(hovered)
+                require(actual_panel != panel(before), f"{label}: adjacent tile produced no hover")
+                if hover_panel is None:
+                    hover_panel = actual_panel
+                else:
+                    require(actual_panel == hover_panel,
+                            f"{label}: visible adjacent tile has a different description/hint")
+                saves = list((live.run / "userdir" / "save" / session.world).glob("*.sav"))
+                require(len(saves) == 1, f"{label}: expected one character save, got {saves}")
+                save = saves[0]
+                def position():
+                    return json.loads(save.read_text().split("\n", 1)[1])["player"]["abs_pos"]
+                start = position()
+                previous_stamp = save.stat().st_mtime_ns
+                x11.click(1, delay=1)
+                capture(session.display, win, session.artifacts / f"{label}-clicked.png")
+                x11.key("F6", delay=1)
+                deadline = time.time() + 30
+                while save.stat().st_mtime_ns == previous_stamp and time.time() < deadline:
+                    time.sleep(0.2)
+                require(save.stat().st_mtime_ns != previous_stamp, f"{label}: quicksave did not run")
+                final = position()
+                want = [start[0] + 1, start[1], start[2]]
+                require(final == want, f"{label}: east adjacent click moved {start} -> {final}, want {want}")
+                observations[side] = {"start": start, "final": final, "pointer": [avatar_x + tile_size, avatar_y],
+                                      "terrain_origin": origin, "hover": str(hover_png)}
+            finally:
+                x11.close()
+    return [], observations
+
+
+CASES = {"minimap": case_minimap, "mouse": case_mouse}
 
 
 def main(argv=None):

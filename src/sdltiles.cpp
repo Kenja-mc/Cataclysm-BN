@@ -1649,8 +1649,8 @@ auto register_item_thumbnail( const catacurses::window &win, const item &itm,
     pending_item_thumbnails.push_back( pending_item_thumbnail{
         .owner = win.weak_ptr(),
         .dest = SDL_Rect{
-            .x = dim.window_pos_pixel.x + x0 * fontwidth,
-            .y = dim.window_pos_pixel.y + y0 * fontheight,
+            .x = dim.window_pos_pixel.x / get_scaling_factor() + x0 * fontwidth,
+            .y = dim.window_pos_pixel.y / get_scaling_factor() + y0 * fontheight,
             .w = ( x1 - x0 ) * fontwidth, .h = ( y1 - y0 ) * fontheight
         },
         .tile_idx = *tile_idx,
@@ -4165,9 +4165,9 @@ static window_dimensions get_window_dimensions( const catacurses::window &win,
         dim.window_size_cell = size;
     }
 
-    // the window position is *always* in standard font dimensions!
+    // Window positions use the standard font, in the same scaled pixels as mouse input.
     dim.window_pos_pixel = point( dim.window_pos_cell.x * fontwidth,
-                                  dim.window_pos_cell.y * fontheight );
+                                  dim.window_pos_cell.y * fontheight ) * get_scaling_factor();
     // But the size of the window is in the font dimensions of the window.
     dim.window_size_pixel.x = dim.window_size_cell.x * dim.scaled_font_size.x;
     dim.window_size_pixel.y = dim.window_size_cell.y * dim.scaled_font_size.y;
@@ -4241,7 +4241,7 @@ std::optional<tripoint_bub_ms> input_context::get_coordinates( const catacurses:
 
     // Translate mouse coordinates to map coordinates based on tile size
     // Check if click is within bounds of the window we care about
-    const inclusive_rectangle<point> win_bounds( win_min, win_max );
+    const half_open_rectangle<point> win_bounds( win_min, win_max );
     if( !win_bounds.contains( coordinate ) ) {
         return std::nullopt;
     }
@@ -4253,9 +4253,9 @@ std::optional<tripoint_bub_ms> input_context::get_coordinates( const catacurses:
 
     const point screen_pos = coordinate - win_min;
     point_bub_ms p;
-    if( tile_iso && use_tiles ) {
-        const float win_mid_x = win_min.x + win_size.x / 2.0f;
-        const float win_mid_y = -win_min.y + win_size.y / 2.0f;
+    if( tile_iso && use_tiles && capture_win == g->w_terrain ) {
+        const float win_mid_x = win_size.x / 2.0f;
+        const float win_mid_y = win_size.y / 2.0f;
         const int screen_col = std::round( ( screen_pos.x - win_mid_x ) / ( fw / 2.0 ) );
         const int screen_row = std::round( ( screen_pos.y - win_mid_y ) / ( fw / 4.0 ) );
         const point_rel_ms selected( ( screen_col - screen_row ) / 2, ( screen_row + screen_col ) / 2 );
