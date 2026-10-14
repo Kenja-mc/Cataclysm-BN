@@ -97,7 +97,6 @@
 #include "units.h"
 #include "units_energy.h"
 #include "units_utility.h"
-#include "utils/string_to_int.h"
 #include "value_ptr.h"
 #include "vehicle/vehicle.h"
 #include "vehicle/vehicle_part.h"
@@ -5391,7 +5390,7 @@ std::string item::tname( unsigned int quantity, bool with_prefix, unsigned int t
         tagtext += string_format( " (%s)", paint->friendly_name() );
     }
     if( has_flag( flag_ETHEREAL_ITEM ) ) {
-        tagtext += string_format( _( " (%s turns)" ), get_var( "ethereal" ) );
+        tagtext += string_format( _( " (%s turns)" ), get_var<int>( "ethereal", 0 ) );
     } else if( goes_bad() || is_food() ) {
         if( has_own_flag( flag_DIRTY ) ) {
             tagtext += _( " (dirty)" );
@@ -11332,8 +11331,7 @@ detached_ptr<item> item::process_internal( detached_ptr<item> &&self, player *ca
         if( !self->has_var( "ethereal" ) ) {
             return detached_ptr<item>();
         }
-        const auto ethereal_counter = string_utils::string_to_int( self->get_var( "ethereal" ) ).value_or(
-                                          0 ) - ticks;
+        const auto ethereal_counter = self->get_var<int>( "ethereal", 0 ) - ticks;
         self->set_var( "ethereal", ethereal_counter );
         const bool processed = ethereal_counter <= 0;
         if( processed && carrier != nullptr ) {
