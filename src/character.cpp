@@ -40,6 +40,7 @@
 #include "fungal_effects.h"
 #include "game.h"
 #include "game_constants.h"
+#include "heat_radiation.h"
 #include "int_id.h"
 #include "item_contents.h"
 #include "item_hauling.h"
@@ -6850,9 +6851,10 @@ void Character::update_bodytemp( const map &m, const weather_manager &weather )
     body_mods.air_humidity = get_local_humidity( weather_point.humidity, weather.weather_id,
                              body_mods.sheltered );
 
-    body_mods.best_fire = get_heat_radiation( _bub_pos, true );
+    const auto body_rad = get_heat_radiation_data( _bub_pos );
+    body_mods.best_fire = body_rad.best_fire;
     body_mods.has_pyromania = has_trait( trait_PYROMANIA );
-    body_mods.heat_radiation = get_heat_radiation( _bub_pos, false );
+    body_mods.heat_radiation = body_rad.temp_mod;
     body_mods.lying_warmth = can_use_floor_warmth() ? floor_warmth( _bub_pos ) : 0_c_delta;
 
     body_mods.is_in_sunlight = weather::is_in_sunlight( m, _bub_pos, weather.weather_id );
