@@ -22,6 +22,8 @@ namespace
 struct hint {
     std::string keys;
     std::string label;
+    int keys_width;
+    int label_width;
 };
 
 auto key_name( const char ch ) -> std::string
@@ -56,17 +58,25 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
     };
     auto hints = std::vector<hint>();
     hints.reserve( singles.size() + 3 );
+    auto push = [&]( std::string keys, std::string label ) {
+        hint h;
+        h.keys = std::move( keys );
+        h.label = std::move( label );
+        h.keys_width = utf8_width( h.keys );
+        h.label_width = utf8_width( h.label );
+        hints.push_back( std::move( h ) );
+    };
     if( driving ) {
-        hints.push_back( { .keys = joined_keys( { ACTION_MOVE_FORTH, ACTION_MOVE_BACK } ), .label = _( "throttle" ) } );
-        hints.push_back( { .keys = joined_keys( { ACTION_MOVE_LEFT, ACTION_MOVE_RIGHT } ), .label = _( "steer" ) } );
+        push( joined_keys( { ACTION_MOVE_FORTH, ACTION_MOVE_BACK } ), _( "throttle" ) );
+        push( joined_keys( { ACTION_MOVE_LEFT, ACTION_MOVE_RIGHT } ), _( "steer" ) );
     } else {
-        hints.push_back( { .keys = joined_keys( { ACTION_MOVE_FORTH, ACTION_MOVE_LEFT, ACTION_MOVE_BACK, ACTION_MOVE_RIGHT } ), .label = _( "move" ) } );
-        hints.push_back( { .keys = joined_keys( { ACTION_MOVE_FORTH_LEFT, ACTION_MOVE_FORTH_RIGHT, ACTION_MOVE_BACK_LEFT, ACTION_MOVE_BACK_RIGHT } ), .label = _( "diag" ) } );
+        push( joined_keys( { ACTION_MOVE_FORTH, ACTION_MOVE_LEFT, ACTION_MOVE_BACK, ACTION_MOVE_RIGHT } ), _( "move" ) );
+        push( joined_keys( { ACTION_MOVE_FORTH_LEFT, ACTION_MOVE_FORTH_RIGHT, ACTION_MOVE_BACK_LEFT, ACTION_MOVE_BACK_RIGHT } ), _( "diag" ) );
     }
-    hints.push_back( { .keys = "?", .label = _( "all keys" ) } );
+    push( "?", _( "all keys" ) );
     for( const auto &[act, label] : singles ) {
         if( auto keys = first_key( act ); !keys.empty() ) {
-            hints.push_back( { .keys = std::move( keys ), .label = label } );
+            push( std::move( keys ), label );
         }
     }
     return hints;
@@ -91,7 +101,7 @@ auto draw_keyhints( const avatar &you, const catacurses::window &w ) -> void
         cached_version = inp_mngr.bindings_version();
     }
     for( const auto &h : cached ) {
-        const auto len = utf8_width( h.keys ) + 1 + utf8_width( h.label );
+        const auto len = h.keys_width + 1 + h.label_width;
         if( pos.x > 1 && pos.x + len > width ) {
             pos = point( 1, pos.y + 1 );
         }
@@ -99,7 +109,7 @@ auto draw_keyhints( const avatar &you, const catacurses::window &w ) -> void
             break;
         }
         mvwprintz( w, pos, c_light_cyan, h.keys );
-        mvwprintz( w, pos + point( utf8_width( h.keys ) + 1, 0 ), c_dark_gray, h.label );
+        mvwprintz( w, pos + point( h.keys_width + 1, 0 ), c_dark_gray, h.label );
         pos.x += len + 2;
     }
     wnoutrefresh( w );

@@ -1,13 +1,13 @@
 #include "hud_boxes.h"
 
 #include <algorithm>
+#include <array>
 #include <cstring>
 #include <cstdint>
 #include <optional>
 #if !defined(TILES) && !defined(_WIN32)
 #include <langinfo.h>
 #endif
-#include <map>
 #include <string>
 #include <utility>
 #include <vector>
@@ -88,9 +88,8 @@ enum class icon {
 };
 
 /// One glyph per icon for each icon set. Nerd Font glyphs are Material Design icons (the fist is Font Awesome).
-auto glyph( const icon i ) -> std::string
+auto glyph( const icon i, const std::string &style ) -> std::string
 {
-    const auto style = get_option<std::string>( "HUD_ICONS" );
     const auto pick = [&]( const char *uni, const char *nerd, const char *ascii ) {
         return std::string( style == "nerd" ? nerd : style == "ascii" ? ascii : uni );
     };
@@ -166,6 +165,7 @@ auto weather_icon( const std::string &id ) -> icon
 
 struct line {
     std::string icon;
+    int icon_w;
     nc_color icon_color;
     std::string text;
     nc_color text_color;
@@ -198,41 +198,52 @@ auto wind_text( const avatar &you ) -> wind_info
              get_wind_color( windpower ) };
 }
 
-auto weather_lines( const avatar &you ) -> std::vector<line>
+auto weather_lines( const avatar &you, const std::string &icons ) -> std::vector<line>
 {
     auto out = std::vector<line>();
     const auto &w = get_weather();
-    if( you.bub_pos().z() < 0 ) {
-        out.push_back( { glyph( icon::underground ), c_light_gray, _( "Underground" ), c_light_gray } );
+    const auto underground = you.bub_pos().z() < 0;
+    const auto first = underground ? glyph( icon::underground, icons )
+                                   : glyph( weather_icon( w.weather_id.str() ), icons );
+    const auto iw = utf8_width( first );
+    if( underground ) {
+        out.push_back( { .icon = std::move( first ), .icon_w = iw, .icon_color = c_light_gray,
+                         .text = _( "Underground" ), .text_color = c_light_gray } );
     } else {
-        out.push_back( { glyph( weather_icon( w.weather_id.str() ) ), w.weather_id->color,
-                         w.weather_id->name.translated(), w.weather_id->color } );
+        out.push_back( { .icon = std::move( first ), .icon_w = iw, .icon_color = w.weather_id->color,
+                         .text = w.weather_id->name.translated(), .text_color = w.weather_id->color } );
     }
-    const auto indent = std::string( utf8_width( out.front().icon ), ' ' );
+    const auto indent = std::string( iw, ' ' );
     auto time_line = time_text( you );
     if( has_thermometer( you ) ) {
         time_line += "  " + print_temperature( w.get_temperature( you.abs_pos() ) );
     }
-    out.push_back( { indent, c_light_gray, time_line, c_light_gray } );
+    out.push_back( { .icon = indent, .icon_w = iw, .icon_color = c_light_gray,
+                     .text = time_line, .text_color = c_light_gray } );
     if( !hud_boxes::roomy() ) {
         return out;
     }
-    out.push_back( { indent, c_light_gray,
-                     string_format( _( "%s, day %d" ), calendar::name_season( season_of_year( calendar::turn ) ),
-                                    day_of_season<int>( calendar::turn ) + 1 ), c_light_gray } );
+    out.push_back( { .icon = indent, .icon_w = iw, .icon_color = c_light_gray,
+                     .text = string_format( _( "%s, day %d" ),
+                                            calendar::name_season( season_of_year( calendar::turn ) ),
+                                            day_of_season<int>( calendar::turn ) + 1 ),
+                     .text_color = c_light_gray } );
     const auto light = get_light_level( character_funcs::fine_detail_vision_mod( you ) );
-    out.push_back( { indent, c_light_gray, string_format( _( "Light: %s" ), colorize( light.first, light.second ) ),
-                     c_light_gray } );
-    out.push_back( { indent, c_light_gray,
-                     string_format( _( "Moon: %s" ), moon_phase_name( get_moon_phase( calendar::turn ) ) ),
-                     c_light_gray } );
+    out.push_back( { .icon = indent, .icon_w = iw, .icon_color = c_light_gray,
+                     .text = string_format( _( "Light: %s" ), colorize( light.first, light.second ) ),
+                     .text_color = c_light_gray } );
+    out.push_back( { .icon = indent, .icon_w = iw, .icon_color = c_light_gray,
+                     .text = string_format( _( "Moon: %s" ),
+                                            moon_phase_name( get_moon_phase( calendar::turn ) ) ),
+                     .text_color = c_light_gray } );
     const auto wind = wind_text( you );
-    out.push_back( { indent, c_light_gray, string_format( _( "Wind: %s" ), colorize( wind.text, wind.color ) ),
-                     c_light_gray } );
+    out.push_back( { .icon = indent, .icon_w = iw, .icon_color = c_light_gray,
+                     .text = string_format( _( "Wind: %s" ), colorize( wind.text, wind.color ) ),
+                     .text_color = c_light_gray } );
     return out;
 }
 
-auto combat_lines( const avatar &you ) -> std::vector<line>
+auto combat_lines( const avatar &you, const std::string &icons ) -> std::vector<line>
 {
     auto out = std::vector<line>();
     const auto &weapon = you.primary_weapon();
@@ -243,10 +254,18 @@ auto combat_lines( const avatar &you ) -> std::vector<line>
     }
     const auto name = you.is_armed() ? character_funcs::fmt_wielded_weapon( you ) : std::string(
                           _( "fists" ) );
-    out.push_back( { glyph( kind ), c_light_cyan, name, c_light_gray } );
+    {
+        const auto ic = glyph( kind, icons );
+        const auto iw = utf8_width( ic );
+        out.push_back( { .icon = std::move( ic ), .icon_w = iw, .icon_color = c_light_cyan,
+                         .text = name, .text_color = c_light_gray } );
+    }
     const auto style = you.martial_arts_data->selected_style_name( you );
     if( !style.empty() ) {
-        out.push_back( { glyph( icon::style ), c_light_blue, style, c_light_gray } );
+        const auto ic = glyph( icon::style, icons );
+        const auto iw = utf8_width( ic );
+        out.push_back( { .icon = std::move( ic ), .icon_w = iw, .icon_color = c_light_blue,
+                         .text = style, .text_color = c_light_gray } );
     }
     auto stance_icon = icon::walk;
     auto stance_color = c_light_gray;
@@ -264,16 +283,24 @@ auto combat_lines( const avatar &you ) -> std::vector<line>
         stance_color = c_brown;
         stance_text = _( "Prone" );
     }
-    out.push_back( { glyph( stance_icon ), stance_color, stance_text, stance_color } );
+    {
+        const auto ic = glyph( stance_icon, icons );
+        const auto iw = utf8_width( ic );
+        out.push_back( { .icon = std::move( ic ), .icon_w = iw, .icon_color = stance_color,
+                         .text = stance_text, .text_color = stance_color } );
+    }
     if( hud_boxes::roomy() && hud_boxes::mana_matters( you ) ) {
         const auto mana = hud_boxes::mana_reading( you );
-        out.push_back( { glyph( icon::mana ), c_light_blue,
-                         string_format( _( "Mana: %s" ), colorize( mana.text, mana.color ) ), c_light_gray } );
+        const auto ic = glyph( icon::mana, icons );
+        const auto iw = utf8_width( ic );
+        out.push_back( { .icon = std::move( ic ), .icon_w = iw, .icon_color = c_light_blue,
+                         .text = string_format( _( "Mana: %s" ), colorize( mana.text, mana.color ) ),
+                         .text_color = c_light_gray } );
     }
     return out;
 }
 
-auto vehicle_lines( const avatar &you ) -> std::vector<line>
+auto vehicle_lines( const avatar &you, const std::string &icons ) -> std::vector<line>
 {
     auto out = std::vector<line>();
     auto *veh = g->remoteveh();
@@ -287,37 +314,41 @@ auto vehicle_lines( const avatar &you ) -> std::vector<line>
     static const auto fuel_type_battery = itype_id( "battery" );
     static const auto fuel_type_muscle = itype_id( "muscle" );
 
-    out.push_back( { .icon = glyph( icon::compass ), .icon_color = c_light_gray,
-                     .text = string_format( _( "Azimuth: %s" ), veh->face.to_string_azimuth_from_north() ),
-                     .text_color = c_light_gray } );
-    const auto indent = std::string( utf8_width( out.front().icon ), ' ' );
-    const auto strain = veh->strain();
-    const auto speed_color = strain <= 0 ? c_light_blue :
-                             strain <= 0.2 ? c_yellow : strain <= 0.4 ? c_light_red : c_red;
-    out.push_back( { .icon = indent, .icon_color = speed_color,
-                     .text = string_format( _( "Speed: %d %s" ),
-                                            static_cast<int>( convert_velocity( veh->velocity, VU_VEHICLE ) ),
-                                            velocity_units( VU_VEHICLE ) ),
-                     .text_color = speed_color } );
-    if( veh->cruise_on ) {
-        out.push_back( { .icon = indent, .icon_color = c_light_gray,
-                         .text = string_format( _( "Cruise: %d %s" ),
-                                                static_cast<int>( convert_velocity( veh->cruise_velocity, VU_VEHICLE ) ),
-                                                velocity_units( VU_VEHICLE ) ),
+    {
+        const auto ic = glyph( icon::compass, icons );
+        const auto iw = utf8_width( ic );
+        out.push_back( { .icon = std::move( ic ), .icon_w = iw, .icon_color = c_light_gray,
+                         .text = string_format( _( "Azimuth: %s" ), veh->face.to_string_azimuth_from_north() ),
                          .text_color = c_light_gray } );
-    }
-    if( veh->has_part( "WING" ) ) {
-        const auto takeoff = veh->get_takeoff_speed();
-        out.push_back( { .icon = indent, .icon_color = c_light_gray,
-                         .text = string_format( _( "Takeoff: %d %s" ),
-                                                takeoff,
+        const auto indent = std::string( iw, ' ' );
+        const auto strain = veh->strain();
+        const auto speed_color = strain <= 0 ? c_light_blue :
+                                 strain <= 0.2 ? c_yellow : strain <= 0.4 ? c_light_red : c_red;
+        out.push_back( { .icon = indent, .icon_w = iw, .icon_color = speed_color,
+                         .text = string_format( _( "Speed: %d %s" ),
+                                                static_cast<int>( convert_velocity( veh->velocity, VU_VEHICLE ) ),
                                                 velocity_units( VU_VEHICLE ) ),
-                         .text_color = convert_velocity( veh->velocity, VU_VEHICLE ) >= takeoff ?
-                                       c_light_green : c_light_red } );
+                         .text_color = speed_color } );
+        if( veh->cruise_on ) {
+            out.push_back( { .icon = indent, .icon_w = iw, .icon_color = c_light_gray,
+                             .text = string_format( _( "Cruise: %d %s" ),
+                                                    static_cast<int>( convert_velocity( veh->cruise_velocity, VU_VEHICLE ) ),
+                                                    velocity_units( VU_VEHICLE ) ),
+                             .text_color = c_light_gray } );
+        }
+        if( veh->has_part( "WING" ) ) {
+            const auto takeoff = veh->get_takeoff_speed();
+            out.push_back( { .icon = indent, .icon_w = iw, .icon_color = c_light_gray,
+                             .text = string_format( _( "Takeoff: %d %s" ),
+                                                    takeoff,
+                                                    velocity_units( VU_VEHICLE ) ),
+                             .text_color = convert_velocity( veh->velocity, VU_VEHICLE ) >= takeoff ?
+                                           c_light_green : c_light_red } );
+        }
+        out.push_back( { .icon = indent, .icon_w = iw, .icon_color = c_light_gray,
+                         .text = veh->engine_on ? _( "Engine: on" ) : _( "Engine: off" ),
+                         .text_color = veh->engine_on ? c_light_green : c_light_gray } );
     }
-    out.push_back( { .icon = indent, .icon_color = c_light_gray,
-                     .text = veh->engine_on ? _( "Engine: on" ) : _( "Engine: off" ),
-                     .text_color = veh->engine_on ? c_light_green : c_light_gray } );
 
     auto engine_fuel = std::optional<itype_id>();
     for( auto e = size_t{ 0 }; e < veh->engines.size(); ++e ) {
@@ -342,14 +373,18 @@ auto vehicle_lines( const avatar &you ) -> std::vector<line>
     };
     if( engine_fuel && *engine_fuel != fuel_type_battery ) {
         const auto percent = percentage( *engine_fuel );
-        out.push_back( { .icon = glyph( icon::fuel ), .icon_color = c_light_gray,
+        const auto ic = glyph( icon::fuel, icons );
+        const auto iw = utf8_width( ic );
+        out.push_back( { .icon = std::move( ic ), .icon_w = iw, .icon_color = c_light_gray,
                          .text = string_format( _( "%s: %d%%" ), item::nname( *engine_fuel ), percent ),
                          .text_color = percent > 20 ? c_light_gray : percent > 5 ? c_yellow : c_red } );
     }
     if( veh->fuel_capacity( fuel_type_battery ) > 0 ) {
         const auto percent = percentage( fuel_type_battery );
         const auto color = percent > 20 ? c_light_cyan : percent > 5 ? c_yellow : c_red;
-        out.push_back( { .icon = glyph( icon::battery ), .icon_color = color,
+        const auto ic = glyph( icon::battery, icons );
+        const auto iw = utf8_width( ic );
+        out.push_back( { .icon = std::move( ic ), .icon_w = iw, .icon_color = color,
                          .text = string_format( _( "Battery: %d%%" ), percent ), .text_color = color } );
     }
     return out;
@@ -366,26 +401,28 @@ auto draw_box( const catacurses::window &w, const box_spec &box ) -> void
 {
     const auto &[at, inner, lines] = box;
     const auto frame = frame_for( unicode_locale(), get_option<bool>( "UI_ROUNDED_BORDERS" ) );
-    const auto bar = [&]( const char *l, const char *r ) {
-        auto s = std::string( l );
-        for( int i = 0; i < inner + 2; i++ ) {
-            s += frame.horizontal;
-        }
-        return s + r;
-    };
-    mvwprintz( w, at, c_dark_gray, bar( frame.top_left, frame.top_right ) );
+    // Build the border and blank fill strings once per box, not once per row.
+    std::string top_bar = frame.top_left;
+    std::string bot_bar = frame.bottom_left;
+    for( int i = 0; i < inner + 2; i++ ) {
+        top_bar += frame.horizontal;
+        bot_bar += frame.horizontal;
+    }
+    top_bar += frame.top_right;
+    bot_bar += frame.bottom_right;
+    const auto blank = std::string( inner + 2, ' ' );
+    mvwprintz( w, at, c_dark_gray, top_bar );
     for( size_t i = 0; i < lines.size(); i++ ) {
         const auto row = at + point( 0, i + 1 );
         mvwprintz( w, row, c_dark_gray, frame.vertical );
-        mvwprintz( w, row + point( 1, 0 ), c_black, std::string( inner + 2, ' ' ) );
+        mvwprintz( w, row + point( 1, 0 ), c_black, blank );
         mvwprintz( w, row + point( 2, 0 ), lines[i].icon_color, lines[i].icon );
-        const auto icon_w = utf8_width( lines[i].icon );
+        const auto icon_w = lines[i].icon_w;
         trim_and_print( w, row + point( 3 + icon_w, 0 ), inner - icon_w - 1, lines[i].text_color,
                         lines[i].text );
         mvwprintz( w, row + point( inner + 3, 0 ), c_dark_gray, frame.vertical );
     }
-    mvwprintz( w, at + point( 0, lines.size() + 1 ), c_dark_gray, bar( frame.bottom_left,
-               frame.bottom_right ) );
+    mvwprintz( w, at + point( 0, lines.size() + 1 ), c_dark_gray, bot_bar );
 }
 
 } // namespace
@@ -460,15 +497,18 @@ auto draw( const avatar &you, const catacurses::window &w ) -> void
         std::vector<line> lines;
     };
     auto boxes = std::vector<box>();
+    boxes.reserve( 3 );
+    // Read once per frame; the boxes themselves draw the same icons.
+    const auto icons = get_option<std::string>( "HUD_ICONS" );
     if( const auto corner = get_option<std::string>( "HUD_WEATHER_BOX" ); corner != "off" ) {
-        boxes.push_back( { corner, weather_lines( you ) } );
+        boxes.push_back( { corner, weather_lines( you, icons ) } );
     }
     if( const auto corner = get_option<std::string>( "HUD_COMBAT_BOX" ); corner != "off" ) {
-        boxes.push_back( { corner, combat_lines( you ) } );
+        boxes.push_back( { corner, combat_lines( you, icons ) } );
     }
     if( const auto corner = get_option<std::string>( "HUD_VEHICLE_BOX" ); corner != "off" ) {
         if( g->remoteveh() != nullptr || you.in_vehicle ) {
-            auto lines = vehicle_lines( you );
+            auto lines = vehicle_lines( you, icons );
             if( !lines.empty() ) {
                 boxes.push_back( { .corner = corner, .lines = std::move( lines ) } );
             }
@@ -476,19 +516,25 @@ auto draw( const avatar &you, const catacurses::window &w ) -> void
     }
     const auto width = getmaxx( w );
     const auto height = getmaxy( w );
-    // Boxes in the same corner stack away from it.
-    auto top = std::map<std::string, int>();
+    // Boxes in the same corner stack away from it. The option only ever holds one
+    // of these four names, so fixed storage replaces a std::map.
+    constexpr std::array<const char *, 4> corner_names = { "top_left", "top_right", "bottom_left", "bottom_right" };
+    auto corner_used = std::array<int, 4>{ 0, 0, 0, 0 };
     for( const auto &b : boxes ) {
         auto inner = 0;
         for( const auto &l : b.lines ) {
-            inner = std::max( inner, utf8_width( l.icon ) + 1 + utf8_width( l.text, true ) );
+            inner = std::max( inner, l.icon_w + 1 + utf8_width( l.text, true ) );
         }
         inner = std::min( inner, std::max( 8, width / 2 ) );
         const auto box_w = inner + 4;
         const auto box_h = static_cast<int>( b.lines.size() ) + 2;
         const auto right = b.corner.ends_with( "right" );
         const auto bottom = b.corner.starts_with( "bottom" );
-        auto &used = top[b.corner];
+        const auto corner = std::ranges::find( corner_names, b.corner );
+        if( corner == corner_names.end() ) {
+            continue;
+        }
+        auto &used = corner_used[static_cast<size_t>( corner - corner_names.begin() )];
         if( used + box_h > height || box_w > width ) {
             continue;
         }

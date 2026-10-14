@@ -1,6 +1,7 @@
 #include "body_panel.h"
 
 #include <algorithm>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -30,28 +31,64 @@ struct wound {
     nc_color color;
 };
 
+/// Walks one limb's conditions worst first, visiting each wound.  Returning false
+/// from `visit` stops the walk, so the compact "worst one only" case stays cheap.
+template<typename Visit>
+auto for_each_wound( const avatar &you, const bodypart_id &bp, Visit visit ) -> void
+{
+    if( you.get_part_hp_cur( bp ) <= 0 ) {
+        const auto text = you.has_effect( effect_mending, bp.id() ) ? _( "mending" )
+                                                                    : _( "broken" );
+        if( !visit( wound{ text, c_magenta } ) ) {
+            return;
+        }
+    }
+    if( you.has_effect( effect_bleed, bp.id() ) ) {
+        if( !visit( wound{ _( "bleeding" ), c_red } ) ) {
+            return;
+        }
+    }
+    if( you.has_effect( effect_infected, bp.id() ) ) {
+        if( !visit( wound{ _( "infected" ), c_light_red } ) ) {
+            return;
+        }
+    }
+    if( you.has_effect( effect_bite, bp.id() ) ) {
+        if( !visit( wound{ _( "bitten" ), c_yellow } ) ) {
+            return;
+        }
+    }
+    if( you.has_effect( effect_bandaged, bp.id() ) ) {
+        if( !visit( wound{ _( "bandaged" ), c_light_green } ) ) {
+            return;
+        }
+    }
+    if( you.has_effect( effect_disinfected, bp.id() ) ) {
+        if( !visit( wound{ _( "disinfected" ), c_light_cyan } ) ) {
+            return;
+        }
+    }
+}
+
+/// Only the first (worst) wound for compact display.
+auto first_wound_of( const avatar &you, const bodypart_id &bp ) -> std::optional<wound>
+{
+    auto out = std::optional<wound>();
+    for_each_wound( you, bp, [&]( const wound & found ) {
+        out = found;
+        return false;
+    } );
+    return out;
+}
+
 /// What is wrong with one limb, worst first; treated conditions come last.
 auto wounds_of( const avatar &you, const bodypart_id &bp ) -> std::vector<wound>
 {
     auto out = std::vector<wound>();
-    if( you.get_part_hp_cur( bp ) <= 0 ) {
-        out.push_back( { you.has_effect( effect_mending, bp.id() ) ? _( "mending" ) : _( "broken" ), c_magenta } );
-    }
-    if( you.has_effect( effect_bleed, bp.id() ) ) {
-        out.push_back( { _( "bleeding" ), c_red } );
-    }
-    if( you.has_effect( effect_infected, bp.id() ) ) {
-        out.push_back( { _( "infected" ), c_light_red } );
-    }
-    if( you.has_effect( effect_bite, bp.id() ) ) {
-        out.push_back( { _( "bitten" ), c_yellow } );
-    }
-    if( you.has_effect( effect_bandaged, bp.id() ) ) {
-        out.push_back( { _( "bandaged" ), c_light_green } );
-    }
-    if( you.has_effect( effect_disinfected, bp.id() ) ) {
-        out.push_back( { _( "disinfected" ), c_light_cyan } );
-    }
+    for_each_wound( you, bp, [&]( const wound & found ) {
+        out.push_back( found );
+        return true;
+    } );
     return out;
 }
 
@@ -66,10 +103,9 @@ auto draw( avatar &you, const catacurses::window &w ) -> void
     // The worst problem of each hurt limb, then a hint for the full view.
     auto lines = std::vector<wound>();
     for( const auto &bp : you.get_all_body_parts( true ) ) {
-        const auto found = wounds_of( you, bp );
-        if( !found.empty() ) {
-            lines.push_back( { string_format( "%s: %s", body_part_name_as_heading( bp, 1 ), found.front().text ),
-                               found.front().color } );
+        if( const auto found = first_wound_of( you, bp ) ) {
+            lines.push_back( { string_format( "%s: %s", body_part_name_as_heading( bp, 1 ), found->text ),
+                               found->color } );
         }
     }
     const auto rows = std::max( getmaxy( w ) - 1, 1 );

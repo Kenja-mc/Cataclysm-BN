@@ -1,9 +1,12 @@
 #include "tile_selection.h"
 
+#include <optional>
+
 #include "action.h"
 #include "avatar.h"
 #include "creature.h"
 #include "game.h"
+#include "input.h"
 #include "item.h"
 #include "map/map.h"
 #include "messages.h"
@@ -38,6 +41,28 @@ auto hostile_at( const avatar &you, const tripoint_bub_ms &p ) -> Creature * // 
 auto route_to( avatar &you, map &m, const tripoint_bub_ms &p ) -> std::vector<tripoint_bub_ms>
 {
     return m.route( you.bub_pos(), p, you.get_legacy_pathfinding_settings(), you.get_legacy_path_avoid() );
+}
+
+auto bound_key_suffix( const action_id act ) -> std::string
+{
+    static auto cache = std::vector<std::optional<std::string>>();
+    static auto cache_version = -1;
+    static auto cache_lang = -1;
+    const auto version = inp_mngr.bindings_version();
+    const auto lang = detail::get_current_language_version();
+    if( cache_version != version || cache_lang != lang ) {
+        cache.assign( NUM_ACTIONS, std::nullopt );
+        cache_version = version;
+        cache_lang = lang;
+    }
+    if( act == ACTION_NULL || static_cast<int>( act ) >= NUM_ACTIONS ) {
+        return std::string();
+    }
+    const auto idx = static_cast<size_t>( act );
+    if( !cache[idx] ) {
+        cache[idx] = press_x( act, " [", "]", "" );
+    }
+    return cache[idx].value_or( std::string() );
 }
 
 } // namespace
@@ -132,7 +157,7 @@ auto hover( avatar &you, map &m, const std::optional<tripoint_bub_ms> &p ) -> vo
     } else {
         // Name the key too, so the mouse teaches the keyboard.
         const auto act = choices.front().act;
-        const auto key = act == ACTION_NULL ? std::string() : press_x( act, " [", "]", "" );
+        const auto key = act == ACTION_NULL ? std::string() : bound_key_suffix( act );
         hovered_hint = string_format( _( "click: %s" ), choices.front().label ) + key;
     }
     if( choices.size() > 1 ) {
