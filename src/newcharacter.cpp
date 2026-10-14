@@ -3565,27 +3565,46 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
                                        get_option<bool>( "USE_TILES" );
 #endif
 
+    constexpr auto location_column = 100;
+    constexpr auto location_width = 60;
+    constexpr auto scenario_column = location_column + location_width;
+    constexpr auto scenario_min_width = 20;
+    auto content_top = 9;
+    auto narrow = false;
     const auto init_windows = [&]( ui_adaptor & ui ) {
+        narrow = TERMX < scenario_column + scenario_min_width + 1;
+        content_top = narrow ? 11 : 9;
         // Row 1
         w = catacurses::newwin( TERMY, TERMX, point_zero );
         w_name = catacurses::newwin( 3, 42, point( 2, 5 ) );
         w_gender = catacurses::newwin( 2, 33, point( 46, 5 ) );
         w_height = catacurses::newwin( 1, 20, point( 80, 5 ) );
-        w_location = catacurses::newwin( 2, 60, point( 100, 5 ) );
-        w_scenario = catacurses::newwin( 1, std::max( 1, TERMX - 161 ), point( 160, 5 ) );
-        w_profession = catacurses::newwin( 1, std::max( 1, TERMX - 161 ), point( 160, 6 ) );
+        w_location = catacurses::newwin( 2, location_width, point( location_column, 5 ) );
+        if( narrow ) {
+            w_scenario = catacurses::newwin( 1, std::max( 1, TERMX - 3 ), point( 2, 8 ) );
+            w_profession = catacurses::newwin( 1, std::max( 1, TERMX - 3 ), point( 2, 9 ) );
+        } else {
+            w_scenario = catacurses::newwin( 1, TERMX - scenario_column - 1,
+                                           point( scenario_column, 5 ) );
+            w_profession = catacurses::newwin( 1, TERMX - scenario_column - 1,
+                                             point( scenario_column, 6 ) );
+        }
 
         // Row 2
         w_age = catacurses::newwin( 1, 12, point( 80, 6 ) );
 
         // Big Row
-        w_stats = catacurses::newwin( 6, 20, point( 2, 9 ) );
-        w_skills = catacurses::newwin( std::max( 1, TERMY - 17 ), 25, point( 2, 16 ) );
-        w_traits = catacurses::newwin( std::max( 1, TERMY - 10 ), 30, point( 28, 9 ) );
-        w_bionics = catacurses::newwin( std::max( 1, TERMY - 10 ), 30, point( 59, 9 ) );
-        w_misc = catacurses::newwin( std::max( 1, TERMY - 10 ), 30, point( 90, 9 ) );
-        w_gear = catacurses::newwin( std::max( 1, TERMY - 10 ), std::max( 1, TERMX - 122 ), point( 121,
-                                     9 ) );
+        w_stats = catacurses::newwin( 6, 20, point( 2, content_top ) );
+        w_skills = catacurses::newwin( std::max( 1, TERMY - content_top - 8 ), 25,
+                                       point( 2, content_top + 7 ) );
+        w_traits = catacurses::newwin( std::max( 1, TERMY - content_top - 1 ), 30,
+                                       point( 28, content_top ) );
+        w_bionics = catacurses::newwin( std::max( 1, TERMY - content_top - 1 ), 30,
+                                        point( 59, content_top ) );
+        w_misc = catacurses::newwin( std::max( 1, TERMY - content_top - 1 ), 30,
+                                     point( 90, content_top ) );
+        w_gear = catacurses::newwin( std::max( 1, TERMY - content_top - 1 ),
+                                     std::max( 1, TERMX - 122 ), point( 121, content_top ) );
 
         // Very bottom Row
         w_guide = catacurses::newwin( 6, std::max( 1, TERMX - 3 ), point( 2, TERMY - 7 ) );
@@ -3680,7 +3699,7 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
         //Draw the line between editable and non-editable stuff.
         for( int i = 0; i < getmaxx( w ); ++i ) {
             if( i == 0 ) {
-                mvwputch( w, point( i, 8 ), BORDER_COLOR, LINE_XXXO );
+                mvwputch( w, point( i, content_top - 1 ), BORDER_COLOR, LINE_XXXO );
             } else if( i == getmaxx( w ) - 1 ) {
                 wputch( w, BORDER_COLOR, LINE_XOXX );
             } else {
@@ -4057,12 +4076,26 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
 
         werase( w_scenario );
         mvwprintz( w_scenario, point_zero, COL_HEADER, _( "Scenario: " ) );
-        wprintz( w_scenario, c_light_gray, g->scen->gender_appropriate_name( you.male ) );
+        if( narrow ) {
+            const auto label_width = utf8_width( _( "Scenario: " ) );
+            trim_and_print( w_scenario, point( label_width, 0 ),
+                            getmaxx( w_scenario ) - label_width, c_light_gray,
+                            g->scen->gender_appropriate_name( you.male ) );
+        } else {
+            wprintz( w_scenario, c_light_gray, g->scen->gender_appropriate_name( you.male ) );
+        }
         wnoutrefresh( w_scenario );
 
         werase( w_profession );
         mvwprintz( w_profession, point_zero, COL_HEADER, _( "Profession: " ) );
-        wprintz( w_profession, c_light_gray, you.prof->gender_appropriate_name( you.male ) );
+        if( narrow ) {
+            const auto label_width = utf8_width( _( "Profession: " ) );
+            trim_and_print( w_profession, point( label_width, 0 ),
+                            getmaxx( w_profession ) - label_width, c_light_gray,
+                            you.prof->gender_appropriate_name( you.male ) );
+        } else {
+            wprintz( w_profession, c_light_gray, you.prof->gender_appropriate_name( you.male ) );
+        }
         wnoutrefresh( w_profession );
 
 #if defined(TILES)
