@@ -2,7 +2,9 @@
 #include "rng.h"
 #include "test_statistics.h"
 
+#include <cmath>
 #include <functional>
+#include <limits>
 #include <optional>
 #include <vector>
 
@@ -69,4 +71,23 @@ TEST_CASE("random_entry_preserves_constness") {
     CHECK(i1 == 1234);
     i1 = 5678;
     CHECK(v1[0] == 5678);
+}
+
+TEST_CASE("degenerate_normal_roll_returns_mean", "[rng]") {
+    const auto engine_before = rng_get_engine();
+    CHECK(normal_roll(90.0, 0.0) == 90.0);
+    CHECK(normal_roll(90.0, -1.0) == 90.0);
+    CHECK(normal_roll(90.0, -std::numeric_limits<double>::infinity()) == 90.0);
+    CHECK(normal_roll(90.0, std::numeric_limits<double>::quiet_NaN()) == 90.0);
+    CHECK(rng_get_engine() == engine_before);
+}
+
+TEST_CASE("degenerate_rng_normal_returns_upper_bound", "[rng]") {
+    const auto engine_before = rng_get_engine();
+    CHECK(rng_normal(5.0, 5.0) == 5.0);
+    CHECK(rng_normal(0.0) == 0.0);
+    CHECK(std::signbit(rng_normal(0.0, -0.0)));
+    const auto smallest = std::numeric_limits<double>::denorm_min();
+    CHECK(rng_normal(0.0, smallest) == smallest);
+    CHECK(rng_get_engine() == engine_before);
 }
