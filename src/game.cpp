@@ -68,6 +68,7 @@
 #include "gamemode.h"
 #include "gates.h"
 #include "harvest.h"
+#include "heat_radiation.h"
 #include "help.h"
 #include "iexamine.h"
 #include "init.h"
@@ -3270,23 +3271,20 @@ static int maptile_field_intensity( maptile &mt, field_type_id fld )
     return field_ptr == nullptr ? 0 : field_ptr->get_field_intensity();
 }
 
-int get_heat_radiation( const tripoint_bub_ms &location, bool direct )
+auto get_heat_radiation_data( const tripoint_bub_ms &location ) -> heat_radiation
 {
     // Direct heat from fire sources
-    // Cache fires to avoid scanning the map around us bp times
-    // Stored as intensity-distance pairs
-    int temp_mod = 0;
-    int best_fire = 0;
-    Character &player_character = get_avatar();
-    map &here = get_map();
+    auto rad = heat_radiation{};
+    auto &player_character = get_avatar();
+    auto &here = get_map();
     // Convert it to an int id once, instead of 139 times per turn
-    const field_type_id fd_fire_int = fd_fire.id();
-    for( const tripoint_bub_ms &dest : here.points_in_radius( location, 6 ) ) {
-        int heat_intensity = 0;
+    const auto fd_fire_int = fd_fire.id();
+    for( const auto &dest : here.points_in_radius( location, 6 ) ) {
+        auto heat_intensity = 0;
 
-        maptile mt = here.maptile_at( tripoint_bub_ms( dest ) );
+        auto mt = here.maptile_at( tripoint_bub_ms( dest ) );
 
-        int ffire = maptile_field_intensity( mt, fd_fire_int );
+        const auto ffire = maptile_field_intensity( mt, fd_fire_int );
         if( ffire > 0 ) {
             heat_intensity = ffire;
         } else  {
@@ -3304,14 +3302,17 @@ int get_heat_radiation( const tripoint_bub_ms &location, bool direct )
             continue;
         }
         // Ensure fire_dist >= 1 to avoid divide-by-zero errors.
-        const int fire_dist = std::max( 1, square_dist( dest, location ) );
-        temp_mod += 6 * heat_intensity * heat_intensity / fire_dist;
-        best_fire = std::max( best_fire, heat_intensity );
+        const auto fire_dist = std::max( 1, square_dist( dest, location ) );
+        rad.temp_mod += 6 * heat_intensity * heat_intensity / fire_dist;
+        rad.best_fire = std::max( rad.best_fire, heat_intensity );
     }
-    if( direct ) {
-        return best_fire;
-    }
-    return temp_mod;
+    return rad;
+}
+
+auto get_heat_radiation( const tripoint_bub_ms &location, bool direct ) -> int
+{
+    const auto rad = get_heat_radiation_data( location );
+    return direct ? rad.best_fire : rad.temp_mod;
 }
 
 int get_convection_temperature( const tripoint_bub_ms &location )
