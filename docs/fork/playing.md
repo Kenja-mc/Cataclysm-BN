@@ -26,6 +26,18 @@ cataclysm-bn          # terminal (curses) version
 cataclysm-bn-tiles    # tiles version
 ```
 
+For graphics, launch **Cataclysm-BN** from the app menu or run `cataclysm-bn-tiles`.
+The `cataclysm-bn` command launches the terminal version, which cannot display tiles.
+The graphical version enables tiles by default and selects the bundled UnDeadPeople
+tileset (`UNDEAD_PEOPLE_BASE`). Menus are text-based, with item thumbnails in inventory
+and pickup lists; check the in-game map to see terrain and creature tiles.
+The installed launchers use `~/.local/share/cataclysm-bn` for saves. The supplied graphical
+build reads settings from `~/.config/cataclysm-bn`; the terminal build reads settings from
+`~/.local/share/cataclysm-bn/config`. Graphics settings therefore need to be changed in the
+graphical version.
+If you previously disabled tiles in the graphical version, enable **Use tiles** under
+**Options → Graphics**; launching it again does not override your saved preference.
+
 Run `./bin/install-cataclysm-bn.sh --uninstall` to remove the installation.
 
 ## Playtesting
@@ -39,6 +51,9 @@ python3 tests/e2e/playtest.py quick_stack          # your terminal; Ctrl+B D to 
 python3 tests/e2e/playtest.py quick_stack --tiles  # reopen in the tiles window
 python3 tests/e2e/playtest.py quick_stack --no-attach  # print the screen and exit
 ```
+
+Playtests use the terminal version unless you pass `--tiles`. Use that flag when checking
+tiles or graphical rendering rather than the terminal map's glyphs.
 
 Each run records a `SESSION.md` in the scenario's data directory (while the game is running) and
 archives a copy at `~/.local/share/cataclysm-bn/playtests/<scenario>-<sha>-<date>.md` so the
