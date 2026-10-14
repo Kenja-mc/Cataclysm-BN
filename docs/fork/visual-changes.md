@@ -27,6 +27,10 @@ sidebar options.
 Hovering a tile highlights it, previews the route and names the click action on the Mouse View
 border ("click: walk here (2 steps)"). Left click does it; right click lists every option.
 
+Tile hit-testing follows the display scaling factor and the sidebar position, so moving the
+sidebar left or choosing 2x scaling does not shift the tile under the pointer. Menu clicks use
+the text grid, even when the terrain tileset is isometric.
+
 ## Body panel and details
 
 ![Body panel listing a bleeding left arm and a bandaged right leg](images/body_panel.png)

@@ -5,7 +5,7 @@ make the game easier to pick up. The simulation, content and tone stay the same:
 items, same zombies. The changes are to the controls, the look of the interface and the busywork
 around managing items.
 
-Branched from `cataclysmbn/Cataclysm-BN@d14e047`; last merged upstream `main`: `a27f19d`.
+Branched from `cataclysmbn/Cataclysm-BN@d14e047`; last merged upstream `main`: `4fd1dbea60`.
 
 Screenshots: [docs/fork/visual-changes.md](docs/fork/visual-changes.md). Changes by date:
 [CHANGELOG-OVERHAUL.md](CHANGELOG-OVERHAUL.md).
@@ -15,6 +15,21 @@ Screenshots: [docs/fork/visual-changes.md](docs/fork/visual-changes.md). Changes
 Movement is **WASD**, with **Q E Z C** for diagonals. The layout merges Bright Nights with Sword of the Stars: The Pit: `F` attacks the nearest enemy, Space interacts with anything (doors, containers, people; `y` also talks), `C` is the character sheet, and `X` waits or rests. The arrow keys and the numpad still work.
 The same keys move the cursor in look mode, targeting and the overmap, and answer every "which
 direction?" prompt.
+
+In **Modern**, lowercase WASD also navigates menus. Menu actions that used those letters move to
+Shift+WASD, including sorting, adding rules, wielding and dropping. Generated menu shortcuts and
+inventory, mutation and bionic letters leave navigation keys free. Search boxes and other text
+fields still accept normal typing; **Classic** retains the upstream controls.
+
+Where a Shift shortcut was already occupied, the other menu action moves:
+
+| Menu                               | Action                        | Key             |
+| ---------------------------------- | ----------------------------- | --------------- |
+| Inventory, pickup and item actions | Wear                          | `V`             |
+| Item actions                       | Disassemble                   | `B`             |
+| Armor layers                       | Sort layers                   | `O`             |
+| Bionics                            | Toggle safe fuel              | `F`             |
+| Vehicle controls                   | Atomic lights / doors / scoop | `B` / `U` / `R` |
 
 ![Modern control scheme](docs/fork/images/controls-modern.svg)
 
@@ -77,6 +92,9 @@ Walking into a closed door still opens it.
   furniture, or walk there in one click.
 - **Right click** lists every option for the tile (fire at, close, examine, pick up, walk…).
   Turn it off under Options → Interface → Mouse tile selection to get the old two-click travel back.
+
+In Modern list menus, hover highlights a row, left click selects it, and right click cancels.
+This includes the tile-action menu opened by a right click on the map.
 
 When aiming: `f`/Enter fires, `x` aims one step, `u` `i` `o` pick aimed, careful or precise shots
 (more care, left to right), `r` switches ammo, `F` or `m` switches fire mode. With **smarter
@@ -296,6 +314,8 @@ that is optional:
   round fires, and only black powder shots hit softer, spread wider and kick less. Loading,
   unloading and splitting keep the right share of handloads; handloads can't be pulled apart for
   smokeless powder. The handloading recipes are still there, listed as `9mm JHP (black powder)`.
+  Rounds already defined as black powder, such as the .45-70 handload, keep their own ballistics
+  without an extra modifier; applying both would reduce their damage twice.
 
 - **Jewelry: 292 items down to 9.** Rings, bracelets, earrings, necklaces, lockets, hairpins,
   tiaras, cufflinks and dental grills are one item each. The metal and gem are a variant the piece

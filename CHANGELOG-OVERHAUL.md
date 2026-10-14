@@ -4,6 +4,46 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-13
+
+### Changed
+
+- Merged upstream `main` through `4fd1dbea60` (24 commits), including clothing-linked drops,
+  animal training fixes and the relic-recharge lifetime fix. Kept the fork's sprite fallbacks
+  and corrected NPC hunger-time units.
+
+### Fixed
+
+- The black-powder loot check now distinguishes native black-powder rounds from stack-modified
+  rounds. It verifies modifier counts without requiring a second ballistic penalty on .45-70
+  handloads. Ammo balance is unchanged.
+- Modern list filters accept all WASD letters while arrow keys move between matching entries.
+  Menu navigation no longer consumes letters while the player types a filter.
+- Sound-marker lifetime checks use an isolated underground scene with normal hearing and an
+  unmuffled NPC, removing random weather and equipment dependencies.
+- Reload checks follow the save-loading flow rather than shortcut capitalization.
+
+## 2026-10-12
+
+### Added
+
+- **Install the fork as a launchable app**: `bin/install-cataclysm-bn.sh` installs launcher
+  wrappers, desktop entries, an icon and a metainfo file into `~/.local`, plus a basepath config
+  at `~/.config/cataclysm-bn/basepath` and the `bin/feedback` workflow.
+
+### Fixed
+
+- Launcher crash on desktop launch: the launcher wrapper now reads the basepath config file,
+  skipping comment lines, and `cataclysm-bn-tiles` reports "no DISPLAY set" instead of failing
+  silently when no display is available.
+- Modern menus reserve lowercase WASD for navigation. Conflicting actions use Shift+WASD;
+  existing Shift conflicts move to free keys. Main-menu shortcuts and inventory, mutation and
+  bionic letters no longer override navigation. Classic controls and text entry stay unchanged.
+- Modern list menus now support hover, click-to-select and right-click cancellation, including
+  the map's right-click action menu.
+- Tiles mouse hit-testing uses the scaled window origin, fixing misaligned hover and clicks
+  with a left sidebar at 2x UI scale. Text menus no longer use isometric map projection.
+
 ## 2026-10-11
 
 ### Added
@@ -224,16 +264,3 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Crashes: starting an activity near NPCs, recraft after reload (upstream #10083), collapsed office
   tower mapgen (upstream #9875), electromagnetic unit (upstream #9354).
 - NPC "Size up stats" hunger (upstream #10447) and repeated mutation attack damage (upstream #1287).
-## 2026-10-12
-
-### Added
-
-- **Install the fork as a launchable app**: `bin/install-cataclysm-bn.sh` installs launcher
-  wrappers, desktop entries, an icon and a metainfo file into `~/.local`, plus a basepath config
-  at `~/.config/cataclysm-bn/basepath` and the `bin/feedback` workflow.
-
-### Fixed
-
-- Launcher crash on desktop launch: the launcher wrapper now reads the basepath config file,
-  skipping comment lines, and `cataclysm-bn-tiles` reports "no DISPLAY set" instead of failing
-  silently when no display is available.
