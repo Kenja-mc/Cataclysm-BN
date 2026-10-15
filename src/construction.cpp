@@ -488,12 +488,20 @@ std::optional<construction_id> construction_menu( const bool blueprint )
     const std::vector<construction_category> &construct_cat = construction_categories::get_all();
     std::vector<size_t> construct_cat_order;
     construct_cat_order.reserve( construct_cat.size() );
+    auto favorite_index = -1;
+    auto all_index = -1;
     const auto append_category = [&]( const construction_category_id & id ) {
         const auto it = std::ranges::find_if( construct_cat, [&]( const construction_category & cat ) {
             return cat.id == id;
         } );
-        if( it != construct_cat.end() ) {
-            construct_cat_order.push_back( std::distance( construct_cat.begin(), it ) );
+        if( it == construct_cat.end() ) {
+            return;
+        }
+        construct_cat_order.push_back( std::distance( construct_cat.begin(), it ) );
+        if( id == construction_category_FAVORITE ) {
+            favorite_index = static_cast<int>( construct_cat_order.size() ) - 1;
+        } else if( id == construction_category_ALL ) {
+            all_index = static_cast<int>( construct_cat_order.size() ) - 1;
         }
     };
     append_category( construction_category_FAVORITE );
@@ -509,9 +517,15 @@ std::optional<construction_id> construction_menu( const bool blueprint )
     const auto normal_tabcount = static_cast<int>( construct_cat_order.size() );
     auto tabcount = normal_tabcount;
 
+    const auto favorite_tab_empty = [&]() -> bool {
+        return !std::ranges::any_of( available, is_favorite );
+    };
+
     std::string filter;
     auto filter_mode = false;
     auto saved_tabindex = tabindex;
+    // Set when the menu opened past an empty Favorite tab.
+    auto favorite_fallback = false;
     const auto set_filter_mode = [&]( const bool active ) {
         if( active == filter_mode ) {
             return;
@@ -1121,6 +1135,11 @@ std::optional<construction_id> construction_menu( const bool blueprint )
             } else if( select >= 0 && static_cast<size_t>( select ) < constructs.size() ) {
                 last_construction = constructs[select];
             }
+            // Open on something useful rather than an empty favorites tab.
+            if( isnew && filter.empty() && tabindex == favorite_index && favorite_tab_empty() ) {
+                tabindex = all_index >= 0 ? all_index : ( tabindex + 1 ) % normal_tabcount;
+                favorite_fallback = true;
+            }
             set_filter_mode( !filter.empty() );
             const auto group_matches_filter = [&]( const construction_group_str_id & group_id,
             const std::string & filter_string ) -> bool {
@@ -1436,6 +1455,7 @@ std::optional<construction_id> construction_menu( const bool blueprint )
         } else if( action == "LEFT" || action == "BACKTAB" ) {
             update_info = true;
             update_cat = true;
+            favorite_fallback = false;
             tabindex--;
             if( tabindex < 0 ) {
                 tabindex = tabcount - 1;
@@ -1443,6 +1463,7 @@ std::optional<construction_id> construction_menu( const bool blueprint )
         } else if( action == "RIGHT" || action == "TAB" ) {
             update_info = true;
             update_cat = true;
+            favorite_fallback = false;
             tabindex = ( tabindex + 1 ) % tabcount;
         } else if( action == "PAGE_UP" ) {
             if( current_construct_breakpoint > 0 ) {
@@ -1510,7 +1531,10 @@ std::optional<construction_id> construction_menu( const bool blueprint )
         }
     } while( !exit );
 
-    const auto tab_to_store = filter_mode ? saved_tabindex : tabindex;
+    // A fallback tab is not the player's choice: keep remembering Favorite so it opens
+    // there once it has entries.
+    const auto tab_to_store = favorite_fallback && favorite_index >= 0 ? favorite_index
+                              : filter_mode ? saved_tabindex : tabindex;
     uistate.construction_tab = int_id<construction_category>( construct_cat_order[tab_to_store] ).id();
 
     return ret;
