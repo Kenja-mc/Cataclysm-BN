@@ -1622,6 +1622,8 @@ static void fire()
     avatar &u = g->u;
     map &here = get_map();
 
+    bool did_something = false;
+
     // Use vehicle turret or draw a pistol from a holster if unarmed
     if( !u.is_armed() ) {
 
@@ -1690,10 +1692,12 @@ static void fire()
         if( !options.empty() ) {
             if( options.size() == 1 && do_autofire ) {
                 actions[0]();
+                did_something = true;
             } else {
                 int sel = uilist( _( "Do what?" ), options );
                 if( sel >= 0 ) {
                     actions[sel]();
+                    did_something = true;
                 }
             }
         }
@@ -1702,6 +1706,7 @@ static void fire()
     item &weapon = u.primary_weapon();
     if( weapon.is_gun() && !weapon.gun_current_mode().melee() ) {
         avatar_action::fire_wielded_weapon( u );
+        did_something = true;
     } else if( weapon.reach_range( u ) > 1 ) {
         if( u.has_effect( effect_relax_gas ) ) {
             if( one_in( 8 ) ) {
@@ -1714,6 +1719,12 @@ static void fire()
         } else {
             reach_attack( u );
         }
+        did_something = true;
+    }
+
+    if( !did_something ) {
+        add_msg( m_info, _( "You have no ranged weapon wielded.  Press %s to wield one." ),
+                 press_x( ACTION_WIELD, "", "", "" ) );
     }
 }
 
