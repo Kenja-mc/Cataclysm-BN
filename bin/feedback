@@ -9,13 +9,12 @@ The skeleton records the current commit SHA (from `git`) and a timestamp; fill i
 the details and save. Long-form write-ups belong in feedback-template.md and should
 be linked here instead of being pasted in full.
 """
+import argparse
 import os
 import subprocess
-import sys
 from datetime import datetime, timezone
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
-REPO = os.path.dirname(ROOT)
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOG = os.path.join(REPO, "docs", "fork", "feedback.md")
 
 try:
@@ -32,24 +31,6 @@ except subprocess.CalledProcessError:
     branch = "(n/a)"
 
 TS = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-
-
-def parse_args(argv):
-    title = ""
-    message = None
-    i = 0
-    while i < len(argv):
-        a = argv[i]
-        if a in ("-m", "--message"):
-            message = argv[i + 1]
-            i += 2
-        elif a.startswith("-"):
-            print(f"bin/feedback: unknown option: {a}")
-            sys.exit(1)
-        else:
-            title = a
-            i += 1
-    return title, message
 
 
 def skeleton(title, message):
@@ -71,26 +52,25 @@ def skeleton(title, message):
 
 
 def main():
-    title, message = parse_args(sys.argv[1:])
-    if not title:
-        print("Usage: bin/feedback <short title> [-m/--message \"<message>\"]")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Append a dated feedback entry.")
+    parser.add_argument("title", help="short title for the entry")
+    parser.add_argument(
+        "-m", "--message", help="note to append instead of opening an editor",
+    )
+    args = parser.parse_args()
 
+    entry = skeleton(args.title, args.message)
     os.makedirs(os.path.dirname(LOG), exist_ok=True)
     with open(LOG, "a") as fh:
-        fh.write(skeleton(title, message))
+        fh.write(entry)
 
-    if message:
-        print(f"Appended to {LOG}:")
-        print(skeleton(title, message).strip())
-        print("Done.")
-        return
-
-    editor = os.environ.get("EDITOR", "nano")
     print(f"Appended to {LOG}:")
-    print(skeleton(title, message).strip())
-    print(f"\nEditing with {editor} ...")
-    subprocess.run([editor, LOG])
+    print(entry.strip())
+
+    if not args.message:
+        editor = os.environ.get("EDITOR", "nano")
+        print(f"\nEditing with {editor} ...")
+        subprocess.run([editor, LOG])
 
     print("Done.")
 
