@@ -35,6 +35,11 @@ void draw_overmap_chunk( const catacurses::window &w_minimap, const avatar &you,
 
 bool default_render();
 
+namespace sidebar
+{
+constexpr auto log_min_rows = 3;
+} // namespace sidebar
+
 class window_panel
 {
     public:
