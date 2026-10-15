@@ -2426,22 +2426,6 @@ auto compass_rows() -> int
     return std::clamp( tail_budget() - controls_rows(), 0, compass_full_rows );
 }
 
-struct shrinking_panel_options {
-    std::function<void( avatar &, const catacurses::window & )> draw;
-    std::string name;
-    int height;
-    int width;
-    std::function<int()> rows;
-};
-
-auto shrinking_panel( shrinking_panel_options options ) -> window_panel
-{
-    auto panel = window_panel( std::move( options.draw ), options.name, options.height,
-                              options.width, true );
-    panel.set_height_override( std::move( options.rows ) );
-    return panel;
-}
-
 } // namespace
 
 static bool spell_panel()
@@ -2497,9 +2481,8 @@ static std::vector<window_panel> initialize_default_classic_panels()
     ret.emplace_back( draw_wind, translate_marker( "Wind" ), 1, 44, false, environment_panel );
     ret.emplace_back( draw_armor, translate_marker( "Armor" ), 5, 44, false );
     ret.emplace_back( draw_armor_comp, translate_marker( "comp.Armor" ), 1, 32, false );
-    ret.emplace_back( shrinking_panel( { .draw = draw_compass_padding,
-                                        .name = translate_marker( "Compass" ), .height = 8,
-                                        .width = 44, .rows = compass_rows } ) );
+    ret.emplace_back( draw_compass_padding, translate_marker( "Compass" ), 8, 44,
+                      true ).set_height_override( compass_rows );
     ret.emplace_back( draw_compass_padding, translate_marker( "Comp.Compass" ), 3, 44,
                       false );
     ret.emplace_back( draw_simple_compass, translate_marker( "Sim.Compass" ), 1, 44, false );
@@ -2510,9 +2493,8 @@ static std::vector<window_panel> initialize_default_classic_panels()
                       default_render, true );
 #endif // TILES
     ret.emplace_back( draw_ai_goal, "AI Needs", 1, 44, false );
-    ret.emplace_back( shrinking_panel( { .draw = draw_keyhints,
-                                        .name = translate_marker( "Controls" ), .height = 5,
-                                        .width = 44, .rows = controls_rows } ) );
+    ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 5, 44,
+                      true ).set_height_override( controls_rows );
     return ret;
 }
 
@@ -2535,9 +2517,8 @@ static std::vector<window_panel> initialize_default_compact_panels()
     ret.emplace_back( draw_armor, translate_marker( "Armor" ), 5, 32, false );
     ret.emplace_back( draw_armor_comp, translate_marker( "comp.Armor" ), 1, 32, false );
     ret.emplace_back( draw_messages_classic, translate_marker( "Log" ), -2, 32, true );
-    ret.emplace_back( shrinking_panel( { .draw = draw_compass,
-                                        .name = translate_marker( "Compass" ), .height = 8,
-                                        .width = 32, .rows = compass_rows } ) );
+    ret.emplace_back( draw_compass, translate_marker( "Compass" ), 8, 32,
+                      true ).set_height_override( compass_rows );
     ret.emplace_back( draw_compass, translate_marker( "Comp.Compass" ), 3, 32, false );
     ret.emplace_back( draw_simple_compass, translate_marker( "Sim.Compass" ), 1, 32, false );
 #if defined(TILES)
@@ -2546,9 +2527,8 @@ static std::vector<window_panel> initialize_default_compact_panels()
 #endif // TILES
     ret.emplace_back( draw_ai_goal, "AI Needs", 1, 32, false );
 
-    ret.emplace_back( shrinking_panel( { .draw = draw_keyhints,
-                                        .name = translate_marker( "Controls" ), .height = 5,
-                                        .width = 32, .rows = controls_rows } ) );
+    ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 5, 32,
+                      true ).set_height_override( controls_rows );
     return ret;
 }
 
@@ -2578,9 +2558,8 @@ static std::vector<window_panel> initialize_default_label_narrow_panels()
     ret.emplace_back( draw_moon_narrow, translate_marker( "Moon" ), 2, 32, false );
     ret.emplace_back( draw_armor_padding, translate_marker( "Armor" ), 5, 32, false );
     ret.emplace_back( draw_armor_comp, translate_marker( "comp.Armor" ), 1, 32, false );
-    ret.emplace_back( shrinking_panel( { .draw = draw_compass_padding,
-                                        .name = translate_marker( "Compass" ), .height = 8,
-                                        .width = 32, .rows = compass_rows } ) );
+    ret.emplace_back( draw_compass_padding, translate_marker( "Compass" ), 8, 32,
+                      true ).set_height_override( compass_rows );
     ret.emplace_back( draw_compass_padding, translate_marker( "Comp.Compass" ), 3, 32,
                       false );
     ret.emplace_back( draw_simple_compass, translate_marker( "Sim.Compass" ), 1, 32, false );
@@ -2590,9 +2569,8 @@ static std::vector<window_panel> initialize_default_label_narrow_panels()
 #endif // TILES
     ret.emplace_back( draw_ai_goal, "AI Needs", 1, 32, false );
 
-    ret.emplace_back( shrinking_panel( { .draw = draw_keyhints,
-                                        .name = translate_marker( "Controls" ), .height = 5,
-                                        .width = 32, .rows = controls_rows } ) );
+    ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 5, 32,
+                      true ).set_height_override( controls_rows );
     return ret;
 }
 
@@ -2622,9 +2600,8 @@ static std::vector<window_panel> initialize_default_label_panels()
     ret.emplace_back( draw_moon_wide, translate_marker( "Moon" ), 1, 44, false );
     ret.emplace_back( draw_armor_padding, translate_marker( "Armor" ), 5, 44, false );
     ret.emplace_back( draw_armor_comp, translate_marker( "comp.Armor" ), 1, 32, false );
-    ret.emplace_back( shrinking_panel( { .draw = draw_compass_padding,
-                                        .name = translate_marker( "Compass" ), .height = 8,
-                                        .width = 44, .rows = compass_rows } ) );
+    ret.emplace_back( draw_compass_padding, translate_marker( "Compass" ), 8, 44,
+                      true ).set_height_override( compass_rows );
     ret.emplace_back( draw_compass_padding, translate_marker( "Comp.Compass" ), 3, 44,
                       false );
     ret.emplace_back( draw_simple_compass, translate_marker( "Sim.Compass" ), 1, 44, false );
@@ -2634,9 +2611,8 @@ static std::vector<window_panel> initialize_default_label_panels()
 #endif // TILES
     ret.emplace_back( draw_ai_goal, "AI Needs", 1, 44, false );
 
-    ret.emplace_back( shrinking_panel( { .draw = draw_keyhints,
-                                        .name = translate_marker( "Controls" ), .height = 5,
-                                        .width = 44, .rows = controls_rows } ) );
+    ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 5, 44,
+                      true ).set_height_override( controls_rows );
     return ret;
 }
 
