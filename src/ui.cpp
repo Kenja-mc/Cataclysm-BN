@@ -928,6 +928,12 @@ void uilist::show( ui_adaptor &ui )
         }
     }
 
+    if( fentries.empty() && filtering && !filter.empty() && vmax > 0 && pad_size > 2 &&
+        get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        trim_and_print( window, point( pad_left + 2, estart ), pad_size - 2,
+                        text_color, _color_error, "%s", _( "--NO MATCHES--" ) );
+    }
+
     if( desc_enabled ) {
         // draw border
         mvwputch( window, point( 0, w_height - desc_lines - 2 ), border_color, LINE_XXXO );
@@ -1093,6 +1099,10 @@ void uilist::query( bool loop, int timeout )
 
     input_context ctxt = create_main_input_context();
     const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    const auto caller_handles_action = [this]( const std::string & action ) {
+        return std::ranges::any_of( additional_actions,
+        [&action]( const auto & added ) { return added.first == action; } );
+    };
 
     shared_ptr_fast<ui_adaptor> ui = create_or_get_ui_adaptor();
 
@@ -1143,14 +1153,10 @@ void uilist::query( bool loop, int timeout )
             inputfilter();
         } else if( categories.size() > 1 && ( ret_act == "LEFT" || ret_act == "RIGHT" ) ) {
             cycle_category( ret_act == "RIGHT" );
-        } else if( modern && ( ret_act == "LEFT" || ret_act == "RIGHT" ) &&
-                   !( allow_additional && std::ranges::any_of( additional_actions,
-        [this]( const auto & action ) { return action.first == ret_act; } ) ) ) {
-            /* A list without categories has no horizontal navigation. */
-        } else if( ret_act == "ANY_INPUT" && iter != keymap.end() ) {
-            // only handle "ANY_INPUT" since "HELP_KEYBINDINGS" is already
-            // handled by the input context and the caller might want to handle
-            // its custom actions
+        } else if( ( ret_act == "ANY_INPUT" ||
+                     ( modern && ( ret_act == "LEFT" || ret_act == "RIGHT" ) &&
+                       !caller_handles_action( ret_act ) ) ) && iter != keymap.end() ) {
+            // Caller actions and category navigation take precedence over numeric hotkeys.
             const auto it = std::find( fentries.begin(), fentries.end(), iter->second );
             if( it != fentries.end() ) {
                 const bool enabled = entries[*it].enabled;
@@ -1167,6 +1173,9 @@ void uilist::query( bool loop, int timeout )
                     }
                 }
             }
+        } else if( modern && ( ret_act == "LEFT" || ret_act == "RIGHT" ) &&
+                   !caller_handles_action( ret_act ) ) {
+            /* A list without categories has no horizontal navigation. */
         } else if( !fentries.empty() && ret_act == "CONFIRM" ) {
             if( entries[ selected ].enabled ) {
                 ret = entries[ selected ].retval; // valid
