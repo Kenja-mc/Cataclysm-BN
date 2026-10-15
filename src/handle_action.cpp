@@ -1190,7 +1190,8 @@ static void wait()
         add_menu_item( 5, '5', "", 3_hours );
         add_menu_item( 6, '6', "", 6_hours );
         as_m.addentry( 13, true, 'c', _( "Custom input" ) );
-        if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" && !u.controlling_vehicle &&
+            g->remoteveh() == nullptr ) {
             as_m.addentry( 17, true, '$', _( "Sleep" ) );
         }
     }
