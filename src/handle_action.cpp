@@ -1707,8 +1707,8 @@ static void fire()
                 int sel = uilist( _( "Do what?" ), options );
                 if( sel >= 0 ) {
                     actions[sel]();
-                    did_something = true;
                 }
+                did_something = true;
             }
         }
     }
@@ -1732,7 +1732,10 @@ static void fire()
         did_something = true;
     }
 
-    if( !did_something ) {
+    if( !did_something && weapon.is_gun() ) {
+        add_msg( m_info, _( "Your %1$s is in a melee mode.  Press %2$s to switch firing mode." ),
+                 weapon.tname(), press_x( ACTION_SELECT_FIRE_MODE, "", "", "" ) );
+    } else if( !did_something ) {
         add_msg( m_info, _( "You have no ranged weapon wielded.  Press %s to wield one." ),
                  press_x( ACTION_WIELD, "", "", "" ) );
     }
