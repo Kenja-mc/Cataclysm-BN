@@ -25,20 +25,9 @@
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-ROOT="$REPO_DIR"
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-USER_BASE="$HOME/.local"
-USER_APPS="$USER_BASE/share/applications"
-USER_ICONS="$USER_BASE/share/icons/hicolor/scalable/apps"
-USER_METAINFO="$USER_BASE/share/metainfo"
-USER_BIN="$USER_BASE/bin"
 CONFIG_DIR="$HOME/.config/cataclysm-bn"
-
-SYSTEM_APPS="/usr/local/share/applications"
-SYSTEM_ICONS="/usr/local/share/icons/hicolor/scalable/apps"
-SYSTEM_METAINFO="/usr/local/share/metainfo"
-SYSTEM_BIN="/usr/local/bin"
 
 # Baked path; the installer fills it in from the build tree.
 CATACLYSM_BN_CURSES_BINARY=""
@@ -65,6 +54,21 @@ EOF
 die() {
   printf 'install-cataclysm-bn.sh: %s\n' "$*" >&2
   exit 1
+}
+
+# Resolve INSTALLED_* destinations for the requested scope (""|"--system").
+set_destinations() {
+  if [ "${1:-}" = "--system" ]; then
+    INSTALLED_BIN="/usr/local/bin"
+    INSTALLED_APPS="/usr/local/share/applications"
+    INSTALLED_ICONS="/usr/local/share/icons/hicolor/scalable/apps"
+    INSTALLED_METAINFO="/usr/local/share/metainfo"
+  else
+    INSTALLED_BIN="$HOME/.local/bin"
+    INSTALLED_APPS="$HOME/.local/share/applications"
+    INSTALLED_ICONS="$HOME/.local/share/icons/hicolor/scalable/apps"
+    INSTALLED_METAINFO="$HOME/.local/share/metainfo"
+  fi
 }
 
 detect_binaries() {
@@ -120,12 +124,9 @@ WRAPPER
 }
 
 setup_config() {
-  if [ ! -d "$CONFIG_DIR" ]; then
-    mkdir -p "$CONFIG_DIR"
-  fi
-  if [ ! -f "$HOME/.config/cataclysm-bn/basepath" ]; then
+  mkdir -p "$CONFIG_DIR"
+  if [ ! -f "$CONFIG_DIR/basepath" ]; then
     # Default to the repo root so it works immediately after install.
-    printf '%s\n' "$ROOT" > "$CONFIG_DIR/basepath"
     cat > "$CONFIG_DIR/basepath" <<EOF
 # Location of the Cataclysm: Bright Nights Overhaul fork's source directory (the game's data basepath).
 # Edit this if you move the repo. Override at launch with CATACLYSM_BN_BASEPATH instead.
@@ -137,22 +138,10 @@ EOF
 
 install_files() {
   detect_binaries
-
-  if [ "${1:-}" = "--system" ]; then
-    INSTALLED_BIN="$SYSTEM_BIN"
-    INSTALLED_APPS="$SYSTEM_APPS"
-    INSTALLED_ICONS="$SYSTEM_ICONS"
-    INSTALLED_METAINFO="$SYSTEM_METAINFO"
-  else
-    INSTALLED_BIN="$USER_BIN"
-    INSTALLED_APPS="$USER_APPS"
-    INSTALLED_ICONS="$USER_ICONS"
-    INSTALLED_METAINFO="$USER_METAINFO"
-  fi
+  set_destinations "${1:-}"
 
   mkdir -p "$INSTALLED_BIN" "$INSTALLED_APPS" "$INSTALLED_ICONS" "$INSTALLED_METAINFO"
 
-  local kind binary
   if [ -n "$CATACLYSM_BN_CURSES_BINARY" ]; then
     create_wrapper "curses" "$INSTALLED_BIN/cataclysm-bn" "$CATACLYSM_BN_CURSES_BINARY"
     printf 'Installed launcher wrapper: %s/cataclysm-bn\n' "$INSTALLED_BIN"
@@ -188,17 +177,7 @@ install_files() {
 }
 
 uninstall_files() {
-  if [ "${1:-}" = "--system" ]; then
-    INSTALLED_BIN="$SYSTEM_BIN"
-    INSTALLED_APPS="$SYSTEM_APPS"
-    INSTALLED_ICONS="$SYSTEM_ICONS"
-    INSTALLED_METAINFO="$SYSTEM_METAINFO"
-  else
-    INSTALLED_BIN="$USER_BIN"
-    INSTALLED_APPS="$USER_APPS"
-    INSTALLED_ICONS="$USER_ICONS"
-    INSTALLED_METAINFO="$USER_METAINFO"
-  fi
+  set_destinations "${1:-}"
 
   rm -f "$INSTALLED_BIN/cataclysm-bn" "$INSTALLED_BIN/cataclysm-bn-tiles"
   rm -f "$INSTALLED_APPS/org.cataclysmbn.CataclysmBN.desktop" \
