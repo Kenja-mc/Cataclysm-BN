@@ -12844,13 +12844,22 @@ bool game::check_safe_mode_allowed( bool repeat_safe_mode_warnings )
         get_safemode().lastmon_whitelist = spotted_creature_name;
     }
 
+    if( safe_mode_warning_logged && get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        // Repeating the full warning can wrap its repeat counter out of view.
+        add_msg( game_message_params{ m_warning, gmf_bypass_cooldown },
+                 _( "Safe mode: %1$s off, %2$s ignore" ),
+                 press_x( ACTION_TOGGLE_SAFEMODE, "", _( "Try" ) ),
+                 press_x( ACTION_IGNORE_ENEMY, "", _( "Try" ) ) );
+        return false;
+    }
+    const auto msg_safe_mode = press_x( ACTION_TOGGLE_SAFEMODE );
+
     std::string whitelist;
     if( !get_safemode().empty() ) {
         whitelist = string_format( _( " or %s to whitelist the monster" ),
                                    press_x( ACTION_WHITELIST_ENEMY ) );
     }
 
-    const std::string msg_safe_mode = press_x( ACTION_TOGGLE_SAFEMODE );
     add_msg( game_message_params{ m_warning, gmf_bypass_cooldown },
              _( "Spotted %1$s--safe mode is on!  (%2$s to turn it off, %3$s to ignore monster%4$s)" ),
              spotted_creature_name, msg_safe_mode, msg_ignore, whitelist );
