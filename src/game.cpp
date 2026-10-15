@@ -5026,11 +5026,11 @@ void game::draw_panels( bool force_draw )
     int spacer = get_option<bool>( "SIDEBAR_SPACERS" ) ? 1 : 0;
     int log_height = 0;
     for( const window_panel &panel : mgr.get_current_layout() ) {
-        if( panel.get_height() != -2 && panel.toggle && panel.render() ) {
-            log_height += panel.get_height() + spacer;
+        if( panel.toggle && panel.render() ) {
+            log_height += panel.get_height() == -2 ? spacer : panel.get_height() + spacer;
         }
     }
-    log_height = std::max( TERMY - log_height, 3 );
+    log_height = std::max( TERMY - log_height, sidebar::log_min_rows );
     for( const window_panel &panel : mgr.get_current_layout() ) {
         if( panel.render() ) {
             // height clamped to window height.
