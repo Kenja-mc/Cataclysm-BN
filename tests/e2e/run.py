@@ -14,6 +14,12 @@ from vehicle_box import TESTS as VEHICLE_BOX_TESTS
 from cursor_panning import TESTS as CURSOR_PANNING_TESTS
 from npc_palette import TESTS as NPC_PALETTE_TESTS
 from hud_sidebar import TESTS as HUD_SIDEBAR_TESTS
+from construction_tab import TESTS as CONSTRUCTION_TAB_TESTS
+from dispose_menu import TESTS as DISPOSE_MENU_TESTS
+from fire_feedback import TESTS as FIRE_FEEDBACK_TESTS
+from keyhints_small import TESTS as KEYHINTS_SMALL_TESTS
+from safe_mode_sleep import TESTS as SAFE_MODE_SLEEP_TESTS
+from vehicle_memory import TESTS as VEHICLE_MEMORY_TESTS
 
 
 
@@ -1065,6 +1071,118 @@ def test_enemy_edge_arrows_off(g):
 
 
 
+
+def test_center_view_at_top_level(_g):
+    """Upstream #10604: pressing the CENTER action at z=10 must not crash."""
+    g = Game(name="bn-e2e-center-view", options={"SAFEMODE": "false"})
+    try:
+        start_new_game(g)
+        settle(g)
+        g.define_lua(HELPERS)
+        assert g.lua("local a=gapi.get_avatar() local p=a:get_pos_ms() p.z=10 "
+                     "gapi.get_map():set_ter_at(p,TerId.new('t_floor'):int_id()) "
+                     "gapi.place_player_local_at(p) out(a:get_pos_ms().z)") == ["10"], g.screen()
+        # CENTER is bound to 0 by default in the Modern scheme.
+        g.keys("0", delay=1.5)
+        # The game process must still be answering Lua, i.e. it did not SIGSEGV.
+        assert g.lua("out(gapi.get_avatar():get_pos_ms().z)") == ["10"], g.screen()
+        g.lua("local a=gapi.get_avatar() local p=a:get_pos_ms() p.z=0 gapi.place_player_local_at(p) out('ok')")
+    finally:
+        g.close()
+
+
+def test_examine_empty_floor_describes_it(_g):
+    """Upstream #9987: with autoselect off, examining an empty floor tile prints its description."""
+    g = Game(name="bn-e2e-examine-floor", options={"SAFEMODE": "false",
+             "AUTOSELECT_SINGLE_VALID_TARGET": "false"})
+    try:
+        start_new_game(g)
+        settle(g)
+        g.define_lua(HELPERS)
+        arena(g)
+        # Modern examine is SPACE, then a direction towards an adjacent tile.
+        g.keys(" ", delay=1.5)
+        g.keys("d", delay=1.5)
+        assert "That is a" in g.screen(), g.screen()
+    finally:
+        g.close()
+
+
+def test_char_creation_overview_fits_small_terminal(_g):
+    """Upstream #10427: the OVERVIEW tab must show Scenario:/Profession: on an 80x24 terminal."""
+    g = Game(name="bn-e2e-cc-overview", cols=80, rows=24, options={"SAFEMODE": "false"})
+
+    def selected(word, name):
+        return any(word in line and name in line for line in g.screen().splitlines())
+
+    try:
+        for _ in range(200):
+            s = g.screen()
+            if "Select your language" in s:
+                g.keys("1", delay=0.5)
+            elif "[New Game]" in s or "Play Now" in s:
+                line = next((l for l in s.splitlines() if "Custom Character" in l), "")
+                if "Custom Character" in line and "»" in line:
+                    g.keys("Enter", delay=1)
+                    break
+                g.keys("Down", delay=0.2)
+            elif "Welcome to Bright Nights" in s:
+                g.keys("Escape", delay=1)
+            elif not s.strip():
+                g.keys("F5", delay=1)
+            elif "World Mods" in s or "World Options" in s:
+                break
+            else:
+                time.sleep(0.5)
+        for _ in range(160):
+            s = g.screen()
+            if "Are you SURE you're finished" in s:
+                g.keys("Left", delay=0.5)
+                g.keys("Enter", delay=1.5)
+            elif "How should death work" in s:
+                g.keys("r", delay=1)
+            elif "SCENARIO" in s and "POINTS" in s and "World" not in s:
+                break
+            elif "World Mods" in s:
+                g.keys("Tab", "Tab", delay=1)
+            elif "World Options" in s:
+                g.keys("Tab", delay=1)
+            else:
+                time.sleep(0.5)
+        for _ in range(12):
+            if "<│SCENARIO│>" in g.screen():
+                break
+            g.keys("Tab", delay=0.7)
+        for _ in range(140):
+            if selected("Scenario", "Trans-Coast"):
+                break
+            g.keys("Down", delay=0.12)
+        g.keys("Enter", delay=1)
+        for _ in range(12):
+            if "<│PROFESSION│>" in g.screen():
+                break
+            g.keys("Tab", delay=0.7)
+        for _ in range(80):
+            if selected("Profession", "Augmentation"):
+                break
+            g.keys("Down", delay=0.12)
+        g.keys("Enter", delay=1)
+        for _ in range(12):
+            s = g.screen()
+            if "Remaining points will be discarded" in s:
+                g.keys("Escape", delay=0.8)
+                continue
+            if "finish character creation" in s or "<│OVERVIEW│>" in s:
+                break
+            g.keys("Tab", delay=0.7)
+        s = g.screen()
+        assert "Scenario:" in s, s
+        assert "Profession:" in s, s
+        assert re.search(r"Scenario:\s*\S", s), s
+        assert re.search(r"Profession:\s*\S", s), s
+    finally:
+        g.close()
+
 TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_auto_explore, test_first_time_tip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
          test_hud_boxes, test_body_panel, test_readable_map_glyphs, test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content, test_craft_parts_chain,
          test_aim_defaults, test_sound_marker_fading, test_smart_targeting, test_stance_toggle, test_contextual_interact_single_door, test_contextual_interact_multiple_doors,
@@ -1072,11 +1190,18 @@ TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_au
          test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_modern_scheme_adds_no_menu_key_clashes, test_wasd_menu_navigation, test_old_full_keybindings_file, test_hud_box_options, test_boxes_replace_sidebar_rows, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
          test_smart_safe_mode, test_smart_safe_mode_horde, test_enemy_edge_arrows, test_enemy_edge_arrows_off,
          test_modern_wield_nearby_rows_keep_their_shortcut,
+         test_center_view_at_top_level, test_examine_empty_floor_describes_it, test_char_creation_overview_fits_small_terminal,
          ]
 TESTS += VEHICLE_BOX_TESTS
 TESTS += CURSOR_PANNING_TESTS
 TESTS += NPC_PALETTE_TESTS
 TESTS += HUD_SIDEBAR_TESTS
+TESTS += CONSTRUCTION_TAB_TESTS
+TESTS += DISPOSE_MENU_TESTS
+TESTS += FIRE_FEEDBACK_TESTS
+TESTS += KEYHINTS_SMALL_TESTS
+TESTS += SAFE_MODE_SLEEP_TESTS
+TESTS += VEHICLE_MEMORY_TESTS
 
 
 def main():
