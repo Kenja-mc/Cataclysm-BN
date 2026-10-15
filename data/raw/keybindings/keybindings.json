@@ -748,7 +748,7 @@
     "id": "CRAFT_PARTS",
     "category": "CRAFTING",
     "name": "Craft the parts first",
-    "bindings": []
+    "bindings": [  ]
   },
   {
     "type": "keybinding",
