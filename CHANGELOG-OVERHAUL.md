@@ -4,6 +4,13 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-15
+
+### Maintenance
+
+- Simplified installer destination setup and feedback argument handling, removed a forwarding-only
+  sidebar panel factory, and reused the vehicle-spawn test helper without changing game behavior.
+
 ## 2026-10-14
 
 ### Changed
