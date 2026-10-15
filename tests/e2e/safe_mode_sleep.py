@@ -92,10 +92,11 @@ def test_wait_menu_offers_sleep_and_six_hour_hotkey(_g):
         game.wait_for("Are you sure you want to sleep?")
         game.keys("Escape", delay=1.0)
         assert "Are you sure you want to sleep?" not in game.screen(), game.screen()
-        # Isolate the fixture from rolled world state so random wildlife cannot interrupt
-        # the six-hour wait (move underground into a sealed arena, banish all monsters).
+        # Isolate the fixture from rolled world state so wildlife or NPC chatter cannot interrupt
+        # the six-hour wait (sealed underground arena, monsters banished, avatar deafened).
         assert game.lua("local a=gapi.get_avatar() local p=a:get_pos_ms() "
                         "a:set_pos_ms(TripointBubMs.new(p.x,p.y,p.z-1)) arena() "
+                        "a:add_effect(EffectTypeId.new('deaf'), TimeDuration.from_hours(12)) "
                         "for dx=-4,4 do for dy=-4,4 do "
                         "if math.abs(dx)==4 or math.abs(dy)==4 then "
                         "M:set_ter_at(here(dx,dy), TerId.new('t_wall'):int_id()) "
