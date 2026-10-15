@@ -34,7 +34,6 @@ struct spot {
     std::set<itype_id> types = {};
     std::map<item_category_id, int> categories = {};
     int total = 0;
-    std::vector<detached_ptr<item>> incoming = {};
 };
 
 struct move_plan {
@@ -134,23 +133,24 @@ auto plan_moves( std::vector<spot> &spots, const std::vector<item *> &items,
 }
 
 template<typename Detach>
-auto execute( avatar &you, std::vector<spot> &spots, const std::vector<move_plan> &plan,
+auto execute( avatar &you, const std::vector<spot> &spots, const std::vector<move_plan> &plan,
               Detach detach ) -> void
 {
     auto moves = 0;
+    auto incoming = std::vector<std::vector<detached_ptr<item>>>( spots.size() );
     for( const auto &mv : plan ) {
         moves += you.item_handling_cost( *mv.it, true, 50 );
-        spots[mv.spot_index].incoming.push_back( detach( mv.it ) );
+        incoming[mv.spot_index].push_back( detach( mv.it ) );
     }
     auto visited = 0;
-    for( auto &s : spots ) {
-        if( s.incoming.empty() ) {
+    for( size_t i = 0; i < spots.size(); i++ ) {
+        if( incoming[i].empty() ) {
             continue;
         }
         visited++;
         // Walking over and back, minus the step we would be adjacent anyway.
-        moves += std::max( 0, s.dist - 1 ) * 2 * 100;
-        put_into_vehicle_or_drop( you, item_drop_reason::deliberate, s.incoming, s.pos );
+        moves += std::max( 0, spots[i].dist - 1 ) * 2 * 100;
+        put_into_vehicle_or_drop( you, item_drop_reason::deliberate, incoming[i], spots[i].pos );
     }
     you.mod_moves( -moves );
     //~ %1$s: "3 items", %2$s: "2 spots", %3$s: time taken
