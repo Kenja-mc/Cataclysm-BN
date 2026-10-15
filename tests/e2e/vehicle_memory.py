@@ -1,5 +1,6 @@
 """Map memory keeps the ground a moving vehicle hides (upstream #10452)."""
 from helpers import HELPERS, Game, bub_pos, settle, start_new_game
+from vehicle_box import spawn_vehicle
 
 
 def vehicle_game(name, **options):
@@ -23,21 +24,6 @@ def vehicle_game(name, **options):
         game.close()
         raise
     return game
-
-
-def spawn_vehicle(game, prototype="armored_car"):
-    """Spawns an opaque vehicle over the avatar, who is put in the driver's seat."""
-    game.keys("F12", "S", "v", delay=0.6)
-    game.wait_for("Choose vehicle to spawn")
-    game.keys("/", delay=0.4)
-    game.type(f"({prototype})")
-    game.keys("Enter", "Enter", delay=0.6)
-    game.wait_for("Vehicle condition")
-    game.keys("Down", "Enter", delay=0.6)  # Undamaged; debug spawn fills fuel stores.
-    game.wait_for("Vehicle direction")
-    game.keys("Enter", delay=0.8)  # Default -90 degrees: north.
-    settle(game)
-    assert game.lua("out(M:has_vehicle_part_with_feature_at(here(0,0),'CONTROLS'))") == ["true"]
 
 
 def take_control(game):
@@ -86,7 +72,7 @@ def test_memory_behind_moved_vehicle(_game):
         before = game.screen()
         assert set(ground_region(before, range(-6, 9))) == {':'}, (
             "the fixture ground was not visible before spawning the vehicle:\n" + before)
-        spawn_vehicle(game)
+        spawn_vehicle(game, "armored_car")
         take_control(game)
         drive_north(game)
         screen = game.screen()
