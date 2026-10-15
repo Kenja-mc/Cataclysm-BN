@@ -502,14 +502,28 @@ distribution_grid &distribution_grid_tracker::make_distribution_grid_at(
     shared_ptr_fast<distribution_grid> dist_grid = make_shared_fast<distribution_grid>
             ( submap_positions, mb );
     for( const tripoint_abs_sm &smp : submap_positions ) {
-        shared_ptr_fast<distribution_grid> &old_grid = parent_distribution_grids[smp];
-        if( old_grid != dist_grid ) {
+        const auto tracked = tracked_submaps_.contains( smp );
+        dist_grid->tracked_submap_count += tracked;
+        auto &old_grid = parent_distribution_grids[smp];
+        if( old_grid ) {
             grids_requiring_updates.erase( old_grid );
-            old_grid = dist_grid;
+            if( tracked ) {
+                --old_grid->tracked_submap_count;
+            }
+            if( old_grid->tracked_submap_count == 0 ) {
+                for( const auto &old_smp : old_grid->submap_coords ) {
+                    const auto entry = parent_distribution_grids.find( old_smp );
+                    if( old_smp != smp && entry != parent_distribution_grids.end() &&
+                        entry->second == old_grid ) {
+                        parent_distribution_grids.erase( entry );
+                    }
+                }
+            }
         }
+        old_grid = dist_grid;
     }
 
-    if( !dist_grid->empty() ) {
+    if( dist_grid->tracked_submap_count != 0 && !dist_grid->empty() ) {
         grids_requiring_updates.emplace( dist_grid );
     }
 
@@ -557,7 +571,12 @@ void distribution_grid_tracker::on_submap_loaded( const tripoint_abs_sm &pos,
     if( dim_id != dimension_id_ ) {
         return;
     }
-    tracked_submaps_.insert( pos );
+    if( tracked_submaps_.insert( pos ).second ) {
+        const auto parent = parent_distribution_grids.find( pos );
+        if( parent != parent_distribution_grids.end() ) {
+            ++parent->second->tracked_submap_count;
+        }
+    }
     make_distribution_grid_at( pos );
 
     // Scan newly-loaded submap for grid_link_tile active furniture and register
@@ -610,19 +629,25 @@ void distribution_grid_tracker::on_submap_unloaded( const tripoint_abs_sm &pos,
         } );
     }
 
-    tracked_submaps_.erase( pos );
+    if( tracked_submaps_.erase( pos ) == 0 ) {
+        return;
+    }
+    const auto parent = parent_distribution_grids.find( pos );
+    if( parent == parent_distribution_grids.end() ) {
+        return;
+    }
+    const auto grid = parent->second;
+    if( --grid->tracked_submap_count != 0 ) {
+        return;
+    }
 
-    // One OMT spans 4 submaps; invalidate all 4 to avoid stale grid entries.
-    const tripoint_abs_omt omt_pos = project_to<coords::omt>( pos );
-    for( const tripoint_abs_sm &smp : get_submaps_for_omt( omt_pos ) ) {
-        auto it = parent_distribution_grids.find( smp );
-        if( it != parent_distribution_grids.end() ) {
-            grids_requiring_updates.erase( it->second );
-            parent_distribution_grids.erase( it );
+    grids_requiring_updates.erase( grid );
+    for( const auto &smp : grid->submap_coords ) {
+        const auto entry = parent_distribution_grids.find( smp );
+        if( entry != parent_distribution_grids.end() && entry->second == grid ) {
+            parent_distribution_grids.erase( entry );
         }
     }
-    // The remaining tracked submaps of this OMT (if any) will re-register their
-    // grid on the next on_changed() call or make_distribution_grid_at() call.
 }
 
 void distribution_grid_tracker::on_changed( const tripoint_abs_ms &p )
@@ -679,9 +704,11 @@ void distribution_grid_tracker::clear()
         if( !n.paused ) {
             const auto sm = project_to<coords::sm>( n.source_pos );
             tracked_submaps_.insert( sm );
-            make_distribution_grid_at( sm );
         }
     } );
+    for( const auto &sm_pos : tracked_submaps_ ) {
+        make_distribution_grid_at( sm_pos );
+    }
 }
 
 void distribution_grid_tracker::on_options_changed()
