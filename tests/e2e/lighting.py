@@ -9,7 +9,7 @@ Flow for each case:
   2. The saved world and config are copied for every launch, so each tiles launch loads the same
      map, character and options.
   3. The tiles binary runs inside a systemd scope capped at 12G with no swap, on a private Xvfb
-     display chosen by the X server (never :98 or the real desktop), rendering with lavapipe.
+     display numbered :100 or higher (never :0, the real desktop), rendering with lavapipe.
   4. Captures are taken with COLORED_LIGHTING=true and COLORED_LIGHTING=false, and with
      COMPUTE_ACCELERATION=cpu and COMPUTE_ACCELERATION=gpu_software. The floor color near each
      emitter is measured and compared: with color, the floor should have the emitter's hue;
@@ -213,30 +213,36 @@ class X11:
 # ---------------------------------------------------------------- private display
 
 def start_xvfb(work, size=(1920, 1200)):
-    """Xvfb takes an unused display number from the server (-displayfd); it never reuses :98."""
-    read_fd, write_fd = os.pipe()
+    """Start Xvfb on a free display from :100 up and wait for its -displayfd ready report.
+
+    The display number must be explicit. Without one, Xvfb -displayfd probes from :0 and replaces
+    the desktop Xwayland socket /tmp/.X11-unix/X0; X11 apps such as Steam then fail until relogin.
+    """
     log = (work / "xvfb.log").open("w")
-    proc = subprocess.Popen(["Xvfb", "-displayfd", str(write_fd), "-screen", "0", f"{size[0]}x{size[1]}x24",
-                             "-nolisten", "tcp", "-noreset"],
-                            pass_fds=(write_fd,), stdout=log, stderr=log)
-    os.close(write_fd)
-    data = b""
-    deadline = time.time() + 20
-    while not data.endswith(b"\n") and time.time() < deadline:
-        ready, _, _ = select.select([read_fd], [], [], max(0.0, deadline - time.time()))
-        if not ready:
-            break
-        chunk = os.read(read_fd, 32)
-        if not chunk:
-            break
-        data += chunk
-    os.close(read_fd)
-    number = data.strip()
-    if not number.isdigit():
-        stop_process(proc)
-        log.close()
-        raise Failure(f"Xvfb did not report a display (see {work / 'xvfb.log'})")
-    return proc, f":{int(number)}", log
+    candidates = [n for n in range(100, 200)
+                  if not os.path.lexists(f"/tmp/.X{n}-lock") and not os.path.lexists(f"/tmp/.X11-unix/X{n}")]
+    for number in candidates[:5]:
+        read_fd, write_fd = os.pipe()
+        proc = subprocess.Popen(["Xvfb", f":{number}", "-displayfd", str(write_fd), "-screen", "0",
+                                 f"{size[0]}x{size[1]}x24", "-nolisten", "tcp", "-noreset"],
+                                pass_fds=(write_fd,), stdout=log, stderr=log)
+        os.close(write_fd)
+        data = b""
+        deadline = time.time() + 20
+        while not data.endswith(b"\n") and time.time() < deadline:
+            ready, _, _ = select.select([read_fd], [], [], max(0.0, deadline - time.time()))
+            if not ready:
+                break
+            chunk = os.read(read_fd, 32)
+            if not chunk:
+                break
+            data += chunk
+        os.close(read_fd)
+        if data.strip() == str(number).encode():
+            return proc, f":{number}", log
+        stop_process(proc)  # another server took this number first, or Xvfb failed; try the next one
+    log.close()
+    raise Failure(f"Xvfb did not report a display (see {work / 'xvfb.log'})")
 
 
 def stop_process(proc, timeout=10):
