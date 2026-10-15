@@ -8,6 +8,7 @@
 #include "type_id.h"
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <string>
@@ -52,6 +53,7 @@ class distribution_grid
         std::map<tripoint_abs_sm, std::vector<tile_location>> contents;
         std::vector<tripoint_abs_ms> flat_contents;
         std::vector<tripoint_abs_sm> submap_coords;
+        std::size_t tracked_submap_count = 0;
 
         mutable std::optional<int> cached_amount_here;
 
@@ -307,15 +309,15 @@ class distribution_grid_tracker : public submap_load_listener
 
         /**
          * submap_load_listener overrides.
-         * Called when a submap at @p pos in dimension @p dim_id becomes resident.
+         * Called when a submap at @p pos in dimension @p dim_id enters simulation.
          * Inserts the position into tracked_submaps_ and builds the grid cluster.
          */
         void on_submap_loaded( const tripoint_abs_sm &pos,
                                const dimension_id &dim_id ) override;
 
         /**
-         * Called just before the submap at @p pos in dimension @p dim_id is evicted.
-         * Removes from tracked_submaps_ and invalidates all 4 submaps of the affected OMT.
+         * Called when the submap at @p pos in dimension @p dim_id leaves simulation.
+         * Retires its grid only when no tracked submaps remain in that grid.
          */
         void on_submap_unloaded( const tripoint_abs_sm &pos,
                                  const dimension_id &dim_id ) override;

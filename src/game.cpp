@@ -833,10 +833,10 @@ void game::load_map( const point_abs_sm &pos_sm, const bool pump_events )
     fluid_grid::bind_dimension( new_dim_id );
 
     m.load( pos_sm, true, pump_events );
+    update_active_load_regions( new_dim_id, pos_sm,
+                                pos_sm + point_rel_sm( g_mapsize, g_mapsize ) );
 
-    // Repopulate the distribution-grid tracker for the current dimension.
-    // With dimension-aware generation, each dimension's submaps live in their own
-    // registry slot, so we iterate over the bound dimension's buffer.
+    // Replay only simulated submaps, not the mapbuffer's retained or border cache.
     {
         // Ensure a tracker exists for this dimension.
         if( grid_trackers_.find( new_dim_id ) == grid_trackers_.end() ) {
@@ -846,10 +846,18 @@ void game::load_map( const point_abs_sm &pos_sm, const bool pump_events )
         }
         auto &tracker = *grid_trackers_[new_dim_id];
         tracker.clear();
-        for( auto &[raw_pos, sm_ptr] : MAPBUFFER_REGISTRY.get( new_dim_id ) ) {
-            if( sm_ptr ) {
-                tracker.on_submap_loaded( tripoint_abs_sm( raw_pos ), new_dim_id );
+        // Snapshot resident simulated positions before replaying: on_submap_loaded()
+        // loads further submaps into the buffer's unordered_map, which would
+        // invalidate an iterator held over it.
+        std::vector<tripoint_abs_sm> simulated_resident;
+        for( const auto &[raw_pos, sm_ptr] : MAPBUFFER_REGISTRY.get( new_dim_id ) ) {
+            const auto sm_pos = tripoint_abs_sm( raw_pos );
+            if( sm_ptr && submap_loader.is_simulated( new_dim_id, sm_pos ) ) {
+                simulated_resident.emplace_back( sm_pos );
             }
+        }
+        for( const tripoint_abs_sm &sm_pos : simulated_resident ) {
+            tracker.on_submap_loaded( sm_pos, new_dim_id );
         }
     }
 
@@ -872,10 +880,6 @@ void game::load_map( const point_abs_sm &pos_sm, const bool pump_events )
         }
     }
 
-    const auto bubble_begin = pos_sm;
-    const auto bubble_end = bubble_begin + point_rel_sm( g_mapsize, g_mapsize );
-
-    update_active_load_regions( new_dim_id, bubble_begin, bubble_end );
     // map::loadn() now uses MAPBUFFER_REGISTRY.get(bound_dimension_), so
     // the load manager can safely fire on_submap_loaded/unloaded events.
     // Ensure a distribution_grid_tracker exists for every active dimension before
@@ -17349,12 +17353,17 @@ auto ensure_distribution_grid_tracker_for(
                                     MAPBUFFER_REGISTRY.get( dim_id ), dim_id );
     auto &tracker = *g->grid_trackers_[dim_id];
     submap_loader.add_listener( &tracker );
-    // Replay on_submap_loaded for all currently-resident submaps of this
-    // dimension so the new tracker picks up existing grid_link_tile nodes.
-    for( auto &[raw_pos, sm_ptr] : MAPBUFFER_REGISTRY.get( dim_id ) ) {
-        if( sm_ptr ) {
-            tracker.on_submap_loaded( tripoint_abs_sm( raw_pos ), dim_id );
+    // Pick up existing simulated cable endpoints without activating retained submaps.
+    // Snapshot first: on_submap_loaded() may load further submaps into the buffer.
+    std::vector<tripoint_abs_sm> simulated_resident;
+    for( const auto &[raw_pos, sm_ptr] : MAPBUFFER_REGISTRY.get( dim_id ) ) {
+        const auto sm_pos = tripoint_abs_sm( raw_pos );
+        if( sm_ptr && submap_loader.is_simulated( dim_id, sm_pos ) ) {
+            simulated_resident.emplace_back( sm_pos );
         }
+    }
+    for( const tripoint_abs_sm &sm_pos : simulated_resident ) {
+        tracker.on_submap_loaded( sm_pos, dim_id );
     }
     return tracker;
 }
