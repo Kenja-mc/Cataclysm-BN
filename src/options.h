@@ -109,6 +109,7 @@ class options_manager
                 void setNext();
                 //set to previous item
                 void setPrev();
+                auto set_default() -> void;
                 //set value
                 void setValue( const std::string &sSetIn );
                 void setValue( float fSetIn );

@@ -9,6 +9,7 @@
 #include "activity_handlers.h"
 #include "activity_time_cadence.h"
 #include "activity_type.h"
+#include "aim_reticle.h"
 #include "armor_layers.h"
 #include "artifact.h"
 #include "auto_note.h"
@@ -696,6 +697,8 @@ void game::reenter_fullscreen()
 void game::setup( bool load_world_modfiles )
 {
     loading_ui ui( true );
+    aim_reticle::clear();
+    tile_selection::clear_hover();
 
     // Clear all dimension overmapbuffers before reloading JSON data.
     // Each overmapbuffer holds raw `settings` pointers into region_settings_map,
@@ -3514,7 +3517,10 @@ auto game::handle_mouseview( input_context &ctxt, std::string &action,
     }
 
     if( action != "TIMEOUT" ) {
-        // Keyboard event, break out of animation loop
+        // A click is resolved against the hovered tile, which keeps its pending confirmation.
+        if( ctxt.get_raw_input().type == input_event_t::mouse && tile_selection::enabled() ) {
+            return false;
+        }
         ZoneScopedN( "handle_mouseview_hide_liveview" );
         liveview.hide();
         tile_selection::clear_hover();
@@ -4996,13 +5002,17 @@ void game::draw( ui_adaptor &ui )
             }
         }
     }
-    // Tiles draw the map themselves; these boxes are for the terminal view.
+    // Terminal boxes go into the map window; tiles boxes are their own windows on top of the
+    // map, so they must come after the map refresh that paints the tiles.
     if( !is_draw_tiles_mode() ) {
         hud_boxes::draw( u, w_terrain );
     }
     {
         ZoneScopedN( "game_draw_wrefresh" );
         wnoutrefresh( w_terrain );
+    }
+    if( is_draw_tiles_mode() ) {
+        hud_boxes::draw( u, w_terrain );
     }
 
     draw_panels( true );
@@ -5203,6 +5213,12 @@ void game::draw_ter( const tripoint_bub_ms &center, const bool looking, const bo
             draw_line( path.back(), u.bub_pos() + u.view_offset, path, true );
         }
         m.drawsq( w_terrain, *hovered, drawsq_params().highlight( true ).center( center ) );
+    }
+
+    // Arrow key aim: the reticle keeps its highlight even when the mouse points elsewhere.
+    if( const auto reticle = aim_reticle::pos();
+        reticle && !looking && u.view_offset.z() == 0 && tile_selection::hovered() != reticle ) {
+        m.drawsq( w_terrain, *reticle, drawsq_params().highlight( true ).center( center ) );
     }
 
     if( ( u.controlling_vehicle || remoteveh() ) && !looking ) {

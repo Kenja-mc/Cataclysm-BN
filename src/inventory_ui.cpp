@@ -1097,6 +1097,20 @@ void inventory_column::draw( const catacurses::window &win, point pos ) const
     }
 }
 
+auto inventory_column::entry_index_at( point origin, point cell ) const -> std::optional<size_t>
+{
+    const auto row = cell.y - origin.y;
+    if( !visible() || cell.x < origin.x || cell.x >= origin.x + static_cast<int>( get_width() ) ||
+        row < 0 || static_cast<size_t>( row ) >= entries_per_page ) {
+        return std::nullopt;
+    }
+    const auto index = page_offset + static_cast<size_t>( row );
+    if( index >= entries.size() || !entries[index].is_selectable() ) {
+        return std::nullopt;
+    }
+    return index;
+}
+
 size_t inventory_column::visible_cells() const
 {
     return std::count_if( cells.begin(), cells.end(), []( const cell_t &elem ) {
@@ -1929,11 +1943,14 @@ void inventory_selector::draw_columns( const catacurses::window &w ) const
     size_t x = border + 1;
     size_t y = get_header_height() + border + 1;
     size_t active_x = 0;
+    column_origins.assign( columns.size(), point_zero );
 
-    for( const auto &elem : columns ) {
+    for( size_t i = 0; i < columns.size(); ++i ) {
+        const auto &elem = columns[i];
         if( &elem == &columns.back() ) {
             x += gap_rounding_error;
         }
+        column_origins[i] = point( x, y );
 
         if( !is_active_column( *elem ) ) {
             elem->draw( w, point( x, y ) );
@@ -2032,7 +2049,14 @@ inventory_selector::inventory_selector( player &u, const inventory_selector_pres
     ctxt.register_action( "WIELD" );
     ctxt.register_action( "WEAR" );
     ctxt.register_action( "ANY_INPUT" ); // For invlets
-
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
 
     append_column( own_inv_column );
     append_column( map_column );
@@ -2053,14 +2077,52 @@ bool inventory_selector::has_available_choices() const
     } );
 }
 
+auto inventory_selector::mouse_input( inventory_input res ) -> inventory_input
+{
+    res.entry = nullptr;
+    if( res.action == "SCROLL_UP" || res.action == "SCROLL_DOWN" ) {
+        res.action = res.action == "SCROLL_UP" ? "UP" : "DOWN";
+        return res;
+    }
+    const auto mouse = ctxt.get_coordinates( w_inv );
+    if( !mouse ) {
+        res.action = res.action == "SEC_SELECT" ? "QUIT" : "";
+        return res;
+    }
+    // get_coordinates() is relative to the window centre.
+    const auto cell = mouse->xy().raw() + point( getmaxx( w_inv ), getmaxy( w_inv ) ) / 2;
+    const auto visible_columns = get_visible_columns();
+    for( size_t i = 0; i < visible_columns.size() && i < column_origins.size(); ++i ) {
+        const auto index = visible_columns[i]->entry_index_at( column_origins[i], cell );
+        if( !index || !visible_columns[i]->activatable() ) {
+            continue;
+        }
+        const auto col_it = std::ranges::find( columns, visible_columns[i] );
+        if( col_it == columns.end() ) {
+            continue;
+        }
+        set_active_column( std::distance( columns.begin(), col_it ) );
+        visible_columns[i]->select( *index, scroll_direction::FORWARD );
+        if( res.action == "SELECT" || res.action == "SEC_SELECT" ) {
+            res.entry = &visible_columns[i]->entries[*index];
+        }
+        return res;
+    }
+    res.action = res.action == "SEC_SELECT" ? "QUIT" : "";
+    return res;
+}
+
 inventory_input inventory_selector::get_input()
 {
     inventory_input res;
 
     res.action = ctxt.handle_input();
     res.ch = ctxt.get_raw_input().get_first_input();
-    const auto bound_action = get_option<std::string>( "CONTROL_SCHEME" ) == "modern" &&
-                              res.action != "ANY_INPUT";
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
+        return mouse_input( res );
+    }
+    const auto bound_action = modern && res.action != "ANY_INPUT";
     res.entry = bound_action ? nullptr : find_entry_by_invlet( res.ch );
 
     if( res.entry != nullptr && !res.entry->is_selectable() ) {

@@ -23,7 +23,7 @@ to triage; reference the session commit SHA (shown by `--version` in the game's 
 ### Controls
 
 - [ ] WASD movement + Q E Z C diagonals, F attack, Space interact, C character, X wait/rest
-- [ ] Arrow keys and numpad movement still work
+- [ ] Numpad movement still works; arrow keys move the aim reticle and `F` attacks it
 - [ ] `n` auto-explore avoids walls/closed doors/traps and refuses to start near hostiles
 - [ ] Contextual `Space` action (single sensible action, or lists directions)
 - [ ] Stances (F2 run, F3 crouch, F4 prone) show in the weapon box / Movement row

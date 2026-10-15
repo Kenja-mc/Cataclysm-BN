@@ -20,6 +20,11 @@ from fire_feedback import TESTS as FIRE_FEEDBACK_TESTS
 from keyhints_small import TESTS as KEYHINTS_SMALL_TESTS
 from safe_mode_sleep import TESTS as SAFE_MODE_SLEEP_TESTS
 from vehicle_memory import TESTS as VEHICLE_MEMORY_TESTS
+from aim_reticle import TESTS as AIM_RETICLE_TESTS
+from safe_click import TESTS as SAFE_CLICK_TESTS
+from inventory_mouse import TESTS as INVENTORY_MOUSE_TESTS
+from pickup_flow import TESTS as PICKUP_FLOW_TESTS
+from options_menu import TESTS as OPTIONS_MENU_TESTS
 
 
 
@@ -351,15 +356,6 @@ def test_attack_command(g):
                 break
         assert zombie_hp(g) != before, why
     g.lua("local m=gapi.get_monster_at(here(1,0)) if m then park(m) end out('ok')")
-
-
-def test_click_to_travel(g):
-    arena(g)
-    settle(g)
-    start = bub_pos(g)
-    x, y = g.find("@")
-    g.click(x + 3, y)
-    assert wait_until(lambda: bub_pos(g) == (start[0] + 3, start[1], start[2]), timeout=15), (start, bub_pos(g))
 
 
 def test_hover_says_what_a_click_does(g):
@@ -1186,7 +1182,7 @@ def test_char_creation_overview_fits_small_terminal(_g):
 TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_auto_explore, test_first_time_tip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
          test_hud_boxes, test_body_panel, test_readable_map_glyphs, test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content, test_craft_parts_chain,
          test_aim_defaults, test_sound_marker_fading, test_smart_targeting, test_stance_toggle, test_contextual_interact_single_door, test_contextual_interact_multiple_doors,
-         test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_click_to_travel, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions, test_right_click_pick_runs_the_action,
+         test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions, test_right_click_pick_runs_the_action,
          test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_modern_scheme_adds_no_menu_key_clashes, test_wasd_menu_navigation, test_old_full_keybindings_file, test_hud_box_options, test_boxes_replace_sidebar_rows, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
          test_smart_safe_mode, test_smart_safe_mode_horde, test_enemy_edge_arrows, test_enemy_edge_arrows_off,
          test_modern_wield_nearby_rows_keep_their_shortcut,
@@ -1202,6 +1198,11 @@ TESTS += FIRE_FEEDBACK_TESTS
 TESTS += KEYHINTS_SMALL_TESTS
 TESTS += SAFE_MODE_SLEEP_TESTS
 TESTS += VEHICLE_MEMORY_TESTS
+TESTS += AIM_RETICLE_TESTS
+TESTS += SAFE_CLICK_TESTS
+TESTS += INVENTORY_MOUSE_TESTS
+TESTS += PICKUP_FLOW_TESTS
+TESTS += OPTIONS_MENU_TESTS
 
 
 def main():

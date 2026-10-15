@@ -10,11 +10,14 @@
 #include "item.h"
 #include "map/map.h"
 #include "messages.h"
+#include "monster.h"
 #include "npc.h"
 #include "options.h"
 #include "player_activity.h"
+#include "smart_safemode.h"
 #include "string_formatter.h"
 #include "translations.h"
+#include "trap.h"
 #include "travel/travel_destination.h"
 
 namespace
@@ -25,6 +28,20 @@ auto hovered_route = std::vector<tripoint_bub_ms>();
 /// Turn the hover was computed on; a new turn can change what a click does.
 auto hovered_turn = std::optional<time_point>();
 auto hovered_hint = std::string();
+auto pending_click = std::optional<tripoint_bub_ms>();
+
+auto hostile_in_view( avatar &you ) -> bool
+{
+    const auto hostiles = you.get_hostile_creatures( g_max_view_distance );
+    const auto as_monster = []( const Creature * cr ) { return dynamic_cast<const monster *>( cr ); };
+    if( std::ranges::any_of( hostiles, [&]( const Creature * cr ) { return as_monster( cr ) == nullptr; } ) ) {
+        return true;
+    }
+    auto monsters = hostiles
+                    | std::views::transform( as_monster )
+                    | std::ranges::to<std::vector<const monster *>>();
+    return smart_safemode::any_threatens( monsters, you );
+}
 
 auto hostile_at( const avatar &you, const tripoint_bub_ms &p ) -> Creature * // *NOPAD*
 {
@@ -41,6 +58,21 @@ auto hostile_at( const avatar &you, const tripoint_bub_ms &p ) -> Creature * // 
 auto route_to( avatar &you, map &m, const tripoint_bub_ms &p ) -> std::vector<tripoint_bub_ms>
 {
     return m.route( you.bub_pos(), p, you.get_legacy_pathfinding_settings(), you.get_legacy_path_avoid() );
+}
+
+auto confirm_hint( const size_t n ) -> std::string
+{
+    return string_format( vgettext( "click again to walk here (%d step)",
+                                    "click again to walk here (%d steps)", n ), n );
+}
+
+auto dangerous_dest( map &m, const avatar &you, const tripoint_bub_ms &p ) -> bool
+{
+    if( m.dangerous_field_at( p ) ) {
+        return true;
+    }
+    const auto &tr = m.tr_at( p );
+    return !tr.is_null() && !tr.is_benign() && ( you.knows_trap( p ) || tr.can_see( p, you ) );
 }
 
 auto bound_key_suffix( const action_id act ) -> std::string
@@ -106,8 +138,13 @@ auto choices_at( const avatar &you, const tripoint_bub_ms &p ) -> std::vector<ch
     return out;
 }
 
+
 auto resolve( avatar &you, map &m, const choice &c, const tripoint_bub_ms &p ) -> action_id
 {
+    if( !c.travel ) {
+        pending_click.reset();
+    }
+
     if( c.act == ACTION_OPEN ) {
         // Walking into a closed door opens it.
         return get_movement_action_from_delta( p - you.bub_pos(), iso_rotate::yes );
@@ -122,14 +159,27 @@ auto resolve( avatar &you, map &m, const choice &c, const tripoint_bub_ms &p ) -
     if( !c.travel ) {
         return c.act;
     }
+    const auto dist = square_dist( p.xy(), you.bub_pos().xy() );
+    const auto safe = get_option<bool>( "SAFE_CLICK_WALK" );
+    const auto dangerous = dangerous_dest( m, you, p );
+    const auto hostiles = safe && dist > 1 ? hostile_in_view( you ) : false;
     const auto route = route_to( you, m, p );
     if( route.empty() ) {
         add_msg( m_info, _( "You can't find a way there." ) );
         return ACTION_NULL;
     }
+    if( safe && ( dist > 1 || dangerous ) && pending_click != p &&
+        ( dangerous || !hostiles ) ) {
+        pending_click = p;
+        hovered_route = route;
+        hovered_hint = dangerous ? std::string( _( "click again: walk into danger" ) ) :
+                       confirm_hint( route.size() );
+        return ACTION_NULL;
+    }
+    pending_click.reset();
     you.set_destination( route );
     const auto step = you.get_next_auto_move_direction();
-    if( step == ACTION_NULL ) {
+    if( hostiles || step == ACTION_NULL ) {
         you.clear_destination();
     }
     return step;
@@ -137,9 +187,15 @@ auto resolve( avatar &you, map &m, const choice &c, const tripoint_bub_ms &p ) -
 
 auto hover( avatar &you, map &m, const std::optional<tripoint_bub_ms> &p ) -> void
 {
+    if( !get_option<bool>( "SAFE_CLICK_WALK" ) ) {
+        pending_click.reset();
+    }
     if( !p || !enabled() ) {
         clear_hover();
         return;
+    }
+    if( hovered_tile != p ) {
+        pending_click.reset();
     }
     if( hovered_tile == p && hovered_turn == calendar::turn ) {
         return;
@@ -147,13 +203,25 @@ auto hover( avatar &you, map &m, const std::optional<tripoint_bub_ms> &p ) -> vo
     hovered_tile = p;
     hovered_turn = calendar::turn;
     const auto choices = choices_at( you, *p );
+    const auto dist = square_dist( p->xy(), you.bub_pos().xy() );
     hovered_route = !choices.empty() && choices.front().travel &&
-                    square_dist( p->xy(), you.bub_pos().xy() ) > 1 ? route_to( you, m, *p ) : std::vector<tripoint_bub_ms>();
+                    dist > 1 ? route_to( you, m, *p ) : std::vector<tripoint_bub_ms>();
+    const auto safe = get_option<bool>( "SAFE_CLICK_WALK" );
     if( choices.empty() ) {
         hovered_hint.clear();
+    } else if( choices.front().travel && safe && dangerous_dest( m, you, *p ) ) {
+        hovered_hint = pending_click == p ? _( "click again: walk into danger" ) :
+                       _( "click: confirm walking into danger" );
     } else if( choices.front().travel && !hovered_route.empty() ) {
-        hovered_hint = string_format( vgettext( "click: walk here (%d step)", "click: walk here (%d steps)",
-                                       hovered_route.size() ), hovered_route.size() );
+        auto base = string_format( vgettext( "click: walk here (%d step)", "click: walk here (%d steps)",
+                                             hovered_route.size() ), hovered_route.size() );
+        if( safe && pending_click == p ) {
+            hovered_hint = confirm_hint( hovered_route.size() );
+        } else if( safe && dist > 1 && hostile_in_view( you ) ) {
+            hovered_hint = _( "click: step toward (hostile in view)" );
+        } else {
+            hovered_hint = base;
+        }
     } else {
         // Name the key too, so the mouse teaches the keyboard.
         const auto act = choices.front().act;
@@ -170,6 +238,7 @@ auto clear_hover() -> void
     hovered_tile.reset();
     hovered_route.clear();
     hovered_hint.clear();
+    pending_click.reset();
 }
 
 auto hovered() -> std::optional<tripoint_bub_ms> { return hovered_tile; }

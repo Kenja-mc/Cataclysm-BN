@@ -298,6 +298,9 @@ class inventory_column
 
         void draw( const catacurses::window &win, point pos ) const;
 
+        /// Index of the selectable entry drawn at `cell` when the column is drawn at `origin`.
+        auto entry_index_at( point origin, point cell ) const -> std::optional<size_t>;
+
         void add_entry( const inventory_entry &entry );
         void move_entries_to( inventory_column &dest );
         void clear();
@@ -667,6 +670,11 @@ class inventory_selector
 
     private:
         catacurses::window w_inv;
+        /// Where draw_columns() put each column, for mouse hit tests.
+        mutable std::vector<point> column_origins;
+
+        /// Modern scheme: turns hover, clicks and the wheel into selection and actions.
+        auto mouse_input( inventory_input res ) -> inventory_input;
 
 
         std::vector<inventory_column *> columns;

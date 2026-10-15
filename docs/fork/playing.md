@@ -17,6 +17,10 @@ This installs:
 - desktop entries → `~/.local/share/applications/` ("Cataclysm-BN" for tiles,
   "Cataclysm-BN (Curses)" for the terminal version)
 - icon and metainfo, and a basepath config at `~/.config/cataclysm-bn/basepath`
+- the Otopack soundpack (music and ambience) in `data/sound/Otopack+ModsUpdates BN`, downloaded
+  with `deno` through upstream's registry bundler. Downloaded audio and its credits stay outside
+  version control. Choose it under **Options → General → Choose soundpack**, then restart.
+  The game picks it by default only if you never saved another soundpack.
 
 The fork then appears in your app menu. The wrapper resolves the game's data directory from
 `CATACLYSM_BN_BASEPATH`, the config file, or the current directory.
@@ -79,14 +83,14 @@ Long-form write-ups should follow
 
 ## What to pay attention to
 
-- **Controls:** WASD + Q E Z C, `F` attack, `n` auto-explore, contextual `Space`, stances
-  (F2/F3/F4), quick stack (`Q`) and sort pile (`Z`), driving hints (`ws`/`ad`) and their return to
-  `wasd` on release.
+- **Controls:** WASD + Q E Z C walk, arrow keys aim, `F` attacks, `g` opens and confirms pickup,
+  `h` wields and `W` wears. Check `n` auto-explore, contextual `Space`, stances (F2/F3/F4),
+  quick stack (`Q`), sort pile (`Z`), driving hints (`ws`/`ad`) and their return to `wasd` on release.
 - **HUD:** weather/weapon boxes, Body panel (`H`), aligned sidebar, vehicle box at 80×25.
 - **Targeting:** starts on the reachable hostile, warns about allies in the line of fire, loudness.
 - **Crafting:** opens on recent recipes, "Missing: …", part producer hints (`p`).
 - **Look:** ASCII art, colors, map glyphs, box behavior.
-- **Sound:** fade-in markers, the Overhaul soundpack behavior.
+- **Sound:** fade-in markers and music/ambience with the Otopack soundpack selected.
 
 Report bugs and suggestions via `bin/feedback`, and use the [feedback template](feedback-template.md)
 when filing anything on GitHub.

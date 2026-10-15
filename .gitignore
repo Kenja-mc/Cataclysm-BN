@@ -246,3 +246,7 @@ clang-tidy-trace
 CMakeFiles/
 CMakeCache.txt
 __cmake_systeminformation/
+
+# Registry content fetched by build-scripts/bundle-registry-mods.ts
+/data/sound/Otopack+ModsUpdates BN/
+/data/mods/external-mods-CREDITS.txt

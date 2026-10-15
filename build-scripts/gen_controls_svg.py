@@ -407,8 +407,8 @@ def render_svg(keymap, entries, menu_parts):
         '<tspan font-weight="700" fill="#0f172a">n</tspan> auto-explores: it '
         'walks toward reachable ground you have not seen yet, and '
         'stops for threats.',
-        'Arrow keys and the numpad still move, aim and answer direction '
-        'prompts. Click a map tile to walk there in one click.',
+        'Arrow keys aim on the map; the numpad walks. Click once for a step, '
+        'twice for longer travel when no hostile is in view.',
         '<tspan font-weight="700" fill="#0f172a">?</tspan> lists every '
         'keybinding on any screen, and Enter opens the action menu with '
         'every action.',

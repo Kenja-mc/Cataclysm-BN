@@ -677,7 +677,7 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
         ui_adaptor ui;
         ui.on_screen_resize( [&]( ui_adaptor & ui ) {
             const int itemsH = std::min( 25, TERMY / 2 );
-            const int pickupBorderRows = 3;
+            const int pickupBorderRows = 4;
 
             // The pickup list may consume the entire terminal, minus space needed for its
             // header/footer and the item info window.
@@ -745,6 +745,12 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
         ctxt.register_action( "FILTER" );
         ctxt.register_action( "WEAR", to_translation( "Wear" ) );
         ctxt.register_action( "WIELD", to_translation( "Wield" ) );
+        if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+            ctxt.register_action( "COORDINATE" );
+            ctxt.register_action( "MOUSE_MOVE" );
+            ctxt.register_action( "SELECT" );
+            ctxt.register_action( "SEC_SELECT" );
+        }
 #if defined(__ANDROID__)
         ctxt.allow_text_entry = true; // allow user to specify pickup amount
 #endif
@@ -906,6 +912,13 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
             right_print( w_pickup, maxitems + 2, 0, c_light_gray, string_format( _( "[%s] Next" ),
                          ctxt.get_desc( "NEXT_TAB", 1 ) ) );
 
+            trim_and_print( w_pickup, point( 0, maxitems + 3 ), pickupW / 2 - 2, c_light_gray,
+                            string_format( _( "[%s] Wield  [%s] Wear" ), ctxt.get_desc( "WIELD", 1 ),
+                                           ctxt.get_desc( "WEAR", 1 ) ) );
+
+            right_print( w_pickup, maxitems + 3, 0, c_light_gray, string_format( _( "[%s] Pick up" ),
+                         ctxt.get_desc( "CONFIRM", 1 ) ) );
+
             const std::string fmted_weight_predict = colorize(
                         string_format( "%.1f", round_up( convert_weight( weight_predict ), 1 ) ),
                         weight_predict > g->u.weight_capacity() ? c_red : c_white );
@@ -924,11 +937,64 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
             wnoutrefresh( w_pickup );
         } );
 
+
+        const auto handle_wield_wear = [&]( const std::string & act ) -> bool {
+            if( selected < 0 || selected >= static_cast<int>( matches.size() ) ) {
+                return false;
+            }
+            const auto true_idx = matches[selected];
+            const auto &selected_item = **stacked_here[true_idx].front();
+            const auto preferred_option = act == "WEAR" ? WEAR : WIELD;
+            const auto can_handle = preferred_option == WEAR ? g->u.can_wear( selected_item ) :
+                                            g->u.can_wield( selected_item );
+            if( !can_handle.success() ) {
+                add_msg( m_info, "%s", can_handle.c_str() );
+                return false;
+            }
+            auto direct_locations = std::vector<item *> {};
+            auto direct_quantities = std::vector<int> {};
+            direct_locations.push_back( *stacked_here[true_idx].front() );
+            direct_quantities.push_back( 0 );
+            for( const auto child_index : getitem[true_idx].children ) {
+                direct_locations.push_back( *stacked_here[child_index].front() );
+                direct_quantities.push_back( 0 );
+            }
+            auto direct_targets = pickup::optimize_pickup( direct_locations, direct_quantities );
+            if( !direct_targets.empty() ) {
+                auto direct_got_water = false;
+                auto direct_offered_swap = false;
+                auto direct_map_pickup = pickup_map{};
+                auto direct_target = direct_targets.front();
+                const auto handled = pick_one_up( { .selection = direct_target,
+                                                   .got_water = direct_got_water,
+                                                   .offered_swap = direct_offered_swap,
+                                                   .map_pickup = direct_map_pickup,
+                                                   .autopickup = false,
+                                                   .preferred_option = preferred_option } );
+                if( !direct_map_pickup.empty() ) {
+                    show_pickup_message( direct_map_pickup );
+                }
+                if( direct_got_water ) {
+                    add_msg( m_info, _( "You can't pick up a liquid!" ) );
+                }
+                if( handled ) {
+                    g->reenter_fullscreen();
+                    return true;
+                }
+            }
+            return false;
+        };
         // Now print the two lists; those on the ground and about to be added to inv
         // Continue until we hit return or space
         do {
             const std::string pickup_chars = ctxt.get_available_single_char_hotkeys( all_pickup_chars );
             int idx = -1;
+            if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" &&
+                ctxt.get_raw_input().type == input_event_t::mouse &&
+                ( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) &&
+                ctxt.get_coordinates( w_pickup ) ) {
+                action = action == "SCROLL_UP" ? "UP" : "DOWN";
+            }
 
             if( action == "ANY_INPUT" &&
                 raw_input_char >= '0' && raw_input_char <= '9' ) {
@@ -984,6 +1050,57 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
                 } else if( selected >= start + maxitems ) {
                     start += maxitems;
                 }
+            } else if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" &&
+                       ( action == "MOUSE_MOVE" || action == "SELECT" || action == "SEC_SELECT" ) ) {
+                const auto mouse = ctxt.get_coordinates( w_pickup );
+                if( mouse ) {
+                    const auto cell = mouse->xy().raw() + point( getmaxx( w_pickup ), getmaxy( w_pickup ) ) / 2;
+                    const int row = cell.y - 1;
+                    if( row >= 0 && row < maxitems ) {
+                        const int item_idx = start + row;
+                        if( item_idx >= 0 && item_idx < static_cast<int>( matches.size() ) ) {
+                            if( action == "MOUSE_MOVE" ) {
+                                selected = item_idx;
+                                iScrollPos = 0;
+                            } else if( action == "SELECT" ) {
+                                idx = item_idx;
+                                selected = item_idx;
+                                start = ( item_idx / maxitems ) * maxitems;
+                            } else if( action == "SEC_SELECT" ) {
+                                selected = item_idx;
+                                const auto &menu_item = **stacked_here[matches[item_idx]].front();
+                                uilist menu;
+                                menu.text = _( "Item action" );
+                                menu.addentry( 0, true, MENU_AUTOASSIGN, _( "Pick up" ) );
+                                if( g->u.can_wield( menu_item ).success() ) {
+                                    menu.addentry( 1, true, MENU_AUTOASSIGN, _( "Wield" ) );
+                                }
+                                if( g->u.can_wear( menu_item ).success() ) {
+                                    menu.addentry( 2, true, MENU_AUTOASSIGN, _( "Wear" ) );
+                                }
+                                menu.addentry( 3, true, MENU_AUTOASSIGN, _( "Cancel" ) );
+                                menu.query();
+                                if( menu.ret == 0 ) {
+                                    for( auto &selection : getitem ) {
+                                        selection.pick = false;
+                                        selection.count.reset();
+                                        selection.all_children_picked = false;
+                                    }
+                                    action = "CONFIRM";
+                                    break;
+                                } else if( menu.ret == 1 ) {
+                                    if( handle_wield_wear( "WIELD" ) ) {
+                                        return;
+                                    }
+                                } else if( menu.ret == 2 ) {
+                                    if( handle_wield_wear( "WEAR" ) ) {
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             } else if( selected >= 0 && selected < static_cast<int>( matches.size() ) &&
                        ( ( action == "RIGHT" && !getitem[matches[selected]].pick ) ||
                          ( action == "LEFT" && getitem[matches[selected]].pick ) ) ) {
@@ -998,48 +1115,9 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
                 if( !popup.canceled() ) {
                     filter_changed = true;
                 }
-            } else if( selected >= 0 && selected < static_cast<int>( matches.size() ) &&
-                       ( action == "WEAR" || action == "WIELD" ) ) {
-                const auto true_idx = matches[selected];
-                const auto &selected_item = **stacked_here[true_idx].front();
-                const auto preferred_option = action == "WEAR" ? WEAR : WIELD;
-                const auto can_handle = preferred_option == WEAR ? g->u.can_wear( selected_item ) :
-                                        g->u.can_wield( selected_item );
-                if( !can_handle.success() ) {
-                    add_msg( m_info, "%s", can_handle.c_str() );
-                } else {
-                    auto direct_locations = std::vector<item *> {};
-                    auto direct_quantities = std::vector<int> {};
-                    direct_locations.push_back( *stacked_here[true_idx].front() );
-                    direct_quantities.push_back( 0 );
-                    for( const auto child_index : getitem[true_idx].children ) {
-                        direct_locations.push_back( *stacked_here[child_index].front() );
-                        direct_quantities.push_back( 0 );
-                    }
-
-                    auto direct_targets = pickup::optimize_pickup( direct_locations, direct_quantities );
-                    if( !direct_targets.empty() ) {
-                        auto direct_got_water = false;
-                        auto direct_offered_swap = false;
-                        auto direct_map_pickup = pickup_map{};
-                        auto direct_target = direct_targets.front();
-                        const auto handled = pick_one_up( pick_one_up_options{ .selection = direct_target,
-                                                          .got_water = direct_got_water,
-                                                          .offered_swap = direct_offered_swap,
-                                                          .map_pickup = direct_map_pickup,
-                                                          .autopickup = false,
-                                                          .preferred_option = preferred_option } );
-                        if( !direct_map_pickup.empty() ) {
-                            show_pickup_message( direct_map_pickup );
-                        }
-                        if( direct_got_water ) {
-                            add_msg( m_info, _( "You can't pick up a liquid!" ) );
-                        }
-                        if( handled ) {
-                            g->reenter_fullscreen();
-                            return;
-                        }
-                    }
+            } else if( action == "WEAR" || action == "WIELD" ) {
+                if( handle_wield_wear( action ) ) {
+                    return;
                 }
             } else if( action == "ANY_INPUT" && raw_input_char == '`' ) {
                 std::string ext = string_input_popup()
@@ -1191,6 +1269,21 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
             if( selection.pick ) {
                 item_selected = true;
             }
+        }
+        if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" && !item_selected &&
+            action == "CONFIRM" && selected >= 0 &&
+            selected < static_cast<int>( matches.size() ) ) {
+            const size_t true_idx = matches[selected];
+            getitem[true_idx].pick = true;
+            if( itemcount ) {
+                getitem[true_idx].count = itemcount;
+                itemcount.reset();
+            }
+            getitem[true_idx].all_children_picked = true;
+            for( size_t child_index : getitem[true_idx].children ) {
+                getitem[child_index].pick = true;
+            }
+            item_selected = true;
         }
         if( action != "CONFIRM" || !item_selected ) {
             add_msg( _( "Never mind." ) );

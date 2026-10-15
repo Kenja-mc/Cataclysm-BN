@@ -47,6 +47,13 @@ def give(g, item, n=1):
     assert g.lua(f"give('{item}',{n})") == ["ok"]
 
 
+def empty_inventory(g):
+    """Strip random equipment and trait-dependent morale before item interaction fixtures."""
+    assert g.lua("local a=gapi.get_avatar() a:clear_bionics() a:clear_mutations() "
+                 "a:clear_morale() a:drop_all_items() a:clear_morale() "
+                 "a:set_mutation(MutationBranchId.new('DEBUG_STORAGE')) out('ok')") == ["ok"]
+
+
 def settle(g):
     # Let queued moves play out so the sidebar and map are current.
     g.keys("x", delay=0.6)

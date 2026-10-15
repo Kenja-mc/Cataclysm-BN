@@ -6,6 +6,27 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ## 2026-10-15
 
+### Added
+
+- **Options menu key guide and reset:** a two-row guide keeps navigation, help and exit visible
+  at 80×25. In Modern, `r` resets the highlighted option and `R` resets the page. A
+  **[Reset to default]** button, hover, clicks on rows and page tabs work with the mouse.
+- **Arrow keys aim** (Sword of the Stars: The Pit): in Modern the arrow keys move a free targeting
+  reticle and `F` attacks what it covers. Options → Interface → Arrow keys aim; off in Classic.
+- **Safe click-to-walk:** walking further than one step by mouse needs a second click on the same
+  tile, and with a hostile in view a far click takes one step. Options → Interface turns it off.
+- **Mouse in inventory and pick-up menus** (Modern): hover highlights, left click picks or marks,
+  the wheel scrolls in terminal and tiles builds, and right click opens the item's actions.
+
+### Changed
+
+- In Modern, `g` in the pick-up menu picks up the marked items, or the highlighted item when
+  nothing is marked. `h` wields and `W` wears in pickup, inventory and item actions, as on the map.
+- The weather, weapon (with stance) and vehicle boxes now also show in the tiles version, drawn
+  over the map; the sidebar no longer repeats what they show there either.
+- `bin/install-cataclysm-bn.sh` downloads the Otopack soundpack (music and ambience) through
+  upstream's registry bundler. Downloaded audio and its credits remain outside version control.
+
 ### Maintenance
 
 - Simplified installer destination setup and feedback argument handling, removed a forwarding-only

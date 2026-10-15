@@ -181,6 +181,7 @@ auto scheme_companions( const bool classic ) -> std::vector<scheme_companion>
 {
     return { { .id = "BUMP_ATTACK", .value = classic }, { .id = "FORCE_CAPITAL_YN", .value = classic },
         { .id = "YN_HOTKEYS", .value = classic }, { .id = "MOUSE_TILE_SELECTION", .value = !classic },
+        { .id = "ARROW_KEY_AIM", .value = !classic },
         { .id = "CONTEXTUAL_INTERACT", .value = !classic } };
 }
 
@@ -1364,6 +1365,19 @@ void options_manager::cOpt::setPrev()
     }
 }
 
+auto options_manager::cOpt::set_default() -> void
+{
+    if( sType == "string_select" || sType == "string_input" ) {
+        sSet = sDefault;
+    } else if( sType == "bool" ) {
+        bSet = bDefault;
+    } else if( sType == "int" || sType == "int_map" ) {
+        iSet = iDefault;
+    } else if( sType == "float" ) {
+        fSet = fDefault;
+    }
+}
+
 //set value
 void options_manager::cOpt::setValue( float fSetIn )
 {
@@ -1945,6 +1959,16 @@ void options_manager::add_options_interface()
 
     add( "MOUSE_TILE_SELECTION", interface, translate_marker( "Mouse tile selection" ),
          translate_marker( "If true, hovering a map tile highlights it, previews the route and says what a click does.  Left click attacks, opens, picks up, examines or walks there; right click lists every option." ),
+         true
+       );
+
+    add( "ARROW_KEY_AIM", interface, translate_marker( "Arrow keys aim" ),
+         translate_marker( "Sword of the Stars: The Pit style.  If true, the arrow keys move a targeting reticle over the map instead of walking, without spending a turn.  F attacks what the reticle covers: up close with your weapon, otherwise you aim at it.  Esc, walking or any other action that takes a turn takes the reticle away.  Turn it off to walk with the arrow keys." ),
+         true
+       );
+
+    add( "SAFE_CLICK_WALK", interface, translate_marker( "Safe click-to-walk" ),
+         translate_marker( "If true, with a hostile in view left-clicking a far tile moves one step, and walking to a distant tile asks for a second click to confirm." ),
          true
        );
 
@@ -3975,16 +3999,27 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
     ctxt.register_action( "PREV_TAB" );
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    const auto modern = ::get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    ctxt.register_action( "RESET_OPTION", to_translation( "Reset to default" ) );
+    ctxt.register_action( "RESET_PAGE", to_translation( "Reset page to defaults" ) );
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
 
     const int iWorldOffset = world_options_only ? 2 : 0;
     int iMinScreenWidth = 0;
     const int iTooltipHeight = 4;
+    const int iFooterHeight = 2;
     int iContentHeight = 0;
 
     catacurses::window w_options_border;
     catacurses::window w_options_tooltip;
     catacurses::window w_options_header;
     catacurses::window w_options;
+    catacurses::window w_options_footer;
 
     const auto init_windows = [&]( ui_adaptor & ui ) {
         if( OPTIONS.contains( "TERMINAL_X" ) ) {
@@ -4006,7 +4041,7 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
 
         iMinScreenWidth = std::max( FULL_SCREEN_WIDTH, TERMX / 2 );
         const int iOffsetX = TERMX > FULL_SCREEN_WIDTH ? ( TERMX - iMinScreenWidth ) / 2 : 0;
-        iContentHeight = TERMY - 3 - iTooltipHeight - iWorldOffset;
+        iContentHeight = TERMY - 3 - iTooltipHeight - iFooterHeight - iWorldOffset;
 
         w_options_border  = catacurses::newwin( TERMY, iMinScreenWidth,
                                                 point( iOffsetX, 0 ) );
@@ -4016,6 +4051,8 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
                                                 point( 1 + iOffsetX, 1 + iTooltipHeight + iWorldOffset ) );
         w_options         = catacurses::newwin( iContentHeight, iMinScreenWidth - 2,
                                                 point( 1 + iOffsetX, iTooltipHeight + 2 + iWorldOffset ) );
+        w_options_footer  = catacurses::newwin( iFooterHeight, iMinScreenWidth - 2,
+                                                point( 1 + iOffsetX, TERMY - 1 - iFooterHeight ) );
 
         ui.position_from_window( w_options_border );
     };
@@ -4023,6 +4060,31 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
     ui_adaptor ui;
     ui.on_screen_resize( init_windows );
     init_windows( ui );
+
+    const auto visible_rows = [&]( const std::vector<PageItem> & items ) {
+        return std::views::iota( 0, static_cast<int>( items.size() ) )
+               | std::views::filter( [&]( const int i ) { return items[i].type == ItemType::GroupHeader || groups_state[items[i].group]; } )
+               | std::ranges::to<std::vector>();
+    };
+    const auto tab_name = [&]( const int i ) -> std::string {
+        return ingame && i == iWorldOptPage ? _( "Current world" ) : pages_[i].name_.translated();
+    };
+    // Tabs are drawn from this column as "[name]" plus a separator.
+    const auto first_tab_x = 7;
+    const auto tab_at = [&]( const int x ) -> std::optional<int> {
+        auto left = first_tab_x;
+        for( int i = 0; i < static_cast<int>( pages_.size() ); i++ ) {
+            const auto right = left + utf8_width( tab_name( i ) ) + 2;
+            if( x >= left && x < right ) {
+                return i;
+            }
+            left = right + 1;
+        }
+        return std::nullopt;
+    };
+    const auto reset_label = std::string( _( "[Reset to default]" ) );
+    auto reset_label_x = -1;
+
     ui.on_redraw( [&]( const ui_adaptor & ) {
         werase( w_options_header );
         werase( w_options_border );
@@ -4043,30 +4105,10 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
         const Page &page = pages_[iCurrentPage];
         const std::vector<PageItem> &page_items = page.items_;
 
-        // Cache visible entries
-        std::vector<int> visible_items;
-        visible_items.reserve( page_items.size() );
-        int curr_line_visible = 0;
-        const auto is_visible = [&]( int i ) -> bool {
-            const PageItem &it = page_items[i];
-            switch( it.type ) {
-                case ItemType::GroupHeader:
-                    return true;
-                case ItemType::BlankLine:
-                case ItemType::Option:
-                    return groups_state[it.group];
-                default:
-                    abort();
-            }
-        };
-        for( int i = 0; i < static_cast<int>( page_items.size() ); i++ ) {
-            if( is_visible( i ) ) {
-                visible_items.push_back( i );
-                if( i == iCurrentLine ) {
-                    curr_line_visible = static_cast<int>( visible_items.size() ) - 1;
-                }
-            }
-        }
+        const auto visible_items = visible_rows( page_items );
+        const auto current_row = std::ranges::find( visible_items, iCurrentLine );
+        const auto curr_line_visible = current_row == visible_items.end() ? 0 :
+                                       static_cast<int>( current_row - visible_items.begin() );
 
         // Format name & value strings for given entry
         const auto fmt_name_value = [&]( const PageItem & it, bool is_selected )
@@ -4159,7 +4201,7 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
 
         //Draw Tabs
         if( !world_options_only ) {
-            mvwprintz( w_options_header, point( 7, 0 ), c_white, "" );
+            mvwprintz( w_options_header, point( first_tab_x, 0 ), c_white, "" );
             for( int i = 0; i < static_cast<int>( pages_.size() ); i++ ) {
                 wprintz( w_options_header, c_white, "[" );
                 if( ingame && i == iWorldOptPage ) {
@@ -4186,6 +4228,41 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
                      _( "Some of these options may produce unexpected results if changed." ) );
         }
         wnoutrefresh( w_options_tooltip );
+        werase( w_options_footer );
+        struct key_hint {
+            std::array<const char *, 2> actions;
+            const char *label;
+            int row = 0;
+        };
+        constexpr auto hints = std::array {
+            key_hint{ .actions = { "UP", "DOWN" }, .label = translate_marker( "move" ) },
+            key_hint{ .actions = { "LEFT", "RIGHT" }, .label = translate_marker( "change" ) },
+            key_hint{ .actions = { "RESET_OPTION" }, .label = translate_marker( "default" ), .row = 1 },
+            key_hint{ .actions = { "RESET_PAGE" }, .label = translate_marker( "page default" ), .row = 1 },
+            key_hint{ .actions = { "PREV_TAB", "NEXT_TAB" }, .label = translate_marker( "page" ) },
+            key_hint{ .actions = { "HELP_KEYBINDINGS" }, .label = translate_marker( "keys" ) },
+            key_hint{ .actions = { "QUIT" }, .label = translate_marker( "done" ) },
+        };
+        auto guides = std::array<std::string, 2>();
+        for( const auto &hint : hints ) {
+            auto keys = std::string();
+            for( const auto *act : hint.actions ) {
+                if( act != nullptr && !inp_mngr.get_input_for_action( act, "OPTIONS" ).empty() ) {
+                    keys += ( keys.empty() ? "" : "/" ) + ctxt.get_desc( act, 1 );
+                }
+            }
+            if( !keys.empty() ) {
+                guides[hint.row] += string_format( "[%s] %s  ", keys, _( hint.label ) );
+            }
+        }
+        reset_label_x = modern ? getmaxx( w_options_footer ) - utf8_width( reset_label ) : -1;
+        trim_and_print( w_options_footer, point_zero, getmaxx( w_options_footer ), c_light_gray, guides[0] );
+        trim_and_print( w_options_footer, point( 0, 1 ),
+                        reset_label_x < 0 ? getmaxx( w_options_footer ) : reset_label_x - 1, c_light_gray, guides[1] );
+        if( reset_label_x >= 0 ) {
+            mvwprintz( w_options_footer, point( reset_label_x, 1 ), c_white, reset_label );
+        }
+        wnoutrefresh( w_options_footer );
 
         wnoutrefresh( w_options );
     } );
@@ -4199,11 +4276,50 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
         auto &cOPTIONS = ( ingame || world_options_only ) && iCurrentPage == iWorldOptPage ?
                          ACTIVE_WORLD_OPTIONS : OPTIONS;
 
-        const std::string action = ctxt.handle_input();
+        auto action = ctxt.handle_input();
 
         if( world_options_only && ( action == "NEXT_TAB" || action == "PREV_TAB" ||
                                     ( action == "QUIT" && ( !on_quit || on_quit() ) ) ) ) {
             return action;
+        }
+
+        if( modern && ( action == "MOUSE_MOVE" || action == "SELECT" || action == "SEC_SELECT" ) ) {
+            // get_coordinates() is relative to the window centre.
+            const auto cell_in = [&]( const catacurses::window & w ) -> std::optional<point> {
+                const auto mouse = ctxt.get_coordinates( w );
+                if( !mouse ) {
+                    return std::nullopt;
+                }
+                const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
+                if( cell.x < 0 || cell.y < 0 || cell.x >= getmaxx( w ) || cell.y >= getmaxy( w ) ) {
+                    return std::nullopt;
+                }
+                return cell;
+            };
+            const auto mouse_action = action;
+            const auto clicked = mouse_action != "MOUSE_MOVE";
+            action.clear();
+            if( const auto cell = cell_in( w_options ) ) {
+                const auto visible = visible_rows( page_items );
+                const auto row = iStartPos + cell->y;
+                if( row < static_cast<int>( visible.size() ) &&
+                    page_items[visible[row]].type != ItemType::BlankLine ) {
+                    iCurrentLine = visible[row];
+                    action = mouse_action == "SELECT" ? "RIGHT" : mouse_action == "SEC_SELECT" ? "LEFT" : "";
+                }
+            } else if( const auto footer = cell_in( w_options_footer ) ) {
+                if( clicked && footer->y == 1 && reset_label_x >= 0 && footer->x >= reset_label_x ) {
+                    action = "RESET_OPTION";
+                }
+            } else if( const auto header = cell_in( w_options_header ) ) {
+                if( const auto tab = tab_at( header->x ); clicked && tab && !world_options_only ) {
+                    iCurrentPage = *tab;
+                    iCurrentLine = 0;
+                    iStartPos = 0;
+                    // The page items and option set above belong to the old page.
+                    continue;
+                }
+            }
         }
 
         const PageItem &curr_item = page_items[iCurrentLine];
@@ -4324,6 +4440,18 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
                 }
                 default:
                     abort();
+            }
+        } else if( action == "RESET_OPTION" ) {
+            if( curr_item.type == ItemType::Option ) {
+                cOPTIONS[curr_item.data].set_default();
+            }
+        } else if( action == "RESET_PAGE" ) {
+            if( query_yn( _( "Reset all options on this page to their defaults?" ) ) ) {
+                for( const PageItem &item : page_items ) {
+                    if( item.type == ItemType::Option ) {
+                        cOPTIONS[item.data].set_default();
+                    }
+                }
             }
         } else if( action == "QUIT" ) {
             break;

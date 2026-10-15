@@ -454,12 +454,15 @@ auto mana_reading( const Character &you ) -> mana_text
 
 auto roomy() -> bool
 {
-    return g->w_terrain && getmaxx( g->w_terrain ) >= 54;
+    // Tiles count w_terrain in map tiles; the boxes are laid out in font cells.
+    const auto map_width = is_draw_tiles_mode() ? TERRAIN_WINDOW_TERM_WIDTH :
+                           g->w_terrain ? getmaxx( g->w_terrain ) : 0;
+    return map_width >= 54;
 }
 
 auto weather_box_shown() -> bool
 {
-    return !is_draw_tiles_mode() && get_option<std::string>( "HUD_WEATHER_BOX" ) != "off";
+    return get_option<std::string>( "HUD_WEATHER_BOX" ) != "off";
 }
 
 auto weather_box_shows_environment() -> bool
@@ -469,7 +472,7 @@ auto weather_box_shows_environment() -> bool
 
 auto combat_box_shown() -> bool
 {
-    return !is_draw_tiles_mode() && get_option<std::string>( "HUD_COMBAT_BOX" ) != "off";
+    return get_option<std::string>( "HUD_COMBAT_BOX" ) != "off";
 }
 
 auto combat_box_shows_mana( const Character &you ) -> bool
@@ -479,9 +482,6 @@ auto combat_box_shows_mana( const Character &you ) -> bool
 
 auto vehicle_box_shown() -> bool
 {
-    if( is_draw_tiles_mode() ) {
-        return false;
-    }
     const auto corner = get_option<std::string>( "HUD_VEHICLE_BOX" );
     if( corner == "off" ) {
         return false;
@@ -514,12 +514,14 @@ auto draw( const avatar &you, const catacurses::window &w ) -> void
             }
         }
     }
-    const auto width = getmaxx( w );
-    const auto height = getmaxy( w );
+    const auto width = is_draw_tiles_mode() ? TERRAIN_WINDOW_TERM_WIDTH : getmaxx( w );
+    const auto height = is_draw_tiles_mode() ? TERRAIN_WINDOW_TERM_HEIGHT : getmaxy( w );
     // Boxes in the same corner stack away from it. The option only ever holds one
     // of these four names, so fixed storage replaces a std::map.
     constexpr std::array<const char *, 4> corner_names = { "top_left", "top_right", "bottom_left", "bottom_right" };
     auto corner_used = std::array<int, 4>{ 0, 0, 0, 0 };
+    static auto windows = std::array<catacurses::window, 3>();
+    auto window_index = size_t{ 0 };
     for( const auto &b : boxes ) {
         auto inner = 0;
         for( const auto &l : b.lines ) {
@@ -540,7 +542,19 @@ auto draw( const avatar &you, const catacurses::window &w ) -> void
         }
         const auto x = right ? width - box_w : 0;
         const auto y = bottom ? height - used - box_h : used;
-        draw_box( w, box_spec{ .at = point( x, y ), .inner = inner, .lines = b.lines } );
+        if( is_draw_tiles_mode() ) {
+            auto &box_win = windows[window_index++];
+            const auto origin = point( getbegx( w ) + x, getbegy( w ) + y );
+            if( !box_win || getmaxx( box_win ) != box_w || getmaxy( box_win ) != box_h ||
+                getbegx( box_win ) != origin.x || getbegy( box_win ) != origin.y ) {
+                box_win = catacurses::newwin( box_h, box_w, origin );
+            }
+            werase( box_win );
+            draw_box( box_win, { .at = point_zero, .inner = inner, .lines = b.lines } );
+            wnoutrefresh( box_win );
+        } else {
+            draw_box( w, { .at = point( x, y ), .inner = inner, .lines = b.lines } );
+        }
         used += box_h;
     }
 }

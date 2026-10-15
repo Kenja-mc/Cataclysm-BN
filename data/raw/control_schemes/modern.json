@@ -1121,7 +1121,6 @@
     "name": "Unmark selected item",
     "bindings": [
       { "input_method": "keyboard", "key": "a" },
-      { "input_method": "keyboard", "key": "h" },
       { "input_method": "keyboard", "key": "LEFT" },
       { "input_method": "keyboard", "key": "NUMPAD_4" },
       { "input_method": "gamepad", "key": "JOY_LEFT" }
@@ -1145,7 +1144,7 @@
     "id": "WIELD",
     "category": "PICKUP",
     "name": "Wield selected item",
-    "bindings": [ { "input_method": "keyboard", "key": "W" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "h" } ]
   },
   {
     "type": "keybinding",
@@ -1261,10 +1260,22 @@
   },
   {
     "type": "keybinding",
+    "id": "LEFT",
+    "category": "INVENTORY",
+    "name": "Previous column",
+    "bindings": [
+      { "input_method": "keyboard", "key": "a" },
+      { "input_method": "keyboard", "key": "LEFT" },
+      { "input_method": "keyboard", "key": "NUMPAD_4" },
+      { "input_method": "gamepad", "key": "JOY_LEFT" }
+    ]
+  },
+  {
+    "type": "keybinding",
     "id": "WIELD",
     "category": "INVENTORY",
     "name": "Wield selected item",
-    "bindings": [ { "input_method": "keyboard", "key": "W" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "h" } ]
   },
   {
     "type": "keybinding",
@@ -1548,18 +1559,37 @@
     "bindings": [ { "input_method": "keyboard", "key": "A" } ]
   },
   {
+    "type": "keybinding",
+    "id": "LEFT",
+    "category": "INVENTORY_ITEM",
+    "name": "Cancel",
+    "bindings": [
+      { "input_method": "keyboard", "key": "a" },
+      { "input_method": "keyboard", "key": "LEFT" },
+      { "input_method": "keyboard", "key": "NUMPAD_4" },
+      { "input_method": "gamepad", "key": "JOY_LEFT" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "OPEN_ITEM_IN_HHG",
+    "category": "INVENTORY_ITEM",
+    "name": "Hitchhiker's Guide",
+    "bindings": [ { "input_method": "keyboard", "key": "J" } ]
+  },
+  {
     "id": "WIELD",
     "type": "keybinding",
     "category": "INVENTORY_ITEM",
     "name": "Wield",
-    "bindings": [ { "input_method": "keyboard", "key": "W" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "h" } ]
   },
   {
     "id": "UNWIELD",
     "type": "keybinding",
     "category": "INVENTORY_ITEM",
     "name": "Unwield",
-    "bindings": [ { "input_method": "keyboard", "key": "W" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "h" } ]
   },
   {
     "id": "DROP",
@@ -1636,21 +1666,42 @@
     "id": "WEAR",
     "category": "PICKUP",
     "name": "Wear selected item",
-    "bindings": [ { "input_method": "keyboard", "key": "V" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "W" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "CONFIRM",
+    "category": "PICKUP",
+    "name": "Confirm Choice",
+    "bindings": [ { "input_method": "keyboard", "key": "g" }, { "input_method": "keyboard", "key": "RETURN" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "SCROLL_UP",
+    "category": "PICKUP",
+    "name": "Scroll up",
+    "bindings": [ { "input_method": "keyboard", "key": "PPAGE" }, { "input_method": "mouse", "key": "SCROLL_UP" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "SCROLL_DOWN",
+    "category": "PICKUP",
+    "name": "Scroll down",
+    "bindings": [ { "input_method": "keyboard", "key": "NPAGE" }, { "input_method": "mouse", "key": "SCROLL_DOWN" } ]
   },
   {
     "type": "keybinding",
     "id": "WEAR",
     "category": "INVENTORY",
     "name": "Wear selected item",
-    "bindings": [ { "input_method": "keyboard", "key": "V" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "W" } ]
   },
   {
     "id": "WEAR",
     "type": "keybinding",
     "category": "INVENTORY_ITEM",
     "name": "Wear",
-    "bindings": [ { "input_method": "keyboard", "key": "V" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "W" } ]
   },
   {
     "id": "DISASSEMBLE",
@@ -1692,5 +1743,19 @@
     "id": "TOGGLE_SAFE_FUEL",
     "category": "BIONICS",
     "bindings": [ { "input_method": "keyboard", "key": "F" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RESET_OPTION",
+    "category": "OPTIONS",
+    "name": "Reset to default",
+    "bindings": [ { "input_method": "keyboard", "key": "r" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "RESET_PAGE",
+    "category": "OPTIONS",
+    "name": "Reset page to defaults",
+    "bindings": [ { "input_method": "keyboard", "key": "R" } ]
   }
 ]
