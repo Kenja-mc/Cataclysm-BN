@@ -1123,6 +1123,8 @@ static auto parse_custom_wait_duration( const std::string &value ) -> std::optio
     }
 }
 
+static void sleep();
+
 static void wait()
 {
     std::map<int, time_duration> durations;
@@ -1188,6 +1190,9 @@ static void wait()
         add_menu_item( 5, '5', "", 3_hours );
         add_menu_item( 6, '6', "", 6_hours );
         as_m.addentry( 13, true, 'c', _( "Custom input" ) );
+        if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+            as_m.addentry( 17, true, '$', _( "Sleep" ) );
+        }
     }
 
     if( g->get_levz() >= 0 || has_watch ) {
@@ -1228,6 +1233,10 @@ static void wait()
     as_m.query(); /* calculate key and window variables, generate window, and loop until we get a valid answer */
 
     time_duration time_to_wait;
+    if( as_m.ret == 17 ) {
+        sleep();
+        return;
+    }
     if( as_m.ret == 13 ) {
         const auto duration_input = string_input_popup()
                                     .title( _( "How long?  (e.g. 10s, 15m, 1h)" ) )
