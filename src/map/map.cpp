@@ -2063,6 +2063,8 @@ auto map::displace_vehicle(vehicle& veh, const tripoint_rel_ms& dp) -> bool {
     // advance_precalc_mounts), so this gives the authoritative absolute tile
     // positions being left.
     // Terrain memory is preserved so the ground beneath doesn't go black.
+    std::vector<tripoint_abs_ms> vacated_tiles;
+    const auto restore_symbols = !is_draw_tiles_mode();
     {
         avatar& you = get_avatar();
         const auto clear_matching_overlay =
@@ -2077,11 +2079,22 @@ auto map::displace_vehicle(vehicle& veh, const tripoint_rel_ms& dp) -> bool {
                 const auto& part = vpr.part();
                 const auto part_offset =
                     tripoint_rel_ms(part.precalc[0], part.mount.z() + part.z_terrain[0]);
-                you.clear_memorized_overlay(src + part_offset);
+                const auto part_pos = src + part_offset;
+                if (restore_symbols) {
+                    const auto p = abs_to_bub(part_pos);
+                    if (inbounds(p)
+                        && (!check_seen_cache(p) || you.get_memorized_symbol(part_pos) != 0
+                            || !you.get_terrain_tile(part_pos).tile.empty())) {
+                        if (vacated_tiles.empty()) { vacated_tiles.reserve(veh.part_count()); }
+                        vacated_tiles.push_back(part_pos);
+                        set_memory_seen_cache_dirty(p);
+                    }
+                }
+                you.clear_memorized_overlay(part_pos);
 
                 const auto& part_info = part.info();
                 if (part_info.has_flag(VPFLAG_LADDER)) {
-                    const auto ladder_pos = src + part_offset;
+                    const auto ladder_pos = part_pos;
                     const auto rope_tile = "vp_" + part_info.get_id().str();
                     const auto min_rope_z =
                         std::max(ladder_pos.z() - part_info.ladder_length(), -OVERMAP_DEPTH);
@@ -2097,6 +2110,18 @@ auto map::displace_vehicle(vehicle& veh, const tripoint_rel_ms& dp) -> bool {
 
     smzs = veh.advance_precalc_mounts(src);
     veh.sm_ms_pos = dest_proj.remainder;
+
+    // Restore only previously seen ground; an unseen NPC vehicle must not reveal its footprint.
+    // advance_precalc_mounts has removed the old vehicle cache entries before this redraw.
+    {
+        const auto mm_params = drawsq_params().memorize(true).output(false).show_items(false);
+        for (const auto& abs_pos : vacated_tiles) {
+            const auto p = abs_to_bub(abs_pos);
+            if (!inbounds(p) || !check_seen_cache(p)) { continue; }
+            // The window stays unused: output() is off, only the memory write matters.
+            draw_maptile({}, p, maptile_at_internal(p), mm_params);
+        }
+    }
 
     // Expand bounds with the new footprint (precalc[0] now holds new offsets).
     for (const vpart_reference& vpr : veh.get_all_parts()) {
