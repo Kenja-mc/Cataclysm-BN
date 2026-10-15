@@ -4,6 +4,61 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-14
+
+### Changed
+
+- Merged upstream `main` through `631956df27` (9 commits).
+- Ported open upstream fixes ahead of their merge: the bugfix bundle from
+  [#10563](https://github.com/cataclysmbn/Cataclysm-BN/pull/10563) (fixes already in the fork kept
+  their fork form), read-menu books sorted by level
+  ([#10436](https://github.com/cataclysmbn/Cataclysm-BN/pull/10436)), predator mutation texts
+  ([#10179](https://github.com/cataclysmbn/Cataclysm-BN/pull/10179)), crash-handler hardening
+  ([#9280](https://github.com/cataclysmbn/Cataclysm-BN/pull/9280)) and the UPS toggle mod on
+  tools without an activate menu ([#10214](https://github.com/cataclysmbn/Cataclysm-BN/pull/10214)).
+
+### Performance
+
+- Repaints with unchanged vision inputs reuse the last visibility result instead of waiting on
+  the GPU again; the line-of-sight cache is invalidated by generation instead of a 131,072-slot
+  clear; body temperature scans nearby heat once instead of twice; the fork's HUD panels stop
+  rebuilding strings and containers every frame. In an interleaved A/B on one saved town, CPU
+  per action fell 4% walking, 7% driving, 4% opening screens, 4% waiting and 12-17% on mouse hover.
+- Electric grids stop being processed after you leave their area
+  ([upstream #10121](https://github.com/cataclysmbn/Cataclysm-BN/issues/10121)). Grids catch up
+  on the elapsed time when you return, as before.
+
+### Added
+
+- Firing with no ranged weapon says so and names the wield key, instead of doing nothing.
+
+### Fixed
+
+- Pressing center view at the top z-level no longer crashes
+  ([upstream #10604](https://github.com/cataclysmbn/Cataclysm-BN/issues/10604)); looking at
+  another z-level also invalidates the right level's cache.
+- Worlds no longer abort on builds with libstdc++ assertions when a region's city sigma is zero
+  ([upstream #10582](https://github.com/cataclysmbn/Cataclysm-BN/issues/10582)).
+- Examining an empty tile with autoselect off prints its description again
+  ([upstream #9987](https://github.com/cataclysmbn/Cataclysm-BN/issues/9987)).
+- E-ink tablet e-copies last the chosen time instead of vanishing at once
+  ([upstream #10015](https://github.com/cataclysmbn/Cataclysm-BN/issues/10015)).
+- Siphoning from the vehicle screen keeps the camera zoom and position during the target prompt
+  ([upstream #9873](https://github.com/cataclysmbn/Cataclysm-BN/issues/9873)).
+- Character creation shows the scenario and profession on narrow screens
+  ([upstream #10427](https://github.com/cataclysmbn/Cataclysm-BN/issues/10427)).
+- Modern list hotkeys `4` and `6` work without stealing horizontal actions from list callers.
+  Unmatched filters show `--NO MATCHES--` within the list body.
+- Short sidebars share the available rows between the compass and Controls, including enabled
+  spacers and panel toggles. The message log and row budget use the same three-row minimum.
+- Modern safe mode repeats a short key hint after its first warning, and the Modern wait menu
+  offers the existing Sleep action. Classic retains its original entries and warnings.
+- A vehicle that hides the tiles behind it no longer blanks them in the terminal: the remembered
+  ground is kept where the tiles view already kept it
+  ([upstream #10452](https://github.com/cataclysmbn/Cataclysm-BN/issues/10452)).
+- The construction menu (`K`) opens on `All` when the Favorite tab has no entries, matching
+  crafting. Once a construction is favorited, it opens on Favorite again.
+
 ## 2026-10-13
 
 ### Changed

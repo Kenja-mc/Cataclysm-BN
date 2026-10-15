@@ -5,7 +5,7 @@ make the game easier to pick up. The simulation, content and tone stay the same:
 items, same zombies. The changes are to the controls, the look of the interface and the busywork
 around managing items.
 
-Branched from `cataclysmbn/Cataclysm-BN@d14e047`; last merged upstream `main`: `4fd1dbea60`.
+Branched from `cataclysmbn/Cataclysm-BN@d14e047`; last merged upstream `main`: `631956df27`.
 
 Screenshots: [docs/fork/visual-changes.md](docs/fork/visual-changes.md). Changes by date:
 [CHANGELOG-OVERHAUL.md](CHANGELOG-OVERHAUL.md).
@@ -51,6 +51,10 @@ ranged or leaping attack, such as a turret or a spitter, always counts, and so d
 to you. While you craft, read or wait, a noise from such a monster, or from one that is not
 hostile, does not stop you to ask "Heard …!".
 
+In the Modern control scheme, only the first blocked step prints the full "Spotted …" safe-mode
+warning. Further blocked steps repeat a short `Safe mode: ! off, ' ignore` line, because the long
+warning's repeat counter can wrap out of view. Classic keeps the upstream warning.
+
 Threat checks are lazy and cached for a turn. A group gets at most 12 route searches; unchecked
 hostiles still stop travel rather than being treated as harmless. A large sealed horde can
 therefore cause an extra safe-mode stop. Changes to passability discard the cached answers.
@@ -83,6 +87,10 @@ Walking into an enemy no longer attacks it. It tells you to press `F`, so a stra
 starts a fight (Options → Interface → Attack by walking into enemies turns bump attacks back on).
 Walking into a closed door still opens it.
 
+The wait menu (`X`; `|` in Classic) lists 5, 30 minutes, 1, 2, 3 and 6 hours, a custom duration,
+times of day and the next weather change. In Modern it also offers **Sleep** on `$`, using the
+same sleep confirmation and alarm prompts as the sleep action. Classic keeps its old entries.
+
 **Mouse tile selection**, inspired by Sword of the Stars: The Pit, works in the terminal too.
 
 - **Hover:** hovering a map tile highlights it, draws the route there, and opens the Mouse View box
@@ -112,7 +120,10 @@ letters used to start moved to Shift: `W` crew, `A` label, `S` siphon, `D` unloa
 
 A **Controls** strip at the bottom of the sidebar shows the most used keys. `? all keys` stays
 near the movement hints, and five rows keep the other hints visible. It reads live keybindings,
-so action hints stay correct if you rebind them.
+so action hints stay correct if you rebind them. On a terminal too short for five rows the strip
+keeps its first row or two instead of vanishing, so the core keys stay on screen.
+The compass gives up rows first. Hidden panels do not reserve space, and sidebar spacers count
+toward the available height.
 While driving, the movement hints become `ws throttle` and `ad steer`. Releasing the controls
 restores the walking hints.
 
@@ -285,7 +296,8 @@ that is optional:
 - **Advanced inventory (`/`) opens like a loot window**: everything around you on the left, your
   inventory on the right. Upstream's default pointed at the empty tile below you.
 - **Crafting (`k`) opens on something useful**: recent recipes, or the first category you can
-  craft from, not an empty favorites list.
+  craft from, not an empty favorites list. **Construction (`K`)** does the same: an empty Favorite
+  tab opens on `All` instead.
 - **One pick-up list**: `g` shows everything within reach in one list.
 - **Combine** (item menu, `C` in the modern scheme): partly used tools that hold their own charges
   and that nothing refills, such as matchbooks, pour into one, as in Project Zomboid. Every charge
@@ -471,6 +483,14 @@ item type variants instead of new item types:
 - Loading is faster: item migrations finalize in one pass over item groups, and the JSON reader
   skips strings and whitespace straight from the stream buffer. In testing, the core data load and
   check went from 734 s to 118 s, and a new game starts in about 18 s.
+- In the modern scheme the wait menu's "4 2 hours" and "6 6 hours" entries did nothing: `4` and `6`
+  are the default left and right menu keys, and that swallowed the hotkey before the entry was
+  looked up. An entry hotkey now wins over the horizontal keys. (Classic menus never register
+  left and right, so `4` and `6` already worked there; the alarm menu's keys were broken the same
+  way in the modern scheme and work now too.)
+- Driving a vehicle that blocks the view painted the tiles it hid behind it black in the terminal;
+  the memory of the ground stays where the tiles view already kept it
+  ([upstream #10452](https://github.com/cataclysmbn/Cataclysm-BN/issues/10452)).
 
 ## Playtesting
 
