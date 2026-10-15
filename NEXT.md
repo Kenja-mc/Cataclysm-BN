@@ -2,6 +2,14 @@
 
 ## Next actions
 
+- **Validate and push local work** — run the data check, software-GPU unit shards and full serial
+  e2e suite before pushing. The complexity-review cuts passed both game builds, the test-binary
+  build, five live-game sidebar/vehicle checks and isolated installer/feedback smokes; the full
+  gates were not rerun for these cuts. Preserve the separate Xvfb display fix in local history.
+- **Normal correctness review** — the completed review covered complexity only. Investigate the
+  temporary-item invocation branches in `src/avatar_functions.cpp` and the player-visible
+  kamikaze diagnostic in `src/monattack.cpp`; reviewer suspicions are not verified defects.
+
 - **Remaining playtest findings** — pickup menu `d`/`a` marking vs WASD navigation in Modern; stairs and save discoverability for new players.
 - **Profile next hot paths** — scent/signature recompute and `sounds::process_sounds` during long rests.
 - **Apply [AGENTS.md build-docs fix](https://github.com/Kenja-mc/Cataclysm-BN/issues/4)** — Part 1 Build commands contradict the preset/shard-runner workflow actually used.
@@ -10,11 +18,5 @@
 
 ## Install the fork and give feedback
 
-```sh
-./bin/install-cataclysm-bn.sh      # app menu launchers (terminal / tiles), basepath config
-cataclysm-bn | cataclysm-bn-tiles  # launch
-python3 tests/e2e/playtest.py quick_stack   # set up a scenario, play, Ctrl+B D to detach
-bin/feedback "title" -m "note"       # record feedback quickly
-```
-
-Full write-up: [`docs/fork/playing.md`](docs/fork/playing.md). Feedback template: [`docs/fork/feedback-template.md`](docs/fork/feedback-template.md).
+See [`docs/fork/playing.md`](docs/fork/playing.md) for install, launch and playtest commands,
+and [`docs/fork/feedback-template.md`](docs/fork/feedback-template.md) for feedback.
