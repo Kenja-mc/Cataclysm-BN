@@ -24,13 +24,14 @@ Upstream's own changes are in `docs/en/game/changelog`.
   clear; body temperature scans nearby heat once instead of twice; the fork's HUD panels stop
   rebuilding strings and containers every frame. In an interleaved A/B on one saved town, CPU
   per action fell 4% walking, 7% driving, 4% opening screens, 4% waiting and 12-17% on mouse hover.
-- Electric grids stop being processed after you leave their area
+- Electric grids stop being processed once all of their area has left the simulated area
   ([upstream #10121](https://github.com/cataclysmbn/Cataclysm-BN/issues/10121)). Grids catch up
   on the elapsed time when you return, as before.
 
 ### Added
 
-- Firing with no ranged weapon says so and names the wield key, instead of doing nothing.
+- Firing with no ranged weapon says so and names the wield key, instead of doing nothing. A gun
+  in a melee mode names the firing-mode key instead.
 
 ### Fixed
 
