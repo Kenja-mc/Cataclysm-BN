@@ -12,24 +12,34 @@ Screenshots: [docs/fork/visual-changes.md](docs/fork/visual-changes.md). Changes
 
 ## Controls
 
-Movement is **WASD**, with **Q E Z C** for diagonals. The layout merges Bright Nights with Sword of the Stars: The Pit: `F` attacks the nearest enemy, Space interacts with anything (doors, containers, people; `y` also talks), `C` is the character sheet, and `X` waits or rests. The arrow keys and the numpad still work.
+Movement is **WASD**, with **Q E Z C** for diagonals. The layout merges Bright Nights with Sword of the Stars: The Pit: `F` attacks the nearest enemy, Space interacts with anything (doors, containers, people; `y` also talks), `C` is the character sheet, and `X` waits or rests. The numpad still walks; the arrow keys aim (below).
 The same keys move the cursor in look mode, targeting and the overmap, and answer every "which
 direction?" prompt.
 
+**Arrow keys aim**, as in The Pit (Options → Interface → Arrow keys aim; on in Modern, off in
+Classic). An arrow key puts a targeting reticle on the nearest hostile you can see, or on your own
+tile, and further arrow keys move it over tiles you can see. This takes no time. The reticle tile is
+highlighted and the Mouse View box says what is there. `F` then attacks what the reticle covers: a
+melee swing when it is next to you, otherwise the normal aim screen opens on that creature. On an
+empty tile, or one your weapon cannot reach, `F` says so and spends nothing. Esc, walking or any
+action that takes time removes the reticle; Esc does not open the main menu while a reticle is up.
+Turn the option off to walk with the arrow keys again.
+
 In **Modern**, lowercase WASD also navigates menus. Menu actions that used those letters move to
-Shift+WASD, including sorting, adding rules, wielding and dropping. Generated menu shortcuts and
-inventory, mutation and bionic letters leave navigation keys free. Search boxes and other text
-fields still accept normal typing; **Classic** retains the upstream controls.
+Shift+WASD, including sorting, adding rules and dropping. Wield and wear use `h` and `W` on the map,
+in inventory, item actions and pickup. Generated shortcuts and inventory, mutation and bionic
+letters leave navigation keys free. Text fields still accept normal typing; **Classic** retains
+the upstream controls.
 
 Where a Shift shortcut was already occupied, the other menu action moves:
 
-| Menu                               | Action                        | Key             |
-| ---------------------------------- | ----------------------------- | --------------- |
-| Inventory, pickup and item actions | Wear                          | `V`             |
-| Item actions                       | Disassemble                   | `B`             |
-| Armor layers                       | Sort layers                   | `O`             |
-| Bionics                            | Toggle safe fuel              | `F`             |
-| Vehicle controls                   | Atomic lights / doors / scoop | `B` / `U` / `R` |
+| Menu             | Action                        | Key             |
+| ---------------- | ----------------------------- | --------------- |
+| Item actions     | Disassemble                   | `B`             |
+| Item actions     | Hitchhiker's Guide            | `J`             |
+| Armor layers     | Sort layers                   | `O`             |
+| Bionics          | Toggle safe fuel              | `F`             |
+| Vehicle controls | Atomic lights / doors / scoop | `B` / `U` / `R` |
 
 ![Modern control scheme](docs/fork/images/controls-modern.svg)
 
@@ -97,12 +107,36 @@ same sleep confirmation and alarm prompts as the sleep action. Classic keeps its
   with what is on the tile and what a click will do ("click: attack the zombie", "click: walk here
   (12 steps)").
 - **Left click** does that: attack an adjacent enemy, open a door, pick up items, examine
-  furniture, or walk there in one click.
+  furniture, or step to an adjacent tile.
+- **Walking further** takes a second click on the same tile: the first click keeps the route on
+  screen and the hint says "click again to walk here (12 steps)". Moving the mouse to another tile
+  or pressing a key cancels it. While a hostile that can reach you is in view, a click on a far tile
+  takes one step along the route instead ("click: step toward (hostile in view)"), so a stray click
+  never walks you into a fight. A known trap or dangerous field as the destination always asks
+  for the second click ("click again: walk into danger"). Options → Interface → Safe click-to-walk
+  turns this off for one-click travel.
 - **Right click** lists every option for the tile (fire at, close, examine, pick up, walk…).
   Turn it off under Options → Interface → Mouse tile selection to get the old two-click travel back.
 
 In Modern list menus, hover highlights a row, left click selects it, and right click cancels.
-This includes the tile-action menu opened by a right click on the map.
+This includes the tile-action menu opened by a right click on the map. Inventory menus work the
+same way: hover highlights an item, left click picks it (or toggles it in menus where you choose
+several, such as drop), the mouse wheel scrolls, and right click on an item in the inventory (`i`)
+opens its actions, as in Sword of the Stars: The Pit. Right click outside the list cancels.
+
+**Pick up with the key you already pressed.** In Modern, `g` opens the pick-up menu and `g` again
+picks up: the marked items, or the highlighted item when nothing is marked. Enter still works.
+Inside the menu the main-game keys act on the highlighted item: `h` wields it and `W` wears it.
+With the mouse, hover highlights a row, left click marks or unmarks it, and the wheel moves through
+the list. Right click lists Pick up, Wield and Wear; each acts on that item alone. The footer shows
+the bound keys. Classic keeps the upstream menu, including Enter doing nothing with no marked items.
+
+**Options menu.** A two-row key guide keeps navigation, help and exit visible at 80×25. In Modern,
+`r` resets the highlighted option to its default and `R` resets the whole page after a Yes/No
+question. Hover selects a row, left click advances the value, right
+click goes back one value, clicking a page tab switches to it and **[Reset to default]** at the
+bottom right resets the highlighted option. Classic keeps the upstream keys; `r` and `R` have no
+key there but can be bound.
 
 When aiming: `f`/Enter fires, `x` aims one step, `u` `i` `o` pick aimed, careful or precise shots
 (more care, left to right), `r` switches ammo, `F` or `m` switches fire mode. With **smarter
@@ -242,10 +276,14 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   own (Options → Graphics → Enable ASCII art in item descriptions).
 - **Overhaul soundpack**, the default when the Otopack is not installed: footsteps, melee swings
   and hits, bullet impacts, reloads, bites, bionic zaps, menus and vehicle doors from Kenney's CC0
-  packs. Gunshots, deaths and ambience stay silent rather than use a sound that does not fit.
-  Sources in `data/sound/Overhaul/CREDITS.md`.
+  packs. It has no music: gunshots, deaths and ambience stay silent rather than use a sound that
+  does not fit. Sources in `data/sound/Overhaul/CREDITS.md`. Music and ambience come from the
+  Otopack, which upstream release builds include. A source checkout downloads it separately:
+  `bin/install-cataclysm-bn.sh` uses `build-scripts/bundle-registry-mods.ts` and keeps the pack's
+  credits with its files. Pick it under Options → General → Choose soundpack.
 
-- **Weather and weapon boxes** (terminal view) sit in a corner of the map. The weather box shows
+- **Weather and weapon boxes** sit in a corner of the map, in the terminal and the tiles version
+  (where they are drawn over the tiles). The weather box shows
   the weather with an icon, then the time (exact with a watch) and temperature (with a
   thermometer), the season and day, light level, moon phase and wind (description and arrow). The
   weapon box shows what you fight with and its ammo, your fighting style, your stance and, when
@@ -256,7 +294,7 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   Date and Wind there. Narrow maps keep those facts in the sidebar; the classic date row also
   retains temperature. The weapon box replaces the Weapon and Mana panels. Turn a box off and
   its rows come back.
-- **Vehicle box** (terminal view) appears when you board a vehicle or control one remotely. It shows
+- **Vehicle box** appears when you board a vehicle or control one remotely. It shows
   azimuth (degrees clockwise from north), current speed, cruise target, engine state, the selected
   engine's fuel percentage and battery charge. Aircraft keep their takeoff-speed readout. Low fuel
   and battery readings change color; empty fuel still reads `0%`. It starts at the bottom right,
@@ -579,6 +617,7 @@ and a software Vulkan driver:
 python3 tests/e2e/tiles.py minimap --vk-icd /path/to/lvp_icd.json
 python3 tests/e2e/rendering.py --vk-icd /path/to/lvp_icd.json
 python3 tests/e2e/lighting.py --vk-icd /path/to/lvp_icd.json
+python3 tests/e2e/hud_tiles.py --vk-icd /path/to/lvp_icd.json
 ```
 
 Run these sequentially with no other heavy work. They use private displays, saves and options;

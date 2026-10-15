@@ -19,6 +19,10 @@
 #   2. ~/.config/cataclysm-bn/basepath (created by this script after install)
 #   3. current working directory (launcher warns and falls back to ".")
 #
+# A user install also downloads the Otopack soundpack (music and ambience) into data/sound,
+# using upstream's registry bundler. This needs deno and network access; a failure leaves
+# the existing soundpacks available.
+#
 # After install, the fork is launchable from the desktop menu as "Cataclysm-BN"
 # (tiles) and "Cataclysm-BN (Curses)".
 
@@ -48,6 +52,9 @@ The launcher wrappers look up the game data directory (basepath) via:
   1. CATACLYSM_BN_BASEPATH environment variable
   2. ~/.config/cataclysm-bn/basepath config file (created by this script)
   3. the current working directory (warns and falls back to ".")
+
+A user install also downloads the Otopack soundpack (music and ambience) into data/sound
+when it is missing. Choose it under Options -> General -> Choose soundpack.
 EOF
 }
 
@@ -136,6 +143,24 @@ EOF
   fi
 }
 
+OTOPACK_DIR="$ROOT/data/sound/Otopack+ModsUpdates BN"
+
+fetch_soundpack() {
+  if [ -f "$OTOPACK_DIR/soundpack.txt" ]; then
+    return 0
+  fi
+  if ! command -v deno >/dev/null 2>&1; then
+    printf 'Skipped the Otopack soundpack (music and ambience): deno is not installed.\n' >&2
+    return 0
+  fi
+  if (cd "$ROOT" && deno run --allow-read --allow-write --allow-net \
+      build-scripts/bundle-registry-mods.ts --exclude-package-type mod); then
+    printf 'Installed the Otopack soundpack: %s\n' "$OTOPACK_DIR"
+  else
+    printf 'Could not download the Otopack soundpack; the game runs without music.\n' >&2
+  fi
+}
+
 install_files() {
   detect_binaries
   set_destinations "${1:-}"
@@ -218,6 +243,7 @@ case "${1:-}" in
     ;;
   "")
     install_files
+    fetch_soundpack
     ;;
   *)
     die "unknown option: $1. Run --help for usage."

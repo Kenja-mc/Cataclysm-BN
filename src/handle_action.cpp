@@ -1,4 +1,5 @@
 #include "action.h"
+#include "aim_reticle.h"
 #include "advanced_inv.h"
 #include "animation.h"
 #include "armor_layers.h"
@@ -49,6 +50,7 @@
 #include "itype.h"
 #include "iuse.h"
 #include "line.h"
+#include "live_view.h"
 #include "magic/magic.h"
 #include "make_static.h"
 #include "map/field.h"
@@ -2003,6 +2005,11 @@ bool game::handle_action()
             if( uquit == QUIT_WATCH ) {
                 return false;
             }
+            // Esc first takes the aim reticle away; the menu opens on the next press.
+            if( aim_reticle::clear() ) {
+                liveview.hide();
+                return false;
+            }
             // No auto-move actions have or can be set at this point.
             u.clear_destination();
             destination_preview.clear();
@@ -2077,11 +2084,11 @@ bool game::handle_action()
                         picked = choices[menu.ret];
                     }
                 }
-                tile_selection::clear_hover();
                 act = picked ? tile_selection::resolve( u, m, *picked, *mouse_target ) : ACTION_NULL;
                 if( act == ACTION_NULL ) {
                     return false;
                 }
+                tile_selection::clear_hover();
             } else if( act == ACTION_SELECT ) {
                 if( !avatar_knows_travel_destination( u, *mouse_target ) ) {
                     return false;
@@ -2110,6 +2117,7 @@ bool game::handle_action()
             // timeout delay.
             u.clear_destination();
             destination_preview.clear();
+            tile_selection::clear_hover();
         }
     }
 
@@ -2146,6 +2154,15 @@ bool game::handle_action()
     }
 
     const auto before_action_moves = u.moves;
+
+    // Sword of the Stars: The Pit style aiming. The arrow keys move a reticle for free instead
+    // of walking, and any action that spends a turn takes the reticle away again.
+    if( aim_reticle::enabled() && !action.empty() && !veh_ctrl && !u.is_dead_state() &&
+        aim_reticle::arrow_move( act, ctxt ) ) {
+        aim_reticle::move( u, m, get_delta_from_movement_action( act, iso_rotate::yes ) );
+        liveview.show( *aim_reticle::pos() );
+        return false;
+    }
 
     // These actions are allowed while deathcam is active. Registered in game::get_player_input
     if( uquit == QUIT_WATCH || !u.is_dead_state() ) {
@@ -3256,9 +3273,18 @@ bool game::handle_action()
                 item_action_menu();
                 break;
 
-            case ACTION_AUTOATTACK:
-                avatar_action::autoattack( u, m );
+            case ACTION_AUTOATTACK: {
+                const auto aim = aim_reticle::attack( u, m );
+                if( !aim ) {
+                    avatar_action::autoattack( u, m );
+                } else if( *aim == ACTION_FIRE ) {
+                    fire();
+                }
+                if( aim && !aim_reticle::active() ) {
+                    liveview.hide();
+                }
                 break;
+            }
 
             case ACTION_TOGGLE_MANUAL_COMBAT_MODE:
                 avatar_action::toggle_manual_combat_mode();
@@ -3281,6 +3307,9 @@ bool game::handle_action()
     const auto action_moves_spent = u.moves > moves_before_debug_restore ? 0 :
                                     before_action_moves - u.moves;
     u.movecounter = ( !u.is_dead_state() ? action_moves_spent : 0 );
+    if( action_moves_spent > 0 && aim_reticle::clear() ) {
+        liveview.hide();
+    }
     dbg( DL::Info ) << string_format( "%s: [%d] %d - %d = %d", action_ident( act ),
                                       to_turn<int>( calendar::turn ), before_action_moves, u.movecounter, u.moves );
     // Cursor panning: re-centre the view after a genuine turn-consuming action.

@@ -466,7 +466,14 @@ void catacurses::init_interface()
     }
 #if !defined(__CYGWIN__)
     // ncurses mouse registration
-    mousemask( BUTTON1_CLICKED | BUTTON3_CLICKED | REPORT_MOUSE_POSITION, nullptr );
+    auto mouse_events = BUTTON1_CLICKED | BUTTON3_CLICKED | REPORT_MOUSE_POSITION;
+#if defined(BUTTON4_PRESSED)
+    mouse_events |= BUTTON4_PRESSED;
+#endif
+#if defined(BUTTON5_PRESSED)
+    mouse_events |= BUTTON5_PRESSED;
+#endif
+    mousemask( mouse_events, nullptr );
     // Ask the terminal for motion events too, so hovering the map works (any-event tracking).
     std::fputs( "\033[?1003h", stdout );
     std::fflush( stdout );
@@ -556,6 +563,16 @@ input_event input_manager::get_input_event()
                     rval.add_input( MOUSE_BUTTON_LEFT );
                 } else if( event.bstate & BUTTON3_CLICKED ) {
                     rval.add_input( MOUSE_BUTTON_RIGHT );
+#if defined(BUTTON4_PRESSED)
+                } else if( ( event.bstate & BUTTON4_PRESSED ) &&
+                           get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+                    rval.add_input( SCROLLWHEEL_UP );
+#endif
+#if defined(BUTTON5_PRESSED)
+                } else if( ( event.bstate & BUTTON5_PRESSED ) &&
+                           get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+                    rval.add_input( SCROLLWHEEL_DOWN );
+#endif
                 } else if( event.bstate & REPORT_MOUSE_POSITION ) {
                     rval.add_input( MOUSE_MOVE );
                     if( input_timeout > 0 ) {
