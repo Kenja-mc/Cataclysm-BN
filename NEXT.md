@@ -5,9 +5,19 @@
 - **Future tickets stay open** — #1 (agentic UI/UX QA in CI) and #2 (two-player co-op) are designed
   future work, neither implemented nor closable. #3 is the upstream feature-watch tracker; its
   checkpoint matches `upstream/main` and every candidate is still unchecked.
-- **Merge upstream** — fork `main` is 11 commits behind `upstream/main`; the tracker checkpoint in
-  issue #3 is current. Review the unchecked candidates first, then merge upstream `main`, fold the
-  items the fork folded and add migrations for any removals.
+- **Next upstream merge** — merge `upstream/main` from the issue #3 checkpoint and repeat the fold: drop
+  the `bp_*` ammo recipes and uncrafts that the merge adds back (`data/json/uncraft/ammo/22.json`,
+  `50bmg.json`, `tankammo.json`, `data/json/uncraft/ammo/rifle ammo.json`,
+  `data/json/recipes/ammo/rifle.json`, `data/mods/exotic_ammo/uncrafts/ammo.json`), keep the new
+  non-`bp_` entries, and re-check the `277_hybrid` recipe and the `Enter → Misc` action list.
+- **Community difficulty thread** — [`docs/fork/reddit-1x5xk5g-proposals.md`](docs/fork/reddit-1x5xk5g-proposals.md)
+  collects what r/cataclysmbn asked for after one post about Bright Nights becoming easy. Most of it is
+  balance work, which the fork rules leave out of scope.
+- **Containers need root** — `bin/playtest-container.sh` runs the fork end-to-end suite and playtest
+  scenarios in an unprivileged bubblewrap user namespace, which is the strongest isolation this host
+  allows: the docker socket is root-only, `sudo` asks for a password, and the rootless extras
+  (`rootlesskit`, `slirp4netns`, `fuse-overlayfs`) are absent. A docker image needs
+  `sudo usermod -aG docker kenja` first.
 - **Restore the build tools** — `ccache`, `mold` and `astyle` are missing on this machine, so the
   preset build stops at the first compile (`ccache: command not found`) and `--target format`
   reports `Artistic Style executable was not found`. Install with
