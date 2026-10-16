@@ -5,8 +5,9 @@
 - **Future tickets stay open** — #1 (agentic UI/UX QA in CI) and #2 (two-player co-op) are designed
   future work, neither implemented nor closable. #3 is the upstream feature-watch tracker; its
   checkpoint matches `upstream/main` and every candidate is still unchecked.
-- **Next upstream merge** — merge `upstream/main` from the issue #3 checkpoint and repeat the fold: drop
-  the `bp_*` ammo recipes and uncrafts that the merge adds back (`data/json/uncraft/ammo/22.json`,
+- **Next upstream merge** — the 2026-10-16 merge is `1a883dd7b5`. Merge `upstream/main` again from the
+  issue #3 checkpoint and repeat the fold: drop the `bp_*` ammo recipes and uncrafts that the merge adds
+  back (`data/json/uncraft/ammo/22.json`,
   `50bmg.json`, `tankammo.json`, `data/json/uncraft/ammo/rifle ammo.json`,
   `data/json/recipes/ammo/rifle.json`, `data/mods/exotic_ammo/uncrafts/ammo.json`), keep the new
   non-`bp_` entries, and re-check the `277_hybrid` recipe and the `Enter → Misc` action list.
