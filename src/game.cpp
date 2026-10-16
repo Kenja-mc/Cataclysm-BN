@@ -3988,7 +3988,10 @@ bool game::try_get_right_click_action( action_id &act, const tripoint_bub_ms &mo
         }
 
         // TODO: Add weapon range check. This requires weapon to be reloaded.
-        u.last_target = shared_from( *mon );
+        // Modern names the clicked creature here; classic leaves last_target to upstream's aim UI.
+        if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+            u.last_target = shared_from( *mon );
+        }
 
         act = ACTION_FIRE;
     } else if( is_adjacent &&
@@ -5204,7 +5207,9 @@ void game::draw_ter( const tripoint_bub_ms &center, const bool looking, const bo
         draw_critter( critter, center );
     }
 
-    if( get_option<bool>( "MOUSE_MOVE" ) && !destination_preview.empty() && u.view_offset.z() == 0 ) {
+    // The keyboard auto-travel mode also fills destination_preview; only mouse walking is optional.
+    if( ( get_option<bool>( "MOUSE_MOVE" ) || u.is_auto_moving() ) &&
+        !destination_preview.empty() && u.view_offset.z() == 0 ) {
         // Draw auto-move preview trail
         const tripoint_bub_ms &final_destination = destination_preview.back();
         auto line_center = u.bub_pos() + u.view_offset;

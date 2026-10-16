@@ -133,7 +133,12 @@ class common_inventory_selector : public inventory_pick_selector
             return requested_action;
         }
 
+        /// Empty unless Modern is active and its Craft shortcut is bound.
         [[nodiscard]] auto craft_hint() const -> std::string {
+            if( get_option<std::string>( "CONTROL_SCHEME" ) != "modern" ||
+                ctxt.key_bound_to( "CRAFT", 0, false ).empty() ) {
+                return std::string();
+            }
             return string_format( _( "[%s] Craft" ), ctxt.get_desc( "CRAFT" ) );
         }
 
@@ -292,8 +297,8 @@ auto game_menus::inv::common( avatar &you ) -> std::optional<action_id>
     auto hint = string_format(
                     _( "Item hotkeys assigned: <color_light_gray>%d</color>/<color_light_gray>%d</color>" ),
                     you.allocated_invlets().count(), inv_chars.size() );
-    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
-        hint += " | " + inv_s.craft_hint();
+    if( const auto craft = inv_s.craft_hint(); !craft.empty() ) {
+        hint += " | " + craft;
     }
     inv_s.set_hint( hint );
 
