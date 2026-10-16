@@ -20,6 +20,7 @@ direction prompts. Top-row numbers do not move you on the map.
 - **Enter — general actions.** All existing action categories remain available here, including
   construction, storage, talking and equipment. Choose **Info → View Player Info** for the
   character sheet, or other Info entries for body status, missions, morale and messages.
+  **Misc → Sidebar Options** moves, hides and reorders the sidebar panels.
 - **`i` — inventory and equipment.** Select an item to open its context menu for **Wield**,
   **Wear**, **Eat**, **Use**, **Read** and other item actions. Wield is an equipment decision
   about the selected item, not another primary map key. The menu shows its local shortcuts.

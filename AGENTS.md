@@ -23,8 +23,9 @@ learn and use. It keeps the BN game rules. `OVERHAUL.md` explains each change.
 
 Run these from the repository root. `linux-curses` is the fork's terminal build; `linux-full` adds
 tiles and sound. Every output path below is relative to `out/build/<preset>/`. The presets need
-`clang`, `mold` and `ccache` (`pacman -S --needed clang mold ccache`): configure succeeds without
-them, but the build stops at the first compile with `ccache: command not found`.
+`clang`, `mold` and `ccache` (`pacman -S --needed clang mold ccache`), and formatting needs
+`astyle` (`pacman -S astyle`): configure succeeds without them, but the build stops at the first
+compile with `ccache: command not found` and `format` with `Artistic Style executable was not found`.
 
 ```sh
 cmake --preset linux-curses
@@ -33,12 +34,12 @@ cmake --preset linux-full
 cmake --build --preset linux-full --target cataclysm-bn-tiles cata_test-tiles
 ```
 
-| Target | Path |
-| --- | --- |
-| Terminal game | `out/build/linux-curses/src/cataclysm-bn` |
-| Terminal tests | `out/build/linux-curses/tests/cata_test` |
-| Tiles game | `out/build/linux-full/src/cataclysm-bn-tiles` |
-| Tiles tests | `out/build/linux-full/tests/cata_test-tiles` |
+| Target         | Path                                          |
+| -------------- | --------------------------------------------- |
+| Terminal game  | `out/build/linux-curses/src/cataclysm-bn`     |
+| Terminal tests | `out/build/linux-curses/tests/cata_test`      |
+| Tiles game     | `out/build/linux-full/src/cataclysm-bn-tiles` |
+| Tiles tests    | `out/build/linux-full/tests/cata_test-tiles`  |
 
 ### Test
 
