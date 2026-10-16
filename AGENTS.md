@@ -71,6 +71,11 @@ Do all three tests before you push. All results must be good.
 3. Fork end-to-end tests: run `python3 tests/e2e/run.py`. Do not run other heavy work at the same
    time, because slow input makes these tests fail.
 
+   `bin/playtest-container.sh e2e [test-name ...]` runs the same suite inside an unprivileged
+   bubblewrap container with a private HOME and `/tmp` and no network, and
+   `bin/playtest-container.sh playtest <scenario>` hands a playtest scenario to you there. Building
+   inside the box needs root, so build on the host first.
+
 Write one end-to-end test for each new fork feature. Do not write unit tests for fork features.
 
 ### Where to find the fork code
