@@ -596,8 +596,9 @@ void use_item( avatar &you, item &used )
     if( used.has_use() && !used.is_medication() ) {
         if( used.has_flag( flag_TEMPORARY_ITEM ) ) {
             you.invoke_item( &used );
+        } else {
+            you.invoke_item( &used, used.bub_pos() );
         }
-        you.invoke_item( &used, used.bub_pos() );
 
     } else if( !used.is_container_empty() && is_pet_food( used.get_contained() ) ) {
         unload_item( you, used );
