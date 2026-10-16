@@ -18,6 +18,13 @@ Upstream's own changes are in `docs/en/game/changelog`.
   with the rows above it.
 - Hint and welcome text no longer prints "Unbound globally!" when a hint key is unbound.
 
+### Maintenance
+
+- Merged upstream `main` (11 commits). The black powder ammo fold survives it: the merged `bp_*`
+  recipes and uncrafts are dropped again, the new non-black-powder entries stay, and the black powder
+  277 hybrid round keeps its recipe. The new `perk` type arrives with the merge, so Modern reaches
+  Perks from **Enter → Misc** like the other actions that have no Modern key.
+
 ## 2026-10-15
 
 ### Added
