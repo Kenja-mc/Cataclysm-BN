@@ -598,9 +598,9 @@ directory, so playtesting does not overwrite your normal tiles options.
 Same as upstream; see `docs/en/dev/guides/building`. The terminal version:
 
 ```sh
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCURSES=ON -DTILES=OFF -DSOUND=OFF -DTESTS=OFF
-ninja -C build cataclysm-bn
-./cataclysm-bn
+cmake --preset linux-curses
+cmake --build --preset linux-curses --target cataclysm-bn
+out/build/linux-curses/src/cataclysm-bn --basepath .
 ```
 
 ## Upstream merges
@@ -631,9 +631,9 @@ GPU, and the vision tests only agree with that setup, so run it the same way: in
 software Vulkan driver (`mesa-vulkan-drivers`) and Xvfb, then
 
 ```sh
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCURSES=ON -DTILES=OFF -DTESTS=ON
-ninja -C build cata_test
-Xvfb :99 & DISPLAY=:99 build-scripts/run-linux-test-shards.ts --mode file-tags build/tests/cata_test -- --gpu-backend=software
+cmake --preset linux-curses
+cmake --build --preset linux-curses --target cata_test
+Xvfb :99 & DISPLAY=:99 build-scripts/run-linux-test-shards.ts --mode file-tags out/build/linux-curses/tests/cata_test -- --gpu-backend=software
 ```
 
 Running every test in one process is not supported upstream either: some tests leave the map
@@ -647,8 +647,8 @@ not include the first-sighting safety check. Arrow timings include fresh-turn ro
 
 `tests/e2e/run.py` starts the terminal build inside tmux, creates a character and plays through the
 new controls, quick stack and sort pile by sending real key presses and reading the screen. It
-needs `tmux` and a built `cataclysm-bn` binary (in `out/build/linux-curses/src`, at the repo root or
-in `build/src`):
+needs `tmux` and a built `cataclysm-bn` binary. The harness looks in
+`out/build/linux-curses/src`, then the repo root, then the legacy `build/src`:
 
 ```sh
 python3 tests/e2e/run.py
