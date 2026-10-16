@@ -28,6 +28,10 @@
 - **Release workflows stay disabled** — Nightly Release, Experimental Release and Manual release are
   off; `gh workflow enable "<name>"` re-enables them. The nightlies need an initial `YYYY-MM-DD` tag
   and an `experimental` release before they can pass, and `docs.yml` chains off Experimental Release.
+- **Watch the CI runs** — the detached service `bn-ci-watch` writes the conclusions of the matrix runs
+  `38952618497` and `38953879314` to
+  `/home/kenja/.local/state/cataclysm-bn/ci-watch.log`. If the service is gone after a restart, read the
+  runs straight from GitHub with `gh run list --workflow matrix --repo Kenja-mc/Cataclysm-BN`.
 - **CI/CD overhaul series** — issue #12 tracks #6 to #11: decision-model playtesting, the fork suite in
   CI, a prepared build container, known failures, a performance gate and the release path. Issue #13
   lists the end-to-end harness traps to write into the test-quality skill.
