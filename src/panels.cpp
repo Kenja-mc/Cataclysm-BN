@@ -827,11 +827,6 @@ auto needs_status::read( const avatar &you ) -> readings
     auto thirst = you.get_thirst_description();
     auto hunger = you.get_hunger_description();
     auto rest = you.get_fatigue_description();
-    // Preserve the descriptor's knowledge gate.
-    const auto pain_prefix = std::string( _( "Pain " ) ) + " ";
-    if( pain.first.starts_with( pain_prefix ) ) {
-        pain.first.erase( 0, pain_prefix.size() );
-    }
     return {
         .pain = { .text = pain.first.empty() ? _( "None" ) : std::move( pain.first ), .color = pain.second },
         .thirst = { .text = thirst.first.empty() ? _( "OK" ) : std::move( thirst.first ), .color = thirst.second },
@@ -1290,20 +1285,22 @@ static void draw_needs_compact( const avatar &u, const catacurses::window &w )
 {
     werase( w );
 
-    auto hunger_pair = u.get_hunger_description();
-    mvwprintz( w, point_zero, hunger_pair.second, hunger_pair.first );
-    hunger_pair = u.get_fatigue_description();
-    // NOLINTNEXTLINE(cata-use-named-point-constants)
-    mvwprintz( w, point( 0, 1 ), hunger_pair.second, hunger_pair.first );
-    auto pain_pair = u.get_pain_description();
-    mvwprintz( w, point( 0, 2 ), pain_pair.second, pain_pair.first );
+    if( !hud_boxes::status_box_shows_needs() ) {
+        auto hunger_pair = u.get_hunger_description();
+        mvwprintz( w, point_zero, hunger_pair.second, hunger_pair.first );
+        hunger_pair = u.get_fatigue_description();
+        // NOLINTNEXTLINE(cata-use-named-point-constants)
+        mvwprintz( w, point( 0, 1 ), hunger_pair.second, hunger_pair.first );
+        auto pain_pair = u.get_pain_description();
+        mvwprintz( w, point( 0, 2 ), pain_pair.second, pain_pair.first );
 
-    hunger_pair = u.get_thirst_description();
-    mvwprintz( w, point( 17, 0 ), hunger_pair.second, hunger_pair.first );
-    const auto heat = needs_status::temperature( u );
-    mvwprintz( w, point( 17, 1 ), heat.color, heat.text );
-    const auto arrow = temp_delta_arrows( u );
-    mvwprintz( w, point( 17 + utf8_width( heat.text ), 1 ), arrow.first, arrow.second );
+        hunger_pair = u.get_thirst_description();
+        mvwprintz( w, point( 17, 0 ), hunger_pair.second, hunger_pair.first );
+        const auto heat = needs_status::temperature( u );
+        mvwprintz( w, point( 17, 1 ), heat.color, heat.text );
+        const auto arrow = temp_delta_arrows( u );
+        mvwprintz( w, point( 17 + utf8_width( heat.text ), 1 ), arrow.first, arrow.second );
+    }
 
     mvwprintz( w, point( 17, 2 ), c_light_gray, _( "Focus" ) );
     mvwprintz( w, point( 24, 2 ), focus_color( u.focus_pool ), std::to_string( u.focus_pool ) );
@@ -1839,16 +1836,18 @@ static void draw_health_classic( avatar &u, const catacurses::window &w )
     }
 
     // needs
-    auto needs_pair = u.get_hunger_description();
-    mvwprintz( w, point( 21, 1 ), needs_pair.second, needs_pair.first );
-    needs_pair = u.get_thirst_description();
-    mvwprintz( w, point( 21, 2 ), needs_pair.second, needs_pair.first );
+    if( !hud_boxes::status_box_shows_needs() ) {
+        auto needs_pair = u.get_hunger_description();
+        mvwprintz( w, point( 21, 1 ), needs_pair.second, needs_pair.first );
+        needs_pair = u.get_thirst_description();
+        mvwprintz( w, point( 21, 2 ), needs_pair.second, needs_pair.first );
+        needs_pair = u.get_fatigue_description();
+        mvwprintz( w, point( 21, 3 ), needs_pair.second, needs_pair.first );
+        auto pain_pair = u.get_pain_description();
+        mvwprintz( w, point( 21, 0 ), pain_pair.second, pain_pair.first );
+    }
     mvwprintz( w, point( 21, 4 ), c_white, _( "Focus" ) );
     mvwprintz( w, point( 27, 4 ), c_white, std::to_string( u.focus_pool ) );
-    needs_pair = u.get_fatigue_description();
-    mvwprintz( w, point( 21, 3 ), needs_pair.second, needs_pair.first );
-    auto pain_pair = u.get_pain_description();
-    mvwprintz( w, point( 21, 0 ), pain_pair.second, pain_pair.first );
 
     // print mood
     std::pair<nc_color, int> morale_pair = morale_stat( u );
@@ -1899,8 +1898,10 @@ static void draw_health_classic( avatar &u, const catacurses::window &w )
     }
 
     // temperature
-    const auto heat = needs_status::temperature( u );
-    mvwprintz( w, point( 21, 6 ), heat.color, heat.text + temp_delta_string( u ) );
+    if( !hud_boxes::status_box_shows_needs() ) {
+        const auto heat = needs_status::temperature( u );
+        mvwprintz( w, point( 21, 6 ), heat.color, heat.text + temp_delta_string( u ) );
+    }
 
     // power
     pair = power_stat( u );
@@ -2241,11 +2242,14 @@ static void draw_lighting_classic( const avatar &u, const catacurses::window &w 
 {
     werase( w );
 
-    const std::pair<std::string, nc_color> ll = get_light_level(
-            character_funcs::fine_detail_vision_mod( get_avatar() ) );
-    const auto col = print_label( w, { .pos = point( label_column, 0 ), .label = _( "Lighting" ) },
-                                  label_pad_classic );
-    mvwprintz( w, point( col, 0 ), ll.second, "%s", ll.first );
+    // The weather box already shows the light level, but the sound level only lives here.
+    if( !hud_boxes::weather_box_shows_environment() ) {
+        const std::pair<std::string, nc_color> ll = get_light_level(
+                character_funcs::fine_detail_vision_mod( get_avatar() ) );
+        const auto col = print_label( w, { .pos = point( label_column, 0 ), .label = _( "Lighting" ) },
+                                      label_pad_classic );
+        mvwprintz( w, point( col, 0 ), ll.second, "%s", ll.first );
+    }
 
     const auto col2 = print_label( w, {
         .pos = point( label_column + label_column_step, 0 ), .label = _( "Sound" )
