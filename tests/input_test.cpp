@@ -138,7 +138,9 @@ TEST_CASE(
     "a modern-scheme rebind to the upstream key survives save and reload", "[input][keybindings]") {
     auto restore_keybindings = user_keybindings_file_guard();
     auto modern = override_option("CONTROL_SCHEME", "modern");
-    const auto pickup_keys = [] { return input_context("DEFAULTMODE").keys_bound_to("pickup_all"); };
+    const auto pickup_keys = [] {
+        return input_context("DEFAULTMODE").keys_bound_to("pickup_all");
+    };
     const auto user_pickup_comma = std::string(R"({
   "type": "keybinding",
   "id": "pickup_all",
@@ -147,7 +149,8 @@ TEST_CASE(
 })");
 
     SECTION("files with the format marker keep the binding") {
-        write_user_keybindings(R"({ "type": "keybindings_format", "version": 2 },)" + user_pickup_comma);
+        write_user_keybindings(
+            R"({ "type": "keybindings_format", "version": 2 },)" + user_pickup_comma);
         inp_mngr.init();
         REQUIRE(contains_key(pickup_keys(), ','));
 
