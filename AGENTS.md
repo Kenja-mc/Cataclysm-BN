@@ -21,17 +21,46 @@ learn and use. It keeps the BN game rules. `OVERHAUL.md` explains each change.
 
 ### Build
 
-1. Run `cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCURSES=ON -DTILES=OFF -DTESTS=ON`.
-2. Run `ninja -C build cataclysm-bn cata_test`.
+Run these from the repository root. `linux-curses` is the fork's terminal build; `linux-full` adds
+tiles and sound. Every output path below is relative to `out/build/<preset>/`.
+
+```sh
+cmake --preset linux-curses
+cmake --build --preset linux-curses --target cataclysm-bn cata_test
+cmake --preset linux-full
+cmake --build --preset linux-full --target cataclysm-bn-tiles cata_test-tiles
+```
+
+| Target | Path |
+| --- | --- |
+| Terminal game | `out/build/linux-curses/src/cataclysm-bn` |
+| Terminal tests | `out/build/linux-curses/tests/cata_test` |
+| Tiles game | `out/build/linux-full/src/cataclysm-bn-tiles` |
+| Tiles tests | `out/build/linux-full/tests/cata_test-tiles` |
 
 ### Test
 
 Do all three tests before you push. All results must be good.
 
-1. Data check: run `./cataclysm-bn --basepath ./ --userdir /tmp/chk/ --check-all-mods`. Make sure
-   that there are no errors.
-2. Upstream unit tests: use the software GPU, as upstream CI does. Refer to "Unit tests" in
-   `OVERHAUL.md`.
+1. Data check:
+
+   ```sh
+   out/build/linux-curses/src/cataclysm-bn --basepath ./ --userdir /tmp/chk/ --check-all-mods
+   ```
+
+   Make sure that there are no errors.
+
+2. Upstream unit tests: use the software GPU, as upstream CI does. Install Mesa's software Vulkan
+   driver and Xvfb, then run the file-tag shards:
+
+   ```sh
+   Xvfb :99 &
+   DISPLAY=:99 build-scripts/run-linux-test-shards.ts --mode file-tags out/build/linux-curses/tests/cata_test -- --gpu-backend=software
+   ```
+
+   Running every test in one process is not supported: some tests leave the map shifted for the
+   next one. See "Unit tests" in `OVERHAUL.md`.
+
 3. Fork end-to-end tests: run `python3 tests/e2e/run.py`. Do not run other heavy work at the same
    time, because slow input makes these tests fail.
 
