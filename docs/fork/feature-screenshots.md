@@ -13,13 +13,13 @@ python3 tests/e2e/feature_shots.py
 
 ![Modern HUD](images/features/hud-modern.png)
 
-The sidebar keeps every reading in one place: the body panel, the indicator boxes for needs, mood and sound, and the Controls strip that spells out movement, menus and the Look, target and stance keys. Modern binds `?` to the whole key list.
+The fork draws its readings in boxes: weapon and style, stance, needs, mood, sound and stats. The sidebar keeps the message log, the compass and the pixel minimap.
 
 ## Classic HUD
 
 ![Classic HUD](images/features/hud-classic.png)
 
-Classic keeps the upstream control scheme. The Controls strip follows the classic keys, so it shows `hjklyubn` movement instead of WASD, and the `?` key still lists everything.
+Classic keeps the upstream scheme, and the game follows the classic key list. Menu text and hints name the classic keys, and `?` still lists everything.
 
 ## The Enter menu
 
