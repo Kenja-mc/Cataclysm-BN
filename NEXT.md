@@ -2,18 +2,33 @@
 
 ## Next actions
 
-- **Validate before pushing** — run `--check-all-mods` against the current binaries, the complete
-  software-GPU unit shards, then `python3 tests/e2e/run.py` serially with no concurrent heavy work.
-  Focused scenarios and native HUD/mouse checks do not replace these publication gates. Use
-  the `out/build/linux-{curses,full}` preset outputs; reconcile the older instructions in #4.
-- **Investigate unverified correctness findings** — inspect the temporary-item invocation
-  branches in `src/avatar_functions.cpp` and the player-visible kamikaze diagnostic in
-  `src/monattack.cpp`. The completed controls/HUD review does not resolve these older suspicions.
-
+- **Future tickets stay open** — #1 (agentic UI/UX QA in CI) and #2 (two-player co-op) are designed
+  future work, neither implemented nor closable. #3 is the upstream feature-watch tracker; its
+  checkpoint matches `upstream/main` and every candidate is still unchecked.
+- **Merge upstream** — fork `main` is 11 commits behind `upstream/main`; the tracker checkpoint in
+  issue #3 is current. Review the unchecked candidates first, then merge upstream `main`, fold the
+  items the fork folded and add migrations for any removals.
+- **Restore the build tools** — `ccache`, `mold` and `astyle` are missing on this machine, so the
+  preset build stops at the first compile (`ccache: command not found`) and `--target format`
+  reports `Artistic Style executable was not found`. Install with
+  `pacman -S --needed ccache mold astyle`. The commits below were built and gated with them
+  disabled (`-DCATA_CCACHE=OFF -DCMAKE_C_COMPILER_LAUNCHER= -DCMAKE_CXX_COMPILER_LAUNCHER= -DLINKER=`),
+  so no astyle pass has reformatted the tree.
+- **Release workflows stay disabled** — Nightly Release, Experimental Release and Manual release are
+  off; `gh workflow enable "<name>"` re-enables them. The nightlies need an initial `YYYY-MM-DD` tag
+  and an `experimental` release before they can pass, and `docs.yml` chains off Experimental Release.
+- **Investigate unverified correctness findings** — the temporary-item invocation branches in
+  `src/avatar_functions.cpp` and the player-visible kamikaze diagnostic in `src/monattack.cpp`
+  remain reviewer suspicions, not verified defects.
+- **Audit follow-ups** — the weather box measures only its date row when fitting, so a long weather
+  name truncates the temperature instead of widening the box; `sdl_font.cpp` now scales oversized
+  glyphs rather than cropping, which needs one manual visual check for configs still holding
+  `FONT_WIDTH=8`/`FONT_HEIGHT=16`; the Controls strip can be squeezed off an 80x25 sidebar when the
+  rolled messages make the Log panel taller, which is why the small-terminal e2e checks pin the Log
+  off; `has_thermometer` scans the inventory on every draw because a per-turn cache showed a
+  freshly picked-up thermometer a turn late.
 - **Remaining playtest findings** — pickup menu `d`/`a` marking vs WASD navigation in Modern; stairs and save discoverability for new players.
 - **Profile next hot paths** — scent/signature recompute and `sounds::process_sounds` during long rests.
-- **Apply [AGENTS.md build-docs fix](https://github.com/Kenja-mc/Cataclysm-BN/issues/4)** — Part 1 Build commands contradict the preset/shard-runner workflow. `OVERHAUL.md`'s Unit tests section also uses legacy `build/` paths.
-- **Apply [test-quality e2e gate](https://github.com/Kenja-mc/Cataclysm-BN/issues/5)** — pin or strip rolled world state (weather, NPC/avatar gear, morale) in e2e fixtures.
 - **Optional S-pack music adoption** — the installer now downloads Otopack separately for music
   and ambience. Adopting S-pack remains a separate decision; see `data/sound/Overhaul/CREDITS.md`.
 - **Check redistribution rights before packaging** — resolve the gaps in
@@ -25,7 +40,7 @@
   `/home/kenja/.local/state/cataclysm-bn/worktree-backups/20261015-203130-bb0f4407/manifest.json`.
 - **Resolve the harvest inventory limitation** — both GitHub-backed repos lack `issues/`;
   the local helper fails with ENOENT, so the local draft count is unavailable, not zero.
-  No new harvest drafts were created; existing policy work remains in #4, #5 and command-post#102.
+  No new harvest drafts were created; existing policy work remains in #3 and command-post#102.
   See the [maintained harvest summary](../ai-stack/command-post/logs/harvest/summary.md).
 
 ## Install the fork and give feedback

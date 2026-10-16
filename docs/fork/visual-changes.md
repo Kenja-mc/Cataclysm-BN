@@ -9,7 +9,8 @@ show obsolete control labels; use `OVERHAUL.md` for current keys and
 
 ![Earlier in-game capture: weather and weapon boxes, body panel, and obsolete Controls-strip shortcuts](images/game.png)
 
-- Top left: the **weather box** (icon, weather, time) and the **weapon box** (weapon, fighting style).
+- Top left: the **weather box** (icon, weather, time) and the **Status box** (weapon, style, stance
+  and needs; this capture shows its earlier weapon-only form).
 - Sidebar: the **body panel** (a figure coloured by limb health, wounds beside it) and the
   **Controls strip** (the capture predates compact action families; current hints use live bindings).
 - Map: **readable glyphs**. Trees are ♣, pines ♠ and saplings τ instead of 7, 4 and 1.

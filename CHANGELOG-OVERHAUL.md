@@ -4,6 +4,20 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-16
+
+### Fixed
+
+- Modern reaches the sidebar options from **Enter → Misc → Sidebar Options**: the key stays
+  unbound, and the panels can still be moved, hidden and reordered.
+- **Arrow keys aim** is Modern-only, so Classic keeps walking with the arrow keys.
+- The classic Lighting panel keeps its **Sound** reading when the weather box shows the light level.
+- Classic and compact sidebars stop repeating the status box's need rows; the compact panel keeps
+  **Focus**.
+- Text-only HUD icons also apply to the vehicle box, and the weather box's **Wind** row lines up
+  with the rows above it.
+- Hint and welcome text no longer prints "Unbound globally!" when a hint key is unbound.
+
 ## 2026-10-15
 
 ### Added
