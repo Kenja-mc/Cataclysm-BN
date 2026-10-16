@@ -21,7 +21,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from helpers import HELPERS, settle  # noqa: E402
+from helpers import HELPERS, save_and_quit, settle  # noqa: E402
 from tmux_game import ROOT, Game, find_binary, start_new_game  # noqa: E402
 ZOMBIE = "gapi.place_monster_at(MonsterTypeId.new('{id}'), here({x},{y})) "
 
@@ -64,7 +64,7 @@ SCENARIOS = [
                  "M:add_item(p, it) local u=gapi.get_avatar() for _,v in ipairs({'ruby_gold_ring','copper_ring'}) do "
                  "local r=gapi.create_item(ItypeId.new('jewelry_ring'), -1) r:set_var_str('variant',v) u:add_item(r) end ",
         "check": [
-            "Look at the tile east of you (l): one stack of 30 9mm rounds, '10 black powder' in its name.",
+            "Look at the tile east of you (Shift+D): one stack of 30 9mm rounds, '10 black powder' in its name.",
             "Open the inventory (i): both rings share one line, each keeps its own name and price.",
         ],
     },
@@ -133,7 +133,7 @@ SCENARIOS = [
         "setup": "arena() ",
         "check": [
             "Press Shift+X repeatedly and watch all four stances in the Status box and Movement row.",
-            "Enter > Combat > Movement mode opens the full movement mode menu.",
+            "Enter > Combat > Movement Mode Menu opens the full movement mode menu.",
         ],
     },
     {
@@ -152,7 +152,7 @@ SCENARIOS = [
         "about": "Crafting says what is missing and jumps to a part you can make",
         "setup": "arena() give('string_6',6) ",
         "check": [
-            "Open crafting (k), filter (f) 'short rope'.",
+            "Open crafting (i, then F5), filter (f) 'short rope'.",
             "The recipe panel starts with 'Missing: ...'; long string is tagged '(can make)'.",
             "Press p (modern scheme): the list jumps to the long string recipe.",
         ],
@@ -306,9 +306,7 @@ def main():
         g.close()
         return 0
     if args.tiles:
-        g.keys("Escape", delay=0.5)
-        g.keys("S", delay=1)
-        g.keys("y", "Enter", delay=1)
+        save_and_quit(g)
         g.wait_for("[Load]", timeout=60)
         subprocess.run(["tmux", "kill-session", "-t", g.name], stderr=subprocess.DEVNULL)
         world = next(p.name for p in (g.userdir / "save").iterdir() if p.is_dir())

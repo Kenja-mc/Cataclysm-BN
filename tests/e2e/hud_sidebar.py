@@ -6,7 +6,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from helpers import HELPERS, arena, give
+from helpers import HELPERS, action_menu, arena, give
 from tmux_game import Game, start_new_game
 
 
@@ -52,4 +52,17 @@ def test_classic_weather_resize_preserves_facts_and_help(_g):
         game.close()
 
 
-TESTS = [test_classic_weather_resize_preserves_facts_and_help]
+def test_modern_reaches_sidebar_options_from_the_menu(_g):
+    """Modern leaves the sidebar options key unbound, so the Enter menu must still reach them."""
+    game = Game(name=f"bn-e2e-sidebar-route-{os.getpid()}", options={
+        "SAFEMODE": "false", "SHOW_WELCOME": "false", "CONTROL_SCHEME": "modern"})
+    try:
+        start_new_game(game)
+        action_menu(game, "Misc", "Sidebar Options")
+        game.wait_for("SIDEBAR OPTIONS")
+    finally:
+        game.close()
+
+
+TESTS = [test_classic_weather_resize_preserves_facts_and_help,
+         test_modern_reaches_sidebar_options_from_the_menu]

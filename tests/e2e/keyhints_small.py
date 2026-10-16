@@ -1,12 +1,10 @@
 import json
 import os
 import re
-import subprocess
 import tempfile
 from pathlib import Path
 
 from tmux_game import Game, start_new_game
-from helpers import action_menu
 
 
 
@@ -21,23 +19,16 @@ def strip(cols, rows, layout="labels", spacers=False, panels=None):
     config = userdir / "config"
     config.mkdir()
     (config / "panel_options.json").write_text(json.dumps([{
-        "current_layout_id": "labels",
+        "current_layout_id": layout,
         "layouts": [{"layout_id": layout, "panels": panels or []}],
     }]))
-    g = Game(name=f"bn-e2e-keyhints-{cols}x{rows}-{os.getpid()}", cols=140, rows=45,
+    g = Game(name=f"bn-e2e-keyhints-{cols}x{rows}-{os.getpid()}", cols=cols, rows=rows,
              userdir=userdir,
              options={"SAFEMODE": "false", "SHOW_WELCOME": "false",
                       "CONTROL_SCHEME": "modern", "SIDEBAR_SPACERS": str(spacers).lower()})
     try:
         start_new_game(g)
-        if layout != "labels":
-            action_menu(g, "Debug", "Sidebar Options")
-            g.wait_for("SIDEBAR OPTIONS")
-            layouts = ("classic", "compact", "labels", "labels-narrow")
-            g.keys("Right", *("Down" for _ in range(layouts.index(layout))),
-                   "Enter", "Escape", delay=0.4)
-        subprocess.run(["tmux", "resize-window", "-t", g.name,
-                        "-x", str(cols), "-y", str(rows)], check=True)
+        g.resize(cols, rows)
         g.keys("x", delay=0.6)
         screen = g.screen()
         return sidebar(screen, cols, 44 if layout in ("labels", "classic") else 32), screen
@@ -50,22 +41,26 @@ def move_hint_line(side):
     return next((line for line in side.splitlines() if re.search(r"\bmove\b", line)), "")
 
 
+# The Log panel's height follows the messages the world rolled, so it is off for strip checks.
+NO_LOG = [{"name": "Log", "toggle": False}]
+
+
 def test_controls_strip_shows_on_80x25(_g):
     """The minimum supported terminal height must retain the core controls."""
-    side, screen = strip(80, 25)
+    side, screen = strip(80, 25, panels=NO_LOG)
     assert re.match(r"\s*\S+ +move\b", move_hint_line(side)), \
         "80x25 must still show how to move:\n" + screen
 
 
 def test_controls_strip_shows_on_100x30(_g):
-    side, screen = strip(100, 30)
+    side, screen = strip(100, 30, panels=NO_LOG)
     assert re.match(r"\s*\S+ +move\b", move_hint_line(side)), \
         "100x30 must still show how to move:\n" + screen
 
 
 def test_controls_strip_survives_tall_layouts(_g):
     for layout in ("classic", "compact", "labels-narrow", "labels"):
-        side, screen = strip(140, 45, layout=layout)
+        side, screen = strip(140, 45, layout=layout, panels=NO_LOG)
         assert move_hint_line(side), f"{layout}: Controls missing:\n{screen}"
         for direction in ("North:", "East:", "South:", "West:"):
             assert direction in side, f"{layout}: full compass missing {direction}:\n" + screen
