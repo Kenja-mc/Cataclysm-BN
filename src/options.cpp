@@ -1960,7 +1960,7 @@ void options_manager::add_options_interface()
     "modern" );
 
     add( "MOUSE_TILE_SELECTION", interface, translate_marker( "Mouse tile selection" ),
-         translate_marker( "If true, hovering a map tile highlights it and shows its contents.  With mouse movement off, right click selects a tile or target without taking a turn; left click attacks the clicked hostile.  With mouse movement on, left click performs the suggested action or walks there and right click lists options." ),
+         translate_marker( "If true, hovering a map tile highlights it and shows its contents.  With mouse movement off, right click selects a tile or target without taking a turn; left click attacks the clicked hostile.  With mouse movement on, left click performs the suggested action or walks there and right click lists options.  If false, hovering shows no highlight, while clicks still use the reticle when mouse movement is off." ),
          true
        );
 
