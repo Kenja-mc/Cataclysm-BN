@@ -28,9 +28,9 @@
 - **Release workflows stay disabled** — Nightly Release, Experimental Release and Manual release are
   off; `gh workflow enable "<name>"` re-enables them. The nightlies need an initial `YYYY-MM-DD` tag
   and an `experimental` release before they can pass, and `docs.yml` chains off Experimental Release.
-- **Investigate unverified correctness findings** — the temporary-item invocation branches in
-  `src/avatar_functions.cpp` and the player-visible kamikaze diagnostic in `src/monattack.cpp`
-  remain reviewer suspicions, not verified defects.
+- **CI/CD overhaul series** — issue #12 tracks #6 to #11: decision-model playtesting, the fork suite in
+  CI, a prepared build container, known failures, a performance gate and the release path. Issue #13
+  lists the end-to-end harness traps to write into the test-quality skill.
 - **Audit follow-ups** — the weather box measures only its date row when fitting, so a long weather
   name truncates the temperature instead of widening the box; `sdl_font.cpp` now scales oversized
   glyphs rather than cropping, which needs one manual visual check for configs still holding
@@ -45,10 +45,6 @@
 - **Check redistribution rights before packaging** — resolve the gaps in
   [`asset-credits.md`](docs/fork/asset-credits.md), especially optional Otopack, Sokoban and
   the LARWICK font. Do not bundle optional downloaded audio under the Overhaul pack's CC0 grant.
-- **Review retained dirty worktrees before further cleanup** — `../bn-wt-crafting-ui`,
-  `../bn-wt-npc-ui` and `../bn-wt-render` contain changes. Recovery archives and retained branch
-  references are recorded in
-  `/home/kenja/.local/state/cataclysm-bn/worktree-backups/20261015-203130-bb0f4407/manifest.json`.
 - **Resolve the harvest inventory limitation** — both GitHub-backed repos lack `issues/`;
   the local helper fails with ENOENT, so the local draft count is unavailable, not zero.
   No new harvest drafts were created; existing policy work remains in #3 and command-post#102.
