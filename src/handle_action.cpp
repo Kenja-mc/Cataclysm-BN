@@ -70,6 +70,7 @@
 #include "output.h"
 #include "overmap/overmap_ui.h"
 #include "panels.h"
+#include "perk.h"
 #include "player.h"
 #include "player_activity.h"
 #include "body_panel.h"
@@ -2943,7 +2944,9 @@ bool game::handle_action()
             case ACTION_MUTATIONS:
                 show_mutations_ui( u );
                 break;
-
+            case ACTION_PERKS:
+                draw_perk_menu( u );
+                break;
             case ACTION_SORT_ARMOR:
                 show_armor_layers_ui( u );
                 break;
