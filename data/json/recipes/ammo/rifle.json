@@ -361,7 +361,7 @@
       [ [ "4570_casing", 1 ] ],
       [ [ "lgrifle_primer", 1 ] ],
       [ [ "gunpowder", 17 ] ],
-      [ [ "copper", 7 ], [ "cartridgebrass", 14 ] ]
+      [ [ "cartridgebrass", 14 ], [ "copper", 7 ] ]
     ]
   },
   {
@@ -1070,7 +1070,7 @@
       [ [ "277_casing", 1 ] ],
       [ [ "lgrifle_primer", 1 ] ],
       [ [ "gunpowder", 8 ] ],
-      [ [ "copper", 12 ], [ "cartridgebrass", 24 ] ]
+      [ [ "cartridgebrass", 24 ], [ "copper", 12 ] ]
     ]
   },
   {
@@ -1093,7 +1093,7 @@
   },
   {
     "type": "recipe",
-    "result": "277_fmj",
+    "result": "277_hybrid",
     "id_suffix": "black_powder",
     "result_stack_modifier": "black_powder",
     "category": "CC_AMMO",
@@ -1111,7 +1111,7 @@
       [ [ "277_casing", 1 ] ],
       [ [ "lgrifle_primer", 1 ] ],
       [ [ "chem_black_powder", 12 ] ],
-      [ [ "copper", 12 ], [ "cartridgebrass", 24 ] ]
+      [ [ "cartridgebrass", 24 ], [ "copper", 12 ] ]
     ]
   }
 ]
