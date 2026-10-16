@@ -47,6 +47,11 @@ class Game:
         return subprocess.run(["tmux", "capture-pane", "-p", "-t", self.name],
                               capture_output=True, text=True).stdout
 
+    def resize(self, cols, rows):
+        """Force the pane size: tmux sizes new windows from the server, not only from -x/-y."""
+        subprocess.run(["tmux", "resize-window", "-t", self.name,
+                        "-x", str(cols), "-y", str(rows)], check=True)
+
     def screen_colors(self):
         return subprocess.run(["tmux", "capture-pane", "-p", "-e", "-t", self.name],
                               capture_output=True, text=True).stdout
@@ -149,8 +154,10 @@ class Game:
 
 def in_game(screen):
     # Small terminals can cut off Controls; classic uses Location and stamina instead of coordinates.
-    return ("X,Y,Z" in screen and (" move " in screen or "Place :" in screen)) or (
-        "Location:" in screen and "Stm" in screen)
+    # The limb bars are the one reading every layout and panel subset keeps.
+    return (("X,Y,Z" in screen and (" move " in screen or "Place :" in screen))
+            or ("Location:" in screen and "Stm" in screen)
+            or ("HEAD" in screen and "TORSO" in screen))
 
 
 def start_new_game(game, timeout=240):

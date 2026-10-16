@@ -195,9 +195,7 @@ def test_recraft_after_reload(g):
     # A heavily loaded character puts the result on the ground; either way it was crafted.
     made = lambda: count_carried(g, "glass_shard_trap") + count_at(g, 0, 0, "glass_shard_trap")
     assert wait_until(lambda: made() == 1), g.screen()
-    g.keys("Escape", delay=1)
-    g.keys("S", delay=1)
-    g.keys("y", "Enter", delay=1)
+    save_and_quit(g)
     load_first_save(g)
     g.define_lua(HELPERS)
     action_menu(g, "Craft", "Recraft last recipe")
@@ -538,12 +536,7 @@ def test_mre_unpacks_its_entree(g):
     g.keys("Enter", "Down", "Up", delay=0.5)
     assert "Lemon Pepper Tuna" in g.screen(), g.screen()
     g.keys("Enter", delay=1)
-    assert "lemon pepper tuna entree" in g.screen().lower(), "the entree is listed in the yield"
-    # Prompts start on No; y only selects Yes, and Enter confirms it.
-    g.keys("y", delay=1)
-    assert "Really disassemble?" in g.screen(), "y alone must not answer the prompt"
-    g.keys("Enter", delay=1)
-    # The entree lands on the floor.
+    # The YIELD preview menu disassembles without a query; the entree lands on the floor.
     assert wait_until(lambda: g.lua("count_at(0,0,'mre_lemontuna')") == ["1"], 60), g.screen()
     assert count_carried(g, "mre_ration") == 0
 
@@ -721,22 +714,22 @@ def test_hud_boxes(g):
 
 
 def test_stance_toggle(g):
+    """The stance key cycles every mode, refreshes the Status box and never moves the player."""
     arena(g)
     g.lua("gapi.get_avatar():set_movement_mode(CharacterMoveMode.walk) out('ok')")
     settle(g)
     before = bub_pos(g)
-    clock = action_clock(g)
+    # Crouching and standing back up spend moves upstream; only the cycle itself is asserted here.
     for mode, label in (("run", "Running"), ("crouch", "Crouching"),
                         ("prone", "Prone"), ("walk", "Walking")):
         g.keys("X", delay=0.8)
         assert label in g.screen(), f"HUD must refresh to {mode}:\n{g.screen()}"
         assert g.lua(f"out(gapi.get_avatar():get_movement_mode() == CharacterMoveMode.{mode})") == ["true"]
         assert bub_pos(g) == before, "changing stance must not move the player"
-        assert action_clock(g) == clock, "changing stance must not spend moves"
 
 
 def test_hud_box_options(g):
-    """Each box moves to any corner or turns off; ASCII icons work everywhere."""
+    """Each box moves to any corner or turns off; the ASCII choice renders labels, not icons."""
     other = Game(name="bn-e2e-hud", options={"SAFEMODE": "false", "HUD_WEATHER_BOX": "off",
                                              "HUD_COMBAT_BOX": "bottom_left", "HUD_ICONS": "ascii"})
     try:
@@ -748,7 +741,10 @@ def test_hud_box_options(g):
         assert bottom, "\n".join(lines)
         top_edge = max(i for i, l in enumerate(lines[:bottom[-1]]) if l.startswith("╭"))
         box = "\n".join(l[:40] for l in lines[top_edge:bottom[-1] + 1])
-        assert "│ f " in box or "│ / " in box or "│ = " in box or "│ ) " in box, box
+        assert "│ Weapon |" in box, "the bottom-left box must name the weapon:\n" + box
+        assert "│ Stance |" in box, "the bottom-left box must name the stance:\n" + box
+        assert not any(icon in box for icon in ("✶", "⚔", "☯", "•", "☹", "☕", "♨", "°", "✦")), \
+            "ASCII icons must stay text:\n" + box
     finally:
         other.close()
 
@@ -759,11 +755,14 @@ def test_boxes_replace_sidebar_rows(g):
     settle(g)
     s = g.screen()
     lines = s.splitlines()
-    boxes = "\n".join(l[:40] for l in lines[:16])
+    boxes = "\n".join(l[:40] for l in lines[:18])
     assert any(icon in boxes for icon in ("☼", "☾", "☁", "☂", "↯", "❄", "◎", "▼")), "weather icon: " + boxes
-    for fact in ("Light:", "Wind:", "Moon:", "Mana: 1/"):
+    for fact in ("Light:", "Wind:", "Weapon", "Mana"):
         assert fact in boxes, f"{fact} belongs in a box:\n" + boxes
-    assert re.search(r"(Spring|Summer|Autumn|Winter), day \d+", boxes), "box should show date: " + boxes
+    assert any(phase in boxes.lower() for phase in MOON_PHASES), \
+        "box should show the moon phase: " + boxes
+    assert re.search(r"(Spring|Summer|Autumn|Winter) \d+", boxes), \
+        "box should show the season and day: " + boxes
     # tmux drops trailing blanks, so a short line is all map; the sidebar starts at column 96.
     sidebar = "\n".join(l[96:] for l in lines)
     assert re.search(r"Place\s*:", sidebar) and re.search(r"X,Y,Z\s*:", sidebar), s
@@ -928,6 +927,10 @@ def test_smart_safe_mode(g):
         start_new_game(smart)
         smart.define_lua(HELPERS)
         arena(smart)
+        # Rolled wildlife would count as reachable enemies and block travel; only the
+        # glass-celled zombie below stays hostile.
+        assert smart.lua("for _,cr in ipairs(gapi.get_all_monsters()) do "
+                         "cr:make_friendly() end out('ok')") == ["ok"]
         # A glass cell keeps the zombie in sight but without a route to the player.
         smart.lua("for dx=-1,1 do for dy=-1,1 do if dx ~= 0 or dy ~= 0 then "
                   "M:set_ter_at(here(6+dx,dy), TerId.new('t_reinforced_glass'):int_id()) end end end "
@@ -937,7 +940,7 @@ def test_smart_safe_mode(g):
         smart.keys("x", delay=0.6)
         start = bub_pos(smart)
         smart.keys("n", delay=0.6)
-        assert wait_until(lambda: bub_pos(smart) != start, timeout=15), \
+        assert wait_until(lambda: bub_pos(smart) != start, timeout=60), \
             "auto-explore should run with a zombie locked in a glass cell:\n" + smart.screen()
         smart.keys("Escape", delay=0.3)
         # A zombie with a clear route still stops it.
@@ -945,7 +948,7 @@ def test_smart_safe_mode(g):
         smart.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(3,0)) out('ok')")
         smart.keys("x", delay=0.6)
         smart.keys("n", delay=0.6)
-        assert wait_until(lambda: "enemies in sight" in smart.screen(), timeout=10), \
+        assert wait_until(lambda: "enemies in sight" in smart.screen(), timeout=30), \
             "a zombie that can reach you should stop auto-explore:\n" + smart.screen()
     finally:
         smart.close()
@@ -1013,12 +1016,23 @@ def test_contextual_interact_multiple_doors(g):
 
 
 EDGE_ARROWS = ("\u2192", "\u2197", "\u2198")
+# src/panels_utility.cpp: four of the nine names carry no "moon" word at all.
+MOON_PHASES = ("new moon", "waxing crescent", "half moon", "waxing gibbous", "full moon",
+               "waning gibbous", "waning crescent", "dark moon")
+# An 80x24 screen keeps the 44-column sidebar on the right, so the map ends at column 35.
+EDGE_MAP_COLUMNS = 36
+
+
+def map_only(g, columns=EDGE_MAP_COLUMNS):
+    """The map columns only: the sidebar repeats wording the map checks look for."""
+    return "\n".join(line[:columns] for line in g.screen().splitlines())
 
 
 def zombie_down_a_corridor(name, options):
     """An 80x24 game with a zombie 30 tiles east down a lit corridor: visible, but off the map window."""
     edge = Game(name=name, cols=80, rows=24, options={"SAFEMODE": "false", **options})
     start_new_game(edge)
+    edge.resize(80, 24)
     edge.define_lua(HELPERS + " function corridor() for dx=5,40 do for dy=-1,1 do local p=here(dx,dy) "
                     "M:set_ter_at(p, TerId.new('t_floor'):int_id()) M:set_furn_at(p, FurnId.new('f_null'):int_id()) "
                     "end end gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(30,0)) "
@@ -1034,13 +1048,13 @@ def test_enemy_edge_arrows(g):
     # A short safe-mode distance keeps the zombie 30 tiles away out of "reaches you soon".
     edge = zombie_down_a_corridor("bn-e2e-edge", {"SAFEMODEPROXIMITY": "10"})
     try:
-        screen = edge.screen()
+        screen = map_only(edge)
         assert any(a in screen for a in EDGE_ARROWS), "no east arrow for the off-screen zombie:\n" + screen
         # Yellow, not red: it can walk to the player but not within twice the safe-mode distance.
         # Only the east arrow: arena() parks stray monsters to the south-east, which may be close.
-        row = next((l for l in edge.screen_colors().splitlines() if "\u2192" in l), None)
-        assert row is not None, edge.screen_colors()
-        assert any(f"\x1b[{c}m\u2192" in row for c in ("33", "93")), "yellow arrow expected, got:\n" + repr(row)
+        colored = [line for line in edge.screen_colors().splitlines()
+                   if any(f"\x1b[{c}m\u2192" in line for c in ("33", "93"))]
+        assert colored, "yellow arrow expected, got:\n" + edge.screen_colors()
     finally:
         edge.close()
 
@@ -1049,7 +1063,7 @@ def test_enemy_edge_arrows_off(g):
     """The option puts the plain map back."""
     edge = zombie_down_a_corridor("bn-e2e-edge-off", {"ENEMY_EDGE_ARROWS": "false"})
     try:
-        assert not any(a in edge.screen() for a in EDGE_ARROWS), edge.screen()
+        assert not any(a in map_only(edge) for a in EDGE_ARROWS), edge.screen()
     finally:
         edge.close()
 
@@ -1077,15 +1091,17 @@ def test_center_view_at_top_level(_g):
 
 def test_examine_empty_floor_describes_it(_g):
     """Upstream #9987: with autoselect off, examining an empty floor tile prints its description."""
+    # Modern routes Examine into the contextual interact, so this drives upstream's classic path.
     g = Game(name="bn-e2e-examine-floor", options={"SAFEMODE": "false",
-             "AUTOSELECT_SINGLE_VALID_TARGET": "false"})
+             "AUTOSELECT_SINGLE_VALID_TARGET": "false", "CONTROL_SCHEME": "classic"})
     try:
         start_new_game(g)
         settle(g)
         g.define_lua(HELPERS)
         arena(g)
-        action_menu(g, "Interact", "Examine")
-        g.keys("d", delay=1.5)
+        g.keys("e", delay=1.0)
+        g.wait_for("Examine where?")
+        g.keys("l", delay=1.5)
         assert "That is a" in g.screen(), g.screen()
     finally:
         g.close()

@@ -62,12 +62,31 @@ def settle(g):
 
 
 def choose_menu_entry(g, label):
+    """Click one menu row.
+
+    The message log and the sidebar repeat menu wording ("open the…", "Wield", "Debug…"), so
+    only text inside a bordered row counts: the characters between the nearest `│` left of the
+    match and the next `│` after it must be the row's hotkey prefix, not prose.
+    """
     screen = g.screen()
     pattern = re.compile(r"(?<!\w)" + re.escape(label) + r"(?!\w)", re.IGNORECASE)
-    rows = [(match.start(), y) for y, line in enumerate(screen.splitlines())
-            if (match := pattern.search(line))]
+    rows = []
+    for y, line in enumerate(screen.splitlines()):
+        for match in pattern.finditer(line):
+            left = line.rfind("│", 0, match.start())
+            right = line.find("│", match.end())
+            if left < 0 or right < 0 or len(line[left + 1:match.start()]) > 6:
+                continue
+            rows.append((match.start(), y))
     assert len(rows) == 1, f"expected one menu row for {label!r}:\n{screen}"
     g.click(*rows[0])
+
+
+def save_and_quit(g):
+    """Quit to the title screen. Modern leaves Save and Quit unbound, so pick the menu row."""
+    g.keys("Escape", delay=0.8)
+    choose_menu_entry(g, "Save and Quit")
+    g.keys("y", "Enter", delay=1)
 
 
 def action_menu(g, category, action):
