@@ -11,6 +11,14 @@ Use when adding or changing automated tests.
 
 - Test one behavior contract, not incidental implementation details.
 - Use deterministic fixtures from `data/mods/TEST_DATA` for data with random, balance, or evolving behavior.
+- E2E fixtures run against a freshly rolled world, so pin or strip rolled state before asserting on sound,
+  volume, or morale. Three observed `tests/e2e/run.py` failures were fixture-side, not game bugs: a surface
+  Strong Gale roll put ambient near 8600 mdB while the shout arrived at about 31 dB (`set_omt_weather_override`
+  selects the weather type only, not wind); the farmer's rolled mouth gear cut `get_shout_volume` from about
+  81 dB to 46 dB, below even the fixed underground threshold; and a fresh character crashed with
+  `Morale "Stylish" is inconsistent` until the fixture cleared morale alongside bionics, mutations, and items.
+  Use `test_sound_marker_fading` as the reference: isolated `Game` session, strip avatar and source-creature
+  state, move the fixture underground where ambient is fixed, then assert.
 - Avoid assertions that rely on probability, wall-clock time, locale, file order, or current global options unless the test pins them.
 - Reproduce reported flakes with the failing `--rng-seed` before accepting the fix.
 - When CI test jobs fail, inspect the job log for the exact test command, filters, shard split, user-dir, order-sensitive included tests, `--rng-seed`, and backend flags. Run that same shard command on the final rebased HEAD before declaring the fix validated; do not substitute a narrower tag filter or a different full-test command.
