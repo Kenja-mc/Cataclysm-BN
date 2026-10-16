@@ -595,7 +595,8 @@ directory, so playtesting does not overwrite your normal tiles options.
 
 ## Building
 
-Same as upstream; see `docs/en/dev/guides/building`. The terminal version:
+Same as upstream; see `docs/en/dev/guides/building`. The presets need `clang`, `mold` and `ccache`
+(`pacman -S --needed clang mold ccache`). The terminal version:
 
 ```sh
 cmake --preset linux-curses
@@ -627,17 +628,22 @@ and never ports code automatically. Close the tracker to stop reporting.
 ## Unit tests
 
 Upstream's Catch2 suite (`cata_test`) must pass. Upstream CI runs it in file shards on a software
-GPU, and the vision tests only agree with that setup, so run it the same way: install Mesa's
-software Vulkan driver (`mesa-vulkan-drivers`) and Xvfb, then
+GPU, and the vision tests only agree with that setup, so run it the same way: Xvfb and the software
+Vulkan ICD (Lavapipe, from `vulkan-swrast`) must be installed, and `VK_DRIVER_FILES` must point at
+the ICD, then
 
 ```sh
 cmake --preset linux-curses
 cmake --build --preset linux-curses --target cata_test
-Xvfb :99 & DISPLAY=:99 build-scripts/run-linux-test-shards.ts --mode file-tags out/build/linux-curses/tests/cata_test -- --gpu-backend=software
+Xvfb :99 &
+DISPLAY=:99 VK_DRIVER_FILES="$HOME/.local/lavapipe/usr/share/vulkan/icd.d/lvp_icd.json" \
+  build-scripts/run-linux-test-shards.ts --mode file-tags out/build/linux-curses/tests/cata_test -- --gpu-backend=software
 ```
 
-Running every test in one process is not supported upstream either: some tests leave the map
-shifted for the next one.
+Without the ICD the `20-visibility` shard fails to create a GPU device. For one shard or test case,
+run `out/build/linux-curses/tests/cata_test` directly with `CATA_TEST_COMPUTE_ACCELERATION=cpu` and
+a Catch2 filter. Running every test in one process is not supported upstream either: some tests
+leave the map shifted for the next one.
 
 The hidden `[benchmark][smart_safemode]` cases measure 12 blocked route searches and the
 over-budget conservative stop separately. Monster-list timings are steady-state scans; they do

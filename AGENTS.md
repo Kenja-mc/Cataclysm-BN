@@ -22,7 +22,9 @@ learn and use. It keeps the BN game rules. `OVERHAUL.md` explains each change.
 ### Build
 
 Run these from the repository root. `linux-curses` is the fork's terminal build; `linux-full` adds
-tiles and sound. Every output path below is relative to `out/build/<preset>/`.
+tiles and sound. Every output path below is relative to `out/build/<preset>/`. The presets need
+`clang`, `mold` and `ccache` (`pacman -S --needed clang mold ccache`): configure succeeds without
+them, but the build stops at the first compile with `ccache: command not found`.
 
 ```sh
 cmake --preset linux-curses
@@ -50,16 +52,20 @@ Do all three tests before you push. All results must be good.
 
    Make sure that there are no errors.
 
-2. Upstream unit tests: use the software GPU, as upstream CI does. Install Mesa's software Vulkan
-   driver and Xvfb, then run the file-tag shards:
+2. Upstream unit tests: use the software GPU, as upstream CI does. Xvfb must be installed, and the
+   software Vulkan ICD must be reachable; point `VK_DRIVER_FILES` at it. Without the ICD the
+   `20-visibility` shard cannot create a GPU device:
 
    ```sh
    Xvfb :99 &
-   DISPLAY=:99 build-scripts/run-linux-test-shards.ts --mode file-tags out/build/linux-curses/tests/cata_test -- --gpu-backend=software
+   DISPLAY=:99 VK_DRIVER_FILES="$HOME/.local/lavapipe/usr/share/vulkan/icd.d/lvp_icd.json" \
+     build-scripts/run-linux-test-shards.ts --mode file-tags out/build/linux-curses/tests/cata_test -- --gpu-backend=software
    ```
 
-   Running every test in one process is not supported: some tests leave the map shifted for the
-   next one. See "Unit tests" in `OVERHAUL.md`.
+   `vulkan-swrast` installs the same ICD at `/usr/share/vulkan/icd.d/lvp_icd.x86_64.json`. For a
+   single shard or test case, run `out/build/linux-curses/tests/cata_test` directly with
+   `CATA_TEST_COMPUTE_ACCELERATION=cpu` and a Catch2 filter. Running every test in one process is
+   not supported: some tests leave the map shifted for the next one.
 
 3. Fork end-to-end tests: run `python3 tests/e2e/run.py`. Do not run other heavy work at the same
    time, because slow input makes these tests fail.
