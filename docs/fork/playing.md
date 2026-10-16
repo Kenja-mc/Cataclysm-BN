@@ -5,7 +5,17 @@ works from a normal terminal or the desktop menu.
 
 ## Installation
 
-Run once from the repository root:
+Build the terminal and graphics versions first. The presets need `clang`, `mold` and `ccache`
+installed:
+
+```sh
+cmake --preset linux-curses
+cmake --build --preset linux-curses --target cataclysm-bn
+cmake --preset linux-full
+cmake --build --preset linux-full --target cataclysm-bn-tiles
+```
+
+Then run once from the repository root:
 
 ```sh
 ./bin/install-cataclysm-bn.sh
