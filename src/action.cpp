@@ -1202,7 +1202,9 @@ action_id handle_action_menu()
         } else if( category_id == "misc" ) {
             register_actions( {
                 ACTION_WAIT, ACTION_SLEEP, ACTION_BIONICS, ACTION_MUTATIONS,
-                ACTION_CONTROL_VEHICLE, ACTION_ITEMACTION, ACTION_TOGGLE_THIEF_MODE
+                ACTION_CONTROL_VEHICLE, ACTION_ITEMACTION, ACTION_TOGGLE_THIEF_MODE,
+                // Modern unbinds the sidebar options key, so the menu keeps them reachable.
+                ACTION_TOGGLE_PANEL_ADM
             } );
 #if defined(TILES)
             if( use_tiles ) {
