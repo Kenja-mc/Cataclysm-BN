@@ -59,6 +59,10 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
     auto hints = std::vector<hint>();
     hints.reserve( singles.size() + 3 );
     auto push = [&]( std::string keys, std::string label ) {
+        if( keys.empty() ) {
+            // An unbound hint would print get_desc()'s "Unbound globally!" text as if it were keys.
+            return;
+        }
         hint h;
         h.keys = std::move( keys );
         h.label = std::move( label );
@@ -75,13 +79,18 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
     }
     if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
         const auto ctxt = input_context( "DEFAULTMODE" );
-        push( ctxt.get_desc( "action_menu" ), _( "menus" ) );
+        const auto push_desc = [&]( const std::string & action, std::string label ) {
+            if( !ctxt.key_bound_to( action, 0, false ).empty() ) {
+                push( ctxt.get_desc( action ), std::move( label ) );
+            }
+        };
+        push_desc( "action_menu", _( "menus" ) );
         push( "?", _( "all keys" ) );
-        push( ctxt.get_desc( "NEXT_TARGET" ), _( "target" ) );
+        push_desc( "NEXT_TARGET", _( "target" ) );
         push( first_key( ACTION_CYCLE_MOVE ), _( "stance" ) );
         push( joined_keys( { ACTION_SHIFT_N, ACTION_SHIFT_W, ACTION_SHIFT_S, ACTION_SHIFT_E } ),
               _( "look" ) );
-        push( ctxt.get_desc( "PEEK_N" ), _( "peek north" ) );
+        push_desc( "PEEK_N", _( "peek north" ) );
     } else {
         push( "?", _( "all keys" ) );
     }
@@ -143,7 +152,9 @@ auto show_welcome_once() -> void
                     key( ACTION_MOVE_BACK_LEFT ), key( ACTION_MOVE_BACK_RIGHT ), key( ACTION_PAUSE ) );
     if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
         const auto ctxt = input_context( "DEFAULTMODE" );
-        const auto inventory_ctxt = input_context( "INVENTORY" );
+        const auto target_key = ctxt.key_bound_to( "NEXT_TARGET", 0, false );
+        const auto next_target = target_key.empty() ? std::string() :
+                                 colorize( ctxt.get_desc( "NEXT_TARGET" ), c_light_cyan );
         text += string_format(
                     _( "%1$s groups the secondary commands into menus; Info has your character and status screens.\n"
                        "%2$s opens inventory.  Select an item for Wield, Use, Eat or Drop; %3$s opens Craft from inventory.\n"
@@ -151,8 +162,8 @@ auto show_welcome_once() -> void
                        "Shift + movement looks in that direction; Ctrl + movement peeks with the normal time cost.\n"
                        "%5$s cycles walking, running, crouching and prone.  %6$s selects a hostile target; %7$s attacks it.  You can also walk into adjacent enemies.\n"
                        "%8$s opens the map.  The Interact menu offers quick stack and sort pile for base storage, without sorting zones.\n\n" ),
-                    key( ACTION_ACTIONMENU ), key( ACTION_INVENTORY ), inventory_ctxt.get_desc( "CRAFT" ),
-                    key( ACTION_EXAMINE ), key( ACTION_CYCLE_MOVE ), ctxt.get_desc( "NEXT_TARGET" ),
+                    key( ACTION_ACTIONMENU ), key( ACTION_INVENTORY ), key( ACTION_CRAFT ),
+                    key( ACTION_EXAMINE ), key( ACTION_CYCLE_MOVE ), next_target,
                     key( ACTION_FIRE ), key( ACTION_MAP ) );
     } else {
         text += string_format(

@@ -2292,7 +2292,9 @@ bool game::handle_action()
 
     // Sword of the Stars: The Pit style aiming. The arrow keys move a reticle for free instead
     // of walking, and any action that spends a turn takes the reticle away again.
-    if( aim_reticle::enabled() && !action.empty() && !veh_ctrl && !u.is_dead_state() &&
+    // The reticle is Modern-only, so Classic keeps upstream's arrow-key walking.
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" && aim_reticle::enabled() &&
+        !action.empty() && !veh_ctrl && !u.is_dead_state() &&
         aim_reticle::arrow_move( act, ctxt ) ) {
         aim_reticle::move( u, m, get_delta_from_movement_action( act, iso_rotate::yes ) );
         liveview.show( *aim_reticle::pos() );
