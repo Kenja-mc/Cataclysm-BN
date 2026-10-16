@@ -23,6 +23,7 @@
 #include "game.h"
 #include "item.h"
 #include "magic/magic.h"
+#include "needs_status.h"
 #include "options.h"
 #include "output.h"
 #include "overmap/overmapbuffer_registry.h"
@@ -69,22 +70,15 @@ auto frame_for( const bool unicode, const bool rounded ) -> frame_glyphs
     return { .horizontal = "─", .vertical = "│", .top_left = "┌", .top_right = "┐", .bottom_left = "└", .bottom_right = "┘" };
 }
 
-/// The weather box redraws every frame; scanning the whole inventory once per turn is enough.
 auto has_thermometer( const avatar &you ) -> bool
 {
-    static auto checked_on = std::optional<time_point>();
-    static auto cached = false;
-    if( checked_on != calendar::turn ) {
-        cached = you.has_item_with_flag( flag_THERMOMETER ) ||
-                 you.has_enchantment_flag( enchantment_flag_id( "THERMOMETER" ) );
-        checked_on = calendar::turn;
-    }
-    return cached;
+    return you.has_item_with_flag( flag_THERMOMETER ) ||
+           you.has_enchantment_flag( enchantment_flag_id( "THERMOMETER" ) );
 }
 
 enum class icon {
     sun, moon, cloud, rain, storm, snow, strange, underground, fists, melee, gun, bow, style,
-    walk, run, crouch, prone, mana, compass, fuel, battery
+    walk, run, crouch, prone, mana, compass, fuel, battery, pain, thirst, hunger, rest, heat
 };
 
 /// One glyph per icon for each icon set. Nerd Font glyphs are Material Design icons (the fist is Font Awesome).
@@ -136,6 +130,16 @@ auto glyph( const icon i, const std::string &style ) -> std::string
             return pick( "▤", "\U000F0298", "F" );
         case icon::battery:
             return pick( "↯", "\U000F0079", "B" );
+        case icon::pain:
+            return pick( "☹", "☹", "" );
+        case icon::thirst:
+            return pick( "☕", "☕", "" );
+        case icon::hunger:
+            return pick( "♨", "♨", "" );
+        case icon::rest:
+            return pick( "zz", "zz", "" );
+        case icon::heat:
+            return pick( "°", "°", "" );
     }
     return "?";
 }
@@ -169,6 +173,8 @@ struct line {
     nc_color icon_color;
     std::string text;
     nc_color text_color;
+    std::string label;
+    bool separator = false;
 };
 
 auto time_text( const avatar &you ) -> std::string
@@ -176,9 +182,20 @@ auto time_text( const avatar &you ) -> std::string
     if( you.has_watch() ) {
         return to_string_time_of_day( calendar::turn );
     }
+    if( you.bub_pos().z() < 0 ) {
+        return _( "???" );
+    }
     const auto hour = hour_of_day<int>( calendar::turn );
     return hour < 5 ? _( "night" ) : hour < 8 ? _( "dawn" ) : hour < 12 ? _( "morning" ) :
            hour < 14 ? _( "noon" ) : hour < 18 ? _( "afternoon" ) : hour < 21 ? _( "evening" ) : _( "night" );
+}
+
+auto season_day_text() -> std::string
+{
+    //~ Season and day, e.g. "Spring 21".
+    return string_format( _( "%s %d" ),
+                          calendar::name_season( season_of_year( calendar::turn ) ),
+                          day_of_season<int>( calendar::turn ) + 1 );
 }
 
 struct wind_info {
@@ -187,65 +204,65 @@ struct wind_info {
 };
 
 /// Local wind as the Wind panel shows it: description plus arrow, colored by strength.
-auto wind_text( const avatar &you ) -> wind_info
+auto wind_text( const avatar &you, const bool ascii ) -> wind_info
 {
     const oter_id &cur_om_ter = ACTIVE_OVERMAP_BUFFER.ter( you.abs_omt_pos() );
     const weather_manager &weather = get_weather();
     const double windpower = get_local_windpower( weather.windspeed, cur_om_ter,
                              you.abs_pos(), weather.winddirection,
                              weather::is_sheltered( get_map(), you.bub_pos() ) );
-    return { get_wind_desc( windpower ) + " " + get_wind_arrow( weather.winddirection ),
-             get_wind_color( windpower ) };
+    auto direction = get_wind_arrow( weather.winddirection );
+    if( ascii ) {
+        constexpr auto arrows = std::array{ "⇓", "⇙", "⇐", "⇖", "⇑", "⇗", "⇒", "⇘" };
+        const auto found = std::ranges::find( arrows, direction );
+        if( found != arrows.end() ) {
+            // Arrows show flow; letters name the origin.
+            constexpr auto names = std::array{ "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
+            direction = names[static_cast<size_t>( found - arrows.begin() )];
+        }
+    }
+    return { .text = get_wind_desc( windpower ) + " " + direction,
+             .color = get_wind_color( windpower ) };
 }
 
 auto weather_lines( const avatar &you, const std::string &icons ) -> std::vector<line>
 {
     auto out = std::vector<line>();
+    out.reserve( 4 );
     const auto &w = get_weather();
     const auto underground = you.bub_pos().z() < 0;
-    const auto first = underground ? glyph( icon::underground, icons )
-                                   : glyph( weather_icon( w.weather_id.str() ), icons );
-    const auto iw = utf8_width( first );
-    if( underground ) {
-        out.push_back( { .icon = std::move( first ), .icon_w = iw, .icon_color = c_light_gray,
-                         .text = _( "Underground" ), .text_color = c_light_gray } );
-    } else {
-        out.push_back( { .icon = std::move( first ), .icon_w = iw, .icon_color = w.weather_id->color,
-                         .text = w.weather_id->name.translated(), .text_color = w.weather_id->color } );
-    }
-    const auto indent = std::string( iw, ' ' );
-    auto time_line = time_text( you );
+    const auto first = icons == "ascii" ? std::string() :
+                       underground ? glyph( icon::underground, icons ) :
+                       glyph( weather_icon( w.weather_id.str() ), icons );
+    auto description = underground ? std::string( _( "Underground" ) ) :
+                       w.weather_id->name.translated();
     if( has_thermometer( you ) ) {
-        time_line += "  " + print_temperature( w.get_temperature( you.abs_pos() ) );
+        description += "  " + print_temperature( w.get_temperature( you.abs_pos() ) );
     }
-    out.push_back( { .icon = indent, .icon_w = iw, .icon_color = c_light_gray,
-                     .text = time_line, .text_color = c_light_gray } );
-    if( !hud_boxes::roomy() ) {
-        return out;
-    }
-    out.push_back( { .icon = indent, .icon_w = iw, .icon_color = c_light_gray,
-                     .text = string_format( _( "%s, day %d" ),
-                                            calendar::name_season( season_of_year( calendar::turn ) ),
-                                            day_of_season<int>( calendar::turn ) + 1 ),
+    out.push_back( { .icon = first, .icon_w = utf8_width( first ),
+                     .icon_color = underground ? c_light_gray : w.weather_id->color,
+                     .text = icons == "ascii" ? std::string( _( "Weather" ) ) + ": " + description : description,
+                     .text_color = underground ? c_light_gray : w.weather_id->color } );
+    const auto clock = icons == "ascii" ? std::string() : std::string( "◷" );
+    out.push_back( { .icon = clock, .icon_w = utf8_width( clock ), .icon_color = c_light_gray,
+                     .text = season_day_text() + " " + time_text( you ) + " " +
+                             moon_phase_name( get_moon_phase( calendar::turn ) ),
                      .text_color = c_light_gray } );
     const auto light = get_light_level( character_funcs::fine_detail_vision_mod( you ) );
-    out.push_back( { .icon = indent, .icon_w = iw, .icon_color = c_light_gray,
-                     .text = string_format( _( "Light: %s" ), colorize( light.first, light.second ) ),
-                     .text_color = c_light_gray } );
-    out.push_back( { .icon = indent, .icon_w = iw, .icon_color = c_light_gray,
-                     .text = string_format( _( "Moon: %s" ),
-                                            moon_phase_name( get_moon_phase( calendar::turn ) ) ),
-                     .text_color = c_light_gray } );
-    const auto wind = wind_text( you );
-    out.push_back( { .icon = indent, .icon_w = iw, .icon_color = c_light_gray,
-                     .text = string_format( _( "Wind: %s" ), colorize( wind.text, wind.color ) ),
-                     .text_color = c_light_gray } );
+    const auto light_icon = icons == "ascii" ? std::string() : std::string( "⊙" );
+    out.push_back( { .icon = light_icon, .icon_w = utf8_width( light_icon ), .icon_color = light.second,
+                     .text = string_format( _( "Light: %s" ), light.first ), .text_color = light.second } );
+    const auto wind = wind_text( you, icons == "ascii" );
+    out.push_back( { .icon = "", .icon_w = 0, .icon_color = wind.color,
+                     .text = string_format( _( "Wind: %s" ), wind.text ), .text_color = wind.color } );
     return out;
 }
 
-auto combat_lines( const avatar &you, const std::string &icons ) -> std::vector<line>
+auto combat_lines( const avatar &you, const std::string &icons,
+                   const bool needs ) -> std::vector<line>
 {
     auto out = std::vector<line>();
+    out.reserve( 10 );
     const auto &weapon = you.primary_weapon();
     auto kind = icon::fists;
     if( you.is_armed() ) {
@@ -255,17 +272,16 @@ auto combat_lines( const avatar &you, const std::string &icons ) -> std::vector<
     const auto name = you.is_armed() ? character_funcs::fmt_wielded_weapon( you ) : std::string(
                           _( "fists" ) );
     {
-        const auto ic = glyph( kind, icons );
-        const auto iw = utf8_width( ic );
-        out.push_back( { .icon = std::move( ic ), .icon_w = iw, .icon_color = c_light_cyan,
-                         .text = name, .text_color = c_light_gray } );
+        const auto ic = icons == "ascii" ? std::string() : glyph( kind, icons );
+        out.push_back( { .icon = ic, .icon_w = utf8_width( ic ), .icon_color = c_light_cyan,
+                         .text = name, .text_color = c_light_gray, .label = _( "Weapon" ) } );
     }
     const auto style = you.martial_arts_data->selected_style_name( you );
-    if( !style.empty() ) {
-        const auto ic = glyph( icon::style, icons );
-        const auto iw = utf8_width( ic );
-        out.push_back( { .icon = std::move( ic ), .icon_w = iw, .icon_color = c_light_blue,
-                         .text = style, .text_color = c_light_gray } );
+    {
+        const auto ic = icons == "ascii" ? std::string() : glyph( icon::style, icons );
+        out.push_back( { .icon = ic, .icon_w = utf8_width( ic ), .icon_color = c_light_blue,
+                         .text = style.empty() ? _( "No style" ) : style, .text_color = c_light_gray,
+                         .label = _( "Style" ) } );
     }
     auto stance_icon = icon::walk;
     auto stance_color = c_light_gray;
@@ -284,36 +300,84 @@ auto combat_lines( const avatar &you, const std::string &icons ) -> std::vector<
         stance_text = _( "Prone" );
     }
     {
-        const auto ic = glyph( stance_icon, icons );
-        const auto iw = utf8_width( ic );
-        out.push_back( { .icon = std::move( ic ), .icon_w = iw, .icon_color = stance_color,
-                         .text = stance_text, .text_color = stance_color } );
+        const auto ic = icons == "ascii" ? std::string() : glyph( stance_icon, icons );
+        out.push_back( { .icon = ic, .icon_w = utf8_width( ic ), .icon_color = stance_color,
+                         .text = stance_text, .text_color = stance_color, .label = _( "Stance" ) } );
     }
-    if( hud_boxes::roomy() && hud_boxes::mana_matters( you ) ) {
+    if( needs ) {
+        out.push_back( { .icon = "", .icon_w = 0, .icon_color = c_dark_gray,
+                         .text = "", .text_color = c_dark_gray, .separator = true } );
+        const auto values = needs_status::read( you );
+        const auto add = [&]( const icon symbol, const char *label, const needs_status::reading & value ) {
+            const auto ic = icons == "ascii" ? std::string() : glyph( symbol, icons );
+            out.push_back( { .icon = ic, .icon_w = utf8_width( ic ), .icon_color = value.color,
+                             .text = value.text, .text_color = value.color, .label = label } );
+        };
+        add( icon::pain, _( "Pain" ), values.pain );
+        add( icon::thirst, _( "Thirst" ), values.thirst );
+        add( icon::hunger, _( "Hunger" ), values.hunger );
+        add( icon::rest, _( "Rest" ), values.rest );
+        add( icon::heat, _( "Heat" ), values.heat );
+    }
+    if( hud_boxes::mana_matters( you ) ) {
         const auto mana = hud_boxes::mana_reading( you );
-        const auto ic = glyph( icon::mana, icons );
-        const auto iw = utf8_width( ic );
-        out.push_back( { .icon = std::move( ic ), .icon_w = iw, .icon_color = c_light_blue,
-                         .text = string_format( _( "Mana: %s" ), colorize( mana.text, mana.color ) ),
-                         .text_color = c_light_gray } );
+        const auto ic = icons == "ascii" ? std::string() : glyph( icon::mana, icons );
+        out.push_back( { .icon = ic, .icon_w = utf8_width( ic ), .icon_color = mana.color,
+                         .text = mana.text, .text_color = mana.color, .label = _( "Mana" ) } );
     }
     return out;
 }
 
-auto vehicle_lines( const avatar &you, const std::string &icons ) -> std::vector<line>
+struct vehicle_state {
+    vehicle *veh = nullptr;
+    std::optional<itype_id> engine_fuel;
+    bool battery = false;
+    bool wing = false;
+    int rows = 0;
+};
+
+auto current_vehicle( const avatar &you ) -> vehicle_state
 {
-    auto out = std::vector<line>();
-    auto *veh = g->remoteveh();
-    if( veh == nullptr && you.in_vehicle ) {
-        veh = veh_pointer_or_null( get_map().veh_at( you.bub_pos() ) );
+    auto state = vehicle_state{ .veh = g->remoteveh() };
+    if( state.veh == nullptr && you.in_vehicle ) {
+        state.veh = veh_pointer_or_null( get_map().veh_at( you.bub_pos() ) );
     }
-    if( veh == nullptr ) {
-        return out;
+    if( state.veh == nullptr ) {
+        return state;
     }
-    out.reserve( 7 );
+    auto *veh = state.veh;
     static const auto fuel_type_battery = itype_id( "battery" );
     static const auto fuel_type_muscle = itype_id( "muscle" );
+    for( auto e = size_t{ 0 }; e < veh->engines.size(); ++e ) {
+        if( veh->is_perpetual_type( e ) || veh->is_engine_type( e, fuel_type_muscle ) ) {
+            continue;
+        }
+        const auto &fuel = veh->cpart( veh->engines[e] ).fuel_current();
+        if( fuel.is_null() ) {
+            continue;
+        }
+        if( !state.engine_fuel || veh->is_engine_on( e ) ) {
+            state.engine_fuel = fuel;
+        }
+        if( veh->is_engine_on( e ) ) {
+            break;
+        }
+    }
+    if( state.engine_fuel == fuel_type_battery ) {
+        state.engine_fuel.reset();
+    }
+    state.battery = veh->fuel_capacity( fuel_type_battery ) > 0;
+    state.wing = veh->has_part( "WING" );
+    state.rows = 3 + veh->cruise_on + state.wing + state.engine_fuel.has_value() + state.battery;
+    return state;
+}
 
+auto vehicle_lines( const vehicle_state &state, const std::string &icons ) -> std::vector<line>
+{
+    auto out = std::vector<line>();
+    auto *veh = state.veh;
+    out.reserve( state.rows );
+    static const auto fuel_type_battery = itype_id( "battery" );
     {
         const auto ic = glyph( icon::compass, icons );
         const auto iw = utf8_width( ic );
@@ -336,7 +400,7 @@ auto vehicle_lines( const avatar &you, const std::string &icons ) -> std::vector
                                                     velocity_units( VU_VEHICLE ) ),
                              .text_color = c_light_gray } );
         }
-        if( veh->has_part( "WING" ) ) {
+        if( state.wing ) {
             const auto takeoff = veh->get_takeoff_speed();
             out.push_back( { .icon = indent, .icon_w = iw, .icon_color = c_light_gray,
                              .text = string_format( _( "Takeoff: %d %s" ),
@@ -350,36 +414,20 @@ auto vehicle_lines( const avatar &you, const std::string &icons ) -> std::vector
                          .text_color = veh->engine_on ? c_light_green : c_light_gray } );
     }
 
-    auto engine_fuel = std::optional<itype_id>();
-    for( auto e = size_t{ 0 }; e < veh->engines.size(); ++e ) {
-        if( veh->is_perpetual_type( e ) || veh->is_engine_type( e, fuel_type_muscle ) ) {
-            continue;
-        }
-        const auto &fuel = veh->cpart( veh->engines[e] ).fuel_current();
-        if( fuel.is_null() ) {
-            continue;
-        }
-        if( !engine_fuel || veh->is_engine_on( e ) ) {
-            engine_fuel = fuel;
-        }
-        if( veh->is_engine_on( e ) ) {
-            break;
-        }
-    }
     const auto percentage = [&]( const itype_id & fuel ) {
         const auto capacity = veh->fuel_capacity( fuel );
         return capacity > 0 ? static_cast<int>(
                    static_cast<int64_t>( veh->fuel_left( fuel ) ) * 100 / capacity ) : 0;
     };
-    if( engine_fuel && *engine_fuel != fuel_type_battery ) {
-        const auto percent = percentage( *engine_fuel );
+    if( state.engine_fuel ) {
+        const auto percent = percentage( *state.engine_fuel );
         const auto ic = glyph( icon::fuel, icons );
         const auto iw = utf8_width( ic );
         out.push_back( { .icon = std::move( ic ), .icon_w = iw, .icon_color = c_light_gray,
-                         .text = string_format( _( "%s: %d%%" ), item::nname( *engine_fuel ), percent ),
+                         .text = string_format( _( "%s: %d%%" ), item::nname( *state.engine_fuel ), percent ),
                          .text_color = percent > 20 ? c_light_gray : percent > 5 ? c_yellow : c_red } );
     }
-    if( veh->fuel_capacity( fuel_type_battery ) > 0 ) {
+    if( state.battery ) {
         const auto percent = percentage( fuel_type_battery );
         const auto color = percent > 20 ? c_light_cyan : percent > 5 ? c_yellow : c_red;
         const auto ic = glyph( icon::battery, icons );
@@ -395,11 +443,13 @@ struct box_spec {
     point at;
     int inner = 0;
     const std::vector<line> &lines;
+    int label_width = 0;
+    int icon_width = 0;
 };
 
 auto draw_box( const catacurses::window &w, const box_spec &box ) -> void
 {
-    const auto &[at, inner, lines] = box;
+    const auto &[at, inner, lines, label_width, icon_width] = box;
     const auto frame = frame_for( unicode_locale(), get_option<bool>( "UI_ROUNDED_BORDERS" ) );
     // Build the border and blank fill strings once per box, not once per row.
     std::string top_bar = frame.top_left;
@@ -416,13 +466,161 @@ auto draw_box( const catacurses::window &w, const box_spec &box ) -> void
         const auto row = at + point( 0, i + 1 );
         mvwprintz( w, row, c_dark_gray, frame.vertical );
         mvwprintz( w, row + point( 1, 0 ), c_black, blank );
-        mvwprintz( w, row + point( 2, 0 ), lines[i].icon_color, lines[i].icon );
-        const auto icon_w = lines[i].icon_w;
-        trim_and_print( w, row + point( 3 + icon_w, 0 ), inner - icon_w - 1, lines[i].text_color,
-                        lines[i].text );
+        const auto &entry = lines[i];
+        if( entry.separator ) {
+            auto bar = std::string();
+            for( auto col = 0; col < inner; ++col ) {
+                bar += frame.horizontal;
+            }
+            mvwprintz( w, row + point( 2, 0 ), c_dark_gray, bar );
+        } else if( label_width > 0 ) {
+            mvwprintz( w, row + point( 2, 0 ), entry.icon_color, entry.icon );
+            const auto label_at = row + point( 2 + icon_width, 0 );
+            mvwprintz( w, label_at, c_light_gray, entry.label );
+            mvwprintz( w, label_at + point( label_width, 0 ), c_dark_gray, " | " );
+            trim_and_print( w, label_at + point( label_width + 3, 0 ),
+                            inner - icon_width - label_width - 3, entry.text_color, entry.text );
+        } else {
+            mvwprintz( w, row + point( 2, 0 ), entry.icon_color, entry.icon );
+            const auto prefix = entry.icon_w > 0 ? entry.icon_w + 1 : 0;
+            trim_and_print( w, row + point( 2 + prefix, 0 ), inner - prefix,
+                            entry.text_color, entry.text );
+        }
         mvwprintz( w, row + point( inner + 3, 0 ), c_dark_gray, frame.vertical );
     }
     mvwprintz( w, at + point( 0, lines.size() + 1 ), c_dark_gray, bot_bar );
+}
+
+struct placement {
+    point at = point_zero;
+    int inner = 0;
+    int rows = 0;
+    int label_width = 0;
+    int icon_width = 0;
+
+    auto width() const -> int { return inner + 4; }
+    auto height() const -> int { return rows + 2; }
+};
+
+struct layout_input {
+    int width;
+    int height;
+    std::array<std::string, 3> corners;
+    int label_width;
+    int weather_inner;
+    bool ascii;
+    bool mana;
+    int vehicle_rows;
+};
+
+struct layout {
+    std::array<placement, 3> boxes;
+    bool needs = false;
+};
+
+auto overlaps( const placement &a, const placement &b ) -> bool
+{
+    return a.at.x < b.at.x + b.width() && b.at.x < a.at.x + a.width() &&
+           a.at.y < b.at.y + b.height() && b.at.y < a.at.y + a.height();
+}
+
+/// Share fit decisions with sidebar visibility.
+auto calculate_layout( const layout_input &input ) -> layout
+{
+    auto result = layout{};
+    auto used = std::array<int, 4> {};
+    constexpr auto corners = std::array{ "top_left", "top_right", "bottom_left", "bottom_right" };
+    const auto roomy = input.width >= 54;
+    const auto center = placement{
+        .at = point( input.width / 2 - 1, input.height / 2 - 1 ), .inner = -1, .rows = 1
+    };
+    for( auto index = size_t{ 0 }; index < result.boxes.size(); ++index ) {
+        const auto &corner = input.corners[index];
+        const auto found = std::ranges::find( corners, corner );
+        if( found == corners.end() || ( index == 2 && input.vehicle_rows == 0 ) ) {
+            continue;
+        }
+        const auto corner_index = static_cast<size_t>( found - corners.begin() );
+        auto candidate = placement{};
+        if( index == 0 ) {
+            candidate.inner = input.weather_inner;
+            candidate.rows = 4;
+        } else if( index == 1 ) {
+            candidate.label_width = input.label_width;
+            candidate.icon_width = input.ascii ? 0 : 3;
+            candidate.inner = candidate.icon_width + input.label_width + 3 + ( roomy ? 21 : 17 );
+            candidate.rows = 9 + input.mana;
+        } else {
+            candidate.inner = roomy ? 32 : 28;
+            candidate.rows = input.vehicle_rows;
+        }
+        const auto fits = [&]() {
+            candidate.at = point( corner.ends_with( "right" ) ? input.width - candidate.width() : 0,
+                                  corner.starts_with( "bottom" ) ?
+                                  input.height - used[corner_index] - candidate.height() : used[corner_index] );
+            return candidate.at.x >= 0 && candidate.at.y >= 0 &&
+                   candidate.at.x + candidate.width() <= input.width &&
+                   candidate.at.y + candidate.height() <= input.height &&
+                   !overlaps( candidate, center ) &&
+            std::ranges::none_of( result.boxes, [&]( const auto & other ) {
+                return other.rows > 0 && overlaps( candidate, other );
+            } );
+        };
+        auto accepted = fits();
+        if( !accepted && index == 1 ) {
+            candidate.rows = 3 + input.mana;
+            accepted = fits();
+        }
+        if( accepted ) {
+            result.boxes[index] = candidate;
+            used[corner_index] += candidate.height();
+            if( index == 1 ) {
+                result.needs = candidate.rows == 9 + input.mana;
+            }
+        }
+    }
+    return result;
+}
+
+struct current_plan {
+    layout geometry;
+    vehicle_state vehicle;
+};
+
+auto plan_for( const avatar &you ) -> current_plan
+{
+    const auto width = is_draw_tiles_mode() ? TERRAIN_WINDOW_TERM_WIDTH :
+                       g->w_terrain ? getmaxx( g->w_terrain ) : 0;
+    const auto height = is_draw_tiles_mode() ? TERRAIN_WINDOW_TERM_HEIGHT :
+                        g->w_terrain ? getmaxy( g->w_terrain ) : 0;
+    const auto corners = std::array{
+        get_option<std::string>( "HUD_WEATHER_BOX" ),
+        get_option<std::string>( "HUD_COMBAT_BOX" ),
+        get_option<std::string>( "HUD_VEHICLE_BOX" )
+    };
+    auto label_width = 0;
+    for( const auto *label : {
+             _( "Weapon" ), _( "Style" ), _( "Stance" ), _( "Pain" ),
+             _( "Thirst" ), _( "Hunger" ), _( "Rest" ), _( "Heat" ), _( "Mana" )
+         } ) {
+        label_width = std::max( label_width, utf8_width( label ) );
+    }
+    auto vehicle = corners[2] == "off" ? vehicle_state{} :
+                   current_vehicle( you );
+    const auto ascii = get_option<std::string>( "HUD_ICONS" ) == "ascii";
+    // Avoid allocating date text in sidebar predicates.
+    const auto weather_inner = corners[0] == "off" ? 0 :
+                               std::max( 38, utf8_width( season_day_text() ) + utf8_width( time_text( you ) ) +
+                                         utf8_width( moon_phase_name( get_moon_phase( calendar::turn ) ) ) +
+                                         2 + ( ascii ? 0 : 2 ) );
+    return {
+        .geometry = calculate_layout( {
+            .width = width, .height = height, .corners = corners,
+            .label_width = label_width, .weather_inner = weather_inner, .ascii = ascii,
+            .mana = corners[1] != "off" && hud_boxes::mana_matters( you ), .vehicle_rows = vehicle.rows
+        } ),
+        .vehicle = std::move( vehicle )
+    };
 }
 
 } // namespace
@@ -452,110 +650,68 @@ auto mana_reading( const Character &you ) -> mana_text
     return { .text = string_format( "%d/%d", now, max ), .color = color };
 }
 
-auto roomy() -> bool
-{
-    // Tiles count w_terrain in map tiles; the boxes are laid out in font cells.
-    const auto map_width = is_draw_tiles_mode() ? TERRAIN_WINDOW_TERM_WIDTH :
-                           g->w_terrain ? getmaxx( g->w_terrain ) : 0;
-    return map_width >= 54;
-}
-
 auto weather_box_shown() -> bool
 {
-    return get_option<std::string>( "HUD_WEATHER_BOX" ) != "off";
+    return plan_for( get_avatar() ).geometry.boxes[0].rows > 0;
 }
 
 auto weather_box_shows_environment() -> bool
 {
-    return weather_box_shown() && roomy();
+    return weather_box_shown();
 }
 
 auto combat_box_shown() -> bool
 {
-    return get_option<std::string>( "HUD_COMBAT_BOX" ) != "off";
+    return plan_for( get_avatar() ).geometry.boxes[1].rows > 0;
+}
+
+auto status_box_shows_needs() -> bool
+{
+    return plan_for( get_avatar() ).geometry.needs;
 }
 
 auto combat_box_shows_mana( const Character &you ) -> bool
 {
-    return combat_box_shown() && roomy() && mana_matters( you );
+    return combat_box_shown() && mana_matters( you );
 }
 
 auto vehicle_box_shown() -> bool
 {
-    const auto corner = get_option<std::string>( "HUD_VEHICLE_BOX" );
-    if( corner == "off" ) {
-        return false;
-    }
-    const auto &you = get_avatar();
-    return g->remoteveh() != nullptr || you.in_vehicle;
+    return plan_for( get_avatar() ).geometry.boxes[2].rows > 0;
 }
 
 auto draw( const avatar &you, const catacurses::window &w ) -> void
 {
-    struct box {
-        std::string corner;
-        std::vector<line> lines;
-    };
-    auto boxes = std::vector<box>();
-    boxes.reserve( 3 );
-    // Read once per frame; the boxes themselves draw the same icons.
+    const auto plan = plan_for( you );
     const auto icons = get_option<std::string>( "HUD_ICONS" );
-    if( const auto corner = get_option<std::string>( "HUD_WEATHER_BOX" ); corner != "off" ) {
-        boxes.push_back( { corner, weather_lines( you, icons ) } );
-    }
-    if( const auto corner = get_option<std::string>( "HUD_COMBAT_BOX" ); corner != "off" ) {
-        boxes.push_back( { corner, combat_lines( you, icons ) } );
-    }
-    if( const auto corner = get_option<std::string>( "HUD_VEHICLE_BOX" ); corner != "off" ) {
-        if( g->remoteveh() != nullptr || you.in_vehicle ) {
-            auto lines = vehicle_lines( you, icons );
-            if( !lines.empty() ) {
-                boxes.push_back( { .corner = corner, .lines = std::move( lines ) } );
-            }
-        }
-    }
-    const auto width = is_draw_tiles_mode() ? TERRAIN_WINDOW_TERM_WIDTH : getmaxx( w );
-    const auto height = is_draw_tiles_mode() ? TERRAIN_WINDOW_TERM_HEIGHT : getmaxy( w );
-    // Boxes in the same corner stack away from it. The option only ever holds one
-    // of these four names, so fixed storage replaces a std::map.
-    constexpr std::array<const char *, 4> corner_names = { "top_left", "top_right", "bottom_left", "bottom_right" };
-    auto corner_used = std::array<int, 4>{ 0, 0, 0, 0 };
     static auto windows = std::array<catacurses::window, 3>();
-    auto window_index = size_t{ 0 };
-    for( const auto &b : boxes ) {
-        auto inner = 0;
-        for( const auto &l : b.lines ) {
-            inner = std::max( inner, l.icon_w + 1 + utf8_width( l.text, true ) );
-        }
-        inner = std::min( inner, std::max( 8, width / 2 ) );
-        const auto box_w = inner + 4;
-        const auto box_h = static_cast<int>( b.lines.size() ) + 2;
-        const auto right = b.corner.ends_with( "right" );
-        const auto bottom = b.corner.starts_with( "bottom" );
-        const auto corner = std::ranges::find( corner_names, b.corner );
-        if( corner == corner_names.end() ) {
+    for( auto index = size_t{ 0 }; index < plan.geometry.boxes.size(); ++index ) {
+        const auto &box = plan.geometry.boxes[index];
+        if( box.rows == 0 ) {
             continue;
         }
-        auto &used = corner_used[static_cast<size_t>( corner - corner_names.begin() )];
-        if( used + box_h > height || box_w > width ) {
-            continue;
-        }
-        const auto x = right ? width - box_w : 0;
-        const auto y = bottom ? height - used - box_h : used;
+        const auto lines = index == 0 ? weather_lines( you, icons ) :
+                           index == 1 ? combat_lines( you, icons, plan.geometry.needs ) :
+                           vehicle_lines( plan.vehicle, icons );
         if( is_draw_tiles_mode() ) {
-            auto &box_win = windows[window_index++];
-            const auto origin = point( getbegx( w ) + x, getbegy( w ) + y );
-            if( !box_win || getmaxx( box_win ) != box_w || getmaxy( box_win ) != box_h ||
+            auto &box_win = windows[index];
+            const auto origin = point( getbegx( w ) + box.at.x, getbegy( w ) + box.at.y );
+            if( !box_win || getmaxx( box_win ) != box.width() || getmaxy( box_win ) != box.height() ||
                 getbegx( box_win ) != origin.x || getbegy( box_win ) != origin.y ) {
-                box_win = catacurses::newwin( box_h, box_w, origin );
+                box_win = catacurses::newwin( box.height(), box.width(), origin );
             }
             werase( box_win );
-            draw_box( box_win, { .at = point_zero, .inner = inner, .lines = b.lines } );
+            draw_box( box_win, {
+                .at = point_zero, .inner = box.inner, .lines = lines,
+                .label_width = box.label_width, .icon_width = box.icon_width
+            } );
             wnoutrefresh( box_win );
         } else {
-            draw_box( w, { .at = point( x, y ), .inner = inner, .lines = b.lines } );
+            draw_box( w, {
+                .at = box.at, .inner = box.inner, .lines = lines,
+                .label_width = box.label_width, .icon_width = box.icon_width
+            } );
         }
-        used += box_h;
     }
 }
 

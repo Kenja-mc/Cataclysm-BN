@@ -1131,7 +1131,7 @@ action_id handle_action_menu()
 
             register_lua_action_entries( category_id );
         } else if( category_id == "look" ) {
-            register_actions( { ACTION_LOOK, ACTION_PEEK, ACTION_LIST_ITEMS, ACTION_ZONES, ACTION_MAP, ACTION_SKY } );
+            register_actions( { ACTION_LOOK, ACTION_PEEK, ACTION_CENTER, ACTION_LIST_ITEMS, ACTION_ZONES, ACTION_MAP, ACTION_SKY } );
             register_lua_action_entries( category_id );
         } else if( category_id == "inventory" ) {
             register_actions( {ACTION_INVENTORY, ACTION_ADVANCEDINV, ACTION_SORT_ARMOR, ACTION_DIR_DROP } );
@@ -1140,7 +1140,7 @@ action_id handle_action_menu()
             // the inventory screen, so it's sorted to the
             // end of the list.
             register_actions( {
-                ACTION_DROP, ACTION_COMPARE, ACTION_ORGANIZE, ACTION_USE,
+                ACTION_DROP, ACTION_COMPARE, ACTION_ORGANIZE, ACTION_USE, ACTION_USE_WIELDED,
                 ACTION_WEAR, ACTION_TAKE_OFF, ACTION_EAT, ACTION_OPEN_CONSUME,
                 ACTION_READ, ACTION_WIELD, ACTION_UNLOAD, ACTION_UNLOAD_ALL
             } );
@@ -1176,12 +1176,14 @@ action_id handle_action_menu()
         } else if( category_id == "combat" ) {
             register_actions( {
                 ACTION_CYCLE_MOVE, ACTION_RESET_MOVE, ACTION_TOGGLE_RUN, ACTION_TOGGLE_CROUCH,
-                ACTION_TOGGLE_PRONE, ACTION_OPEN_MOVEMENT, ACTION_FIRE, ACTION_RELOAD_ITEM, ACTION_RELOAD_WEAPON,
+                ACTION_TOGGLE_PRONE, ACTION_OPEN_MOVEMENT, ACTION_AUTOATTACK, ACTION_FIRE, ACTION_RELOAD_ITEM, ACTION_RELOAD_WEAPON,
+                ACTION_TOGGLE_MANUAL_COMBAT_MODE,
                 ACTION_RELOAD_WIELDED, ACTION_CAST_SPELL, ACTION_CAST_LAST_SPELL,
                 ACTION_SELECT_FIRE_MODE,
                 ACTION_SELECT_DEFAULT_AMMO, ACTION_THROW, ACTION_FIRE_BURST, ACTION_PICK_STYLE,
                 ACTION_TOGGLE_AUTO_TRAVEL_MODE, ACTION_TOGGLE_SAFEMODE, ACTION_TOGGLE_AUTOSAFE,
                 ACTION_IGNORE_ENEMY, ACTION_TOGGLE_AUTO_FEATURES, ACTION_TOGGLE_AUTO_PULP_BUTCHER,
+                ACTION_WHITELIST_ENEMY,
                 ACTION_TOGGLE_AUTO_MINING, ACTION_TOGGLE_AUTO_FORAGING
             } );
             register_lua_action_entries( category_id );

@@ -105,6 +105,7 @@
 #include "worldfactory.h"
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <charconv>
 #include <chrono>
@@ -112,9 +113,40 @@
 #include <cstdlib>
 #include <initializer_list>
 #include <optional>
+#include <ranges>
 #include <set>
 #include <sstream>
+#include <string_view>
 #include <utility>
+
+namespace
+{
+
+constexpr auto peek_actions = std::array<std::string_view, 8> {
+    "PEEK_N", "PEEK_NE", "PEEK_E", "PEEK_SE",
+    "PEEK_S", "PEEK_SW", "PEEK_W", "PEEK_NW"
+};
+
+auto peek_direction( const std::string_view action ) -> std::optional<point_rel_ms>
+{
+    const auto found = std::ranges::find( peek_actions, action );
+    if( found == peek_actions.end() ) {
+        return std::nullopt;
+    }
+    const auto move = static_cast<action_id>( ACTION_MOVE_FORTH + ( found - peek_actions.begin() ) );
+    return get_delta_from_movement_action( move, iso_rotate::yes );
+}
+
+auto selected_tile_reachable( const tripoint_bub_ms &p ) -> bool
+{
+    const auto &you = g->u;
+    const auto &here = get_map();
+    return here.inbounds( p ) && p.z() == you.bub_pos().z() &&
+           square_dist( p.xy(), you.bub_pos().xy() ) <= 1 &&
+           !here.obstructed_by_vehicle_rotation( you.bub_pos(), p );
+}
+
+} // namespace
 
 static const activity_id ACT_FERTILIZE_PLOT( "ACT_FERTILIZE_PLOT" );
 static const activity_id ACT_MOVE_LOOT( "ACT_MOVE_LOOT" );
@@ -376,6 +408,13 @@ input_context game::get_player_input( std::string &action )
             ctxt.register_action( "QUIT", to_translation( "Accept your fate" ) );
         } else {
             ctxt = get_default_mode_input_context();
+            if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+                ctxt.register_action( "NEXT_TARGET" );
+                ctxt.register_action( "PREV_TARGET" );
+                for( const auto &id : peek_actions ) {
+                    ctxt.register_action( std::string( id ) );
+                }
+            }
         }
     }
 
@@ -683,17 +722,21 @@ inline static void pldrive( point_rel_veh d )
     return pldrive( tripoint_rel_veh( d, 0 ) );
 }
 
-static void open()
+namespace
 {
-    player &u = g->u;
-    const std::optional<tripoint_bub_ms> openp_ = choose_adjacent_highlight( _( "Open where?" ),
-            pgettext( "no door, gate, curtain, etc.", "There is nothing that can be opened nearby." ),
-            ACTION_OPEN, false );
 
-    if( !openp_ ) {
+auto open( const tripoint_bub_ms *target = nullptr ) -> void
+{
+    auto &u = g->u;
+    const auto openp_ = target ? std::nullopt :
+                        choose_adjacent_highlight( _( "Open where?" ),
+                                pgettext( "no door, gate, curtain, etc.", "There is nothing that can be opened nearby." ),
+                                ACTION_OPEN, false );
+
+    if( !target && !openp_ ) {
         return;
     }
-    const auto openp = *openp_;
+    const auto &openp = target ? *target : *openp_;
     map &here = get_map();
 
     if( const optional_vpart_position vp = here.veh_at( openp ) ) {
@@ -729,6 +772,8 @@ static void open()
         add_msg( m_info, _( "No door there." ) );
     }
 }
+
+} // namespace
 
 static void close()
 {
@@ -839,7 +884,10 @@ static void haul()
     }
 }
 
-static void smash()
+namespace
+{
+
+auto smash( const tripoint_bub_ms *target = nullptr ) -> void
 {
     player &u = g->u;
     map &here = get_map();
@@ -872,11 +920,11 @@ static void smash()
     } else {
         smashskill = u.str_cur + weapon.damage_melee( DT_BASH );
     }
-    const std::optional<tripoint_bub_ms> smashp_ = choose_adjacent( _( "Smash where?" ), true );
-    if( !smashp_ ) {
+    const auto smashp_ = target ? std::nullopt : choose_adjacent( _( "Smash where?" ), true );
+    if( !target && !smashp_ ) {
         return;
     }
-    auto smashp = *smashp_;
+    auto smashp = target ? *target : *smashp_;
 
     bool smash_floor = false;
     if( smashp.z() != u.bub_pos().z() ) {
@@ -1043,6 +1091,36 @@ static void smash()
         }
     } else {
         add_msg( _( "There's nothing there to smash!" ) );
+    }
+}
+
+} // namespace
+
+auto tile_selection::open_at( const tripoint_bub_ms &p ) -> void
+{
+    auto &you = g->u;
+    if( !selected_tile_reachable( p ) || p == you.bub_pos() ) {
+        return;
+    }
+    if( you.has_active_mutation( trait_SHELL2 ) ) {
+        add_msg( m_info, _( "You can't open things while you're in your shell." ) );
+    } else if( you.is_mounted() && !you.mounted_creature->has_flag( MF_MOUNTABLE_DOORS ) ) {
+        add_msg( m_info, _( "You can't open things while you're riding." ) );
+    } else {
+        open( &p );
+    }
+}
+
+auto tile_selection::smash_at( const tripoint_bub_ms &p ) -> void
+{
+    auto &you = g->u;
+    if( !selected_tile_reachable( p ) ) {
+        return;
+    }
+    if( you.has_active_mutation( trait_SHELL2 ) ) {
+        add_msg( m_info, _( "You can't smash things while you're in your shell." ) );
+    } else {
+        smash( &p );
     }
 }
 
@@ -1735,11 +1813,22 @@ static void fire()
     }
 
     if( !did_something && weapon.is_gun() ) {
-        add_msg( m_info, _( "Your %1$s is in a melee mode.  Press %2$s to switch firing mode." ),
-                 weapon.tname(), press_x( ACTION_SELECT_FIRE_MODE, "", "", "" ) );
+        if( const auto mode = press_x( ACTION_SELECT_FIRE_MODE, "", "", "" ); !mode.empty() ) {
+            add_msg( m_info, _( "Your %1$s is in a melee mode.  Press %2$s to switch firing mode." ),
+                     weapon.tname(), mode );
+        } else {
+            add_msg( m_info,
+                     _( "Your %1$s is in a melee mode.  Open the Combat menu (%2$s) to switch firing mode." ),
+                     weapon.tname(), press_x( ACTION_ACTIONMENU, "", "", "" ) );
+        }
     } else if( !did_something ) {
-        add_msg( m_info, _( "You have no ranged weapon wielded.  Press %s to wield one." ),
-                 press_x( ACTION_WIELD, "", "", "" ) );
+        if( const auto wield = press_x( ACTION_WIELD, "", "", "" ); !wield.empty() ) {
+            add_msg( m_info, _( "You have no ranged weapon wielded.  Press %s to wield one." ), wield );
+        } else {
+            add_msg( m_info,
+                     _( "You have no ranged weapon wielded.  Open inventory (%s), select a weapon and choose Wield." ),
+                     press_x( ACTION_INVENTORY, "", "", "" ) );
+        }
     }
 }
 
@@ -1983,9 +2072,9 @@ bool game::handle_action()
     const auto veh_ctrl = !u.is_dead_state() && ( local_vehicle_in_control ||
                           remote_vehicle != nullptr );
 
-    // If performing an action with right mouse button, co-ordinates
-    // of location clicked.
     std::optional<tripoint_bub_ms> mouse_target;
+    auto reticle_attack_mode = aim_reticle::attack_mode::fire_command;
+    const auto directed_peek = action.starts_with( "PEEK_" ) ? peek_direction( action ) : std::nullopt;
 
     if( uquit == QUIT_WATCH && action == "QUIT" ) {
         uquit = QUIT_DIED;
@@ -1994,7 +2083,17 @@ bool game::handle_action()
 
     if( act == ACTION_NULL ) {
         ZoneScopedN( "handle_action_resolve_action" );
-        act = look_up_action( action );
+        if( !u.is_dead_state() && ( action == "NEXT_TARGET" || action == "PREV_TARGET" ) ) {
+            u.clear_destination();
+            destination_preview.clear();
+            if( aim_reticle::cycle( u, m, action == "PREV_TARGET" ) ) {
+                liveview.show( *aim_reticle::pos() );
+            } else {
+                liveview.hide();
+            }
+            return false;
+        }
+        act = directed_peek ? ACTION_PEEK : look_up_action( action );
 
         if( act == ACTION_KEYBINDINGS ) {
             // already handled by input context
@@ -2067,8 +2166,25 @@ bool game::handle_action()
                 return false;
             }
             mouse_target = mouse_pos;
-
-            if( tile_selection::enabled() ) {
+            if( !m.inbounds( *mouse_target ) || mouse_target->z() != u.bub_pos().z() ) {
+                return false;
+            }
+            const auto mouse_move = get_option<bool>( "MOUSE_MOVE" );
+            if( !mouse_move ) {
+                u.clear_destination();
+                destination_preview.clear();
+                if( !aim_reticle::select( u, m, *mouse_target ) ) {
+                    return false;
+                }
+                liveview.show( *mouse_target );
+                if( act == ACTION_SEC_SELECT ) {
+                    return false;
+                }
+                // Use reticle dispatch so clicks pay normal attack costs.
+                mouse_target.reset();
+                reticle_attack_mode = aim_reticle::attack_mode::direct;
+                act = ACTION_FIRE;
+            } else if( tile_selection::enabled() ) {
                 const auto choices = tile_selection::choices_at( u, *mouse_target );
                 auto picked = std::optional<tile_selection::choice>();
                 if( act == ACTION_SELECT && !choices.empty() ) {
@@ -2140,6 +2256,15 @@ bool game::handle_action()
         return false;
     }
 
+    auto inventory_moves = std::optional<int>();
+    if( act == ACTION_INVENTORY && !u.is_dead_state() &&
+        get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        inventory_moves = u.moves;
+        if( const auto requested = game_menus::inv::common( u ) ) {
+            act = *requested;
+        }
+    }
+
     // This has no action unless we're in a special game mode.
     {
         ZoneScopedN( "handle_action_gamemode_pre_action" );
@@ -2153,7 +2278,17 @@ bool game::handle_action()
         soffset = get_option<int>( "MOVE_VIEW_OFFSET" );
     }
 
-    const auto before_action_moves = u.moves;
+    const auto before_action_moves = inventory_moves.value_or( u.moves );
+    if( !u.is_dead_state() && act >= ACTION_SHIFT_N && act <= ACTION_SHIFT_NW &&
+        get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        const auto move = static_cast<action_id>( ACTION_MOVE_FORTH + act - ACTION_SHIFT_N );
+        const auto target = aim_reticle::pos().value_or( u.bub_pos() ) +
+                            get_delta_from_movement_action( move, iso_rotate::yes );
+        if( aim_reticle::select( u, m, target ) ) {
+            liveview.show( target );
+        }
+        return false;
+    }
 
     // Sword of the Stars: The Pit style aiming. The arrow keys move a reticle for free instead
     // of walking, and any action that spends a turn takes the reticle away again.
@@ -2480,7 +2615,11 @@ bool game::handle_action()
                         add_msg( m_info, _( "You can't close things while you're riding." ) );
                         break;
                     } else {
-                        close();
+                        if( mouse_target ) {
+                            doors::close_door( m, u, *mouse_target );
+                        } else {
+                            close();
+                        }
                     }
                 } else if( mouse_target ) {
                     doors::close_door( m, u, *mouse_target );
@@ -2605,6 +2744,12 @@ bool game::handle_action()
                     add_msg( m_info, _( "You can't peek around corners while you're in your shell." ) );
                 } else if( u.is_mounted() ) {
                     add_msg( m_info, _( "You can't peek around corners while you're riding." ) );
+                } else if( directed_peek ) {
+                    const auto target = u.bub_pos() + *directed_peek;
+                    if( m.inbounds( target ) && !m.impassable( target ) &&
+                        !m.obstructed_by_vehicle_rotation( u.bub_pos(), target ) ) {
+                        peek( tripoint_rel_ms( *directed_peek, 0 ) );
+                    }
                 } else {
                     peek();
                 }
@@ -2651,7 +2796,9 @@ bool game::handle_action()
                 break;
 
             case ACTION_INVENTORY:
-                game_menus::inv::common( u );
+                if( !inventory_moves ) {
+                    game_menus::inv::common( u );
+                }
                 break;
 
             case ACTION_COMPARE:
@@ -2734,9 +2881,17 @@ bool game::handle_action()
                 break;
             }
 
-            case ACTION_FIRE:
-                fire();
+            case ACTION_FIRE: {
+                const auto aim = !mouse_target && get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ?
+                                 aim_reticle::attack( u, m, reticle_attack_mode ) : std::nullopt;
+                if( !aim || *aim == ACTION_FIRE ) {
+                    fire();
+                }
+                if( aim && !aim_reticle::active() ) {
+                    liveview.hide();
+                }
                 break;
+            }
 
             case ACTION_CAST_SPELL:
                 cast_spell();
@@ -3273,18 +3428,9 @@ bool game::handle_action()
                 item_action_menu();
                 break;
 
-            case ACTION_AUTOATTACK: {
-                const auto aim = aim_reticle::attack( u, m );
-                if( !aim ) {
-                    avatar_action::autoattack( u, m );
-                } else if( *aim == ACTION_FIRE ) {
-                    fire();
-                }
-                if( aim && !aim_reticle::active() ) {
-                    liveview.hide();
-                }
+            case ACTION_AUTOATTACK:
+                avatar_action::autoattack( u, m );
                 break;
-            }
 
             case ACTION_TOGGLE_MANUAL_COMBAT_MODE:
                 avatar_action::toggle_manual_combat_mode();

@@ -678,18 +678,18 @@ def case_minimap(session):
 
 
 def case_mouse(session):
-    """Same visible adjacent tile, 2x scaling, on both sides of a nonzero terrain origin."""
-    # The harness owns this isolated config. Bind a real game save action so assertions read the
-    # serialized avatar, not a screenshot guess or a mocked input/coordinate implementation.
+    """Check 2x selection with either sidebar origin."""
+    # Free selection doesn't enable quicksave; use save-and-quit.
     bindings = session.curses_userdir / "config" / "keybindings.json"
     rows = json.loads(bindings.read_text()) if bindings.exists() else []
     rows = [row for row in rows if not (row.get("category") == "DEFAULTMODE"
-                                      and row.get("id") == "quicksave")]
-    rows.append({"type": "keybinding", "id": "quicksave", "category": "DEFAULTMODE",
+                                      and row.get("id") in ("save", "quicksave"))]
+    rows.append({"type": "keybinding", "id": "save", "category": "DEFAULTMODE",
                  "bindings": [{"input_method": "keyboard", "key": "F6"}]})
     bindings.write_text(json.dumps(rows))
     options = {
-        "CONTROL_SCHEME": "modern", "MOUSE_TILE_SELECTION": "true", "CURSOR_PANNING": "false",
+        "CONTROL_SCHEME": "modern", "MOUSE_MOVE": "false",
+        "MOUSE_TILE_SELECTION": "true", "CURSOR_PANNING": "false",
         "SCALING_FACTOR": "2", "FULLSCREEN": "borderless", "TILES": "UNDEAD_PEOPLE_BASE",
         "FONT_WIDTH": "8", "FONT_HEIGHT": "16", "FONT_SIZE": "16",
         "TERMINAL_X": "160", "TERMINAL_Y": "60",
@@ -737,16 +737,17 @@ def case_mouse(session):
                     return json.loads(save.read_text().split("\n", 1)[1])["player"]["abs_pos"]
                 start = position()
                 previous_stamp = save.stat().st_mtime_ns
-                x11.click(1, delay=1)
+                x11.click(3, delay=1)
                 capture(session.display, win, session.artifacts / f"{label}-clicked.png")
                 x11.key("F6", delay=1)
+                x11.key("Left", delay=0.2)
+                x11.key("Return", delay=1)
                 deadline = time.time() + 30
                 while save.stat().st_mtime_ns == previous_stamp and time.time() < deadline:
                     time.sleep(0.2)
-                require(save.stat().st_mtime_ns != previous_stamp, f"{label}: quicksave did not run")
+                require(save.stat().st_mtime_ns != previous_stamp, f"{label}: save-and-quit did not persist")
                 final = position()
-                want = [start[0] + 1, start[1], start[2]]
-                require(final == want, f"{label}: east adjacent click moved {start} -> {final}, want {want}")
+                require(final == start, f"{label}: RMB selection moved the avatar {start} -> {final}")
                 observations[side] = {"start": start, "final": final, "pointer": [avatar_x + tile_size, avatar_y],
                                       "terrain_origin": origin, "hover": str(hover_png)}
             finally:

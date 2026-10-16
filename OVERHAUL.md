@@ -12,24 +12,50 @@ Screenshots: [docs/fork/visual-changes.md](docs/fork/visual-changes.md). Changes
 
 ## Controls
 
-Movement is **WASD**, with **Q E Z C** for diagonals. The layout merges Bright Nights with Sword of the Stars: The Pit: `F` attacks the nearest enemy, Space interacts with anything (doors, containers, people; `y` also talks), `C` is the character sheet, and `X` waits or rests. The numpad still walks; the arrow keys aim (below).
-The same keys move the cursor in look mode, targeting and the overmap, and answer every "which
-direction?" prompt.
+Modern uses a few control families instead of a separate primary key for every menu. **WASD**
+walks, with **Q E Z C** for diagonals; the numpad also walks. Walk into an enemy to attack it.
+The same direction keys move cursors in look mode, targeting and the overmap, and answer
+direction prompts. Top-row numbers do not move you on the map.
+
+- **Enter — general actions.** All existing action categories remain available here, including
+  construction, storage, talking and equipment. Choose **Info → View Player Info** for the
+  character sheet, or other Info entries for body status, missions, morale and messages.
+- **`i` — inventory and equipment.** Select an item to open its context menu for **Wield**,
+  **Wear**, **Eat**, **Use**, **Read** and other item actions. Wield is an equipment decision
+  about the selected item, not another primary map key. The menu shows its local shortcuts.
+  Press **F5 Craft** inside inventory to craft, even when the inventory is empty.
+- **Space — tile actions.** Right click or Shift+direction selects a tile; Space offers its
+  applicable **Open**, **Close**, **Examine**, **Pickup**, **Jump** and **Smash** actions.
+  Jumping and destructive actions are explicit choices, never an automatic substitute for
+  examining or opening something.
+- **Shift+direction — look.** Shift+WASD/QEZC moves a free reticle one tile in that direction,
+  starting at your position and accumulating with each press. Looking spends no time.
+- **Ctrl+direction — peek.** Ctrl+WASD/QEZC physically peeks from the neighboring tile through
+  the normal peek action. It costs the usual **200 moves**, unlike free looking; canceling
+  returns you to your starting position.
+- **Shift+X — movement mode.** Cycle walk, run, crouch and prone. F2/F3/F4 are unbound on the map.
+- **Tab / Shift+Tab — targets.** Cycle forward/backward through visible hostiles, ordered by
+  distance then position, wrapping at either end. Selection takes no time; **`f`** attacks the
+  selected target, using the normal aiming screen with a gun.
+
+**Ctrl+X** opens wait/rest; **`x`** or numpad 5 waits one turn. In a Modern terminal build,
+**Ctrl+C** and **Ctrl+Z** are game chords (diagonal peeks), not terminal quit/suspend signals.
+**Classic** retains upstream controls and normal terminal signal behavior.
 
 **Arrow keys aim**, as in The Pit (Options → Interface → Arrow keys aim; on in Modern, off in
 Classic). An arrow key puts a targeting reticle on the nearest hostile you can see, or on your own
 tile, and further arrow keys move it over tiles you can see. This takes no time. The reticle tile is
-highlighted and the Mouse View box says what is there. `F` then attacks what the reticle covers: a
-melee swing when it is next to you, otherwise the normal aim screen opens on that creature. On an
-empty tile, or one your weapon cannot reach, `F` says so and spends nothing. Esc, walking or any
+highlighted and the Mouse View box says what is there. `f` then attacks what the reticle covers: a
+melee swing with a melee weapon when it is next to you, otherwise the normal aim screen opens on that creature. On an
+empty tile, or one your weapon cannot reach, `f` says so and spends nothing. Esc, walking or any
 action that takes time removes the reticle; Esc does not open the main menu while a reticle is up.
 Turn the option off to walk with the arrow keys again.
 
 In **Modern**, lowercase WASD also navigates menus. Menu actions that used those letters move to
-Shift+WASD, including sorting, adding rules and dropping. Wield and wear use `h` and `W` on the map,
-in inventory, item actions and pickup. Generated shortcuts and inventory, mutation and bionic
-letters leave navigation keys free. Text fields still accept normal typing; **Classic** retains
-the upstream controls.
+Shift+WASD, including sorting, adding rules and dropping. Context-local shortcuts remain local:
+for example, inventory and pickup offer Wield and Wear without binding them as primary map
+commands. Generated shortcuts and inventory, mutation and bionic letters leave navigation keys
+free. Text fields still accept normal typing; **Classic** retains the upstream controls.
 
 Where a Shift shortcut was already occupied, the other menu action moves:
 
@@ -44,7 +70,10 @@ Where a Shift shortcut was already occupied, the other menu action moves:
 ![Modern control scheme](docs/fork/images/controls-modern.svg)
 
 Regenerate the diagram from the binding files with `python3 build-scripts/gen_controls_svg.py`.
-Shift actions and the stance keys are included; conflicting bindings are highlighted in red.
+The diagram uses standard ANSI key widths and row stagger, including unbound keys and modifiers.
+Arrow/navigation and numpad clusters appear separately below the main keyboard for readable labels.
+Modifier families appear in a small legend rather than on every direction key; the generator
+reports conflicting bindings.
 
 `n` **auto-explores**: each press walks you to the nearest spot you can reach that borders ground
 you have not seen yet, on your current floor. It goes around walls, closed doors, known traps and
@@ -69,64 +98,65 @@ Threat checks are lazy and cached for a turn. A group gets at most 12 route sear
 hostiles still stop travel rather than being treated as harmless. A large sealed horde can
 therefore cause an extra safe-mode stop. Changes to passability discard the cached answers.
 
-The welcome card also mentions click-to-walk, and a first tip suggests a starter goal: find water,
+The welcome card also explains mouse selection, and a first tip suggests a starter goal: find water,
 food and a weapon, because houses usually have all three.
 
-| Key       | Action                          | Key     | Action                            |
-| --------- | ------------------------------- | ------- | --------------------------------- |
-| `w a s d` | move                            | `x`     | wait a turn (also `.`)            |
-| `q e z c` | move diagonally                 | Space   | interact / examine                |
-| `g`       | pick up from everything nearby  | `,`     | pick up from one tile             |
-| `i`       | inventory                       | `u`     | use an item                       |
-| `h`       | hold (wield)                    | `W`/`T` | wear / take off                   |
-| `f`       | fire                            | `r`     | reload                            |
-| `t`       | throw                           | `b`     | bash (smash)                      |
-| `o` / `O` | open / close                    | `j`     | jump                              |
-| `D`       | drop (`Ctrl+D` drops to a side) | `E`     | eat or drink                      |
-| `k`       | craft (`&` also works)          | `K`     | construct (`*` also works)        |
-| `Q`       | **quick stack** to storage      | `Z`     | **sort the pile** you stand on    |
-| `l`       | look around                     | `m`     | map                               |
-| `F`       | attack the nearest enemy        | Tab     | attack in a direction             |
-| `C`       | character sheet                 | `X`     | wait or rest a while              |
-| `H`       | body status (every limb)        | `J`     | Hitchhiker's Guide                |
-| Enter     | action menu with every action   | `N`     | switch fire mode                  |
-| `n`       | **auto-explore**                | `y`     | talk to someone                   |
-| `F1`      | help                            | `?`     | full keybinding list (any screen) |
+| Key / family         | Action                                                     |
+| -------------------- | ---------------------------------------------------------- |
+| `w a s d`, `q e z c` | move; bump an enemy to melee attack                        |
+| Numpad               | move; numpad 5 waits one turn                              |
+| Shift+direction      | move the free look/selection reticle                       |
+| Ctrl+direction       | physical peek (normal 200-move cost)                       |
+| Tab / Shift+Tab      | next / previous visible hostile                            |
+| `f`, `r`, `t`        | attack selected target / reload / throw                    |
+| Space                | selected-tile actions, including explicit Jump and Smash   |
+| `g`                  | pick up from everything nearby                             |
+| `i`                  | inventory; select an item for equipment/use actions        |
+| `i`, then F5         | craft (also works with empty inventory)                    |
+| Enter                | all action groups; Info contains character/status screens  |
+| Shift+X              | cycle walk / run / crouch / prone                          |
+| `x` / Ctrl+X         | wait one turn / wait or rest a while                       |
+| `m`, `n`             | map / auto-explore                                         |
+| `<` / `>`            | stairs up / down                                           |
+| `!` / `'`            | safe mode / ignore enemy                                   |
+| F1 / `?`             | help / full keybinding list                                |
+| Esc                  | cancel selection, or main menu when no selection is active |
+| F12 / backtick       | developer debug menu / Lua console                         |
 
-Walking into an enemy no longer attacks it. It tells you to press `F`, so a stray step never
-starts a fight (Options → Interface → Attack by walking into enemies turns bump attacks back on).
-Walking into a closed door still opens it.
+Walking into an enemy attacks it in both control schemes. Options → Interface → Attack by walking
+into enemies can disable this; in Modern, select a target and press `f` for a deliberate attack.
+The old separate map shortcuts for Wield, Craft, Open, Smash, Jump and character information are
+unbound, not removed actions: use inventory, Space or Enter. Walking into a closed door still opens it.
 
-The wait menu (`X`; `|` in Classic) lists 5, 30 minutes, 1, 2, 3 and 6 hours, a custom duration,
+The wait menu (**Ctrl+X** in Modern; `|` in Classic) lists 5, 30 minutes, 1, 2, 3 and 6 hours, a custom duration,
 times of day and the next weather change. In Modern it also offers **Sleep** on `$`, using the
 same sleep confirmation and alarm prompts as the sleep action. Classic keeps its old entries.
 
 **Mouse tile selection**, inspired by Sword of the Stars: The Pit, works in the terminal too.
 
-- **Hover:** hovering a map tile highlights it, draws the route there, and opens the Mouse View box
-  with what is on the tile and what a click will do ("click: attack the zombie", "click: walk here
-  (12 steps)").
-- **Left click** does that: attack an adjacent enemy, open a door, pick up items, examine
-  furniture, or step to an adjacent tile.
-- **Walking further** takes a second click on the same tile: the first click keeps the route on
-  screen and the hint says "click again to walk here (12 steps)". Moving the mouse to another tile
-  or pressing a key cancels it. While a hostile that can reach you is in view, a click on a far tile
-  takes one step along the route instead ("click: step toward (hostile in view)"), so a stray click
-  never walks you into a fight. A known trap or dangerous field as the destination always asks
-  for the second click ("click again: walk into danger"). Options → Interface → Safe click-to-walk
-  turns this off for one-click travel.
-- **Right click** lists every option for the tile (fire at, close, examine, pick up, walk…).
-  Turn it off under Options → Interface → Mouse tile selection to get the old two-click travel back.
+- **Hover:** highlights the tile and opens the Mouse View box with its terrain, items and creatures.
+- **Right click:** selects/inspects a visible tile or target without moving, attacking or taking a turn.
+  Press `f` to attack the selected hostile, as with the arrow-key reticle.
+- **Left click:** attacks the clicked hostile: an adjacent melee swing, or the normal ranged aiming
+  flow with a gun. Clicking empty or out-of-reach ground never walks there. Use **Space** for doors,
+  furniture and other nearby interactions.
+- **Firing screen:** right click targets, the wheel cycles targets, and left click fires in Modern.
+  Classic retains its upstream left-select/right-fire mapping.
+- **Keyboard movement only in Modern.** **Options → Interface → Mouse movement** is off;
+  single clicks, double clicks and distant clicks do not move the avatar, including through the
+  legacy handler when Mouse tile selection is off. Classic keeps upstream mouse movement.
+- **Safe click-to-walk**, when using a movement-enabled scheme: with Mouse tile selection and
+  Safe click-to-walk on, long travel needs a second click, visible threats limit a distant click
+  to one step, and a known trap/dangerous field asks for confirmation.
 
 In Modern list menus, hover highlights a row, left click selects it, and right click cancels.
-This includes the tile-action menu opened by a right click on the map. Inventory menus work the
-same way: hover highlights an item, left click picks it (or toggles it in menus where you choose
+Inventory menus follow the usual list controls: hover highlights an item, left click picks it (or toggles it in menus where you choose
 several, such as drop), the mouse wheel scrolls, and right click on an item in the inventory (`i`)
 opens its actions, as in Sword of the Stars: The Pit. Right click outside the list cancels.
 
 **Pick up with the key you already pressed.** In Modern, `g` opens the pick-up menu and `g` again
 picks up: the marked items, or the highlighted item when nothing is marked. Enter still works.
-Inside the menu the main-game keys act on the highlighted item: `h` wields it and `W` wears it.
+Inside pickup, local shortcuts act on the highlighted item: `h` wields it and `W` wears it.
 With the mouse, hover highlights a row, left click marks or unmarks it, and the wheel moves through
 the list. Right click lists Pick up, Wield and Wear; each acts on that item alone. The footer shows
 the bound keys. Classic keeps the upstream menu, including Enter doing nothing with no marked items.
@@ -145,8 +175,8 @@ already hunting you, targets behind an ally come last, and the aim panel says "A
 fire: …" when someone friendly stands in the way.
 
 On the overmap: `=`/`-` zoom, `R` toggles weather, `x` sets a waypoint. In the tiles version's
-main view the mouse wheel zooms and `Ctrl+N` toggles the pixel minimap, because their upstream keys
-`z`, `Z` and `N` are movement, sort pile and fire mode here.
+main view the mouse wheel zooms. Pixel minimap controls remain available through Enter rather
+than a separate primary map key.
 
 In the vehicle screen, WASD and Q E Z C move the cursor like everywhere else. The actions those
 letters used to start moved to Shift: `W` crew, `A` label, `S` siphon, `D` unload, `E` rename,
@@ -161,35 +191,39 @@ toward the available height.
 While driving, the movement hints become `ws throttle` and `ad steer`. Releasing the controls
 restores the walking hints.
 
-**Follower commands**: `y` opens chat, then `P` opens the command palette. Choose a follower
+**Follower commands**: open Chat from Enter (or interact with a nearby follower), then `P` opens the command palette. Choose a follower
 when more than one is nearby. Change engagement, aiming, gun use, movement and item rules
 without entering dialogue; bionic reserve and recharge appear only for followers with bionics.
 Rules belong to the selected follower, and the palette can copy another follower's rules.
 Options → Interface → NPC interface turns it off and keeps the original chat commands.
 
 **Classic controls** are one option away: Options → Interface → Control scheme → Classic restores
-the original vi-keys and numpad layout, turns bump attacks back on and makes Y/N prompts want
-capitals. Your own key changes are kept in both schemes, because the game now saves only the keys
-you changed. The modern layout lives in `data/raw/control_schemes/modern.json` on top of the
-untouched upstream keybindings, so other schemes can be added the same way. Quick stack, sort pile,
-attack, auto-explore and body status have no key in classic; bind them or use the Enter action
-menu. The modern scheme unbinds peek (its key `X` waits) and the map-shift keys.
+the original vi-keys and numpad layout and makes Y/N prompts want capitals. Bump attacks default
+to on in both schemes. Upgrades keep saved option choices: if an older profile has
+**Attack by walking into enemies** off, enable it under Options → Interface. Your own key changes
+are kept in both schemes, because the game now saves only the keys you changed. The modern layout
+lives in `data/raw/control_schemes/modern.json` on top of the untouched upstream keybindings, so
+other schemes can be added the same way. Quick stack, sort pile,
+directional attack, auto-explore and body status have no key in classic; bind them or use the Enter action
+menu. Modern groups actions under Enter, inventory and Space; Shift+direction looks,
+Ctrl+direction peeks, Ctrl+X waits/rests and Shift+X cycles movement modes.
 
 `keybindings.json` starts with a format marker and holds only the keys you changed, including a
 key set back to its upstream default. A file saved by an older version, without the marker, held
 every key: entries in it that only repeat upstream's default are ignored, so it cannot undo the
 scheme.
 
-**Contextual interact** (Options → Interface → Contextual interact, on by default in the modern
-scheme): when you press Space and only one adjacent tile has a sensible non-combat action (open or
-close a door, pick up items, examine furniture), it does that action without asking for a
-direction. When several tiles have actions, the direction prompt lists what each direction would do
-("East: open the closed wood door"). It never auto-attacks. The use menu (`u`) opens on the item
-you used last.
+**Contextual interact** (Options → Interface → Contextual interact, on by default in Modern):
+Space acts on the tile selected by right click or Shift+direction and lists its applicable
+actions, including Open, Close, Examine, Pickup, Jump and Smash. Without a selected tile,
+nearby sensible interactions remain available; a single safe action can be chosen directly,
+and multiple choices are listed. Jump and Smash always need an explicit choice; Smash uses
+local `S` so `s` remains menu navigation. It never auto-attacks. Use item actions through
+inventory or the general Enter menu.
 
-**Stances**, as in Quasimorph: in the modern scheme `F2` toggles running, `F3` crouching and `F4`
-lying prone; the weapon box shows the stance you are in (walking, running, crouching, prone). `"`
-opens the movement mode menu in both schemes.
+**Stances**, as in Quasimorph: **Shift+X** cycles walking, running, crouching and prone in Modern;
+the Status box shows the current mode. F2/F3/F4 no longer select stances on the map. The
+movement mode menu remains in Enter; Classic keeps its upstream movement controls.
 
 Your first new game opens with a short welcome card listing these keys (Options → Interface →
 Show welcome card brings it back). Like Caves of Qud's Classic and Roleplay modes, it then asks how
@@ -201,8 +235,9 @@ The first time your character gets hungry, thirsty, tired, hurt, overloaded, see
 the night, a one-line tip in the message log says what to do and names the key. Each tip shows once
 per character; Options → Interface → Show first-time tips turns them off.
 
-With mouse tile selection, the hover hint also names the key for the same action
-(`click: attack the zombie [TAB]`), so the mouse teaches the keyboard.
+With mouse tile selection, the hover hint explains the select/attack buttons. The fire
+command attacks the selected hostile. When mouse movement is explicitly enabled, hints name the
+suggested click action and its key instead.
 
 Yes/No prompts are selectable buttons. They open on **No**: move with the arrow keys (or `y`/`n`),
 press Enter or click a button to answer, and Esc always cancels. Options → Interface → Answer Yes/No
@@ -282,31 +317,40 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   `bin/install-cataclysm-bn.sh` uses `build-scripts/bundle-registry-mods.ts` and keeps the pack's
   credits with its files. Pick it under Options → General → Choose soundpack.
 
-- **Weather and weapon boxes** sit in a corner of the map, in the terminal and the tiles version
-  (where they are drawn over the tiles). The weather box shows
-  the weather with an icon, then the time (exact with a watch) and temperature (with a
-  thermometer), the season and day, light level, moon phase and wind (description and arrow). The
-  weapon box shows what you fight with and its ammo, your fighting style, your stance and, when
-  you use magic, your mana as `current/max`. Values carry the same colors as in the sidebar.
-  Options → Interface → Weather box / Weapon box moves each to any corner or turns it off, and Box
-  icons picks Unicode, [Nerd Font](https://www.nerdfonts.com/) or ASCII. The sidebar does not
-  repeat what a box shows: weather and clock stay in the box, and roomy maps also move Light,
-  Date and Wind there. Narrow maps keep those facts in the sidebar; the classic date row also
-  retains temperature. The weapon box replaces the Weapon and Mana panels. Turn a box off and
-  its rows come back.
+- **Weather and Status boxes** sit in a corner of the map, in both terminal and tiles builds.
+  Weather has four rows: an icon and description, season/day with time and moon phase, Light,
+  and Wind. The date row stays compact and the box widens when translated text needs more room.
+  A watch reveals exact time; without one, time is approximate above ground and unknown below.
+  A thermometer adds outdoor temperature. Wind letters name its origin; arrows show its flow.
+  Status shows weapon and ammo, fighting style and stance, followed by five fixed rows:
+  **Pain, Thirst, Hunger, Rest, Heat**. Relevant mana remains `current/max`. Icons always
+  have text labels, values align, and normal gameplay descriptors and colors remain intact.
+  Healthy values are explicit; Heat describes body comfort, not outdoor temperature.
+  Options → Interface → Weather box / Status box moves or disables each box. Box icons
+  selects **Text only**, Unicode or [Nerd Font](https://www.nerdfonts.com/) (custom font required).
+  Boxes avoid each other and the avatar's map center. A cramped Status box falls back to
+  loadout-only or the sidebar; Needs disappear from the sidebar only when all five fit
+  in Status. Weather, weapon and mana sidebar fields likewise return when their box cannot
+  fit or is disabled, including immediately after changing options or resizing.
+- **Readable default typeface:** bundled JetBrains Mono NL Regular with Unifont fallback,
+  anti-aliased at size 18, with 11 × 24 UI cells and square 24 × 24 map/overmap text cells.
+  Oversized TTF glyphs shrink to fit their cells instead of losing strokes, including fallback
+  symbols. Existing custom font files remain supported. Graphics options control cell dimensions,
+  size and blending. [Font credits and licenses](docs/fork/asset-credits.md#fonts).
 - **Vehicle box** appears when you board a vehicle or control one remotely. It shows
   azimuth (degrees clockwise from north), current speed, cruise target, engine state, the selected
   engine's fuel percentage and battery charge. Aircraft keep their takeoff-speed readout. Low fuel
   and battery readings change color; empty fuel still reads `0%`. It starts at the bottom right,
   uses the same frames and icon settings as the other boxes, and stacks with boxes in the same
-  corner. Options → Interface → Vehicle box moves it to any corner or turns it off. While it is on,
-  the Vehicle sidebar panel steps aside; turn it off to restore that panel. Native tiles readouts
-  are unchanged.
+  corner. Options → Interface → Vehicle box moves it to any corner or turns it off. The Vehicle
+  sidebar panel steps aside only when the box fits; disabling it or losing room restores that
+  panel. Native tiles readouts are unchanged.
   Speed, azimuth and fuel values stay readable at the minimum supported 80 × 25 terminal size.
 - **Body panel** (inspired by Project Zomboid's health screen): the sidebar lists every hurt limb
-  and what is wrong with it (bleeding, infected, bitten, broken, bandaged, disinfected). `H` opens
-  the full view with every limb's health and what to do about wounds. Hide it like any panel from
-  the sidebar options. The Hitchhiker's Guide moved to `J`.
+  and what is wrong with it (bleeding, infected, bitten, broken, bandaged, disinfected).
+  **Enter → Info → Body status** opens the full view with every limb's health and what to do
+  about wounds. Hide it like any panel from the sidebar options. The Hitchhiker's Guide remains
+  available through Enter and item context menus.
 - **Aligned sidebar**: every row uses one label width and one column grid, with a space after each
   colon, in every sidebar layout. The separate Sound panel starts hidden, because the Movement row
   already shows the sound level; turn it back on from the sidebar options.
@@ -318,12 +362,12 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 Upstream expects you to set up loot zones and run a sorting activity to keep a base usable. Here
 that is optional:
 
-- **Quick stack (`Q`)**, as in Terraria and Hytale. Everything you carry goes into storage within reach (a walkable straight line, dark or not)
+- **Quick stack (Enter action menu)**, as in Terraria and Hytale. Everything you carry goes into storage within reach (a walkable straight line, dark or not)
   nearby (shelves, lockers, counters, vehicle cargo) that already holds the same item, or mostly
   the same kind of item. Loose piles on the ground are left alone. Worn, wielded and favorited (`*` in the
   inventory) items always stay with you. It costs the time it takes to walk over and put things
   down.
-- **Sort pile (`Z`)**. Dump a haul in one place, stand on it and press `Z`. Each item goes to the
+- **Sort pile (Enter action menu)**. Dump a haul in one place, stand on it and choose Sort pile. Each item goes to the
   nearby storage that already holds the same thing or mostly the same category, or to a loose pile
   of exactly the same item. Put one example of
   each kind of thing where you want it to live, and everything else follows.
@@ -331,11 +375,11 @@ that is optional:
   6), so a workshop with stocked shelves works like a Hytale workbench next to chests. You can
   change it under Options → Debug → Crafting range.
 
-- **Advanced inventory (`/`) opens like a loot window**: everything around you on the left, your
-  inventory on the right. Upstream's default pointed at the empty tile below you.
-- **Crafting (`k`) opens on something useful**: recent recipes, or the first category you can
-  craft from, not an empty favorites list. **Construction (`K`)** does the same: an empty Favorite
-  tab opens on `All` instead.
+- **Advanced inventory (Enter action menu) opens like a loot window**: everything around you on
+  the left, your inventory on the right. Upstream's default pointed at the empty tile below you.
+- **Crafting (`i`, then F5) opens on something useful**: recent recipes, or the first category
+  you can craft from, not an empty favorites list. **Construction (Enter action menu)** does the
+  same: an empty Favorite tab opens on `All` instead.
 - **One pick-up list**: `g` shows everything within reach in one list.
 - **Combine** (item menu, `C` in the modern scheme): partly used tools that hold their own charges
   and that nothing refills, such as matchbooks, pour into one, as in Project Zomboid. Every charge

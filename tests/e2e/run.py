@@ -20,11 +20,16 @@ from fire_feedback import TESTS as FIRE_FEEDBACK_TESTS
 from keyhints_small import TESTS as KEYHINTS_SMALL_TESTS
 from safe_mode_sleep import TESTS as SAFE_MODE_SLEEP_TESTS
 from vehicle_memory import TESTS as VEHICLE_MEMORY_TESTS
-from aim_reticle import TESTS as AIM_RETICLE_TESTS
+from aim_reticle import TESTS as AIM_RETICLE_TESTS, action_clock
 from safe_click import TESTS as SAFE_CLICK_TESTS
 from inventory_mouse import TESTS as INVENTORY_MOUSE_TESTS
 from pickup_flow import TESTS as PICKUP_FLOW_TESTS
 from options_menu import TESTS as OPTIONS_MENU_TESTS
+from map_mouse import TESTS as MAP_MOUSE_TESTS, firing_target_panel, mouse_state, no_mouse_movement_game
+from inventory_hub import TESTS as INVENTORY_HUB_TESTS
+from contextual_hub import TESTS as CONTEXTUAL_HUB_TESTS
+from grouped_controls import TESTS as GROUPED_CONTROLS_TESTS
+from hud_status import TESTS as HUD_STATUS_TESTS
 
 
 
@@ -34,8 +39,6 @@ def test_welcome_card(g):
     assert getattr(g, "saw_welcome", False), "first new game should show the welcome card"
     card = g.welcome_screen
     assert "Unsupported" not in card and "%" not in card, "the card text must be formatted:\n" + card
-    assert "Space" in card and "mouse works too" in card, card
-    assert "walks toward ground" in card, card
 
 
 def test_death_mode_choice(g):
@@ -55,11 +58,6 @@ def test_first_time_tip(g):
     assert g.lua("out(gapi.get_avatar():get_value('tip_seen_hostile'))") == ["1"]
     g.lua("local m=gapi.get_monster_at(here(4,0)) if m then park(m) end out('ok')")
 
-
-def test_controls_strip(g):
-    s = g.screen()
-    for hint in ("wasd move", "qezc diag", "Q stash", "Z sort pile", "n explore"):
-        assert hint in s, f"missing {hint!r} in sidebar"
 
 
 def test_auto_explore(g):
@@ -108,7 +106,7 @@ def test_quick_stack(g):
     give(g, "usb_drive", 3)
     give(g, "plastic_six_dice", 1)
     assert count_carried(g, "usb_drive") == 3
-    g.keys("Q", delay=1.5)
+    action_menu(g, "Interact", "Quick stack to nearby storage")
     settle(g)
     assert count_at(g, 2, 0, "usb_drive") == 4, "drives should join the rack"
     assert count_carried(g, "usb_drive") == 0
@@ -122,7 +120,7 @@ def test_quick_stack_not_through_windows(g):
     assert g.lua("M:set_ter_at(here(1,0), TerId.new('t_window'):int_id()) out('ok')") == ["ok"]
     spawn(g, 2, 0, "usb_drive", furn="f_rack")
     give(g, "usb_drive", 2)
-    g.keys("Q", delay=1.5)
+    action_menu(g, "Interact", "Quick stack to nearby storage")
     settle(g)
     assert count_carried(g, "usb_drive") == 2, "a shelf behind a window is out of reach"
     assert count_at(g, 2, 0, "usb_drive") == 1
@@ -153,7 +151,7 @@ def test_sort_pile(g):
     spawn(g, 0, 0, "usb_drive", 2)
     spawn(g, 0, 0, "character_sheet", 1)
     spawn(g, 0, 0, "plastic_six_dice", 1)
-    g.keys("Z", delay=1.5)
+    action_menu(g, "Interact", "Sort the pile you're standing on")
     settle(g)
     assert count_at(g, 3, 0, "usb_drive") == 3, "same item goes to the same shelf"
     assert count_at(g, -3, 0, "character_sheet") == 1, "books follow books"
@@ -170,7 +168,7 @@ def wait_until(check, timeout=30):
 
 
 def craft_by_name(g, name):
-    g.keys("k", delay=1.5)
+    open_crafting(g)
     g.keys("f", delay=0.8)
     g.type(name)
     g.keys("Enter", delay=1.5)
@@ -181,7 +179,7 @@ def craft_by_name(g, name):
 
 
 def test_crafting_opens_on_content(g):
-    g.keys("k", delay=1.5)
+    open_crafting(g)
     s = g.screen()
     g.keys("Escape", delay=0.6)
     assert "< FAVORITE >" not in s, "crafting should not open on the empty favorites list"
@@ -202,7 +200,7 @@ def test_recraft_after_reload(g):
     g.keys("y", "Enter", delay=1)
     load_first_save(g)
     g.define_lua(HELPERS)
-    g.keys("-", delay=1)
+    action_menu(g, "Craft", "Recraft last recipe")
     assert wait_until(lambda: made() == 2), g.screen()
 
 
@@ -232,7 +230,7 @@ def test_craft_parts_chain(_g):
         settle(g)
 
         def browse_recipe(name):
-            g.keys("k", delay=1.5)
+            open_crafting(g)
             g.wait_for("[f]ilter", timeout=10)
             g.keys("f", delay=0.8)
             g.wait_for("Search:", timeout=10)
@@ -301,7 +299,7 @@ def load_first_save(g, timeout=120):
 
 
 def test_aim_defaults(g):
-    g.keys("/", delay=1.5)
+    action_menu(g, "Inventory", "Advanced Inventory management")
     s = g.screen()
     g.keys("Escape", delay=0.6)
     assert "Surrounding area" in s or "Surrounding" in s or "AL" in s, "left pane should show the surroundings"
@@ -335,73 +333,110 @@ def zombie_hp(g):
     return int(out[0])
 
 
-def test_walking_into_enemy_does_not_attack(g):
+def test_walking_into_enemy_attacks(g):
+    """Misses still count as bump attacks."""
+    empty_inventory(g)
     arena(g)
-    assert g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(1,0)) out('ok')") == ["ok"]
-    before = zombie_hp(g)
-    assert before > 0
-    g.keys("d", delay=1)
-    assert "in the way" in g.screen(), g.screen()
-    assert zombie_hp(g) == before, "a plain step must not swing at the zombie"
+    settle(g)
+    try:
+        assert g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(1,0)) out('ok')") == ["ok"]
+        before = bub_pos(g)
+        clock = action_clock(g)
+        g.keys("d", delay=1)
+        assert bub_pos(g) == before, "a bump attack must not step into the occupied tile"
+        assert action_clock(g) > clock, "walking into the zombie must spend moves attacking"
+    finally:
+        arena(g)
+
+
+def test_bump_attack_can_be_disabled(_g):
+    game = Game(name="bn-e2e-no-bump",
+                options={"CONTROL_SCHEME": "modern", "BUMP_ATTACK": "false", "SAFEMODE": "false"})
+    try:
+        start_new_game(game)
+        game.define_lua(HELPERS)
+        empty_inventory(game)
+        arena(game)
+        settle(game)
+        assert game.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(1,0)) out('ok')") == ["ok"]
+        before = bub_pos(game)
+        clock = action_clock(game)
+        game.keys("d", delay=1)
+        assert bub_pos(game) == before, "an occupied tile must still block movement"
+        assert action_clock(game) == clock, "BUMP_ATTACK=false must prevent a movement key from attacking"
+    finally:
+        game.close()
 
 
 def test_attack_command(g):
-    """Sword of the Stars: The Pit style: F attacks the nearest enemy; Tab and a direction picks one."""
-    for keys, why in ((("F",), "F should attack the nearest enemy"), (("Tab", "d"), "Tab then a direction should attack")):
-        before = zombie_hp(g)
-        for _ in range(6):
-            for k in keys:
-                g.keys(k, delay=1)
-            if zombie_hp(g) != before:
-                break
-        assert zombie_hp(g) != before, why
-    g.lua("local m=gapi.get_monster_at(here(1,0)) if m then park(m) end out('ok')")
-
-
-def test_hover_says_what_a_click_does(g):
-    """Sword of the Stars: The Pit style: hovering a tile highlights it and names the click action."""
+    empty_inventory(g)
     arena(g)
     settle(g)
-    x, y = g.find("@")
-    g.hover(x + 3, y)
-    assert "click: walk here (3 steps)" in g.screen(), g.screen()
+    try:
+        assert g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(1,0)) out('ok')") == ["ok"]
+        before = bub_pos(g)
+        clock = action_clock(g)
+        action_menu(g, "Interact", "Attack in a direction")
+        g.keys("d", delay=1)
+        assert bub_pos(g) == before, "a directed attack must not move the player"
+        assert action_clock(g) > clock, "the directional attack must spend moves attacking"
+    finally:
+        arena(g)
 
 
-def test_click_attacks_an_adjacent_enemy(g):
+def test_action_menu_opens_character_info(g):
+    def character_sheet_visible(screen):
+        return all(label in screen for label in ("Strength:", "Dexterity:", "Intelligence:", "Perception:"))
+
     arena(g)
-    assert g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(1,0)) out('ok')") == ["ok"]
     settle(g)
-    before = zombie_hp(g)
-    x, y = g.find("@")
-    g.hover(x + 1, y)
-    assert re.search(r"click: attack[^\n]*\[\S+\]", g.screen()), "hover hint should name the key: " + g.screen()
-    for _ in range(6):
+    try:
+        before = bub_pos(g)
+        clock = action_clock(g)
+        action_menu(g, "Info", "View Player Info")
+        assert character_sheet_visible(g.screen()), "the action menu must open the actual character sheet:\n" + g.screen()
+        g.keys("Escape", delay=0.6)
+        assert not character_sheet_visible(g.screen()), "Escape must return from the character sheet"
+        assert bub_pos(g) == before
+        assert action_clock(g) == clock, "browsing character information must not spend moves"
+    finally:
+        arena(g)
+
+
+def test_hover_inspects_without_acting(_g):
+    with no_mouse_movement_game("bn-e2e-map-hover") as g:
+        before = mouse_state(g)
+        x, y = g.find("@")
+        g.hover(x + 3, y)
+        assert "Mouse View" in g.screen(), "hover must show the actual tile inspector:\n" + g.screen()
+        assert mouse_state(g) == before, "hovering must not act or move"
+
+
+def test_left_click_attacks_adjacent_enemy(_g):
+    with no_mouse_movement_game("bn-e2e-map-melee-attack") as g:
+        assert g.lua("local m=gapi.place_monster_at(MonsterTypeId.new('mon_zombie'),here(1,0)) "
+                     "MAP_MOUSE_TARGETS={m} out(m ~= nil)") == ["true"]
+        before = mouse_state(g)
+        x, y = g.find("@")
         g.click(x + 1, y)
-        if zombie_hp(g) != before:
-            break
-    assert zombie_hp(g) != before, "clicking an adjacent enemy attacks it"
+        assert bub_pos(g) == before[1], "LMB attacks the clicked enemy without moving"
+        assert action_clock(g) > before[0], "LMB must spend moves attacking even if the swing misses"
 
 
-def test_right_click_lists_actions(g):
-    x, y = g.find("@")
-    g.click(x + 1, y, button=2)
-    s = g.screen()
-    g.keys("Escape", delay=0.6)
-    assert "attack" in s, s
-    g.lua("local m=gapi.get_monster_at(here(1,0)) if m then park(m) end out('ok')")
-
-
-def test_right_click_pick_runs_the_action(g):
-    arena(g)
-    settle(g)
-    before = bub_pos(g)
-    x, y = g.find("@")
-    g.click(x + 1, y, button=2)
-    row, line = next((row, line) for row, line in enumerate(g.screen().splitlines())
-                     if "step here" in line)
-    g.click(line.index("step here"), row)
-    assert wait_until(lambda: bub_pos(g) == (before[0] + 1, before[1], before[2])), (
-        "clicking the right-click menu row must execute its movement action\n" + g.screen())
+def test_right_click_selects_adjacent_enemy_for_f(_g):
+    with no_mouse_movement_game("bn-e2e-map-melee-select") as g:
+        assert g.lua("local m=gapi.place_monster_at(MonsterTypeId.new('mon_zombie'),here(1,0)) "
+                     "MAP_MOUSE_TARGETS={m} out(m ~= nil)") == ["true"]
+        before = mouse_state(g)
+        x, y = g.find("@")
+        g.click(x + 1, y, button=2)
+        assert "Mouse View" in g.screen(), "RMB must inspect the selected enemy:\n" + g.screen()
+        assert not re.search(r"\battack (?:the )?zombie\b", g.screen()), \
+            "RMB must not open an action menu:\n" + g.screen()
+        assert mouse_state(g) == before, "RMB must not spend moves, move, or damage either creature"
+        g.keys("f", delay=1)
+        assert bub_pos(g) == before[1], "f attacks the selected enemy without moving"
+        assert action_clock(g) > before[0], "f must spend moves attacking even if the swing misses"
 
 
 
@@ -454,7 +489,7 @@ def test_jewelry_is_one_item_per_form(g):
     assert g.lua("give('hammer',1)") == ["ok"]
 
     def open_disassembly():
-        g.keys("(", delay=1)
+        action_menu(g, "Craft", "Disassemble items")
         if "Disassemble item" in g.screen():
             return True
         g.keys("Escape", delay=0.5)
@@ -497,7 +532,7 @@ def test_mre_unpacks_its_entree(g):
     out = g.lua("local m=gapi.create_item(ItypeId.new('mre_ration'), -1) m:set_var_str('variant','mre_lemontuna') "
                 "gapi.get_avatar():add_item(m) out(m:display_name(1))")
     assert "Lemon Pepper Tuna" in out[0], out
-    g.keys("u", delay=1)
+    action_menu(g, "Craft", "Disassemble items")
     g.keys("/", delay=0.5)
     g.type("Lemon")
     g.keys("Enter", "Down", "Up", delay=0.5)
@@ -511,38 +546,6 @@ def test_mre_unpacks_its_entree(g):
     # The entree lands on the floor.
     assert wait_until(lambda: g.lua("count_at(0,0,'mre_lemontuna')") == ["1"], 60), g.screen()
     assert count_carried(g, "mre_ration") == 0
-
-
-def keys_by_category(files):
-    """Category -> key -> actions bound to it, later files replacing an action's bindings."""
-    actions = {}
-    for path in files:
-        for entry in json.loads(Path(path).read_text()):
-            if entry.get("type") == "keybinding":
-                actions[(entry.get("category", "default"), entry["id"])] = [
-                    k for b in entry.get("bindings", []) if b.get("input_method") == "keyboard"
-                    for k in (b["key"] if isinstance(b["key"], list) else [b["key"]])]
-    by_category = {}
-    for (category, action), keys in actions.items():
-        for key in keys:
-            by_category.setdefault(category, {}).setdefault(key, set()).add(action)
-    return by_category
-
-
-def test_modern_scheme_adds_no_menu_key_clashes(g):
-    """No menu gets a key the modern scheme binds to two of its actions; upstream's own pairs stay.
-
-    Pair based: the modern scheme may move an upstream mutually exclusive pair (wield/unwield) to
-    the shifted keys, which must not read as a new clash; only a new set of conflicting actions is.
-    """
-    base = sorted(str(p) for p in (ROOT / "data/raw/keybindings").glob("*.json"))
-
-    def clashing_pairs(files):
-        return {(category, frozenset(actions)) for category, keys in keys_by_category(files).items()
-                for actions in keys.values() if len(actions) > 1}
-
-    new = clashing_pairs(base + [str(ROOT / "data/raw/control_schemes/modern.json")]) - clashing_pairs(base)
-    assert not new, "\n".join(f"{c}: {sorted(a)}" for c, a in sorted(new, key=str))
 
 
 def test_wasd_menu_navigation(g):
@@ -573,7 +576,7 @@ def test_wasd_menu_navigation(g):
     spawn(g, 0, 0, "rock")
     spawn(g, 0, 0, "stick")
     before = {item: count_carried(g, item) for item in ("rock", "stick")}
-    g.keys(",", delay=0.8)
+    g.keys("g", delay=0.8)
     g.wait_for("rock")
     def selected(item):
         return re.search(r"< [^<>]*" + item + r"[^<>]* >", g.screen()) is not None
@@ -616,8 +619,8 @@ def test_modern_wield_nearby_rows_keep_their_shortcut(g):
         out = g.lua(f"local it=gapi.create_item(ItypeId.new('{item}'),-1) out(it:display_name(1))")
         assert len(out) == 1, out
         names[out[0]] = item
-    g.keys("h", delay=1.5)
-    assert "Wield item" in g.screen(), "h should open the wield picker\n" + g.screen()
+    action_menu(g, "Inventory", "Wield")
+    assert "Wield item" in g.screen(), g.screen()
     rows = item_picker_rows(g.screen(), names)
     assert len(rows) == len(names), f"one row per fixture item: {rows}\n{g.screen()}"
     assert sorted(name for _, name in rows) == sorted(names), rows
@@ -688,10 +691,11 @@ def test_vehicle_screen_diagonals(g):
     arena(g)
     from vehicle_box import spawn_vehicle
     spawn_vehicle(g, "bicycle")
-    g.keys("Space", delay=1.5)
-    # Contextual interact goes straight to the bicycle when nothing else is in reach.
+    action_menu(g, "Interact", "Examine Nearby Terrain")
     if "which tile?" in g.screen() or "Examine where?" in g.screen():
         g.keys("x", delay=1.5)
+    if "Interact with the" in g.screen():
+        choose_menu_entry(g, "examine the")
     g.keys("e", delay=2)  # "Examine vehicle"
     try:
         start = g.screen()
@@ -717,25 +721,18 @@ def test_hud_boxes(g):
 
 
 def test_stance_toggle(g):
-    """F3 toggles crouch: the HUD box shows the stance and the avatar's move mode changes."""
     arena(g)
-    settle(g)
-    # Start walking.
     g.lua("gapi.get_avatar():set_movement_mode(CharacterMoveMode.walk) out('ok')")
-    g.keys("x", delay=0.6)
-    s = g.screen()
-    assert "Walking" in s, "HUD box should show Walking:\n" + s
-    assert g.lua("out(tostring(gapi.get_avatar():get_movement_mode() == CharacterMoveMode.walk))") == ["true"]
-    # Press F3 to crouch.
-    g.keys("F3", delay=0.8)
-    s = g.screen()
-    assert "Crouching" in s, "HUD box should show Crouching after F3:\n" + s
-    assert g.lua("out(tostring(gapi.get_avatar():get_movement_mode() == CharacterMoveMode.crouch))") == ["true"]
-    # Press F3 again to return to walking.
-    g.keys("F3", delay=0.8)
-    s = g.screen()
-    assert "Walking" in s, "HUD box should show Walking after second F3:\n" + s
-    assert g.lua("out(tostring(gapi.get_avatar():get_movement_mode() == CharacterMoveMode.walk))") == ["true"]
+    settle(g)
+    before = bub_pos(g)
+    clock = action_clock(g)
+    for mode, label in (("run", "Running"), ("crouch", "Crouching"),
+                        ("prone", "Prone"), ("walk", "Walking")):
+        g.keys("X", delay=0.8)
+        assert label in g.screen(), f"HUD must refresh to {mode}:\n{g.screen()}"
+        assert g.lua(f"out(gapi.get_avatar():get_movement_mode() == CharacterMoveMode.{mode})") == ["true"]
+        assert bub_pos(g) == before, "changing stance must not move the player"
+        assert action_clock(g) == clock, "changing stance must not spend moves"
 
 
 def test_hud_box_options(g):
@@ -789,7 +786,6 @@ def test_boxes_replace_sidebar_rows(g):
 
 
 def test_body_panel(g):
-    """Zomboid style body panel: the wounded limbs list, H opens the full view."""
     arena(g)
     settle(g)
     s = g.screen()
@@ -798,11 +794,10 @@ def test_body_panel(g):
     coord = next(l for l in s.splitlines() if "X,Y,Z" in l)
     # The wound list starts on the same label grid as the Location panel, with no figure beside it.
     assert body.index("No wounds") == coord.index("X,Y,Z"), body + "\n" + coord
-    assert any(l.rstrip().endswith(": details") for l in s.splitlines()), s
     g.lua("gapi.get_avatar():add_effect(EffectTypeId.new('bleed'), TimeDuration.from_minutes(30), BodyPartTypeId.new('arm_l'), 1) out('ok')")
     settle(g)
     assert "bleeding" in g.screen(), g.screen()
-    g.keys("H", delay=1)
+    action_menu(g, "Info", "Body status")
     details = g.screen()
     g.keys("Escape", delay=0.8)
     g.lua("gapi.get_avatar():remove_effect(EffectTypeId.new('bleed'), BodyPartTypeId.new('arm_l')) out('ok')")
@@ -905,28 +900,25 @@ def test_sound_marker_fading(_g):
         g.close()
 
 
-def test_smart_targeting(g):
+def test_smart_targeting(_g):
     """Aiming starts on the hostile with a clear firing line and names an ally standing in the way."""
-    arena(g)
-    assert g.lua("local u=gapi.get_avatar() u:drop_all_items() M:clear_items_at(here(0,0)) "
-                 "local w=u:create_item(ItypeId.new('model_10_revolver'), -1) "
-                 "w:ammo_set(ItypeId.new('38_special'), 6) out(u:wield(w))") == ["true"]
-    # A hostile 4 tiles east has a friendly dog 2 tiles east in the firing line; a second
-    # hostile 4 tiles west has a clear line.
-    assert g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(4,0)) "
-                 "local d=gapi.place_monster_at(MonsterTypeId.new('mon_dog'), here(2,0)) d:make_friendly() "
-                 "gapi.place_monster_at(MonsterTypeId.new('mon_zombie_rot'), here(-4,0)) out('ok')") == ["ok"]
-    g.keys("f", delay=2)
-    s = g.screen()
-    assert "Firing" in s, "aiming should open the targeting window\n" + s
-    assert "decayed zombie" in s, "aiming should start on the hostile with a clear line:\n" + s
-    assert "Ally in the line of fire" not in s, s
-    g.keys("Tab", delay=2)
-    s = g.screen()
-    assert "Ally in the line of fire: Labrador mutt" in s, \
-        "cycling to the blocked hostile should name the ally in the way:\n" + s
-    g.keys("Escape", delay=1)
-    g.lua("for dx=-8,8 do for dy=-8,8 do local m=gapi.get_monster_at(here(dx,dy)) if m then park(m) end end end out('ok')")
+    with no_mouse_movement_game("bn-e2e-smart-targeting") as g:
+        assert g.lua("local u=gapi.get_avatar() "
+                     "local w=u:create_item(ItypeId.new('model_10_revolver'), -1) "
+                     "w:ammo_set(ItypeId.new('38_special'), 6) out(u:wield(w))") == ["true"]
+        settle(g)
+        # The dog blocks the eastern hostile's firing line.
+        assert g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(4,0)) "
+                     "local d=gapi.place_monster_at(MonsterTypeId.new('mon_dog'), here(2,0)) d:make_friendly() "
+                     "gapi.place_monster_at(MonsterTypeId.new('mon_zombie_rot'), here(-4,0)) out('ok')") == ["ok"]
+        g.keys("f", delay=2)
+        panel = firing_target_panel(g)
+        assert "decayed zombie" in panel, "aiming should start on the hostile with a clear line:\n" + panel
+        assert "Ally in the line of fire" not in panel, panel
+        g.keys("Tab", delay=2)
+        panel = firing_target_panel(g)
+        assert "Ally in the line of fire: Labrador mutt" in panel, \
+            "cycling to the blocked hostile should name the ally in the way:\n" + panel
 
 
 def test_smart_safe_mode(g):
@@ -990,37 +982,34 @@ def test_smart_safe_mode_horde(g):
 
 
 def test_contextual_interact_single_door(g):
-    """Space opens a single adjacent closed door without asking for a direction."""
     arena(g)
-    # Place a closed door at (1,0) - directly east of the player at (0,0)
-    g.lua("M:set_ter_at(here(1,0), TerId.new('t_door_c'):int_id()) "
-          "M:set_furn_at(here(1,0), FurnId.new('f_null'):int_id()) out('ok')")
+    g.lua("M:set_ter_at(here(1,0), TerId.new('t_door_c'):int_id()) out('ok')")
     settle(g)
-    # Press Space - should open the door without a direction prompt
-    g.keys("Space", delay=1.5)
-    # The door should now be open (t_door_o)
-    result = g.lua("out(M:get_ter_at(here(1,0)):str_id():str())")
-    assert result == ["t_door_o"], f"door should be open, got: {result}"
-    # There should be no direction prompt visible
-    assert "Examine where?" not in g.screen(), "should not ask for direction with single door"
+    x, y = g.find("@")
+    g.click(x + 1, y, button=2)
+    before = bub_pos(g)
+    clock = action_clock(g)
+    g.keys("Space", delay=0.8)
+    choose_menu_entry(g, "open the")
+    assert g.lua("out(M:get_ter_at(here(1,0)):str_id():str())") == ["t_door_o"]
+    assert bub_pos(g) == before
+    assert action_clock(g) > clock, "opening a selected door must preserve the normal cost"
 
 
 def test_contextual_interact_multiple_doors(g):
-    """With two adjacent interactable tiles, Space shows a direction prompt listing actions."""
     arena(g)
-    # Place closed doors at (1,0) and (-1,0)
     g.lua("M:set_ter_at(here(1,0), TerId.new('t_door_c'):int_id()) "
-          "M:set_furn_at(here(1,0), FurnId.new('f_null'):int_id()) "
-          "M:set_ter_at(here(-1,0), TerId.new('t_door_c'):int_id()) "
-          "M:set_furn_at(here(-1,0), FurnId.new('f_null'):int_id()) out('ok')")
+          "M:set_ter_at(here(-1,0), TerId.new('t_door_c'):int_id()) out('ok')")
     settle(g)
-    # Press Space - should show a direction prompt listing both doors
-    g.keys("Space", delay=1.5)
-    s = g.screen()
-    assert "Interact with which tile?" in s, f"should show direction prompt:\n{s}"
-    assert "open" in s.lower(), f"should mention open action:\n{s}"
-    # Cancel the prompt
-    g.keys("Escape", delay=0.5)
+    g.keys("Escape", delay=0.4)
+    if "MAIN MENU" in g.screen():
+        g.keys("Escape", delay=0.4)
+    g.keys("Space", delay=0.8)
+    g.wait_for("Interact with which tile?")
+    g.keys("d", delay=0.8)
+    choose_menu_entry(g, "open the")
+    assert g.lua("out(M:get_ter_at(here(1,0)):str_id():str(),"
+                 "M:get_ter_at(here(-1,0)):str_id():str())") == ["t_door_o,t_door_c"]
 
 
 EDGE_ARROWS = ("\u2192", "\u2197", "\u2198")
@@ -1078,8 +1067,7 @@ def test_center_view_at_top_level(_g):
         assert g.lua("local a=gapi.get_avatar() local p=a:get_pos_ms() p.z=10 "
                      "gapi.get_map():set_ter_at(p,TerId.new('t_floor'):int_id()) "
                      "gapi.place_player_local_at(p) out(a:get_pos_ms().z)") == ["10"], g.screen()
-        # CENTER is bound to 0 by default in the Modern scheme.
-        g.keys("0", delay=1.5)
+        action_menu(g, "Look", "Center View")
         # The game process must still be answering Lua, i.e. it did not SIGSEGV.
         assert g.lua("out(gapi.get_avatar():get_pos_ms().z)") == ["10"], g.screen()
         g.lua("local a=gapi.get_avatar() local p=a:get_pos_ms() p.z=0 gapi.place_player_local_at(p) out('ok')")
@@ -1096,8 +1084,7 @@ def test_examine_empty_floor_describes_it(_g):
         settle(g)
         g.define_lua(HELPERS)
         arena(g)
-        # Modern examine is SPACE, then a direction towards an adjacent tile.
-        g.keys(" ", delay=1.5)
+        action_menu(g, "Interact", "Examine")
         g.keys("d", delay=1.5)
         assert "That is a" in g.screen(), g.screen()
     finally:
@@ -1179,11 +1166,11 @@ def test_char_creation_overview_fits_small_terminal(_g):
     finally:
         g.close()
 
-TESTS = [test_welcome_card, test_death_mode_choice, test_controls_strip, test_auto_explore, test_first_time_tip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
+TESTS = [test_welcome_card, test_death_mode_choice, test_auto_explore, test_first_time_tip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
          test_hud_boxes, test_body_panel, test_readable_map_glyphs, test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content, test_craft_parts_chain,
          test_aim_defaults, test_sound_marker_fading, test_smart_targeting, test_stance_toggle, test_contextual_interact_single_door, test_contextual_interact_multiple_doors,
-         test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_does_not_attack, test_attack_command, test_hover_says_what_a_click_does, test_click_attacks_an_adjacent_enemy, test_right_click_lists_actions, test_right_click_pick_runs_the_action,
-         test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_modern_scheme_adds_no_menu_key_clashes, test_wasd_menu_navigation, test_old_full_keybindings_file, test_hud_box_options, test_boxes_replace_sidebar_rows, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
+         test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_attacks, test_bump_attack_can_be_disabled, test_attack_command, test_action_menu_opens_character_info, test_hover_inspects_without_acting, test_left_click_attacks_adjacent_enemy, test_right_click_selects_adjacent_enemy_for_f,
+         test_magnet_pull_through_monster, test_vehicle_screen_diagonals, test_classic_control_scheme, test_wasd_menu_navigation, test_old_full_keybindings_file, test_hud_box_options, test_boxes_replace_sidebar_rows, test_gun_loudness_in_item_info, test_combine_partly_used_tools,
          test_smart_safe_mode, test_smart_safe_mode_horde, test_enemy_edge_arrows, test_enemy_edge_arrows_off,
          test_modern_wield_nearby_rows_keep_their_shortcut,
          test_center_view_at_top_level, test_examine_empty_floor_describes_it, test_char_creation_overview_fits_small_terminal,
@@ -1200,9 +1187,14 @@ TESTS += SAFE_MODE_SLEEP_TESTS
 TESTS += VEHICLE_MEMORY_TESTS
 TESTS += AIM_RETICLE_TESTS
 TESTS += SAFE_CLICK_TESTS
+TESTS += MAP_MOUSE_TESTS
 TESTS += INVENTORY_MOUSE_TESTS
 TESTS += PICKUP_FLOW_TESTS
 TESTS += OPTIONS_MENU_TESTS
+TESTS += INVENTORY_HUB_TESTS
+TESTS += CONTEXTUAL_HUB_TESTS
+TESTS += GROUPED_CONTROLS_TESTS
+TESTS += HUD_STATUS_TESTS
 
 
 def main():

@@ -73,7 +73,18 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
         push( joined_keys( { ACTION_MOVE_FORTH, ACTION_MOVE_LEFT, ACTION_MOVE_BACK, ACTION_MOVE_RIGHT } ), _( "move" ) );
         push( joined_keys( { ACTION_MOVE_FORTH_LEFT, ACTION_MOVE_FORTH_RIGHT, ACTION_MOVE_BACK_LEFT, ACTION_MOVE_BACK_RIGHT } ), _( "diag" ) );
     }
-    push( "?", _( "all keys" ) );
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        const auto ctxt = input_context( "DEFAULTMODE" );
+        push( ctxt.get_desc( "action_menu" ), _( "menus" ) );
+        push( "?", _( "all keys" ) );
+        push( ctxt.get_desc( "NEXT_TARGET" ), _( "target" ) );
+        push( first_key( ACTION_CYCLE_MOVE ), _( "stance" ) );
+        push( joined_keys( { ACTION_SHIFT_N, ACTION_SHIFT_W, ACTION_SHIFT_S, ACTION_SHIFT_E } ),
+              _( "look" ) );
+        push( ctxt.get_desc( "PEEK_N" ), _( "peek north" ) );
+    } else {
+        push( "?", _( "all keys" ) );
+    }
     for( const auto &[act, label] : singles ) {
         if( auto keys = first_key( act ); !keys.empty() ) {
             push( std::move( keys ), label );
@@ -124,29 +135,46 @@ auto show_welcome_once() -> void
         const auto k = first_key( act );
         return colorize( k == _( "spc" ) ? std::string( _( "Space" ) ) : k, c_light_cyan );
     };
-    const auto text = string_format(
-                          _( "<color_white>Welcome to Bright Nights.</color>\n\n"
-                             "Move with %1$s%2$s%3$s%4$s and step diagonally with %5$s%6$s%7$s%8$s.  %9$s waits a turn.\n"
-                             "%10$s interacts with things next to you, %11$s picks things up and %12$s opens your inventory.\n"
-                             "%13$s uses an item, %14$s crafts, %15$s looks around and %16$s opens the map.\n\n"
-                             "Back at a base, %17$s stashes what you carry onto nearby shelves that hold the same kind of thing, "
-                             "and %18$s sorts the pile you are standing on.  No sorting zones needed.\n\n"
-                             "%19$s%20$s"
-                             "The Controls strip at the bottom of the sidebar always shows these keys, "
-                             "and <color_light_cyan>?</color> on any screen lists every key." ),
-                          key( ACTION_MOVE_FORTH ), key( ACTION_MOVE_LEFT ), key( ACTION_MOVE_BACK ),
-                          key( ACTION_MOVE_RIGHT ),
-                          key( ACTION_MOVE_FORTH_LEFT ), key( ACTION_MOVE_FORTH_RIGHT ), key( ACTION_MOVE_BACK_LEFT ),
-                          key( ACTION_MOVE_BACK_RIGHT ), key( ACTION_PAUSE ), key( ACTION_EXAMINE ), key( ACTION_PICKUP_ALL ),
-                          key( ACTION_INVENTORY ), key( ACTION_USE ), key( ACTION_CRAFT ), key( ACTION_LOOK ),
-                          key( ACTION_MAP ),
-                          key( ACTION_QUICK_STACK ), key( ACTION_SORT_PILE ),
-                          get_option<bool>( "MOUSE_TILE_SELECTION" ) ?
-                          std::string( _( "The mouse works too: hover a tile to see what a click does, click to walk "
-                                          "there or act, and right-click for every option.\n\n" ) ) : std::string(),
-                          first_key( ACTION_AUTO_EXPLORE ).empty() ? std::string() :
-                          string_format( _( "%s walks toward ground you have not seen yet.\n\n" ),
-                                         key( ACTION_AUTO_EXPLORE ) ) );
+    auto text = string_format(
+                    _( "<color_white>Welcome to Bright Nights.</color>\n\n"
+                       "Move with %1$s%2$s%3$s%4$s and step diagonally with %5$s%6$s%7$s%8$s.  %9$s waits a turn.\n" ),
+                    key( ACTION_MOVE_FORTH ), key( ACTION_MOVE_LEFT ), key( ACTION_MOVE_BACK ),
+                    key( ACTION_MOVE_RIGHT ), key( ACTION_MOVE_FORTH_LEFT ), key( ACTION_MOVE_FORTH_RIGHT ),
+                    key( ACTION_MOVE_BACK_LEFT ), key( ACTION_MOVE_BACK_RIGHT ), key( ACTION_PAUSE ) );
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        const auto ctxt = input_context( "DEFAULTMODE" );
+        const auto inventory_ctxt = input_context( "INVENTORY" );
+        text += string_format(
+                    _( "%1$s groups the secondary commands into menus; Info has your character and status screens.\n"
+                       "%2$s opens inventory.  Select an item for Wield, Use, Eat or Drop; %3$s opens Craft from inventory.\n"
+                       "%4$s interacts with the selected or nearby tile, including Open, Jump and Smash.  Destructive choices are explicit.\n"
+                       "Shift + movement looks in that direction; Ctrl + movement peeks with the normal time cost.\n"
+                       "%5$s cycles walking, running, crouching and prone.  %6$s selects a hostile target; %7$s attacks it.  You can also walk into adjacent enemies.\n"
+                       "%8$s opens the map.  The Interact menu offers quick stack and sort pile for base storage, without sorting zones.\n\n" ),
+                    key( ACTION_ACTIONMENU ), key( ACTION_INVENTORY ), inventory_ctxt.get_desc( "CRAFT" ),
+                    key( ACTION_EXAMINE ), key( ACTION_CYCLE_MOVE ), ctxt.get_desc( "NEXT_TARGET" ),
+                    key( ACTION_FIRE ), key( ACTION_MAP ) );
+    } else {
+        text += string_format(
+                    _( "%1$s interacts with things next to you, %2$s picks things up and %3$s opens your inventory.\n"
+                       "%4$s uses an item, %5$s crafts, %6$s looks around and %7$s opens the map.\n\n"
+                       "Back at a base, %8$s stashes what you carry onto nearby shelves that hold the same kind of thing, "
+                       "and %9$s sorts the pile you are standing on.  No sorting zones needed.\n\n" ),
+                    key( ACTION_EXAMINE ), key( ACTION_PICKUP_ALL ), key( ACTION_INVENTORY ),
+                    key( ACTION_USE ), key( ACTION_CRAFT ), key( ACTION_LOOK ), key( ACTION_MAP ),
+                    key( ACTION_QUICK_STACK ), key( ACTION_SORT_PILE ) );
+    }
+    if( !get_option<bool>( "MOUSE_MOVE" ) ) {
+        text += _( "Right-click selects a map tile; left-click attacks an enemy.  Move with the keyboard, not mouse clicks.\n\n" );
+    } else if( get_option<bool>( "MOUSE_TILE_SELECTION" ) ) {
+        text += _( "Hover a tile to see what a click does, click to walk there or act, and right-click for every option.\n\n" );
+    }
+    if( !first_key( ACTION_AUTO_EXPLORE ).empty() ) {
+        text += string_format( _( "%s walks toward ground you have not seen yet.\n\n" ),
+                               key( ACTION_AUTO_EXPLORE ) );
+    }
+    text += _( "The Controls strip at the bottom of the sidebar shows the main keys; "
+               "<color_light_cyan>?</color> on any screen lists every key." );
     popup( text );
     // Caves of Qud lets you pick Classic or Roleplay at the start; same here, using the existing death prompt.
     auto death = uilist();

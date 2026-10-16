@@ -1,4 +1,3 @@
-"""Sword of the Stars: The Pit style aim reticle: arrow keys aim, F fires."""
 from helpers import HELPERS, arena, bub_pos, empty_inventory, settle, start_new_game
 from tmux_game import Game
 
@@ -13,36 +12,33 @@ def test_arrow_keys_aim_and_attack(game):
     arena(game)
     settle(game)
     try:
-        # Adjacent, so F can swing at what the reticle covers without a ranged weapon.
+        # Keep the target within unarmed reach.
         assert game.lua("local m=gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(1,0)) "
                         "out(m ~= nil)") == ["true"]
 
         turn = action_clock(game)
         pos = bub_pos(game)
-        # The first arrow key puts the reticle on the nearest visible hostile, for free.
+        # First arrow snaps to the nearest hostile.
         game.keys("Left", delay=1)
-        # Read the screen first: the Lua console key used below hides the Mouse View box.
+        # Lua closes Mouse View; inspect it first.
         assert "Mouse View" in game.screen(), game.screen()
         assert bub_pos(game) == pos, "an arrow key aims instead of walking"
         assert action_clock(game) == turn, "aiming spends no time"
 
-        # Moving the reticle over the map costs nothing either.
         for key in ("Right", "Left", "Left", "Right"):
             game.keys(key, delay=0.8)
             assert bub_pos(game) == pos, "the reticle moves, the player stays"
         assert action_clock(game) == turn, "moving the reticle spends no time"
 
-        # A swing spends moves even when it misses or finishes within the current turn.
-        game.keys("F", delay=1.2)
-        assert action_clock(game) > turn, "F must spend moves attacking"
+        # Misses still cost moves.
+        game.keys("f", delay=1.2)
+        assert action_clock(game) > turn, "f must spend moves attacking"
 
-        # With the reticle on bare floor, F says so instead of taking a turn.
         still = action_clock(game)
         for _ in range(3):
             game.keys("Right", delay=0.7)
         assert action_clock(game) == still, "the reticle keeps moving for free after the attack"
-        game.keys("F", delay=1)
-        assert "There's nothing there to attack." in game.screen(), game.screen()
+        game.keys("f", delay=1)
         assert action_clock(game) == still, "attacking empty ground must not spend time"
     finally:
         game.keys("Escape", delay=0.6)

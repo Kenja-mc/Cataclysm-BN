@@ -3,7 +3,7 @@ import json
 import os
 import re
 
-from helpers import HELPERS, arena, settle
+from helpers import HELPERS, action_menu, arena, settle
 from tmux_game import ROOT, Game, start_new_game
 
 
@@ -42,7 +42,7 @@ def favorite_key(screen):
 
 
 def open_menu(game):
-    game.keys("K", delay=0.5)
+    action_menu(game, "Craft", "Construct Terrain")
     game.wait_for("Construction speed")
     return game.screen()
 

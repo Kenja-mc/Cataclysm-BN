@@ -20,6 +20,7 @@
 #include "game.h"
 #include "game_constants.h"
 #include "game_inventory.h"
+#include "input.h"
 #include "gun_mode.h"
 #include "int_id.h"
 #include "inventory.h"
@@ -183,14 +184,26 @@ auto try_shove_grabbed_vehicle( avatar &you ) -> bool
 /// Set while an explicit attack command drives avatar_action::move.
 auto attack_requested = false;
 
+auto explicit_attack_hint() -> std::string
+{
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        const auto ctxt = input_context( "DEFAULTMODE" );
+        return string_format( _( "Select an enemy with %1$s, then press %2$s to attack." ),
+                              ctxt.get_desc( "NEXT_TARGET" ), press_x( ACTION_FIRE, "", "", "" ) );
+    }
+    const auto directional = press_x( ACTION_ATTACK, "", "", "" );
+    return string_format( _( "Press %s to attack." ), directional.empty() ?
+                          press_x( ACTION_AUTOATTACK, "", "", "" ) : directional );
+}
+
 /// Walking into a hostile only attacks when the player asked for it or opted into bump attacks.
 auto refuse_bump_attack( const Creature &target ) -> bool
 {
     if( attack_requested || get_option<bool>( "BUMP_ATTACK" ) ) {
         return false;
     }
-    add_msg( m_info, _( "%1$s is in the way.  %2$s to attack." ), target.disp_name( false, true ),
-             press_x( ACTION_AUTOATTACK ) );
+    add_msg( m_info, _( "%s is in the way." ), target.disp_name( false, true ) );
+    add_msg( m_info, "%s", explicit_attack_hint() );
     return true;
 }
 
@@ -566,7 +579,7 @@ bool avatar_action::move( avatar &you, map &m, const tripoint_rel_ms &d )
                 if( get_option<bool>( "BUMP_ATTACK" ) ) {
                     add_msg( m_info, _( "Move into the monster to attack." ) );
                 } else {
-                    add_msg( m_info, _( "%s to attack." ), press_x( ACTION_AUTOATTACK ) );
+                    add_msg( m_info, "%s", explicit_attack_hint() );
                 }
                 you.clear_destination();
                 return false;

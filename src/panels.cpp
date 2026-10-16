@@ -32,6 +32,7 @@
 #include "magic/magic.h"
 #include "map/map.h"
 #include "messages.h"
+#include "needs_status.h"
 #include "options.h"
 #include "output.h"
 #include "overmap/omdata.h"
@@ -785,7 +786,7 @@ static std::pair<nc_color, std::string> temp_delta_arrows( const avatar &u )
     return std::make_pair( temp_color, temp_message );
 }
 
-static std::pair<nc_color, std::string> temp_stat( const avatar &u )
+auto needs_status::temperature( const avatar &u ) -> reading
 {
     /// Find hottest/coldest bodypart
     // Calculate the most extreme body temperatures
@@ -793,8 +794,8 @@ static std::pair<nc_color, std::string> temp_stat( const avatar &u )
     const auto extreme_cur_temp = temp_struct.extreme_cur_temp;
 
     // printCur the hottest/coldest bodypart
-    std::string temp_string;
-    nc_color temp_color = c_yellow;
+    auto temp_string = std::string();
+    auto temp_color = c_yellow;
     if( extreme_cur_temp > BODYTEMP_SCORCHING ) {
         temp_color = c_red;
         temp_string = _( "Scorching!" );
@@ -817,7 +818,27 @@ static std::pair<nc_color, std::string> temp_stat( const avatar &u )
         temp_color = c_blue;
         temp_string = _( "Freezing!" );
     }
-    return std::make_pair( temp_color, temp_string );
+    return { .text = std::move( temp_string ), .color = temp_color };
+}
+
+auto needs_status::read( const avatar &you ) -> readings
+{
+    auto pain = you.get_pain_description();
+    auto thirst = you.get_thirst_description();
+    auto hunger = you.get_hunger_description();
+    auto rest = you.get_fatigue_description();
+    // Preserve the descriptor's knowledge gate.
+    const auto pain_prefix = std::string( _( "Pain " ) ) + " ";
+    if( pain.first.starts_with( pain_prefix ) ) {
+        pain.first.erase( 0, pain_prefix.size() );
+    }
+    return {
+        .pain = { .text = pain.first.empty() ? _( "None" ) : std::move( pain.first ), .color = pain.second },
+        .thirst = { .text = thirst.first.empty() ? _( "OK" ) : std::move( thirst.first ), .color = thirst.second },
+        .hunger = { .text = std::move( hunger.first ), .color = hunger.second },
+        .rest = { .text = rest.first.empty() ? _( "Rested" ) : std::move( rest.first ), .color = rest.second },
+        .heat = temperature( you )
+    };
 }
 
 static std::string get_armor( const avatar &u, bodypart_id bp, unsigned int truncate = 0 )
@@ -1279,10 +1300,10 @@ static void draw_needs_compact( const avatar &u, const catacurses::window &w )
 
     hunger_pair = u.get_thirst_description();
     mvwprintz( w, point( 17, 0 ), hunger_pair.second, hunger_pair.first );
-    auto pair = temp_stat( u );
-    mvwprintz( w, point( 17, 1 ), pair.first, pair.second );
+    const auto heat = needs_status::temperature( u );
+    mvwprintz( w, point( 17, 1 ), heat.color, heat.text );
     const auto arrow = temp_delta_arrows( u );
-    mvwprintz( w, point( 17 + utf8_width( pair.second ), 1 ), arrow.first, arrow.second );
+    mvwprintz( w, point( 17 + utf8_width( heat.text ), 1 ), arrow.first, arrow.second );
 
     mvwprintz( w, point( 17, 2 ), c_light_gray, _( "Focus" ) );
     mvwprintz( w, point( 24, 2 ), focus_color( u.focus_pool ), std::to_string( u.focus_pool ) );
@@ -1697,43 +1718,23 @@ static void draw_weightvolume_labels( const avatar &u, const catacurses::window 
 static void draw_needs_narrow( const avatar &u, const catacurses::window &w )
 {
     werase( w );
-    std::pair<std::string, nc_color> hunger_pair = u.get_hunger_description();
-    std::pair<std::string, nc_color> thirst_pair = u.get_thirst_description();
-    std::pair<std::string, nc_color> rest_pair = u.get_fatigue_description();
-    std::pair<nc_color, std::string> temp_pair = temp_stat( u );
-    std::pair<std::string, nc_color> pain_pair = u.get_pain_description();
-    const auto col = print_label( w, { .pos = point( label_column, 0 ), .label = _( "Hunger" ) } );
-    mvwprintz( w, point( col, 0 ), hunger_pair.second, "%s", hunger_pair.first );
+    const auto needs = needs_status::read( u );
+    const auto col = print_label( w, { .pos = point( label_column, 0 ), .label = _( "Pain" ) } );
+    mvwprintz( w, point( col, 0 ), needs.pain.color, "%s", needs.pain.text );
     print_label( w, { .pos = point( label_column, 1 ), .label = _( "Thirst" ) } );
-    mvwprintz( w, point( col, 1 ), thirst_pair.second, "%s", thirst_pair.first );
-    print_label( w, { .pos = point( label_column, 2 ), .label = _( "Rest" ) } );
-    mvwprintz( w, point( col, 2 ), rest_pair.second, "%s", rest_pair.first );
-    print_label( w, { .pos = point( label_column, 3 ), .label = _( "Pain" ) } );
-    mvwprintz( w, point( col, 3 ), pain_pair.second, "%s", pain_pair.first );
+    mvwprintz( w, point( col, 1 ), needs.thirst.color, "%s", needs.thirst.text );
+    print_label( w, { .pos = point( label_column, 2 ), .label = _( "Hunger" ) } );
+    mvwprintz( w, point( col, 2 ), needs.hunger.color, "%s", needs.hunger.text );
+    print_label( w, { .pos = point( label_column, 3 ), .label = _( "Rest" ) } );
+    mvwprintz( w, point( col, 3 ), needs.rest.color, "%s", needs.rest.text );
     print_label( w, { .pos = point( label_column, 4 ), .label = _( "Heat" ) } );
-    mvwprintz( w, point( col, 4 ), temp_pair.first, "%s", temp_pair.second );
+    mvwprintz( w, point( col, 4 ), needs.heat.color, "%s", needs.heat.text );
     wnoutrefresh( w );
 }
 
 static void draw_needs_labels( const avatar &u, const catacurses::window &w )
 {
-    werase( w );
-    std::pair<std::string, nc_color> hunger_pair = u.get_hunger_description();
-    std::pair<std::string, nc_color> thirst_pair = u.get_thirst_description();
-    std::pair<std::string, nc_color> rest_pair = u.get_fatigue_description();
-    std::pair<nc_color, std::string> temp_pair = temp_stat( u );
-    std::pair<std::string, nc_color> pain_pair = u.get_pain_description();
-    const auto col = print_label( w, { .pos = point( label_column, 0 ), .label = _( "Pain" ) } );
-    mvwprintz( w, point( col, 0 ), pain_pair.second, "%s", pain_pair.first );
-    print_label( w, { .pos = point( label_column, 1 ), .label = _( "Thirst" ) } );
-    mvwprintz( w, point( col, 1 ), thirst_pair.second, "%s", thirst_pair.first );
-    print_label( w, { .pos = point( label_column, 2 ), .label = _( "Rest" ) } );
-    mvwprintz( w, point( col, 2 ), rest_pair.second, "%s", rest_pair.first );
-    print_label( w, { .pos = point( label_column, 3 ), .label = _( "Hunger" ) } );
-    mvwprintz( w, point( col, 3 ), hunger_pair.second, "%s", hunger_pair.first );
-    print_label( w, { .pos = point( label_column, 4 ), .label = _( "Heat" ) } );
-    mvwprintz( w, point( col, 4 ), temp_pair.first, "%s", temp_pair.second );
-    wnoutrefresh( w );
+    draw_needs_narrow( u, w );
 }
 
 static void draw_sound_labels( const avatar &u, const catacurses::window &w )
@@ -1898,8 +1899,8 @@ static void draw_health_classic( avatar &u, const catacurses::window &w )
     }
 
     // temperature
-    pair = temp_stat( u );
-    mvwprintz( w, point( 21, 6 ), pair.first, pair.second + temp_delta_string( u ) );
+    const auto heat = needs_status::temperature( u );
+    mvwprintz( w, point( 21, 6 ), heat.color, heat.text + temp_delta_string( u ) );
 
     // power
     pair = power_stat( u );
@@ -2438,6 +2439,11 @@ static bool weapon_panel()
     return !hud_boxes::combat_box_shown();
 }
 
+static bool needs_panel()
+{
+    return !hud_boxes::status_box_shows_needs();
+}
+
 static bool weather_panel()
 {
     return !hud_boxes::weather_box_shown();
@@ -2539,6 +2545,7 @@ static std::vector<window_panel> initialize_default_label_narrow_panels()
     ret.emplace_back( draw_hint, translate_marker( "Hint" ), 1, 32, false );
     ret.emplace_back( draw_limb_narrow, translate_marker( "Limbs" ), 3, 32, true );
     ret.emplace_back( body_panel::draw, translate_marker( "Body" ), 3, 32, true );
+    ret.emplace_back( draw_needs_narrow, translate_marker( "Needs" ), 5, 32, true, needs_panel );
     ret.emplace_back( draw_char_narrow, translate_marker( "Movement" ), 3, 32, true );
     ret.emplace_back( draw_mana, translate_marker( "Mana" ), 1, 32, true,
                       spell_panel );
@@ -2551,7 +2558,6 @@ static std::vector<window_panel> initialize_default_label_narrow_panels()
     ret.emplace_back( draw_weapon_labels, translate_marker( "Weapon" ), 2, 32, true, weapon_panel );
     ret.emplace_back( draw_weightvolume_narrow, translate_marker( "Wgt/Vol" ), 2, 32,
                       true );
-    ret.emplace_back( draw_needs_narrow, translate_marker( "Needs" ), 5, 32, true );
     // Movement already shows the sound level.
     ret.emplace_back( draw_sound_narrow, translate_marker( "Sound" ), 1, 32, false );
     ret.emplace_back( draw_messages, translate_marker( "Log" ), -2, 32, true );
@@ -2581,6 +2587,7 @@ static std::vector<window_panel> initialize_default_label_panels()
     ret.emplace_back( draw_hint, translate_marker( "Hint" ), 1, 44, false );
     ret.emplace_back( draw_limb_wide, translate_marker( "Limbs" ), 2, 44, true );
     ret.emplace_back( body_panel::draw, translate_marker( "Body" ), 3, 44, true );
+    ret.emplace_back( draw_needs_labels, translate_marker( "Needs" ), 5, 44, true, needs_panel );
     ret.emplace_back( draw_char_wide, translate_marker( "Movement" ), 2, 44, true );
     ret.emplace_back( draw_mana, translate_marker( "Mana" ), 1, 44, true,
                       spell_panel );
@@ -2594,7 +2601,6 @@ static std::vector<window_panel> initialize_default_label_panels()
     ret.emplace_back( draw_weapon_labels, translate_marker( "Weapon" ), 2, 44, true, weapon_panel );
     ret.emplace_back( draw_weightvolume_labels, translate_marker( "Wgt/Vol" ), 2, 44,
                       true );
-    ret.emplace_back( draw_needs_labels, translate_marker( "Needs" ), 5, 44, true );
     ret.emplace_back( draw_sound_labels, translate_marker( "Sound" ), 1, 44, false );
     ret.emplace_back( draw_messages, translate_marker( "Log" ), -2, 44, true );
     ret.emplace_back( draw_moon_wide, translate_marker( "Moon" ), 1, 44, false );

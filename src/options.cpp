@@ -9,6 +9,7 @@
 #include <ranges>
 #include <stdexcept>
 
+#include "aim_reticle.h"
 #include "calendar.h"
 #include "cached_options.h"
 #include "cached_item_options.h"
@@ -179,8 +180,9 @@ struct scheme_companion {
 /// Options that follow the control scheme: classic means upstream behaviour.
 auto scheme_companions( const bool classic ) -> std::vector<scheme_companion>
 {
-    return { { .id = "BUMP_ATTACK", .value = classic }, { .id = "FORCE_CAPITAL_YN", .value = classic },
+    return { { .id = "BUMP_ATTACK", .value = true }, { .id = "FORCE_CAPITAL_YN", .value = classic },
         { .id = "YN_HOTKEYS", .value = classic }, { .id = "MOUSE_TILE_SELECTION", .value = !classic },
+        { .id = "MOUSE_MOVE", .value = classic },
         { .id = "ARROW_KEY_AIM", .value = !classic },
         { .id = "CONTEXTUAL_INTERACT", .value = !classic } };
 }
@@ -1953,22 +1955,27 @@ void options_manager::add_options_interface()
        );
 
     add( "CONTROL_SCHEME", interface, translate_marker( "Control scheme" ),
-         translate_marker( "Modern: WASD movement and mnemonic keys, attacks with F.  Classic: the original vi-keys and numpad layout, walking into enemies attacks and Y/N prompts answer to capital Y and N.  Your own key changes are kept either way." ),
+         translate_marker( "Modern: WASD movement, Space for contextual interaction, Inventory for item actions and crafting, and Enter for secondary menus.  Shift plus movement looks, Ctrl plus movement peeks, Shift+X cycles movement modes, and Tab cycles targets.  Classic: the original vi-keys and numpad layout, with capital Y/N prompts.  Both schemes allow attacks by walking into enemies.  Your own key changes are kept either way." ),
     { { "modern", translate_marker( "Modern (WASD)" ) }, { "classic", translate_marker( "Classic" ) } },
     "modern" );
 
     add( "MOUSE_TILE_SELECTION", interface, translate_marker( "Mouse tile selection" ),
-         translate_marker( "If true, hovering a map tile highlights it, previews the route and says what a click does.  Left click attacks, opens, picks up, examines or walks there; right click lists every option." ),
+         translate_marker( "If true, hovering a map tile highlights it and shows its contents.  With mouse movement off, right click selects a tile or target without taking a turn; left click attacks the clicked hostile.  With mouse movement on, left click performs the suggested action or walks there and right click lists options." ),
          true
        );
 
+    add( "MOUSE_MOVE", interface, translate_marker( "Mouse movement" ),
+         translate_marker( "Allow map mouse clicks to move your character.  Off in Modern: right click selects and left click attacks without walking.  On in Classic to preserve upstream click-to-walk." ),
+         false
+       );
+
     add( "ARROW_KEY_AIM", interface, translate_marker( "Arrow keys aim" ),
-         translate_marker( "Sword of the Stars: The Pit style.  If true, the arrow keys move a targeting reticle over the map instead of walking, without spending a turn.  F attacks what the reticle covers: up close with your weapon, otherwise you aim at it.  Esc, walking or any other action that takes a turn takes the reticle away.  Turn it off to walk with the arrow keys." ),
+         translate_marker( "Sword of the Stars: The Pit style.  If true, the arrow keys move a targeting reticle over the map instead of walking, without spending a turn.  In Modern, the fire command attacks a selected hostile within your melee weapon's reach, or aims at it with a firearm.  With a firearm and no hostile selected, it opens normal gun aiming.  Esc, walking or any other action that takes a turn takes the reticle away.  Turn it off to walk with the arrow keys." ),
          true
        );
 
     add( "SAFE_CLICK_WALK", interface, translate_marker( "Safe click-to-walk" ),
-         translate_marker( "If true, with a hostile in view left-clicking a far tile moves one step, and walking to a distant tile asks for a second click to confirm." ),
+         translate_marker( "Only applies when Mouse movement is on.  If true, with a hostile in view left-clicking a far tile moves one step, and walking to a distant tile asks for a second click to confirm." ),
          true
        );
 
@@ -1979,7 +1986,7 @@ void options_manager::add_options_interface()
 
     add( "CONTEXTUAL_INTERACT", interface,
          translate_marker( "Contextual interact" ),
-         translate_marker( "If true, Space (interact) does the only sensible adjacent action without asking for a direction, and lists what each direction does when there are several." ),
+         translate_marker( "In Modern, Space interacts with a selected nearby visible tile, or asks for a nearby direction when nothing is selected.  Open, close, examine, pickup, jump and smash share this control; jump and smash require an explicit choice.  Off and in Classic, keep the original examine behavior." ),
          true
        );
 
@@ -1990,7 +1997,7 @@ void options_manager::add_options_interface()
 
     add( "BUMP_ATTACK", interface, translate_marker( "Attack by walking into enemies" ),
          translate_marker( "If true, moving into a hostile creature attacks it.  If false, use the attack command instead, so a stray step never starts a fight." ),
-         false
+         true
        );
 
     add( "SMART_SAFEMODE", interface, translate_marker( "Smart safe mode" ),
@@ -2004,7 +2011,7 @@ void options_manager::add_options_interface()
        );
 
     add( "HUD_WEATHER_BOX", interface, translate_marker( "Weather box" ),
-         translate_marker( "A small box on the map showing the environment: weather, time, light, wind, moon phase, season and, with a thermometer, the temperature.  The Location sidebar panel skips these while the box is on." ),
+         translate_marker( "A map box with four rows: weather and known temperature, date/time and moon phase, light, and wind.  Exact time needs a clock; without one, time is unknown underground.  Temperature needs a thermometer.  Wind letters name its origin; arrows show its flow.  Matching sidebar fields step aside only when the box fits." ),
     {
         { "top_left", translate_marker( "Top left" ) }, { "top_right", translate_marker( "Top right" ) },
         { "bottom_left", translate_marker( "Bottom left" ) }, { "bottom_right", translate_marker( "Bottom right" ) },
@@ -2012,8 +2019,8 @@ void options_manager::add_options_interface()
     },
     "top_left" );
 
-    add( "HUD_COMBAT_BOX", interface, translate_marker( "Weapon box" ),
-    translate_marker( "A small box on the map showing what you fight with and your fighting style." ), {
+    add( "HUD_COMBAT_BOX", interface, translate_marker( "Status box" ),
+    translate_marker( "A map box for your weapon, fighting style, stance, Pain, Thirst, Hunger, Rest and Heat.  Needs keep fixed positions and labels in both icon and text modes.  Matching sidebar fields step aside only when the box fits; smaller views keep the sidebar fallback." ), {
         { "top_left", translate_marker( "Top left" ) }, { "top_right", translate_marker( "Top right" ) },
         { "bottom_left", translate_marker( "Bottom left" ) }, { "bottom_right", translate_marker( "Bottom right" ) },
         { "off", translate_marker( "Off" ) }
@@ -2030,8 +2037,8 @@ void options_manager::add_options_interface()
     "bottom_right" );
 
     add( "HUD_ICONS", interface, translate_marker( "Box icons" ),
-         translate_marker( "Icons in the weather, weapon and vehicle boxes.  Unicode works in most terminals.  Nerd Font needs a patched font (nerdfonts.com).  ASCII works everywhere." ),
-    { { "unicode", translate_marker( "Unicode" ) }, { "nerd", translate_marker( "Nerd Font" ) }, { "ascii", translate_marker( "ASCII" ) } },
+         translate_marker( "Icons in the weather, status and vehicle boxes.  Unicode uses the bundled fallback font and keeps text labels.  Nerd Font requires your own compatible patched font.  Text only uses ASCII labels and works everywhere." ),
+    { { "unicode", translate_marker( "Unicode" ) }, { "nerd", translate_marker( "Nerd Font" ) }, { "ascii", translate_marker( "Text only" ) } },
     "unicode" );
 
     add( "SHOW_TIPS", interface, translate_marker( "Show first-time tips" ),
@@ -2493,11 +2500,11 @@ void options_manager::add_options_graphics()
 
         add( "FONT_BLENDING", page_id, translate_marker( "Font blending" ),
              translate_marker( "If true, fonts will look better." ),
-             false, COPT_CURSES_HIDE );
+             true, COPT_CURSES_HIDE );
 
         add( "FONT_WIDTH", page_id, translate_marker( "Font width" ),
              translate_marker( "Set the font width.  Requires restart." ),
-             8, 100, 8, COPT_CURSES_HIDE );
+             8, 100, 11, COPT_CURSES_HIDE );
 
         static auto font_size_options = std::array<std::array<std::string, 3>, 8> {{
                 {"FONT_HEIGHT",         translate_marker( "Font height" ),         translate_marker( "Set the font height.  Requires restart." )},
@@ -2510,8 +2517,9 @@ void options_manager::add_options_graphics()
                 {"OVERMAP_FONT_SIZE",   translate_marker( "Overmap font size" ),   translate_marker( "Set the overmap font size.  Requires restart." )}
             }
         };
-        for( auto &&[option, option_name, option_desc] : font_size_options ) {
-            add( option, page_id, option_name, option_desc, 8, 100, 16, COPT_CURSES_HIDE );
+        for( const auto &[option, option_name, option_desc] : font_size_options ) {
+            const auto default_size = option.ends_with( "_SIZE" ) ? 18 : 24;
+            add( option, page_id, option_name, option_desc, 8, 100, default_size, COPT_CURSES_HIDE );
         }
     } );
 #endif // TILES
@@ -4536,6 +4544,7 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
             }
             save();
             if( control_scheme_changed ) {
+                aim_reticle::clear();
                 inp_mngr.init();
             }
             if( ingame && world_options_changed ) {

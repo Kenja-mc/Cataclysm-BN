@@ -6,7 +6,7 @@ import time
 from helpers import HELPERS, arena, give, settle
 from tmux_game import Game, start_new_game
 
-# The modern scheme only: the wait menu is opened with X and its entries are the fork's.
+# Modern wait-menu choices differ from Classic.
 BASE_OPTIONS = {"SHOW_WELCOME": "false", "HUD_WEATHER_BOX": "off", "CONTROL_SCHEME": "modern"}
 
 TIME_OF_DAY = re.compile(r"(\d{1,2}):(\d{2}):(\d{2})\s*([AP]M)")
@@ -32,8 +32,8 @@ def safe_mode_messages(game):
 
 
 def open_wait_menu(game):
-    """X waits; a character carrying an alarm clock is asked about it first."""
-    game.keys("X", delay=1.0)
+    """Ctrl+X waits; a character carrying an alarm clock is asked about it first."""
+    game.keys("C-x", delay=1.0)
     if "What do you want to do?" in game.screen():
         game.keys("W", delay=1.0)
     game.wait_for("Wait for how long?")

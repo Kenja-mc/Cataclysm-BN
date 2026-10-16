@@ -2,7 +2,7 @@
 import os
 import re
 
-from helpers import HELPERS, arena, count_at, count_carried
+from helpers import HELPERS, action_menu, arena, count_at, count_carried
 from tmux_game import Game, start_new_game
 
 
@@ -24,7 +24,10 @@ def _fixture(game):
 
 
 def _open_dispose(game, scheme):
-    game.keys("h" if scheme == "modern" else "w", delay=1)
+    if scheme == "modern":
+        action_menu(game, "Inventory", "Wield")
+    else:
+        game.keys("w", delay=1)
     game.wait_for("Wield item")
     game.keys("/", delay=0.6)
     game.type("Hi-Point", delay=0.3)

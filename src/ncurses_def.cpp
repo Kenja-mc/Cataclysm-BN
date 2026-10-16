@@ -22,6 +22,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <stdexcept>
+#include <optional>
 
 #include "cursesdef.h"
 #include "catacharset.h"
@@ -65,6 +66,28 @@ auto unicode_lines = false;
 
 /// A built-in theme redefined terminal colors this session; they are reset on exit.
 auto palette_changed = false;
+
+auto modern_input_mode = std::optional<bool>();
+
+auto update_control_input_mode() -> void
+{
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern_input_mode == modern ) {
+        return;
+    }
+    // Ctrl+C/Z are Modern peek chords.
+    if( modern ) {
+        raw();
+    } else {
+        noraw();
+        cbreak();
+        if( auto tio = termios{}; tcgetattr( STDIN_FILENO, &tio ) == 0 ) {
+            tio.c_iflag &= ~( IXON | IXOFF );
+            tcsetattr( STDIN_FILENO, TCSANOW, &tio );
+        }
+    }
+    modern_input_mode = modern;
+}
 
 auto translate_attrs( const int attrs ) -> int
 {
@@ -523,6 +546,7 @@ void input_manager::pump_events()
 
 input_event input_manager::get_input_event()
 {
+    update_control_input_mode();
     int key = ERR;
     input_event rval;
     do {

@@ -1,7 +1,7 @@
 """Modern scheme mouse support in inventory menus: click a row to pick it, right click for item actions."""
 import re
 
-from helpers import arena, empty_inventory, give, spawn
+from helpers import action_menu, arena, empty_inventory, give, spawn
 
 
 def display_name(g, item):
@@ -33,8 +33,8 @@ def fresh_inventory(g):
 def test_click_picks_an_inventory_row(g):
     fresh_inventory(g)
     pipe = display_name(g, "pipe")
-    g.keys("h", delay=1.5)
-    assert "Wield item" in g.screen(), "h should open the wield picker\n" + g.screen()
+    action_menu(g, "Inventory", "Wield")
+    assert "Wield item" in g.screen(), g.screen()
     x, y = row_of(g, pipe)
     g.hover(x, y)
     g.click(x, y)
@@ -65,7 +65,7 @@ def test_click_picks_nearby_item_without_inventory(g):
     spawn(g, 0, 0, "pipe")
     spawn(g, 1, 0, "rock")
     pipe = display_name(g, "pipe")
-    g.keys("h", delay=1)
+    action_menu(g, "Inventory", "Wield")
     x, y = row_of(g, pipe)
     g.click(x, y)
     assert wielded(g) == ["pipe"], "a hidden inventory column must not shift mouse selection"
@@ -76,7 +76,7 @@ def test_click_picks_nearby_item_without_inventory(g):
 def test_wheel_moves_inventory_selection(g):
     fresh_inventory(g)
     pipe = display_name(g, "pipe")
-    g.keys("h", delay=1)
+    action_menu(g, "Inventory", "Wield")
     x, y = row_of(g, pipe)
     g.hover(x, y)
     # A wheel notch emits a press only, not a button-release packet.
@@ -87,17 +87,17 @@ def test_wheel_moves_inventory_selection(g):
     arena(g)
 
 
-def test_inventory_wield_and_wear_match_map_keys(g):
+def test_inventory_context_wields_and_wears_selected_items(g):
     fresh_inventory(g)
     pipe = display_name(g, "pipe")
     give(g, "tshirt")
     shirt = display_name(g, "tshirt")
     g.keys("i", delay=1)
-    g.hover(*row_of(g, pipe))
+    g.click(*row_of(g, pipe), button=2)
     g.keys("h", delay=1)
-    assert wielded(g) == ["pipe"], "h in inventory must wield, not move left"
+    assert wielded(g) == ["pipe"], "the item context must wield the selected pipe"
     g.keys("i", delay=1)
-    g.hover(*row_of(g, shirt))
+    g.click(*row_of(g, shirt), button=2)
     g.keys("W", delay=1)
     assert g.lua("local a=gapi.get_avatar() local worn=false for _,it in ipairs(a:all_items(false)) do "
                  "if it:get_type():str()=='tshirt' then worn=a:is_wearing(it) end end out(worn)") == ["true"]
@@ -107,7 +107,7 @@ def test_inventory_wield_and_wear_match_map_keys(g):
 
 def test_right_click_outside_inventory_cancels(g):
     fresh_inventory(g)
-    g.keys("h", delay=1)
+    action_menu(g, "Inventory", "Wield")
     assert "Wield item" in g.screen(), g.screen()
     g.click(0, 0, button=2)
     assert "Wield item" not in g.screen(), g.screen()
@@ -118,4 +118,4 @@ def test_right_click_outside_inventory_cancels(g):
 
 TESTS = [test_click_picks_an_inventory_row, test_right_click_opens_item_actions,
          test_click_picks_nearby_item_without_inventory, test_wheel_moves_inventory_selection,
-         test_inventory_wield_and_wear_match_map_keys, test_right_click_outside_inventory_cancels]
+         test_inventory_context_wields_and_wears_selected_items, test_right_click_outside_inventory_cancels]

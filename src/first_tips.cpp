@@ -10,6 +10,7 @@
 #include "bodypart.h"
 #include "calendar.h"
 #include "color.h"
+#include "input.h"
 #include "messages.h"
 #include "options.h"
 #include "string_formatter.h"
@@ -33,7 +34,17 @@ struct tip {
 
 auto key( const action_id act ) -> std::string
 {
-    return press_x( act, "", "", _( "(unbound)" ) );
+    if( const auto bound = press_x( act, "", "", "" ); !bound.empty() ) {
+        return bound;
+    }
+    if( act == ACTION_EAT || act == ACTION_USE || act == ACTION_DROP ) {
+        return string_format( _( "%s → item actions" ),
+                              press_x( ACTION_INVENTORY, "", "", _( "Inventory" ) ) );
+    }
+    if( act == ACTION_SLEEP ) {
+        return string_format( _( "%s → Sleep" ), press_x( ACTION_WAIT, "", "", _( "Wait menu" ) ) );
+    }
+    return _( "(unbound)" );
 }
 
 auto hurt( const avatar &you ) -> bool
@@ -51,19 +62,39 @@ auto tips() -> const std::vector<tip> & // *NOPAD*
     static const auto all = std::vector<tip> {
         {
             "hostile", []( const avatar & you ) { return !you.get_hostile_creatures( 15 ).empty(); },
-            [] { return string_format( _( "Something hostile is in sight.  %s attacks the nearest enemy; walking away works too." ), key( ACTION_AUTOATTACK ) ); }
+            [] {
+                if( get_option<bool>( "BUMP_ATTACK" ) )
+                {
+                    return std::string(
+                        _( "Something hostile is in sight.  Walk into an adjacent enemy to attack; walking away works too." ) );
+                }
+                if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" )
+            {
+                const auto ctxt = input_context( "DEFAULTMODE" );
+                    return string_format(
+                        _( "Something hostile is in sight.  Select it with %1$s, then attack with %2$s; walking away works too." ),
+                        ctxt.get_desc( "NEXT_TARGET" ), key( ACTION_FIRE ) );
+                }
+            const auto attack = press_x( ACTION_ATTACK, "", "", "" );
+            if( !attack.empty() )
+        {
+            return string_format(
+                _( "Something hostile is in sight.  %s attacks in a direction; walking away works too." ), attack );
+            }
+            return std::string( _( "Something hostile is in sight.  Bump attacks are disabled; bind the directional attack command or keep your distance." ) );
+            }
         },
         {
             "hungry", []( const avatar & you ) { return you.get_hunger_description().second == c_yellow; },
-            [] { return string_format( _( "You are getting hungry.  %s eats; the sidebar shows how hungry you are." ), key( ACTION_EAT ) ); }
+            [] { return string_format( _( "You are getting hungry.  Eat food (%s); the sidebar shows how hungry you are." ), key( ACTION_EAT ) ); }
         },
         {
             "thirsty", []( const avatar & you ) { return you.get_thirst() > thirst_levels::thirsty; },
-            [] { return string_format( _( "You are getting thirsty.  %s drinks too.  Water from rivers and toilets needs boiling first." ), key( ACTION_EAT ) ); }
+            [] { return string_format( _( "You are getting thirsty.  Drink (%s).  Water from rivers and toilets needs boiling first." ), key( ACTION_EAT ) ); }
         },
         {
             "tired", []( const avatar & you ) { return you.get_fatigue() > fatigue_levels::tired; },
-            [] { return string_format( _( "You are tired.  %s sleeps; a bed and a closed door make it safer." ), key( ACTION_SLEEP ) ); }
+            [] { return string_format( _( "You are tired.  Sleep (%s); a bed and a closed door make it safer." ), key( ACTION_SLEEP ) ); }
         },
         {
             "hurt", hurt,
@@ -71,7 +102,7 @@ auto tips() -> const std::vector<tip> & // *NOPAD*
         },
         {
             "heavy", []( const avatar & you ) { return you.weight_carried() > you.weight_capacity(); },
-            [] { return string_format( _( "You carry more than you can and move slowly.  %s drops things." ), key( ACTION_DROP ) ); }
+            [] { return string_format( _( "You carry more than you can and move slowly.  Drop items (%s)." ), key( ACTION_DROP ) ); }
         },
         {
             "night", []( const avatar & ) { return is_night( calendar::turn ); },

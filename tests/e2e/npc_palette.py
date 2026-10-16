@@ -1,5 +1,5 @@
 """Follower command palette: chat menu entry, rule changes that stick, and the NPC_UI option."""
-from helpers import HELPERS, arena, settle
+from helpers import HELPERS, action_menu, arena, settle
 from tmux_game import Game, start_new_game
 
 # A new farmer follower, placed within hearing range of the player.
@@ -16,7 +16,7 @@ SECOND_FOLLOWER = ("SECOND=M:place_npc(here(-2,0),'farmer') "
 
 
 def open_palette(g):
-    g.keys("y", delay=1)
+    action_menu(g, "Interact", "Chat with NPC")
     assert "Follower command palette" in g.screen(), "palette entry missing from chat menu:\n" + g.screen()
     g.keys("P", delay=1)
     assert "Follower commands:" in g.screen(), "palette did not open:\n" + g.screen()
@@ -33,7 +33,7 @@ def select_rule_state(g, key, label):
 
 def choose_palette(g, name):
     for index in range(2):
-        g.keys("y", delay=0.5)
+        action_menu(g, "Interact", "Chat with NPC")
         assert "Follower command palette" in g.screen(), g.screen()
         g.keys("P", delay=0.5)
         assert "Whose rules?" in g.screen(), g.screen()
@@ -56,7 +56,7 @@ def test_follower_palette_changes_the_follower_rules(g):
         arena(palette)
         settle(palette)
         # Without a follower the chat menu has no palette entry.
-        palette.keys("y", delay=1)
+        action_menu(palette, "Interact", "Chat with NPC")
         assert "Follower command palette" not in palette.screen(), palette.screen()
         palette.keys("Escape", delay=0.5)
 
@@ -92,7 +92,7 @@ def test_follower_palette_changes_the_follower_rules(g):
         palette.keys("D", delay=0.5)
 
         # A temporary order from the team menu holds the rule; flipping it in the palette takes effect.
-        palette.keys("y", delay=1)
+        action_menu(palette, "Interact", "Chat with NPC")
         palette.keys("o", delay=1)
         assert "Hold off on pulping zombies for a while" in palette.screen(), palette.screen()
         palette.keys("p", delay=0.5)
@@ -106,7 +106,7 @@ def test_follower_palette_changes_the_follower_rules(g):
         # With two followers the palette first asks whose rules to show.
         assert palette.lua(SECOND_FOLLOWER) == ["ok"]
         settle(palette)
-        palette.keys("y", delay=1)
+        action_menu(palette, "Interact", "Chat with NPC")
         palette.keys("P", delay=1)
         assert "Whose rules?" in palette.screen(), "two followers must pick one:\n" + palette.screen()
         palette.keys("Escape", delay=0.5)
@@ -143,7 +143,7 @@ def test_follower_palette_option_off_keeps_the_old_menu(g):
         arena(legacy)
         assert legacy.lua(FOLLOWER) == ["ok"]
         settle(legacy)
-        legacy.keys("y", delay=1)
+        action_menu(legacy, "Interact", "Chat with NPC")
         screen = legacy.screen()
         assert "Tell everyone on your team to wake up" in screen, "team commands missing:\n" + screen
         assert "Follower command palette" not in screen, screen

@@ -22,16 +22,65 @@ namespace
 
 auto reticle = std::optional<tripoint_bub_ms>();
 
+auto is_hostile( const avatar &you, const Creature &critter ) -> bool
+{
+    if( &critter == &you || critter.is_dead_state() || !you.sees( critter ) ) {
+        return false;
+    }
+    if( const auto *guy = dynamic_cast<const npc *>( &critter ) ) {
+        return guy->is_enemy();
+    }
+    return critter.attitude_to( you ) == Attitude::A_HOSTILE;
+}
+
 auto hostile_at( const avatar &you, const tripoint_bub_ms &p ) -> Creature * // *NOPAD*
 {
     auto *critter = g->critter_at<Creature>( p, true );
-    if( critter == nullptr || critter == &you || !you.sees( *critter ) ) {
-        return nullptr;
+    return critter != nullptr && is_hostile( you, *critter ) ? critter : nullptr;
+}
+
+struct target_rank {
+    int distance;
+    tripoint_bub_ms pos;
+};
+
+auto rank_less( const target_rank &lhs, const target_rank &rhs ) -> bool
+{
+    return lhs.distance != rhs.distance ? lhs.distance < rhs.distance : lhs.pos < rhs.pos;
+}
+
+auto next_target( const avatar &you, const std::optional<tripoint_bub_ms> &after,
+                  const bool reverse ) -> std::optional<tripoint_bub_ms>
+{
+    const auto &m = get_map();
+    const auto current = after ? std::optional<target_rank>(
+                             target_rank{ .distance = rl_dist( you.bub_pos(), *after ), .pos = *after } ) : std::nullopt;
+    auto first = std::optional<target_rank>();
+    auto next = std::optional<target_rank>();
+    auto current_found = false;
+    const auto before = [reverse]( const auto & lhs, const auto & rhs ) { return reverse ? rank_less( rhs, lhs ) : rank_less( lhs, rhs ); };
+    for( const auto &critter : g->all_creatures() ) {
+        const auto p = critter.bub_pos();
+        if( p.z() != you.bub_pos().z() || !m.inbounds( p ) ) {
+            continue;
+        }
+        const auto distance = rl_dist( you.bub_pos(), p );
+        if( distance > g_max_view_distance || !is_hostile( you, critter ) || !you.sees( p ) ) {
+            continue;
+        }
+        const auto rank = target_rank{ .distance = distance, .pos = p };
+        current_found = current_found || ( after && p == *after );
+        if( !first || before( rank, *first ) ) {
+            first = rank;
+        }
+        if( current && before( *current, rank ) && ( !next || before( rank, *next ) ) ) {
+            next = rank;
+        }
     }
-    if( const auto *guy = dynamic_cast<const npc *>( critter ) ) {
-        return guy->is_enemy() ? critter : nullptr;
+    if( current_found && next ) {
+        return next->pos;
     }
-    return critter->attitude_to( you ) == Attitude::A_HOSTILE ? critter : nullptr;
+    return first ? std::optional<tripoint_bub_ms>( first->pos ) : std::nullopt;
 }
 
 auto start_pos( const avatar &you ) -> tripoint_bub_ms
@@ -65,12 +114,35 @@ auto enabled() -> bool
 
 auto active() -> bool
 {
-    return enabled() && reticle.has_value();
+    return reticle.has_value();
 }
 
 auto pos() -> std::optional<tripoint_bub_ms>
 {
     return active() ? reticle : std::nullopt;
+}
+
+auto select( avatar &you, map &m, const tripoint_bub_ms &p ) -> bool
+{
+    if( p.z() != you.bub_pos().z() || !m.inbounds( p ) || !you.sees( p ) ) {
+        return false;
+    }
+    reticle = p;
+    tile_selection::hover( you, m, reticle );
+    return true;
+}
+
+auto cycle( avatar &you, map &m, const bool reverse ) -> bool
+{
+    const auto target = next_target( you, reticle, reverse );
+    if( !target ) {
+        clear();
+        add_msg( _( "There are no visible hostile targets." ) );
+        return false;
+    }
+    reticle = target;
+    tile_selection::hover( you, m, reticle );
+    return true;
 }
 
 auto arrow_move( const action_id act, input_context &ctxt ) -> bool
@@ -103,18 +175,20 @@ auto move( avatar &you, map &m, const point_rel_ms &delta ) -> void
     tile_selection::hover( you, m, reticle );
 }
 
-auto attack( avatar &you, map &m ) -> std::optional<action_id>
+auto attack( avatar &you, map &m, const attack_mode mode ) -> std::optional<action_id>
 {
-    if( !enabled() ) {
-        clear();
-        return std::nullopt;
-    }
     if( !reticle ) {
         return std::nullopt;
     }
     const auto p = *reticle;
     auto *target = hostile_at( you, p );
     if( target == nullptr ) {
+        const auto &weapon = you.primary_weapon();
+        if( mode == attack_mode::fire_command && weapon.is_gun() &&
+            !weapon.gun_current_mode().melee() ) {
+            clear();
+            return ACTION_FIRE;
+        }
         add_msg( m_info, _( "There's nothing there to attack." ) );
         return ACTION_NULL;
     }

@@ -9,30 +9,38 @@ class avatar;
 class input_context;
 class map;
 
-/// Sword of the Stars: The Pit style aiming. The arrow keys move a targeting reticle over the
-/// map without spending a turn and F attacks what it covers; the reticle tile reuses the mouse
-/// tile selection highlight and the Mouse View hint.
+/// Free selection shared by keyboard and mouse.
 namespace aim_reticle
 {
 
+enum class attack_mode {
+    direct,
+    fire_command
+};
+
 auto enabled() -> bool;
 
-/// True while the reticle is up, so F attacks the tile it covers.
 auto active() -> bool;
 
 auto pos() -> std::optional<tripoint_bub_ms>;
 
-/// True when the action is a cardinal move the player typed on an arrow key.
+/// Free, visible, same-level selection, independent of arrow aiming.
+auto select( avatar &you, map &m, const tripoint_bub_ms &p ) -> bool;
+
+/// Wrap visible hostiles by distance/position without spending moves.
+auto cycle( avatar &you, map &m, bool reverse = false ) -> bool;
+
+/// True for typed cardinal arrow-key movement.
 auto arrow_move( const action_id act, input_context &ctxt ) -> bool;
 
-/// Moves the reticle one step. The first call puts it on the nearest visible hostile, else on the player.
+/// Start at the nearest visible hostile, otherwise the player.
 auto move( avatar &you, map &m, const point_rel_ms &delta ) -> void;
 
-/// F with the reticle up. Returns the action to run (ACTION_FIRE to aim at the target),
-/// ACTION_NULL when it was already handled, nullopt when there is no reticle.
-auto attack( avatar &you, map &m ) -> std::optional<action_id>;
+/// Keyboard fire may fall back to gun aiming; direct clicks never retarget.
+/// ACTION_FIRE: aim; ACTION_NULL: handled; nullopt: no selection.
+auto attack( avatar &you, map &m, attack_mode mode ) -> std::optional<action_id>;
 
-/// Takes the reticle away again; returns true when there was one to take.
+/// Return whether a selection was cleared.
 auto clear() -> bool;
 
 } // namespace aim_reticle
