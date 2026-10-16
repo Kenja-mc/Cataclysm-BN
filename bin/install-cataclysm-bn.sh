@@ -86,7 +86,11 @@ detect_binaries() {
     CATACLYSM_BN_TILES_BINARY="$ROOT/out/build/linux-full/src/cataclysm-bn-tiles"
   fi
   if [ -z "$CATACLYSM_BN_CURSES_BINARY" ] && [ -z "$CATACLYSM_BN_TILES_BINARY" ]; then
-    die "no built binaries found. Build first:\n  cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCURSES=ON -DTILES=OFF\n  ninja -C build cataclysm-bn"
+    die "no built binaries found. Build first:
+  cmake --preset linux-curses
+  cmake --build --preset linux-curses --target cataclysm-bn
+  cmake --preset linux-full
+  cmake --build --preset linux-full --target cataclysm-bn-tiles"
   fi
 }
 
