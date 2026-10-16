@@ -138,29 +138,29 @@ TEST_CASE(
     "a modern-scheme rebind to the upstream key survives save and reload", "[input][keybindings]") {
     auto restore_keybindings = user_keybindings_file_guard();
     auto modern = override_option("CONTROL_SCHEME", "modern");
-    const auto close_keys = [] { return input_context("DEFAULTMODE").keys_bound_to("close"); };
-    const auto user_close_c = std::string(R"({
+    const auto pickup_keys = [] { return input_context("DEFAULTMODE").keys_bound_to("pickup_all"); };
+    const auto user_pickup_comma = std::string(R"({
   "type": "keybinding",
-  "id": "close",
+  "id": "pickup_all",
   "category": "DEFAULTMODE",
-  "bindings": [ { "input_method": "keyboard", "key": "c" } ]
+  "bindings": [ { "input_method": "keyboard", "key": "," } ]
 })");
 
     SECTION("files with the format marker keep the binding") {
-        write_user_keybindings(R"({ "type": "keybindings_format", "version": 2 },)" + user_close_c);
+        write_user_keybindings(R"({ "type": "keybindings_format", "version": 2 },)" + user_pickup_comma);
         inp_mngr.init();
-        REQUIRE(contains_key(close_keys(), 'c'));
+        REQUIRE(contains_key(pickup_keys(), ','));
 
         inp_mngr.save();
         inp_mngr.init();
-        CHECK(contains_key(close_keys(), 'c'));
-        CHECK_FALSE(contains_key(close_keys(), 'O'));
+        CHECK(contains_key(pickup_keys(), ','));
+        CHECK_FALSE(contains_key(pickup_keys(), 'g'));
     }
 
     SECTION("older files that repeat the upstream default follow the scheme") {
-        write_user_keybindings(user_close_c);
+        write_user_keybindings(user_pickup_comma);
         inp_mngr.init();
-        CHECK(contains_key(close_keys(), 'O'));
-        CHECK_FALSE(contains_key(close_keys(), 'c'));
+        CHECK(contains_key(pickup_keys(), 'g'));
+        CHECK_FALSE(contains_key(pickup_keys(), ','));
     }
 }
