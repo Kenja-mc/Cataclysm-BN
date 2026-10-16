@@ -2,7 +2,7 @@
 import re
 import subprocess
 
-from helpers import HELPERS, Game, arena, settle, start_new_game
+from helpers import HELPERS, Game, action_menu, arena, settle, start_new_game
 
 
 def vehicle_game(name, **options):
@@ -73,7 +73,7 @@ def test_vehicle_box_electric(_game):
         # The same corner already holds weather/combat; all three must survive stacking.
         assert "Walking" in screen and "Azimuth:" in screen, screen
         assert "wasd move" in screen and "throttle" not in screen, screen
-        game.keys("^", delay=1)
+        action_menu(game, "Misc", "Control Vehicle")
         game.keys("w", delay=1)
         settle(game)
         screen = game.screen()
@@ -85,7 +85,7 @@ def test_vehicle_box_electric(_game):
         assert "ws throttle" in screen and "ad steer" in screen and "wasd move" not in screen, screen
         game.keys("s", delay=1)
         settle(game)
-        game.keys("^", delay=1)
+        action_menu(game, "Misc", "Control Vehicle")
         game.wait_for("Let go of controls")
         game.keys("Enter", delay=1)
         settle(game)

@@ -1,4 +1,6 @@
 """Shared Lua helpers and Python wrappers for e2e tests and the playtest harness."""
+import re
+
 from tmux_game import Game, start_new_game  # noqa: F401  (re-exported for convenience)
 
 HELPERS = (
@@ -57,3 +59,23 @@ def empty_inventory(g):
 def settle(g):
     # Let queued moves play out so the sidebar and map are current.
     g.keys("x", delay=0.6)
+
+
+def choose_menu_entry(g, label):
+    screen = g.screen()
+    pattern = re.compile(r"(?<!\w)" + re.escape(label) + r"(?!\w)", re.IGNORECASE)
+    rows = [(match.start(), y) for y, line in enumerate(screen.splitlines())
+            if (match := pattern.search(line))]
+    assert len(rows) == 1, f"expected one menu row for {label!r}:\n{screen}"
+    g.click(*rows[0])
+
+
+def action_menu(g, category, action):
+    g.keys("Enter", delay=0.8)
+    choose_menu_entry(g, category + "…")
+    choose_menu_entry(g, action)
+
+
+def open_crafting(g):
+    g.keys("i", delay=0.8)
+    g.keys("F5", delay=1.5)

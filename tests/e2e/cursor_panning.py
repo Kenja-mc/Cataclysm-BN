@@ -13,7 +13,8 @@ instances enable it where needed.
 """
 
 import time
-from helpers import HELPERS, arena, settle, bub_pos
+from helpers import HELPERS, arena, settle, bub_pos, empty_inventory
+from aim_reticle import action_clock
 from tmux_game import Game, start_new_game
 
 _PAN_RATE = "100"  # EDGE_SCROLL=Slow: 100 ms between pan steps
@@ -112,22 +113,24 @@ def test_cursor_panning_movement_recenter(g):
 
 
 def test_cursor_panning_click_target(g):
-    """Click after panning targets the tile at the panned coordinates."""
     pan = Game( name="bn-e2e-pan-click-2",
-                options=_PAN_OPTIONS )
+                options={**_PAN_OPTIONS, "CONTROL_SCHEME": "modern", "MOUSE_MOVE": "false",
+                         "MOUSE_TILE_SELECTION": "true"} )
     try:
         start_new_game( pan )
         pan.define_lua( HELPERS )
+        empty_inventory( pan )
         arena( pan )
         settle( pan )
         assert pan.lua(
             "gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(1,0)) out('ok')"
         ) == ["ok"]
-        settle( pan )
         before_hp = int( pan.lua(
             "local m=gapi.get_monster_at(here(1,0)) if m then out(m:get_hp()) "
             "else out(-1) end"
         )[0] )
+        before_pos = bub_pos( pan )
+        before_clock = action_clock( pan )
         x_player, y_player = pan.find( "@" )
         edge = _right_edge( pan )
         # Pan east: view shifts right, zombie slides *left* on screen.
@@ -136,14 +139,18 @@ def test_cursor_panning_click_target(g):
         # After n pan steps east, zombie screen pos = centre + (1 - n).
         # Since @ is at centre - n, zombie appears at @_x + 1.
         pan.hover( x_panned + 1, y_player )
-        pan.click( x_panned + 1, y_player )
-        settle( pan )
+        pan.click( x_panned + 1, y_player, button=2 )
+        assert bub_pos( pan ) == before_pos, "selecting after panning must not move the avatar"
+        assert action_clock( pan ) == before_clock, "selecting after panning must be free"
         after_hp = int( pan.lua(
             "local m=gapi.get_monster_at(here(1,0)) if m then out(m:get_hp()) "
             "else out(-1) end"
         )[0] )
-        assert after_hp < before_hp or "miss" in pan.screen().lower(), \
-            f"clicking zombie did not attack it: HP {before_hp} -> {after_hp}\n{pan.screen()}"
+        assert after_hp == before_hp, "RMB selects the zombie without attacking it"
+        pan.keys( "f", delay=1 )
+        assert action_clock( pan ) > before_clock, \
+            "f must attack the tile selected at the panned coordinates"
+        assert bub_pos( pan ) == before_pos, "f must attack the selected world tile without moving"
         pan.lua(
             "local m=gapi.get_monster_at(here(1,0)) if m then park(m) end out('ok')"
         )

@@ -175,8 +175,15 @@ auto stash_inventory( avatar &you ) -> void
     auto spots = gather_spots( you, std::nullopt );
     const auto plan = plan_moves( spots, carried, false );
     if( plan.empty() ) {
-        add_msg( m_info, _( "No nearby storage holds anything like what you carry.  Drop your haul, stand on it and %s to sort it." ),
-                 press_x( ACTION_SORT_PILE ) );
+        if( const auto sort = press_x( ACTION_SORT_PILE, "", "", "" ); !sort.empty() ) {
+            add_msg( m_info,
+                     _( "No nearby storage holds anything like what you carry.  Drop your haul, stand on it and press %s to sort it." ),
+                     sort );
+        } else {
+            add_msg( m_info,
+                     _( "No nearby storage holds anything like what you carry.  Drop your haul, stand on it, then open the Interact menu (%s) and choose Sort pile." ),
+                     press_x( ACTION_ACTIONMENU, "", "", "" ) );
+        }
         return;
     }
     execute( you, spots, plan, [&]( item * it ) { return you.inv_remove_item( it ); } );

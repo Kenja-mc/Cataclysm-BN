@@ -16,7 +16,7 @@ learn and use. It keeps the BN game rules. `OVERHAUL.md` explains each change.
 2. Put a new behavior behind an option when a player can want the old behavior.
 3. Keep the classic control scheme the same as upstream.
 4. Do not add AI art.
-5. Write few comments. Write a comment only when the code does not show the reason.
+5. Keep comments terse. Add one only for a non-obvious reason; remove comments that restate code.
 6. Obey the upstream code rules in Part 2.
 
 ### Build

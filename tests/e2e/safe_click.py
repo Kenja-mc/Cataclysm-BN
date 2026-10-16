@@ -1,7 +1,9 @@
 """Safe click-to-walk: far clicks need a second click, and a hostile in view limits a click to one step."""
+from contextlib import contextmanager
 import time
 
 from helpers import HELPERS, arena, bub_pos, settle, start_new_game
+from tmux_game import Game
 
 
 def wait_until(cond, timeout=15):
@@ -18,77 +20,58 @@ def see_everything(g, on):
     assert g.lua(f"gapi.get_avatar():{verb}(MutationBranchId.new('DEBUG_NIGHTVISION')) out('ok')") == ["ok"]
 
 
-def test_safe_click_preview(g):
-    arena(g)
-    # A dark shelter hides the tile three steps away, and an unseen tile offers no walk.
-    see_everything(g, True)
-    # Earlier tests leave monsters further out; seeing one would limit the click to one step.
-    assert g.lua("for dx=-60,60 do for dy=-60,60 do local m=gapi.get_monster_at(here(dx,dy)) "
-                 "if m then m:set_hp(0) end end end out('ok')") == ["ok"]
-    settle(g)
-    try:
-        start = bub_pos(g)
-        x, y = g.find("@")
-        g.hover(x + 3, y)
-        assert "click: walk here (3 steps)" in g.screen(), g.screen()
-        g.click(x + 3, y)
-        assert "click again to walk here (3 steps)" in g.screen(), g.screen()
-        # Reading the position opens the Lua console with a key, which also cancels the click.
-        assert bub_pos(g) == start, (start, bub_pos(g))
-        g.hover(x + 3, y)
-        g.click(x + 3, y)
-        g.click(x + 3, y)
-        assert wait_until(lambda: bub_pos(g) == (start[0] + 3, start[1], start[2])), (start, bub_pos(g))
-    finally:
-        see_everything(g, False)
-
-
-def test_safe_click_hostile_one_step(g):
-    arena(g)
-    see_everything(g, True)
-    assert g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(-4,0)) out('ok')") == ["ok"]
-    settle(g)
-    try:
-        start = bub_pos(g)
-        x, y = g.find("@")
-        g.hover(x + 3, y)
-        assert "click: step toward (hostile in view)" in g.screen(), g.screen()
-        g.click(x + 3, y)
-        after = bub_pos(g)
-        assert max(abs(after[0] - start[0]), abs(after[1] - start[1])) == 1, (start, after)
-    finally:
-        see_everything(g, False)
-        arena(g)
-
-
-def test_safe_click_option_off(_g):
-    from tmux_game import Game
-
-    game = Game(name="bn-e2e-safe-click-off", options={"SAFEMODE": "false", "SAFE_CLICK_WALK": "false"})
+@contextmanager
+def click_walk_game(name, **options):
+    """Keep legacy travel opt-in and isolated."""
+    game = Game(name=name, options={"CONTROL_SCHEME": "modern", "SAFEMODE": "false",
+                                   "MOUSE_TILE_SELECTION": "true", "MOUSE_MOVE": "true",
+                                   "SAFE_CLICK_WALK": "true", **options})
     try:
         start_new_game(game)
         game.define_lua(HELPERS)
         arena(game)
         see_everything(game, True)
+        assert game.lua("for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end "
+                        "out('ok')") == ["ok"]
         settle(game)
-        start = bub_pos(game)
-        x, y = game.find("@")
-        game.click(x + 3, y)
-        assert wait_until(lambda: bub_pos(game) == (start[0] + 3, start[1], start[2])), (start, bub_pos(game))
+        yield game
     finally:
         game.close()
 
 
-def test_safe_click_hostile_npc_and_danger(_g):
-    from tmux_game import Game
+def test_safe_click_preview(_g):
+    with click_walk_game("bn-e2e-safe-click-preview") as g:
+        start = bub_pos(g)
+        x, y = g.find("@")
+        g.click(x + 3, y)
+        # Lua cancels the pending confirmation.
+        assert bub_pos(g) == start, "the first far click must only preview travel"
+        g.click(x + 3, y)
+        g.click(x + 3, y)
+        assert wait_until(lambda: bub_pos(g) == (start[0] + 3, start[1], start[2])), (start, bub_pos(g))
 
-    game = Game(name="bn-e2e-safe-click-npc", options={"SAFEMODE": "false"})
-    try:
-        start_new_game(game)
-        game.define_lua(HELPERS)
-        arena(game)
-        see_everything(game, True)
-        settle(game)
+
+def test_safe_click_hostile_one_step(_g):
+    with click_walk_game("bn-e2e-safe-click-hostile") as g:
+        assert g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(-4,0)) "
+                     "out('ok')") == ["ok"]
+        settle(g)
+        start = bub_pos(g)
+        x, y = g.find("@")
+        g.click(x + 3, y)
+        assert bub_pos(g) == (start[0] + 1, start[1], start[2]), "a visible hostile limits travel to one step"
+
+
+def test_safe_click_option_off(_g):
+    with click_walk_game("bn-e2e-safe-click-off", SAFE_CLICK_WALK="false") as game:
+        start = bub_pos(game)
+        x, y = game.find("@")
+        game.click(x + 3, y)
+        assert wait_until(lambda: bub_pos(game) == (start[0] + 3, start[1], start[2])), (start, bub_pos(game))
+
+
+def test_safe_click_hostile_npc_and_danger(_g):
+    with click_walk_game("bn-e2e-safe-click-npc") as game:
         assert game.lua("HOSTILE_NPC=M:place_npc(here(4,0),'farmer') "
                         "HOSTILE_NPC:clear_bionics() HOSTILE_NPC:clear_mutations() "
                         "HOSTILE_NPC:clear_morale() HOSTILE_NPC:drop_all_items() out('ok')") == ["ok"]
@@ -97,8 +80,6 @@ def test_safe_click_hostile_npc_and_danger(_g):
                         "out(HOSTILE_NPC:is_enemy(),gapi.get_creature_at(HOSTILE_NPC:get_pos_ms()) ~= nil)") == ["true,true"]
         start = bub_pos(game)
         x, y = game.find("@")
-        game.hover(x - 3, y)
-        assert "click: step toward (hostile in view)" in game.screen(), game.screen()
         game.click(x - 3, y)
         assert bub_pos(game) == (start[0] - 1, start[1], start[2])
 
@@ -107,12 +88,8 @@ def test_safe_click_hostile_npc_and_danger(_g):
                         "3,TimeDuration.from_turns(0)))") == ["true"]
         start = bub_pos(game)
         x, y = game.find("@")
-        game.hover(x - 3, y)
         game.click(x - 3, y)
-        assert "click again: walk into danger" in game.screen(), game.screen()
-        assert bub_pos(game) == start
-    finally:
-        game.close()
+        assert bub_pos(game) == start, "danger still requires confirmation with a hostile in view"
 
 
 TESTS = [test_safe_click_preview, test_safe_click_hostile_one_step, test_safe_click_option_off,

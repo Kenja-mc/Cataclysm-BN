@@ -28,21 +28,21 @@ ZOMBIE = "gapi.place_monster_at(MonsterTypeId.new('{id}'), here({x},{y})) "
 SCENARIOS = [
     {
         "id": "quick_stack",
-        "about": "Quick stack (Q) puts carried items into nearby storage that already holds them",
+        "about": "Quick stack puts carried items into nearby storage that already holds them",
         "setup": "arena() spawn(2,0,'usb_drive',1,'f_rack') give('usb_drive',3) give('plastic_six_dice',1) ",
         "check": [
-            "Press Q (modern scheme): the three USB drives join the rack two tiles east.",
+            "Enter > Interact > Quick stack: the three USB drives join the rack two tiles east.",
             "The dice stay in your inventory: nothing nearby holds dice.",
             "The log says 'Stashed N items into 1 spot'.",
         ],
     },
     {
         "id": "sort_pile",
-        "about": "Sort pile (Z) moves the pile under you onto matching shelves",
+        "about": "Sort pile moves the pile under you onto matching shelves",
         "setup": "arena() spawn(3,0,'usb_drive',1,'f_rack') spawn(-3,0,'flyer',1,'f_rack') "
                  "spawn(0,0,'usb_drive',2) spawn(0,0,'character_sheet',1) spawn(0,0,'plastic_six_dice',1) ",
         "check": [
-            "Press Z: the USB drives go to the east rack, the character sheet to the west rack (books).",
+            "Enter > Interact > Sort the pile: drives go to the east rack, the character sheet to the west rack.",
             "The dice stay on your tile.",
         ],
     },
@@ -70,13 +70,13 @@ SCENARIOS = [
     },
     {
         "id": "hud",
-        "about": "Weather and weapon boxes on the map, stance line, aligned sidebar, body panel",
+        "about": "Weather and Status boxes on the map, stance line, aligned sidebar, body panel",
         "setup": "arena() give('bat',1) gapi.get_avatar():add_effect(EffectTypeId.new('bleed'), "
                  "TimeDuration.from_turns(30), BodyPartTypeId.new('arm_l')) ",
         "check": [
             "Top-left boxes: weather and time; what you fight with, your style and stance.",
-            "Sidebar rows share one label column; the Body panel lists the bleeding arm. H opens details.",
-            "Options > Interface > Weather box / Weapon box move the boxes or turn them off.",
+            "Sidebar rows share one label column; the Body panel lists the bleeding arm. Enter > Info > Body status opens details.",
+            "Options > Interface > Weather box / Status box move the boxes or turn them off.",
         ],
     },
     {
@@ -88,7 +88,7 @@ SCENARIOS = [
                  + "local d=gapi.place_monster_at(MonsterTypeId.new('mon_dog'), here(3,0)) d:make_friendly() "
                  + ZOMBIE.format(id="mon_zombie_rot", x=-6, y=0),
         "check": [
-            "Wield the revolver (h) and reload it (r).",
+            "Open inventory (i), select the revolver, choose Wield in its item actions, then reload (r).",
             "Press f: aiming starts on the decayed zombie to the west, whose line is clear.",
             "Tab to the east zombie: the panel says 'Ally in the line of fire: <dog>'.",
             "Hover a zombie with the mouse: the hint says what a click does.",
@@ -129,22 +129,22 @@ SCENARIOS = [
     },
     {
         "id": "stances",
-        "about": "F2 run, F3 crouch, F4 prone (modern scheme); the weapon box shows the stance",
+        "about": "Shift+X cycles walk, run, crouch and prone; the Status box shows the stance",
         "setup": "arena() ",
         "check": [
-            "Press F2, F3, F4 and watch the stance line in the weapon box and the Movement row.",
-            "\" opens the movement mode menu in both schemes.",
+            "Press Shift+X repeatedly and watch all four stances in the Status box and Movement row.",
+            "Enter > Combat > Movement mode opens the full movement mode menu.",
         ],
     },
     {
         "id": "contextual",
-        "about": "Space does the one sensible action next to you, or lists the choices",
+        "about": "Space offers explicit actions for the selected tile",
         "setup": "arena() M:set_ter_at(here(1,0), TerId.new('t_door_c'):int_id()) "
                  "M:set_ter_at(here(-3,0), TerId.new('t_door_c'):int_id()) spawn(-3,2,'rock',2) ",
         "check": [
-            "Press Space: the door east of you opens without a direction prompt; Space again closes it.",
-            "Walk next to the west door and the rocks: Space lists what each direction does.",
-            "u opens the use menu on the item you used last.",
+            "Right-click the east door to select it; Space then Open opens it, Space then Close closes it.",
+            "With no tile selected, Space lists nearby tiles; choose a direction then the explicit Open or Smash action.",
+            "Inventory (i), select an item, then choose Use from its item actions.",
         ],
     },
     {

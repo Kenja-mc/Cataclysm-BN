@@ -1,5 +1,6 @@
 #include "game_inventory.h"
 
+#include "action.h"
 #include "avatar.h"
 #include "avatar_action.h"
 #include "avatar_functions.h"
@@ -114,27 +115,43 @@ class common_inventory_selector : public inventory_pick_selector
         explicit common_inventory_selector( player &p ) : inventory_pick_selector( p ) {
             ctxt.register_action( "unload_all",
                                   to_translation( "Unload every carried item that can be unloaded" ) );
+            if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+                ctxt.register_action( "CRAFT", to_translation( "Craft" ) );
+            }
         }
 
         auto clear_shortcuts() -> void {
             unload_all_selected = false;
+            requested_action.reset();
         }
 
         [[nodiscard]] auto selected_unload_all() const -> bool {
             return unload_all_selected;
         }
 
+        [[nodiscard]] auto selected_action() const -> std::optional<action_id> {
+            return requested_action;
+        }
+
+        [[nodiscard]] auto craft_hint() const -> std::string {
+            return string_format( _( "[%s] Craft" ), ctxt.get_desc( "CRAFT" ) );
+        }
+
     protected:
         auto handle_action( const std::string &action ) -> bool override {
-            if( action != "unload_all" ) {
-                return false;
+            if( action == "CRAFT" ) {
+                requested_action = ACTION_CRAFT;
+                return true;
+            } else if( action == "unload_all" ) {
+                unload_all_selected = true;
+                return true;
             }
-            unload_all_selected = true;
-            return true;
+            return false;
         }
 
     private:
         bool unload_all_selected = false;
+        std::optional<action_id> requested_action;
 };
 
 std::string good_bad_none( int value )
@@ -267,14 +284,18 @@ static item *inv_internal( player &u, const inventory_selector_preset &preset,
     } while( true );
 }
 
-void game_menus::inv::common( avatar &you )
+auto game_menus::inv::common( avatar &you ) -> std::optional<action_id>
 {
     common_inventory_selector inv_s( you );
 
     inv_s.set_title( _( "Inventory" ) );
-    inv_s.set_hint( string_format(
-                        _( "Item hotkeys assigned: <color_light_gray>%d</color>/<color_light_gray>%d</color>" ),
-                        you.allocated_invlets().count(), inv_chars.size() ) );
+    auto hint = string_format(
+                    _( "Item hotkeys assigned: <color_light_gray>%d</color>/<color_light_gray>%d</color>" ),
+                    you.allocated_invlets().count(), inv_chars.size() );
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        hint += " | " + inv_s.craft_hint();
+    }
+    inv_s.set_hint( hint );
 
     bool started_action = false;
     do {
@@ -284,6 +305,10 @@ void game_menus::inv::common( avatar &you )
 
         inv_s.clear_shortcuts();
         auto *location = inv_s.execute();
+
+        if( const auto action = inv_s.selected_action() ) {
+            return action;
+        }
 
         if( inv_s.selected_unload_all() ) {
             avatar_action::unload_all( you );
@@ -309,6 +334,7 @@ void game_menus::inv::common( avatar &you )
         started_action = examine_item_menu::run( *location, func_pos_x, func_width,
                          examine_item_menu::menu_pos_t::right );
     } while( !started_action );
+    return std::nullopt;
 }
 
 item *game_menus::inv::titled_filter_menu( const item_filter &filter, avatar &you,

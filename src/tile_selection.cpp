@@ -27,6 +27,7 @@ auto hovered_tile = std::optional<tripoint_bub_ms>();
 auto hovered_route = std::vector<tripoint_bub_ms>();
 /// Turn the hover was computed on; a new turn can change what a click does.
 auto hovered_turn = std::optional<time_point>();
+auto hovered_mouse_move = false;
 auto hovered_hint = std::string();
 auto pending_click = std::optional<tripoint_bub_ms>();
 
@@ -132,7 +133,8 @@ auto choices_at( const avatar &you, const tripoint_bub_ms &p ) -> std::vector<ch
     if( adjacent && target == nullptr && can_examine_at( p ) ) {
         out.push_back( { .act = ACTION_EXAMINE, .label = string_format( _( "examine the %s" ), m.name( p ) ) } );
     }
-    if( dist > 0 && target == nullptr && avatar_knows_travel_destination( you, p ) && m.passable( p ) ) {
+    if( get_option<bool>( "MOUSE_MOVE" ) && dist > 0 && target == nullptr &&
+        avatar_knows_travel_destination( you, p ) && m.passable( p ) ) {
         out.push_back( { .label = adjacent ? _( "step here" ) : _( "walk here" ), .travel = true } );
     }
     return out;
@@ -158,6 +160,10 @@ auto resolve( avatar &you, map &m, const choice &c, const tripoint_bub_ms &p ) -
     }
     if( !c.travel ) {
         return c.act;
+    }
+    if( !get_option<bool>( "MOUSE_MOVE" ) ) {
+        pending_click.reset();
+        return ACTION_NULL;
     }
     const auto dist = square_dist( p.xy(), you.bub_pos().xy() );
     const auto safe = get_option<bool>( "SAFE_CLICK_WALK" );
@@ -187,21 +193,30 @@ auto resolve( avatar &you, map &m, const choice &c, const tripoint_bub_ms &p ) -
 
 auto hover( avatar &you, map &m, const std::optional<tripoint_bub_ms> &p ) -> void
 {
-    if( !get_option<bool>( "SAFE_CLICK_WALK" ) ) {
+    const auto mouse_move = get_option<bool>( "MOUSE_MOVE" );
+    if( !mouse_move || !get_option<bool>( "SAFE_CLICK_WALK" ) ) {
         pending_click.reset();
     }
-    if( !p || !enabled() ) {
+    if( !p || !enabled() || !m.inbounds( *p ) || p->z() != you.bub_pos().z() ||
+        ( !mouse_move && !you.sees( *p ) ) ) {
         clear_hover();
         return;
     }
     if( hovered_tile != p ) {
         pending_click.reset();
     }
-    if( hovered_tile == p && hovered_turn == calendar::turn ) {
+    if( hovered_tile == p && hovered_turn == calendar::turn && hovered_mouse_move == mouse_move ) {
         return;
     }
     hovered_tile = p;
     hovered_turn = calendar::turn;
+    hovered_mouse_move = mouse_move;
+    if( !mouse_move ) {
+        hovered_route.clear();
+        pending_click.reset();
+        hovered_hint = _( "left: attack; right: select" );
+        return;
+    }
     const auto choices = choices_at( you, *p );
     const auto dist = square_dist( p->xy(), you.bub_pos().xy() );
     hovered_route = !choices.empty() && choices.front().travel &&

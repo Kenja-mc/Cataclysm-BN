@@ -217,6 +217,7 @@
 #include <queue>
 #include <ranges>
 #include <set>
+#include <span>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -3928,6 +3929,12 @@ void game::setremoteveh( vehicle *veh )
 
 bool game::try_get_left_click_action( action_id &act, const tripoint_bub_ms &mouse_target )
 {
+    if( !get_option<bool>( "MOUSE_MOVE" ) ) {
+        u.clear_destination();
+        destination_preview.clear();
+        act = ACTION_NULL;
+        return false;
+    }
     bool new_destination = true;
     if( !destination_preview.empty() ) {
         auto &final_destination = destination_preview.back();
@@ -3969,7 +3976,7 @@ bool game::try_get_right_click_action( action_id &act, const tripoint_bub_ms &mo
 
     const bool is_adjacent = square_dist( mouse_target.xy(), u.bub_pos().xy() ) <= 1;
     const bool is_self = square_dist( mouse_target.xy(), u.bub_pos().xy() ) <= 0;
-    if( const monster *const mon = critter_at<monster>( mouse_target ) ) {
+    if( monster *const mon = critter_at<monster>( mouse_target ) ) {
         if( !u.sees( *mon ) ) {
             add_msg( _( "Nothing relevant here." ) );
             return false;
@@ -3981,6 +3988,7 @@ bool game::try_get_right_click_action( action_id &act, const tripoint_bub_ms &mo
         }
 
         // TODO: Add weapon range check. This requires weapon to be reloaded.
+        u.last_target = shared_from( *mon );
 
         act = ACTION_FIRE;
     } else if( is_adjacent &&
@@ -5196,7 +5204,7 @@ void game::draw_ter( const tripoint_bub_ms &center, const bool looking, const bo
         draw_critter( critter, center );
     }
 
-    if( !destination_preview.empty() && u.view_offset.z() == 0 ) {
+    if( get_option<bool>( "MOUSE_MOVE" ) && !destination_preview.empty() && u.view_offset.z() == 0 ) {
         // Draw auto-move preview trail
         const tripoint_bub_ms &final_destination = destination_preview.back();
         auto line_center = u.bub_pos() + u.view_offset;
@@ -5206,16 +5214,16 @@ void game::draw_ter( const tripoint_bub_ms &center, const bool looking, const bo
                       POSY - u.bub_pos().y() ), c_white, 'X' );
     }
 
-    if( const auto hovered = tile_selection::hovered(); hovered && !looking && u.view_offset.z() == 0 ) {
-        // Mouse tile selection: the route the click would walk, then the tile itself highlighted.
+    if( const auto hovered = tile_selection::hovered(); hovered && !looking &&
+        u.view_offset.z() == 0 ) {
         const auto &path = tile_selection::hover_path();
-        if( !path.empty() ) {
+        if( get_option<bool>( "MOUSE_MOVE" ) && !path.empty() ) {
             draw_line( path.back(), u.bub_pos() + u.view_offset, path, true );
         }
         m.drawsq( w_terrain, *hovered, drawsq_params().highlight( true ).center( center ) );
     }
 
-    // Arrow key aim: the reticle keeps its highlight even when the mouse points elsewhere.
+    // Keep selection visible after the mouse leaves.
     if( const auto reticle = aim_reticle::pos();
         reticle && !looking && u.view_offset.z() == 0 && tile_selection::hovered() != reticle ) {
         m.drawsq( w_terrain, *reticle, drawsq_params().highlight( true ).center( center ) );
@@ -8835,81 +8843,167 @@ bool game::npc_menu( npc &who, const bool &force )
 
 void game::examine()
 {
+    const auto contextual = get_option<bool>( "CONTEXTUAL_INTERACT" ) &&
+                            get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    const auto selected = contextual ? aim_reticle::pos() : std::nullopt;
     // if we are driving a vehicle, examine the
     // current tile without asking.
     const optional_vpart_position vp = m.veh_at( u.bub_pos() );
-    if( vp && vp->vehicle().player_in_control( u ) ) {
+    if( vp && vp->vehicle().player_in_control( u ) && !selected ) {
         examine( u.bub_pos() );
         return;
     }
 
-    // Contextual interact (CONTEXTUAL_INTERACT option): when only one adjacent tile has a
-    // sensible non-combat action, do it without asking for a direction. When several do, list
-    // what each direction would do in the prompt. Never auto-attacks.
-    if( get_option<bool>( "CONTEXTUAL_INTERACT" ) ) {
+    if( contextual ) {
+        const auto reachable = [&]( const tripoint_bub_ms & p ) {
+            return m.inbounds( p ) && p.z() == u.bub_pos().z() &&
+                   square_dist( p.xy(), u.bub_pos().xy() ) <= 1 &&
+                   !m.obstructed_by_vehicle_rotation( u.bub_pos(), p ) && u.sees( p );
+        };
         const auto usable = [&]( const tile_selection::choice & c ) {
             return !c.travel && c.act != ACTION_ATTACK && c.act != ACTION_FIRE &&
                    !( c.act == ACTION_PICKUP && u.is_mounted() );
         };
         const auto run = [&]( const tile_selection::choice & c, const tripoint_bub_ms & pos ) {
-            const auto act = tile_selection::resolve( u, m, c, pos );
-            if( act >= ACTION_MOVE_FORTH && act <= ACTION_MOVE_FORTH_LEFT ) {
-                avatar_action::move( u, m, get_delta_from_movement_action( act, iso_rotate::yes ) );
-            } else if( act == ACTION_EXAMINE ) {
-                u.manual_examine = true;
-                examine( pos );
-                u.manual_examine = false;
-            } else if( act == ACTION_PICKUP ) {
-                pickup( pos );
-            } else if( act == ACTION_CLOSE ) {
-                doors::close_door( m, u, pos );
+            if( !reachable( pos ) ) {
+                return;
             }
-            return act != ACTION_NULL;
+            switch( c.act ) {
+                case ACTION_OPEN:
+                    tile_selection::open_at( pos );
+                    break;
+                case ACTION_EXAMINE:
+                    u.manual_examine = true;
+                    examine( pos );
+                    u.manual_examine = false;
+                    break;
+                case ACTION_PICKUP:
+                    pickup( pos );
+                    break;
+                case ACTION_CLOSE:
+                    if( u.is_mounted() && !u.mounted_creature->has_flag( MF_MOUNTABLE_DOORS ) ) {
+                        add_msg( m_info, _( "You can't close things while you're riding." ) );
+                    } else {
+                        doors::close_door( m, u, pos );
+                    }
+                    break;
+                case ACTION_JUMP:
+                    iexamine::jump_over_tile( u, pos );
+                    break;
+                case ACTION_SMASH:
+                    tile_selection::smash_at( pos );
+                    break;
+                default:
+                    break;
+            }
         };
-        struct directed_choice {
-            tripoint_bub_ms pos;
-            tile_selection::choice c;
-        };
-        // Your own tile counts too: a vehicle or furniture under you is examined there.
-        const auto choices_for = [&]( const tripoint_bub_ms & p ) {
+        const auto choices_for = [&]( const tripoint_bub_ms & p, const bool explicit_tile ) {
             auto out = tile_selection::choices_at( u, p ) | std::views::filter( usable )
                        | std::ranges::to<std::vector>();
             if( p == u.bub_pos() && can_examine_at( p ) ) {
                 out.push_back( { .act = ACTION_EXAMINE, .label = string_format( _( "examine the %s" ), m.name( p ) ) } );
             }
+            if( p != u.bub_pos() ) {
+                const auto obstacle = m.impassable( p ) || m.has_furn( p ) || m.move_cost( p ) > 2 ||
+                                      m.dangerous_field_at( p ) ||
+                                      ( u.knows_trap( p ) && !m.tr_at( p ).is_benign() );
+                if( ( explicit_tile || obstacle ) && iexamine::can_jump_over_tile( u, p ) ) {
+                    out.push_back( { .act = ACTION_JUMP, .label = string_format( _( "jump over the %s" ), m.name( p ) ) } );
+                }
+            }
+            const auto pulpable = std::ranges::any_of( m.i_at( p ), []( const item * it ) {
+                return it->is_corpse() && it->damage() < it->max_damage() &&
+                       ( it->can_revive() || it->get_mtype()->zombify_into );
+            } );
+            const auto bashable_field = std::ranges::any_of( m.field_at( p ), []( const auto & fd ) {
+                return fd.first->bash_info.str_min != -1;
+            } );
+            if( m.is_bashable( p ) || pulpable || bashable_field ) {
+                out.push_back( { .act = ACTION_SMASH, .label = string_format( _( "smash the %s" ), m.name( p ) ) } );
+            }
             return out;
         };
+        const auto interact = [&]( const tripoint_bub_ms & p,
+        const std::span<const tile_selection::choice> choices ) {
+            if( choices.empty() ) {
+                add_msg( _( "There is nothing to interact with on that tile." ) );
+                return;
+            }
+            if( choices.size() == 1 && choices.front().act != ACTION_SMASH &&
+                choices.front().act != ACTION_JUMP ) {
+                run( choices.front(), p );
+                return;
+            }
+            auto menu = uilist();
+            menu.text = string_format( _( "Interact with the %s" ), m.name( p ) );
+            auto index = 0;
+            for( const auto &c : choices ) {
+                auto key = MENU_AUTOASSIGN;
+                switch( c.act ) {
+                    case ACTION_OPEN:
+                        key = 'o';
+                        break;
+                    case ACTION_CLOSE:
+                        key = 'c';
+                        break;
+                    case ACTION_EXAMINE:
+                        key = 'e';
+                        break;
+                    case ACTION_PICKUP:
+                        key = 'g';
+                        break;
+                    case ACTION_JUMP:
+                        key = 'j';
+                        break;
+                    case ACTION_SMASH:
+                        key = 'S';
+                        break;
+                    default:
+                        break;
+                }
+                menu.addentry( index++, true, key, c.label );
+            }
+            menu.query();
+            if( menu.ret >= 0 && static_cast<size_t>( menu.ret ) < choices.size() ) {
+                run( choices[menu.ret], p );
+            }
+        };
+        if( selected ) {
+            if( !reachable( *selected ) ) {
+                add_msg( _( "You can't reach that tile." ) );
+                return;
+            }
+            interact( *selected, choices_for( *selected, true ) );
+            return;
+        }
+        struct directed_choice {
+            tripoint_bub_ms pos;
+            tile_selection::choice c;
+        };
         auto options = std::vector<directed_choice>();
-        for( const tripoint_bub_ms &p : m.points_in_radius( u.bub_pos(), 1 ) ) {
-            if( m.obstructed_by_vehicle_rotation( u.bub_pos(), p ) ) {
+        for( const auto &p : m.points_in_radius( u.bub_pos(), 1 ) ) {
+            if( !reachable( p ) ) {
                 continue;
             }
-            for( const auto &c : choices_for( p ) ) {
+            for( const auto &c : choices_for( p, false ) ) {
                 options.push_back( { .pos = p, .c = c } );
             }
         }
-
-        if( options.size() == 1 && run( options.front().c, options.front().pos ) ) {
+        if( options.size() == 1 ) {
+            interact( options.front().pos, std::span( &options.front().c, 1 ) );
             return;
         }
-
-        if( options.size() > 1 ) {
+        if( !options.empty() ) {
             auto full_prompt = std::string( _( "Interact with which tile?" ) );
             for( const auto &dc : options ) {
-                full_prompt += "\n";
                 const auto where = dc.pos == u.bub_pos() ? std::string( _( "Here" ) ) :
                                    direction_name( direction_from( u.bub_pos().xy(), dc.pos.xy() ) );
-                full_prompt += string_format( _( "%s: %s" ), where, dc.c.label );
+                full_prompt += "\n" + string_format( _( "%s: %s" ), where, dc.c.label );
             }
-            const auto target = choose_adjacent( full_prompt, false );
-            if( !target ) {
-                return;
+            if( const auto target = choose_adjacent( full_prompt, false ); target && reachable( *target ) ) {
+                interact( *target, choices_for( *target, true ) );
             }
-            for( const auto &c : choices_for( *target ) ) {
-                if( run( c, *target ) ) {
-                    return;
-                }
-            }
+            return;
         }
     }
 
@@ -14481,6 +14575,9 @@ void game::on_options_changed()
     // null world::info via overmapbuffer when trying to reload overmap data.
     if( !world_generator || !world_generator->active_world ) {
         return;
+    }
+    if( !aim_reticle::active() ) {
+        liveview.hide();
     }
     for( auto &[dim_id, tracker_ptr] : grid_trackers_ ) {
         if( tracker_ptr ) {

@@ -83,12 +83,28 @@ Long-form write-ups should follow
 
 ## What to pay attention to
 
-- **Controls:** WASD + Q E Z C walk, arrow keys aim, `F` attacks, `g` opens and confirms pickup,
-  `h` wields and `W` wears. Check `n` auto-explore, contextual `Space`, stances (F2/F3/F4),
-  quick stack (`Q`), sort pile (`Z`), driving hints (`ws`/`ad`) and their return to `wasd` on release.
-- **HUD:** weather/weapon boxes, Body panel (`H`), aligned sidebar, vehicle box at 80×25.
-- **Targeting:** starts on the reachable hostile, warns about allies in the line of fire, loudness.
-- **Crafting:** opens on recent recipes, "Missing: …", part producer hints (`p`).
+- **Controls:** WASD + Q E Z C walk and bump-attack; arrow keys aim. Tab/Shift+Tab cycle visible
+  hostiles freely in distance/position order with wraparound; `f` attacks the selection using
+  normal gun aiming. Enter groups all actions (Info for character/status screens). Ctrl+X opens
+  wait/rest; Shift+X cycles walk/run/crouch/prone, with F2/F3/F4 unbound.
+- **Inventory:** `i`, then select an item for Wield/Wear/Eat/Use/Read and other context actions.
+  Wield is equipment, not a primary map key. Check the visible F5 Craft entry even when empty.
+  `g` opens/confirms pickup. Quick stack, sort pile and other former map-menu keys remain in Enter.
+- **Look and interact:** Shift+WASD/QEZC moves a free reticle from the player, accumulating one
+  tile per press. Space acts on that selection or the RMB-selected tile and offers applicable
+  Open/Close/Examine/Pickup/Jump/Smash choices; Jump and Smash require explicit choices (`S` for Smash).
+  Ctrl+WASD/QEZC peeks physically for the normal 200 moves and returns on cancel. In Modern
+  curses, Ctrl+C/Z must act as game chords rather than quit/suspend; Classic keeps normal signals.
+- **Mouse:** map right click selects freely; left click attacks the clicked hostile.
+  No Modern map click walks. Classic retains upstream mouse behavior.
+- **HUD:** four-row Weather and loadout/needs Status boxes; check Text only and Unicode modes,
+  fixed Pain/Thirst/Hunger/Rest/Heat order, watch/thermometer gates and sidebar restoration on
+  toggles or narrow/short resizes. Body details remain in Enter → Info → Body status.
+  Check vehicle/readout fallbacks at 80×25, driving hints (`ws`/`ad`), and their return to
+  `wasd` on release. The new bundled typeface should show readable labels and complete glyphs.
+- **Targeting:** gun aiming starts on the reachable hostile and warns about allies in the line of
+  fire; check loudness. Map target cycling is selection, not an attack.
+- **Crafting:** `i`, then F5; opens on recent recipes, "Missing: …", part producer hints (`p`).
 - **Look:** ASCII art, colors, map glyphs, box behavior.
 - **Sound:** fade-in markers and music/ambience with the Otopack soundpack selected.
 

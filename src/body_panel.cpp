@@ -12,6 +12,7 @@
 #include "color.h"
 #include "cursesdef.h"
 #include "input.h"
+#include "options.h"
 #include "output.h"
 #include "string_formatter.h"
 #include "translations.h"
@@ -125,6 +126,9 @@ auto draw( avatar &you, const catacurses::window &w ) -> void
     static auto key_version = -1;
     if( key_version != inp_mngr.bindings_version() ) {
         key = press_x( ACTION_BODY_STATUS, "", "", "" );
+        if( key.empty() && get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+            key = string_format( _( "%s → Info" ), press_x( ACTION_ACTIONMENU, "", "", "" ) );
+        }
         key_version = inp_mngr.bindings_version();
     }
     if( !key.empty() ) {

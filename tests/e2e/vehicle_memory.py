@@ -1,5 +1,5 @@
 """Map memory keeps the ground a moving vehicle hides (upstream #10452)."""
-from helpers import HELPERS, Game, bub_pos, settle, start_new_game
+from helpers import HELPERS, Game, action_menu, bub_pos, settle, start_new_game
 from vehicle_box import spawn_vehicle
 
 
@@ -28,7 +28,7 @@ def vehicle_game(name, **options):
 
 def take_control(game):
     """Taking control also starts the engine, which nearby monsters may interrupt."""
-    game.keys("^", delay=1.2)
+    action_menu(game, "Misc", "Control Vehicle")
     for _ in range(40):
         if "Stop trying to start the vehicle?" in game.screen():
             game.keys("I", delay=0.8)  # Ignore further distractions and finish.

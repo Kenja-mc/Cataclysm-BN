@@ -38,8 +38,8 @@ def check_hud(session):
             label = f"{side}-{corner}"
             on = session.launch(label, {**opts, "HUD_WEATHER_BOX": corner})
             x0, y0, x1, y1 = changed_bounds(off, on, origin, edge)
-            # Six weather facts plus the border must fit even when the map uses large tiles.
-            require(y1 - y0 + 1 == 8 * 16,
+            # HUD uses UI cells, not map tiles.
+            require(y1 - y0 + 1 == 6 * 16,
                     f"{label}: weather facts were clipped or laid out in map tiles: {(x0, y0, x1, y1)}")
             if corner == "top_left":
                 require((x0, y0) == (origin, 0), f"{label}: wrong terrain origin: {(x0, y0)}")

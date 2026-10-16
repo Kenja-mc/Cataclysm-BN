@@ -241,9 +241,15 @@ void mend_item( avatar &you, item &obj, bool interactive )
                         return item::nname( e );
                     }, enumeration_conjunction::or_ );
 
-                    add_msg( m_info, _( "It is damaged, and could be repaired with %s.  "
-                                        "%s to use one of those items." ),
-                             repair_options, press_x( ACTION_USE ) );
+                    if( const auto use = press_x( ACTION_USE, "", "", "" ); !use.empty() ) {
+                        add_msg( m_info, _( "It is damaged, and could be repaired with %s.  "
+                                            "Press %s to use one of those items." ),
+                                 repair_options, use );
+                    } else {
+                        add_msg( m_info, _( "It is damaged, and could be repaired with %1$s.  "
+                                            "Open inventory (%2$s), select a repair tool and choose Use." ),
+                                 repair_options, press_x( ACTION_INVENTORY, "", "", "" ) );
+                    }
                 }
             }
         }

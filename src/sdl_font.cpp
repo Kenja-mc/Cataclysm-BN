@@ -333,36 +333,29 @@ SDL_Texture_Ptr CachedTTFFont::create_glyph( const SDL_Renderer_Ptr &renderer,
         const std::string &ch,
         const int color )
 {
-    SDL_Surface_Ptr sglyph(
-        fontblending
-        ? TTF_RenderText_Blended( font.get(), ch.c_str(), 0, windowsPalette[color] )
-        : TTF_RenderText_Solid( font.get(), ch.c_str(), 0, windowsPalette[color] )
-    );
+    auto sglyph = SDL_Surface_Ptr(
+                      fontblending
+                      ? TTF_RenderText_Blended( font.get(), ch.c_str(), 0, windowsPalette[color] )
+                      : TTF_RenderText_Solid( font.get(), ch.c_str(), 0, windowsPalette[color] )
+                  );
     if( !sglyph ) {
         dbg( DL::Error ) << "Failed to create glyph for " << ch << ": " << SDL_GetError();
         return nullptr;
     }
-    const int wf = utf8_wrapper( ch ).display_width();
-    SDL_Surface_Ptr surface( SDL_CreateSurface( width * wf, height, SDL_PIXELFORMAT_RGBA32 ) );
-    SDL_Rect src_rect = { 0, 0, sglyph->w, sglyph->h };
-    SDL_Rect dst_rect = { 0, 0, width * wf, height };
-    if( src_rect.w < dst_rect.w ) {
-        dst_rect.x = ( dst_rect.w - src_rect.w ) / 2;
-        dst_rect.w = src_rect.w;
-    } else if( src_rect.w > dst_rect.w ) {
-        src_rect.x = ( src_rect.w - dst_rect.w ) / 2;
-        src_rect.w = dst_rect.w;
-    }
-    if( src_rect.h < dst_rect.h ) {
-        dst_rect.y = ( dst_rect.h - src_rect.h ) / 2;
-        dst_rect.h = src_rect.h;
-    } else if( src_rect.h > dst_rect.h ) {
-        src_rect.y = ( src_rect.h - dst_rect.h ) / 2;
-        src_rect.h = dst_rect.h;
-    }
-
-    if( !printErrorIf( !SDL_BlitSurface( sglyph.get(), &src_rect, surface.get(), &dst_rect ),
-                       "SDL_BlitSurface failed" ) ) {
+    const auto cell_width = width * static_cast<int>( utf8_wrapper( ch ).display_width() );
+    auto surface = SDL_Surface_Ptr( SDL_CreateSurface( cell_width, height, SDL_PIXELFORMAT_RGBA32 ) );
+    const auto glyph_width = std::min( sglyph->w, cell_width );
+    const auto glyph_height = std::min( sglyph->h, height );
+    const auto dst_rect = SDL_Rect{
+        .x = ( cell_width - glyph_width ) / 2, .y = ( height - glyph_height ) / 2,
+        .w = glyph_width, .h = glyph_height
+    };
+    const auto scaled = sglyph->w > cell_width || sglyph->h > height;
+    const auto copied = scaled ?
+                        SDL_BlitSurfaceScaled( sglyph.get(), nullptr, surface.get(), &dst_rect,
+                                fontblending ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST ) :
+                        SDL_BlitSurface( sglyph.get(), nullptr, surface.get(), &dst_rect );
+    if( !printErrorIf( !copied, "Failed to fit glyph into font cell" ) ) {
         sglyph = std::move( surface );
     }
 

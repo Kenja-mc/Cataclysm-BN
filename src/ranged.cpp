@@ -4349,8 +4349,10 @@ void target_ui::draw_controls_list( int text_y )
         lines.push_back( { 8, colored( col_move, _( "Move cursor with directional keys" ) ) } );
     }
     if( is_mouse_enabled() ) {
-        std::string move = _( "Mouse: LMB: Target, Wheel: Cycle," );
-        std::string fire = _( "RMB: Fire" );
+        const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+        const auto move = std::string( modern ? _( "Mouse: RMB: Target, Wheel: Cycle," ) :
+                                       _( "Mouse: LMB: Target, Wheel: Cycle," ) );
+        const auto fire = std::string( modern ? _( "LMB: Fire" ) : _( "RMB: Fire" ) );
         lines.push_back( { 7, colored( col_move, move ) + " " + colored( col_fire, fire ) } );
     }
     {

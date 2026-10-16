@@ -6,6 +6,7 @@
 #include <utility>
 #include <optional>
 
+#include "action.h"
 #include "coordinates.h"
 #include "item_handling_util.h"
 #include "pickup_token.h"
@@ -43,7 +44,8 @@ item *titled_filter_menu( const item_filter &filter, avatar &you,
 */
 /*@{*/
 
-void common( avatar &you );
+/// Return a requested action to normal dispatch.
+auto common( avatar &you ) -> std::optional<action_id>;
 void compare( player &p, const std::optional<tripoint_rel_ms> &offset );
 void compare( const item &left, const item &right );
 /** Assign (or reassign from existing) letter to item in character's inventory. */

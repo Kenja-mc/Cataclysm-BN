@@ -12,18 +12,59 @@ Upstream's own changes are in `docs/en/game/changelog`.
   at 80×25. In Modern, `r` resets the highlighted option and `R` resets the page. A
   **[Reset to default]** button, hover, clicks on rows and page tabs work with the mouse.
 - **Arrow keys aim** (Sword of the Stars: The Pit): in Modern the arrow keys move a free targeting
-  reticle and `F` attacks what it covers. Options → Interface → Arrow keys aim; off in Classic.
-- **Safe click-to-walk:** walking further than one step by mouse needs a second click on the same
-  tile, and with a hostile in view a far click takes one step. Options → Interface turns it off.
+  reticle and `f` attacks what it covers. Options → Interface → Arrow keys aim; off in Classic.
+- **Safe click-to-walk** (only when Mouse movement is explicitly enabled): walking further than
+  one step needs a second click, and with a hostile in view a far click takes one step.
 - **Mouse in inventory and pick-up menus** (Modern): hover highlights, left click picks or marks,
   the wheel scrolls in terminal and tiles builds, and right click opens the item's actions.
 
 ### Changed
 
+- Modern map clicks no longer move the avatar. Right click selects/inspects without taking a turn;
+  left click attacks the clicked hostile. Modern's firing screen also uses right-select/left-fire.
+  **Mouse movement** is off in Modern; Classic retains upstream mouse behavior.
+- Modern now uses compact action families: Enter keeps every general action category (Info for
+  character/status screens); `i` opens inventory and item context actions such as Wield, Wear,
+  Eat, Use and Read. Wield is an equipment action, not a separate primary map key. Inventory's
+  visible **F5 Craft** entry works even with an empty inventory.
+- Space acts on the RMB/Shift-look selected tile and offers applicable Open, Close, Examine,
+  Pickup, Jump and Smash choices. Jump and destructive actions require an explicit choice;
+  local `S` selects Smash without conflicting with menu navigation.
+- Shift+WASD/QEZC freely moves a look reticle one tile at a time from the player;
+  Ctrl+WASD/QEZC physically peeks through the normal action, costing 200 moves and returning
+  to the starting position on cancel. Modern curses treats Ctrl+C/Z as game chords rather than
+  quit/suspend signals; Classic keeps normal signal behavior.
+- Shift+X cycles walk, run, crouch and prone; F2/F3/F4 are unbound. Ctrl+X opens wait/rest;
+  lowercase `x` and numpad 5 wait one turn.
+- Tab/Shift+Tab freely cycle visible hostiles in distance/position order with wraparound.
+  `f` attacks the selected target, using normal gun aiming; bump attacks default to on again.
+  Former separate map-menu shortcuts are unbound without removing their actions. Top-row
+  numbers no longer move the player; context-local menu bindings and Classic are unchanged.
+- Replaced the controls diagram with a complete 104-key ANSI keyboard: standard key widths,
+  staggered rows and modifiers, separate navigation/arrow/numpad clusters, and a compact
+  modifier-family legend.
 - In Modern, `g` in the pick-up menu picks up the marked items, or the highlighted item when
-  nothing is marked. `h` wields and `W` wears in pickup, inventory and item actions, as on the map.
+  nothing is marked. Pickup's local Wield and Wear shortcuts remain available.
 - The weather, weapon (with stance) and vehicle boxes now also show in the tiles version, drawn
   over the map; the sidebar no longer repeats what they show there either.
+- Weather now uses four rows: description, date/time/moon phase, Light and Wind. Compact date
+  text and fit-aware width retain the full phase. Watch and thermometer gates remain intact,
+  including live inventory changes and unknown underground time without a watch.
+  Text-only wind letters now name the same origin as a weather instrument.
+- Renamed the weapon box to **Status**, with weapon, style, stance and fixed aligned
+  Pain/Thirst/Hunger/Rest/Heat rows. Icons retain labels; healthy values stay explicit.
+  Sidebar fields return when boxes cannot fit. Narrow views keep Needs rather than hiding
+  them behind an oversized box, and boxes protect the avatar's map center.
+- Bundled JetBrains Mono NL Regular (SIL OFL 1.1), with Unifont fallback, as the larger,
+  anti-aliased default typeface. Oversized TTF glyphs now fit their cells instead of being
+  center-cropped. Existing custom fonts remain supported; asset credits list the new font
+  and its license.
+- Empty-tile inspection no longer blocks keyboard gun aiming. Direct map clicks still cannot
+  redirect to another target. Saved control-scheme switches clear inspection, while canceled
+  switches preserve it; Classic's fire command ignores Modern reticles.
+- Contextual Space choices no longer expose or act on unseen neighboring terrain.
+- Existing saved option values remain preferences, including an explicitly disabled bump attack;
+  upgrading an older profile may need that option enabled once.
 - `bin/install-cataclysm-bn.sh` downloads the Otopack soundpack (music and ambience) through
   upstream's registry bundler. Downloaded audio and its credits remain outside version control.
 
