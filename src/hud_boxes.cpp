@@ -70,6 +70,7 @@ auto frame_for( const bool unicode, const bool rounded ) -> frame_glyphs
     return { .horizontal = "─", .vertical = "│", .top_left = "┌", .top_right = "┐", .bottom_left = "└", .bottom_right = "┘" };
 }
 
+/// Scanned every draw: a per-turn cache went stale when the avatar picked a thermometer up.
 auto has_thermometer( const avatar &you ) -> bool
 {
     return you.has_item_with_flag( flag_THERMOMETER ) ||
@@ -253,7 +254,9 @@ auto weather_lines( const avatar &you, const std::string &icons ) -> std::vector
     out.push_back( { .icon = light_icon, .icon_w = utf8_width( light_icon ), .icon_color = light.second,
                      .text = string_format( _( "Light: %s" ), light.first ), .text_color = light.second } );
     const auto wind = wind_text( you, icons == "ascii" );
-    out.push_back( { .icon = "", .icon_w = 0, .icon_color = wind.color,
+    // Every other row owns an icon cell, so the wind row keeps an empty one to stay in column.
+    const auto wind_icon = icons == "ascii" ? std::string() : std::string( " " );
+    out.push_back( { .icon = wind_icon, .icon_w = utf8_width( wind_icon ), .icon_color = wind.color,
                      .text = string_format( _( "Wind: %s" ), wind.text ), .text_color = wind.color } );
     return out;
 }
@@ -376,10 +379,11 @@ auto vehicle_lines( const vehicle_state &state, const std::string &icons ) -> st
 {
     auto out = std::vector<line>();
     auto *veh = state.veh;
+    const auto ascii = icons == "ascii";
     out.reserve( state.rows );
     static const auto fuel_type_battery = itype_id( "battery" );
     {
-        const auto ic = glyph( icon::compass, icons );
+        const auto ic = ascii ? std::string() : glyph( icon::compass, icons );
         const auto iw = utf8_width( ic );
         out.push_back( { .icon = std::move( ic ), .icon_w = iw, .icon_color = c_light_gray,
                          .text = string_format( _( "Azimuth: %s" ), veh->face.to_string_azimuth_from_north() ),
@@ -421,7 +425,7 @@ auto vehicle_lines( const vehicle_state &state, const std::string &icons ) -> st
     };
     if( state.engine_fuel ) {
         const auto percent = percentage( *state.engine_fuel );
-        const auto ic = glyph( icon::fuel, icons );
+        const auto ic = ascii ? std::string() : glyph( icon::fuel, icons );
         const auto iw = utf8_width( ic );
         out.push_back( { .icon = std::move( ic ), .icon_w = iw, .icon_color = c_light_gray,
                          .text = string_format( _( "%s: %d%%" ), item::nname( *state.engine_fuel ), percent ),
@@ -430,7 +434,7 @@ auto vehicle_lines( const vehicle_state &state, const std::string &icons ) -> st
     if( state.battery ) {
         const auto percent = percentage( fuel_type_battery );
         const auto color = percent > 20 ? c_light_cyan : percent > 5 ? c_yellow : c_red;
-        const auto ic = glyph( icon::battery, icons );
+        const auto ic = ascii ? std::string() : glyph( icon::battery, icons );
         const auto iw = utf8_width( ic );
         out.push_back( { .icon = std::move( ic ), .icon_w = iw, .icon_color = color,
                          .text = string_format( _( "Battery: %d%%" ), percent ), .text_color = color } );
