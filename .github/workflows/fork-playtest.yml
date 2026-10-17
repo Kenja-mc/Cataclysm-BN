@@ -162,6 +162,7 @@ jobs:
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
           import json
           import os
+          import sys
 
           LEGS = [
               {
@@ -241,10 +242,13 @@ jobs:
           # An empty include list is not a usable matrix, so fall back to one unused vector
           # that the job-level `if` keeps from running.
           print("matrix=%s" % json.dumps({"include": legs} if legs else {"leg": ["none"]}))
+          # Human-readable lines go to stderr: everything on stdout lands in $GITHUB_OUTPUT,
+          # which accepts only name=value lines.
           for leg in legs:
               print("leg: %s -> %s/%s/%s, models %s, %s %d turns" %
                     (leg["leg"], leg["mode"], leg["scheme"], leg["input"], leg["models"],
-                     "dry run" if leg["dry"] else "live", leg["turns"]))
+                     "dry run" if leg["dry"] else "live", leg["turns"]),
+                    file=sys.stderr)
           PY
 
   e2e-suite:
