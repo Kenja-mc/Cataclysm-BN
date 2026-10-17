@@ -4,6 +4,25 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-17
+
+### Added
+
+- **Agentic playtests**: a decision model plays a scenario and reports what it meets. One transcript
+  line per turn carries the state that preceded the action, and the report names each defect with its
+  turn number plus the run's cost. Free models only, from OpenCode and Experiential Labs, with a
+  fallback that moves to the next model when a free allowance runs out and compacts the state to fit.
+  Scenarios cover the main menu, the tutorial, natural gameplay and a map built around the features
+  this fork adds, on the terminal and tiles builds and with classic or modern controls. See
+  [`docs/fork/agentic-playtests.md`](docs/fork/agentic-playtests.md) and `OVERHAUL.md`.
+
+### Maintenance
+
+- The end-to-end suite and the playtests run on GitHub Actions:
+  `.github/workflows/fork-playtest.yml` runs the deterministic checks on every push, four playtest
+  legs on the nightly schedule, and the feature screenshots on demand. The live legs wait for the
+  model secrets, the dry leg runs either way.
+
 ## 2026-10-16
 
 ### Fixed

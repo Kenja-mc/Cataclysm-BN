@@ -594,6 +594,20 @@ The `stress` scenario puts 120 zombies around reinforced glass for checking smar
 edge-arrow responsiveness. The tiles launch uses a private `XDG_CONFIG_HOME` under the scenario
 directory, so playtesting does not overwrite your normal tiles options.
 
+A decision model can play a scenario by itself:
+
+```sh
+python3 tests/e2e/agent_playtest.py --scenario fork_features --models text --turns 30 \
+        --report-dir /tmp/playtest-fork
+```
+
+It reads the state each turn, picks one action from the keys the current screen accepts, sends it and
+writes one transcript line per turn plus a report naming any defect it found. `--dry-run` needs no
+API key and opens no socket, so it doubles as the wiring check. Free models only: the pools, the free
+daily allowances and what the console needs are in
+[`docs/fork/agentic-playtests.md`](docs/fork/agentic-playtests.md). The deterministic suite below
+stays the gate; a model run adds evidence, it never replaces a check.
+
 ## Building
 
 Same as upstream; see `docs/en/dev/guides/building`. The presets need `clang`, `mold` and `ccache`

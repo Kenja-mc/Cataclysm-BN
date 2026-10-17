@@ -54,6 +54,22 @@
   No new harvest drafts were created; existing policy work remains in #3 and command-post#102.
   See the [maintained harvest summary](../ai-stack/command-post/logs/harvest/summary.md).
 
+## Accounts and credentials
+
+This repository belongs to the `Kenja-mc` GitHub account. The workstation's active `gh` account is
+a different one, so both the identity and the push credential are pinned per repository.
+
+- **Commits** — `.git/config` sets `user.name` and `user.email` to `Kenja-mc`, so the global identity
+  never applies here.
+- **Push** — `.git/config` sets a `credential.https://github.com.helper` that reads the Kenja-mc
+  token from the gh keyring at push time, so `git push origin main` needs no flags and no inline
+  helper. Nothing global changes and no token is written to disk.
+- **gh** — the active account is `asmartin-ai`, which has pull-only access here: it cannot open
+  issues, comment or read secrets. Use `gh-fork` (in `~/.local/bin`) or prefix a call with
+  `GH_TOKEN=$(gh auth token --user Kenja-mc)`, and always pass `--repo Kenja-mc/Cataclysm-BN`.
+- **Model secrets** — `XPL_SK_AGENT` and `OC_SK_AGENT` are still not repository secrets, verified
+  with the admin token, so the agentic playtest legs stay on the dry path until they are added.
+
 ## Install the fork and give feedback
 
 See [`docs/fork/playing.md`](docs/fork/playing.md) for install, launch and playtest commands,
