@@ -1,0 +1,1065 @@
+name: fork-playtest
+
+# Play-testing the fork: the curses end-to-end suite, and an agentic playtest where a
+# decision model plays the game, chooses its own actions and reports what it finds
+# (fork issue #6).
+#
+# Exit codes are the driver's contract and the workflow keeps it: 0 clean, 1 a defect the
+# model named, 3 a cap (turns, wall clock, tokens, budget) cut the run short, 2 the harness
+# broke. Only 2 fails a leg: a defect and a cap are the run's product, so they are reported
+# in the leg summary, named in a warning, recorded as a verdict (clean | defect | killed |
+# harness-error) in the artifact's verdict.json, and the job stays green. The triage job
+# files one issue when any leg reported a defect; a cap is not an issue.
+#
+# Cost: the runners below are standard GitHub-hosted runners, which are free for public
+# repositories, so the runner minutes cost nothing. The model tokens are not free: every
+# decision is a paid call unless the pool is one of the *-free models. Each playtest leg
+# prints its cost from transcript.jsonl (and the report's own cost line) into the job
+# summary, and the triage job prints the whole-run total.
+#
+# Combinations: the four the user asked for, one leg each. kb means keyboard only, kb-mouse
+# means keyboard plus mouse; the surface is either the curses build or the tiles build
+# under Xvfb: kb (classic scheme) and kb-mouse (modern scheme) in curses, kb (classic) and
+# kb-mouse (modern) in tiles. Co-op is the fifth combination the fork wants but has no
+# harness: OVERHAUL.md ("Simple seamless co-op", fork issue #2) describes the co-op port as
+# work to evaluate and no multiplayer behavior is enabled, so there is nothing to drive
+# yet. A co-op leg belongs here once that harness exists.
+#
+# Without both model secrets (XPL_SK_AGENT, OC_SK_AGENT) the live legs are replaced by one
+# dry playtest leg, so every push still proves the wiring and the harness without a model
+# call; the plan job says so in the run summary.
+#
+# The screenshots job is the fork's own visual check: nightly and on demand it replays the
+# fork features in the tiles build and regenerates docs/fork/images/features/ plus the page
+# docs/fork/feature-screenshots.md, which it uploads as an artifact. It never commits or
+# pushes an image; a human reviews the artifact and commits the page.
+#
+# Content per leg, from playtest.SCENARIOS: main menu navigation (main_menu), the tutorial
+# (tutorial), natural gameplay (natural_gameplay) and a custom map that exercises fork
+# features (fork_features: quick stack, sort pile, item variants, stack modifiers, the
+# body panel, the hub menus, modern keys). main_menu and tutorial start at the title
+# screen and the tutorial room, which have no tiles surface, so the tiles leg walks
+# natural_gameplay and fork_features only. Ids must exist in the registry; the run step
+# fails listing the unknown ids instead of letting each scenario die as a harness error.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: [docs/**, scripts/**, "**.md", "**.mdx"]
+  pull_request:
+    branches: [main]
+    paths-ignore: [docs/**, scripts/**, "**.md", "**.mdx"]
+    types: [opened, reopened, synchronize]
+  schedule:
+    # Nightly at 04:17 UTC, late enough that the matrix workflow has landed the tiles
+    # package for the day's commit.
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "One scenario id from playtest.SCENARIOS (empty: the leg's content list; main_menu and tutorial are curses-only)"
+        type: string
+        default: ""
+      mode:
+        description: "Game surface"
+        type: choice
+        options: [all, curses, tiles]
+        default: all
+      scheme:
+        description: "Control scheme"
+        type: choice
+        options: [all, modern, classic]
+        default: all
+      input:
+        description: "Inputs the model may use"
+        type: choice
+        options: [all, kb, kb-mouse]
+        default: all
+      models:
+        description: 'A pool ("vision"|"text") or comma-separated model ids (empty: the leg default)'
+        type: string
+        default: ""
+      dry_run:
+        description: "Wiring check: no key, no network, no tokens"
+        type: boolean
+        default: false
+      screenshots_only:
+        description: "Feature screenshots: space-separated shot ids for --only (empty: all shots)"
+        type: string
+        default: ""
+
+# Cancel all previous instances in favor of the latest revision of a PR; a nightly run
+# is never cancelled by a newer revision.
+concurrency:
+  group: fork-playtest-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Least privilege: the jobs that run third-party code (the game under test) and the
+# model-driven loop hold read permissions only. The triage job, which files the one issue,
+# grants itself issues: write in its own permissions block.
+permissions:
+  actions: read
+  contents: read
+
+env:
+  LLVM_VERSION: "22"
+  # Kill switches, per scenario run: 30 turns, 15 minutes, $2. A nightly run with keys is
+  # twelve runs at most (both curses legs walk four scenarios, both tiles legs two), so $24
+  # of tokens; without keys every leg is a 3-turn dry run and spends nothing.
+  TURNS: "30"
+  MAX_WALL_S: "900"
+  BUDGET_USD: "2.00"
+
+jobs:
+  plan:
+    name: Plan the playtest matrix
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      count: ${{ steps.plan.outputs.count }}
+      has_keys: ${{ steps.keys.outputs.has_keys }}
+    steps:
+      # Job-level `if` cannot read secrets, so the key check belongs here: without both
+      # keys the live legs are replaced by one dry leg instead of going red every night.
+      - name: Check whether the model keys exist
+        id: keys
+        env:
+          XPL_SK_AGENT: ${{ secrets.XPL_SK_AGENT }}
+          OC_SK_AGENT: ${{ secrets.OC_SK_AGENT }}
+        run: |
+          if [ -n "${XPL_SK_AGENT:-}" ] && [ -n "${OC_SK_AGENT:-}" ]; then
+            echo "has_keys=true" >> "$GITHUB_OUTPUT"
+            echo "both model keys are configured; the live playtest matrix runs"
+          else
+            echo "has_keys=false" >> "$GITHUB_OUTPUT"
+            echo "key state: XPL_SK_AGENT=${XPL_SK_AGENT:+set} OC_SK_AGENT=${OC_SK_AGENT:+set}"
+            {
+              echo "### Live playtest skipped"
+              echo
+              echo "The live playtest did not run: \`XPL_SK_AGENT\` and \`OC_SK_AGENT\` are not"
+              echo "configured as repository secrets, so no leg may play a live game. Everything"
+              echo "else ran: the end-to-end suite, the fork feature screenshots (when this is a"
+              echo "scheduled run) and one dry playtest leg, which checks the wiring with no key"
+              echo "and no network. Add both secrets under Settings -> Secrets and variables ->"
+              echo "Actions to turn the full matrix on."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # The dispatch inputs filter the legs here, because the matrix context is not
+      # available in a job-level `if`.
+      - name: Build the leg list
+        id: plan
+        env:
+          MODE: ${{ inputs.mode }}
+          SCHEME: ${{ inputs.scheme }}
+          INPUT: ${{ inputs.input }}
+          MODELS: ${{ inputs.models }}
+          HAS_KEYS: ${{ steps.keys.outputs.has_keys }}
+          DRY_INPUT: ${{ inputs.dry_run }}
+          TURNS: ${{ env.TURNS }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os
+
+          LEGS = [
+              {
+                  "leg": "kb-classic-curses",
+                  "name": "kb (keyboard only), classic scheme, curses build",
+                  "mode": "curses",
+                  "scheme": "classic",
+                  "input": "kb",
+                  "models": "text",
+                  "ccache_key": "linux-clang-curses",
+                  "content": "main_menu tutorial natural_gameplay fork_features",
+              },
+              {
+                  "leg": "kb-mouse-modern-curses",
+                  "name": "kb-mouse (keyboard plus mouse), modern scheme, curses build",
+                  "mode": "curses",
+                  "scheme": "modern",
+                  "input": "kb-mouse",
+                  "models": "text",
+                  "ccache_key": "linux-clang-curses",
+                  "content": "main_menu tutorial natural_gameplay fork_features",
+              },
+              {
+                  "leg": "kb-classic-tiles",
+                  "name": "kb (keyboard only), classic scheme, tiles build",
+                  "mode": "tiles",
+                  "scheme": "classic",
+                  "input": "kb",
+                  "models": "vision",
+                  "ccache_key": "linux-clang-tiles",
+                  # main_menu and tutorial start at the title screen / tutorial room and are
+                  # curses-only: start_scenario(mode="tiles") refuses them.
+                  "content": "natural_gameplay fork_features",
+              },
+              {
+                  "leg": "kb-mouse-modern-tiles",
+                  "name": "kb-mouse (keyboard plus mouse), modern scheme, tiles build",
+                  "mode": "tiles",
+                  "scheme": "modern",
+                  "input": "kb-mouse",
+                  "models": "vision",
+                  "ccache_key": "linux-clang-tiles",
+                  # main_menu and tutorial start at the title screen / tutorial room and are
+                  # curses-only: start_scenario(mode="tiles") refuses them.
+                  "content": "natural_gameplay fork_features",
+              },
+          ]
+
+
+          def wanted(value, actual):
+              return value in ("", "all", actual)
+
+
+          mode = os.environ.get("MODE", "")
+          scheme = os.environ.get("SCHEME", "")
+          inputs = os.environ.get("INPUT", "")
+          models = os.environ.get("MODELS", "")
+          legs = [dict(leg) for leg in LEGS
+                  if wanted(mode, leg["mode"]) and wanted(scheme, leg["scheme"])
+                  and wanted(inputs, leg["input"])]
+          for leg in legs:
+              if models:
+                  leg["models"] = models
+
+          # Without both repository secrets no leg may call a model: the live legs wait and
+          # one dry leg proves the wiring on every push. A dry_run dispatch does the same
+          # to whatever legs the inputs selected.
+          dry = os.environ.get("HAS_KEYS") != "true" or os.environ.get("DRY_INPUT") == "true"
+          if os.environ.get("HAS_KEYS") != "true":
+              legs = [leg for leg in legs if leg["leg"] == "kb-classic-curses"][:1]
+          live_turns = int(os.environ.get("TURNS") or 30)
+          for leg in legs:
+              leg["dry"] = dry
+              leg["turns"] = 3 if dry else live_turns
+
+          print("count=%d" % len(legs))
+          # An empty include list is not a usable matrix, so fall back to one unused vector
+          # that the job-level `if` keeps from running.
+          print("matrix=%s" % json.dumps({"include": legs} if legs else {"leg": ["none"]}))
+          for leg in legs:
+              print("leg: %s -> %s/%s/%s, models %s, %s %d turns" %
+                    (leg["leg"], leg["mode"], leg["scheme"], leg["input"], leg["models"],
+                     "dry run" if leg["dry"] else "live", leg["turns"]))
+          PY
+
+  e2e-suite:
+    name: Fork end-to-end suite (curses)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: install dependencies (ubuntu)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libncursesw5-dev mold gettext parallel libsqlite3-dev zlib1g-dev libvulkan-dev mesa-vulkan-drivers xvfb autoconf autoconf-archive automake libtool libltdl-dev tmux imagemagick
+          sudo locale-gen en_US.UTF-8
+
+      - name: Install SDL3-devel Dependencies (ubuntu)
+        run: |
+          sudo apt-get install libasound2-dev libpulse-dev libaudio-dev libjack-dev libsndio-dev libx11-dev \
+            libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev \
+            libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev \
+            libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev \
+            libfreetype-dev libharfbuzz-dev \
+            libtiff-dev libavif-dev libwebp-dev libjpeg-dev libjxl-dev \
+            libflac-dev libvorbis-dev libxmp-dev libmpg123-dev libwavpack-dev
+
+      - name: Setup LLVM build tools
+        uses: aminya/setup-cpp@v1
+        with:
+          compiler: llvm-${{ env.LLVM_VERSION }}
+          cmake: true
+          ninja: true
+          setup-cpp: false
+
+      - name: Show Clang version
+        run: clang++ --version
+
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: linux-clang-curses-${{ github.ref_name }}
+          restore-keys: |
+            linux-clang-curses-${{ github.ref_name }}
+            linux-clang-curses-main
+            linux-clang-curses-
+          max-size: 2G
+          verbose: 2
+          save: ${{ github.event_name != 'pull_request' }}
+
+      # The matrix workflow uploads linux-tiles-x64-pr-... for the same commit, but that
+      # artifact cannot supply this job's binary: the ci-tiles configure builds only
+      # cataclysm-bn-tiles and cata_test-tiles (CMakePresets.json, buildPreset "ci-tiles")
+      # and installs them under cataclysmbn-<label>/bin, while the end-to-end suite drives
+      # the curses binary (tests/e2e/tmux_game.py find_binary: out/build/linux-curses/src/
+      # cataclysm-bn, ./cataclysm-bn, build/src/cataclysm-bn). The curses binary is
+      # therefore always built here, from the same ccache the matrix workflow warms; the
+      # tiles package is reused by the tiles playtest leg, which does need it.
+      - name: Configure and build the curses game (ccache)
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: ci-curses
+          configurePresetAdditionalArgs: "['-DUSE_PREFIX_DATA_DIR=OFF', '-DCATA_FORMAT_TARGETS=OFF']"
+          buildPreset: ci-curses
+          buildPresetAdditionalArgs: "['--target', 'cataclysm-bn', '-j', '2']"
+
+      # Run the suite in its own job: nothing else loads this runner while a game is live,
+      # because slow input makes these tests fail. tmux and imagemagick are the harness's
+      # own tools (tests/e2e/tiles.py captures frames with magick); the curses suite unsets
+      # DISPLAY for every game it starts, so Xvfb is only here for harness code that wants
+      # a display, exactly as in the matrix workflow's test step.
+      - name: Run the fork end-to-end suite
+        run: |
+          set -o pipefail
+          Xvfb :99 -screen 0 1280x1024x24 &
+          xvfb_pid=$!
+          trap 'kill "$xvfb_pid" 2>/dev/null || true' EXIT
+          export DISPLAY=:99
+          sleep 1
+          python3 tests/e2e/run.py 2>&1 | tee e2e-suite.log
+
+      # Always: a failing suite is the interesting one, and the log is its only evidence.
+      # warn, not ignore: the suite writes e2e-suite.log as soon as it starts, so a missing
+      # log means the suite never started and a warning is worth reading. warn never fails.
+      - name: upload the suite log
+        if: always()
+        uses: actions/upload-artifact@v4.6.0
+        with:
+          name: e2e-suite-log
+          path: |
+            e2e-suite.log
+            /tmp/bn-e2e-*
+          if-no-files-found: warn
+          retention-days: 14
+
+  playtest:
+    name: playtest ${{ matrix.name }}
+    needs: plan
+    # The legs spend model tokens, so they run on push to main, on the nightly schedule
+    # and when dispatched; a pull request keeps the free end-to-end suite and can get a
+    # playtest by dispatching this workflow on its branch.
+    if: needs.plan.outputs.count != '0' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    # Two games at a time on push; a nightly run may use the whole matrix. Never fail the
+    # other legs because one of them found a defect.
+    strategy:
+      fail-fast: false
+      max-parallel: ${{ github.event_name == 'schedule' && 3 || 2 }}
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    env:
+      LEG: ${{ matrix.leg }}
+      MODE: ${{ matrix.mode }}
+      SCHEME: ${{ matrix.scheme }}
+      INPUT: ${{ matrix.input }}
+      CONTENT: ${{ matrix.content }}
+      TURNS: ${{ matrix.turns }}
+      DRY_RUN: ${{ (matrix.dry || inputs.dry_run) && '--dry-run' || '' }}
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: install dependencies (ubuntu)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libncursesw5-dev mold gettext parallel libsqlite3-dev zlib1g-dev libvulkan-dev mesa-vulkan-drivers xvfb autoconf autoconf-archive automake libtool libltdl-dev tmux imagemagick
+          sudo locale-gen en_US.UTF-8
+
+      - name: Install SDL3-devel Dependencies (ubuntu)
+        run: |
+          sudo apt-get install libasound2-dev libpulse-dev libaudio-dev libjack-dev libsndio-dev libx11-dev \
+            libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev \
+            libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev \
+            libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev \
+            libfreetype-dev libharfbuzz-dev \
+            libtiff-dev libavif-dev libwebp-dev libjpeg-dev libjxl-dev \
+            libflac-dev libvorbis-dev libxmp-dev libmpg123-dev libwavpack-dev
+
+      - name: Setup LLVM build tools
+        uses: aminya/setup-cpp@v1
+        with:
+          compiler: llvm-${{ env.LLVM_VERSION }}
+          cmake: true
+          ninja: true
+          setup-cpp: false
+
+      - name: Show Clang version
+        run: clang++ --version
+
+      # tests/e2e/playtest.py start_tiles() refuses to run without the software Vulkan
+      # driver at ~/.local/lavapipe/usr/share/vulkan/icd.d/lvp_icd.json
+      # (tiles.DEFAULT_LAVAPIPE_ICD); the distro package installs the same manifest under
+      # /usr/share/vulkan/icd.d. Xvfb comes with the harness, which starts its own display.
+      - name: Provide the lavapipe Vulkan ICD
+        if: matrix.mode == 'tiles'
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          manifests=(/usr/share/vulkan/icd.d/lvp_icd*.json)
+          if [ ${#manifests[@]} -eq 0 ]; then
+            echo "::error::no lavapipe ICD manifest under /usr/share/vulkan/icd.d; the tiles surface cannot start a GPU device (install mesa-vulkan-drivers)"
+            exit 1
+          fi
+          manifest="${manifests[0]}"
+          target="$HOME/.local/lavapipe/usr/share/vulkan/icd.d/lvp_icd.json"
+          mkdir -p "$(dirname "$target")"
+          ln -sfn "$manifest" "$target"
+          echo "VK_DRIVER_FILES=$manifest" >> "$GITHUB_ENV"
+          echo "lavapipe ICD: $manifest -> $target"
+
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ matrix.ccache_key }}-${{ github.ref_name }}
+          restore-keys: |
+            ${{ matrix.ccache_key }}-${{ github.ref_name }}
+            ${{ matrix.ccache_key }}-main
+            ${{ matrix.ccache_key }}-
+          max-size: 2G
+          verbose: 2
+          save: ${{ github.event_name != 'pull_request' }}
+
+      # Reuse the tiles package the matrix workflow built for this commit, when there is
+      # one. It cannot supply the curses binary (see the e2e-suite job), so this job always
+      # builds the curses game below and only takes the tiles binary from the package.
+      - name: Find the matrix run for this commit
+        id: matrix-run
+        if: matrix.mode == 'tiles'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          run_id=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow matrix.yml \
+                     --commit "$GITHUB_SHA" --limit 10 --json databaseId,status,conclusion \
+                     --jq '[.[] | select(.status == "completed" and .conclusion == "success")][0].databaseId // empty')
+          if [ -z "$run_id" ]; then
+            echo "no completed successful matrix run for $GITHUB_SHA; the tiles binary will be built here"
+          else
+            echo "matrix run for $GITHUB_SHA: $run_id"
+          fi
+          echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Download the matrix workflow's tiles package
+        if: matrix.mode == 'tiles' && steps.matrix-run.outputs.run-id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: linux-tiles-x64-*
+          run-id: ${{ steps.matrix-run.outputs.run-id }}
+          github-token: ${{ github.token }}
+          path: prebuilt
+
+      - name: Stage the reused tiles binary
+        id: tiles-reuse
+        if: matrix.mode == 'tiles' && steps.matrix-run.outputs.run-id != ''
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          mapfile -t found < <(find prebuilt -type f -name cataclysm-bn-tiles)
+          test ${#found[@]} -ge 1
+          binary="${found[0]}"
+          # tests/e2e/playtest.py tiles_binary() looks at out/build/linux-full/src/
+          # cataclysm-bn-tiles and ./cataclysm-bn-tiles; the package installs the binary
+          # under cataclysmbn-<label>/bin with the shared libraries beside it in lib/.
+          mkdir -p out/build/linux-full/src
+          cp "$binary" out/build/linux-full/src/cataclysm-bn-tiles
+          chmod +x out/build/linux-full/src/cataclysm-bn-tiles
+          lib="$(dirname "$(dirname "$binary")")/lib"
+          if [ -d "$lib" ]; then
+            echo "LD_LIBRARY_PATH=$lib" >> "$GITHUB_ENV"
+          fi
+          echo "reused=true" >> "$GITHUB_OUTPUT"
+          echo "reused $binary"
+
+      # Every surface starts from a world the curses build creates (tests/e2e/tiles.py
+      # builds its tiles fixture with tmux_game.Game), so this build is unconditional.
+      - name: Configure and build the curses game (ccache)
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: ci-curses
+          configurePresetAdditionalArgs: "['-DUSE_PREFIX_DATA_DIR=OFF', '-DCATA_FORMAT_TARGETS=OFF']"
+          buildPreset: ci-curses
+          buildPresetAdditionalArgs: "['--target', 'cataclysm-bn', '-j', '2']"
+
+      - name: prepare (tiles fallback)
+        if: matrix.mode == 'tiles' && steps.tiles-reuse.outputs.reused != 'true'
+        run: bash ./build-scripts/requirements.sh
+
+      # ci-tiles configures into its own binary directory, so it neither overwrites the
+      # curses configure nor shares its cache entries. The build preset's binary directory
+      # is the shared `build`, so this fallback configures and builds with cmake directly.
+      - name: Configure the tiles game (ccache)
+        if: matrix.mode == 'tiles' && steps.tiles-reuse.outputs.reused != 'true'
+        run: |
+          cmake --preset ci-tiles -B build-tiles \
+            -DUSE_PREFIX_DATA_DIR=OFF -DCATA_FORMAT_TARGETS=OFF
+
+      - name: Build the tiles game (ccache)
+        if: matrix.mode == 'tiles' && steps.tiles-reuse.outputs.reused != 'true'
+        timeout-minutes: 60
+        run: cmake --build build-tiles --target cataclysm-bn-tiles -j 2
+
+      - name: Stage the built tiles binary
+        if: matrix.mode == 'tiles' && steps.tiles-reuse.outputs.reused != 'true'
+        run: |
+          test -x build-tiles/src/cataclysm-bn-tiles
+          mkdir -p out/build/linux-full/src
+          ln -sfn "$PWD/build-tiles/src/cataclysm-bn-tiles" out/build/linux-full/src/cataclysm-bn-tiles
+          ls -l out/build/linux-full/src/cataclysm-bn-tiles
+
+      # The keys are repository secrets; a missing one must be readable, not a stack trace
+      # in the middle of a run. A dry leg (no keys configured, or a dry_run dispatch) never
+      # reaches a model, so it does not need a key.
+      - name: Check the model keys
+        if: matrix.dry != true && inputs.dry_run != true
+        env:
+          XPL_SK_AGENT: ${{ secrets.XPL_SK_AGENT }}
+          OC_SK_AGENT: ${{ secrets.OC_SK_AGENT }}
+        run: |
+          missing=()
+          if [ -z "${XPL_SK_AGENT:-}" ]; then missing+=(XPL_SK_AGENT); fi
+          if [ -z "${OC_SK_AGENT:-}" ]; then missing+=(OC_SK_AGENT); fi
+          if [ ${#missing[@]} -eq 2 ]; then
+            echo "::error::no model key is set for this repository: ${missing[*]} are both empty. Add them under Settings -> Secrets and variables -> Actions, or dispatch this workflow with dry_run=true to check the wiring without a key. Every decision call fails without a key, so the live playtest cannot start."
+            exit 1
+          fi
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::warning::secret ${missing[*]} is not set; models that need it are retired, the rest of the pool still plays"
+          fi
+          echo "model keys present: XPL_SK_AGENT=${XPL_SK_AGENT:+yes} OC_SK_AGENT=${OC_SK_AGENT:+yes}"
+
+      # A scenario id that does not exist must fail once, with the known ids listed,
+      # instead of dying as a harness error once per scenario.
+      - name: Check the content scenario ids
+        env:
+          SCENARIO_OVERRIDE: ${{ inputs.scenario }}
+          PYTHONPATH: tests/e2e
+        run: |
+          python3 - "${SCENARIO_OVERRIDE:-$CONTENT}" <<'PY'
+          import sys
+
+          from playtest import SCENARIOS
+
+          known = sorted(s["id"] for s in SCENARIOS)
+          unknown = [s for s in sys.argv[1].split() if s not in known]
+          if unknown:
+              raise SystemExit("unknown scenario id(s): %s\nknown ids: %s"
+                               % (", ".join(unknown), ", ".join(known)))
+          print("scenarios this run: %s" % sys.argv[1])
+          PY
+
+      - name: Run the playtest, one run per content scenario
+        id: run
+        env:
+          XPL_SK_AGENT: ${{ secrets.XPL_SK_AGENT }}
+          OC_SK_AGENT: ${{ secrets.OC_SK_AGENT }}
+          MODEL_SPEC: ${{ inputs.models != '' && inputs.models || matrix.models }}
+          SCENARIO_OVERRIDE: ${{ inputs.scenario }}
+          PYTHONPATH: tests/e2e
+        run: |
+          set -uo pipefail
+          scenarios="${SCENARIO_OVERRIDE:-$CONTENT}"
+          mkdir -p "reports/$LEG"
+          worst=0
+          for scenario in $scenarios; do
+            report="reports/$LEG/$scenario"
+            mkdir -p "$report"
+            echo "::group::playtest $scenario ($LEG)"
+            python3 tests/e2e/agent_playtest.py \
+              --scenario "$scenario" \
+              --mode "$MODE" \
+              --scheme "$SCHEME" \
+              --input "$INPUT" \
+              --models "$MODEL_SPEC" \
+              --turns "$TURNS" \
+              --seed "${{ github.run_number }}" \
+              --report-dir "$report" \
+              --budget-usd "$BUDGET_USD" \
+              --max-wall-s "$MAX_WALL_S" \
+              $DRY_RUN 2>&1 | tee "$report/run.log"
+            code=${PIPESTATUS[0]}
+            echo "::endgroup::"
+            echo "playtest $scenario: exit code $code"
+            # One line per scenario, machine readable for the verdict step below.
+            printf '%s\t%s\n' "$scenario" "$code" >> "reports/$LEG/results.txt"
+            if [ "$code" -eq 1 ]; then
+              worst=1
+            elif [ "$code" -eq 2 ] && [ "$worst" -ne 1 ]; then
+              worst=2
+            elif [ "$code" -eq 3 ] && [ "$worst" -eq 0 ]; then
+              worst=3
+            fi
+          done
+          echo "exit_code=$worst" >> "$GITHUB_OUTPUT"
+          echo "leg $LEG exit code $worst"
+          exit 0
+
+      # The run's product, per the contract: exit 0 clean, exit 1 a defect the model named,
+      # exit 3 a cap cut the run short, exit 2 the harness broke. Only 2 fails the leg; 1 and
+      # 3 are reported here and in verdict.json and leave the job green.
+      - name: Sum the leg cost and write the verdict
+        if: always()
+        id: verdict
+        env:
+          EXIT_CODE: ${{ steps.run.outputs.exit_code }}
+          DRY_RUN: ${{ (matrix.dry || inputs.dry_run) && 'true' || 'false' }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          # The plan job names the legs in the user's own words; keep them that way here.
+          INPUT_WORDS = {"kb": "keyboard only", "kb-mouse": "keyboard plus mouse"}
+          # Exit code to verdict, and what each verdict means for the job.
+          VERDICTS = {
+              0: "clean",
+              1: "defect",
+              2: "harness-error",
+              3: "killed",
+          }
+
+          leg = os.environ["LEG"]
+          reports = Path("reports") / leg
+
+          # The per-scenario exit codes, written by the run step.
+          codes = {}
+          results = reports / "results.txt"
+          if results.exists():
+              for line in results.read_text().splitlines():
+                  if "\t" in line:
+                      name, _, value = line.partition("\t")
+                      try:
+                          codes[name] = int(value)
+                      except ValueError:
+                          pass
+
+          scenarios = []
+          usd = 0.0
+          tokens = 0
+          measured = estimated = 0
+          lines = []
+          killed = []
+          for report in sorted(p for p in reports.iterdir() if p.is_dir()) if reports.is_dir() else []:
+              # The driver writes a result, a stop reason, a caps line and a cost line into
+              # every summary.md, budget and stuck-detector stops included, so a stopped run
+              # still shows what it spent and which cap stopped it without downloading the
+              # artifact.
+              summary = report / "summary.md"
+              stopped = caps = ""
+              shown = []
+              if summary.exists():
+                  summary_lines = summary.read_text().splitlines()
+                  shown = [line for line in summary_lines
+                           if line.startswith(("- result:", "- stopped:", "- caps:", "cost:"))]
+                  if not shown:
+                      shown = summary_lines[-10:]
+                  for line in summary_lines:
+                      if line.startswith("- stopped:"):
+                          stopped = line.split(":", 1)[1].strip()
+                      elif line.startswith("- caps:"):
+                          caps = line.split(":", 1)[1].strip()
+              lines.append(f"- **{report.name}**")
+              lines += [f"  - {line.lstrip('- ')}" for line in shown]
+
+              code = codes.get(report.name)
+              report_verdict = VERDICTS.get(code, "harness-error") if code is not None else "unknown"
+              if report_verdict == "killed":
+                  killed.append(f"{report.name}: {stopped or 'a cap stopped the run'}"
+                                + (f" (caps: {caps})" if caps else ""))
+                  # A cap is a warning, not a red job: name the cap in the run's annotations.
+                  print(f"::warning title=cap hit::{leg}/{report.name} was stopped by a cap: "
+                        f"{stopped or 'the driver reported a cap'}"
+                        + (f" (caps: {caps})" if caps else ""))
+              entry = {"scenario": report.name, "code": code, "verdict": report_verdict}
+              if report_verdict == "killed":
+                  entry["stopped"] = stopped
+                  entry["caps"] = caps
+
+              transcript = report / "transcript.jsonl"
+              if not transcript.exists():
+                  entry.update({"turns": 0, "transcript": False})
+                  scenarios.append(entry)
+                  continue
+              # The transcript carries the whole state text of every turn, so it is only
+              # streamed and summed here, never quoted: what reaches the job summary is the
+              # report's own result, stop reason and cost lines, and the numbers below.
+              turns = 0
+              with transcript.open() as rows:
+                  for row in rows:
+                      try:
+                          turn = json.loads(row)
+                      except json.JSONDecodeError:
+                          continue
+                      turns += 1
+                      usd += float(turn.get("usd") or 0.0)
+                      tokens += int(turn.get("tokens") or 0)
+                      if turn.get("measured"):
+                          measured += 1
+                      else:
+                          estimated += 1
+              entry.update({"turns": turns, "transcript": True})
+              scenarios.append(entry)
+
+          code = int(os.environ.get("EXIT_CODE") or 2)
+          verdict_name = VERDICTS.get(code, "harness-error")
+          dry_run = os.environ.get("DRY_RUN") == "true"
+          defects = [s for s in scenarios if s["verdict"] == "defect"]
+          verdict = {
+              "leg": leg,
+              "mode": os.environ["MODE"],
+              "scheme": os.environ["SCHEME"],
+              "input": os.environ["INPUT"],
+              "models": os.environ.get("MODEL_SPEC", ""),
+              "dry_run": dry_run,
+              "exit_code": code,
+              "verdict": verdict_name,
+              "defect": bool(defects),
+              "killed": verdict_name == "killed",
+              "cost_usd": round(usd, 4),
+              "tokens": tokens,
+              "measured_turns": measured,
+              "estimated_turns": estimated,
+              "scenarios": scenarios,
+          }
+          reports.mkdir(parents=True, exist_ok=True)
+          (reports / "verdict.json").write_text(json.dumps(verdict, indent=2) + "\n")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"defects={'true' if verdict['defect'] else 'false'}\n")
+              out.write(f"verdict={verdict_name}\n")
+
+          cost_line = ("cost: $%.4f total = $%.4f measured/estimated mix (%d measured, %d estimated turns); "
+                       "%d tokens" % (usd, usd, measured, estimated, tokens))
+          if not measured and not estimated:
+              cost_line += " (no transcript: nothing was spent)"
+          (reports / "cost.txt").write_text(cost_line + "\n")
+
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              summary.write(f"## playtest leg {leg}\n\n")
+              summary.write("- input: %s (%s)\n" % (INPUT_WORDS.get(os.environ["INPUT"],
+                                                                     os.environ["INPUT"]),
+                                                    os.environ["INPUT"]))
+              summary.write(f"- surface: {os.environ['MODE']} build, "
+                            f"{os.environ['SCHEME']} control scheme, "
+                            f"models {os.environ.get('MODEL_SPEC', '')}\n")
+              summary.write(f"- verdict: {verdict_name} (driver exit code {code}"
+                            f"{'; dry run, no tokens' if dry_run else ''})\n")
+              if verdict_name == "defect":
+                  summary.write("- a defect is the run's product: the report names the turns, "
+                                "the job stays green and the triage job files the issue\n")
+              elif verdict_name == "killed":
+                  summary.write("- a cap stopped this leg short, so it is not a finished playtest:\n")
+                  for line in killed:
+                      summary.write(f"  - {line}\n")
+              elif verdict_name == "harness-error":
+                  summary.write("- the tooling broke: this leg fails the job\n")
+              for line in lines:
+                  summary.write(f"{line}\n")
+              summary.write(f"- {cost_line}\n")
+              summary.write("- runner minutes: free on GitHub-hosted runners for public repositories; "
+                            "the model tokens are not\n")
+              if not scenarios:
+                  summary.write("- no scenario report was written: a step before the runs failed; "
+                                "a missing repository secret is named in that step\n")
+          print(cost_line)
+          PY
+
+      # Always: a failing leg is the interesting one and its evidence must be published.
+      # ignore, not warn: the curses legs write no frames/ at all (the driver captures
+      # frames for the tiles build only) and a leg whose build died before the runs has no
+      # reports directory, both of which are normal and must not fail or nag this upload.
+      - name: upload the playtest artifacts
+        if: always()
+        uses: actions/upload-artifact@v4.6.0
+        with:
+          name: playtest-${{ matrix.leg }}
+          path: reports/${{ matrix.leg }}
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # Only a harness error (exit 2) fails the leg. A defect (1) and a cap (3) are the
+      # run's product: they are reported in the summary, in verdict.json and, for a defect,
+      # by the triage job, and they leave the job green.
+      - name: Report the leg result
+        if: always()
+        env:
+          EXIT_CODE: ${{ steps.run.outputs.exit_code }}
+          VERDICT: ${{ steps.verdict.outputs.verdict }}
+        run: |
+          code="${EXIT_CODE:-2}"
+          case "$code" in
+            0)  echo "leg $LEG: clean (exit code 0)" ;;
+            1)  echo "leg $LEG: a defect was reported (exit code 1); the report and the artifact explain it, the job stays green" ;;
+            3)  echo "leg $LEG: a cap stopped the run (exit code 3); see the warning and the summary, the job stays green" ;;
+            *)  echo "::error::leg $LEG: the harness failed (exit code $code, verdict ${VERDICT:-harness-error}); the tooling broke, so this leg fails"; exit 2 ;;
+          esac
+
+  # The fork's own visual check: replay the fork features in the tiles build and regenerate
+  # docs/fork/images/features/ and the page docs/fork/feature-screenshots.md.
+  screenshots:
+    name: Fork feature screenshots (tiles)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    # Nightly and on demand only: never on push. The job keeps the default token at
+    # contents: read, so it cannot read the matrix run's tiles package (that needs
+    # actions: read) and builds both binaries here instead; it uploads an artifact and
+    # never commits or pushes the PNGs.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: install dependencies (ubuntu)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libncursesw5-dev mold gettext parallel libsqlite3-dev zlib1g-dev libvulkan-dev mesa-vulkan-drivers xvfb autoconf autoconf-archive automake libtool libltdl-dev tmux imagemagick
+          sudo locale-gen en_US.UTF-8
+
+      - name: Install SDL3-devel Dependencies (ubuntu)
+        run: |
+          sudo apt-get install libasound2-dev libpulse-dev libaudio-dev libjack-dev libsndio-dev libx11-dev \
+            libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev \
+            libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev \
+            libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev \
+            libfreetype-dev libharfbuzz-dev \
+            libtiff-dev libavif-dev libwebp-dev libjpeg-dev libjxl-dev \
+            libflac-dev libvorbis-dev libxmp-dev libmpg123-dev libwavpack-dev
+
+      - name: Setup LLVM build tools
+        uses: aminya/setup-cpp@v1
+        with:
+          compiler: llvm-${{ env.LLVM_VERSION }}
+          cmake: true
+          ninja: true
+          setup-cpp: false
+
+      - name: Show Clang version
+        run: clang++ --version
+
+      # tests/e2e/tiles.py Session.start() refuses to run without the software Vulkan
+      # driver at ~/.local/lavapipe/usr/share/vulkan/icd.d/lvp_icd.json; the distro package
+      # installs the same manifest under /usr/share/vulkan/icd.d.
+      - name: Provide the lavapipe Vulkan ICD
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          manifests=(/usr/share/vulkan/icd.d/lvp_icd*.json)
+          if [ ${#manifests[@]} -eq 0 ]; then
+            echo "::error::no lavapipe ICD manifest under /usr/share/vulkan/icd.d; the tiles build cannot start a GPU device (install mesa-vulkan-drivers)"
+            exit 1
+          fi
+          manifest="${manifests[0]}"
+          target="$HOME/.local/lavapipe/usr/share/vulkan/icd.d/lvp_icd.json"
+          mkdir -p "$(dirname "$target")"
+          ln -sfn "$manifest" "$target"
+          echo "VK_DRIVER_FILES=$manifest" >> "$GITHUB_ENV"
+          echo "lavapipe ICD: $manifest -> $target"
+
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: linux-clang-tiles-${{ github.ref_name }}
+          restore-keys: |
+            linux-clang-tiles-${{ github.ref_name }}
+            linux-clang-tiles-main
+            linux-clang-tiles-
+          max-size: 2G
+          verbose: 2
+          save: ${{ github.event_name != 'pull_request' }}
+
+      # The fixture worlds every shot starts from are built by the curses binary.
+      - name: Configure and build the curses game (ccache)
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: ci-curses
+          configurePresetAdditionalArgs: "['-DUSE_PREFIX_DATA_DIR=OFF', '-DCATA_FORMAT_TARGETS=OFF']"
+          buildPreset: ci-curses
+          buildPresetAdditionalArgs: "['--target', 'cataclysm-bn', '-j', '2']"
+
+      - name: prepare (tiles)
+        run: bash ./build-scripts/requirements.sh
+
+      - name: Configure the tiles game (ccache)
+        run: |
+          cmake --preset ci-tiles -B build-tiles \
+            -DUSE_PREFIX_DATA_DIR=OFF -DCATA_FORMAT_TARGETS=OFF
+
+      - name: Build the tiles game (ccache)
+        timeout-minutes: 60
+        run: cmake --build build-tiles --target cataclysm-bn-tiles -j 2
+
+      - name: Stage the built tiles binary
+        run: |
+          test -x build-tiles/src/cataclysm-bn-tiles
+          mkdir -p out/build/linux-full/src
+          ln -sfn "$PWD/build-tiles/src/cataclysm-bn-tiles" out/build/linux-full/src/cataclysm-bn-tiles
+          ls -l out/build/linux-full/src/cataclysm-bn-tiles
+
+      # --only rewrites docs/fork/feature-screenshots.md with just the shots it captured, so
+      # a limited dispatch must be followed by a full run before the page is committed by a
+      # human. A full run (no screenshots_only) captures every shot and rewrites the page whole.
+      - name: Capture the feature screenshots
+        env:
+          SCREENSHOTS_ONLY: ${{ inputs.screenshots_only }}
+        run: |
+          set -o pipefail
+          args=()
+          if [ -n "${SCREENSHOTS_ONLY:-}" ]; then
+            # Word splitting is wanted: the input is a list of shot ids for --only.
+            args+=(--only $SCREENSHOTS_ONLY)
+          fi
+          if [ -n "${VK_DRIVER_FILES:-}" ]; then
+            args+=(--vk-icd "$VK_DRIVER_FILES")
+          fi
+          python3 tests/e2e/feature_shots.py "${args[@]}" 2>&1 | tee screenshots.log
+
+      # Always: the captions that worked before a failure are still worth reading.
+      # ignore: with --only, or when every shot failed, there can be no PNG at all.
+      - name: upload the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4.6.0
+        with:
+          name: fork-feature-screenshots
+          path: |
+            docs/fork/images/features/*.png
+            docs/fork/feature-screenshots.md
+            screenshots.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+  triage:
+    name: Triage the scheduled playtest
+    needs: [plan, playtest]
+    # One issue per scheduled run, and only when a run reported a defect. Push and PR runs
+    # leave the artifacts for a human to read. always() so a leg that failed (a defect the
+    # model named is a failed leg) still gets triaged. Without keys there were no live
+    # runs, so there is nothing to triage.
+    if: always() && !cancelled() && github.event_name == 'schedule' && needs.plan.outputs.count != '0' && needs.plan.outputs.has_keys == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Only this job files issues; the jobs that run the game and the model loop hold read
+    # permissions only. actions: read is what reading the run's own artifacts needs.
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - name: Download the playtest artifacts
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: playtest-*
+          merge-multiple: true
+          path: reports
+
+      - name: Sum the run cost and collect the defects
+        id: verdict
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          INPUT_WORDS = {"kb": "keyboard only", "kb-mouse": "keyboard plus mouse"}
+          reports = Path("reports")
+          verdicts = {}
+          # Only the leg verdicts are read: transcripts and frames stay inside the artifact,
+          # nothing here unpacks or prints them.
+          for path in sorted(reports.rglob("verdict.json")) if reports.is_dir() else []:
+              try:
+                  verdict = json.loads(path.read_text())
+              except json.JSONDecodeError:
+                  continue
+              verdicts[verdict.get("leg", str(path))] = verdict
+          verdicts = list(verdicts.values())
+          defective = [v for v in verdicts if v.get("defect")]
+          killed = [v for v in verdicts if v.get("killed")]
+          broken = [v for v in verdicts if v.get("verdict") == "harness-error"]
+          total_usd = sum(float(v.get("cost_usd") or 0.0) for v in verdicts)
+          total_tokens = sum(int(v.get("tokens") or 0) for v in verdicts)
+
+          body = [
+              "> *This was generated by AI during triage.*",
+              "",
+              f"The scheduled agentic playtest reported a defect: {os.environ['RUN_URL']}",
+              "",
+              f"- legs: {len(verdicts)}; with a defect: {len(defective)}; stopped by a cap: "
+              f"{len(killed)}; with a harness error: {len(broken)}",
+              f"- cost this run: ${total_usd:.4f} over {total_tokens} tokens "
+              f"(runner minutes are free for public repositories, the model tokens are not)",
+              "",
+          ]
+          for v in defective:
+              scenarios = ", ".join(f"`{s['scenario']}` ({s['turns']} turns)" for s in v["scenarios"]) or "none"
+              body += [
+                  f"### leg `{v['leg']}`",
+                  "",
+                  f"- input: {INPUT_WORDS.get(v['input'], v['input'])} ({v['input']})",
+                  f"- surface: {v['mode']} build, {v['scheme']} control scheme, models {v['models']}",
+                  f"- verdict: {v['verdict']} (driver exit code {v['exit_code']}; only a harness error fails the leg)",
+                  f"- scenarios: {scenarios}",
+                  "- turn numbers and the state before each defect: the leg artifact "
+                  f"`playtest-{v['leg']}` (summary.md per scenario)",
+                  "",
+              ]
+          if killed:
+              body += ["### Legs a cap stopped short", ""]
+              for v in killed:
+                  hit = ", ".join(s["scenario"] for s in v["scenarios"] if s["verdict"] == "killed")
+                  body.append(f"- `{v['leg']}`: {hit or 'a cap'} (see the leg artifact for the cap that hit)")
+              body.append("")
+          body += ["The artifacts expire with the run; a human decides whether this is a real defect."]
+
+          Path("issue.md").write_text("\n".join(body) + "\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              summary.write("## scheduled playtest triage\n\n")
+              summary.write(f"- legs: {len(verdicts)}, with a defect: {len(defective)}, "
+                            f"stopped by a cap: {len(killed)}, harness errors: {len(broken)}\n")
+              summary.write(f"- cost: ${total_usd:.4f} over {total_tokens} tokens\n")
+              summary.write("- runner minutes: free on GitHub-hosted runners for public repositories; "
+                            "the model tokens are not\n")
+          print(f"defect={'true' if defective else 'false'} cost=${total_usd:.4f} tokens={total_tokens}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"defect={'true' if defective else 'false'}\n")
+          PY
+
+      # One issue for the whole run: an open agentic-playtest issue is updated, otherwise
+      # exactly one is opened. Two legs with a defect do not open two issues.
+      - name: File or update the one issue
+        if: steps.verdict.outputs.defect == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          gh label create agentic-playtest --force \
+            --description "Reported by the scheduled agentic playtest" --color d93f0b || true
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --label agentic-playtest \
+                       --state open --limit 1 --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body-file issue.md
+            echo "updated issue #$existing"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --label agentic-playtest \
+              --title "Agentic playtest reported a defect (nightly ${{ github.run_number }})" \
+              --body-file issue.md
+          fi
