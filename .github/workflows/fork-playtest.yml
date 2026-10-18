@@ -373,8 +373,10 @@ jobs:
     strategy:
       fail-fast: false
       max-parallel: ${{ github.event_name == 'schedule' && 3 || 2 }}
-      matrix:
-        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+      # The plan emits {"include": [...]}, so the whole object belongs on `matrix`. Placing
+      # it under `matrix.include` makes the include an object instead of a list, which
+      # yields no combinations and makes GitHub create no job at all, silently.
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     env:
       LEG: ${{ matrix.leg }}
       MODE: ${{ matrix.mode }}
