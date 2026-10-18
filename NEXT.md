@@ -45,6 +45,17 @@
   machine: suite tests take 58 to 145 seconds each there, so any harness check that samples the screen
   after a fixed key delay is a coin flip. The Lua console wait and the safe-mode hint now wait for the
   text they need instead of guessing.
+- **The CI build keeps debug assertions on** — a game-side debugmsg opens a modal "An error has
+  occurred!" popup that swallows every key, which stalls the harness and then fails every later test in
+  that game. Seen with `Morale "Stylish" is inconsistent: lhs 7 != rhs N/A`, `morale.cpp:860`, which is
+  game logic and therefore out of this fork's scope. `tmux_game.dismiss_error_popup` answers the popup
+  and reports its text, and the suite calls it around every test so one assertion cannot poison five.
+- **`test_memory_behind_moved_vehicle` is flaky on the runners** — it fails with
+  `tiles hidden by the vehicle lost their remembered ground: ['8', ':']`, the vehicle's own hull glyph
+  inside the span the test treats as trail. It passed in one shard run and failed in the next, and a
+  twenty-second wait for the redraw did not clear it, so the cause is the fixture's geometry under some
+  spawns rather than a slow screen. The span the test checks (`range(4, 9)` below the driver) needs to
+  start below the vehicle's actual rear.
 - **CI/CD overhaul series** — issue #12 tracks #6 to #11: decision-model playtesting, the fork suite in
   CI, a prepared build container, known failures, a performance gate and the release path. Issue #13
   lists the end-to-end harness traps to write into the test-quality skill.
