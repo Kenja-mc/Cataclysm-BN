@@ -1215,7 +1215,17 @@ TESTS += HUD_STATUS_TESTS
 
 def main():
     keep = "--keep" in sys.argv
+    # --shard=<index>/<count> splits the suite for parallel jobs; the tests are assigned by
+    # position, so the shards stay stable as long as the list is only appended to.
+    shard = next((a for a in sys.argv[1:] if a.startswith("--shard=")), "")
+    if shard:
+        index, count = (int(v) for v in shard.split("=", 1)[1].split("/"))
+        if not 0 <= index < count:
+            sys.exit(f"{shard}: the index must be below the shard count")
+    else:
+        index, count = 0, 1
     wanted = [a for a in sys.argv[1:] if not a.startswith("--")]
+    chosen = TESTS[index::count]
     # Safe mode would stop movement whenever wildlife wanders into view.
     g = Game(options={"SAFEMODE": "false", "SOUND_MARKER_TURNS": "3"})
     failures = 0
@@ -1225,8 +1235,7 @@ def main():
         g.define_lua(HELPERS)
         # Lua-created inventory must not depend on the random starting outfit's pockets.
         assert g.lua("gapi.get_avatar():set_mutation(MutationBranchId.new('DEBUG_STORAGE')) out('ok')") == ["ok"]
-        wanted = [a for a in sys.argv[1:] if not a.startswith("--")]
-        for test in [t for t in TESTS if not wanted or any(w in t.__name__ for w in wanted)]:
+        for test in [t for t in chosen if not wanted or any(w in t.__name__ for w in wanted)]:
             started = time.time()
             try:
                 test(g)
@@ -1240,7 +1249,7 @@ def main():
     finally:
         if not keep:
             g.close()
-    ran = len([t for t in TESTS if not wanted or any(w in t.__name__ for w in wanted)])
+    ran = len([t for t in chosen if not wanted or any(w in t.__name__ for w in wanted)])
     print(f"{ran - failures}/{ran} passed")
     return 1 if failures else 0
 
