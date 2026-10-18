@@ -193,6 +193,12 @@ Without both model secrets the workflow does not play live at all: it collapses 
 leg on `kb-classic-curses` at 3 turns, spends nothing, and says so in the job summary. The rest of
 the pipeline still runs: the end-to-end suite on every push, and the screenshot job on the schedule.
 
+The end-to-end suite runs as four parallel shards. A single runner could not finish all 140 checks
+inside the job's two-hour timeout: the tail of the suite is slower on two cores than it is locally,
+and the job was cancelled with the suite still running. Each shard builds the same cache-warm curses
+binary and runs a quarter of the checks, selected by position (`--shard=0/4`), and uploads its own
+log as `e2e-suite-log-<shard>`.
+
 `python3 tests/e2e/feature_shots.py` runs on schedule and dispatch only. It uploads
 `docs/fork/images/features/*.png` as an artifact and never commits them. Note the trap: `--only`
 rewrites the feature page with just the shots it captured, so leave it off when regenerating the
@@ -208,3 +214,6 @@ whole set.
   suite stays the gate.
 - Known quirk: the harness wakes the map with the wait key before handing it over, and in the classic
   scheme that key is Look Around, so a classic run starts with that panel open (Escape closes it).
+- The tiles harness shells out to ImageMagick for capture and pixels. ImageMagick 7 provides the
+  `magick` shim and ImageMagick 6 the `import`, `identify` and `convert` binaries; `tiles.py` picks
+  whichever is installed, because the GitHub runners carry 6 and development machines usually 7.
