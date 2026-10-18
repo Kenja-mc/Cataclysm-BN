@@ -117,7 +117,6 @@ jobs:
     timeout-minutes: 5
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
-      count: ${{ steps.plan.outputs.count }}
       has_keys: ${{ steps.keys.outputs.has_keys }}
     steps:
       # Job-level `if` cannot read secrets, so the key check belongs here: without both
@@ -238,7 +237,6 @@ jobs:
               leg["dry"] = dry
               leg["turns"] = 3 if dry else live_turns
 
-          print("count=%d" % len(legs))
           # An empty include list gives the job no combinations, so it is skipped cleanly.
           print("matrix=%s" % json.dumps({"include": legs}))
           # Human-readable lines go to stderr: everything on stdout lands in $GITHUB_OUTPUT,
