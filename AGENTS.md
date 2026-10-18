@@ -78,6 +78,19 @@ Do all three tests before you push. All results must be good.
 
 Write one end-to-end test for each new fork feature. Do not write unit tests for fork features.
 
+The same suite runs on GitHub Actions in `.github/workflows/fork-playtest.yml`, as four shards
+because the two-core runners are much slower than this machine: a test there takes 58 to 145 seconds
+against about 50 here. Three traps were found doing that, and each of them cost whole runs:
+
+* A check that reads the screen once, or after a fixed key delay, is a coin flip on the runners. Wait
+  for the text it needs with a bounded timeout (`Game.wait_for`) instead of sampling.
+* A game-side debug assertion opens a modal "An error has occurred!" popup that swallows every key,
+  and it then fails every later test in that game. The CI build keeps debug assertions on while a
+  local build does not, so it only reproduces there. `Game.dismiss_error_popup` answers the popup and
+  reports its text, and the suite calls it around every test.
+* An assertion over a span of the map must account for the fixture's own extent, such as a vehicle's
+  length, or it fails on one spawn and passes on the next.
+
 ### Where to find the fork code
 
 | Subject                           | Location                                                                                                            |
