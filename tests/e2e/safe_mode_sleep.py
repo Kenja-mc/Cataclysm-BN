@@ -57,6 +57,12 @@ def test_safe_mode_repeats_hint_while_movement_is_blocked(_g):
         game.keys("x", delay=1.5)
         game.keys("w", delay=1.5)
         assert minutes_of_day(game) == blocked_at, "safe mode must keep blocking the move"
+        # The hint is drawn while the second blocked key is processed, which lands later on a
+        # loaded runner than the fixed key delay allows for.
+        try:
+            game.wait_for("Safe mode:", timeout=20)
+        except AssertionError:
+            pass
         assert "Safe mode:" in game.screen(), "the repeat hint is not on screen:\n" + game.screen()
         warning, repeat_hint = safe_mode_messages(game)
         assert warning, "the spotted warning is gone:\n" + game.screen()

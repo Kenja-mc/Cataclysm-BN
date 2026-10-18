@@ -110,12 +110,15 @@ class Game:
         """Runs one line in the in-game Lua console; `out(...)` inside it reports values back."""
         self.calls = getattr(self, "calls", 0) + 1
         marker = f"#{os.getpid()}.{self.calls}#"
-        # The console can take a moment to open; typing before it does sends the code to the map.
+        # The console can take a moment to open, and a loaded two-core runner needs much
+        # longer than an idle machine: type before it opens and the code goes to the map.
         for _ in range(3):
-            self.keys("`", delay=1)
-            if "to enter/edit command" in self.screen():
+            self.keys("`", delay=0.5)
+            try:
+                self.wait_for("to enter/edit command", timeout=15)
                 break
-            self.keys("Escape", delay=0.5)
+            except AssertionError:
+                self.keys("Escape", delay=0.5)
         else:
             raise AssertionError("could not open the Lua console; refusing to type code into the game\n" + self.screen())
         self.keys("Enter", delay=0.5)
