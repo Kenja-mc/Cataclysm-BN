@@ -266,8 +266,20 @@ def stop_process(proc, timeout=10):
 
 # ---------------------------------------------------------------- captures and pixels
 
+def magick_command(tool):
+    """The ImageMagick command for `tool`: 7.x `magick <tool>`, or the 6.x binary.
+
+    Ubuntu runners carry ImageMagick 6, which has no `magick` shim, so `import`,
+    `identify` and `convert` are called directly there; a developer machine usually
+    carries 7, whose `magick` shim fronts the same three tools.
+    """
+    if not shutil.which("magick"):
+        return ["convert" if tool == "convert" else tool]
+    return ["magick"] if tool == "convert" else ["magick", tool]
+
+
 def capture(display, window_id, png):
-    subprocess.run(["magick", "import", "-display", display, "-window", f"0x{window_id:x}", str(png)],
+    subprocess.run([*magick_command("import"), "-display", display, "-window", f"0x{window_id:x}", str(png)],
                    check=True, capture_output=True)
     return Path(png)
 
@@ -286,10 +298,11 @@ def frame_is_game_world(rgb):
 
 def frame_rgb(png):
     """(width, height, raw 8-bit RGB bytes) of a whole capture."""
-    size = subprocess.run(["magick", "identify", "-format", "%w %h", str(png)],
+    size = subprocess.run([*magick_command("identify"), "-format", "%w %h", str(png)],
                           check=True, capture_output=True, text=True).stdout.split()
     w, h = int(size[0]), int(size[1])
-    data = subprocess.run(["magick", str(png), "-depth", "8", "rgb:-"], check=True, capture_output=True).stdout
+    data = subprocess.run([*magick_command("convert"), str(png), "-depth", "8", "rgb:-"],
+                          check=True, capture_output=True).stdout
     require(len(data) == w * h * 3, f"{png} decoded to {len(data)} bytes for {w}x{h}")
     return w, h, data
 
@@ -331,7 +344,8 @@ def blobs_of(mask, w, h):
 def crop_to(png, blob, out, margin=4):
     x0 = max(0, blob["x0"] - margin)
     y0 = max(0, blob["y0"] - margin)
-    subprocess.run(["magick", str(png), "-crop", f"{blob['w'] + 2 * margin}x{blob['h'] + 2 * margin}+{x0}+{y0}",
+    subprocess.run([*magick_command("convert"), str(png),
+                    "-crop", f"{blob['w'] + 2 * margin}x{blob['h'] + 2 * margin}+{x0}+{y0}",
                     "+repage", str(out)], check=True, capture_output=True)
 
 

@@ -211,7 +211,7 @@ def sprite_template(root, name, size):
         sw = sheet.get("sprite_width", info["width"])
         sh = sheet.get("sprite_height", info["height"])
         atlas = folder / sheet["file"]
-        dimensions = subprocess.run(["magick", "identify", "-format", "%w %h", str(atlas)],
+        dimensions = subprocess.run([*tiles.magick_command("identify"), "-format", "%w %h", str(atlas)],
                                     check=True, capture_output=True, text=True).stdout.split()
         columns, rows = int(dimensions[0]) // sw, int(dimensions[1]) // sh
         for tile in sheet.get("tiles", []):
@@ -222,7 +222,7 @@ def sprite_template(root, name, size):
             require(0 <= local < columns * rows, f"{name}: sprite lies outside its atlas")
             x, y = local % columns * sw, local // columns * sh
             pixels = subprocess.run([
-                "magick", str(atlas), "-crop", f"{sw}x{sh}+{x}+{y}", "+repage", "-filter", "point",
+                *tiles.magick_command("convert"), str(atlas), "-crop", f"{sw}x{sh}+{x}+{y}", "+repage", "-filter", "point",
                 "-resize", f"{size[0]}x{size[1]}!", "-depth", "8", "rgba:-"],
                 check=True, capture_output=True).stdout
             return size[0], size[1], pixels
