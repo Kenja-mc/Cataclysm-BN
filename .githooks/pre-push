@@ -1,0 +1,24 @@
+#!/bin/sh
+# Refuses to push anything to the upstream repository.
+#
+# The upstream is a source to merge from and nothing else. Enable this hook in a clone with:
+#
+#   git config core.hooksPath .githooks
+
+remote="$1"
+url="$2"
+
+case "$url" in
+  *cataclysmbn/Cataclysm-BN*) ;;
+  *) exit 0 ;;
+esac
+
+cat >&2 <<'EOF'
+pre-push: refusing to push to cataclysmbn/Cataclysm-BN, the upstream repository.
+
+The upstream is read-only for this fork: fetch and merge from it, never push to it, and
+never open a pull request, issue, branch or comment there. Everything we submit goes to
+Kenja-mc/Cataclysm-BN. See AGENTS.md, "Never touch the upstream".
+EOF
+
+exit 1

@@ -8,6 +8,18 @@ compatibility: git, gh, conventional-prs
 
 Use before `gh pr create`, `gh pr edit`, PR body edits, or PR title edits.
 
+## Target repository
+
+Every pull request and issue this skill prepares goes to `Kenja-mc/Cataclysm-BN`, the fork. Always pass
+`--repo Kenja-mc/Cataclysm-BN`, and run the commands through `gh-fork`, which refuses to change
+anything in the upstream.
+
+Never run `gh pr create`, `gh pr edit`, `gh pr comment`, `gh issue create` or any other write against
+`cataclysmbn/Cataclysm-BN`. The upstream is a source to merge from and nothing else. Six CI issues
+were once filed there on this fork's behalf by mistake; they were closed as off-topic and the account
+was blocked for it. If a task asks for an upstream pull request or issue, stop and ask the user
+instead of opening one.
+
 ## Sources
 
 - `docs/en/contribute/changelog_guidelines.md`

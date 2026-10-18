@@ -89,8 +89,16 @@ a different one, so both the identity and the push credential are pinned per rep
   token from the gh keyring at push time, so `git push origin main` needs no flags and no inline
   helper. Nothing global changes and no token is written to disk.
 - **gh** — the active account is `asmartin-ai`, which has pull-only access here: it cannot open
-  issues, comment or read secrets. Use `gh-fork` (in `~/.local/bin`) or prefix a call with
-  `GH_TOKEN=$(gh auth token --user Kenja-mc)`, and always pass `--repo Kenja-mc/Cataclysm-BN`.
+  issues, comment or read secrets. Use `gh-fork` (in `~/.local/bin`), which sets the Kenja-mc token
+  for one call and refuses to change anything in `cataclysmbn/Cataclysm-BN`. Always pass
+  `--repo Kenja-mc/Cataclysm-BN`. Do not prefix a call with a raw `GH_TOKEN` instead: that path has
+  no guard.
+- **Never touch the upstream** — `cataclysmbn/Cataclysm-BN` is a source to merge from and nothing
+  else. Six CI issues were filed there by mistake, closed as off-topic, and the account was blocked
+  for it, so the guards are deliberate. `git config core.hooksPath .githooks` enables the pre-push
+  hook, `git remote set-url --push upstream DISABLED-fetch-only` blocks the push at the remote, and
+  `gh-fork` blocks the API path; a fresh clone needs the first two again. Fetching and merging
+  upstream are unaffected.
 - **Model secrets** — `XPL_SK_AGENT` and `OC_SK_AGENT` are still not repository secrets, verified
   with the admin token, so the agentic playtest legs stay on the dry path until they are added.
   Experiential Labs also needs a saved card with one settled charge of $1 or more, and its credit
