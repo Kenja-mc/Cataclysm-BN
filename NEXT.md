@@ -38,6 +38,13 @@
   binaries rather than the 7.x `magick` shim; `tests/e2e/tiles.py` accepts either. The `matrix`
   workflow's red `clang, curses` job is a pre-existing cache-save error: with a warm ccache every
   compile is a hit, so the directory the action wants to save never appears.
+- **Two CI traps worth remembering** — a leg matrix built from a job output must go on `matrix:` as the
+  whole `{"include": [...]}` object; putting that object under `matrix.include` leaves `include` as an
+  object instead of a list, and GitHub then creates **no job at all** and says nothing, which looks
+  exactly like a job-level `if` that was false. Second, the two-core runners are far slower than this
+  machine: suite tests take 58 to 145 seconds each there, so any harness check that samples the screen
+  after a fixed key delay is a coin flip. The Lua console wait and the safe-mode hint now wait for the
+  text they need instead of guessing.
 - **CI/CD overhaul series** — issue #12 tracks #6 to #11: decision-model playtesting, the fork suite in
   CI, a prepared build container, known failures, a performance gate and the release path. Issue #13
   lists the end-to-end harness traps to write into the test-quality skill.
