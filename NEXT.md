@@ -28,10 +28,16 @@
 - **Release workflows stay disabled** — Nightly Release, Experimental Release and Manual release are
   off; `gh workflow enable "<name>"` re-enables them. The nightlies need an initial `YYYY-MM-DD` tag
   and an `experimental` release before they can pass, and `docs.yml` chains off Experimental Release.
-- **Watch the CI runs** — the detached service `bn-ci-watch` writes the conclusions of the matrix runs
-  `38952618497` and `38953879314` to
-  `/home/kenja/.local/state/cataclysm-bn/ci-watch.log`. If the service is gone after a restart, read the
-  runs straight from GitHub with `gh run list --workflow matrix --repo Kenja-mc/Cataclysm-BN`.
+- **Watch the CI runs** — the detached service `bn-playtest-watch` writes the conclusions of the
+  `fork-playtest` run to `/home/kenja/.local/state/cataclysm-bn/playtest-watch.log`. If the service is
+  gone after a restart, read the runs straight from GitHub with
+  `gh run list --workflow fork-playtest.yml --repo Kenja-mc/Cataclysm-BN`.
+- **CI state** — `fork-playtest.yml` plans cleanly: it names the legs, and without the model secrets it
+  runs one dry leg plus the end-to-end suite in four shards, because a single runner cannot finish all
+  140 checks inside a two-hour job. The tiles jobs need ImageMagick, which the runners ship as the 6.x
+  binaries rather than the 7.x `magick` shim; `tests/e2e/tiles.py` accepts either. The `matrix`
+  workflow's red `clang, curses` job is a pre-existing cache-save error: with a warm ccache every
+  compile is a hit, so the directory the action wants to save never appears.
 - **CI/CD overhaul series** — issue #12 tracks #6 to #11: decision-model playtesting, the fork suite in
   CI, a prepared build container, known failures, a performance gate and the release path. Issue #13
   lists the end-to-end harness traps to write into the test-quality skill.
@@ -69,6 +75,8 @@ a different one, so both the identity and the push credential are pinned per rep
   `GH_TOKEN=$(gh auth token --user Kenja-mc)`, and always pass `--repo Kenja-mc/Cataclysm-BN`.
 - **Model secrets** — `XPL_SK_AGENT` and `OC_SK_AGENT` are still not repository secrets, verified
   with the admin token, so the agentic playtest legs stay on the dry path until they are added.
+  Experiential Labs also needs a saved card with one settled charge of $1 or more, and its credit
+  overflow switch left off: without both, a call past the free allowance bills credits.
 
 ## Install the fork and give feedback
 
