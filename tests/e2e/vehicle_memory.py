@@ -1,4 +1,6 @@
 """Map memory keeps the ground a moving vehicle hides (upstream #10452)."""
+import time
+
 from helpers import HELPERS, Game, action_menu, bub_pos, settle, start_new_game
 from vehicle_box import spawn_vehicle
 
@@ -75,12 +77,19 @@ def test_memory_behind_moved_vehicle(_game):
         spawn_vehicle(game, "armored_car")
         take_control(game)
         drive_north(game)
-        screen = game.screen()
+        # The frame holding the vehicle's previous position can still be on screen when the
+        # drive returns, so wait for the redraw rather than reading once; a tile that never
+        # regains its remembered ground still fails below.
+        hidden = ground_region(game.screen(), range(4, 9))
+        for _ in range(40):
+            if set(hidden) == {":"}:
+                break
+            time.sleep(0.5)
+            hidden = ground_region(game.screen(), range(4, 9))
         # The opaque body reaches three rows behind the driver; the trail is behind it.
-        hidden = ground_region(screen, range(4, 9))
         assert set(hidden) == {':'}, (
             "tiles hidden by the vehicle lost their remembered ground: "
-            f"{sorted(set(hidden))}\n" + screen)
+            f"{sorted(set(hidden))}\n" + game.screen())
     finally:
         game.close()
 
