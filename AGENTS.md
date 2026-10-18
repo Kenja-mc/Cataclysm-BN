@@ -18,6 +18,13 @@ learn and use. It keeps the BN game rules. `OVERHAUL.md` explains each change.
 4. Do not add AI art.
 5. Keep comments terse. Add one only for a non-obvious reason; remove comments that restate code.
 6. Obey the upstream code rules in Part 2.
+7. Never touch the upstream. `cataclysmbn/Cataclysm-BN` is a source to merge from and nothing else:
+   do not open a pull request, issue, comment, branch or release there. Everything we submit goes to
+   `Kenja-mc/Cataclysm-BN`. The PR workflow in Part 2 predates this fork and applies to the fork only.
+   Three guards enforce it: the `gh-fork` wrapper refuses upstream writes, `.githooks/pre-push`
+   (enabled with `git config core.hooksPath .githooks`) refuses upstream pushes, and
+   `git remote set-url --push upstream DISABLED-fetch-only` blocks the push at the remote. Fetching
+   and merging from upstream are unaffected.
 
 ### Build
 
