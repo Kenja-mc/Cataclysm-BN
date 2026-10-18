@@ -239,9 +239,8 @@ jobs:
               leg["turns"] = 3 if dry else live_turns
 
           print("count=%d" % len(legs))
-          # An empty include list is not a usable matrix, so fall back to one unused vector
-          # that the job-level `if` keeps from running.
-          print("matrix=%s" % json.dumps({"include": legs} if legs else {"leg": ["none"]}))
+          # An empty include list gives the job no combinations, so it is skipped cleanly.
+          print("matrix=%s" % json.dumps({"include": legs}))
           # Human-readable lines go to stderr: everything on stdout lands in $GITHUB_OUTPUT,
           # which accepts only name=value lines.
           for leg in legs:
@@ -249,12 +248,22 @@ jobs:
                     (leg["leg"], leg["mode"], leg["scheme"], leg["input"], leg["models"],
                      "dry run" if leg["dry"] else "live", leg["turns"]),
                     file=sys.stderr)
+          # A notice is the only trace of the count in the run page, which makes a
+          # skipped or unexpected job easy to explain.
+          print("::notice::playtest legs=%d" % len(legs), file=sys.stderr)
           PY
 
   e2e-suite:
-    name: Fork end-to-end suite (curses)
+    name: Fork end-to-end suite (curses, shard ${{ matrix.shard }})
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    # The full suite outgrew a single runner: its tail tests are slower there than they are
+    # locally, and the suite was still running when the job hit its two-hour timeout. Each
+    # shard builds the same cache-warm curses binary and runs a quarter of the 140 checks.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
@@ -317,11 +326,15 @@ jobs:
           buildPresetAdditionalArgs: "['--target', 'cataclysm-bn', '-j', '2']"
 
       # Run the suite in its own job: nothing else loads this runner while a game is live,
-      # because slow input makes these tests fail. tmux and imagemagick are the harness's
-      # own tools (tests/e2e/tiles.py captures frames with magick); the curses suite unsets
-      # DISPLAY for every game it starts, so Xvfb is only here for harness code that wants
-      # a display, exactly as in the matrix workflow's test step.
+      # because slow input makes these tests fail. tmux and ImageMagick are the harness's
+      # own tools (tests/e2e/tiles.py captures frames with `magick`, or the 6.x binaries
+      # that the runners install); the curses suite unsets DISPLAY for every game it starts,
+      # so Xvfb is only here for harness code that wants a display, exactly as in the matrix
+      # workflow's test step.
       - name: Run the fork end-to-end suite
+        env:
+          # Unbuffered, so the log names the test a stall happened in.
+          PYTHONUNBUFFERED: "1"
         run: |
           set -o pipefail
           Xvfb :99 -screen 0 1280x1024x24 &
@@ -329,7 +342,7 @@ jobs:
           trap 'kill "$xvfb_pid" 2>/dev/null || true' EXIT
           export DISPLAY=:99
           sleep 1
-          python3 tests/e2e/run.py 2>&1 | tee e2e-suite.log
+          python3 tests/e2e/run.py --shard=${{ matrix.shard }}/4 2>&1 | tee e2e-suite-shard-${{ matrix.shard }}.log
 
       # Always: a failing suite is the interesting one, and the log is its only evidence.
       # warn, not ignore: the suite writes e2e-suite.log as soon as it starts, so a missing
@@ -338,9 +351,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4.6.0
         with:
-          name: e2e-suite-log
+          name: e2e-suite-log-${{ matrix.shard }}
           path: |
-            e2e-suite.log
+            e2e-suite-shard-${{ matrix.shard }}.log
             /tmp/bn-e2e-*
           if-no-files-found: warn
           retention-days: 14
@@ -350,8 +363,9 @@ jobs:
     needs: plan
     # The legs spend model tokens, so they run on push to main, on the nightly schedule
     # and when dispatched; a pull request keeps the free end-to-end suite and can get a
-    # playtest by dispatching this workflow on its branch.
-    if: needs.plan.outputs.count != '0' && github.event_name != 'pull_request'
+    # playtest by dispatching this workflow on its branch. An empty leg list is an empty
+    # matrix, which skips the job without a condition.
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 150
     # Two games at a time on push; a nightly run may use the whole matrix. Never fail the
@@ -955,7 +969,7 @@ jobs:
     # leave the artifacts for a human to read. always() so a leg that failed (a defect the
     # model named is a failed leg) still gets triaged. Without keys there were no live
     # runs, so there is nothing to triage.
-    if: always() && !cancelled() && github.event_name == 'schedule' && needs.plan.outputs.count != '0' && needs.plan.outputs.has_keys == 'true'
+    if: always() && !cancelled() && github.event_name == 'schedule' && needs.plan.outputs.has_keys == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # Only this job files issues; the jobs that run the game and the model loop hold read
