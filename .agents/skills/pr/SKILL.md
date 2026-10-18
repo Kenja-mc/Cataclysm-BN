@@ -1,6 +1,6 @@
 ---
 name: pr
-description: Create or update Cataclysm-BN PRs with validated titles, terse bodies, related links, and reviewer-useful evidence.
+description: Create or update pull requests and issues for the fork Kenja-mc/Cataclysm-BN, never for the upstream, with validated titles, terse bodies, related links, and reviewer-useful evidence.
 compatibility: git, gh, conventional-prs
 ---
 
