@@ -32,12 +32,13 @@
   `fork-playtest` run to `/home/kenja/.local/state/cataclysm-bn/playtest-watch.log`. If the service is
   gone after a restart, read the runs straight from GitHub with
   `gh run list --workflow fork-playtest.yml --repo Kenja-mc/Cataclysm-BN`.
-- **CI state** — `fork-playtest.yml` plans cleanly: it names the legs, and without the model secrets it
-  runs one dry leg plus the end-to-end suite in four shards, because a single runner cannot finish all
-  140 checks inside a two-hour job. The tiles jobs need ImageMagick, which the runners ship as the 6.x
-  binaries rather than the 7.x `magick` shim; `tests/e2e/tiles.py` accepts either. The `matrix`
-  workflow's red `clang, curses` job is a pre-existing cache-save error: with a warm ccache every
-  compile is a hit, so the directory the action wants to save never appears.
+- **CI state** — `fork-playtest.yml` is green end to end without model secrets: the plan job names the
+  legs, one dry playtest leg runs, and the end-to-end suite passes 140/140 across four shards, because
+  a single runner cannot finish the suite inside a two-hour job. A dispatch run also captured all ten
+  feature screenshots. Still unproven on CI: the live model legs, the nightly triage job, and the two
+  API shapes the first live run checks.
+- The `matrix` workflow's red `clang, curses` job is a pre-existing cache-save error: with a warm
+  ccache every compile is a hit, so the directory the action wants to save never appears.
 - **Two CI traps worth remembering** — a leg matrix built from a job output must go on `matrix:` as the
   whole `{"include": [...]}` object; putting that object under `matrix.include` leaves `include` as an
   object instead of a list, and GitHub then creates **no job at all** and says nothing, which looks
