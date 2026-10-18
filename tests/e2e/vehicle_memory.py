@@ -76,8 +76,9 @@ def test_memory_behind_moved_vehicle(_game):
         take_control(game)
         drive_north(game)
         screen = game.screen()
-        # The opaque body reaches three rows behind the driver; the trail is behind it.
-        hidden = ground_region(screen, range(4, 9))
+        # The armored car's hull can reach four rows behind the driver (row 4 showed a hull
+        # glyph on a two-core runner), so the trail is read from row 6 down.
+        hidden = ground_region(screen, range(6, 12))
         assert set(hidden) == {':'}, (
             "tiles hidden by the vehicle lost their remembered ground: "
             f"{sorted(set(hidden))}\n" + screen)
