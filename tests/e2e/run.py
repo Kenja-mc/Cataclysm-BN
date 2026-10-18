@@ -1237,6 +1237,9 @@ def main():
         assert g.lua("gapi.get_avatar():set_mutation(MutationBranchId.new('DEBUG_STORAGE')) out('ok')") == ["ok"]
         for test in [t for t in chosen if not wanted or any(w in t.__name__ for w in wanted)]:
             started = time.time()
+            # A debug assertion popup left behind by an earlier test blocks every key, so
+            # clear it here rather than letting it fail this test as well.
+            g.dismiss_error_popup()
             try:
                 test(g)
                 print(f"PASS {test.__name__} ({time.time() - started:.1f}s)")
@@ -1246,6 +1249,7 @@ def main():
                 traceback.print_exc()
                 print(g.screen())
                 g.keys("Escape", delay=0.5)
+                g.dismiss_error_popup()
     finally:
         if not keep:
             g.close()
