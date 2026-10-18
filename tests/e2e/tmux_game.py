@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -106,6 +107,21 @@ class Game:
             time.sleep(0.3)
         raise AssertionError(f"timed out waiting for {text!r}\n{self.screen()}")
 
+    def dismiss_error_popup(self):
+        """Answer a debug assertion popup, which blocks every key until it is answered.
+
+        The CI build keeps debug assertions on, so a game-side debugmsg stalls the harness
+        mid-test. The text is reported rather than swallowed, and the keypress resumes play.
+        """
+        screen = self.screen()
+        if "An error has occurred!" not in screen:
+            return False
+        detail = [l.strip() for l in screen.splitlines() if "DEBUG" in l or "FUNCTION" in l][:2]
+        print("debug assertion popup, answering it to continue: " + " | ".join(detail),
+              file=sys.stderr)
+        self.keys("Space", delay=0.5)
+        return True
+
     def lua(self, code):
         """Runs one line in the in-game Lua console; `out(...)` inside it reports values back."""
         self.calls = getattr(self, "calls", 0) + 1
@@ -113,6 +129,7 @@ class Game:
         # The console can take a moment to open, and a loaded two-core runner needs much
         # longer than an idle machine: type before it opens and the code goes to the map.
         for _ in range(3):
+            self.dismiss_error_popup()
             self.keys("`", delay=0.5)
             try:
                 self.wait_for("to enter/edit command", timeout=15)
