@@ -13,7 +13,7 @@ python3 tests/e2e/feature_shots.py
 
 ![Modern HUD](images/features/hud-modern.png)
 
-The fork draws its readings in boxes: weapon and style, stance, needs, mood, sound and stats. The sidebar keeps the message log, the compass and the pixel minimap.
+Weather and time sit above the weapon, style, stance and needs boxes. The sidebar keeps the limb bars, sound, mood, stats, message log, compass and pixel minimap.
 
 ## Classic HUD
 
@@ -31,7 +31,7 @@ Enter opens every command group: Items, Interact, Info, Misc, crafting, vehicles
 
 ![Interact menu: quick stack and sort pile](images/features/interact-menu.png)
 
-Space opens Interact. Quick stack moves carried items into nearby storage that already holds them, and sort pile sorts the stack under the player without sorting zones.
+Enter, then Interact, opens this menu. Quick stack moves carried items into nearby storage that already holds them, and sort pile sorts the player's pile without sorting zones.
 
 ## Inventory with item variants
 
@@ -49,7 +49,7 @@ The crafting menu opens on a tab with recipes to make. The parts chain shows wha
 
 ![Look around and tile selection](images/features/look.png)
 
-Shift and a direction moves the cursor without spending a turn. The tile under the cursor shows what it holds, and Enter selects it for the next action.
+Shift and a direction inspects the adjacent tile without spending a turn. The tile inspector shows what it holds, and Space interacts with the selected tile.
 
 ## Map and minimap
 
@@ -61,7 +61,7 @@ The map opens on the local area with the pixel minimap the fork keeps on by defa
 
 ![Sidebar options from the Enter menu](images/features/sidebar-options.png)
 
-Modern leaves the panel key unbound. Enter, then Misc, opens Sidebar Options, where the panels can be moved, hidden and reordered.
+Modern leaves the panel key unbound. Enter, then Misc, then Sidebar Options opens the editor, where the panels can be moved, hidden and reordered.
 
 ## Body panel and limb details
 
