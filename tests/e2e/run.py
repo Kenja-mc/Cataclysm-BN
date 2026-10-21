@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """End-to-end checks for the overhaul, played through the real curses binary in tmux."""
 import json
+import os
 import re
 import sys
+import tempfile
 import time
 import traceback
 from pathlib import Path
@@ -1307,6 +1309,10 @@ def run_parallel(count, forward):
 
 def main():
     keep = "--keep" in sys.argv
+    # One tmux server per process: the harness polls the screen several times a second, and
+    # local parallel shards sharing one server starve each other of input, which fails tests.
+    # TMUX_TMPDIR moves the socket, so a shard cannot see or disturb another's sessions.
+    os.environ["TMUX_TMPDIR"] = tempfile.mkdtemp(prefix="bn-e2e-tmux-")
     # --parallel=<n> runs n shards at once on one machine; the suite is serial otherwise.
     parallel = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--parallel=")), "")
     if parallel:
