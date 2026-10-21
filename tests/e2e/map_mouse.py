@@ -35,11 +35,19 @@ def no_mouse_movement_game(name, mouse_move="false", **options):
 
 
 def mouse_state(game):
-    """Observe turns, position, and both sides' health without assuming attacks hit."""
-    health = game.lua("local hp={gapi.get_avatar():get_hp()} "
-                      "for _,m in ipairs(MAP_MOUSE_TARGETS) do hp[#hp+1]=m:get_hp() end "
-                      "out(table.concat(hp,','))")
-    return action_clock(game), bub_pos(game), health
+    """Observe turns, position, and both sides' health without assuming attacks hit.
+
+    One console round trip, not three: the click tests sample this several times per tile
+    and the console costs about a second per call on a loaded runner.
+    """
+    parts = game.lua(
+        "local a=gapi.get_avatar() local steps=-a:get_moves() local p=a:abs_pos() "
+        "local hp={a:get_hp()} "
+        "for _,m in ipairs(MAP_MOUSE_TARGETS) do hp[#hp+1]=m:get_hp() end "
+        "out(gapi.current_turn():to_turn(), steps, p.x, p.y, p.z, table.concat(hp,','))"
+    )[0].split(",")
+    turn, moves, x, y, z = (int(v) for v in parts[:5])
+    return ((turn, moves), (x, y, z), parts[5:])
 
 
 def firing_target_panel(game):
