@@ -25,9 +25,10 @@ name: fork-playtest
 # work to evaluate and no multiplayer behavior is enabled, so there is nothing to drive
 # yet. A co-op leg belongs here once that harness exists.
 #
-# Without both model secrets (XPL_SK_AGENT, OC_SK_AGENT) the live legs are replaced by one
-# dry playtest leg, so every push still proves the wiring and the harness without a model
-# call; the plan job says so in the run summary.
+# A push proves the wiring with one dry playtest leg and spends nothing: live legs cost model
+# tokens and up to fifteen minutes each, so they run on the nightly schedule and when
+# dispatched. Without both model secrets (XPL_SK_AGENT, OC_SK_AGENT) every run is that one dry
+# leg; the plan job says so in the run summary.
 #
 # The screenshots job is the fork's own visual check: nightly and on demand it replays the
 # fork features in the tiles build and regenerates docs/fork/images/features/ plus the page
@@ -51,8 +52,8 @@ on:
     paths-ignore: [docs/**, scripts/**, "**.md", "**.mdx"]
     types: [opened, reopened, synchronize]
   schedule:
-    # Nightly at 04:17 UTC, late enough that the matrix workflow has landed the tiles
-    # package for the day's commit.
+    # Nightly at 04:17 UTC. The matrix workflow runs weekly, so it may already have built a
+    # tiles package for this commit; otherwise the tiles legs build their own binary.
     - cron: "17 4 * * *"
   workflow_dispatch:
     inputs:
@@ -88,11 +89,12 @@ on:
         type: string
         default: ""
 
-# Cancel all previous instances in favor of the latest revision of a PR; a nightly run
-# is never cancelled by a newer revision.
+# A newer run of the same event replaces the older one: a superseded commit no longer needs
+# its end-to-end suite. The event name is in the group so a nightly or a dispatch is never
+# cancelled by a push, and cancel-in-progress stays off for the nightly.
 concurrency:
-  group: fork-playtest-${{ github.event.pull_request.number || github.ref_name }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: fork-playtest-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: ${{ github.event_name != 'schedule' }}
 
 # Least privilege: the jobs that run third-party code (the game under test) and the
 # model-driven loop hold read permissions only. The triage job, which files the one issue,
@@ -129,7 +131,7 @@ jobs:
         run: |
           if [ -n "${XPL_SK_AGENT:-}" ] && [ -n "${OC_SK_AGENT:-}" ]; then
             echo "has_keys=true" >> "$GITHUB_OUTPUT"
-            echo "both model keys are configured; the live playtest matrix runs"
+            echo "both model keys are configured; the live playtest matrix runs on the nightly schedule and on dispatch"
           else
             echo "has_keys=false" >> "$GITHUB_OUTPUT"
             echo "key state: XPL_SK_AGENT=${XPL_SK_AGENT:+set} OC_SK_AGENT=${OC_SK_AGENT:+set}"
@@ -156,6 +158,7 @@ jobs:
           MODELS: ${{ inputs.models }}
           HAS_KEYS: ${{ steps.keys.outputs.has_keys }}
           DRY_INPUT: ${{ inputs.dry_run }}
+          EVENT_NAME: ${{ github.event_name }}
           TURNS: ${{ env.TURNS }}
         run: |
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
@@ -227,11 +230,18 @@ jobs:
                   leg["models"] = models
 
           # Without both repository secrets no leg may call a model: the live legs wait and
-          # one dry leg proves the wiring on every push. A dry_run dispatch does the same
-          # to whatever legs the inputs selected.
-          dry = os.environ.get("HAS_KEYS") != "true" or os.environ.get("DRY_INPUT") == "true"
-          if os.environ.get("HAS_KEYS") != "true":
-              legs = [leg for leg in legs if leg["leg"] == "kb-classic-curses"][:1]
+          # one dry leg proves the wiring on every push. A push with keys behaves the same
+          # way: live legs spend tokens and up to fifteen minutes each, so they belong to the
+          # nightly schedule and to dispatches. A dry_run dispatch does the same to whatever
+          # legs the inputs selected.
+          push = os.environ.get("EVENT_NAME") == "push"
+          dry = (os.environ.get("HAS_KEYS") != "true" or push
+                 or os.environ.get("DRY_INPUT") == "true")
+          if os.environ.get("HAS_KEYS") != "true" or push:
+              # One leg is enough to prove the wiring. Keep the first leg the dispatch
+              # filters selected, so a dry_run tiles dispatch still checks the tiles leg
+              # instead of collapsing to no job at all.
+              legs = legs[:1]
           live_turns = int(os.environ.get("TURNS") or 30)
           for leg in legs:
               leg["dry"] = dry
@@ -254,7 +264,10 @@ jobs:
   e2e-suite:
     name: Fork end-to-end suite (curses, shard ${{ matrix.shard }})
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    # A warm shard finished the whole job in about 40 minutes; with a cold ccache the
+    # build took 37 minutes by itself, so 90 covers the build plus the suite. The cap
+    # only has to catch a hang, so a hung shard cannot hold a runner for two hours.
+    timeout-minutes: 90
     # The full suite outgrew a single runner: its tail tests are slower there than they are
     # locally, and the suite was still running when the job hit its two-hour timeout. Each
     # shard builds the same cache-warm curses binary and runs a balanced quarter of the 140
@@ -360,15 +373,16 @@ jobs:
   playtest:
     name: playtest ${{ matrix.name }}
     needs: plan
-    # The legs spend model tokens, so they run on push to main, on the nightly schedule
-    # and when dispatched; a pull request keeps the free end-to-end suite and can get a
-    # playtest by dispatching this workflow on its branch. An empty leg list is an empty
-    # matrix, which skips the job without a condition.
+    # The legs spend model tokens, so on a push the plan emits one dry leg: it proves the
+    # wiring and spends nothing. The live legs run on the nightly schedule and when
+    # dispatched; a pull request keeps the free end-to-end suite and can get a playtest by
+    # dispatching this workflow on its branch. An empty leg list is an empty matrix, which
+    # skips the job without a condition.
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 150
-    # Two games at a time on push; a nightly run may use the whole matrix. Never fail the
-    # other legs because one of them found a defect.
+    # Two games at a time; the nightly schedule may run three. Never fail the other legs
+    # because one of them found a defect.
     strategy:
       fail-fast: false
       max-parallel: ${{ github.event_name == 'schedule' && 3 || 2 }}
