@@ -19,6 +19,11 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Maintenance
 
+- The end-to-end suite supports local parallel runs (`--parallel=4`), per-test timing output
+  (`--durations=<path>`) and duration-balanced CI shards. The Lua console and click helpers poll
+  for readiness instead of sleeping after every action. Reload and wait fixtures no longer depend
+  on earlier wounds or the starting outfit's storage.
+
 - Merged `upstream/main` (34 commits) as `c682cb343a`. The black powder rounds the merge
   re-added to `data/json/uncraft/ammo/rifle ammo.json` are folded again; the new 8 mm uncrafts
   upstream added there are kept.

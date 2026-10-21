@@ -189,9 +189,10 @@ Each leg ends in one of four verdicts:
 | `killed`        | 3         | A cap (dollars, wall clock or tokens) stopped a run. The leg does not fail, and a capped run cannot report success |
 | `harness-error` | 2         | The harness itself failed. This is the one verdict that fails the job                                              |
 
-Without both model secrets the workflow does not play live at all: it collapses to a single dry-run
-leg on `kb-classic-curses` at 3 turns, spends nothing, and says so in the job summary. The rest of
-the pipeline still runs: the end-to-end suite on every push, and the screenshot job on the schedule.
+Without both model secrets the workflow does not play live at all: it keeps only the first
+matching leg (`kb-classic-curses` by default), makes it a dry run with 3 turns, and says so in the
+job summary. Dispatch filters still apply, so a tiles-only request checks a tiles leg. The rest
+of the pipeline still runs: the end-to-end suite on every push, and the screenshot job on the schedule.
 
 The end-to-end suite runs as four parallel shards. A single runner could not finish all 140 checks
 inside the job's two-hour timeout: the tail of the suite is slower on two cores than it is locally,
@@ -200,7 +201,9 @@ binary and runs a balanced quarter of the checks (`--shard=0/4`), and uploads it
 `e2e-suite-log-<shard>`. `run.py` assigns the tests longest first into the lightest shard, using the
 per-test seconds in `tests/e2e/durations.json`; positional slicing put the three mouse tests in one
 shard and made it 47% longer than its neighbours. A local run is serial unless it is asked for
-`--parallel=4`, and `--durations=<path>` rewrites the manifest after a run.
+`--parallel=4`. `--durations=<path>` writes timings to the requested file; use
+`--durations=tests/e2e/durations.json` to refresh the manifest, then rerun the suite to verify
+the changed shard assignments.
 
 `python3 tests/e2e/feature_shots.py` runs on schedule and dispatch only. It uploads
 `docs/fork/images/features/*.png` as an artifact and never commits them. Note the trap: `--only`
