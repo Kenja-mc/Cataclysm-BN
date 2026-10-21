@@ -22,6 +22,10 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Merged `upstream/main` (34 commits) as `c682cb343a`. The black powder rounds the merge
   re-added to `data/json/uncraft/ammo/rifle ammo.json` are folded again; the new 8 mm uncrafts
   upstream added there are kept.
+- The cross-platform build matrix runs weekly and on demand instead of every push. Pushes
+  check one dry playtest leg; nightly and manual runs retain the live matrix when model keys
+  are configured. Filtered dry dispatches keep their selected surface, and cold builds have
+  a 90-minute end-to-end job limit.
 
 ## 2026-10-17
 
