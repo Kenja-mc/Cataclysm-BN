@@ -141,6 +141,8 @@
     "material": "steel",
     "symbol": "=",
     "color": "dark_gray",
+    "stackable": true,
+    "damage_states": [ 0, 0 ],
     "looks_like": "40mm_casing"
   },
   {
@@ -154,6 +156,8 @@
     "material": "steel",
     "symbol": "=",
     "color": "dark_gray",
+    "stackable": true,
+    "damage_states": [ 0, 0 ],
     "looks_like": "40mm_casing"
   },
   {

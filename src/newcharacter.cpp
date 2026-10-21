@@ -2477,7 +2477,7 @@ tab_direction set_profession( avatar &u, points_left &points,
             if( sorted_profs[cur_id]->vehicle() ) {
                 buffer += colorize( _( "Vehicle:" ), c_light_blue ) + "\n";
                 vproto_id veh_id = sorted_profs[cur_id]->vehicle();
-                buffer += veh_id->name + "\n";
+                buffer += _( veh_id->name ) + "\n";
             }
             // Profession spells
             if( !sorted_profs[cur_id]->spells().empty() ) {
@@ -3357,7 +3357,7 @@ tab_direction set_scenario( avatar &u, points_left &points,
             mvwprintz( w_vehicle, point_zero, COL_HEADER, _( "Scenario Vehicle:" ) );
             wprintz( w_vehicle, c_light_gray, ( "\n" ) );
             if( sorted_scens[cur_id]->vehicle() ) {
-                wprintz( w_vehicle, c_light_gray, sorted_scens[cur_id]->vehicle()->name );
+                wprintz( w_vehicle, c_light_gray, _( sorted_scens[cur_id]->vehicle()->name ) );
             }
 
             mvwprintz( w_flags, point_zero, COL_HEADER, _( "Scenario Flags:" ) );
@@ -3527,7 +3527,7 @@ static void draw_height( const catacurses::window &w_height, const avatar &you,
     werase( w_height );
     mvwprintz( w_height, point_zero, highlight ? h_light_gray : c_light_gray, _( "Height:" ) );
     unsigned height_pos = 1 + utf8_width( _( "Height:" ) );
-    mvwprintz( w_height, point( height_pos, 0 ), c_white, string_format( "%d cm",
+    mvwprintz( w_height, point( height_pos, 0 ), c_white, string_format( _( "%d cm" ),
                you.base_height() ) );
     wnoutrefresh( w_height );
 }

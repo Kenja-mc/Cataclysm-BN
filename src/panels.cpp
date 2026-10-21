@@ -2074,8 +2074,9 @@ static void draw_veh_compact( const avatar &u, const catacurses::window &w )
         veh = veh_pointer_or_null( get_map().veh_at( u.bub_pos() ) );
     }
     if( veh ) {
-        mvwprintz( w, point( 0, 1 ), c_light_gray, "fuel: " );
-        veh->print_fuel_indicators( w, point( 6, 1 ) );
+        const std::string fuel_label = _( "fuel: " );
+        mvwprintz( w, point( 0, 1 ), c_light_gray, fuel_label );
+        veh->print_fuel_indicators( w, point( utf8_width( fuel_label ), 1 ) );
         mvwprintz( w, point( 0, 0 ), c_light_gray, veh->face.to_string_azimuth_from_north() );
         // target speed > current speed
         const float strain = veh->strain();
@@ -2085,7 +2086,7 @@ static void draw_veh_compact( const avatar &u, const catacurses::window &w )
         int t_speed = static_cast<int>( convert_velocity( veh->cruise_velocity, VU_VEHICLE ) );
         int c_speed = static_cast<int>( convert_velocity( veh->velocity, VU_VEHICLE ) );
         int offset = get_int_digits( c_speed );
-        const std::string type = get_option<std::string>( "USE_METRIC_SPEEDS" );
+        const std::string type = velocity_units( VU_VEHICLE );
         mvwprintz( w, point( 6, 0 ), c_light_gray, "%s :", type );
         mvwprintz( w, point( 13, 0 ), col_vel, "%d", c_speed );
         if( veh->cruise_on ) {
@@ -2117,8 +2118,9 @@ static void draw_veh_padding( const avatar &u, const catacurses::window &w )
         veh = veh_pointer_or_null( get_map().veh_at( u.bub_pos() ) );
     }
     if( veh ) {
-        mvwprintz( w, point( 1, 1 ), c_light_gray, "fuel: " );
-        veh->print_fuel_indicators( w, point( 7, 1 ) );
+        const std::string fuel_label = _( "fuel: " );
+        mvwprintz( w, point( 1, 1 ), c_light_gray, fuel_label );
+        veh->print_fuel_indicators( w, point( 1 + utf8_width( fuel_label ), 1 ) );
         mvwprintz( w, point( 1, 0 ), c_light_gray, veh->face.to_string_azimuth_from_north() );
         // target speed > current speed
         const float strain = veh->strain();
@@ -2128,7 +2130,7 @@ static void draw_veh_padding( const avatar &u, const catacurses::window &w )
         int t_speed = static_cast<int>( convert_velocity( veh->cruise_velocity, VU_VEHICLE ) );
         int c_speed = static_cast<int>( convert_velocity( veh->velocity, VU_VEHICLE ) );
         int offset = get_int_digits( c_speed );
-        const std::string type = get_option<std::string>( "USE_METRIC_SPEEDS" );
+        const std::string type = velocity_units( VU_VEHICLE );
         mvwprintz( w, point( 7, 0 ), c_light_gray, "%s :", type );
         mvwprintz( w, point( 14, 0 ), col_vel, "%d", c_speed );
         if( veh->cruise_on ) {
@@ -2160,8 +2162,9 @@ static void draw_veh_classic( const avatar &u, const catacurses::window &w )
         veh = veh_pointer_or_null( get_map().veh_at( u.bub_pos() ) );
     }
     if( veh ) {
-        mvwprintz( w, point( 0, 1 ), c_light_gray, "fuel: " );
-        veh->print_fuel_indicators( w, point( 7, 1 ) );
+        const std::string fuel_label = _( "fuel: " );
+        mvwprintz( w, point( 0, 1 ), c_light_gray, fuel_label );
+        veh->print_fuel_indicators( w, point( utf8_width( fuel_label ) + 1, 1 ) );
         mvwprintz( w, point( 0, 0 ), c_light_gray, veh->face.to_string_azimuth_from_north() );
         // target speed > current speed
         const float strain = veh->strain();
@@ -2171,7 +2174,7 @@ static void draw_veh_classic( const avatar &u, const catacurses::window &w )
         int t_speed = static_cast<int>( convert_velocity( veh->cruise_velocity, VU_VEHICLE ) );
         int c_speed = static_cast<int>( convert_velocity( veh->velocity, VU_VEHICLE ) );
         int offset = get_int_digits( c_speed );
-        const std::string type = get_option<std::string>( "USE_METRIC_SPEEDS" );
+        const std::string type = velocity_units( VU_VEHICLE );
         mvwprintz( w, point( 6, 0 ), c_light_gray, "%s :", type );
         mvwprintz( w, point( 13, 0 ), col_vel, "%d", c_speed );
         if( veh->cruise_on ) {
