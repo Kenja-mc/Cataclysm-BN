@@ -232,9 +232,11 @@ death works: _Permadeath_ (the default) or _Roleplay_, which offers to reload yo
 you die. Autosave is on, so that save is recent. This only sets upstream's Options → General →
 Prompt on character death, so you can change it later.
 
-The first time your character gets hungry, thirsty, tired, hurt, overloaded, sees a hostile or meets
-the night, a one-line tip in the message log says what to do and names the key. Each tip shows once
-per character; Options → Interface → Show first-time tips turns them off.
+The first time your character gets hungry, thirsty, tired, hurt, overloaded, sees a hostile, steps
+onto stairs or meets the night, a one-line tip in the message log says what to do and names the key.
+The stairs tip uses the keys that are actually bound, so Modern and Classic both read correctly, and
+one early tip says that the game saves for you, since new players look for a save key that does not
+exist. Each tip shows once per character; Options → Interface → Show first-time tips turns them off.
 
 With mouse tile selection, the hover hint explains the select/attack buttons. The fire
 command attacks the selected hostile. When mouse movement is explicitly enabled, hints name the
@@ -320,7 +322,8 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 
 - **Weather and Status boxes** sit in a corner of the map, in both terminal and tiles builds.
   Weather has four rows: an icon and description, season/day with time and moon phase, Light,
-  and Wind. The date row stays compact and the box widens when translated text needs more room.
+  and Wind. The box widens to fit its widest row, so a long weather name, a temperature or a
+  translated date is never cut off.
   A watch reveals exact time; without one, time is approximate above ground and unknown below.
   A thermometer adds outdoor temperature. Wind letters name its origin; arrows show its flow.
   Status shows weapon and ammo, fighting style and stance, followed by five fixed rows:
