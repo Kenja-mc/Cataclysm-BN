@@ -26,45 +26,45 @@ from tiles import (Session, X11, WINDOW_TITLE_PREFIX, DETERMINISTIC_OPTIONS, pat
 from tmux_game import Game, start_new_game  # noqa: E402
 from helpers import HELPERS, arena, give, spawn, settle, save_and_quit  # noqa: E402
 
-# id, page title, what the reader must see, key sequence, options, and the paragraph under the image.
+# Each key tuple is one chord; successive tuples are separate key presses.
 SHOTS = [
     dict(id="hud-modern", title="Modern HUD",
          keys=[], options={"CONTROL_SCHEME": "modern", "HUD_WEATHER_BOX": "top_left",
                            "HUD_COMBAT_BOX": "top_left"},
-         body="The fork draws its readings in boxes: weapon and style, stance, needs, mood, sound and "
-              "stats. The sidebar keeps the message log, the compass and the pixel minimap."),
+         body="Weather and time sit above the weapon, style, stance and needs boxes. The sidebar keeps "
+              "the limb bars, sound, mood, stats, message log, compass and pixel minimap."),
     dict(id="hud-classic", title="Classic HUD",
          keys=[], options={"CONTROL_SCHEME": "classic", "HUD_WEATHER_BOX": "top_left",
                            "HUD_COMBAT_BOX": "top_left"},
          body="Classic keeps the upstream scheme, and the game follows the classic key list. Menu text and "
               "hints name the classic keys, and `?` still lists everything."),
     dict(id="enter-menu", title="The Enter menu",
-         keys=["Return"], options={"CONTROL_SCHEME": "modern"},
+         keys=[("Return",)], options={"CONTROL_SCHEME": "modern"},
          body="Enter opens every command group: Items, Interact, Info, Misc, crafting, vehicles and "
               "settings. Modern routes each group here instead of binding a top-row number."),
     dict(id="interact-menu", title="Interact menu: quick stack and sort pile",
-         keys=["space"], options={"CONTROL_SCHEME": "modern"},
-         body="Space opens Interact. Quick stack moves carried items into nearby storage that already "
-              "holds them, and sort pile sorts the stack under the player without sorting zones."),
+         keys=[("Return",), ("2",)], options={"CONTROL_SCHEME": "modern"},
+         body="Enter, then Interact, opens this menu. Quick stack moves carried items into nearby storage "
+              "that already holds them, and sort pile sorts the player's pile without sorting zones."),
     dict(id="inventory", title="Inventory with item variants",
-         keys=["i"], options={"CONTROL_SCHEME": "modern"},
+         keys=[("i",)], options={"CONTROL_SCHEME": "modern"},
          body="One line holds one kind of thing. Rings, novels and other folded families list as a "
               "single entry with a count, and selecting a line opens the item's actions."),
     dict(id="crafting", title="Crafting with the parts chain",
-         keys=["i", "F5"], options={"CONTROL_SCHEME": "modern"},
+         keys=[("i",), ("F5",)], options={"CONTROL_SCHEME": "modern"},
          body="The crafting menu opens on a tab with recipes to make. The parts chain shows what a "
               "recipe needs, which of those parts the player can produce, and one honest time estimate."),
     dict(id="look", title="Look around and tile selection",
-         keys=["Shift_L", "Right"], options={"CONTROL_SCHEME": "modern"},
-         body="Shift and a direction moves the cursor without spending a turn. The tile under the cursor "
-              "shows what it holds, and Enter selects it for the next action."),
+         keys=[("Shift_L", "d")], options={"CONTROL_SCHEME": "modern"},
+         body="Shift and a direction inspects the adjacent tile without spending a turn. The tile "
+              "inspector shows what it holds, and Space interacts with the selected tile."),
     dict(id="map", title="Map and minimap",
-         keys=["m"], options={"CONTROL_SCHEME": "modern"},
+         keys=[("m",)], options={"CONTROL_SCHEME": "modern"},
          body="The map opens on the local area with the pixel minimap the fork keeps on by default."),
     dict(id="sidebar-options", title="Sidebar options from the Enter menu",
-         keys=["Return", "7"], options={"CONTROL_SCHEME": "modern"},
-         body="Modern leaves the panel key unbound. Enter, then Misc, opens Sidebar Options, where the "
-              "panels can be moved, hidden and reordered."),
+         keys=[("Return",), ("7",), ("9",)], options={"CONTROL_SCHEME": "modern"},
+         body="Modern leaves the panel key unbound. Enter, then Misc, then Sidebar Options opens the "
+              "editor, where the panels can be moved, hidden and reordered."),
     dict(id="body-panel", title="Body panel and limb details",
          keys=[], options={"CONTROL_SCHEME": "modern"},
          setup="gapi.get_avatar():add_effect(EffectTypeId.new('bleed'), "
@@ -203,8 +203,8 @@ def main():
             try:
                 proc, x11, window, run = launch(session, shot["id"], shot["options"], work,
                                                 fixtures[(scheme, setup)])
-                for key in shot["keys"]:
-                    x11.key(key, delay=0.6)
+                for keys in shot["keys"]:
+                    x11.key(*keys, delay=0.6)
                 time.sleep(1.5)
                 capture(session.display, window, png)
                 digest = hashlib.sha256(png.read_bytes()).hexdigest()
