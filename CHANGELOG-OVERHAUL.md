@@ -4,6 +4,16 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-21
+
+### Maintenance
+
+- The reload regression waits for the item picker and each loaded round before sending the next
+  key. Fixed delays could lose input on CI and leave a six-round revolver at five rounds.
+- Tiles playtests and screenshot captures apply deterministic options to both config-directory
+  modes. CI builds had ignored the XDG-only copy, leaving rain and blinking enabled so frame
+  waits timed out. Failed screenshot launches now close their game window before the next shot.
+
 ## 2026-10-20
 
 ### Added
