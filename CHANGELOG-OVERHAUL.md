@@ -27,7 +27,8 @@ Upstream's own changes are in `docs/en/game/changelog`.
   matchbooks cannot change the two items and twelve charges under test.
 - Crafting checks read wrapped estimates from the recipe column without neighboring batch rows
   or item details. Vehicle-memory checks disable animated weather and use a private electric
-  armored-car fixture, avoiding rain, exhaust and cameras without invalidating sight after driving.
+  armored car with a solid rear, avoiding exhaust, cameras and randomly opened doors without
+  invalidating sight after driving.
 - Legacy-keybindings and map-memory fixtures activate queued NPCs before clearing their arenas,
   so late-arriving companions cannot block movement or interfere with vehicle setup.
 - Electric-vehicle HUD checks wait for the engine to start and answer interruption prompts before
@@ -36,6 +37,8 @@ Upstream's own changes are in `docs/en/game/changelog`.
   first Needs row of a partially painted terminal frame.
 - Mouse-selection fixtures flush queued actors and clear transient effects before testing. The
   arrow-aim-off check verifies the inspected enemy and reports failures from its isolated game.
+- The recraft save/reload fixture replaces unrelated world vehicles with passive bicycles before
+  crafting, avoiding recurring idling-engine debug popups in later tests.
 
 ## 2026-10-20
 

@@ -205,6 +205,11 @@ def test_crafting_opens_on_content(g):
 
 def test_recraft_after_reload(g):
     """Upstream #10083: recraft crashed after save, quit to menu and reload in one session."""
+    # This crafting fixture does not need idling world vehicles across the reload.
+    assert g.lua("for _,v in ipairs(M:get_vehicles()) do "
+                 "if v:type() ~= 'bicycle' then M:replace_vehicle(v,'bicycle') end end "
+                 "local passive=true for _,v in ipairs(M:get_vehicles()) do "
+                 "passive=v:type()=='bicycle' and passive end out(passive)") == ["true"]
     # Materials on the floor nearby also exercise the larger crafting reach.
     arena(g)
     spawn(g, 3, 0, "glass_shard", 3)
