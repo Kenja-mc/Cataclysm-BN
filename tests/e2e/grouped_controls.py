@@ -5,28 +5,13 @@ from tempfile import TemporaryDirectory
 
 from aim_reticle import action_clock
 from helpers import HELPERS, arena, bub_pos, empty_inventory, settle, start_new_game
-from map_mouse import firing_target_panel, mouse_state, no_mouse_movement_game
+from map_mouse import firing_target_panel, mouse_state, mouse_view, no_mouse_movement_game
 from safe_click import see_everything
 from tmux_game import Game
 
 
 DIRECTIONS = (("W", 0, -1), ("E", 1, -1), ("D", 1, 0), ("C", 1, 1),
               ("S", 0, 1), ("Z", -1, 1), ("A", -1, 0), ("Q", -1, -1))
-
-
-def mouse_view(game):
-    screen = game.screen()
-    lines = screen.splitlines()
-    top = next((y for y, line in enumerate(lines) if "Mouse View" in line), None)
-    assert top is not None, "selection must show the actual tile inspector:\n" + screen
-    title = lines[top].index("Mouse View")
-    left = max(lines[top].rfind(corner, 0, title) for corner in ("╭", "┌", "+"))
-    assert left >= 0, screen
-    right = len(lines[top].rstrip())
-    bottom = next((y for y in range(top + 1, len(lines))
-                   if lines[y][left:left + 1] in ("╰", "└", "+")), None)
-    assert bottom is not None, screen
-    return "\n".join(line[left:right] for line in lines[top:bottom + 1])
 
 
 def mark_direction(game, dx, dy):

@@ -19,16 +19,29 @@ def no_mouse_movement_game(name, mouse_move="false", **options):
     try:
         start_new_game(game)
         game.define_lua(HELPERS)
+        # Activate queued NPCs before they can escape the sweep and steal the clicked "@".
+        settle(game)
         empty_inventory(game)
         arena(game)
         see_everything(game, True)
-        assert game.lua("for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end "
+        assert game.lua("local a=gapi.get_avatar() "
+                        # Stun redirects an attack's movement step.
+                        "a:clear_effects() "
+                        "for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end "
+                        "for _,n in ipairs(gapi.get_all_npcs()) do park(n) end "
                         "MAP_MOUSE_TARGETS={} "
                         "for dx=-4,4 do for dy=-4,4 do local p=here(dx,dy) "
                         "M:remove_trap_at(p) "
                         "for _,fid in ipairs(M:get_field_ids_at(p)) do M:remove_field_at(p,fid) end "
                         "end end out('ok')") == ["ok"]
         settle(game)
+        # Keep every clicked "@" unambiguously the avatar.
+        assert game.lua("local a=gapi.get_avatar():get_pos_ms() local n=0 "
+                        "for _,cr in ipairs(gapi.get_all_creatures()) do "
+                        "if not cr:is_avatar() then local p=cr:get_pos_ms() "
+                        "if math.abs(p.x-a.x)<=13 and math.abs(p.y-a.y)<=13 and p.z==a.z then "
+                        "n=n+1 end end end out(n)") == ["0"], \
+            "a creature arrived after the fixture sweep:\n" + game.screen()
         yield game
     finally:
         game.close()
@@ -62,6 +75,21 @@ def firing_target_panel(game):
     bottom = next((y for y in range(top + 1, len(lines))
                    if lines[y][left:left + 1] in ("└", "╰", "+")), None)
     assert bottom is not None, "expected the firing window's bottom border:\n" + screen
+    return "\n".join(line[left:right] for line in lines[top:bottom + 1])
+
+
+def mouse_view(game):
+    screen = game.screen()
+    lines = screen.splitlines()
+    top = next((y for y, line in enumerate(lines) if "Mouse View" in line), None)
+    assert top is not None, "selection must show the actual tile inspector:\n" + screen
+    title = lines[top].index("Mouse View")
+    left = max(lines[top].rfind(corner, 0, title) for corner in ("╭", "┌", "+"))
+    assert left >= 0, screen
+    right = len(lines[top].rstrip())
+    bottom = next((y for y in range(top + 1, len(lines))
+                   if lines[y][left:left + 1] in ("╰", "└", "+")), None)
+    assert bottom is not None, screen
     return "\n".join(line[left:right] for line in lines[top:bottom + 1])
 
 
@@ -151,9 +179,17 @@ def test_mouse_selects_when_arrow_aim_disabled(_g):
         before = mouse_state(game)
         x, y = game.find("@")
         game.click(x + 1, y, button=2)
+        panel = mouse_view(game)
+        assert "zombie" in panel, "RMB must select the zombie east of the avatar:\n" + game.screen()
         assert mouse_state(game) == before, "mouse selection must be free even when arrows walk"
+        # Stun redirects movement even when f requests an adjacent attack.
+        assert game.lua("out(gapi.get_avatar():has_effect(EffectTypeId.new('stunned')))") == ["false"], \
+            "the avatar must be able to act when f is pressed:\n" + game.screen()
         game.keys("f", delay=1)
-        assert bub_pos(game) == before[1], "f must attack the selection without moving"
+        after = bub_pos(game)
+        assert after == before[1], (
+            f"f must attack the selection without moving ({before[1]} -> {after}); "
+            f"state {mouse_state(game)}\n" + game.screen())
         assert action_clock(game) > before[0], "f must spend moves on the selected melee attack"
 
 

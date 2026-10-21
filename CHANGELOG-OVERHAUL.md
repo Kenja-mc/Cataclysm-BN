@@ -34,6 +34,8 @@ Upstream's own changes are in `docs/en/game/changelog`.
   throttling, using the same bounded control helper as the map-memory check.
 - HUD resize checks wait for two identical complete-size captures instead of asserting on the
   first Needs row of a partially painted terminal frame.
+- Mouse-selection fixtures flush queued actors and clear transient effects before testing. The
+  arrow-aim-off check verifies the inspected enemy and reports failures from its isolated game.
 
 ## 2026-10-20
 
