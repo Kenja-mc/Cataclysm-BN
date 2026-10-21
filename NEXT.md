@@ -4,7 +4,9 @@
 
 - **Future tickets stay open** — #1 (agentic UI/UX QA in CI) and #2 (two-player co-op) are designed
   future work, neither implemented nor closable. #3 is the upstream feature-watch tracker; its
-  checkpoint matches `upstream/main` and every candidate is still unchecked.
+  checkpoint matches `upstream/main` and every candidate is still unchecked. #14 asks for number-key
+  rows with item thumbnails in list menus (SotS: The Pit style); #15 covers the README download
+  badges that still point at upstream releases.
 - **Next upstream merge** — the 2026-10-20 merge is `c682cb343a` (34 commits, base
   `5196022810`). It resolved five conflicts: `tankammo.json` and `generic/casing.json` keep
   upstream's `stackable`/`damage_states` and the fork's `looks_like`; `rifle ammo.json` keeps the
@@ -16,6 +18,11 @@
   `data/json/uncraft/ammo/rifle ammo.json`, `data/json/recipes/ammo/rifle.json`,
   `data/mods/exotic_ammo/uncrafts/ammo.json`), keep the new non-`bp_` entries, and re-check the
   `277_hybrid` recipe and the `Enter → Misc` action list.
+- **Regenerate the feature screenshots** — `tests/e2e/feature_shots.py` now detects a capture that
+  did not change the screen (three shipped images were byte-identical), gives the body-panel shot a
+  wounded fixture, and opens crafting with `i` then F5 instead of the classic `&`. Run
+  `python3 tests/e2e/feature_shots.py` once no other game work is running and check that the weather
+  box appears in the HUD shots; the page is rewritten in place.
 - **Community difficulty thread** — [`docs/fork/reddit-1x5xk5g-proposals.md`](docs/fork/reddit-1x5xk5g-proposals.md)
   collects what r/cataclysmbn asked for after one post about Bright Nights becoming easy. Most of it is
   balance work, which the fork rules leave out of scope.
