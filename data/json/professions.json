@@ -2267,6 +2267,7 @@
       { "level": 2, "name": "gun" },
       { "level": 2, "name": "rifle" },
       { "level": 2, "name": "pistol" },
+      { "level": 2, "name": "shotgun" },
       { "level": 2, "name": "melee" },
       { "level": 2, "name": "stabbing" },
       { "level": 2, "name": "dodge" },
@@ -2287,20 +2288,24 @@
           "boots_combat",
           "wristwatch",
           "canteen",
-          "molle_pack",
-          "hatchet",
-          "boltcutters",
           "multitool"
         ],
         "entries": [
+          { "item": "molle_pack", "contents-item": [ "hatchet", "boltcutters" ] },
           { "group": "charged_two_way_radio" },
           { "item": "webbing_belt", "contents-item": "e_tool" },
           { "item": "tinyweldtank", "ammo-item": "oxyacetylene", "charges": 60, "container-item": "oxy_torch" },
-          { "item": "modularvestceramic", "contents-group": "army_mags_m4" },
+          { "item": "modularvestceramic" },
           { "item": "ear_plugs", "custom-flags": [ "no_auto_equip" ] },
           { "item": "goggles_welding", "custom-flags": [ "no_auto_equip" ] },
           { "item": "knife_combat", "container-item": "sheath" },
-          { "item": "m4a1", "ammo-item": "556", "charges": 30, "contents-item": [ "shoulder_strap", "holo_sight" ] },
+          { "item": "ammo_satchel_leg", "contents-group": "ammopouch_shot_droneop" },
+          {
+            "item": "mossberg_590",
+            "ammo-item": "shot_00",
+            "charges": 9,
+            "contents-item": [ "shoulder_strap", "holo_sight" ]
+          },
           { "item": "grenadebandolier", "contents-item": [ "c4_breaching", "c4_breaching", "c4", "c4" ] }
         ]
       },
@@ -6482,6 +6487,23 @@
         "entries": [ { "item": "primitive_axe", "custom-flags": [ "auto_wield" ] } ]
       },
       "female": [ "chestwrap" ]
+    },
+    "flags": [ "SCEN_ONLY" ]
+  },
+  {
+    "type": "profession",
+    "id": "jetskier",
+    "name": "Jetskier",
+    "description": "Every year during spring break and all summer you'd be out on the lake, riding the waves.  The end of the world can wait for when you make it back to shore.",
+    "points": 1,
+    "vehicle": "jetski",
+    "skills": [ { "level": 1, "name": "swimming" }, { "level": 2, "name": "driving" } ],
+    "items": {
+      "both": {
+        "items": [ "crocs_sport", "tank_top", "flotation_vest", "dive_bag", "diving_watch", "fancy_sunglasses", "smart_phone" ]
+      },
+      "male": [ "trunks" ],
+      "female": [ "bikini_top", "bikini_bottom" ]
     },
     "flags": [ "SCEN_ONLY" ]
   },
