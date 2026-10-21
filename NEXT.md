@@ -79,10 +79,13 @@
   game logic and therefore out of this fork's scope. `tmux_game.dismiss_error_popup` answers the popup
   and reports its text, and the suite calls it around every test so one assertion cannot poison five.
 - **Vehicle-memory fixture** — the trailing sample starts at row 6, beyond the vehicle's rear.
-  Weather animation is disabled, and a private electric armored-car fixture avoids exhaust and
-  camera vision. Every sampled cell must be hidden from direct sight. Real-game checks rejected a
-  transparent-rear electric van; source review rejected a tank with camera-assisted vision.
+  Weather animation is disabled; its private electric armored car has a solid rear because even
+  mint-condition spawns randomly open doors. It avoids exhaust and camera vision, and every sampled
+  cell must be hidden from direct sight. A transparent van and a camera-equipped tank were rejected.
   No redraw delay or post-drive cache invalidation is used.
+- **Native vehicle reload warning** — an idling combustion engine reported out-of-bounds sounds
+  after a same-session save/reload. The recraft fixture replaces unrelated vehicles before its
+  first craft; this isolates the crafting regression, not a repair of the native vehicle lifecycle.
 - **CI/CD overhaul series** — issue #12 tracks #6 to #11: decision-model playtesting, the fork suite in
   CI, a prepared build container, known failures, a performance gate and the release path. Issue #13
   lists the end-to-end harness traps to write into the test-quality skill.

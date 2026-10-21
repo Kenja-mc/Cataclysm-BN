@@ -17,12 +17,15 @@ def vehicle_game(name, **options):
         (ROOT / "data/json/vehicles/vans_busses.json").read_text()) if vehicle["id"] == "armored_car")
     prototype["id"] = "e2e_memory_electric_car"
     prototype["name"] = "Memory fixture armored car"
+    # Even mint-condition spawns randomly open doors; keep the rear opaque.
+    replacements = {"diesel_engine_v8": "engine_electric_super",
+                    "hddoor_opaque": "hdboard_horizontal"}
     for part in prototype["parts"]:
-        part["parts"] = ["engine_electric_super" if item == "diesel_engine_v8" else item
+        part["parts"] = [replacements.get(item, item) if isinstance(item, str) else item
                          for item in part["parts"] if item != "alternator_truck"]
     (mod_dir / "modinfo.json").write_text(json.dumps([{
         "type": "MOD_INFO", "id": "e2e_vehicle_memory", "name": "E2E vehicle memory",
-        "description": "Electric, camera-free armored car for the map-memory fixture.",
+        "description": "Electric, camera-free armored car with a solid rear for map-memory checks.",
         "category": "content", "dependencies": ["bn"],
     }]))
     (mod_dir / "vehicles.json").write_text(json.dumps([prototype]))
@@ -95,8 +98,7 @@ def test_memory_behind_moved_vehicle(_game):
                         "for dx=0,4 do for dy=6,11 do visible=a:sees(here(dx,dy)) or visible end end "
                         "out(visible)") == ["false"], (
             "the vehicle must hide all ground being measured:\n" + screen)
-        # The opaque armored hull is unchanged; the private fixture mod uses an electric
-        # drivetrain so exhaust cannot cover the remembered pavement.
+        # The solid rear blocks sight without randomized doors, cameras or exhaust.
         hidden = ground_region(screen, range(6, 12))
         assert set(hidden) == {':'}, (
             "tiles hidden by the vehicle lost their remembered ground: "
