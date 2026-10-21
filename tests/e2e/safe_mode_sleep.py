@@ -3,7 +3,7 @@ import os
 import re
 import time
 
-from helpers import HELPERS, arena, give, settle
+from helpers import HELPERS, arena, empty_inventory, give, settle
 from tmux_game import Game, start_new_game
 
 # Modern wait-menu choices differ from Classic.
@@ -86,6 +86,7 @@ def test_wait_menu_offers_sleep_and_six_hour_hotkey(_g):
     try:
         start_new_game(game)
         game.define_lua(HELPERS)
+        empty_inventory(game)
         arena(game)
         give(game, "diving_watch")
 
@@ -94,10 +95,10 @@ def test_wait_menu_offers_sleep_and_six_hour_hotkey(_g):
         sleep_lines = [l for l in screen.splitlines() if "Sleep" in l]
         assert sleep_lines, "the wait menu has no Sleep entry:\n" + screen
         assert any("$ Sleep" in l for l in sleep_lines), sleep_lines
-        game.keys("$", delay=1.0)
+        game.keys("$", delay=0)
         game.wait_for("Are you sure you want to sleep?")
-        game.keys("Escape", delay=1.0)
-        assert "Are you sure you want to sleep?" not in game.screen(), game.screen()
+        game.keys("Escape", delay=0)
+        game.wait_gone("Are you sure you want to sleep?", timeout=10)
         # Isolate the fixture from rolled world state so wildlife or NPC chatter cannot interrupt
         # the six-hour wait (sealed underground arena, monsters banished, avatar deafened).
         assert game.lua("local a=gapi.get_avatar() local p=a:get_pos_ms() "
@@ -116,10 +117,16 @@ def test_wait_menu_offers_sleep_and_six_hour_hotkey(_g):
         # 6 is bound to menu-right in the modern scheme, but must still pick "6 hours".
         # If a 'Stop waiting?' prompt still appears, the test must fail rather than answer it.
         assert "Stop waiting?" not in game.screen(), game.screen()
+        # The clock row redraws a moment after the move and the arena edits; wait for it
+        # rather than sampling once.
+        deadline = time.time() + 10
         before = minutes_of_day(game)
+        while before is None and time.time() < deadline:
+            time.sleep(0.1)
+            before = minutes_of_day(game)
         assert before is not None, game.screen()
         open_wait_menu(game)
-        game.keys("6", delay=1.0)
+        game.keys("6", delay=0)
         # The entry firing closes the menu; the wait itself then runs in a few seconds.
         deadline = time.time() + 20
         while time.time() < deadline and "Wait for how long?" in game.screen():

@@ -678,6 +678,21 @@ needs `tmux` and a built `cataclysm-bn` binary. The harness looks in
 python3 tests/e2e/run.py
 ```
 
+For a faster local run, use four isolated game processes:
+
+```sh
+python3 tests/e2e/run.py --parallel=4 --durations=/tmp/e2e-durations.json
+```
+
+Do not run unrelated heavy work alongside the suite. Each process uses a private tmux server,
+world and user directory. `--shard=0/4` runs just the first of four shards; tests are assigned
+longest first to the lightest shard using `tests/e2e/durations.json`, then run in suite order.
+
+`--durations=<path>` writes the passing tests' elapsed seconds to that file, merging results
+when running in parallel. To refresh the checked-in manifest, pass
+`--durations=tests/e2e/durations.json`. Rerun the full suite afterward: updated timings change
+which tests share a game, so the new assignment must also pass.
+
 The tiles checks also need the tiles binary, ImageMagick's `magick`, Xvfb, the X11/XTest libraries
 and a software Vulkan driver:
 
