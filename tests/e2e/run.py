@@ -489,12 +489,19 @@ def test_black_powder_survives_reloading(g):
                  "local w=u:create_item(ItypeId.new('model_10_revolver'), -1) "
                  "local a=u:create_item(ItypeId.new('38_special'), 6) a:set_var_str('stack_mod:black_powder','3') "
                  "out(u:wield(w))") == ["true"]
+
+    def round_loaded(loaded):
+        screen = g.screen()
+        if "Stop reloading?" in screen:
+            g.keys("I", delay=0)
+        return f"Weapon | ({loaded})" in screen
+
     for loaded in range(1, 7):
         g.keys("r", delay=0)
         g.wait_for("Reload item")
         g.keys("r", delay=0)
         g.wait_gone("Reload item")
-        g.wait_for(f"Weapon | ({loaded})")
+        assert wait_until(lambda: round_loaded(loaded)), g.screen()
     out = g.lua(REVOLVER + "out(w.charges, w:get_var_str('stack_mod:black_powder','0'), w:display_name(1))")
     charges, black_powder, name = out[0].split(",", 2)
     assert int(charges) == 6, out

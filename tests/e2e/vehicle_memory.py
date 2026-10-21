@@ -34,6 +34,7 @@ def vehicle_game(name, **options):
     try:
         start_new_game(game)
         game.define_lua(HELPERS)
+        settle(game)  # Activate queued NPCs before parking them.
         # Yellow pavement marks the memorable ground; its ':' symbol is unique on screen.
         # Engine sounds place random '?' overlays in the occluded trail; isolate map memory.
         assert game.lua("local a=gapi.get_avatar() a:set_mutation(MutationBranchId.new('DEAF')) "

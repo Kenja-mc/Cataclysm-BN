@@ -9,7 +9,7 @@ Upstream's own changes are in `docs/en/game/changelog`.
 ### Maintenance
 
 - The reload regression waits for the item picker and each loaded round before sending the next
-  key. Fixed delays could lose input on CI and leave a six-round revolver at five rounds.
+  key and answers interruption prompts. Fixed delays could leave the cylinder one round short.
 - Tiles playtests and screenshot captures apply deterministic options to both config-directory
   modes. CI builds had ignored the XDG-only copy, leaving rain and blinking enabled so frame
   waits timed out. Failed screenshot launches now close their game window before the next shot.
@@ -28,10 +28,12 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Crafting checks read wrapped estimates from the recipe column without neighboring batch rows
   or item details. Vehicle-memory checks disable animated weather and use a private electric
   armored-car fixture, avoiding rain, exhaust and cameras without invalidating sight after driving.
-- The legacy-keybindings fixture activates queued NPCs before clearing the movement arena, so a
-  late-arriving starting companion cannot block the diagonal key being checked.
+- Legacy-keybindings and map-memory fixtures activate queued NPCs before clearing their arenas,
+  so late-arriving companions cannot block movement or interfere with vehicle setup.
 - Electric-vehicle HUD checks wait for the engine to start and answer interruption prompts before
   throttling, using the same bounded control helper as the map-memory check.
+- HUD resize checks wait for two identical complete-size captures instead of asserting on the
+  first Needs row of a partially painted terminal frame.
 
 ## 2026-10-20
 
