@@ -21,7 +21,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import tiles  # noqa: E402
-from tiles import Session, X11, WINDOW_TITLE_PREFIX, DETERMINISTIC_OPTIONS, patch_options, capture  # noqa: E402
+from tiles import (Session, X11, WINDOW_TITLE_PREFIX, DETERMINISTIC_OPTIONS, patch_launch_options,
+                   capture)  # noqa: E402
 from tmux_game import Game, start_new_game  # noqa: E402
 from helpers import HELPERS, arena, give, spawn, settle, save_and_quit  # noqa: E402
 
@@ -135,7 +136,7 @@ def launch(session, label, options, run_root, fixture):
     shutil.copytree(fixture_dir / "config", userdir / "config")
     shutil.copytree(fixture_dir / "save", userdir / "save")
     shutil.copytree(userdir / "config", xdg / "cataclysm-bn")
-    patch_options(xdg / "cataclysm-bn" / "options.json", {**DETERMINISTIC_OPTIONS, **options})
+    patch_launch_options(userdir, xdg, {**DETERMINISTIC_OPTIONS, **options})
     for sub in ("home", "cache", "data", "state"):
         (run / sub).mkdir(parents=True, exist_ok=True)
     env = {
@@ -149,14 +150,22 @@ def launch(session, label, options, run_root, fixture):
     proc = subprocess.Popen([str(session.tiles_binary), "--basepath", f"{session.root}/",
                              "--userdir", f"{userdir}/", "--world", world],
                             cwd=session.root, env=env, stdout=log, stderr=log)
-    # wait_for_frame wants two identical captures of a drawn world, so the title screen does not count.
-    tiles.wait_for_frame(session, proc, run, min(session.timeout, 120))
-    x11 = X11(session.display)
-    window = x11.find_window(WINDOW_TITLE_PREFIX)
-    if not window:
-        raise RuntimeError(f"game window disappeared (see {run / 'tiles.log'})")
-    # There is no window manager, so the keys must be aimed at the game window explicitly.
-    x11.focus_local(window, 40, 40)
+    x11 = None
+    try:
+        # The caller only receives proc once the world is up, so a failed wait must clean up here.
+        tiles.wait_for_frame(session, proc, run, min(session.timeout, 120))
+        x11 = X11(session.display)
+        window = x11.find_window(WINDOW_TITLE_PREFIX)
+        if not window:
+            raise RuntimeError(f"game window disappeared (see {run / 'tiles.log'})")
+        # There is no window manager, so the keys must be aimed at the game window explicitly.
+        x11.focus_local(window, 40, 40)
+    except BaseException:
+        if x11 is not None:
+            x11.close()
+        tiles.stop_process(proc)
+        log.close()
+        raise
     return proc, x11, window, run
 
 
