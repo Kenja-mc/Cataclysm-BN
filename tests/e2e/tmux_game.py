@@ -25,7 +25,8 @@ def find_binary():
 
 class Game:
     def __init__(self, name="bn-e2e", cols=140, rows=45, options=None, keybindings=None, userdir=None):
-        self.name = name
+        # Sessions from two processes must not collide: local parallel shards run at once.
+        self.name = f"{name}-{os.getpid()}"
         self.userdir = Path(userdir) if userdir else Path(tempfile.mkdtemp(prefix="bn-e2e-"))
         config = self.userdir / "config"
         config.mkdir(parents=True, exist_ok=True)
@@ -34,7 +35,7 @@ class Game:
                 [{"info": "", "default": "", "name": k, "value": v} for k, v in options.items()]))
         if keybindings:
             (config / "keybindings.json").write_text((ROOT / keybindings).read_text())
-        subprocess.run(["tmux", "kill-session", "-t", name], stderr=subprocess.DEVNULL)
+        subprocess.run(["tmux", "kill-session", "-t", self.name], stderr=subprocess.DEVNULL)
         # Wiki and guide keys open a URL; a stub opener keeps the browser off the desktop.
         stub_bin = self.userdir / "bin"
         stub_bin.mkdir(exist_ok=True)
@@ -42,7 +43,7 @@ class Game:
         (stub_bin / "xdg-open").chmod(0o755)
         env = f"PATH={stub_bin}:$PATH BROWSER=true LANG=C.UTF-8 LC_ALL=C.UTF-8 TERM=xterm-256color"
         cmd = f"cd {ROOT} && env -u DISPLAY -u WAYLAND_DISPLAY {env} {os.environ.get('GAME_WRAPPER', '')} {find_binary()} --basepath {ROOT}/ --userdir {self.userdir}/"
-        subprocess.run(["tmux", "new-session", "-d", "-s", name, "-x", str(cols), "-y", str(rows), cmd], check=True)
+        subprocess.run(["tmux", "new-session", "-d", "-s", self.name, "-x", str(cols), "-y", str(rows), cmd], check=True)
 
     def screen(self):
         return subprocess.run(["tmux", "capture-pane", "-p", "-t", self.name],
@@ -82,16 +83,20 @@ class Game:
         time.sleep(delay)
 
     def click(self, x, y, button=0):
-        """Mouse click at a screen cell, SGR (1006) encoded as xterm-256color terminfo expects."""
+        """Mouse click at a screen cell, SGR (1006) encoded as xterm-256color terminfo expects.
+
+        The click has been handled once the screen stops changing, so poll for that instead of
+        sleeping a flat second; `minimum` keeps a slow runner's first redraw from looking idle.
+        """
         for suffix in ("M", "m"):
             subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", f"\x1b[<{button};{x + 1};{y + 1}{suffix}"])
             time.sleep(0.05)
-        time.sleep(1)
+        self.settle_screen(minimum=0.3, timeout=1.5)
 
     def hover(self, x, y):
         """Mouse motion with no button held, SGR encoded (button code 35)."""
         subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", f"\x1b[<35;{x + 1};{y + 1}M"])
-        time.sleep(1)
+        self.settle_screen(minimum=0.3, timeout=1.5)
 
     def find(self, ch):
         for y, line in enumerate(self.screen().splitlines()):
@@ -99,13 +104,33 @@ class Game:
                 return line.index(ch), y
         return None
 
-    def wait_for(self, text, timeout=60):
+    def wait_for(self, text, timeout=60, poll=0.05):
         deadline = time.time() + timeout
         while time.time() < deadline:
             if text in self.screen():
                 return True
-            time.sleep(0.3)
+            time.sleep(poll)
         raise AssertionError(f"timed out waiting for {text!r}\n{self.screen()}")
+
+    def wait_gone(self, text, timeout=60, poll=0.05):
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            if text not in self.screen():
+                return True
+            time.sleep(poll)
+        raise AssertionError(f"timed out waiting for {text!r} to go away\n{self.screen()}")
+
+    def settle_screen(self, minimum=0.3, timeout=2.0):
+        """Returns once two consecutive captures match and `minimum` seconds have passed."""
+        started = time.time()
+        previous = self.screen()
+        while time.time() - started < timeout:
+            time.sleep(0.05)
+            current = self.screen()
+            if current == previous and time.time() - started >= minimum:
+                return True
+            previous = current
+        return False
 
     def dismiss_error_popup(self):
         """Answer a debug assertion popup, which blocks every key until it is answered.
@@ -119,7 +144,8 @@ class Game:
         detail = [l.strip() for l in screen.splitlines() if "DEBUG" in l or "FUNCTION" in l][:2]
         print("debug assertion popup, answering it to continue: " + " | ".join(detail),
               file=sys.stderr)
-        self.keys("Space", delay=0.5)
+        self.keys("Space", delay=0.1)
+        self.wait_gone("An error has occurred!", timeout=15)
         return True
 
     def lua(self, code):
@@ -130,31 +156,32 @@ class Game:
         # longer than an idle machine: type before it opens and the code goes to the map.
         for _ in range(3):
             self.dismiss_error_popup()
-            self.keys("`", delay=0.5)
+            self.keys("`", delay=0)
             try:
                 self.wait_for("to enter/edit command", timeout=15)
                 break
             except AssertionError:
-                self.keys("Escape", delay=0.5)
+                self.keys("Escape", delay=0)
         else:
             raise AssertionError("could not open the Lua console; refusing to type code into the game\n" + self.screen())
-        self.keys("Enter", delay=0.5)
+        self.keys("Enter", delay=0)
         # Keep the echoed command short so its output is still on screen afterwards.
         self.type(f"OUT='{marker}' " + code)
-        self.keys("C-s", delay=0.5)
-        # Slow machines take a while to run big snippets; wait for the output instead of guessing.
+        self.keys("C-s", delay=0)
+        # Slow machines take a while to run big snippets; wait for the output to stop moving.
         deadline = time.time() + 20
         found = []
         while time.time() < deadline:
             lines = [l.strip("│^v ").strip() for l in self.screen().splitlines()]
             found = [l[len(marker):] for l in lines if l.startswith(marker)]
             if found:
-                time.sleep(0.3)
+                self.settle_screen(minimum=0.05, timeout=2)
                 lines = [l.strip("│^v ").strip() for l in self.screen().splitlines()]
                 found = [l[len(marker):] for l in lines if l.startswith(marker)]
                 break
-            time.sleep(0.3)
-        self.keys("Escape", delay=0.8)
+            time.sleep(0.05)
+        self.keys("Escape", delay=0)
+        self.wait_gone("to enter/edit command", timeout=15)
         return found
 
     def define_lua(self, code):
