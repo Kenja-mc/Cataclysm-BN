@@ -6,24 +6,22 @@
   future work, neither implemented nor closable. #3 is the upstream feature-watch tracker; its
   checkpoint matches `upstream/main` and every candidate is still unchecked. #14 asks for number-key
   rows with item thumbnails in list menus (SotS: The Pit style); #15 covers the README download
-  badges that still point at upstream releases; #16 plans the end-to-end suite speedup (balanced
-  shards from a duration manifest, readiness waits instead of fixed sleeps, a local parallel
-  runner). Measured baseline: 140 tests, 6554 s of test time, shard 3 at 2119 s against shard 1 at
-  1438 s, and two mouse tests at 1415 s together.
+  badges that still point at upstream releases. #16's balanced shards, readiness polling and
+  local parallel runner are merged. Its remaining phases are the slow-test key-delay audit and
+  prepared save fixtures; keep the issue open until its CI timing acceptance is measured.
 
-  Two branches are pushed and not merged:
-
-  - `perf/e2e-runtime` (4 commits): shards balanced from `tests/e2e/durations.json`, `--durations`
-    output, `--parallel=N` local runner, and readiness polling in `lua()`/`click()`/`wait_for()`.
-    Measured: a Lua round trip 2.76 s -> 0.34 s; the two mouse tests 943 s -> 113 s and 471 s -> 56 s;
-    a four-shard local run 6431 s -> 727 s. A full green run has not been done since the last three
-    fixes (hover must keep its one-second pause because the pan runs on timeouts, a run needs its
-    own tmux server, and the sleep test must wait for its dialog instead of sampling once); each fix
-    was verified on its own test.
-  - `ci/rework-workflows`: the cross-platform `matrix` runs weekly and on dispatch instead of every
-    push (about two hours of runner time per push, always red on its ccache step), a push runs one
-    dry playtest leg instead of four live ones, and a newer push cancels the older run. The dispatch
-    on that branch (run 39536969750) reported `playtest legs=1` from the plan job.
+  - **E2E runtime verified locally**: `python3 tests/e2e/run.py --parallel=4` passed 141/141 in
+    593 seconds. The refreshed manifest has all 141 tests; actual shard test totals were
+    580/563/568/572 seconds (3.1% spread), and the two mouse tests took 167 seconds combined.
+    Reload fixtures clear earlier wounds and trait-dependent morale; the sleep fixture has
+    debug storage so its watch cannot fall out of an over-capacity starting outfit.
+    Data checking reported no errors. All five upstream unit shards exited 0 using software
+    Vulkan; the suite reported one expected failure and skipped translation checks without MO files.
+  - **CI workflow changes merged**: the cross-platform matrix runs weekly and on dispatch.
+    Pushes check one dry playtest leg; filtered dry dispatches retain their requested surface.
+    The end-to-end cap is 90 minutes because a cold build alone took 37 minutes. Final CI on
+    the combined changes is pending; the embedded plan passed push, schedule, live/dry dispatch
+    and no-key tiles-filter cases locally.
 - **Next upstream merge** — the 2026-10-20 merge is `c682cb343a` (34 commits, base
   `5196022810`). It resolved five conflicts: `tankammo.json` and `generic/casing.json` keep
   upstream's `stackable`/`damage_states` and the fork's `looks_like`; `rifle ammo.json` keeps the
