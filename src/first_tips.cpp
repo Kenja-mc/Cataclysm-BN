@@ -11,6 +11,8 @@
 #include "calendar.h"
 #include "color.h"
 #include "input.h"
+#include "map/map.h"
+#include "map/mapdata.h"
 #include "messages.h"
 #include "options.h"
 #include "string_formatter.h"
@@ -103,6 +105,26 @@ auto tips() -> const std::vector<tip> & // *NOPAD*
         {
             "heavy", []( const avatar & you ) { return you.weight_carried() > you.weight_capacity(); },
             [] { return string_format( _( "You carry more than you can and move slowly.  Drop items (%s)." ), key( ACTION_DROP ) ); }
+        },
+        {
+            "stairs",
+            []( const avatar & you ) {
+                const auto &here = get_map();
+                return here.has_flag( TFLAG_GOES_UP, you.bub_pos() ) ||
+                       here.has_flag( TFLAG_GOES_DOWN, you.bub_pos() );
+            },
+            [] {
+                const auto ctxt = input_context( "DEFAULTMODE" );
+                return string_format( _( "You are standing on stairs.  %1$s goes up, %2$s goes down." ),
+                                      ctxt.get_desc( "LEVEL_UP" ), ctxt.get_desc( "LEVEL_DOWN" ) );
+            }
+        },
+        {
+            "save",
+            []( const avatar & /*you*/ ) { return calendar::turn - calendar::start_of_game > 5_turns; },
+            [] {
+                return _( "The game saves for you: it autosaves as you play, and saves when you quit." );
+            }
         },
         {
             "night", []( const avatar & ) { return is_night( calendar::turn ); },
