@@ -1240,10 +1240,81 @@ TESTS += GROUPED_CONTROLS_TESTS
 TESTS += HUD_STATUS_TESTS
 
 
+DURATIONS = Path(__file__).with_name("durations.json")
+
+
+def recorded_durations():
+    """Per-test seconds from the last run, used to split the shards by cost."""
+    try:
+        return json.loads(DURATIONS.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def shard_of(tests, index, count):
+    """Assigns a whole test to one shard, longest first into the lightest bin.
+
+    Positional slicing cost a third of the CI wall time: the three mouse tests sat in one
+    shard and made it 47% longer than its neighbours. A test stays whole, so tests keep
+    their relative order inside a shard and shared state behaves as it did.
+    """
+    if count == 1:
+        return list(tests)
+    durations = recorded_durations()
+    default = sorted(durations.values())[len(durations) // 2] if durations else 30.0
+    bins = [[] for _ in range(count)]
+    loads = [0.0] * count
+    for test in sorted(tests, key=lambda t: -durations.get(t.__name__, default)):
+        lightest = min(range(count), key=loads.__getitem__)
+        bins[lightest].append(test)
+        loads[lightest] += durations.get(test.__name__, default)
+    # Keep the suite's own order inside a shard: shared state depends on it.
+    order = {test: n for n, test in enumerate(tests)}
+    return sorted(bins[index], key=order.__getitem__)
+
+
+def run_parallel(count, forward):
+    """Runs `count` shards at once, each its own game, and prefixes their output by shard."""
+    import subprocess
+    import tempfile
+    import threading
+    logs = Path(tempfile.mkdtemp(prefix="bn-e2e-parallel-"))
+    processes = {}
+    for index in range(count):
+        durations = logs / f"shard-{index}.json"
+        process = subprocess.Popen(
+            [sys.executable, __file__, f"--shard={index}/{count}", f"--durations={durations}", *forward],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+        processes[index] = (process, durations)
+
+        def pump(shard, stream=process.stdout):
+            for line in stream:
+                print(f"[{shard}] {line}", end="")
+        threading.Thread(target=pump, args=(index,), daemon=True).start()
+    failed = 0
+    merged = {}
+    for index, (process, durations) in processes.items():
+        if process.wait():
+            failed += 1
+        if durations.exists():
+            merged.update(json.loads(durations.read_text()))
+    wanted = next((a.split("=", 1)[1] for a in forward if a.startswith("--durations=")), "")
+    if wanted:
+        Path(wanted).write_text(json.dumps(merged, indent=1, sort_keys=True) + "\n")
+    print(f"{count} shards finished, {failed} failed")
+    return 1 if failed else 0
+
+
 def main():
     keep = "--keep" in sys.argv
-    # --shard=<index>/<count> splits the suite for parallel jobs; the tests are assigned by
-    # position, so the shards stay stable as long as the list is only appended to.
+    # --parallel=<n> runs n shards at once on one machine; the suite is serial otherwise.
+    parallel = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--parallel=")), "")
+    if parallel:
+        forward = [a for a in sys.argv[1:]
+                   if not a.startswith(("--shard=", "--parallel="))]
+        return run_parallel(int(parallel), forward)
+    # --shard=<index>/<count> splits the suite for parallel jobs, balanced by the recorded
+    # per-test durations (tests/e2e/durations.json) so no shard sets the wall time alone.
     shard = next((a for a in sys.argv[1:] if a.startswith("--shard=")), "")
     if shard:
         index, count = (int(v) for v in shard.split("=", 1)[1].split("/"))
@@ -1251,11 +1322,14 @@ def main():
             sys.exit(f"{shard}: the index must be below the shard count")
     else:
         index, count = 0, 1
+    # --durations=<path> records this run's per-test seconds, for the next shard split.
+    record = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--durations=")), "")
     wanted = [a for a in sys.argv[1:] if not a.startswith("--")]
-    chosen = TESTS[index::count]
+    chosen = shard_of(TESTS, index, count)
     # Safe mode would stop movement whenever wildlife wanders into view.
     g = Game(options={"SAFEMODE": "false", "SOUND_MARKER_TURNS": "3"})
     failures = 0
+    timings = {}
     try:
         start_new_game(g)
         settle(g)
@@ -1270,6 +1344,7 @@ def main():
             try:
                 test(g)
                 print(f"PASS {test.__name__} ({time.time() - started:.1f}s)")
+                timings[test.__name__] = round(time.time() - started, 1)
             except Exception:
                 failures += 1
                 print(f"FAIL {test.__name__}")
@@ -1280,6 +1355,9 @@ def main():
     finally:
         if not keep:
             g.close()
+    if record:
+        Path(record).write_text(json.dumps(timings, indent=1, sort_keys=True) + "\n")
+        print(f"recorded {len(timings)} test durations to {record}")
     ran = len([t for t in chosen if not wanted or any(w in t.__name__ for w in wanted)])
     print(f"{ran - failures}/{ran} passed")
     return 1 if failures else 0
