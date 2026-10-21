@@ -289,23 +289,25 @@ def capture(display, window_id, png):
 
 
 def frame_shows_world(rgb):
-    """Recognize full-height sidebar content, not the compact loader or centered title menu.
+    """Recognize edge content from the loaded world's map and sidebar.
 
-    Launch options disable splash artwork, which can also paint the window edges.
+    Launch options disable splash artwork; the title and compact loader stay centered.
     """
     width, height, pixels = rgb
     inset = min(20, width // 8)          # a full-screen border line is not the sidebar
     band = min(max(40, width // 8), width - 2 * inset)
     edges = ((inset, inset + band), (width - inset - band, width - inset))
     painted_rows = 0
+    bottom_content = False
     for y in range(height):
         base = 3 * y * width
         for start, stop in edges:
             if any(pixels[offset] or pixels[offset + 1] or pixels[offset + 2]
                    for offset in range(base + 3 * start, base + 3 * stop, 3)):
                 painted_rows += 1
+                bottom_content |= y >= 3 * height // 4
                 break
-    return painted_rows * 2 >= height
+    return painted_rows * 4 >= height and bottom_content
 
 
 def frame_rgb(png):

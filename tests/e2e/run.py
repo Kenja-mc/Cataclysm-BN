@@ -83,12 +83,8 @@ def test_first_time_tips_stairs_and_save(g):
 
 
 def test_auto_explore(g):
-    """n walks toward unseen ground; runs before any test spawns hostiles, which would block it."""
-    # The start shelter can be fully seen with its doors shut; a cross of floor opens it to the outdoors.
-    assert g.lua("for d=-30,30 do for _,p in ipairs({here(d,0), here(0,d)}) do "
-                 "M:set_ter_at(p, TerId.new('t_floor'):int_id()) M:set_furn_at(p, FurnId.new('f_null'):int_id()) "
-                 "end end out('ok')") == ["ok"]
-    settle(g)
+    """n walks toward unseen ground without a rolled NPC or monster blocking the route."""
+    exploration_arena(g)
     start = bub_pos(g)
     g.keys("n", delay=0.6)
     assert wait_until(lambda: bub_pos(g) != start, timeout=15), "n should start walking:\n" + g.screen()
@@ -260,6 +256,13 @@ def test_craft_parts_chain(_g):
         def close_recipes():
             g.keys("Escape", delay=0.8)
 
+        def recipe_summary():
+            """Join wrapped recipe text without neighboring list and item columns."""
+            g.wait_for("Time to complete:", timeout=10)
+            lines = g.screen().splitlines()
+            column = next(line.index("Time to complete:") for line in lines if "Time to complete:" in line)
+            return " ".join(line[column:].split("  ", 1)[0].strip() for line in lines)
+
         browse_recipe("tinfoil hat")
         screen = flat_text(g)
         assert "aluminum foil" in screen, screen
@@ -287,7 +290,7 @@ def test_craft_parts_chain(_g):
         for _ in range(11):
             g.keys("Down", delay=0.4)
         part = re.search(r"Part: rolling paper \(make (\d+) more, ~(" + DURATION + r")\)",
-                         flat_text(g))
+                         recipe_summary())
         assert part, g.screen()
         assert part.group(1) == "12", g.screen()
 
@@ -296,7 +299,7 @@ def test_craft_parts_chain(_g):
         g.keys("b", delay=1)
         g.keys("Home", delay=0.2)
         g.keys("Down", delay=0.8)
-        made = re.search(r"Time to complete:\s*(" + DURATION + r")", flat_text(g))
+        made = re.search(r"Time to complete:\s*(" + DURATION + r")", recipe_summary())
         assert made, g.screen()
         assert made.group(1) == part.group(2), g.screen()
         close_recipes()
@@ -695,8 +698,8 @@ def test_old_full_keybindings_file(g):
     try:
         start_new_game(old)
         old.define_lua(HELPERS)
+        settle(old)
         arena(old)
-        old.keys("x", delay=0.6)
         for key, (dx, dy) in {"d": (1, 0), "w": (0, -1), "e": (1, -1)}.items():
             before = bub_pos(old)
             old.keys(key, delay=0.8)
@@ -873,6 +876,7 @@ def test_gun_loudness_in_item_info(g):
 
 def test_combine_partly_used_tools(g):
     """Partly used tools that nothing refills pour into one, keeping every charge."""
+    empty_inventory(g)
     arena(g)
     g.lua("local u=gapi.get_avatar() u:create_item(ItypeId.new('matches'),1):set_charges(5) "
           "u:create_item(ItypeId.new('matches'),1):set_charges(7) out('ok')")
@@ -953,7 +957,7 @@ def test_smart_safe_mode(g):
     try:
         start_new_game(smart)
         smart.define_lua(HELPERS)
-        arena(smart)
+        exploration_arena(smart)
         # Rolled wildlife would count as reachable enemies and block travel; only the
         # glass-celled zombie below stays hostile.
         assert smart.lua("for _,cr in ipairs(gapi.get_all_monsters()) do "
@@ -1287,6 +1291,7 @@ def run_parallel(count, forward):
     import threading
     logs = Path(tempfile.mkdtemp(prefix="bn-e2e-parallel-"))
     processes = {}
+    threads = []
     for index in range(count):
         durations = logs / f"shard-{index}.json"
         process = subprocess.Popen(
@@ -1297,7 +1302,9 @@ def run_parallel(count, forward):
         def pump(shard, stream=process.stdout):
             for line in stream:
                 print(f"[{shard}] {line}", end="")
-        threading.Thread(target=pump, args=(index,), daemon=True).start()
+        thread = threading.Thread(target=pump, args=(index,), daemon=True)
+        threads.append(thread)
+        thread.start()
     failed = 0
     merged = {}
     for index, (process, durations) in processes.items():
@@ -1305,6 +1312,8 @@ def run_parallel(count, forward):
             failed += 1
         if durations.exists():
             merged.update(json.loads(durations.read_text()))
+    for thread in threads:
+        thread.join()
     wanted = next((a.split("=", 1)[1] for a in forward if a.startswith("--durations=")), "")
     if wanted:
         Path(wanted).write_text(json.dumps(merged, indent=1, sort_keys=True) + "\n")
@@ -1314,16 +1323,24 @@ def run_parallel(count, forward):
 
 def main():
     keep = "--keep" in sys.argv
-    # One tmux server per process: the harness polls the screen several times a second, and
-    # local parallel shards sharing one server starve each other of input, which fails tests.
-    # TMUX_TMPDIR moves the socket, so a shard cannot see or disturb another's sessions.
-    os.environ["TMUX_TMPDIR"] = tempfile.mkdtemp(prefix="bn-e2e-tmux-")
+    if any(a in ("--parallel", "--shard", "--durations") for a in sys.argv[1:]):
+        sys.exit("use --parallel=N, --shard=I/N and --durations=PATH")
+    wanted = [a for a in sys.argv[1:] if not a.startswith("--")]
+    if wanted and not any(any(w in t.__name__ for w in wanted) for t in TESTS):
+        sys.exit("no tests match the requested names")
     # --parallel=<n> runs n shards at once on one machine; the suite is serial otherwise.
-    parallel = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--parallel=")), "")
-    if parallel:
-        forward = [a for a in sys.argv[1:]
-                   if not a.startswith(("--shard=", "--parallel="))]
-        return run_parallel(int(parallel), forward)
+    parallel = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--parallel=")), None)
+    if parallel is not None:
+        try:
+            count = int(parallel)
+        except ValueError:
+            sys.exit("--parallel must be a positive integer")
+        if count < 1:
+            sys.exit("--parallel must be a positive integer")
+        if any(a.startswith("--shard=") for a in sys.argv[1:]):
+            sys.exit("--parallel and --shard cannot be combined")
+        forward = [a for a in sys.argv[1:] if not a.startswith("--parallel=")]
+        return run_parallel(count, forward)
     # --shard=<index>/<count> splits the suite for parallel jobs, balanced by the recorded
     # per-test durations (tests/e2e/durations.json) so no shard sets the wall time alone.
     shard = next((a for a in sys.argv[1:] if a.startswith("--shard=")), "")
@@ -1335,9 +1352,18 @@ def main():
         index, count = 0, 1
     # --durations=<path> records this run's per-test seconds, for the next shard split.
     record = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--durations=")), "")
-    wanted = [a for a in sys.argv[1:] if not a.startswith("--")]
     chosen = shard_of(TESTS, index, count)
-    # Safe mode would stop movement whenever wildlife wanders into view.
+    if wanted:
+        chosen = [t for t in chosen if any(w in t.__name__ for w in wanted)]
+    if not chosen:
+        if record:
+            Path(record).write_text("{}\n")
+        print("0/0 passed")
+        return 0
+    # A shard's private tmux server cannot starve another shard of input.
+    os.environ.pop("TMUX", None)
+    socket_dir = tempfile.mkdtemp(prefix="bn-e2e-tmux-")
+    os.environ["TMUX_TMPDIR"] = socket_dir
     g = Game(options={"SAFEMODE": "false", "SOUND_MARKER_TURNS": "3"})
     failures = 0
     timings = {}
@@ -1347,7 +1373,7 @@ def main():
         g.define_lua(HELPERS)
         # Lua-created inventory must not depend on the random starting outfit's pockets.
         assert g.lua("gapi.get_avatar():set_mutation(MutationBranchId.new('DEBUG_STORAGE')) out('ok')") == ["ok"]
-        for test in [t for t in chosen if not wanted or any(w in t.__name__ for w in wanted)]:
+        for test in chosen:
             started = time.time()
             # A debug assertion popup left behind by an earlier test blocks every key, so
             # clear it here rather than letting it fail this test as well.
@@ -1366,10 +1392,13 @@ def main():
     finally:
         if not keep:
             g.close()
+        else:
+            print(f"Kept game: env -u TMUX TMUX_TMPDIR={socket_dir} tmux -L default attach-session -t {g.name}")
+            print(f"User directory: {g.userdir}")
     if record:
         Path(record).write_text(json.dumps(timings, indent=1, sort_keys=True) + "\n")
         print(f"recorded {len(timings)} test durations to {record}")
-    ran = len([t for t in chosen if not wanted or any(w in t.__name__ for w in wanted)])
+    ran = len(chosen)
     print(f"{ran - failures}/{ran} passed")
     return 1 if failures else 0
 

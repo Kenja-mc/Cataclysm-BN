@@ -28,6 +28,17 @@ def arena(g):
     assert g.lua("arena()") == ["ok"]
 
 
+def exploration_arena(g):
+    """Open routes to unseen ground without rolled creatures blocking auto-exploration."""
+    settle(g)
+    assert g.lua("for dx=-30,30 do for dy=-30,30 do local p=here(dx,dy) "
+                 "if dx==0 or dy==0 then M:set_ter_at(p, TerId.new('t_floor'):int_id()) "
+                 "M:set_furn_at(p, FurnId.new('f_null'):int_id()) end "
+                 "local cr=gapi.get_creature_at(p) "
+                 "if cr and not cr:is_avatar() then park(cr) end end end out('ok')") == ["ok"]
+    settle(g)
+
+
 def bub_pos(g):
     return tuple(int(v) for v in g.lua("pos()")[0].split(","))
 

@@ -687,11 +687,17 @@ python3 tests/e2e/run.py --parallel=4 --durations=/tmp/e2e-durations.json
 Do not run unrelated heavy work alongside the suite. Each process uses a private tmux server,
 world and user directory. `--shard=0/4` runs just the first of four shards; tests are assigned
 longest first to the lightest shard using `tests/e2e/durations.json`, then run in suite order.
+Use the `--parallel=N`, `--shard=I/N` and `--durations=PATH` forms with `=`.
+The parallel count must be positive; `--parallel` and `--shard` cannot be combined.
+Test-name filters that match nothing are errors; valid empty shards skip game startup.
+`--keep` preserves each nonempty shard's main game and prints its private tmux attachment command
+and user directory.
 
-`--durations=<path>` writes the passing tests' elapsed seconds to that file, merging results
-when running in parallel. To refresh the checked-in manifest, pass
-`--durations=tests/e2e/durations.json`. Rerun the full suite afterward: updated timings change
-which tests share a game, so the new assignment must also pass.
+`--durations=<path>` writes only this run's passing tests' elapsed seconds, merging the worker
+results when running in parallel. Refresh the checked-in manifest only from a successful full run, without
+test-name filters or `--shard`, and pass `--durations=tests/e2e/durations.json`.
+A filtered or single-shard run would replace the manifest with only its selected tests.
+Rerun the full suite afterward: updated timings change which tests share a game.
 
 The tiles checks also need the tiles binary, ImageMagick's `magick`, Xvfb, the X11/XTest libraries
 and a software Vulkan driver:

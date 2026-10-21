@@ -16,6 +16,22 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Refreshed all ten feature screenshots from a verified tiles CI run. The capture script now opens
   Interact through the command hub, reaches the Sidebar Options editor and holds Shift with the
   look direction; captions match the current controls.
+- The parallel test runner rejects nonpositive counts and conflicting shard flags, drains each
+  worker's output and prints an attachment command for retained games. Private tmux servers also
+  work when the runner starts inside another tmux session.
+- Manual playtest dispatches no longer cancel an in-flight manual run. Click checks retain their
+  original one-second observation window. The frame detector accepts dark map captures with
+  either sidebar position and rejects the compact loader and the tested JSON-error popup.
+- Auto-exploration and smart-safe-mode fixtures open routes outside the starting shelter and clear
+  creatures from the walk radius. The tool-combine fixture clears starter inventory so rolled
+  matchbooks cannot change the two items and twelve charges under test.
+- Crafting checks read wrapped estimates from the recipe column without neighboring batch rows
+  or item details. Vehicle-memory checks disable animated weather and use a private electric
+  armored-car fixture, avoiding rain, exhaust and cameras without invalidating sight after driving.
+- The legacy-keybindings fixture activates queued NPCs before clearing the movement arena, so a
+  late-arriving starting companion cannot block the diagonal key being checked.
+- Electric-vehicle HUD checks wait for the engine to start and answer interruption prompts before
+  throttling, using the same bounded control helper as the map-memory check.
 
 ## 2026-10-20
 

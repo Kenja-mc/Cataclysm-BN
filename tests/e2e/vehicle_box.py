@@ -32,6 +32,18 @@ def spawn_vehicle(game, prototype="car"):
     assert game.lua("out(M:has_vehicle_part_with_feature_at(here(0,0),'CONTROLS'))") == ["true"]
 
 
+def take_control(game):
+    """Taking control also starts the engine, which nearby monsters may interrupt."""
+    action_menu(game, "Misc", "Control Vehicle")
+    for _ in range(40):
+        if "Stop trying to start the vehicle?" in game.screen():
+            game.keys("I", delay=0.8)  # Ignore further distractions and finish.
+        if "Engine: on" in game.screen():
+            return
+        game.keys("x", delay=1.0)
+    raise AssertionError("the vehicle engine never started:\n" + game.screen())
+
+
 def test_vehicle_box(_game):
     game = vehicle_game("bn-e2e-vehicle-box")
     try:
@@ -73,7 +85,7 @@ def test_vehicle_box_electric(_game):
         # The same corner already holds weather/combat; all three must survive stacking.
         assert "Walking" in screen and "Azimuth:" in screen, screen
         assert "wasd move" in screen and "throttle" not in screen, screen
-        action_menu(game, "Misc", "Control Vehicle")
+        take_control(game)
         game.keys("w", delay=1)
         settle(game)
         screen = game.screen()
