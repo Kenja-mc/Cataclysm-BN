@@ -479,8 +479,10 @@ REVOLVER = ("local w=nil for _,it in ipairs(gapi.get_avatar():all_items(false)) 
 
 
 def test_black_powder_survives_reloading(g):
+    empty_inventory(g)
     arena(g)
-    assert g.lua("local u=gapi.get_avatar() u:drop_all_items() M:clear_items_at(here(0,0)) "
+    # Earlier fixtures can leave wounds that interrupt reloading.
+    assert g.lua("local u=gapi.get_avatar() u:clear_effects() u:set_all_parts_hp_to_max() "
                  "local w=u:create_item(ItypeId.new('model_10_revolver'), -1) "
                  "local a=u:create_item(ItypeId.new('38_special'), 6) a:set_var_str('stack_mod:black_powder','3') "
                  "out(u:wield(w))") == ["true"]

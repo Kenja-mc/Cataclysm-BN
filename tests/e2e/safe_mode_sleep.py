@@ -3,7 +3,7 @@ import os
 import re
 import time
 
-from helpers import HELPERS, arena, give, settle
+from helpers import HELPERS, arena, empty_inventory, give, settle
 from tmux_game import Game, start_new_game
 
 # Modern wait-menu choices differ from Classic.
@@ -86,6 +86,7 @@ def test_wait_menu_offers_sleep_and_six_hour_hotkey(_g):
     try:
         start_new_game(game)
         game.define_lua(HELPERS)
+        empty_inventory(game)
         arena(game)
         give(game, "diving_watch")
 
@@ -96,9 +97,6 @@ def test_wait_menu_offers_sleep_and_six_hour_hotkey(_g):
         assert any("$ Sleep" in l for l in sleep_lines), sleep_lines
         game.keys("$", delay=0)
         game.wait_for("Are you sure you want to sleep?")
-        # Earlier this sampled the screen right after Escape: on a loaded runner the dialog
-        # was still up, the sleep began, and cancelling it later dropped the carried watch,
-        # which left the sidebar clock at "???" and failed the wait assertions below.
         game.keys("Escape", delay=0)
         game.wait_gone("Are you sure you want to sleep?", timeout=10)
         # Isolate the fixture from rolled world state so wildlife or NPC chatter cannot interrupt
