@@ -257,7 +257,8 @@ jobs:
     timeout-minutes: 120
     # The full suite outgrew a single runner: its tail tests are slower there than they are
     # locally, and the suite was still running when the job hit its two-hour timeout. Each
-    # shard builds the same cache-warm curses binary and runs a quarter of the 140 checks.
+    # shard builds the same cache-warm curses binary and runs a balanced quarter of the 140
+    # checks: run.py assigns them longest first from tests/e2e/durations.json.
     strategy:
       fail-fast: false
       matrix:
