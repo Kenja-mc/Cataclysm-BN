@@ -89,12 +89,11 @@ on:
         type: string
         default: ""
 
-# A newer run of the same event replaces the older one: a superseded commit no longer needs
-# its end-to-end suite. The event name is in the group so a nightly or a dispatch is never
-# cancelled by a push, and cancel-in-progress stays off for the nightly.
+# Superseded pushes and PR revisions need no further testing. Manual and scheduled runs
+# may have distinct inputs or already-spent model tokens, so let the running one finish.
 concurrency:
   group: fork-playtest-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref_name }}
-  cancel-in-progress: ${{ github.event_name != 'schedule' }}
+  cancel-in-progress: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
 
 # Least privilege: the jobs that run third-party code (the game under test) and the
 # model-driven loop hold read permissions only. The triage job, which files the one issue,
