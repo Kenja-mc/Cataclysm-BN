@@ -52,8 +52,8 @@ on:
     paths-ignore: [docs/**, scripts/**, "**.md", "**.mdx"]
     types: [opened, reopened, synchronize]
   schedule:
-    # Nightly at 04:17 UTC, late enough that the matrix workflow has landed the tiles
-    # package for the day's commit.
+    # Nightly at 04:17 UTC. The matrix workflow runs weekly, so it may already have built a
+    # tiles package for this commit; otherwise the tiles legs build their own binary.
     - cron: "17 4 * * *"
   workflow_dispatch:
     inputs:
@@ -90,7 +90,7 @@ on:
         default: ""
 
 # A newer run of the same event replaces the older one: a superseded commit no longer needs
-# its thirty-minute suite. The event name is in the group so a nightly or a dispatch is never
+# its end-to-end suite. The event name is in the group so a nightly or a dispatch is never
 # cancelled by a push, and cancel-in-progress stays off for the nightly.
 concurrency:
   group: fork-playtest-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref_name }}
@@ -131,7 +131,7 @@ jobs:
         run: |
           if [ -n "${XPL_SK_AGENT:-}" ] && [ -n "${OC_SK_AGENT:-}" ]; then
             echo "has_keys=true" >> "$GITHUB_OUTPUT"
-            echo "both model keys are configured; the live playtest matrix runs"
+            echo "both model keys are configured; the live playtest matrix runs on the nightly schedule and on dispatch"
           else
             echo "has_keys=false" >> "$GITHUB_OUTPUT"
             echo "key state: XPL_SK_AGENT=${XPL_SK_AGENT:+set} OC_SK_AGENT=${OC_SK_AGENT:+set}"
@@ -238,7 +238,10 @@ jobs:
           dry = (os.environ.get("HAS_KEYS") != "true" or push
                  or os.environ.get("DRY_INPUT") == "true")
           if os.environ.get("HAS_KEYS") != "true" or push:
-              legs = [leg for leg in legs if leg["leg"] == "kb-classic-curses"][:1]
+              # One leg is enough to prove the wiring. Keep the first leg the dispatch
+              # filters selected, so a dry_run tiles dispatch still checks the tiles leg
+              # instead of collapsing to no job at all.
+              legs = legs[:1]
           live_turns = int(os.environ.get("TURNS") or 30)
           for leg in legs:
               leg["dry"] = dry
@@ -261,9 +264,10 @@ jobs:
   e2e-suite:
     name: Fork end-to-end suite (curses, shard ${{ matrix.shard }})
     runs-on: ubuntu-latest
-    # A shard finished in under 39 minutes even before the harness stopped sleeping between
-    # keys; the cap only has to catch a hang, so a hung shard cannot hold a runner for two hours.
-    timeout-minutes: 60
+    # A warm shard finished the whole job in about 40 minutes; with a cold ccache the
+    # build took 37 minutes by itself, so 90 covers the build plus the suite. The cap
+    # only has to catch a hang, so a hung shard cannot hold a runner for two hours.
+    timeout-minutes: 90
     # The full suite outgrew a single runner: its tail tests are slower there than they are
     # locally, and the suite was still running when the job hit its two-hour timeout. Each
     # shard builds the same cache-warm curses binary and runs a quarter of the 140 checks.
@@ -376,8 +380,8 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 150
-    # Two games at a time on push; a nightly run may use the whole matrix. Never fail the
-    # other legs because one of them found a defect.
+    # Two games at a time; the nightly schedule may run three. Never fail the other legs
+    # because one of them found a defect.
     strategy:
       fail-fast: false
       max-parallel: ${{ github.event_name == 'schedule' && 3 || 2 }}

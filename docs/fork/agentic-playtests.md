@@ -168,8 +168,9 @@ Exit codes tell a reader what happened:
 pull requests, a nightly schedule and a manual dispatch. A push runs one dry leg with three turns:
 it proves the wiring and spends nothing, and a newer push cancels the older run. The four live
 legs below run on the nightly schedule and on dispatch, where their tokens and fifteen-minute
-walls are actually wanted. The cross-platform `matrix` workflow runs weekly and on dispatch only;
-it ships nothing the fork uses and cost about two hours of runner time per push.
+walls are actually wanted. The cross-platform `matrix` workflow runs weekly and on dispatch only.
+Scheduled runs warm its caches and run its tests; dispatches also produce packaged artifacts.
+The nightly tiles jobs reuse a matching package when available, or build their own binary.
 
 Four legs, each with its own content list (main menu and tutorial have no tiles surface, so both
 tiles legs walk two scenarios):
