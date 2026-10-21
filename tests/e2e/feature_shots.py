@@ -9,6 +9,7 @@ the window.  A shot that fails is reported and skipped, so one broken key sequen
 rest of the set.
 """
 import argparse
+import hashlib
 import os
 import shutil
 import subprocess
@@ -27,11 +28,13 @@ from helpers import HELPERS, arena, give, spawn, settle, save_and_quit  # noqa: 
 # id, page title, what the reader must see, key sequence, options, and the paragraph under the image.
 SHOTS = [
     dict(id="hud-modern", title="Modern HUD",
-         keys=[], options={"CONTROL_SCHEME": "modern"},
+         keys=[], options={"CONTROL_SCHEME": "modern", "HUD_WEATHER_BOX": "top_left",
+                           "HUD_COMBAT_BOX": "top_left"},
          body="The fork draws its readings in boxes: weapon and style, stance, needs, mood, sound and "
               "stats. The sidebar keeps the message log, the compass and the pixel minimap."),
     dict(id="hud-classic", title="Classic HUD",
-         keys=[], options={"CONTROL_SCHEME": "classic"},
+         keys=[], options={"CONTROL_SCHEME": "classic", "HUD_WEATHER_BOX": "top_left",
+                           "HUD_COMBAT_BOX": "top_left"},
          body="Classic keeps the upstream scheme, and the game follows the classic key list. Menu text and "
               "hints name the classic keys, and `?` still lists everything."),
     dict(id="enter-menu", title="The Enter menu",
@@ -47,7 +50,7 @@ SHOTS = [
          body="One line holds one kind of thing. Rings, novels and other folded families list as a "
               "single entry with a count, and selecting a line opens the item's actions."),
     dict(id="crafting", title="Crafting with the parts chain",
-         keys=["&"], options={"CONTROL_SCHEME": "modern"},
+         keys=["i", "F5"], options={"CONTROL_SCHEME": "modern"},
          body="The crafting menu opens on a tab with recipes to make. The parts chain shows what a "
               "recipe needs, which of those parts the player can produce, and one honest time estimate."),
     dict(id="look", title="Look around and tile selection",
@@ -63,6 +66,10 @@ SHOTS = [
               "panels can be moved, hidden and reordered."),
     dict(id="body-panel", title="Body panel and limb details",
          keys=[], options={"CONTROL_SCHEME": "modern"},
+         setup="gapi.get_avatar():add_effect(EffectTypeId.new('bleed'), "
+               "TimeDuration.from_turns(600), BodyPartTypeId.new('arm_l')) "
+               "gapi.get_avatar():add_effect(EffectTypeId.new('bandaged'), "
+               "TimeDuration.from_turns(600), BodyPartTypeId.new('leg_r')) out('ok')",
          body="The body panel lists every limb with its own bar and names each wound. Enter, then Info, "
               "then Body status opens the same list with treatment hints."),
 ]
@@ -80,14 +87,17 @@ python3 tests/e2e/feature_shots.py
 """
 
 
-def build_world(session, scheme="modern"):
-    """Builds one fixture save per control scheme and returns (user directory, world name).
+def build_world(session, scheme="modern", setup=""):
+    """Builds one fixture save per control scheme and setup, and returns (user directory, world name).
 
     The save carries the options it was created with, so a Classic capture needs a Classic fixture.
+    A setup snippet runs in the fixture game before the save, for shots that need a state the
+    default fixture does not have.
     """
     tiles.tmux_game.ROOT = session.root
-    userdir = session.work / f"fixture-{scheme}"
-    game = Game(name=f"bn-shots-fixture-{scheme}", userdir=userdir,
+    key = f"{scheme}-{hashlib.sha256(setup.encode()).hexdigest()[:6]}" if setup else scheme
+    userdir = session.work / f"fixture-{key}"
+    game = Game(name=f"bn-shots-fixture-{key}", userdir=userdir,
                 options={"SAFEMODE": "false", "INITIAL_TIME": "12", "SHOW_WELCOME": "false",
                          "CONTROL_SCHEME": scheme})
     try:
@@ -101,6 +111,8 @@ def build_world(session, scheme="modern"):
         give(game, "rag", 4)
         give(game, "jewelry_ring", 3)
         give(game, "water_clean", 2)
+        if setup:
+            assert game.lua(setup) == ["ok"], "fixture setup failed:\n" + game.screen()
         settle(game)
         assert game.lua("out(gdebug.save_game())") == ["true"], \
             "saving the fixture failed:\n" + game.screen()
@@ -111,7 +123,7 @@ def build_world(session, scheme="modern"):
         world = saves[0].name
     finally:
         subprocess.run(["tmux", "kill-session", "-t", game.name], stderr=subprocess.DEVNULL, check=False)
-    print(f"fixture {scheme}: {world}")
+    print(f"fixture {key}: {world}")
     return userdir, world
 
 
@@ -167,22 +179,30 @@ def main():
     session.start()
     keep = args.only or [shot["id"] for shot in SHOTS]
     made, failed = [], []
+    seen_shots = {}
     fixtures = {}
     try:
         for shot in SHOTS:
             if shot["id"] not in keep:
                 continue
             scheme = shot["options"].get("CONTROL_SCHEME", "modern")
-            if scheme not in fixtures:
-                fixtures[scheme] = build_world(session, scheme)
+            setup = shot.get("setup", "")
+            if (scheme, setup) not in fixtures:
+                fixtures[(scheme, setup)] = build_world(session, scheme, setup)
             png = images / f"{shot['id']}.png"
             proc = x11 = None
             try:
-                proc, x11, window, run = launch(session, shot["id"], shot["options"], work, fixtures[scheme])
+                proc, x11, window, run = launch(session, shot["id"], shot["options"], work,
+                                                fixtures[(scheme, setup)])
                 for key in shot["keys"]:
                     x11.key(key, delay=0.6)
                 time.sleep(1.5)
                 capture(session.display, window, png)
+                digest = hashlib.sha256(png.read_bytes()).hexdigest()
+                if digest in seen_shots:
+                    raise RuntimeError(f"identical to {seen_shots[digest]}: the key sequence did not "
+                                       "change the screen")
+                seen_shots[digest] = shot["id"]
                 made.append(shot)
                 print(f"ok   {shot['id']} -> {png} ({png.stat().st_size // 1024} KB)")
             except Exception as error:  # one bad key sequence must not lose the rest
