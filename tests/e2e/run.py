@@ -60,6 +60,26 @@ def test_first_time_tip(g):
 
 
 
+def test_first_time_tips_stairs_and_save(g):
+    """The two onboarding gaps a new player hits: how stairs work and whether progress is safe."""
+    arena(g)
+    for tip in ("hostile", "hungry", "thirsty", "tired", "hurt", "heavy", "night", "goal"):
+        assert g.lua(f"gapi.get_avatar():set_value('tip_seen_{tip}','1') out('ok')") == ["ok"]
+    assert g.lua("gapi.get_avatar():set_value('tip_seen_stairs','') "
+                 "M:set_ter_at(here(0,0), TerId.new('t_stairs_down'):int_id()) out('ok')") == ["ok"]
+    settle(g)
+    assert "Tip: You are standing on stairs" in g.screen(), g.screen()
+    assert g.lua("out(gapi.get_avatar():get_value('tip_seen_stairs'))") == ["1"]
+    assert g.lua("gapi.get_avatar():set_value('tip_seen_save','') out('ok')") == ["ok"]
+    for _ in range(8):
+        settle(g)
+        if "Tip: The game saves for you" in g.screen():
+            break
+    assert "Tip: The game saves for you" in g.screen(), g.screen()
+    assert g.lua("out(gapi.get_avatar():get_value('tip_seen_save'))") == ["1"]
+    assert g.lua("M:set_ter_at(here(0,0), TerId.new('t_floor'):int_id()) out('ok')") == ["ok"]
+
+
 def test_auto_explore(g):
     """n walks toward unseen ground; runs before any test spawns hostiles, which would block it."""
     # The start shelter can be fully seen with its doors shut; a cross of floor opens it to the outdoors.
@@ -1189,7 +1209,7 @@ def test_char_creation_overview_fits_small_terminal(_g):
     finally:
         g.close()
 
-TESTS = [test_welcome_card, test_death_mode_choice, test_auto_explore, test_first_time_tip, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
+TESTS = [test_welcome_card, test_death_mode_choice, test_auto_explore, test_first_time_tip, test_first_time_tips_stairs_and_save, test_unified_batteries, test_black_powder_rounds_stack, test_jewelry_is_one_item_per_form, test_mixed_jewelry_stacks, test_folded_families, test_mre_unpacks_its_entree, test_wasd_movement, test_wait_keeps_position, test_blocked_step_says_why,
          test_hud_boxes, test_body_panel, test_readable_map_glyphs, test_quick_stack, test_quick_stack_not_through_windows, test_black_powder_loot_keeps_its_modifier, test_sort_pile, test_rounded_frames, test_crafting_opens_on_content, test_craft_parts_chain,
          test_aim_defaults, test_sound_marker_fading, test_smart_targeting, test_stance_toggle, test_contextual_interact_single_door, test_contextual_interact_multiple_doors,
          test_recraft_after_reload, test_black_powder_survives_reloading, test_walking_into_enemy_attacks, test_bump_attack_can_be_disabled, test_attack_command, test_action_menu_opens_character_info, test_hover_inspects_without_acting, test_left_click_attacks_adjacent_enemy, test_right_click_selects_adjacent_enemy_for_f,
