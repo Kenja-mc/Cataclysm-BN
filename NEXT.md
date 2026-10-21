@@ -8,17 +8,19 @@
   rows with item thumbnails in list menus (SotS: The Pit style); #15 covers the README download
   badges that still point at upstream releases. #16's duration-based shards, readiness polling and
   local parallel runner are merged. Keep the issue open: its remaining phases are the slow-test
-  key-delay audit and prepared save fixtures, and the observed CI shard spread is still 29.6%,
+  key-delay audit and prepared save fixtures, and the observed CI shard spread is still 25.9%,
   above its 10% target.
 
-  - **E2E runtime verified**: the final local parallel run passed 141/141 in 593 seconds.
-    [CI run 39625972735](https://github.com/Kenja-mc/Cataclysm-BN/actions/runs/39625972735)
-    passed all 141 tests in four jobs, with the slowest job taking 15m12s including its build.
-    Total CI test time was 2610.5 seconds; the two mouse tests took 190.6 seconds combined.
+  - **E2E runtime verified**: the final local parallel run passed 141/141 in about 656 seconds.
+    [CI run 39688342172](https://github.com/Kenja-mc/Cataclysm-BN/actions/runs/39688342172)
+    passed all 141 tests in four jobs, with the slowest job taking 16m40s including its build.
+    Total CI test time was 2860.9 seconds; the two mouse tests took 289.8 seconds combined.
     Reloading waits for each menu and loaded round. Its fixture clears earlier wounds and morale;
     the sleep fixture has storage so its watch cannot fall out of a full starting outfit.
     Data checking reported no errors. All five upstream unit shards exited 0 using software
     Vulkan; one test failed as expected and translation checks skipped missing MO files.
+  - **DeepSeek adversarial review completed**: false-green runner arguments, nested tmux/keep
+    failures and vacuous fixture checks are fixed. Clicks retain the original one-second window.
   - **CI workflow changes merged**: the cross-platform matrix runs weekly and on dispatch.
     Pushes check one dry playtest leg; filtered dry dispatches retain their requested surface.
     The end-to-end cap is 90 minutes because a cold build alone took 37 minutes. The final
