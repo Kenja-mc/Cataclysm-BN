@@ -46,6 +46,7 @@ def hud_game(tag, moon=False, **options):
                          "SIDEBAR_POSITION": "right", "SIDEBAR_SPACERS": "false",
                          "HUD_WEATHER_BOX": "off", "HUD_COMBAT_BOX": "off",
                          "HUD_VEHICLE_BOX": "off", "HUD_ICONS": "ascii",
+                         "ANIMATIONS": "false",
                          "24_HOUR": "24h", "USE_CELSIUS": "celsius",
                          "YN_HOTKEYS": "false", "CHRONIC_PAIN": "false", **options})
     try:
@@ -125,6 +126,19 @@ def status_needs(screen, cols=140):
 
 def counters(game):
     return game.lua("out(gapi.current_turn():to_turn(),gapi.get_avatar():get_moves())")
+
+
+def resized_frame(game, cols, rows, ready, timeout=10.0):
+    """Wait for a complete resize repaint, not its first visible Needs row."""
+    deadline = time.time() + timeout
+    previous, screen = None, ""
+    while time.time() < deadline:
+        screen = game.screen()
+        if len(screen.splitlines()) == rows and ready(screen) and screen == previous:
+            return screen
+        previous = screen
+        time.sleep(0.1)
+    raise AssertionError(f"the {cols}x{rows} resize did not settle:\n" + screen)
 
 
 def set_hud_option(game, label, value):
@@ -228,15 +242,13 @@ def test_status_short_narrow_fallback_retains_needs(_g):
             for cols, rows in ((90, 25), (100, 25), (140, 45)):
                 subprocess.run(["tmux", "resize-window", "-t", game.name,
                                 "-x", str(cols), "-y", str(rows)], check=True)
-                for _ in range(100):
-                    screen = game.screen()
-                    region = regions(screen, cols)[1 if rows == 25 else 0]
-                    pattern = r"\bPain\s*:" if rows == 25 else r"\bPain\s*\|"
-                    if re.search(pattern, region):
-                        break
-                    time.sleep(0.1)
-                else:
-                    raise AssertionError("resize did not restore the visible Needs owner:\n" + screen)
+                sidebar_owns = rows == 25
+
+                def ready(screen, cols=cols, sidebar_owns=sidebar_owns):
+                    pattern = r"\bPain\s*:" if sidebar_owns else r"\bPain\s*\|"
+                    return re.search(pattern, regions(screen, cols)[1 if sidebar_owns else 0])
+
+                screen = resized_frame(game, cols, rows, ready)
                 if rows == 25:
                     terrain, sidebar = regions(screen, cols)
                     assert sidebar_needs(screen, cols) == baseline, screen
@@ -329,15 +341,13 @@ def test_weather_four_rows_and_instrument_gates(_g):
         for cols, rows in ((90, 25), (140, 45)):
             subprocess.run(["tmux", "resize-window", "-t", game.name,
                             "-x", str(cols), "-y", str(rows)], check=True)
-            for _ in range(100):
-                screen = game.screen()
+
+            def ready(screen, cols=cols):
                 terrain, sidebar = regions(screen, cols, 32)
-                if len(screen.splitlines()) == rows and re.search(r"\bLight\s*:", terrain) and \
-                        re.search(r"\bMoon\s*:\s*\S", sidebar):
-                    break
-                time.sleep(0.1)
-            else:
-                raise AssertionError("resize did not restore Weather:\n" + screen)
+                return re.search(r"\bLight\s*:", terrain) and \
+                    re.search(r"\bMoon\s*:\s*\S", sidebar)
+
+            screen = resized_frame(game, cols, rows, ready)
             resized = weather_rows(screen, cols, 32)
             assert_weather_date(resized[1], season, day, moon_phase(screen, cols))
             assert clock in resized[1], resized
