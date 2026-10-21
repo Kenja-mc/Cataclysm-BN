@@ -207,8 +207,9 @@ binary and runs a balanced quarter of the checks (`--shard=0/4`), and uploads it
 per-test seconds in `tests/e2e/durations.json`; positional slicing put the three mouse tests in one
 shard and made it 47% longer than its neighbours. A local run is serial unless it is asked for
 `--parallel=4`. `--durations=<path>` writes timings to the requested file; use
-`--durations=tests/e2e/durations.json` to refresh the manifest, then rerun the suite to verify
-the changed shard assignments.
+`--durations=tests/e2e/durations.json` on a successful full, unfiltered run to refresh the manifest.
+Do not use a single `--shard` to refresh it: that records only that shard's tests.
+Rerun the suite afterward to verify the changed shard assignments.
 
 `python3 tests/e2e/feature_shots.py` runs on schedule and dispatch only. It uploads
 `docs/fork/images/features/*.png` as an artifact and never commits them. Note the trap: `--only`

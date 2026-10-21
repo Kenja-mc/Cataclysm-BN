@@ -85,13 +85,12 @@ class Game:
     def click(self, x, y, button=0):
         """Mouse click at a screen cell, SGR (1006) encoded as xterm-256color terminfo expects.
 
-        The click has been handled once the screen stops changing, so poll for that instead of
-        sleeping a flat second; `minimum` keeps a slow runner's first redraw from looking idle.
+        Preserve the one-second observation window; wait longer if the redraw is still changing.
         """
         for suffix in ("M", "m"):
             subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", f"\x1b[<{button};{x + 1};{y + 1}{suffix}"])
             time.sleep(0.05)
-        self.settle_screen(minimum=0.3, timeout=1.5)
+        self.settle_screen(minimum=1.0, timeout=1.5)
 
     def hover(self, x, y):
         """Mouse motion with no button held, SGR encoded (button code 35).

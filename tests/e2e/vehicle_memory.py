@@ -1,10 +1,36 @@
 """Map memory keeps the ground a moving vehicle hides (upstream #10452)."""
-from helpers import HELPERS, Game, action_menu, bub_pos, settle, start_new_game
-from vehicle_box import spawn_vehicle
+import json
+import tempfile
+from pathlib import Path
+
+from helpers import HELPERS, Game, bub_pos, settle, start_new_game
+from tmux_game import ROOT
+from vehicle_box import spawn_vehicle, take_control
 
 
 def vehicle_game(name, **options):
-    game = Game(name=name, options={"SAFEMODE": "false", **options})
+    # Clearing exhaust after driving invalidates the sight caches under test.
+    userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-vehicle-memory-"))
+    mod_dir = userdir / "mods" / "e2e_vehicle_memory"
+    mod_dir.mkdir(parents=True)
+    prototype = next(vehicle for vehicle in json.loads(
+        (ROOT / "data/json/vehicles/vans_busses.json").read_text()) if vehicle["id"] == "armored_car")
+    prototype["id"] = "e2e_memory_electric_car"
+    prototype["name"] = "Memory fixture armored car"
+    for part in prototype["parts"]:
+        part["parts"] = ["engine_electric_super" if item == "diesel_engine_v8" else item
+                         for item in part["parts"] if item != "alternator_truck"]
+    (mod_dir / "modinfo.json").write_text(json.dumps([{
+        "type": "MOD_INFO", "id": "e2e_vehicle_memory", "name": "E2E vehicle memory",
+        "description": "Electric, camera-free armored car for the map-memory fixture.",
+        "category": "content", "dependencies": ["bn"],
+    }]))
+    (mod_dir / "vehicles.json").write_text(json.dumps([prototype]))
+    defaults = json.loads((ROOT / "data/mods/default.json").read_text())
+    (userdir / "config").mkdir()
+    (userdir / "config/default_mods.json").write_text(json.dumps([*defaults, "e2e_vehicle_memory"]))
+    game = Game(name=name, userdir=userdir,
+                options={"SAFEMODE": "false", "ANIMATIONS": "false", **options})
     try:
         start_new_game(game)
         game.define_lua(HELPERS)
@@ -24,18 +50,6 @@ def vehicle_game(name, **options):
         game.close()
         raise
     return game
-
-
-def take_control(game):
-    """Taking control also starts the engine, which nearby monsters may interrupt."""
-    action_menu(game, "Misc", "Control Vehicle")
-    for _ in range(40):
-        if "Stop trying to start the vehicle?" in game.screen():
-            game.keys("I", delay=0.8)  # Ignore further distractions and finish.
-        if "Engine: on" in game.screen():
-            return
-        game.keys("x", delay=1.0)
-    raise AssertionError("the vehicle engine never started:\n" + game.screen())
 
 
 def drive_north(game, tiles=3, presses=70):
@@ -72,12 +86,16 @@ def test_memory_behind_moved_vehicle(_game):
         before = game.screen()
         assert set(ground_region(before, range(-6, 9))) == {':'}, (
             "the fixture ground was not visible before spawning the vehicle:\n" + before)
-        spawn_vehicle(game, "armored_car")
+        spawn_vehicle(game, "e2e_memory_electric_car")
         take_control(game)
         drive_north(game)
         screen = game.screen()
-        # The armored car's hull can reach four rows behind the driver (row 4 showed a hull
-        # glyph on a two-core runner), so the trail is read from row 6 down.
+        assert game.lua("local a=gapi.get_avatar() local visible=false "
+                        "for dx=0,4 do for dy=6,11 do visible=a:sees(here(dx,dy)) or visible end end "
+                        "out(visible)") == ["false"], (
+            "the vehicle must hide all ground being measured:\n" + screen)
+        # The opaque armored hull is unchanged; the private fixture mod uses an electric
+        # drivetrain so exhaust cannot cover the remembered pavement.
         hidden = ground_region(screen, range(6, 12))
         assert set(hidden) == {':'}, (
             "tiles hidden by the vehicle lost their remembered ground: "
