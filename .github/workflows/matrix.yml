@@ -1,13 +1,14 @@
 name: matrix
 
+# The fork ships none of these builds. The cross-platform matrix (Windows, macOS, Android,
+# shader artifacts) came to about two hours of runner time on every push, and its Linux jobs
+# have been red on their ccache post-step since the fork began, so nothing there gated a
+# change. The fork's gate is its own end-to-end suite in fork-playtest.yml, which builds
+# exactly what it drives. The matrix now runs weekly, which keeps the tiles package, the unit
+# shards and the cross-platform caches warm, and on dispatch for a specific commit.
 on:
-  push:
-    branches: [main]
-    paths-ignore: [docs/**, scripts/**, "**.md", "**.mdx"]
-  pull_request:
-    branches: [main]
-    paths-ignore: [docs/**, scripts/**, "**.md", "**.mdx"]
-    types: [opened, reopened, synchronize]
+  schedule:
+    - cron: "37 3 * * 1"
   workflow_dispatch:
 
 # Cancel all previous instances in favor of latest revision of a PR.
