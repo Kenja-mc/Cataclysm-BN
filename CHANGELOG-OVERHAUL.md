@@ -13,6 +13,9 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Tiles playtests and screenshot captures apply deterministic options to both config-directory
   modes. CI builds had ignored the XDG-only copy, leaving rain and blinking enabled so frame
   waits timed out. Failed screenshot launches now close their game window before the next shot.
+- Refreshed all ten feature screenshots from a verified tiles CI run. The capture script now opens
+  Interact through the command hub, reaches the Sidebar Options editor and holds Shift with the
+  look direction; captions match the current controls.
 
 ## 2026-10-20
 

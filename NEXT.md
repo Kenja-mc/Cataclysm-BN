@@ -6,22 +6,24 @@
   future work, neither implemented nor closable. #3 is the upstream feature-watch tracker; its
   checkpoint matches `upstream/main` and every candidate is still unchecked. #14 asks for number-key
   rows with item thumbnails in list menus (SotS: The Pit style); #15 covers the README download
-  badges that still point at upstream releases. #16's balanced shards, readiness polling and
-  local parallel runner are merged. Its remaining phases are the slow-test key-delay audit and
-  prepared save fixtures; keep the issue open until its CI timing acceptance is measured.
+  badges that still point at upstream releases. #16's duration-based shards, readiness polling and
+  local parallel runner are merged. Keep the issue open: its remaining phases are the slow-test
+  key-delay audit and prepared save fixtures, and the observed CI shard spread is still 29.6%,
+  above its 10% target.
 
-  - **E2E runtime verified locally**: `python3 tests/e2e/run.py --parallel=4` passed 141/141 in
-    593 seconds. The refreshed manifest has all 141 tests; actual shard test totals were
-    580/563/568/572 seconds (3.1% spread), and the two mouse tests took 167 seconds combined.
-    Reload fixtures clear earlier wounds and trait-dependent morale; the sleep fixture has
-    debug storage so its watch cannot fall out of an over-capacity starting outfit.
+  - **E2E runtime verified**: the final local parallel run passed 141/141 in 593 seconds.
+    [CI run 39625972735](https://github.com/Kenja-mc/Cataclysm-BN/actions/runs/39625972735)
+    passed all 141 tests in four jobs, with the slowest job taking 15m12s including its build.
+    Total CI test time was 2610.5 seconds; the two mouse tests took 190.6 seconds combined.
+    Reloading waits for each menu and loaded round. Its fixture clears earlier wounds and morale;
+    the sleep fixture has storage so its watch cannot fall out of a full starting outfit.
     Data checking reported no errors. All five upstream unit shards exited 0 using software
-    Vulkan; the suite reported one expected failure and skipped translation checks without MO files.
+    Vulkan; one test failed as expected and translation checks skipped missing MO files.
   - **CI workflow changes merged**: the cross-platform matrix runs weekly and on dispatch.
     Pushes check one dry playtest leg; filtered dry dispatches retain their requested surface.
-    The end-to-end cap is 90 minutes because a cold build alone took 37 minutes. Final CI on
-    the combined changes is pending; the embedded plan passed push, schedule, live/dry dispatch
-    and no-key tiles-filter cases locally.
+    The end-to-end cap is 90 minutes because a cold build alone took 37 minutes. The final
+    modern keyboard-and-mouse tiles dispatch passed both dry scenarios. Live model legs and
+    nightly triage remain unverified without model secrets.
 - **Next upstream merge** — the 2026-10-20 merge is `c682cb343a` (34 commits, base
   `5196022810`). It resolved five conflicts: `tankammo.json` and `generic/casing.json` keep
   upstream's `stackable`/`damage_states` and the fork's `looks_like`; `rifle ammo.json` keeps the
@@ -33,11 +35,11 @@
   `data/json/uncraft/ammo/rifle ammo.json`, `data/json/recipes/ammo/rifle.json`,
   `data/mods/exotic_ammo/uncrafts/ammo.json`), keep the new non-`bp_` entries, and re-check the
   `277_hybrid` recipe and the `Enter → Misc` action list.
-- **Regenerate the feature screenshots** — `tests/e2e/feature_shots.py` now detects a capture that
-  did not change the screen (three shipped images were byte-identical), gives the body-panel shot a
-  wounded fixture, and opens crafting with `i` then F5 instead of the classic `&`. Run
-  `python3 tests/e2e/feature_shots.py` once no other game work is running and check that the weather
-  box appears in the HUD shots; the page is rewritten in place.
+- **Feature screenshots refreshed**: all ten captures from green CI run 39625972735 are published
+  in `docs/fork/images/features/`. The HUD weather boxes, wounded body panel, Interact command
+  list, shifted look selection and actual Sidebar Options editor were visually checked.
+  The generator applies options to both compile-time config-directory modes and cleans up
+  failed launches. Its modifier keys are sent as chords, not separate taps.
 - **Community difficulty thread** — [`docs/fork/reddit-1x5xk5g-proposals.md`](docs/fork/reddit-1x5xk5g-proposals.md)
   collects what r/cataclysmbn asked for after one post about Bright Nights becoming easy. Most of it is
   balance work, which the fork rules leave out of scope.
@@ -52,6 +54,9 @@
   `pacman -S --needed ccache mold astyle`. The commits below were built and gated with them
   disabled (`-DCATA_CCACHE=OFF -DCMAKE_C_COMPILER_LAUNCHER= -DCMAKE_CXX_COMPILER_LAUNCHER= -DLINKER=`),
   so no astyle pass has reformatted the tree.
+- **Local tiles binary is stale**: it reports `60e711cc78` and rejects current data. Rebuild it
+  from a clean source tree before local tiles verification; the tiles checks above used CI's
+  freshly built binaries. The uncommitted HUD experiment remains untouched.
 - **Release workflows stay disabled** — Nightly Release, Experimental Release and Manual release are
   off; `gh workflow enable "<name>"` re-enables them. The nightlies need an initial `YYYY-MM-DD` tag
   and an `experimental` release before they can pass, and `docs.yml` chains off Experimental Release.
@@ -59,11 +64,6 @@
   `fork-playtest` run to `/home/kenja/.local/state/cataclysm-bn/playtest-watch.log`. If the service is
   gone after a restart, read the runs straight from GitHub with
   `gh run list --workflow fork-playtest.yml --repo Kenja-mc/Cataclysm-BN`.
-- **CI state** — `fork-playtest.yml` is green end to end without model secrets: the plan job names the
-  legs, one dry playtest leg runs, and the end-to-end suite passes 140/140 across four shards, because
-  a single runner cannot finish the suite inside a two-hour job. A dispatch run also captured all ten
-  feature screenshots. Still unproven on CI: the live model legs, the nightly triage job, and the two
-  API shapes the first live run checks.
 - The `matrix` workflow's red `clang, curses` job is a pre-existing cache-save error: with a warm
   ccache every compile is a hit, so the directory the action wants to save never appears.
 - **Two CI traps worth remembering** — a leg matrix built from a job output must go on `matrix:` as the
