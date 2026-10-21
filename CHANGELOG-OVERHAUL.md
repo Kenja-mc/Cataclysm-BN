@@ -4,6 +4,25 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-20
+
+### Added
+
+- **Stairs and save tips**: stepping onto stairs names the keys that go up and down, and an early
+  tip says that the game saves as you play and when you quit, because new players hunt for a save
+  key that does not exist. See `OVERHAUL.md`.
+
+### Fixed
+
+- The weather box widens to fit its widest row. It measured only the date row before, so a long
+  weather name could cut the temperature off instead of widening the box.
+
+### Maintenance
+
+- Merged `upstream/main` (34 commits) as `c682cb343a`. The black powder rounds the merge
+  re-added to `data/json/uncraft/ammo/rifle ammo.json` are folded again; the new 8 mm uncrafts
+  upstream added there are kept.
+
 ## 2026-10-17
 
 ### Added
