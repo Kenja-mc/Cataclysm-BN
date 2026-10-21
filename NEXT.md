@@ -6,7 +6,10 @@
   future work, neither implemented nor closable. #3 is the upstream feature-watch tracker; its
   checkpoint matches `upstream/main` and every candidate is still unchecked. #14 asks for number-key
   rows with item thumbnails in list menus (SotS: The Pit style); #15 covers the README download
-  badges that still point at upstream releases.
+  badges that still point at upstream releases; #16 plans the end-to-end suite speedup (balanced
+  shards from a duration manifest, readiness waits instead of fixed sleeps, a local parallel
+  runner). Measured baseline: 140 tests, 6554 s of test time, shard 3 at 2119 s against shard 1 at
+  1438 s, and two mouse tests at 1415 s together.
 - **Next upstream merge** — the 2026-10-20 merge is `c682cb343a` (34 commits, base
   `5196022810`). It resolved five conflicts: `tankammo.json` and `generic/casing.json` keep
   upstream's `stackable`/`damage_states` and the fork's `looks_like`; `rifle ammo.json` keeps the
