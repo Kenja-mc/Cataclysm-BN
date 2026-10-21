@@ -226,6 +226,29 @@ auto wind_text( const avatar &you, const bool ascii ) -> wind_info
              .color = get_wind_color( windpower ) };
 }
 
+/// Weather row text: the condition, plus the temperature when the avatar carries a thermometer.
+auto weather_text( const avatar &you, const bool underground ) -> std::string
+{
+    const auto &w = get_weather();
+    auto text = underground ? std::string( _( "Underground" ) ) : w.weather_id->name.translated();
+    if( has_thermometer( you ) ) {
+        text += "  " + print_temperature( w.get_temperature( you.abs_pos() ) );
+    }
+    return text;
+}
+
+/// Columns the weather row needs for its current text, icon column included.
+auto weather_row_width( const avatar &you, const std::string &icons ) -> int
+{
+    const auto underground = you.bub_pos().z() < 0;
+    const auto icon_w = icons == "ascii" ? 0 :
+                        std::max( utf8_width( glyph( icon::underground, icons ) ),
+                                  utf8_width( glyph( weather_icon( get_weather().weather_id.str() ), icons ) ) );
+    const auto prefix = icon_w > 0 ? icon_w + 1 : 0;
+    const auto label = icons == "ascii" ? std::string( _( "Weather" ) ) + ": " : std::string();
+    return prefix + utf8_width( label + weather_text( you, underground ) );
+}
+
 auto weather_lines( const avatar &you, const std::string &icons ) -> std::vector<line>
 {
     auto out = std::vector<line>();
@@ -235,11 +258,7 @@ auto weather_lines( const avatar &you, const std::string &icons ) -> std::vector
     const auto first = icons == "ascii" ? std::string() :
                        underground ? glyph( icon::underground, icons ) :
                        glyph( weather_icon( w.weather_id.str() ), icons );
-    auto description = underground ? std::string( _( "Underground" ) ) :
-                       w.weather_id->name.translated();
-    if( has_thermometer( you ) ) {
-        description += "  " + print_temperature( w.get_temperature( you.abs_pos() ) );
-    }
+    const auto description = weather_text( you, underground );
     out.push_back( { .icon = first, .icon_w = utf8_width( first ),
                      .icon_color = underground ? c_light_gray : w.weather_id->color,
                      .text = icons == "ascii" ? std::string( _( "Weather" ) ) + ": " + description : description,
@@ -611,12 +630,15 @@ auto plan_for( const avatar &you ) -> current_plan
     }
     auto vehicle = corners[2] == "off" ? vehicle_state{} :
                    current_vehicle( you );
-    const auto ascii = get_option<std::string>( "HUD_ICONS" ) == "ascii";
-    // Avoid allocating date text in sidebar predicates.
+    const auto icons = get_option<std::string>( "HUD_ICONS" );
+    const auto ascii = icons == "ascii";
+    // Size every weather row, not only the date row; the description can outgrow it.
     const auto weather_inner = corners[0] == "off" ? 0 :
-                               std::max( 38, utf8_width( season_day_text() ) + utf8_width( time_text( you ) ) +
-                                         utf8_width( moon_phase_name( get_moon_phase( calendar::turn ) ) ) +
-                                         2 + ( ascii ? 0 : 2 ) );
+                               std::max( { 38,
+                                           utf8_width( season_day_text() ) + utf8_width( time_text( you ) ) +
+                                           utf8_width( moon_phase_name( get_moon_phase( calendar::turn ) ) ) + 2 +
+                                           ( ascii ? 0 : 2 ),
+                                           weather_row_width( you, icons ) } );
     return {
         .geometry = calculate_layout( {
             .width = width, .height = height, .corners = corners,
