@@ -5,12 +5,17 @@
 - **Future tickets stay open** — #1 (agentic UI/UX QA in CI) and #2 (two-player co-op) are designed
   future work, neither implemented nor closable. #3 is the upstream feature-watch tracker; its
   checkpoint matches `upstream/main` and every candidate is still unchecked.
-- **Next upstream merge** — the 2026-10-16 merge is `1a883dd7b5`. Merge `upstream/main` again from the
-  issue #3 checkpoint and repeat the fold: drop the `bp_*` ammo recipes and uncrafts that the merge adds
-  back (`data/json/uncraft/ammo/22.json`,
-  `50bmg.json`, `tankammo.json`, `data/json/uncraft/ammo/rifle ammo.json`,
-  `data/json/recipes/ammo/rifle.json`, `data/mods/exotic_ammo/uncrafts/ammo.json`), keep the new
-  non-`bp_` entries, and re-check the `277_hybrid` recipe and the `Enter → Misc` action list.
+- **Next upstream merge** — the 2026-10-20 merge is `c682cb343a` (34 commits, base
+  `5196022810`). It resolved five conflicts: `tankammo.json` and `generic/casing.json` keep
+  upstream's `stackable`/`damage_states` and the fork's `looks_like`; `rifle ammo.json` keeps the
+  new 8 mm uncrafts and drops every `bp_` entry the merge re-added; `handle_action.cpp` keeps the
+  fork's mouse path with upstream's remembered-terrain autowalk condition; `newcharacter.cpp`
+  keeps the fork's scene vehicle text. Merge `upstream/main` again from the issue #3 checkpoint and
+  repeat the fold: drop the `bp_*` ammo recipes and uncrafts that the merge adds back
+  (`data/json/uncraft/ammo/22.json`, `50bmg.json`, `tankammo.json`,
+  `data/json/uncraft/ammo/rifle ammo.json`, `data/json/recipes/ammo/rifle.json`,
+  `data/mods/exotic_ammo/uncrafts/ammo.json`), keep the new non-`bp_` entries, and re-check the
+  `277_hybrid` recipe and the `Enter → Misc` action list.
 - **Community difficulty thread** — [`docs/fork/reddit-1x5xk5g-proposals.md`](docs/fork/reddit-1x5xk5g-proposals.md)
   collects what r/cataclysmbn asked for after one post about Bright Nights becoming easy. Most of it is
   balance work, which the fork rules leave out of scope.
@@ -60,14 +65,16 @@
 - **CI/CD overhaul series** — issue #12 tracks #6 to #11: decision-model playtesting, the fork suite in
   CI, a prepared build container, known failures, a performance gate and the release path. Issue #13
   lists the end-to-end harness traps to write into the test-quality skill.
-- **Audit follow-ups** — the weather box measures only its date row when fitting, so a long weather
-  name truncates the temperature instead of widening the box; `sdl_font.cpp` now scales oversized
+- **Audit follow-ups** — `sdl_font.cpp` now scales oversized
   glyphs rather than cropping, which needs one manual visual check for configs still holding
   `FONT_WIDTH=8`/`FONT_HEIGHT=16`; the Controls strip can be squeezed off an 80x25 sidebar when the
   rolled messages make the Log panel taller, which is why the small-terminal e2e checks pin the Log
   off; `has_thermometer` scans the inventory on every draw because a per-turn cache showed a
   freshly picked-up thermometer a turn late.
-- **Remaining playtest findings** — pickup menu `d`/`a` marking vs WASD navigation in Modern; stairs and save discoverability for new players.
+- **Remaining playtest findings** — the pickup menu keeps `d`/`a` as mark/unmark: the menu has no
+  horizontal movement to steal, the hint bar names both keys, and `test_wasd_menu_navigation` pins
+  the behavior, so changing it is an owner decision rather than a fix. Stairs and save
+  discoverability are handled by the new first-time tips.
 - **Profile next hot paths** — scent/signature recompute and `sounds::process_sounds` during long rests.
 - **Optional S-pack music adoption** — the installer now downloads Otopack separately for music
   and ambience. Adopting S-pack remains a separate decision; see `data/sound/Overhaul/CREDITS.md`.
