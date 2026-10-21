@@ -10,6 +10,20 @@
   shards from a duration manifest, readiness waits instead of fixed sleeps, a local parallel
   runner). Measured baseline: 140 tests, 6554 s of test time, shard 3 at 2119 s against shard 1 at
   1438 s, and two mouse tests at 1415 s together.
+
+  Two branches are pushed and not merged:
+
+  - `perf/e2e-runtime` (4 commits): shards balanced from `tests/e2e/durations.json`, `--durations`
+    output, `--parallel=N` local runner, and readiness polling in `lua()`/`click()`/`wait_for()`.
+    Measured: a Lua round trip 2.76 s -> 0.34 s; the two mouse tests 943 s -> 113 s and 471 s -> 56 s;
+    a four-shard local run 6431 s -> 727 s. A full green run has not been done since the last three
+    fixes (hover must keep its one-second pause because the pan runs on timeouts, a run needs its
+    own tmux server, and the sleep test must wait for its dialog instead of sampling once); each fix
+    was verified on its own test.
+  - `ci/rework-workflows`: the cross-platform `matrix` runs weekly and on dispatch instead of every
+    push (about two hours of runner time per push, always red on its ccache step), a push runs one
+    dry playtest leg instead of four live ones, and a newer push cancels the older run. The dispatch
+    on that branch (run 39536969750) reported `playtest legs=1` from the plan job.
 - **Next upstream merge** — the 2026-10-20 merge is `c682cb343a` (34 commits, base
   `5196022810`). It resolved five conflicts: `tankammo.json` and `generic/casing.json` keep
   upstream's `stackable`/`damage_states` and the fork's `looks_like`; `rifle ammo.json` keeps the
