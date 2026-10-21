@@ -52,11 +52,12 @@ GOLD_TOLERANCE = 12
 ZOOMS = ("1x", "2x", "4x")
 
 # Frame made deterministic: no animation, beacon blink, rain or static noise.
+# Fit the default 11x24 font within the 1200px-high Xvfb display.
 DETERMINISTIC_OPTIONS = {
     "USE_TILES": "true",
     "FULLSCREEN": "no",
     "TERMINAL_X": "132",
-    "TERMINAL_Y": "60",
+    "TERMINAL_Y": "50",
     "ANIMATIONS": "false",
     "ANIMATION_RAIN": "false",
     "ANIMATION_PROJECTILES": "false",
@@ -66,6 +67,9 @@ DETERMINISTIC_OPTIONS = {
     "PIXEL_MINIMAP": "true",
     "PIXEL_MINIMAP_HEIGHT": "16",
     "PIXEL_MINIMAP_BLINK": "0",
+    # The frame wait reads the loader by its default compact progress window at the bottom.
+    "LOADING_PROGRESS_COMPACT": "true",
+    "LOADING_SCREEN_IMAGES": "false",
 }
 
 # Fixture offsets relative to the avatar, (dx, dy).
@@ -284,16 +288,24 @@ def capture(display, window_id, png):
     return Path(png)
 
 
-def frame_is_game_world(rgb):
-    """The healthy fixture's body bars distinguish the world view from loading artwork."""
+def frame_shows_world(rgb):
+    """Recognize full-height sidebar content, not the compact loader or centered title menu.
+
+    Launch options disable splash artwork, which can also paint the window edges.
+    """
     width, height, pixels = rgb
-    green = 0
-    for y in range(min(height, 32)):
-        for x in range(width):
-            offset = 3 * (y * width + x)
-            r, g, b = pixels[offset:offset + 3]
-            green += r < 16 and g >= 96 and b < 16
-    return green >= 64
+    inset = min(20, width // 8)          # a full-screen border line is not the sidebar
+    band = min(max(40, width // 8), width - 2 * inset)
+    edges = ((inset, inset + band), (width - inset - band, width - inset))
+    painted_rows = 0
+    for y in range(height):
+        base = 3 * y * width
+        for start, stop in edges:
+            if any(pixels[offset] or pixels[offset + 1] or pixels[offset + 2]
+                   for offset in range(base + 3 * start, base + 3 * stop, 3)):
+                painted_rows += 1
+                break
+    return painted_rows * 2 >= height
 
 
 def frame_rgb(png):
@@ -468,8 +480,18 @@ def patch_options(path, values):
     path.write_text(json.dumps(rows))
 
 
+def patch_launch_options(userdir, xdg, values):
+    """Patch both config locations selected by the compile-time USE_XDG_DIR option."""
+    patch_options(Path(userdir) / "config" / "options.json", values)
+    patch_options(Path(xdg) / "cataclysm-bn" / "options.json", values)
+
+
 def wait_for_frame(session, proc, run, timeout):
-    """Waits for the healthy fixture's world view and two identical decoded captures."""
+    """Waits for two identical decoded captures of the loaded world.
+
+    The world must be drawn (see frame_shows_world) as well as still, so neither a loading screen
+    nor a half-painted first frame satisfies the wait.
+    """
     deadline = time.time() + timeout
     x11 = X11(session.display)
     try:
@@ -483,7 +505,7 @@ def wait_for_frame(session, proc, run, timeout):
             if window is not None:
                 shot = capture(session.display, window, run / "frame.png")
                 data = frame_rgb(shot)
-                if data == previous and frame_is_game_world(data):
+                if data == previous and frame_shows_world(data):
                     return shot
                 previous = data
             time.sleep(1.0)
@@ -556,7 +578,7 @@ class Session:
         shutil.copytree(self.curses_userdir / "config", userdir / "config")
         shutil.copytree(self.curses_userdir / "save", userdir / "save")
         shutil.copytree(self.curses_userdir / "config", xdg / "cataclysm-bn")
-        patch_options(xdg / "cataclysm-bn" / "options.json", {**DETERMINISTIC_OPTIONS, **tiles_options})
+        patch_launch_options(userdir, xdg, {**DETERMINISTIC_OPTIONS, **tiles_options})
         for sub in ("home", "cache", "data", "state"):
             (run / sub).mkdir(parents=True, exist_ok=True)
         env = {

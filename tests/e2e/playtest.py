@@ -469,8 +469,9 @@ def wait_for_save(userdir, timeout=90):
 def start_tiles(userdir, save_name, seed=None, timeout=180):
     """Reopen a saved scenario world in the tiles build on a private Xvfb display.
 
-    The tiles build reads its options from XDG_CONFIG_HOME, not --userdir, so the scenario's config
-    is copied there and the deterministic tiles options are merged in.
+    The tiles build picks its config directory at compile time (XDG_CONFIG_HOME with USE_XDG_DIR,
+    <userdir>/config without it), so the scenario's config is copied to both places and the
+    deterministic tiles options are merged into both.
     """
     icd = tiles.DEFAULT_LAVAPIPE_ICD
     if not icd.exists():
@@ -478,7 +479,7 @@ def start_tiles(userdir, save_name, seed=None, timeout=180):
     run = Path(userdir) / "tiles"
     (run / "xdg" / "cataclysm-bn").mkdir(parents=True, exist_ok=True)
     shutil.copytree(Path(userdir) / "config", run / "xdg" / "cataclysm-bn", dirs_exist_ok=True)
-    tiles.patch_options(run / "xdg" / "cataclysm-bn" / "options.json", tiles.DETERMINISTIC_OPTIONS)
+    tiles.patch_launch_options(userdir, run / "xdg", tiles.DETERMINISTIC_OPTIONS)
     for sub in ("home", "cache", "data", "state"):
         (run / sub).mkdir(parents=True, exist_ok=True)
     xvfb, display, xvfb_log = tiles.start_xvfb(run)
@@ -503,7 +504,7 @@ def start_tiles(userdir, save_name, seed=None, timeout=180):
     proc = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=log, stderr=log)
     x11 = None
     try:
-        # wait_for_frame wants two identical captures of a drawn world, so the title screen does not count.
+        # The frame must be the loaded world, not the loading screen, and it must be still.
         frame = tiles.wait_for_frame(_Display(display), proc, run, timeout)
         x11 = tiles.X11(display)
         window = x11.find_window(tiles.WINDOW_TITLE_PREFIX)
@@ -666,15 +667,11 @@ def reopen_in_tiles_window(handle):
     save_and_quit(g)
     handle.save_name = wait_for_save(handle.userdir)
     handle.close()
-    # The tiles build reads its options from XDG_CONFIG_HOME, not --userdir; give it the scenario's
-    # options there so it neither ignores them nor touches your own config.
+    # Honor the scenario's config with either compile-time config directory.
     xdg = handle.userdir / "xdg"
     shutil.rmtree(xdg, ignore_errors=True)
     shutil.copytree(handle.userdir / "config", xdg / "cataclysm-bn")
-    options_file = xdg / "cataclysm-bn" / "options.json"
-    options_file.write_text(json.dumps(
-        [o for o in json.loads(options_file.read_text()) if o["name"] != "USE_TILES"]
-        + [{"info": "", "default": "", "name": "USE_TILES", "value": "true"}]))
+    tiles.patch_launch_options(handle.userdir, xdg, {"USE_TILES": "true"})
     # The tiles binary loads the first save of the world given by --world.
     return subprocess.run([str(tiles_binary()), "--basepath", f"{ROOT}/", "--userdir", f"{handle.userdir}/",
                            "--world", handle.save_name], cwd=ROOT,
