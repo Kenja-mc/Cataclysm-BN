@@ -836,52 +836,6 @@ auto assign_autofill_tanks_for_grid( const std::set<tripoint_abs_omt> &grid, map
     } );
 }
 
-struct split_storage_result {
-    fluid_grid::liquid_storage_state lhs;
-    fluid_grid::liquid_storage_state rhs;
-};
-
-auto split_storage_state( const fluid_grid::liquid_storage_state &state,
-                          units::volume lhs_capacity,
-                          units::volume rhs_capacity ) -> split_storage_result
-{
-    auto lhs_state = fluid_grid::liquid_storage_state{
-        .stored_by_type = {},
-        .capacity = lhs_capacity
-    };
-    auto rhs_state = fluid_grid::liquid_storage_state{
-        .stored_by_type = {},
-        .capacity = rhs_capacity
-    };
-
-    const auto total_capacity = lhs_capacity + rhs_capacity;
-    if( total_capacity <= 0_ml ) {
-        return { .lhs = lhs_state, .rhs = rhs_state };
-    }
-
-    const auto total_capacity_ml = units::to_milliliter( total_capacity );
-    const auto lhs_capacity_ml = units::to_milliliter( lhs_capacity );
-    const auto ratio = static_cast<double>( lhs_capacity_ml ) / total_capacity_ml;
-
-    std::ranges::for_each( state.stored_by_type, [&]( const auto & entry ) {
-        const auto liquid_ml = units::to_milliliter( entry.second );
-        const auto lhs_liquid_ml = static_cast<decltype( liquid_ml )>( std::round( liquid_ml * ratio ) );
-
-        lhs_state.stored_by_type[entry.first] = units::from_milliliter( lhs_liquid_ml );
-        rhs_state.stored_by_type[entry.first] =
-            entry.second - lhs_state.stored_by_type[entry.first];
-
-        if( lhs_state.stored_by_type[entry.first] <= 0_ml ) {
-            lhs_state.stored_by_type.erase( entry.first );
-        }
-        if( rhs_state.stored_by_type[entry.first] <= 0_ml ) {
-            rhs_state.stored_by_type.erase( entry.first );
-        }
-    } );
-
-    return { .lhs = lhs_state, .rhs = rhs_state };
-}
-
 auto connection_bitset_at( const tripoint_abs_omt &p ) -> const fluid_grid::connection_bitset
 & // *NOPAD*
 {
@@ -940,6 +894,38 @@ auto remove_tank_storage( fluid_grid::liquid_storage_state &state,
     }
     state.capacity = remaining_capacity;
     return removed;
+}
+
+/// Rounds up, because the whole volume was already removed from storage.
+auto spilled_charges( const itype_id &liquid, units::volume volume ) -> int
+{
+    const auto &type = liquid.obj();
+    const auto per_charge = type.volume / std::max( type.stack_size, 1 );
+    if( per_charge <= 0_ml || volume <= 0_ml ) {
+        return 0;
+    }
+    return static_cast<int>( ( volume + per_charge - 1_ml ) / per_charge );
+}
+
+auto spill_liquid_at( const tripoint_abs_ms &p, const fluid_grid::liquid_storage_state &liquid,
+                      mapbuffer &mb ) -> void
+{
+    auto target_sm = tripoint_abs_sm{};
+    auto target_pos = point_sm_ms{};
+    std::tie( target_sm, target_pos ) = project_remain<coords::sm>( p );
+    auto *target_submap = mb.lookup_submap( target_sm );
+    if( target_submap == nullptr ) {
+        return;
+    }
+    auto &items = target_submap->get_items( target_pos );
+    std::ranges::for_each( liquid.stored_by_type, [&]( const auto & entry ) {
+        if( entry.second <= 0_ml ) {
+            return;
+        }
+        auto liquid_item = item::spawn( entry.first, calendar::turn );
+        liquid_item->charges = spilled_charges( entry.first, entry.second );
+        items.push_back( std::move( liquid_item ) );
+    } );
 }
 
 class fluid_storage_grid
@@ -1335,19 +1321,24 @@ class fluid_grid_tracker
             make_storage_grid_at( sm_pos );
         }
 
-        auto disconnect_tank_at( const tripoint_abs_ms &p ) -> bool {
+        auto disconnect_tank_at( const tripoint_abs_ms &p )
+        -> std::expected<void, fluid_grid::tank_disconnect_error> {
             auto target_sm = tripoint_abs_sm{};
             auto target_pos = point_sm_ms{};
             std::tie( target_sm, target_pos ) = project_remain<coords::sm>( p );
             auto *target_submap = mb->lookup_submap( target_sm );
             if( target_submap == nullptr ) {
-                return false;
+                return std::unexpected( fluid_grid::tank_disconnect_error{
+                    .why = fluid_grid::tank_disconnect_error::reason::unloaded
+                } );
             }
 
             const auto &furn = target_submap->get_furn( target_pos ).obj();
             const auto tank_capacity = tank_capacity_for_furn( furn );
             if( !tank_capacity ) {
-                return false;
+                return std::unexpected( fluid_grid::tank_disconnect_error{
+                    .why = fluid_grid::tank_disconnect_error::reason::no_tank
+                } );
             }
 
             invalidate_submap_cache_at( target_sm );
@@ -1358,31 +1349,35 @@ class fluid_grid_tracker
             const auto assigned = target_submap->get_furn_vars( target_pos ).get(
                                       "fluid_grid_assigned_liquid", "" );
             if( state.stored_total() > new_capacity ) {
-                return false;
+                return std::unexpected( fluid_grid::tank_disconnect_error{
+                    .why = fluid_grid::tank_disconnect_error::reason::capacity_overflow
+                } );
             }
             if( !assigned.empty() ) {
                 const auto liquid = itype_id( assigned );
                 const auto liquid_capacity = calculate_liquid_capacity_for_grid(
                                                  fluid_grid::grid_at( project_to<coords::omt>( p ) ), *mb, liquid );
                 if( state.stored_for( liquid ) > liquid_capacity - *tank_capacity ) {
-                    return false;
+                    return std::unexpected( fluid_grid::tank_disconnect_error{
+                        .why = fluid_grid::tank_disconnect_error::reason::liquid_overflow,
+                        .liquid = liquid
+                    } );
                 }
             }
             const auto overflow = remove_tank_storage( state, p, *mb );
             grid.set_state( state );
 
             auto &items = target_submap->get_items( target_pos );
-            items.clear();
 
             std::ranges::for_each( overflow.stored_by_type, [&]( const auto & entry ) {
                 if( entry.second <= 0_ml ) {
                     return;
                 }
                 auto liquid_item = item::spawn( entry.first, calendar::turn );
-                liquid_item->charges = liquid_item->charges_per_volume( entry.second );
+                liquid_item->charges = spilled_charges( entry.first, entry.second );
                 items.push_back( std::move( liquid_item ) );
             } );
-            return true;
+            return {};
         }
 
         auto clear() -> void {
@@ -1741,7 +1736,7 @@ auto process_transformers_at( const tripoint_abs_omt &p, time_point to ) -> void
         const auto held = units::to_milliliter<double>( state.stored_for( output.first ) );
         const auto assigned_capacity = units::to_milliliter<double>(
                                            calculate_assigned_liquid_capacity_for_grid( grid, mbuf,
-                                                   output.first ) );
+                                               output.first ) );
         const auto required_autofill = std::max( 0.0, ( output.second - input ) * scale + held -
                                        assigned_capacity );
         assign_autofill_tanks_for_grid( grid, mbuf, output.first,
@@ -2005,7 +2000,7 @@ auto on_structure_changed( const tripoint_abs_ms &p ) -> void
     }
 }
 
-auto disconnect_tank( const tripoint_abs_ms &p ) -> bool
+auto disconnect_tank( const tripoint_abs_ms &p ) -> std::expected<void, tank_disconnect_error>
 {
     return get_fluid_grid_tracker().disconnect_tank_at( p );
 }
@@ -2040,22 +2035,60 @@ auto on_tank_removed( const tripoint_abs_ms &p ) -> void
             return;
         }
         auto liquid_item = item::spawn( entry.first, calendar::turn );
-        liquid_item->charges = liquid_item->charges_per_volume( entry.second );
+        liquid_item->charges = spilled_charges( entry.first, entry.second );
         items.push_back( std::move( liquid_item ) );
     } );
 }
 
-auto add_grid_connection( const tripoint_abs_omt &lhs, const tripoint_abs_omt &rhs ) -> bool
+auto split_storage_state( const liquid_storage_state &state,
+                          units::volume lhs_capacity,
+                          units::volume rhs_capacity )
+-> split_storage_result
+{
+    auto lhs_state = liquid_storage_state{
+        .stored_by_type = {},
+        .capacity = lhs_capacity
+    };
+    auto rhs_state = liquid_storage_state{
+        .stored_by_type = {},
+        .capacity = rhs_capacity
+    };
+
+    const auto total_capacity_ml = units::to_milliliter( lhs_capacity + rhs_capacity );
+    const auto lhs_capacity_ml = units::to_milliliter( lhs_capacity );
+
+    std::ranges::for_each( state.stored_by_type, [&]( const auto & entry ) {
+        const auto liquid_ml = units::to_milliliter( entry.second );
+        if( liquid_ml <= 0 ) {
+            return;
+        }
+        // Integer split: the remainder always goes to rhs, so no liquid is rounded away.
+        const auto lhs_liquid_ml = total_capacity_ml <= 0
+                                   ? liquid_ml
+                                   : liquid_ml * lhs_capacity_ml / total_capacity_ml;
+        const auto rhs_liquid_ml = liquid_ml - lhs_liquid_ml;
+        if( lhs_liquid_ml > 0 ) {
+            lhs_state.stored_by_type[entry.first] = units::from_milliliter( lhs_liquid_ml );
+        }
+        if( rhs_liquid_ml > 0 ) {
+            rhs_state.stored_by_type[entry.first] = units::from_milliliter( rhs_liquid_ml );
+        }
+    } );
+
+    return { .lhs = lhs_state, .rhs = rhs_state };
+}
+
+auto add_grid_connection( const tripoint_abs_omt &lhs, const tripoint_abs_omt &rhs )
+-> std::expected<void, connection_error>
 {
     if( project_to<coords::om>( lhs ).xy() != project_to<coords::om>( rhs ).xy() ) {
-        debugmsg( "Connecting fluid grids on different overmaps is not supported yet" );
-        return false;
+        return std::unexpected( connection_error::different_overmap );
     }
 
     const auto coord_diff = rhs - lhs;
     if( std::abs( coord_diff.x() ) + std::abs( coord_diff.y() ) + std::abs( coord_diff.z() ) != 1 ) {
         debugmsg( "Tried to connect non-orthogonally adjacent points" );
-        return false;
+        return std::unexpected( connection_error::not_adjacent );
     }
 
     auto lhs_omc = fluid_omb().get_om_global( lhs );
@@ -2071,8 +2104,7 @@ auto add_grid_connection( const tripoint_abs_omt &lhs, const tripoint_abs_omt &r
     auto &rhs_bitset = connection_bitset_at( *rhs_omc.om, rhs_omc.local );
 
     if( lhs_bitset[lhs_i] && rhs_bitset[rhs_i] ) {
-        debugmsg( "Tried to connect to fluid grid two points that are connected to each other" );
-        return false;
+        return std::unexpected( connection_error::already_connected );
     }
 
     const auto lhs_grid = grid_at( lhs );
@@ -2097,15 +2129,16 @@ auto add_grid_connection( const tripoint_abs_omt &lhs, const tripoint_abs_omt &r
 
     on_structure_changed( project_to<coords::ms>( lhs ) );
     on_structure_changed( project_to<coords::ms>( rhs ) );
-    return true;
+    return {};
 }
 
-auto remove_grid_connection( const tripoint_abs_omt &lhs, const tripoint_abs_omt &rhs ) -> bool
+auto remove_grid_connection( const tripoint_abs_omt &lhs, const tripoint_abs_omt &rhs )
+-> std::expected<void, connection_error>
 {
     const auto coord_diff = rhs - lhs;
     if( std::abs( coord_diff.x() ) + std::abs( coord_diff.y() ) + std::abs( coord_diff.z() ) != 1 ) {
         debugmsg( "Tried to disconnect non-orthogonally adjacent points" );
-        return false;
+        return std::unexpected( connection_error::not_adjacent );
     }
 
     auto lhs_omc = fluid_omb().get_om_global( lhs );
@@ -2121,8 +2154,7 @@ auto remove_grid_connection( const tripoint_abs_omt &lhs, const tripoint_abs_omt
     auto &rhs_bitset = connection_bitset_at( *rhs_omc.om, rhs_omc.local );
 
     if( !lhs_bitset[lhs_i] && !rhs_bitset[rhs_i] ) {
-        debugmsg( "Tried to disconnect from fluid grid two points with no connection to each other" );
-        return false;
+        return std::unexpected( connection_error::not_connected );
     }
 
     const auto old_grid = grid_at( lhs );
@@ -2145,13 +2177,22 @@ auto remove_grid_connection( const tripoint_abs_omt &lhs, const tripoint_abs_omt
         storage.erase( fluid_omb().get_om_global( old_anchor ).local );
         const auto lhs_anchor = anchor_for_grid( lhs_grid );
         const auto rhs_anchor = anchor_for_grid( rhs_grid );
+        if( lhs_capacity + rhs_capacity <= 0_ml ) {
+            // No tank is left to hold it, so spill instead of dropping the liquid.
+            spill_liquid_at( project_to<coords::ms>( lhs ), old_state, mbuf );
+            storage[fluid_omb().get_om_global( lhs_anchor ).local] =
+                liquid_storage_state{ .capacity = lhs_capacity };
+            storage[fluid_omb().get_om_global( rhs_anchor ).local] =
+                liquid_storage_state{ .capacity = rhs_capacity };
+            return {};
+        }
         storage[fluid_omb().get_om_global( lhs_anchor ).local] = split_state.lhs;
         storage[fluid_omb().get_om_global( rhs_anchor ).local] = split_state.rhs;
     }
 
     on_structure_changed( project_to<coords::ms>( lhs ) );
     on_structure_changed( project_to<coords::ms>( rhs ) );
-    return true;
+    return {};
 }
 
 auto clear() -> void

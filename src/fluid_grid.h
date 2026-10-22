@@ -7,6 +7,7 @@
 #include "units.h"
 
 #include <bitset>
+#include <expected>
 #include <map>
 #include <ranges>
 #include <set>
@@ -68,6 +69,37 @@ struct seed_liquid_mapgen_opts {
     mapbuffer *map_buffer = nullptr;
 };
 
+/// Why a fluid grid connection request was rejected.
+enum class connection_error {
+    /// Grids stay inside one overmap.
+    different_overmap,
+    /// Connections only span orthogonally adjacent tiles.
+    not_adjacent,
+    already_connected,
+    not_connected,
+};
+
+/// Why a tank cannot leave its fluid grid.
+struct tank_disconnect_error {
+    enum class reason {
+        no_tank,
+        /// The tank is not in a loaded submap.
+        unloaded,
+        /// The remaining capacity cannot hold the tank's total volume.
+        capacity_overflow,
+        /// The remaining capacity cannot hold all of one liquid.  `liquid` names it.
+        liquid_overflow,
+    };
+    reason why = reason::no_tank;
+    itype_id liquid = itype_id::NULL_ID();
+};
+
+/// A grid split between two halves; per liquid, lhs + rhs equals the original exactly.
+struct split_storage_result {
+    liquid_storage_state lhs;
+    liquid_storage_state rhs;
+};
+
 auto connections_for( overmap &om ) -> connection_map &; // *NOPAD*
 auto connections_for( const overmap &om ) -> const connection_map &; // *NOPAD*
 auto storage_for( overmap &om ) -> std::map<tripoint_om_omt,
@@ -98,11 +130,14 @@ auto set_fixture_assigned_liquid( const tripoint_abs_ms &p, const itype_id &liqu
 auto unassign_fixture_liquid( const tripoint_abs_ms &p ) -> bool;
 auto on_structure_changed( const tripoint_abs_ms &p ) -> void;
 auto on_tank_removed( const tripoint_abs_ms &p ) -> void;
-auto disconnect_tank( const tripoint_abs_ms &p ) -> bool;
-auto add_grid_connection( const tripoint_abs_omt &lhs,
-                          const tripoint_abs_omt &rhs ) -> bool;
-auto remove_grid_connection( const tripoint_abs_omt &lhs,
-                             const tripoint_abs_omt &rhs ) -> bool;
+auto disconnect_tank( const tripoint_abs_ms &p ) -> std::expected<void, tank_disconnect_error>;
+auto split_storage_state( const liquid_storage_state &state,
+                          units::volume lhs_capacity, units::volume rhs_capacity )
+-> split_storage_result;
+auto add_grid_connection( const tripoint_abs_omt &lhs, const tripoint_abs_omt &rhs )
+-> std::expected<void, connection_error>;
+auto remove_grid_connection( const tripoint_abs_omt &lhs, const tripoint_abs_omt &rhs )
+-> std::expected<void, connection_error>;
 auto clear() -> void;
 
 } // namespace fluid_grid
