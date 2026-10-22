@@ -27,8 +27,10 @@ name: fork-playtest
 #
 # A push proves the wiring with one dry playtest leg and spends nothing: live legs cost model
 # tokens and up to fifteen minutes each, so they run on the nightly schedule and when
-# dispatched. Without both model secrets (XPL_SK_AGENT, OC_SK_AGENT) every run is that one dry
-# leg; the plan job says so in the run summary.
+# dispatched. A live leg needs any one of these model secrets: OPENROUTER_API_KEY on its own
+# (the free openrouter-text / openrouter-vision pools, $0 per call), or both XPL_SK_AGENT and
+# OC_SK_AGENT. Without a usable key every run is that one dry leg; the plan job says so in the
+# run summary and picks the OpenRouter pools when that is the only key present.
 #
 # The screenshots job is the fork's own visual check: nightly and on demand it replays the
 # fork features in the tiles build and regenerates docs/fork/images/features/ plus the page
@@ -77,7 +79,7 @@ on:
         options: [all, kb, kb-mouse]
         default: all
       models:
-        description: 'A pool ("vision"|"text") or comma-separated model ids (empty: the leg default)'
+        description: 'A pool ("vision"|"text"|"openrouter-text"|"openrouter-vision") or comma-separated model ids (empty: the leg default)'
         type: string
         default: ""
       dry_run:
@@ -120,29 +122,46 @@ jobs:
       matrix: ${{ steps.plan.outputs.matrix }}
       has_keys: ${{ steps.keys.outputs.has_keys }}
     steps:
-      # Job-level `if` cannot read secrets, so the key check belongs here: without both
-      # keys the live legs are replaced by one dry leg instead of going red every night.
+      # Job-level `if` cannot read secrets, so the key check belongs here: without a usable
+      # key the live legs are replaced by one dry leg instead of going red every night.
+      # OPENROUTER_API_KEY alone is enough: the plan then points every leg at the free
+      # OpenRouter pools, which need no second key.
       - name: Check whether the model keys exist
         id: keys
         env:
           XPL_SK_AGENT: ${{ secrets.XPL_SK_AGENT }}
           OC_SK_AGENT: ${{ secrets.OC_SK_AGENT }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
-          if [ -n "${XPL_SK_AGENT:-}" ] && [ -n "${OC_SK_AGENT:-}" ]; then
-            echo "has_keys=true" >> "$GITHUB_OUTPUT"
-            echo "both model keys are configured; the live playtest matrix runs on the nightly schedule and on dispatch"
+          has_keys=false
+          has_openrouter=false
+          or_only=false
+          if [ -n "${OPENROUTER_API_KEY:-}" ]; then has_openrouter=true; fi
+          if [ "$has_openrouter" = true ] \
+             || { [ -n "${XPL_SK_AGENT:-}" ] && [ -n "${OC_SK_AGENT:-}" ]; }; then
+            has_keys=true
+          fi
+          if [ "$has_openrouter" = true ] \
+             && { [ -z "${XPL_SK_AGENT:-}" ] || [ -z "${OC_SK_AGENT:-}" ]; }; then
+            or_only=true
+          fi
+          echo "has_keys=$has_keys" >> "$GITHUB_OUTPUT"
+          echo "has_openrouter=$has_openrouter" >> "$GITHUB_OUTPUT"
+          echo "or_only=$or_only" >> "$GITHUB_OUTPUT"
+          echo "key state: OPENROUTER_API_KEY=${OPENROUTER_API_KEY:+set} XPL_SK_AGENT=${XPL_SK_AGENT:+set} OC_SK_AGENT=${OC_SK_AGENT:+set}"
+          if [ "$has_keys" = true ]; then
+            echo "a model key is configured; the live playtest matrix runs on the nightly schedule and on dispatch"
           else
-            echo "has_keys=false" >> "$GITHUB_OUTPUT"
-            echo "key state: XPL_SK_AGENT=${XPL_SK_AGENT:+set} OC_SK_AGENT=${OC_SK_AGENT:+set}"
             {
               echo "### Live playtest skipped"
               echo
-              echo "The live playtest did not run: \`XPL_SK_AGENT\` and \`OC_SK_AGENT\` are not"
-              echo "configured as repository secrets, so no leg may play a live game. Everything"
-              echo "else ran: the end-to-end suite, the fork feature screenshots (when this is a"
-              echo "scheduled run) and one dry playtest leg, which checks the wiring with no key"
-              echo "and no network. Add both secrets under Settings -> Secrets and variables ->"
-              echo "Actions to turn the full matrix on."
+              echo "The live playtest did not run: no model key is configured as a repository"
+              echo "secret. Set \`OPENROUTER_API_KEY\` (enough on its own: the free OpenRouter"
+              echo "pools), or \`XPL_SK_AGENT\` and \`OC_SK_AGENT\` together. Everything else ran:"
+              echo "the end-to-end suite, the fork feature screenshots (when this is a scheduled"
+              echo "run) and one dry playtest leg, which checks the wiring with no key and no"
+              echo "network. Add a secret under Settings -> Secrets and variables -> Actions to"
+              echo "turn the full matrix on."
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
@@ -156,6 +175,7 @@ jobs:
           INPUT: ${{ inputs.input }}
           MODELS: ${{ inputs.models }}
           HAS_KEYS: ${{ steps.keys.outputs.has_keys }}
+          OR_ONLY: ${{ steps.keys.outputs.or_only }}
           DRY_INPUT: ${{ inputs.dry_run }}
           EVENT_NAME: ${{ github.event_name }}
           TURNS: ${{ env.TURNS }}
@@ -227,8 +247,13 @@ jobs:
           for leg in legs:
               if models:
                   leg["models"] = models
+              elif os.environ.get("OR_ONLY") == "true":
+                  # Only OPENROUTER_API_KEY is configured: every leg plays free OpenRouter
+                  # models, vision where the harness sends a frame and text for curses.
+                  leg["models"] = ("openrouter-vision" if leg["mode"] == "tiles"
+                                   else "openrouter-text")
 
-          # Without both repository secrets no leg may call a model: the live legs wait and
+          # Without a usable model key no leg may call a model: the live legs wait and
           # one dry leg proves the wiring on every push. A push with keys behaves the same
           # way: live legs spend tokens and up to fifteen minutes each, so they belong to the
           # nightly schedule and to dispatches. A dry_run dispatch does the same to whatever
@@ -353,7 +378,11 @@ jobs:
           trap 'kill "$xvfb_pid" 2>/dev/null || true' EXIT
           export DISPLAY=:99
           sleep 1
-          python3 tests/e2e/run.py --shard=${{ matrix.shard }}/4 2>&1 | tee e2e-suite-shard-${{ matrix.shard }}.log
+          # --durations feeds the shard split from real CI cost once the artifacts are
+          # merged: python3 tests/e2e/merge_durations.py e2e-durations-shard-*.json --write
+          python3 tests/e2e/run.py --shard=${{ matrix.shard }}/4 \
+            --durations=e2e-durations-shard-${{ matrix.shard }}.json \
+            2>&1 | tee e2e-suite-shard-${{ matrix.shard }}.log
 
       # Always: a failing suite is the interesting one, and the log is its only evidence.
       # warn, not ignore: the suite writes e2e-suite.log as soon as it starts, so a missing
@@ -365,6 +394,7 @@ jobs:
           name: e2e-suite-log-${{ matrix.shard }}
           path: |
             e2e-suite-shard-${{ matrix.shard }}.log
+            e2e-durations-shard-${{ matrix.shard }}.json
             /tmp/bn-e2e-*
           if-no-files-found: warn
           retention-days: 14
@@ -554,24 +584,38 @@ jobs:
 
       # The keys are repository secrets; a missing one must be readable, not a stack trace
       # in the middle of a run. A dry leg (no keys configured, or a dry_run dispatch) never
-      # reaches a model, so it does not need a key.
+      # reaches a model, so it does not need a key. OPENROUTER_API_KEY alone is enough: it
+      # reaches every model of the openrouter-* pools, which is what the plan selects then.
       - name: Check the model keys
         if: matrix.dry != true && inputs.dry_run != true
         env:
+          MODEL_SPEC: ${{ inputs.models != '' && inputs.models || matrix.models }}
           XPL_SK_AGENT: ${{ secrets.XPL_SK_AGENT }}
           OC_SK_AGENT: ${{ secrets.OC_SK_AGENT }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
+          # A pool needs exactly its provider's key; a comma-separated model list may need any.
+          case "${MODEL_SPEC:-}" in
+            openrouter-text|openrouter-vision) needed=(OPENROUTER_API_KEY) ;;
+            text|vision) needed=(XPL_SK_AGENT OC_SK_AGENT) ;;
+            *) needed=(OPENROUTER_API_KEY XPL_SK_AGENT OC_SK_AGENT) ;;
+          esac
           missing=()
-          if [ -z "${XPL_SK_AGENT:-}" ]; then missing+=(XPL_SK_AGENT); fi
-          if [ -z "${OC_SK_AGENT:-}" ]; then missing+=(OC_SK_AGENT); fi
-          if [ ${#missing[@]} -eq 2 ]; then
-            echo "::error::no model key is set for this repository: ${missing[*]} are both empty. Add them under Settings -> Secrets and variables -> Actions, or dispatch this workflow with dry_run=true to check the wiring without a key. Every decision call fails without a key, so the live playtest cannot start."
+          for name in "${needed[@]}"; do
+            case "$name" in
+              OPENROUTER_API_KEY) [ -n "${OPENROUTER_API_KEY:-}" ] || missing+=("$name") ;;
+              XPL_SK_AGENT) [ -n "${XPL_SK_AGENT:-}" ] || missing+=("$name") ;;
+              OC_SK_AGENT) [ -n "${OC_SK_AGENT:-}" ] || missing+=("$name") ;;
+            esac
+          done
+          if [ ${#missing[@]} -eq ${#needed[@]} ]; then
+            echo "::error::no key for models '${MODEL_SPEC}': ${missing[*]} missing. Add OPENROUTER_API_KEY (enough on its own for the openrouter-* pools) or both XPL_SK_AGENT and OC_SK_AGENT under Settings -> Secrets and variables -> Actions, or dispatch this workflow with dry_run=true to check the wiring without a key. Every decision call fails without a key, so the live playtest cannot start."
             exit 1
           fi
           if [ ${#missing[@]} -gt 0 ]; then
-            echo "::warning::secret ${missing[*]} is not set; models that need it are retired, the rest of the pool still plays"
+            echo "::warning::secret(s) ${missing[*]} not set; models that need them are retired, the rest of the pool still plays"
           fi
-          echo "model keys present: XPL_SK_AGENT=${XPL_SK_AGENT:+yes} OC_SK_AGENT=${OC_SK_AGENT:+yes}"
+          echo "model keys present: OPENROUTER_API_KEY=${OPENROUTER_API_KEY:+yes} XPL_SK_AGENT=${XPL_SK_AGENT:+yes} OC_SK_AGENT=${OC_SK_AGENT:+yes}"
 
       # A scenario id that does not exist must fail once, with the known ids listed,
       # instead of dying as a harness error once per scenario.
@@ -596,8 +640,10 @@ jobs:
       - name: Run the playtest, one run per content scenario
         id: run
         env:
-          XPL_SK_AGENT: ${{ secrets.XPL_SK_AGENT }}
-          OC_SK_AGENT: ${{ secrets.OC_SK_AGENT }}
+          # A dry leg reaches no model, so it gets no key at all.
+          XPL_SK_AGENT: ${{ (matrix.dry != true && inputs.dry_run != true) && secrets.XPL_SK_AGENT || '' }}
+          OC_SK_AGENT: ${{ (matrix.dry != true && inputs.dry_run != true) && secrets.OC_SK_AGENT || '' }}
+          OPENROUTER_API_KEY: ${{ (matrix.dry != true && inputs.dry_run != true) && secrets.OPENROUTER_API_KEY || '' }}
           MODEL_SPEC: ${{ inputs.models != '' && inputs.models || matrix.models }}
           SCENARIO_OVERRIDE: ${{ inputs.scenario }}
           PYTHONPATH: tests/e2e
