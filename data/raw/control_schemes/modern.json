@@ -1753,6 +1753,13 @@
   },
   {
     "type": "keybinding",
+    "id": "WORLD_PRESET",
+    "category": "OPTIONS",
+    "name": "Apply world preset",
+    "bindings": [ { "input_method": "keyboard", "key": "p" } ]
+  },
+  {
+    "type": "keybinding",
     "name": "Center View",
     "category": "DEFAULTMODE",
     "id": "center",

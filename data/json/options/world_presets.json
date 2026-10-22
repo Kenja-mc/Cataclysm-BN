@@ -1,0 +1,48 @@
+[
+  {
+    "type": "WORLD_PRESET",
+    "id": "relaxed",
+    "name": "Relaxed",
+    "description": "More supplies, weaker and rarer monsters, fewer NPCs, and sturdier vehicles.",
+    "values": {
+      "ITEM_SPAWNRATE": "1.25",
+      "SPAWN_DENSITY": "0.75",
+      "MONSTER_UPGRADE_FACTOR": "4.0",
+      "MONSTER_RESILIENCE": "80",
+      "NPC_DENSITY": "0.05",
+      "VEHICLE_DAMAGE": "0.5",
+      "VEHICLE_SPAWNRATE": "1.25"
+    }
+  },
+  {
+    "type": "WORLD_PRESET",
+    "id": "scarce",
+    "name": "Scarce",
+    "description": "Less loot, rarer guns and ammo, and fewer usable vehicles.",
+    "values": {
+      "ITEM_SPAWNRATE": "0.8",
+      "SPAWN_RATE_guns": "0.65",
+      "SPAWN_RATE_ammo": "0.65",
+      "VEHICLE_SPAWNRATE": "0.5",
+      "VEHICLE_DAMAGE": "2.0"
+    }
+  },
+  {
+    "type": "WORLD_PRESET",
+    "id": "hardcore",
+    "name": "Hardcore",
+    "description": "Scarce supplies, tougher and faster-evolving monsters, more NPCs, ruined vehicles, and a hostile start.",
+    "values": {
+      "ITEM_SPAWNRATE": "0.5",
+      "SPAWN_DENSITY": "1.5",
+      "MONSTER_RESILIENCE": "120",
+      "MONSTER_UPGRADE_FACTOR": "1.0",
+      "NPC_DENSITY": "0.25",
+      "VEHICLE_SPAWNRATE": "0.25",
+      "VEHICLE_DAMAGE": "3.0",
+      "WANDER_SPAWNS": "true",
+      "BLACK_ROAD": "true",
+      "CROWD_CRUSH": "true"
+    }
+  }
+]
