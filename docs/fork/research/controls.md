@@ -84,9 +84,46 @@ Checked against the effective modern scheme, case-sensitive. Free in `DEFAULTMOD
 south-east) and `X` (cycle movement mode), plus the rest of the look layer. Taken chords:
 `Ctrl`+`W A S D Q E Z C` (peek), `Ctrl`+`P` (perks), `Ctrl`+`X` (wait several minutes).
 
-## Next: survey data
+## Key-guess survey, 2026-10-22
 
-`tests/e2e/keyguess.py` (on `main`) shows a decision model a real screen with the Controls panel
-off, states a goal, and asks which key it would press. It then presses the key on a fresh game and
-checks the goal through the game state. That turns the picks above into measured guesses on real
-screens. Results go here when the first full run is in.
+`tests/e2e/keyguess.py` shows a decision model a real screen of the current modern scheme with
+the Controls panel off, states a goal, and asks which key it would press from six offered keys.
+It then presses that key on a fresh game and checks the goal through the game state. No hint text
+was visible in any capture. Two models, three trials each per scenario:
+[`keyguess-2026-10-22.jsonl`](keyguess-2026-10-22.jsonl),
+[`summary`](keyguess-2026-10-22-summary.md).
+
+| Goal | Keys that work today | `jev-latest` | `gpt-6-luna-decisions` | Reached |
+|---|---|---|---|---|
+| Open the inventory | `i` | `i` `i` `i` | `i` `i` `i` | 6/6 |
+| Open the world map | `m` | `m` `m` `m` | `M` `M` `M` | 3/6 |
+| Let one turn pass without moving | `x` | `.` `.` `.` | `Space` `5` `Space` | 0/6 |
+| Open the list of available actions | `Enter` | `m` `m` `m` | `?` `?` `?` | 0/6 |
+| From the Actions menu, open crafting | `6` then `Enter` | `6` `6` `6` | `6` `6` `6` | 0/6; all 6 took the right first step |
+| From the inventory list, wield a pipe | `h`, or `Enter` then `h` | `w` `u` `u` | `w` `Enter` `w` | 0/6 |
+| From the inventory list, open the item menu | `Enter` | `Enter` x3 | `Enter` x3 | 6/6 |
+
+What it says about the current modern defaults:
+
+- **Wait is the biggest miss.** Nobody guessed `x`. `jev-latest` chose `.` every time, which is
+  also the roguelike convention in the survey and the classic CBN key, and the first-pass decision
+  (`.` at 0.40). `.` is free in modern gameplay.
+- **The action hub is undiscoverable without a hint.** `Enter` was never guessed; `?` (keys and
+  help) and `m` (menu) were. The Controls panel's `RETURN menus` hint is doing all the work here.
+- **Wield misses on the letter.** `w` is the NetHack/DCSS wield key and movement owns it; `h` is
+  not guessed. `Enter` is a correct first step (it opens the item menu, which lists `h Wield`).
+- **Capital `M` for map** is a classic-scheme habit; in modern `M` is unbound, so it could be an
+  alias at no cost.
+- **Two-step menus read well.** Every model opened the Craft page with `6`; only the confirm step
+  was missing, which is a goal-wording limit of a one-key question, not a key problem.
+
+Limits: two models, seven screens, one key per answer. The harness offers a closed list, so a key
+outside the list cannot be guessed. Guesses are evidence about expectation, not a vote: a key is
+only worth changing when the expected key is free in that context (`.` is; `w` is not).
+
+## Next
+
+- Add screens for the remaining overloaded and unbound actions (doors, pick up, drop, read, sleep,
+  vehicle controls, fire mode) and a version of each screen with the Controls panel on, so the
+  survey measures what the hint panel buys.
+- Rerun the decision questions with these survey rows in the state, as scored evidence per key.
