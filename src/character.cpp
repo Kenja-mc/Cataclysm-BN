@@ -1115,8 +1115,7 @@ int min_pain( const Character &c )
         //40 to 50 is "distressing pain"
         int hurt = remaining_ratio( c.get_hp( bp ), c.get_hp_max( bp ) ) * HP_LOSS_PAIN;
         //if body part is broken and not splinted, increase pain by BROKEN_LIMB_PAIN
-        if( c.is_limb_broken( bp ) && !c.worn_with_flag( flag_SPLINT, bp ) )
-        {
+        if( c.is_limb_broken( bp ) && !c.worn_with_flag( flag_SPLINT, bp ) ) {
             hurt += BROKEN_LIMB_PAIN;
         }
         const bodypart_str_id bp_id = bp.id();
@@ -1211,7 +1210,7 @@ int Character::swim_speed() const
     }
     /** @EFFECT_SWIMMING increases swim speed */
     ret += ( 50 - get_skill_level( skill_swimming ) * 2 ) * ( ( encumb( body_part_leg_l ) + encumb(
-                body_part_leg_r ) ) / 10 );
+               body_part_leg_r ) ) / 10 );
     ret += ( 80 - get_skill_level( skill_swimming ) * 3 ) * ( encumb( body_part_torso ) / 10 );
     if( get_skill_level( skill_swimming ) < 10 ) {
         for( auto &i : worn ) {
@@ -3891,9 +3890,9 @@ ret_val<bool> Character::can_swap( const item &it ) const
 // pretty much the same as inventory::remove_randomly_by_volume but I didn't see a point in
 // adding it to the inventory class when it's only called here in Character::drop_invalid_inventory
 std::vector<detached_ptr<item>> remove_randomly_by_weight( location_inventory &,
-                             const units::mass & );
+        const units::mass & );
 std::vector<detached_ptr<item>> remove_randomly_by_weight( location_inventory &inv,
-                             const units::mass &weight )
+        const units::mass &weight )
 {
     std::vector<item *> contents;
     std::vector<detached_ptr<item>> result;
@@ -4066,8 +4065,7 @@ static auto get_enchantment_mut_visible(
 )
 {
     auto visitor = []<typename T>( const T & v ) -> bool {
-        if constexpr( std::is_same_v<T, const item *> )
-        {
+        if constexpr( std::is_same_v<T, const item *> ) {
             const item *it = v;
             return !it->has_flag( flag_id( "HIDDEN" ) );
         }
@@ -4194,7 +4192,7 @@ std::vector<Character::overlay_entry> Character::get_overlay_ids() const
     if( is_armed() ) {
         const overlay_entry ent {
             "wielded_" + weapon.typeId().str(),
-            &weapon
+                               &weapon
         };
         rval.push_back( ent );
     }
@@ -4526,10 +4524,9 @@ void Character::do_skill_rust( const time_duration &duration )
     // adjacent overmap tile (any z-level). Only evaluated if is_npc().
     const bool has_ally = [&]() -> bool {
         const tripoint_abs_omt self_omt = abs_omt_pos();
-        return !g->get_npcs_if( [this, &self_omt]( const npc & other )
-        {
+        return !g->get_npcs_if( [this, &self_omt]( const npc & other ) {
             return other.is_ally( *this ) &&
-            rl_dist( other.abs_omt_pos().xy(), self_omt.xy() ) <= 1;
+                        rl_dist( other.abs_omt_pos().xy(), self_omt.xy() ) <= 1;
         } ).empty();
     }();
 
@@ -6317,7 +6314,7 @@ std::map<bodypart_id, int> get_wind_resistance( const Character &chr,
 {
     std::map<bodypart_id, int> wind_res_per_bp = warmth::wind_resistance_from_clothing( clothing_map );
     std::map<bodypart_id, int> wind_res_per_bp_bonus = warmth::wind_resistance_from_clothing(
-                bonus_clothing_map );
+            bonus_clothing_map );
     for( auto &pair : wind_res_per_bp ) {
         const int exposed = std::max( 0, 100 - pair.second );
         const auto exposed_it = wind_res_per_bp_bonus.find( pair.first );
@@ -6772,7 +6769,7 @@ void update_bodytemp_bps( Character &chr, BodyTemperatureModifiers &body_mods )
         const auto adjusted_temp = submerged_bp
                                    ? units::temperature( body_mods.water_temperature )
                                    : units::temperature( BODYTEMP_NORM + ( body_mods.ambient_temperature - body_mods.ambient_norm ) /
-                                           5.0 );
+                                       5.0 );
 
         // Represents the fact that the body generates heat when it is cold.
         const auto scaled_temperature = logarithmic_range(
@@ -6788,8 +6785,8 @@ void update_bodytemp_bps( Character &chr, BodyTemperatureModifiers &body_mods )
                                   ( warmth_it != body_mods.warmth_per_bp.end() ? warmth_it->second : 0 ) ) );
         const auto warmth_bonus_it = body_mods.warmth_per_bp_bonus.find( bp );
         const auto clothing_warmth_adjusted_bonus = units::from_legacy_bodypart_temp_delta(
-                    static_cast<int>( homeostasis_adjustment *
-                                      ( warmth_bonus_it != body_mods.warmth_per_bp_bonus.end() ? warmth_bonus_it->second : 0 ) ) );
+                static_cast<int>( homeostasis_adjustment *
+                                  ( warmth_bonus_it != body_mods.warmth_per_bp_bonus.end() ? warmth_bonus_it->second : 0 ) ) );
 
         const auto wind_res_it = body_mods.wind_res_per_bp.find( bp );
         const int wind_res = ( wind_res_it != body_mods.wind_res_per_bp.end() ) ? wind_res_it->second : 0;
@@ -7937,7 +7934,7 @@ std::string Character::extended_description() const
         const nc_color state_col = limb_color( bp.id(), true, true, true );
         nc_color name_color = state_col;
         std::pair<std::string, nc_color> hp_bar = get_hp_bar( get_part_hp_cur( bp ), get_part_hp_max( bp ),
-                false );
+            false );
 
         ss += colorize( left_justify( bp_heading, longest ), name_color );
         ss += colorize( hp_bar.first, hp_bar.second );
@@ -8783,8 +8780,7 @@ detached_ptr<item> Character::dispose_item( detached_ptr<item> &&obj, const std:
         volume_carried() + obj->volume() <= volume_capacity(), '1',
         item_handling_cost( *obj ),
         [this, bucket, &obj] {
-            if( bucket && !obj->spill_contents( *this ) )
-            {
+            if( bucket && !obj->spill_contents( *this ) ) {
                 return std::move( obj );
             }
 
@@ -8806,8 +8802,7 @@ detached_ptr<item> Character::dispose_item( detached_ptr<item> &&obj, const std:
         bucket ? _( "Spill contents and wear item" ) : _( "Wear item" ),
         can_wear( *obj ).success(), '3', item_wear_cost( *obj ),
         [this, bucket, &obj] {
-            if( bucket && !obj->spill_contents( *this ) )
-            {
+            if( bucket && !obj->spill_contents( *this ) ) {
                 return std::move( obj );
             }
 
@@ -10657,6 +10652,12 @@ std::vector<detached_ptr<item>> Character::inv_dump_remove()
     for( auto it = worn.begin(); it != worn.end(); ) {
         detached_ptr<item> t;
         it = worn.erase( it, &t );
+        // A destroyed location leaves `t` empty; dropped clothing still sheds its worn
+        // mutations and morale contributions.
+        if( !t ) {
+            continue;
+        }
+        t->on_takeoff( *this );
         ret.push_back( std::move( t ) );
     }
     inv.dump_remove( ret );
@@ -10810,7 +10811,37 @@ void Character::rem_morale( const morale_type &type )
 
 void Character::clear_morale()
 {
-    morale->clear();
+    *morale = morale_from_current_state();
+}
+
+auto Character::morale_from_current_state() const -> player_morale // *NOPAD*
+{
+    player_morale result;
+
+    for( const item * const &wit : worn ) {
+        result.on_item_wear( *wit );
+    }
+
+    for( const trait_id &mut : get_mutations() ) {
+        result.on_mutation_gain( mut );
+    }
+
+    for( const auto &elem : *effects ) {
+        for( const std::pair<const bodypart_str_id, effect> &_effect_it : elem.second ) {
+            const effect &e = _effect_it.second;
+            if( !e.is_removed() ) {
+                result.on_effect_int_change( e.get_id(), e.get_intensity(), e.get_bp() );
+            }
+        }
+    }
+
+    result.on_stat_change( "kcal", get_stored_kcal() );
+    result.on_stat_change( "thirst", get_thirst() );
+    result.on_stat_change( "fatigue", get_fatigue() );
+    result.on_stat_change( "pain", get_pain() );
+    result.on_stat_change( "pkill", get_painkiller() );
+    result.on_stat_change( "perceived_pain", get_perceived_pain() );
+    return result;
 }
 
 bool Character::has_morale_to_read() const
@@ -10820,31 +10851,7 @@ bool Character::has_morale_to_read() const
 
 bool Character::check_and_recover_morale()
 {
-    player_morale test_morale;
-
-    for( const item * const &wit : worn ) {
-        test_morale.on_item_wear( *wit );
-    }
-
-    for( const trait_id &mut : get_mutations() ) {
-        test_morale.on_mutation_gain( mut );
-    }
-
-    for( const auto &elem : *effects ) {
-        for( const std::pair<const bodypart_str_id, effect> &_effect_it : elem.second ) {
-            const effect &e = _effect_it.second;
-            if( !e.is_removed() ) {
-                test_morale.on_effect_int_change( e.get_id(), e.get_intensity(), e.get_bp() );
-            }
-        }
-    }
-
-    test_morale.on_stat_change( "kcal", get_stored_kcal() );
-    test_morale.on_stat_change( "thirst", get_thirst() );
-    test_morale.on_stat_change( "fatigue", get_fatigue() );
-    test_morale.on_stat_change( "pain", get_pain() );
-    test_morale.on_stat_change( "pkill", get_painkiller() );
-    test_morale.on_stat_change( "perceived_pain", get_perceived_pain() );
+    const player_morale test_morale = morale_from_current_state();
 
     apply_persistent_morale();
 
@@ -11038,8 +11045,8 @@ std::string Character::is_snuggling() const
 
     if( in_vehicle ) {
         if( const std::optional<vpart_reference> vp = here.veh_at( bub_pos() ).part_with_feature(
-                    VPFLAG_CARGO,
-                    false ) ) {
+                VPFLAG_CARGO,
+                false ) ) {
             vehicle *const veh = &vp->vehicle();
             const int cargo = vp->part_index();
             if( !veh->get_items( cargo ).empty() ) {
@@ -11227,7 +11234,7 @@ auto Character::floor_item_warmth( const tripoint_bub_ms &pos ) -> units::temper
     map &here = get_map();
     if( !!here.veh_at( pos ) ) {
         if( const std::optional<vpart_reference> vp = here.veh_at( pos ).part_with_feature( VPFLAG_CARGO,
-                false ) ) {
+            false ) ) {
             vehicle *const veh = &vp->vehicle();
             const int cargo = vp->part_index();
             vehicle_stack vehicle_items = veh->get_items( cargo );
@@ -11421,7 +11428,7 @@ bool Character::has_charges( const itype_id &it, int quantity,
 }
 
 std::vector<detached_ptr<item>> Character::use_amount( itype_id it, int quantity,
-                             const std::function<bool( const item & )> &filter )
+        const std::function<bool( const item & )> &filter )
 {
     std::vector<detached_ptr<item>> ret;
 
@@ -11447,7 +11454,7 @@ bool Character::use_charges_if_avail( const itype_id &it, int quantity )
 }
 
 std::vector<detached_ptr<item>> Character::use_charges( const itype_id &what, int qty,
-                             const std::function<bool( const item & )> &filter )
+        const std::function<bool( const item & )> &filter )
 {
     std::vector<detached_ptr<item>> res;
     if( qty <= 0 ) {
@@ -12115,7 +12122,7 @@ std::vector<Creature *> Character::get_visible_creatures( const int range ) cons
 {
     return g->get_creatures_if( [this, range]( const Creature & critter ) -> bool {
         return this != &critter && bub_pos() != critter.bub_pos() && // TODO: get rid of fake npcs (pos() check)
-        rl_dist( bub_pos(), critter.bub_pos() ) <= range && sees( critter );
+                rl_dist( bub_pos(), critter.bub_pos() ) <= range && sees( critter );
     } );
 }
 
@@ -12125,8 +12132,8 @@ std::vector<Creature *> Character::get_hostile_creatures( int range ) const
         // Fixes circular distance range for ranged attacks
         float dist_to_creature = std::round( rl_dist_exact( abs_pos(), critter.abs_pos() ) );
         return this != &critter && abs_pos() != critter.abs_pos() && // TODO: get rid of fake npcs (pos() check)
-        dist_to_creature <= range && critter.attitude_to( *this ) == Attitude::A_HOSTILE
-        && sees( critter );
+                dist_to_creature <= range && critter.attitude_to( *this ) == Attitude::A_HOSTILE
+                && sees( critter );
     } );
 }
 

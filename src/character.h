@@ -1860,13 +1860,13 @@ class Character : public Creature, public location_visitable<Character>
         // has_amount works ONLY for quantity.
         // has_charges works ONLY for charges.
         std::vector<detached_ptr<item>> use_amount( itype_id it, int quantity,
-                                     const std::function<bool( const item & )> &filter = return_true<item> );
+                const std::function<bool( const item & )> &filter = return_true<item> );
         // Uses up charges
         bool use_charges_if_avail( const itype_id &it, int quantity );
 
         // Uses up charges
         std::vector<detached_ptr<item>> use_charges( const itype_id &what, int qty,
-                                     const std::function<bool( const item & )> &filter = return_true<item> );
+                const std::function<bool( const item & )> &filter = return_true<item> );
 
         bool has_fire( int quantity ) const;
         void use_fire( int quantity );
@@ -2281,6 +2281,9 @@ class Character : public Creature, public location_visitable<Character>
         int get_morale( const morale_type &type ) const;
         void rem_morale( const morale_type &type );
         void clear_morale();
+        /// Permanent morale derived from the character's current worn items, mutations,
+        /// effects and stats, without any temporary points.
+        auto morale_from_current_state() const -> player_morale; // *NOPAD*
         bool has_morale_to_read() const;
         bool has_morale_to_craft() const;
         const inventory &crafting_inventory( bool clear_path );
@@ -2628,14 +2631,14 @@ class Character : public Creature, public location_visitable<Character>
                                int batch, inventory &map_inv, bool can_cancel = false,
                                const std::function<bool( const item & )> &filter = return_true<item>, bool player_inv = true );
         std::vector<detached_ptr<item>> consume_items( const comp_selection<item_comp> &is, int batch,
-                                     const std::function<bool( const item & )> &filter = return_true<item> );
+                const std::function<bool( const item & )> &filter = return_true<item> );
         std::vector<detached_ptr<item>> consume_items( map &m, const comp_selection<item_comp> &is,
-                                     int batch,
-                                     const tripoint_bub_ms &origin, int radius,
-                                     const std::function<bool( const item & )> &filter = return_true<item> );
+                int batch,
+                const tripoint_bub_ms &origin, int radius,
+                const std::function<bool( const item & )> &filter = return_true<item> );
         std::vector<detached_ptr<item>> consume_items( const std::vector<item_comp> &components,
-                                     int batch = 1,
-                                     const std::function<bool( const item & )> &filter = return_true<item> );
+                int batch = 1,
+                const std::function<bool( const item & )> &filter = return_true<item> );
         /** Consume tools for the next multiplier * 5% progress of the craft */
         bool craft_consume_tools( item &craft, int mulitplier, bool start_craft );
         void consume_tools( const comp_selection<tool_comp> &tool, int batch );
