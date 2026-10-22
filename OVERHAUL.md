@@ -703,6 +703,9 @@ and never ports code automatically. Close the tracker to stop reporting.
 
 - [Agentic UI/UX QA in CI](https://github.com/Kenja-mc/Cataclysm-BN/issues/1): review real
   terminal and tiles captures with human triage; deterministic end-to-end checks remain the gate.
+- [Build speed](https://github.com/Kenja-mc/Cataclysm-BN/issues/17): enable the ccache and mold
+  wiring the presets already carry, then evaluate a game PCH, a faster test build type and one
+  shared `_deps` checkout. Measured options and target numbers are in the issue.
 - [Simple seamless co-op](https://github.com/Kenja-mc/Cataclysm-BN/issues/2): evaluate the BN
   co-op port and related projects before choosing an implementation. No multiplayer behavior is
   enabled by this ticket.
