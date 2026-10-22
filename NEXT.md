@@ -20,8 +20,9 @@
   rows with item thumbnails in list menus (SotS: The Pit style); #15 covers the README download
   badges that still point at upstream releases. #16's duration-based shards, readiness polling and
   local parallel runner are merged. Keep the issue open: its remaining phases are the slow-test
-  key-delay audit and prepared save fixtures, and the observed CI shard spread is still 25.9%,
-  above its 10% target.
+  key-delay audit and prepared save fixtures. Shard timings now come from CI
+  ([run 39740016172](https://github.com/Kenja-mc/Cataclysm-BN/actions/runs/39740016172): 8.3%
+  spread, inside the 10% target).
 
   - **E2E runtime verified**: the final local parallel run passed 141/141 in about 656 seconds.
     [CI run 39688342172](https://github.com/Kenja-mc/Cataclysm-BN/actions/runs/39688342172)
