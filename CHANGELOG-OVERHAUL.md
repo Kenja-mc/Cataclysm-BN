@@ -31,6 +31,10 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Maintenance
 
+- A key-guess survey (`tests/e2e/keyguess.py`) shows a decision model a real screen with no
+  key hints, asks which key reaches a goal, and checks the answer in a fresh game.
+- The safe-mode repeat-hint check waits for the first full warning before blocking again: a
+  zombie placed from Lua is noticed only after a turn, which made the check flaky on CI.
 - The end-to-end suite is split into feature modules; `run.py` is only the runner. It runs in
   parallel by default, has a two-minute `--tier=smoke`, `--list` and `--help`, and rejects unknown
   options. Tests with the same options share one game instead of starting their own, which drops
