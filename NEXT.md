@@ -101,7 +101,8 @@
   first craft; this isolates the crafting regression, not a repair of the native vehicle lifecycle.
 - **CI/CD overhaul series** — issue #12 tracks #6 to #11: decision-model playtesting, the fork suite in
   CI, a prepared build container, known failures, a performance gate and the release path. Issue #13
-  lists the end-to-end harness traps to write into the test-quality skill.
+  holds thirteen end-to-end harness traps with their symptoms and fixes; the remaining work is to
+  write them into the Gates section of `.agents/skills/test-quality/SKILL.md`.
 - **Audit follow-ups** — `sdl_font.cpp` now scales oversized
   glyphs rather than cropping, which needs one manual visual check for configs still holding
   `FONT_WIDTH=8`/`FONT_HEIGHT=16`; the Controls strip can be squeezed off an 80x25 sidebar when the
