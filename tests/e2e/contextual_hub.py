@@ -1,29 +1,32 @@
 from contextlib import contextmanager
 
 from aim_reticle import action_clock
-from helpers import HELPERS, arena, bub_pos, count_at, count_carried, empty_inventory, settle, spawn, start_new_game
+from fixtures import shared_game
+from helpers import HELPERS, arena, bub_pos, choose_menu_entry, count_at, count_carried, empty_inventory, settle, spawn
 from safe_click import see_everything
-from tmux_game import Game
+
+
+def contextual_setup(game):
+    # Effects, fields and view state survive from the previous test on the shared profile game.
+    assert game.lua("gapi.get_avatar():clear_effects() "
+                    "for dx=-4,4 do for dy=-4,4 do local p=here(dx,dy) M:remove_trap_at(p) "
+                    "for _,fid in ipairs(M:get_field_ids_at(p)) do M:remove_field_at(p,fid) end "
+                    "end end out('ok')") == ["ok"]
+    empty_inventory(game)
+    arena(game)
+    see_everything(game, True)
+    settle(game)
+    assert game.lua("local a=gapi.get_avatar() a:set_str_bonus(10) out(a:get_str()>=4)") == ["true"]
 
 
 @contextmanager
 def contextual_game(name, **options):
-    game = Game(name=name, options={
+    with shared_game(name, define=HELPERS, setup=contextual_setup, options={
         "CONTROL_SCHEME": "modern", "CONTEXTUAL_INTERACT": "true",
         "MOUSE_TILE_SELECTION": "true", "MOUSE_MOVE": "false", "SAFEMODE": "false",
         "AUTOSELECT_SINGLE_VALID_TARGET": "false", **options,
-    })
-    try:
-        start_new_game(game)
-        game.define_lua(HELPERS)
-        empty_inventory(game)
-        arena(game)
-        see_everything(game, True)
-        settle(game)
-        assert game.lua("local a=gapi.get_avatar() a:set_str_bonus(10) out(a:get_str()>=4)") == ["true"]
+    }) as game:
         yield game
-    finally:
-        game.close()
 
 
 def select_tile(game, dx, dy):
@@ -200,6 +203,20 @@ def test_contextual_direction_rejects_unseen_tiles(_game):
         assert action_clock(game) == clock, "an unseen direction must not dispatch an action"
 
 
+def test_contextual_interact_multiple_doors(g):
+    arena(g)
+    g.lua("M:set_ter_at(here(1,0), TerId.new('t_door_c'):int_id()) "
+          "M:set_ter_at(here(-1,0), TerId.new('t_door_c'):int_id()) out('ok')")
+    settle(g)
+    g.keys("Escape", delay=0.4)
+    if "MAIN MENU" in g.screen():
+        g.keys("Escape", delay=0.4)
+    g.keys("Space", delay=0.8)
+    g.wait_for("Interact with which tile?")
+    g.keys("d", delay=0.8)
+    choose_menu_entry(g, "open the")
+    assert g.lua("out(M:get_ter_at(here(1,0)):str_id():str(),"
+                 "M:get_ter_at(here(-1,0)):str_id():str())") == ["t_door_o,t_door_c"]
 TESTS = [
     test_contextual_selected_door_over_nearby,
     test_contextual_menu_cancel_is_free,
@@ -210,4 +227,5 @@ TESTS = [
     test_contextual_disabled_and_classic_keep_legacy_examine,
     test_contextual_selected_pickup_uses_action_menu,
     test_contextual_direction_rejects_unseen_tiles,
+    test_contextual_interact_multiple_doors,
 ]

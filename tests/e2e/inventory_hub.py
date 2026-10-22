@@ -1,25 +1,22 @@
 from contextlib import contextmanager
-import os
 
 from aim_reticle import action_clock
+from fixtures import shared_game
 from helpers import HELPERS, arena, empty_inventory, give
 from inventory_mouse import display_name, row_of, wielded
-from tmux_game import Game, start_new_game
 
 
 @contextmanager
 def inventory_game(name, scheme="modern"):
-    game = Game(name=f"bn-e2e-inventory-{name}-{os.getpid()}",
-                options={"CONTROL_SCHEME": scheme, "SAFEMODE": "false",
-                         "HIGHLIGHT_UNREAD_RECIPES": "false"})
-    try:
-        start_new_game(game)
-        game.define_lua(HELPERS)
-        empty_inventory(game)
-        arena(game)
+    with shared_game(f"bn-e2e-inventory-{name}", define=HELPERS, setup=inventory_setup,
+                     options={"CONTROL_SCHEME": scheme, "SAFEMODE": "false",
+                              "HIGHLIGHT_UNREAD_RECIPES": "false"}) as game:
         yield game
-    finally:
-        game.close()
+
+
+def inventory_setup(game):
+    empty_inventory(game)
+    arena(game)
 
 
 def browse_craft_and_cancel(game):

@@ -1,9 +1,9 @@
 """Dispose choices remain usable with holstered weapons; empty Modern filters explain themselves."""
-import os
 import re
+from contextlib import contextmanager
 
+from fixtures import shared_game
 from helpers import HELPERS, action_menu, arena, count_at, count_carried
-from tmux_game import Game, start_new_game
 
 
 def _fixture(game):
@@ -60,40 +60,31 @@ def _dispose_with_shown_hotkey(game, choice):
     assert count_at(game, 0, 0, "bat") == int(not stored), game.screen()
 
 
+@contextmanager
+def dispose_game(scheme):
+    with shared_game(f"bn-e2e-dispose-{scheme}", define=HELPERS, setup=_fixture,
+                     options={"CONTROL_SCHEME": scheme, "SAFEMODE": "false"}) as game:
+        yield game
+
+
 def test_modern_dispose_holstered_weapon_hotkeys(_g):
-    game = Game(name=f"bn-e2e-dispose-modern-{os.getpid()}",
-                options={"CONTROL_SCHEME": "modern", "SAFEMODE": "false"})
-    try:
-        start_new_game(game)
-        game.define_lua(HELPERS)
+    with dispose_game("modern") as game:
         for choice in ("Store in inventory", "Drop item"):
             _fixture(game)
             _open_dispose(game, "modern")
             _dispose_with_shown_hotkey(game, choice)
-    finally:
-        game.close()
 
 
 def test_classic_dispose_holstered_weapon_hotkeys(_g):
-    game = Game(name=f"bn-e2e-dispose-classic-{os.getpid()}",
-                options={"CONTROL_SCHEME": "classic", "SAFEMODE": "false"})
-    try:
-        start_new_game(game)
-        game.define_lua(HELPERS)
+    with dispose_game("classic") as game:
         for choice in ("Store in inventory", "Drop item"):
             _fixture(game)
             _open_dispose(game, "classic")
             _dispose_with_shown_hotkey(game, choice)
-    finally:
-        game.close()
 
 
 def test_modern_dispose_empty_filter_explains_and_recovers(_g):
-    game = Game(name=f"bn-e2e-dispose-filter-{os.getpid()}",
-                options={"CONTROL_SCHEME": "modern", "SAFEMODE": "false"})
-    try:
-        start_new_game(game)
-        game.define_lua(HELPERS)
+    with dispose_game("modern") as game:
         _fixture(game)
         _open_dispose(game, "modern")
         game.keys("/", delay=0.6)
@@ -110,8 +101,6 @@ def test_modern_dispose_empty_filter_explains_and_recovers(_g):
         assert "Store in inventory" in screen, screen
         assert "Drop item" in screen, screen
         _dispose_with_shown_hotkey(game, "Drop item")
-    finally:
-        game.close()
 
 
 TESTS = [test_modern_dispose_holstered_weapon_hotkeys,

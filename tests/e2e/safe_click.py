@@ -1,18 +1,8 @@
 """Safe click-to-walk: far clicks need a second click, and a hostile in view limits a click to one step."""
 from contextlib import contextmanager
-import time
 
-from helpers import HELPERS, arena, bub_pos, settle, start_new_game
-from tmux_game import Game
-
-
-def wait_until(cond, timeout=15):
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        if cond():
-            return True
-        time.sleep(0.3)
-    return False
+from fixtures import shared_game
+from helpers import HELPERS, arena, bub_pos, settle, wait_until
 
 
 def see_everything(g, on):
@@ -20,23 +10,22 @@ def see_everything(g, on):
     assert g.lua(f"gapi.get_avatar():{verb}(MutationBranchId.new('DEBUG_NIGHTVISION')) out('ok')") == ["ok"]
 
 
+def click_walk_setup(game):
+    arena(game)
+    see_everything(game, True)
+    assert game.lua("for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end "
+                    "for _,n in ipairs(gapi.get_all_npcs()) do park(n) end out('ok')") == ["ok"]
+    settle(game)
+
+
 @contextmanager
 def click_walk_game(name, **options):
     """Keep legacy travel opt-in and isolated."""
-    game = Game(name=name, options={"CONTROL_SCHEME": "modern", "SAFEMODE": "false",
-                                   "MOUSE_TILE_SELECTION": "true", "MOUSE_MOVE": "true",
-                                   "SAFE_CLICK_WALK": "true", **options})
-    try:
-        start_new_game(game)
-        game.define_lua(HELPERS)
-        arena(game)
-        see_everything(game, True)
-        assert game.lua("for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end "
-                        "out('ok')") == ["ok"]
-        settle(game)
+    with shared_game(name, define=HELPERS, setup=click_walk_setup,
+                     options={"CONTROL_SCHEME": "modern", "SAFEMODE": "false",
+                              "MOUSE_TILE_SELECTION": "true", "MOUSE_MOVE": "true",
+                              "SAFE_CLICK_WALK": "true", **options}) as game:
         yield game
-    finally:
-        game.close()
 
 
 def test_safe_click_preview(_g):

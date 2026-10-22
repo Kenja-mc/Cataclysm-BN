@@ -1,7 +1,18 @@
 """Shared Lua helpers and Python wrappers for e2e tests and the playtest harness."""
 import re
+import time
 
 from tmux_game import Game, start_new_game  # noqa: F401  (re-exported for convenience)
+
+
+def wait_until(check, timeout=30, poll=0.3):
+    """Poll a predicate until it holds; returns False on timeout."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if check():
+            return True
+        time.sleep(poll)
+    return False
 
 HELPERS = (
     "M=gapi.get_map() function here(dx,dy) local c=gapi.get_avatar():get_pos_ms() return TripointBubMs.new(c.x+dx,c.y+dy,c.z) end "

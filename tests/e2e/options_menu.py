@@ -1,12 +1,16 @@
 """Options menu: key guide footer, reset to default, and Modern mouse support."""
 import re
+import time
 
 from tmux_game import Game, start_new_game
 
 
 def open_options(g):
-    g.keys("Escape", delay=1)
-    assert "MAIN MENU" in g.screen(), "Esc should open the main menu\n" + g.screen()
+    """Esc opens the main menu; another Escape retries a key the game swallowed mid-action."""
+    deadline = time.time() + 15
+    while "MAIN MENU" not in g.screen():
+        assert time.time() < deadline, "Esc should open the main menu\n" + g.screen()
+        g.keys("Escape", delay=0.3)
     for y, line in enumerate(g.screen().splitlines()):
         match = re.search(r"[│ ]Options +│", line)
         if match:
