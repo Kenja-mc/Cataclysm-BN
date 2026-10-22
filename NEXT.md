@@ -32,11 +32,17 @@
     option in-game or fails, because the pool is keyed on the options it was created with. Tests
     that assert on what the player saw need `DEBUG_NIGHTVISION` and no rolled monsters: the start
     shelter can be very dark.
+  - **Nightly-only failures** — the 2026-10-22 schedule was the first run of the live playtest
+    legs and it found four bugs that push runs cannot see. `save_and_quit` retried nothing, so a
+    menu the model left open swallowed the single Escape; it now repeats Escape until the row is
+    on screen. The shard job failed on a tumbled watch (the sidebar then shows an approximate
+    time, so the safe-mode test now asserts the avatar's position) and on an out-of-bounds sound
+    assertion from an unbounded parking ring, whose modal popup then failed four later tests.
+    CI run 39803692613 is green. Treat a red schedule as evidence, not noise.
   - **CI workflow changes merged**: the cross-platform matrix runs weekly and on dispatch.
     Pushes check one dry playtest leg; filtered dry dispatches retain their requested surface.
-    The end-to-end cap is 90 minutes because a cold build alone took 37 minutes. The final
-    modern keyboard-and-mouse tiles dispatch passed both dry scenarios. Live model legs and
-    nightly triage remain unverified without model secrets.
+    The end-to-end cap is 90 minutes because a cold build alone took 37 minutes. Live legs run on
+    free models inside the nightly schedule, and both the legs and the triage job now pass.
 - **Next upstream merge** — the 2026-10-20 merge is `c682cb343a` (34 commits, base
   `5196022810`). It resolved five conflicts: `tankammo.json` and `generic/casing.json` keep
   upstream's `stackable`/`damage_states` and the fork's `looks_like`; `rifle ammo.json` keeps the
@@ -147,9 +153,10 @@ a different one, so both the identity and the push credential are pinned per rep
   `gh-fork` blocks the API path; a fresh clone needs the first two again. Fetching and merging
   upstream are unaffected.
 - **Model secrets** — `XPL_SK_AGENT` and `OC_SK_AGENT` are still not repository secrets, verified
-  with the admin token, so the agentic playtest legs stay on the dry path until they are added.
-  Experiential Labs also needs a saved card with one settled charge of $1 or more, and its credit
-  overflow switch left off: without both, a call past the free allowance bills credits.
+  with the admin token. The nightly schedule runs its live legs on `openrouter/free` models at
+  $0.0000; the paid keys only widen the model pool. Experiential Labs also needs a saved card with
+  one settled charge of $1 or more, and its credit overflow switch left off: without both, a call
+  past the free allowance bills credits.
 
 ## Install the fork and give feedback
 
