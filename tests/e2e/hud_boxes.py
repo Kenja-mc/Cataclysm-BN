@@ -88,10 +88,11 @@ def test_corner_bars_keep_sidebar_panels(g):
             "\n".join(lines[weather - 1:weather + 2])
         assert lines[weather + 1].startswith("╰"), "the weather bar is one row:\n" + \
             "\n".join(lines[weather - 1:weather + 2])
-        combat = next((i for i, l in enumerate(lines) if "fists" in l and "Walking" in l), None)
+        # The starting loadout varies (fists or a weapon), so the bar is found by its frame and stance.
+        combat = next((i for i, l in enumerate(lines) if l.startswith("│") and "Walking" in l), None)
         assert combat is not None, "the status bar is missing:\n" + s
         row = lines[combat]
-        # The starting loadout varies, so the row is checked for its shape: weapon, style, stance.
+        # The row is checked for its shape: weapon, style and stance, separated by bars.
         assert "Walking" in row and row.count("│") >= 2, \
             "one status row must hold weapon, style and stance:\n" + row
         assert lines[combat - 1].startswith("╭") and lines[combat + 1].startswith("╰"), \
