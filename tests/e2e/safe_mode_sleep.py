@@ -50,15 +50,21 @@ def test_safe_mode_repeats_hint_while_movement_is_blocked(_g):
         give(game, "diving_watch")
         assert game.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(3,0)); "
                         "out(gapi.get_monster_at(here(3,0)) ~= nil)") == ["true"]
+        # A zombie placed from Lua is only noticed when a turn passes, so the first key may still
+        # run; keep pausing until the full warning is logged, then block one more action.
+        for _ in range(4):
+            if safe_mode_messages(game)[0]:
+                break
+            game.keys("x", delay=1.0)
+        warning, repeat_hint = safe_mode_messages(game)
+        assert warning and not repeat_hint, "the first blocked action must give the full warning:\n" \
+            + game.screen()
         blocked_at = minutes_of_day(game)
         assert blocked_at is not None, game.screen()
-        # Two blocked actions: the first warns, the second must say something again instead of
-        # looking like a freeze.
-        game.keys("x", delay=1.5)
         game.keys("w", delay=1.5)
         assert minutes_of_day(game) == blocked_at, "safe mode must keep blocking the move"
-        # The hint is drawn while the second blocked key is processed, which lands later on a
-        # loaded runner than the fixed key delay allows for.
+        # The hint is drawn while the blocked key is processed, which lands later on a loaded
+        # runner than the fixed key delay allows for.
         try:
             game.wait_for("Safe mode:", timeout=20)
         except AssertionError:
