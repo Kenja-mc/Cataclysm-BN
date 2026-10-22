@@ -20,20 +20,18 @@
   rows with item thumbnails in list menus (SotS: The Pit style); #15 covers the README download
   badges that still point at upstream releases. #16's duration-based shards, readiness polling and
   local parallel runner are merged. Keep the issue open: its remaining phases are the slow-test
-  key-delay audit and prepared save fixtures. Shard timings now come from CI
-  ([run 39740016172](https://github.com/Kenja-mc/Cataclysm-BN/actions/runs/39740016172): 8.3%
-  spread, inside the 10% target).
+  key-delay audit and prepared save fixtures.
 
-  - **E2E runtime verified**: the final local parallel run passed 141/141 in about 656 seconds.
-    [CI run 39688342172](https://github.com/Kenja-mc/Cataclysm-BN/actions/runs/39688342172)
-    passed all 141 tests in four jobs, with the slowest job taking 16m40s including its build.
-    Total CI test time was 2860.9 seconds; the two mouse tests took 289.8 seconds combined.
-    Reloading waits for each menu and loaded round. Its fixture clears earlier wounds and morale;
-    the sleep fixture has storage so its watch cannot fall out of a full starting outfit.
-    Data checking reported no errors. All five upstream unit shards exited 0 using software
-    Vulkan; one test failed as expected and translation checks skipped missing MO files.
-  - **DeepSeek adversarial review completed**: false-green runner arguments, nested tmux/keep
-    failures and vacuous fixture checks are fixed. Clicks retain the original one-second window.
+  - **Shard timings and the gate** — `tests/e2e/durations.json` holds CI-measured times
+    ([run 39740016172](https://github.com/Kenja-mc/Cataclysm-BN/actions/runs/39740016172): 723 /
+    760 / 749 / 702 s, 8.3% spread, inside the 10% target). After changing the timings or
+    `shard_of()`, refresh them from the `e2e-durations-shard-*` artifacts and run the full suite
+    locally: a new split changes which tests share a game, and two order-dependent failures
+    appeared only that way.
+  - **Pooled games and vision** — `fixtures.retire` drops a shared game when a test changes an
+    option in-game or fails, because the pool is keyed on the options it was created with. Tests
+    that assert on what the player saw need `DEBUG_NIGHTVISION` and no rolled monsters: the start
+    shelter can be very dark.
   - **CI workflow changes merged**: the cross-platform matrix runs weekly and on dispatch.
     Pushes check one dry playtest leg; filtered dry dispatches retain their requested surface.
     The end-to-end cap is 90 minutes because a cold build alone took 37 minutes. The final
@@ -71,7 +69,7 @@
   so no astyle pass has reformatted the tree.
 - **Local tiles binary is stale**: it reports `60e711cc78` and rejects current data. Rebuild it
   from a clean source tree before local tiles verification; the tiles checks above used CI's
-  freshly built binaries. The uncommitted HUD experiment remains untouched.
+  freshly built binaries.
 - **Release workflows stay disabled** — Nightly Release, Experimental Release and Manual release are
   off; `gh workflow enable "<name>"` re-enables them. The nightlies need an initial `YYYY-MM-DD` tag
   and an `experimental` release before they can pass, and `docs.yml` chains off Experimental Release.
@@ -123,6 +121,7 @@
 - **Resolve the harvest inventory limitation** — both GitHub-backed repos lack `issues/`;
   the local helper fails with ENOENT, so the local draft count is unavailable, not zero.
   No new harvest drafts were created; existing policy work remains in #3 and command-post#102.
+  New harness lessons went to the open #13 tracker instead, which owns the test-quality traps.
   See the [maintained harvest summary](../ai-stack/command-post/logs/harvest/summary.md).
 
 ## Accounts and credentials
