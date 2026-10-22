@@ -6,6 +6,14 @@
   grid feedback, the remote-control and worn-morale fixes and the compact corner bars option are
   merged with their docs. #17 records measured build-speed options (ccache and mold are wired in
   the presets but off in the built trees).
+- **Control-scheme research is parked on `research/controls`** — the unbound, overloaded and
+  duplicated binding lists, the decision-model picks and the first key-guess survey (42 trials).
+  No binding file changed. The survey's clearest signals: nobody guessed `x` for wait (`.` was the
+  pick), nobody guessed `Enter` for the action list, and nobody guessed `h` for wield. Extend the
+  survey with `tests/e2e/keyguess.py` before shipping any default.
+- **Texture sweep** — `docs/fork/texture-sweep.md` (data on `research/textures`). Two empty-sprite
+  bugs are fixed. #19 tracks the default tileset: its MShock-family provenance is unresolved and
+  locked doors draw exactly like closed ones. RetroDays and its three derivatives are CC BY-SA 4.0.
 - **Future tickets stay open** — #1 (agentic UI/UX QA in CI) and #2 (two-player co-op) are designed
   future work, neither implemented nor closable. #3 is the upstream feature-watch tracker; its
   checkpoint matches `upstream/main` and every candidate is still unchecked. #14 asks for number-key
