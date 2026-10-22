@@ -452,6 +452,48 @@ Zombies still rise, but weakened according to how mangled the corpse was, helple
 after rising, and only a limited number of times. It's a middle ground between upstream revival and
 switching it off.
 
+**Stocked River Barges** is a fork mod that new worlds enable by default; untick it under World
+Mods to keep upstream's barges. Upstream thinned river barges ("cargo ships") to about one crate
+per 52 tiles. The mod restores full holds with the same crate types, stocks the crew quarters'
+trash cans, counters and sinks, and adds a few of the sealed Hermex containers the deck graffiti
+warns about (military, rare or science loot). Sunken cargo ships were already full and are
+unchanged.
+
+## World presets
+
+World creation offers ready-made settings for players who do not want to tune each world option.
+On the World Options tab, or on the Current world page of the in-game options, press **p**
+(modern scheme) and pick a preset. A preset first resets the page to the defaults and then sets a
+few existing options; every value stays visible and editable afterwards:
+
+- **Relaxed**: more loot and usable vehicles, fewer and weaker monsters that evolve more slowly,
+  fewer NPCs.
+- **Scarce**: 0.8x loot, 0.65x guns and ammo, fewer and more damaged vehicles. These are the
+  values players on the r/cataclysmbn difficulty thread recommend.
+- **Hardcore**: half the loot, more and tougher monsters that evolve faster, more NPCs, rare and
+  wrecked vehicles, wandering hordes, crowd crush and a start surrounded by zombies (Black Road).
+- **Default (reset page)**: the plain defaults.
+
+Experience speed and skill rust are global Debug options, not world options, so presets do not
+change them. Mods can add presets with the `WORLD_PRESET` JSON type
+(`docs/en/mod/json/reference/options.md`). The classic scheme has no preset key.
+
+## Plumbing (fluid grids)
+
+Upstream's fluid grid connects tanks, sinks, showers and pumps inside one overmap tile. The fork
+keeps its rules and makes failures explain themselves:
+
+- The plumbing kit says why a connection cannot be made (another overmap, already connected, not
+  connected) and only uses up parts and tools when the connection succeeds.
+- Its report lists each stored liquid with the grid's total and capacity.
+- Pouring or filling more than the grid holds says how much went in; the rest stays in your
+  container.
+- A tank that cannot be disconnected says whether the rest of the grid lacks room or cannot hold
+  that liquid, and what to do.
+- Mixing clean and tainted water in a single-tank grid explains that one tank holds only one kind.
+- Disconnecting a tank no longer deletes items lying on its tile, and splitting a grid keeps every
+  milliliter.
+
 ## Stack modifiers (for modders)
 
 Variants that differ only by a uniform tweak do not need their own item type. Define the tweak
@@ -577,6 +619,11 @@ item type variants instead of new item types:
 - Driving a vehicle that blocks the view painted the tiles it hid behind it black in the terminal;
   the memory of the ground stays where the tiles view already kept it
   ([upstream #10452](https://github.com/cataclysmbn/Cataclysm-BN/issues/10452)).
+- Opening vehicle controls while remote-controlling a vehicle read part `-1` of its part list and
+  could crash; it now opens the remote vehicle's controls
+  ([upstream #5413](https://github.com/cataclysmbn/Cataclysm-BN/issues/5413)).
+- Dropping or losing worn clothes all at once (death, a dropped inventory) kept the Stylish morale
+  bonus, and the morale self-check later reported `Morale "Stylish" is inconsistent`.
 
 ## Playtesting
 
@@ -603,6 +650,18 @@ A decision model can play a scenario by itself:
 python3 tests/e2e/agent_playtest.py --scenario fork_features --models text --turns 30 \
         --report-dir /tmp/playtest-fork
 ```
+
+With an OpenRouter key, the free OpenRouter models play instead; the key is read from the
+environment or from a `KEY=VALUE` file and is never printed:
+
+```sh
+OPENROUTER_ENV_FILE=~/.config/free-pool/env python3 tests/e2e/agent_playtest.py \
+        --scenario fork_features --mode curses --models openrouter-text --turns 30 \
+        --report-dir /tmp/playtest-fork
+```
+
+The nightly GitHub Action uses the `OPENROUTER_API_KEY` repository secret for its live legs
+(`openrouter-text` in the terminal build, `openrouter-vision` with screenshots in tiles).
 
 It reads the state each turn, picks one action from the keys the current screen accepts, sends it and
 writes one transcript line per turn plus a report naming any defect it found. `--dry-run` needs no
@@ -670,34 +729,35 @@ not include the first-sighting safety check. Arrow timings include fresh-turn ro
 ## End-to-end tests
 
 `tests/e2e/run.py` starts the terminal build inside tmux, creates a character and plays through the
-new controls, quick stack and sort pile by sending real key presses and reading the screen. It
-needs `tmux` and a built `cataclysm-bn` binary. The harness looks in
-`out/build/linux-curses/src`, then the repo root, then the legacy `build/src`:
+fork features by sending real key presses and reading the screen. It needs `tmux` and a built
+`cataclysm-bn` binary. The harness looks in `out/build/linux-curses/src`, then the repo root, then
+the legacy `build/src`.
+
+Each feature has its own module under `tests/e2e/` with a `TESTS` list; `run.py` is only the
+runner and registry. A test that takes the shared game `g` runs on the runner's main game. A test
+that needs other options borrows a game for its option profile from `fixtures.py`, which keeps one
+game per profile for the whole process, because each new game costs about 12 seconds.
 
 ```sh
-python3 tests/e2e/run.py
-```
-
-For a faster local run, use four isolated game processes:
-
-```sh
-python3 tests/e2e/run.py --parallel=4 --durations=/tmp/e2e-durations.json
+python3 tests/e2e/run.py                 # whole suite, parallel (up to 4 processes)
+python3 tests/e2e/run.py --tier=smoke    # one test per module, about 2 minutes
+python3 tests/e2e/run.py --list          # every registered test, its module and recorded time
+python3 tests/e2e/run.py wasd_ jewelry   # only tests whose name contains a substring
+python3 tests/e2e/run.py --serial --keep # one process; leave the main game open afterwards
 ```
 
 Do not run unrelated heavy work alongside the suite. Each process uses a private tmux server,
-world and user directory. `--shard=0/4` runs just the first of four shards; tests are assigned
+world and user directory. `--shard=I/N` runs one of N shards (CI uses four); tests are assigned
 longest first to the lightest shard using `tests/e2e/durations.json`, then run in suite order.
-Use the `--parallel=N`, `--shard=I/N` and `--durations=PATH` forms with `=`.
-The parallel count must be positive; `--parallel` and `--shard` cannot be combined.
-Test-name filters that match nothing are errors; valid empty shards skip game startup.
-`--keep` preserves each nonempty shard's main game and prints its private tmux attachment command
-and user directory.
+Use the `--parallel=N`, `--shard=I/N`, `--durations=PATH` and `--tier=` forms with `=`; unknown
+options are errors. Test-name filters that match nothing are errors; empty shards skip game
+startup.
 
-`--durations=<path>` writes only this run's passing tests' elapsed seconds, merging the worker
-results when running in parallel. Refresh the checked-in manifest only from a successful full run, without
-test-name filters or `--shard`, and pass `--durations=tests/e2e/durations.json`.
-A filtered or single-shard run would replace the manifest with only its selected tests.
-Rerun the full suite afterward: updated timings change which tests share a game.
+`--durations=<path>` writes only this run's passing tests' elapsed seconds. CI uploads one such
+file per shard; `python3 tests/e2e/merge_durations.py <shard files> --write` merges them into the
+checked-in manifest, so the shard split follows CI's timings instead of a fast local machine's.
+Refresh the manifest only from a successful full run, and rerun the suite afterward: updated
+timings change which tests share a game.
 
 The tiles checks also need the tiles binary, ImageMagick's `magick`, Xvfb, the X11/XTest libraries
 and a software Vulkan driver:

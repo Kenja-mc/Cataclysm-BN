@@ -75,15 +75,18 @@ Do all three tests before you push. All results must be good.
    `CATA_TEST_COMPUTE_ACCELERATION=cpu` and a Catch2 filter. Running every test in one process is
    not supported: some tests leave the map shifted for the next one.
 
-3. Fork end-to-end tests: run `python3 tests/e2e/run.py`. Do not run other heavy work at the same
-   time, because slow input makes these tests fail.
+3. Fork end-to-end tests: run `python3 tests/e2e/run.py` (parallel by default, about 10 minutes).
+   Do not run other heavy work at the same time, because slow input makes these tests fail. While
+   iterating, run `python3 tests/e2e/run.py --tier=smoke` (one test per module) or name filters.
 
    `bin/playtest-container.sh e2e [test-name ...]` runs the same suite inside an unprivileged
    bubblewrap container with a private HOME and `/tmp` and no network, and
    `bin/playtest-container.sh playtest <scenario>` hands a playtest scenario to you there. Building
    inside the box needs root, so build on the host first.
 
-Write one end-to-end test for each new fork feature. Do not write unit tests for fork features.
+Write one end-to-end test for each new fork feature, in its own module under `tests/e2e/` with a
+`TESTS` list registered in `run.py`. Reuse a game per option profile through `fixtures.py` instead
+of starting a new one. Do not write unit tests for fork features.
 
 The same suite runs on GitHub Actions in `.github/workflows/fork-playtest.yml`, as four shards
 because the two-core runners are much slower than this machine: a test there takes 58 to 145 seconds

@@ -6,8 +6,33 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ## 2026-10-21
 
+### Added
+
+- **World presets**: press `p` on the World Options tab or the in-game Current world page
+  (modern scheme) to apply Relaxed, Scarce or Hardcore, or reset the page. Presets only fill in
+  existing world options, which stay editable. Requested on r/cataclysmbn. See `OVERHAUL.md`.
+- **Stocked River Barges**: a fork mod, on by default in new worlds, that refills the river barges
+  upstream left nearly empty and adds the sealed Hermex containers the deck graffiti mentions.
+- **Plumbing feedback**: the fluid grid explains refused connections, partial fills, tanks that
+  cannot be disconnected and the one-tank water purity rule; failed connections no longer use up
+  parts.
+- **OpenRouter playtests**: decision-model playtests can use free OpenRouter models, locally from
+  `OPENROUTER_ENV_FILE` and nightly in CI from the `OPENROUTER_API_KEY` secret.
+
+### Fixed
+
+- Opening vehicle controls while remote-controlling a vehicle could crash (upstream #5413).
+- Losing all worn clothes at once kept the Stylish morale bonus and logged a morale inconsistency.
+- Disconnecting a fluid grid tank deleted items lying on its tile; splitting a grid could drop
+  liquid when a part had no capacity.
+
 ### Maintenance
 
+- The end-to-end suite is split into feature modules; `run.py` is only the runner. It runs in
+  parallel by default, has a two-minute `--tier=smoke`, `--list` and `--help`, and rejects unknown
+  options. Tests with the same options share one game instead of starting their own, which drops
+  game starts from 54 to about 26; three duplicated tests were merged into the tests that already
+  covered them. CI uploads per-shard timings that `merge_durations.py` folds into the manifest.
 - The reload regression waits for the item picker and each loaded round before sending the next
   key and answers interruption prompts. Fixed delays could leave the cylinder one round short.
 - Tiles playtests and screenshot captures apply deterministic options to both config-directory
