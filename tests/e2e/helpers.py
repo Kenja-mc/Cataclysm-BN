@@ -110,7 +110,14 @@ def choose_menu_entry(g, label):
 
 def save_and_quit(g):
     """Quit to the title screen. Modern leaves Save and Quit unbound, so pick the menu row."""
-    g.keys("Escape", delay=0.8)
+    # The model can leave a menu open, and Escape then only closes that menu, so keep sending it
+    # until the main menu is actually on screen.
+    for _ in range(6):
+        if "Save and Quit" in g.screen():
+            break
+        g.keys("Escape", delay=0.8)
+        g.settle_screen(minimum=0.3, timeout=2.0)
+    g.wait_for("Save and Quit", timeout=15)
     choose_menu_entry(g, "Save and Quit")
     g.keys("y", "Enter", delay=1)
 
