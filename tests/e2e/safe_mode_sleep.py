@@ -4,6 +4,7 @@ import re
 import time
 
 from helpers import HELPERS, arena, empty_inventory, give, settle
+from safe_click import see_everything
 from tmux_game import Game, start_new_game
 
 # Modern wait-menu choices differ from Classic.
@@ -48,6 +49,12 @@ def test_safe_mode_repeats_hint_while_movement_is_blocked(_g):
         game.define_lua(HELPERS)
         arena(game)
         give(game, "diving_watch")
+        # The shelter can start very dark; the zombies must be seen to be warned about, and rolled
+        # wildlife must not be spotted first.
+        see_everything(game, True)
+        assert game.lua("for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end out('ok')") \
+            == ["ok"]
+        settle(game)
         # Glass cells keep each zombie in sight but away from the player: the pauses below give it
         # turns, and a zombie that reaches the player buries the warnings under combat messages.
         assert game.lua("function caged(x, y) for dx=-1,1 do for dy=-1,1 do if dx ~= 0 or dy ~= 0 then "
