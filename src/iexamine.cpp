@@ -1791,7 +1791,7 @@ static void apply_lock_picking_tool( player &p, item *it, const tripoint_bub_ms 
         target = here.tername( examp );
     }
     p.add_msg_if_player(
-        _( "You attempt to pick lock of %1$s using your %2$s…" ), target, it->tname() );
+         _( "You attempt to pick lock of %1$s using your %2$s…" ), target, it->tname() );
     const ret_val<bool> can_use = iuse_fn->can_call( p, *it, false, examp );
     if( can_use.success() ) {
         p.invoke_item( it, "PICK_LOCK", examp );
@@ -2601,7 +2601,7 @@ std::vector<seed_tuple> iexamine::get_seed_entries( const std::vector<item *> &s
     seed_entries.reserve( seed_map.size() );
     for( const auto &pr : seed_map ) {
         seed_entries.emplace_back(
-            pr.first, item::nname( pr.first, pr.second ), pr.second );
+                        pr.first, item::nname( pr.first, pr.second ), pr.second );
     }
 
     // Sort by name
@@ -2717,8 +2717,8 @@ void iexamine::dirtmound( player &p, const tripoint_bub_ms &examp )
  * @ref islot_seed::byproducts) are included.
  */
 std::vector<detached_ptr<item>> iexamine::get_harvest_items( const itype &type,
-                             const int plant_count,
-                             const int seed_count, const bool byproducts )
+        const int plant_count,
+        const int seed_count, const bool byproducts )
 {
     std::vector<detached_ptr<item>> result;
     if( !type.seed ) {
@@ -3636,14 +3636,14 @@ static auto confirm_fluid_grid_contamination( const tripoint_abs_omt &pos_abs_om
         fluid_grid::liquid_charges_at( pos_abs_omt, itype_water ) > 0;
     if( liquid_type == itype_water_clean && dirty_available ) {
         return query_yn(
-                   _( "Adding clean water to this grid containing tainted water will contaminate your clean water.  Continue?" ) );
+                   _( "This fluid grid has only one tank, so it holds either clean water or tainted water, not both.  Adding clean water to the tainted water here will leave it all tainted.  Continue?" ) );
     }
     if( liquid_type == itype_water && clean_available ) {
         return query_yn(
-                   _( "Adding tainted water to this grid containing clean water will contaminate your clean water.  Continue?" ) );
+                   _( "Adding tainted water to this grid containing clean water will contaminate your clean water.  A fluid grid with one tank holds either clean water or tainted water, not both.  Continue?" ) );
     }
     return query_yn( string_format(
-                         _( "Adding %s will contaminate the fluid grid's water supply.  Continue?" ),
+                         _( "Adding %s will contaminate the fluid grid's water supply.  A fluid grid with one tank holds either clean water or tainted water, not both.  Continue?" ),
                          item::nname( liquid_type ) ) );
 }
 
@@ -3726,25 +3726,56 @@ void iexamine::keg( player &p, const tripoint_bub_ms &examp )
         }
     };
     const auto transfer_tank_liquid_to_grid = [&]( const tripoint_bub_ms & where ) {
-        const auto pos_abs_omt = project_to<coords::omt>( bub_to_abs( where ) );
+        const auto pos_abs_ms = bub_to_abs( where );
+        const auto pos_abs_omt = project_to<coords::omt>( pos_abs_ms );
         auto items = here.i_at( where );
         auto transferred = std::vector<item *> {};
         std::ranges::for_each( items, [&]( item * it ) {
-            if( it != nullptr && it->made_of( LIQUID ) ) {
-                const auto pos_abs_ms = bub_to_abs( where );
-                if( fluid_grid::assign_tank_liquid( pos_abs_ms, it->typeId() ) ) {
-                    const auto added = fluid_grid::add_liquid_charges( pos_abs_omt, it->typeId(),
-                                       it->charges );
-                    it->charges -= added;
-                    if( it->charges <= 0 ) {
-                        transferred.push_back( it );
-                    }
-                }
+            if( it == nullptr || !it->made_of( LIQUID ) ) {
+                return;
             }
+            if( !fluid_grid::assign_tank_liquid( pos_abs_ms, it->typeId() ) ) {
+                add_msg( m_info, _( "This tank is assigned to a different liquid, so the %s stays where it is." ),
+                         it->tname() );
+                return;
+            }
+            const auto before_volume = it->volume();
+            const auto added = fluid_grid::add_liquid_charges( pos_abs_omt, it->typeId(),
+                               it->charges );
+            it->charges -= added;
+            if( it->charges <= 0 ) {
+                transferred.push_back( it );
+                return;
+            }
+            if( added <= 0 ) {
+                add_msg( m_info, _( "The fluid grid cannot hold any more %1$s; the %2$s is left behind." ),
+                         item::nname( it->typeId() ), it->tname() );
+                return;
+            }
+            add_msg( m_info, _( "The fluid grid takes %1$s of the %2$s; %3$s is left behind." ),
+                     format_volume( before_volume - it->volume() ), it->tname(),
+                     format_volume( it->volume() ) );
         } );
         std::ranges::for_each( transferred, [&]( item * it ) {
             here.i_rem( where, it );
         } );
+    };
+
+    const auto disconnect_failure_message =
+    []( const fluid_grid::tank_disconnect_error & error ) -> std::string {
+        switch( error.why ) {
+            case fluid_grid::tank_disconnect_error::reason::no_tank:
+                return _( "There is no fluid grid tank here." );
+            case fluid_grid::tank_disconnect_error::reason::unloaded:
+                return std::string{};
+            case fluid_grid::tank_disconnect_error::reason::capacity_overflow:
+                return _( "The rest of the fluid grid cannot hold this tank's liquid.  Drain the grid first, or connect more tanks to make room." );
+            case fluid_grid::tank_disconnect_error::reason::liquid_overflow:
+                return string_format(
+                           _( "The rest of the fluid grid cannot hold all of the %1$s in this tank.  Drain some %1$s first, or connect more tanks that can hold it." ),
+                           item::nname( error.liquid ) );
+        }
+        return std::string{};
     };
 
     if( is_plumbed_tank ) {
@@ -3897,6 +3928,8 @@ void iexamine::keg( player &p, const tripoint_bub_ms &examp )
                 if( fluid_grid::set_tank_assigned_liquid( pos_abs_ms, liquid_type ) ) {
                     consume_fluid_grid_requirements( p, requirements );
                     add_msg( m_info, _( "This tank is now assigned to dispense %s." ), item::nname( liquid_type ) );
+                } else {
+                    add_msg( m_info, _( "This tank cannot be assigned to %s." ), item::nname( liquid_type ) );
                 }
                 return;
             }
@@ -3998,7 +4031,14 @@ void iexamine::keg( player &p, const tripoint_bub_ms &examp )
                     return;
                 }
                 p.use_charges( drink_type, added );
-                add_msg( _( "You fill the %1$s with %2$s." ), keg_name, item::nname( drink_type ) );
+                const auto &liquid_data = drink_type.obj();
+                const auto per_charge = liquid_data.volume / std::max( liquid_data.stack_size, 1 );
+                if( added < charges_held ) {
+                    add_msg( m_info, _( "The %1$s takes %2$s; the rest stays with you." ),
+                             keg_name, format_volume( per_charge * added ) );
+                } else {
+                    add_msg( _( "You fill the %1$s with %2$s." ), keg_name, item::nname( drink_type ) );
+                }
                 p.moves -= to_moves<int>( 10_seconds );
                 return;
             }
@@ -4048,9 +4088,13 @@ void iexamine::keg( player &p, const tripoint_bub_ms &examp )
                 return;
             }
 
-            case DISCONNECT_FROM_FLUID_GRID:
-                if( !fluid_grid::disconnect_tank( pos_abs_ms ) ) {
-                    add_msg( m_info, _( "The rest of the fluid grid cannot hold this tank's liquid." ) );
+            case DISCONNECT_FROM_FLUID_GRID: {
+                const auto disconnected = fluid_grid::disconnect_tank( pos_abs_ms );
+                if( !disconnected ) {
+                    const auto message = disconnect_failure_message( disconnected.error() );
+                    if( !message.empty() ) {
+                        add_msg( m_info, message );
+                    }
                     return;
                 }
                 if( !disconnected_variant ) {
@@ -4060,6 +4104,7 @@ void iexamine::keg( player &p, const tripoint_bub_ms &examp )
                 fluid_grid::on_structure_changed( pos_abs_ms );
                 add_msg( m_info, _( "You disconnect the %s from the fluid grid." ), keg_name );
                 return;
+            }
 
             default:
                 return;
@@ -4108,8 +4153,12 @@ void iexamine::keg( player &p, const tripoint_bub_ms &examp )
                 add_msg( m_info, _( "You connect the %s to the fluid grid." ), keg_name );
                 return;
             } else if( selectmenu.ret == DISCONNECT_FROM_FLUID_GRID ) {
-                if( !fluid_grid::disconnect_tank( bub_to_abs( examp ) ) ) {
-                    add_msg( m_info, _( "The rest of the fluid grid cannot hold this tank's liquid." ) );
+                const auto disconnected = fluid_grid::disconnect_tank( bub_to_abs( examp ) );
+                if( !disconnected ) {
+                    const auto message = disconnect_failure_message( disconnected.error() );
+                    if( !message.empty() ) {
+                        add_msg( m_info, message );
+                    }
                     return;
                 }
                 if( !disconnected_variant ) {
@@ -4268,7 +4317,6 @@ void iexamine::keg( player &p, const tripoint_bub_ms &examp )
                 } else { // tmp being empty means all charges were used up
                     p.use_charges( drink.typeId(), charges_held );
                 }
-                add_msg( _( "You fill the %1$s with %2$s." ), keg_name, drink_nname );
                 notify_contents_changed( examp );
                 p.moves -= to_moves<int>( 10_seconds );
                 return;
@@ -4295,9 +4343,13 @@ void iexamine::keg( player &p, const tripoint_bub_ms &examp )
                 return;
             }
 
-            case DISCONNECT_FROM_FLUID_GRID:
-                if( !fluid_grid::disconnect_tank( bub_to_abs( examp ) ) ) {
-                    add_msg( m_info, _( "The rest of the fluid grid cannot hold this tank's liquid." ) );
+            case DISCONNECT_FROM_FLUID_GRID: {
+                const auto disconnected = fluid_grid::disconnect_tank( bub_to_abs( examp ) );
+                if( !disconnected ) {
+                    const auto message = disconnect_failure_message( disconnected.error() );
+                    if( !message.empty() ) {
+                        add_msg( m_info, message );
+                    }
                     return;
                 }
                 if( !disconnected_variant ) {
@@ -4307,6 +4359,7 @@ void iexamine::keg( player &p, const tripoint_bub_ms &examp )
                 fluid_grid::on_structure_changed( bub_to_abs( examp ) );
                 add_msg( m_info, _( "You disconnect the %s from the fluid grid." ), keg_name );
                 return;
+            }
 
             default:
                 return;
@@ -4346,15 +4399,20 @@ detached_ptr<item> iexamine::pour_into_keg( const tripoint_bub_ms &pos,
             add_msg( m_info, _( "This tank is assigned to a different liquid." ) );
             return std::move( liquid );
         }
+        const auto before_volume = liquid->volume();
         const auto added = fluid_grid::add_liquid_charges( pos_abs_omt, liquid->typeId(),
                            liquid->charges );
-        if( added > 0 ) {
-            add_msg( _( "You pour %1$s into the %2$s." ), obj.tname(), keg_name );
-            liquid->charges -= added;
+        if( added <= 0 ) {
+            add_msg( m_info, _( "The %s cannot hold any more liquid." ), keg_name );
+            return std::move( liquid );
         }
+        add_msg( _( "You pour %1$s into the %2$s." ), obj.tname(), keg_name );
+        liquid->charges -= added;
         if( liquid->charges == 0 ) {
             return detached_ptr<item>();
         }
+        add_msg( m_info, _( "The %1$s takes %2$s of the %3$s; the rest stays in the container." ),
+                 keg_name, format_volume( before_volume - liquid->volume() ), obj.tname() );
         return std::move( liquid );
     }
 
@@ -4954,6 +5012,9 @@ auto iexamine::fluid_grid_fixture( player &p, const tripoint_bub_ms &examp ) -> 
                 consume_fluid_grid_requirements( p, requirements );
                 add_msg( m_info, _( "The %1$s is now assigned to dispense %2$s." ), fixture_name,
                          item::nname( selected_liquid ) );
+            } else {
+                add_msg( m_info, _( "The %1$s cannot be assigned to %2$s." ), fixture_name,
+                         item::nname( selected_liquid ) );
             }
             return;
         }
@@ -5236,7 +5297,7 @@ void iexamine::reload_furniture( player &p, const tripoint_bub_ms &examp )
     }
 
     const int amount_in_furn_after_placing = count_charges_in_list( &ammo_types.at( ammo_index ),
-            items );
+        items );
     //~ %1$s - furniture, %2$d - number, %3$s items.
     add_msg( _( "The %1$s contains %2$d %3$s." ), f.name(), amount_in_furn_after_placing,
              cur_ammo->nname( amount_in_furn_after_placing ) );
@@ -5768,7 +5829,7 @@ void iexamine::pay_gas( player &p, const tripoint_bub_ms &examp )
         }
 
         const std::optional<tripoint_bub_ms> pGasPump = getGasPumpByNumber( examp,
-                uistate.ags_pay_gas_selected_pump );
+            uistate.ags_pay_gas_selected_pump );
         if( !pGasPump || !toPumpFuel( pTank, *pGasPump, liters * 1000 ) ) {
             return;
         }
@@ -5806,7 +5867,7 @@ void iexamine::pay_gas( player &p, const tripoint_bub_ms &examp )
         item *cashcard = &( p.i_at( pos ) );
         // Okay, we have a cash card. Now we need to know what's left in the pump.
         const std::optional<tripoint_bub_ms> pGasPump = getGasPumpByNumber( examp,
-                uistate.ags_pay_gas_selected_pump );
+            uistate.ags_pay_gas_selected_pump );
         int amount = pGasPump ? fromPumpFuel( pTank, *pGasPump ) : 0;
         if( amount >= 0 ) {
             sound_event se;
@@ -6451,7 +6512,7 @@ static item *cyborg_on_couch( const tripoint_bub_ms &couch_pos )
     }
     // if we're in a autodoc couch on a vehicle, go through the items in it, and return the item if's a cyborg
     if( const std::optional<vpart_reference> vp = get_map().veh_at( couch_pos ).part_with_feature(
-                flag_AUTODOC_COUCH, false ) ) {
+            flag_AUTODOC_COUCH, false ) ) {
         auto dest_veh = &vp->vehicle();
         int dest_part = vp->part_index();
         for( item * const &it : dest_veh->get_items( dest_part ) ) {
@@ -6631,7 +6692,7 @@ void iexamine::autodoc( player &p, const tripoint_bub_ms &examp )
     }
     // find splints in vehicle
     if( const std::optional<vpart_reference> vp = get_map().veh_at( examp ).part_with_feature(
-                flag_AUTODOC, false ) ) {
+            flag_AUTODOC, false ) ) {
         auto dest_veh = &vp->vehicle();
         int dest_part = vp->part_index();
         for( item *&it : dest_veh->get_items( dest_part ) ) {
@@ -7114,7 +7175,7 @@ static void cloning_vat_activate( player &p, const tripoint_bub_ms &examp )
                         }
                     }
                     const shared_ptr_fast<monster> newmon_ptr = make_shared_fast<monster>
-                            ( mtype_id( chosen->name.str() ) );
+                        ( mtype_id( chosen->name.str() ) );
                     monster &newmon = *newmon_ptr;
 
                     if( chosen ) {
@@ -7864,7 +7925,7 @@ void iexamine::quern_examine( player &p, const tripoint_bub_ms &examp )
                 for( auto it_mill : mill_list ) {
                     pop += "-> " + item::nname( it_mill.first->typeId(),
                                                 it_mill.first->count() ) + ( ( it_mill.second > 1 ) ? " (" + std::to_string(
-                                                            it_mill.second ) + ")\n" : "\n" );
+                                                        it_mill.second ) + ")\n" : "\n" );
                 }
             }
             popup( pop, PF_NONE );

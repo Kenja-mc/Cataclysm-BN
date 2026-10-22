@@ -118,7 +118,16 @@ TEST_CASE("fluid grids preserve multiple liquid types", "[overmap][fluid_grid]")
     fluid_grid::on_structure_changed(tank_abs_ms);
     fluid_grid::on_structure_changed(water_tank_abs_ms);
     fluid_grid::on_structure_changed(autofill_tank_abs_ms);
-    REQUIRE(fluid_grid::add_grid_connection(tank_abs_omt, grid_node_abs_omt));
+    REQUIRE(fluid_grid::add_grid_connection(tank_abs_omt, grid_node_abs_omt).has_value());
+    CHECK(fluid_grid::add_grid_connection(tank_abs_omt, grid_node_abs_omt).error()
+          == fluid_grid::connection_error::already_connected);
+    CHECK(
+        fluid_grid::add_grid_connection(tank_abs_omt, tank_abs_omt + tripoint_rel_omt{OMAPX, 0, 0})
+            .error()
+        == fluid_grid::connection_error::different_overmap);
+    CHECK(fluid_grid::remove_grid_connection(tank_abs_omt, tank_abs_omt + tripoint_rel_omt{0, 1, 0})
+              .error()
+          == fluid_grid::connection_error::not_connected);
 
     REQUIRE(fluid_grid::storage_stats_at(grid_node_abs_omt).capacity > 0_ml);
     REQUIRE(fluid_grid::assign_tank_liquid(tank_abs_ms, gasoline));
@@ -176,6 +185,13 @@ TEST_CASE("fluid grids preserve multiple liquid types", "[overmap][fluid_grid]")
     CHECK(fluid_grid::liquid_charges_at(grid_node_abs_omt, gasoline) == 500);
     CHECK(fluid_grid::liquid_charges_at(grid_node_abs_omt, water) == 10);
     CHECK(fluid_grid::liquid_charges_at(grid_node_abs_omt, diesel) == 10);
+
+    SECTION("Disconnecting a grid keeps every charge") {
+        REQUIRE(fluid_grid::remove_grid_connection(tank_abs_omt, grid_node_abs_omt).has_value());
+        CHECK(fluid_grid::liquid_charges_at(tank_abs_omt, gasoline) == 500);
+        CHECK(fluid_grid::liquid_charges_at(tank_abs_omt, water) == 10);
+        CHECK(fluid_grid::liquid_charges_at(tank_abs_omt, diesel) == 10);
+    }
 }
 
 TEST_CASE("fluid grid pumps respect liquid capacity while purifying", "[overmap][fluid_grid]") {
@@ -228,6 +244,29 @@ TEST_CASE("fluid grid pumps respect liquid capacity while purifying", "[overmap]
         fluid_grid::process_transformers_at(grid, calendar::turn + 70_minutes);
         CHECK(fluid_grid::storage_stats_at(grid).stored_for(water) == 5_liter);
     }
+}
+
+TEST_CASE("fluid grid storage split keeps every milliliter", "[overmap][fluid_grid]") {
+    const auto water = itype_id("water");
+    const auto clean = itype_id("water_clean");
+    const auto gasoline = itype_id("gasoline");
+    const auto original = fluid_grid::liquid_storage_state{
+        .stored_by_type = {{water, 333_ml}, {clean, 7_ml}, {gasoline, 1000_ml}},
+        .capacity = 1340_ml};
+
+    const auto split = fluid_grid::split_storage_state(original, 1_ml, 1339_ml);
+    CHECK(split.lhs.stored_for(water) + split.rhs.stored_for(water) == 333_ml);
+    CHECK(split.lhs.stored_for(clean) + split.rhs.stored_for(clean) == 7_ml);
+    CHECK(split.lhs.stored_for(gasoline) + split.rhs.stored_for(gasoline) == 1000_ml);
+    CHECK(split.lhs.stored_total() + split.rhs.stored_total() == original.stored_total());
+
+    // Equal halves with odd volumes must still add up exactly.
+    const auto halves = fluid_grid::split_storage_state(original, 670_ml, 670_ml);
+    CHECK(halves.lhs.stored_for(water) + halves.rhs.stored_for(water) == 333_ml);
+    CHECK(halves.lhs.stored_for(clean) + halves.rhs.stored_for(clean) == 7_ml);
+    CHECK(halves.lhs.stored_for(gasoline) + halves.rhs.stored_for(gasoline) == 1000_ml);
+    CHECK(halves.lhs.stored_total() + halves.rhs.stored_total() == original.stored_total());
+    CHECK(halves.lhs.capacity + halves.rhs.capacity == original.capacity);
 }
 
 TEST_CASE("fluid tank removal respects assigned liquid storage", "[overmap][fluid_grid]") {
