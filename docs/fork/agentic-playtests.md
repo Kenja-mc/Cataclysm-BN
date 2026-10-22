@@ -271,6 +271,27 @@ Rerun the suite afterward to verify the changed shard assignments.
 rewrites the feature page with just the shots it captured, so leave it off when regenerating the
 whole set.
 
+## Key-guess survey
+
+`tests/e2e/keyguess.py` asks a decision model which key it would press, without teaching it the
+layout. Each scenario opens a real screen of the modern scheme with the sidebar Controls panel off
+and the popups disabled, states a goal (open the map, wield the pipe), and offers six keys or key
+sequences. The harness then presses the chosen keys on a fresh game and checks the goal through
+the game state, so every answer is scored as reached, first step or missed.
+
+```sh
+python3 tests/e2e/keyguess.py --validate                       # which offered keys reach each goal
+XPL_SK_AGENT=... python3 tests/e2e/keyguess.py --models jev-latest,gpt-6-luna-decisions \
+    --trials 3 --out /tmp/keyguess
+```
+
+Run `--validate` after changing a scenario: a goal no offered key reaches is a trap, not a
+question. Each trial starts its own game (about ten seconds) because a closed menu can leave its
+text on the pane and a pressed key can change the world. A model error is recorded as an error
+row and the survey continues. Results are `results.jsonl` and `summary.md` in `--out`. The
+harness is research tooling, not part of the suite; survey results and keymap proposals live on
+the `research/controls` branch.
+
 ## Limits worth knowing
 
 - The driver plays what it can see. A scenario that hides the feature behind a menu needs turns to
