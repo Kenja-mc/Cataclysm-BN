@@ -15,6 +15,9 @@ show obsolete control labels; use `OVERHAUL.md` for current keys and
   **Controls strip** (the capture predates compact action families; current hints use live bindings).
 - Map: **readable glyphs**. Trees are ♣, pines ♠ and saplings τ instead of 7, 4 and 1.
 - Rounded window corners.
+- **Compact corner bars** (Options → Interface) replaces the two boxes with one-row strips:
+  `Weather: Drizzle  │  Spring 16 morning  │  Light: bright  │  Wind: Calm Air NE`. The status
+  strip carries the weapon, style and stance. The sidebar keeps its panels either way.
 
 For comparison, the same kind of start with the classic control scheme, classic colours, digit
 glyphs and the map boxes turned off. The fork's sidebar panels stay; each can be hidden from the

@@ -75,9 +75,17 @@ Do all three tests before you push. All results must be good.
    `CATA_TEST_COMPUTE_ACCELERATION=cpu` and a Catch2 filter. Running every test in one process is
    not supported: some tests leave the map shifted for the next one.
 
-3. Fork end-to-end tests: run `python3 tests/e2e/run.py` (parallel by default, about 10 minutes).
-   Do not run other heavy work at the same time, because slow input makes these tests fail. While
-   iterating, run `python3 tests/e2e/run.py --tier=smoke` (one test per module) or name filters.
+3. Fork end-to-end tests, in proportion to the change:
+
+   | Change | Run |
+   |---|---|
+   | Docs only | Nothing |
+   | One feature | Its tests, then `python3 tests/e2e/run.py --tier=smoke` |
+   | Harness, build, data or shared fixture | The whole suite |
+
+   `python3 tests/e2e/run.py` is parallel by default and takes about 10 minutes. Do not run other
+   heavy work at the same time, because slow input makes these tests fail. Name filters run single
+   tests while iterating.
 
    `bin/playtest-container.sh e2e [test-name ...]` runs the same suite inside an unprivileged
    bubblewrap container with a private HOME and `/tmp` and no network, and
