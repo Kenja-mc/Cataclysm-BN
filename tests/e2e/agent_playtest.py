@@ -37,7 +37,9 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 from agent_actions import actions_for, classify_screen  # noqa: E402
-from agent_models import Gateway, MissingKey, NoModelAvailable, pool  # noqa: E402
+from agent_models import (  # noqa: E402
+    POOLS, Gateway, MissingKey, NoModelAvailable, load_env_file, pool,
+)
 from agent_state import close_tiles, dump_state, send_action  # noqa: E402
 from playtest import SCENARIOS, start_scenario  # noqa: E402
 
@@ -73,8 +75,8 @@ class Stop(Exception):
 # ------------------------------------------------------------------ decisions
 
 def resolve_models(spec: str) -> list[str]:
-    """--models takes a pool name ("vision" or "text") or a comma separated list of model ids."""
-    return pool(spec) if spec in ("vision", "text") else [m.strip() for m in spec.split(",") if m.strip()]
+    """--models takes a pool name (see agent_models.POOLS) or a comma separated list of model ids."""
+    return pool(spec) if spec in POOLS else [m.strip() for m in spec.split(",") if m.strip()]
 
 
 def build_gateway(args: argparse.Namespace) -> tuple[Gateway, list[str], str]:
@@ -90,7 +92,8 @@ def build_gateway(args: argparse.Namespace) -> tuple[Gateway, list[str], str]:
 
 def text_only_pool(models: list[str]) -> bool:
     """True when nothing in the pool can see a frame, so a tiles capture is only there for the state."""
-    return not set(models) & set(pool("vision"))
+    vision = set(pool("vision")) | set(pool("openrouter-vision"))
+    return not set(models) & vision
 
 
 def model_error(exc: BaseException) -> None:
@@ -98,9 +101,10 @@ def model_error(exc: BaseException) -> None:
     if isinstance(exc, MissingKey):
         raise HarnessError(
             f"no API key for the model pool: {exc}\n"
-            "Set XPL_SK_AGENT (api.experientiallabs.ai) or OC_SK_AGENT (opencode.ai). Neither is stored "
-            "as a secret on this repository, so a live run cannot start until one is added; --dry-run "
-            "needs no key.") from exc
+            "Set OPENROUTER_API_KEY (openrouter.ai, the openrouter-* pools), XPL_SK_AGENT "
+            "(api.experientiallabs.ai) or OC_SK_AGENT (opencode.ai); a local key may also live in the "
+            "KEY=VALUE file named by OPENROUTER_ENV_FILE. Without a repository secret a live run cannot "
+            "start; --dry-run needs no key.") from exc
     if isinstance(exc, NoModelAvailable):
         raise Stop(f"every model in the pool is exhausted: {exc}", EXIT_KILL) from exc
 
@@ -439,7 +443,8 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--mode", choices=["curses", "tiles"], default="curses", help="game surface")
     parser.add_argument("--scheme", choices=["modern", "classic"], default="modern")
     parser.add_argument("--input", choices=["kb", "kb-mouse"], default="kb", help="input the model may use")
-    parser.add_argument("--models", default="text", help='a pool ("vision" or "text") or model ids')
+    parser.add_argument("--models", default="text",
+                        help='a pool (%s) or comma-separated model ids' % "|".join(sorted(POOLS)))
     parser.add_argument("--turns", type=int, default=20, help="turn budget: the normal end of a run")
     parser.add_argument("--seed", help="world seed: 1-64 letters, digits, '.', '_' or '-'")
     parser.add_argument("--report-dir", required=True, help="transcript.jsonl, summary.md and frames/")
@@ -455,6 +460,9 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    # A local key may live in the file OPENROUTER_ENV_FILE names; read it once, before the
+    # first request, without ever echoing a value.
+    load_env_file()
     report_dir = Path(args.report_dir)
     frames_dir = report_dir / "frames"
     frames_dir.mkdir(parents=True, exist_ok=True)

@@ -1,9 +1,9 @@
 """Model layer for the agentic playtest (fork issue #6).
 
-One interface, :meth:`Gateway.decide`, over three API surfaces:
+One interface, :meth:`Gateway.decide`, over four API surfaces:
 
-* ``chat`` - an OpenAI-compatible ``/chat/completions`` route that is asked for a
-  JSON object naming the action.
+* ``chat`` - an OpenAI-compatible ``/chat/completions`` route (Experiential Labs,
+  OpenCode, or OpenRouter) that is asked for a JSON object naming the action.
 * ``systemone`` - TypeSafe System One typed decisions (``choice``, ``noul``,
   ``score``).
 * ``decisions`` - OpenAI's Decisions API, typed ``predicate``/``choice``/``score``
@@ -13,7 +13,9 @@ The gateway never dials a lane that is not free: the free tier is the budget, so
 spent free tier moves to the next model or stops, it does not bill.
 
 Standard library only. Importing this module reads no key and opens no socket;
-that happens on the first real (non dry-run) request.
+that happens on the first real (non dry-run) request. A key may come from the
+environment or, for OpenRouter, from the ``KEY=VALUE`` file named by
+``OPENROUTER_ENV_FILE``; a value is never printed, logged or echoed.
 """
 from __future__ import annotations
 
@@ -29,6 +31,7 @@ import urllib.error
 import urllib.request
 from dataclasses import dataclass, replace
 from datetime import date
+from pathlib import Path
 from typing import Any
 
 DEFAULT_TIMEOUT = 30.0
@@ -138,6 +141,37 @@ REGISTRY: dict[str, ModelSpec] = {
             "glm-5.3-flash-free", "opencode", "chat", None, False, True,
             note="context not published",
         ),
+        # OpenRouter, checked 2026-10-21 against GET https://openrouter.ai/api/v1/models
+        # (21 rows carry a zero price). Each id below answered the harness's JSON-action
+        # prompt in a local probe on that date; ids this account's data policy blocks
+        # (nemotron-3.5-super-vl, minimax-m3.1-flash, flint) and upstream-429 gemma are
+        # left out. Free models cost 0 whatever their list price says, and OpenRouter
+        # reports usage, so a run measures its tokens.
+        ModelSpec(
+            "nvidia/nemotron-3-ultra-550b-a55b:free", "openrouter", "chat", 1_000_000, False, True,
+            note="verified 2026-10-21: one JSON action in 5.9 s",
+        ),
+        ModelSpec(
+            "poolside/laguna-xs-2.1:free", "openrouter", "chat", 262_144, False, True,
+            note="verified 2026-10-21: one JSON action in 0.3 s",
+        ),
+        ModelSpec(
+            "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", "openrouter", "chat", 256_000,
+            True, True,
+            note="multimodal (image in); upstream capacity is shared, so it can 502",
+        ),
+        ModelSpec(
+            "liquid/lfm-2.5-2.6b:free", "openrouter", "chat", 65_536, False, True,
+            note="verified 2026-10-21: one JSON action in 16.6 s, a slow last resort",
+        ),
+        ModelSpec(
+            "dots-studio/dots-3-note-preview:free", "openrouter", "chat", 512_000, True, True,
+            note="verified 2026-10-21 with an image; text alone spends its budget on reasoning",
+        ),
+        ModelSpec(
+            "openrouter/free", "openrouter", "chat", 200_000, True, True,
+            note="OpenRouter's own router over the free tier; picks a model per request",
+        ),
     )
 }
 
@@ -148,7 +182,21 @@ SURFACES: dict[tuple[str, str], tuple[str, str]] = {
     ("xplabs", "decisions"): ("https://api.experientiallabs.ai/v1/decisions", "XPL_SK_AGENT"),
     ("opencode", "chat"): ("https://opencode.ai/inference/openai/v1/chat/completions", "OC_SK_AGENT"),
     ("opencode", "systemone"): ("https://opencode.ai/inference/systemone/v1/systemone", "OC_SK_AGENT"),
+    ("openrouter", "chat"): ("https://openrouter.ai/api/v1/chat/completions", "OPENROUTER_API_KEY"),
 }
+
+# Headers a provider likes beyond Authorization. OpenRouter attributes traffic to an app
+# with these two; they are not secrets and the harness never sends anything else.
+EXTRA_HEADERS: dict[str, dict[str, str]] = {
+    "openrouter": {
+        "HTTP-Referer": "https://github.com/Kenja-mc/Cataclysm-BN",
+        "X-Title": "Cataclysm-BN agentic playtest",
+    },
+}
+
+# A key may also come from a KEY=VALUE file named by this variable (one line per key,
+# optionally with `export`), so a local run never puts the key on a command line.
+ENV_FILE_VAR = "OPENROUTER_ENV_FILE"
 
 POOLS: dict[str, list[str]] = {
     "vision": [
@@ -168,6 +216,22 @@ POOLS: dict[str, list[str]] = {
         "deepseek-v4.1-flash-free",
         "glm-5.3-flash-free",
     ],
+    # OpenRouter needs one key for every model, so it gets pools of its own instead of
+    # being appended to the pools above: a run with only OPENROUTER_API_KEY stays live
+    # rather than retiring every Experiential Labs and OpenCode model first.
+    # Chosen 2026-10-21 from the 21 zero-priced models in GET /api/v1/models.
+    "openrouter-text": [
+        "nvidia/nemotron-3-ultra-550b-a55b:free",
+        "poolside/laguna-xs-2.1:free",
+        "openrouter/free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+        "liquid/lfm-2.5-2.6b:free",
+    ],
+    "openrouter-vision": [
+        "dots-studio/dots-3-note-preview:free",
+        "openrouter/free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+    ],
 }
 
 
@@ -185,6 +249,71 @@ def pool(name: str) -> list[str]:
     if name not in POOLS:
         raise ValueError(f"unknown pool {name!r}; expected one of {sorted(POOLS)}")
     return [model for model in POOLS[name] if usable(REGISTRY[model])]
+
+
+# --------------------------------------------------------------------------- keys
+
+_ENV_LINE = re.compile(r"^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$")
+_LOADED_ENV_FILES: set[str] = set()
+_env_file_error = ""
+
+
+def _env_pair(line: str) -> tuple[str, str] | None:
+    """``(name, value)`` of one env-file line, or None for a comment or blank line."""
+    text = line.strip()
+    if not text or text.startswith("#"):
+        return None
+    match = _ENV_LINE.match(text)
+    if match is None:
+        return None
+    value = match.group(2).strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+        value = value[1:-1]
+    else:
+        value = value.split(" #", 1)[0].rstrip()
+    return match.group(1), value
+
+
+def load_env_file(path: str | None = None) -> list[str]:
+    """Read ``KEY=VALUE`` lines from ``OPENROUTER_ENV_FILE`` into the environment.
+
+    Called the first time a key is looked up, never at import, and read once per path.
+    A variable already set in the environment wins over the file, as ``set -a; . file``
+    would. Returns the names it added: a value stays out of every return value, log line
+    and error message, and the file is not echoed.
+    """
+    global _env_file_error
+    path = path or os.environ.get(ENV_FILE_VAR) or ""
+    if not path or path in _LOADED_ENV_FILES:
+        return []
+    _LOADED_ENV_FILES.add(path)
+    try:
+        lines = Path(path).expanduser().read_text(encoding="utf-8").splitlines()
+    except OSError as error:
+        # The path is not a secret; say it was unusable, never what it holds.
+        _env_file_error = f"{ENV_FILE_VAR}={path} could not be read ({error.strerror or error})"
+        return []
+    _env_file_error = ""
+    added: list[str] = []
+    for line in lines:
+        pair = _env_pair(line)
+        if pair is None:
+            continue
+        name, value = pair
+        if not value or os.environ.get(name):
+            continue
+        os.environ[name] = value
+        added.append(name)
+    return added
+
+
+def env_key(name: str) -> str:
+    """The key ``name`` names, loading OPENROUTER_ENV_FILE once when the variable is absent."""
+    key = os.environ.get(name, "")
+    if not key:
+        load_env_file()
+        key = os.environ.get(name, "")
+    return key
 
 
 def estimate_tokens(text: str) -> int:
@@ -476,20 +605,24 @@ def _data_url(image: bytes) -> str:
 
 def _post(client: "Client", body: dict[str, Any], *, timeout: float, attempts: int = 2) -> dict[str, Any]:
     """POST JSON and return the parsed reply. One retry on 5xx or a timeout, never on 429."""
-    key = os.environ.get(client.key_env, "")
+    key = env_key(client.key_env)
     if not key:
+        hint = f" ({_env_file_error})" if _env_file_error else ""
         raise MissingKey(
-            f"{client.key_env} is not set in the environment; export it or pass dry_run=True"
+            f"{client.key_env} is not set in the environment{hint}; export it, put it in the "
+            f"file named by {ENV_FILE_VAR}, or pass dry_run=True"
         )
+    headers = {
+        "Authorization": f"Bearer {key}",  # never logged, never echoed in an error
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    headers.update(EXTRA_HEADERS.get(client.provider, {}))
     request = urllib.request.Request(
         client.endpoint,
         data=json.dumps(body).encode("utf-8"),
         method="POST",
-        headers={
-            "Authorization": f"Bearer {key}",  # never logged, never echoed in an error
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        },
+        headers=headers,
     )
     last = "no attempt made"
     for attempt in range(attempts):
@@ -513,9 +646,20 @@ def _post(client: "Client", body: dict[str, Any], *, timeout: float, attempts: i
                 raise _TryNext(f"no reply after {attempt + 1} attempts ({last})") from error
         if raw is not None:
             try:
-                return json.loads(raw)
+                payload = json.loads(raw)
             except ValueError as error:
                 raise _TryNext(f"reply is not JSON: {raw[:200]!r}") from error
+            # OpenRouter reports an upstream failure as HTTP 200 with an `error` object:
+            # a 429 in it is still quota, anything else means another model may answer.
+            error = payload.get("error") if isinstance(payload, dict) else None
+            if isinstance(error, dict) and error.get("message"):
+                code = str(error.get("code") or "")
+                message = str(error.get("message"))
+                status = int(code) if code.isdigit() else 0
+                if _is_quota(status, code, message):
+                    raise _Quota(f"HTTP {status or 'error'} {code}: {message}")
+                raise _TryNext(f"error in the reply (HTTP {code or 'unknown'}): {message}")
+            return payload
         time.sleep(RETRY_SLEEP)
     raise _TryNext(f"no reply after {attempts} attempts ({last})")
 
@@ -735,8 +879,13 @@ def required_keys(models: list[str]) -> list[str]:
 
 
 def missing_keys(models: list[str]) -> list[str]:
-    """The subset of :func:`required_keys` that is absent from the environment."""
-    return [env for env in required_keys(models) if not os.environ.get(env)]
+    """The subset of :func:`required_keys` that is absent from the environment and env file."""
+    return [env for env in required_keys(models) if not env_key(env)]
+
+
+def pools_with_keys() -> dict[str, list[str]]:
+    """``pool name -> missing key vars`` for every pool; empty list means a live run can start."""
+    return {name: [env for env in required_keys(pool(name)) if not env_key(env)] for name in POOLS}
 
 
 # --------------------------------------------------------------------------- gateway
@@ -811,6 +960,7 @@ class Gateway:
             raise ValueError("choices must not be empty")
         typed = Question("action", question, "choice", dict(choices))
         failed: dict[str, str] = {}
+        key_envs: list[str] = []
         for model_id in self.models:
             if model_id in self._retired:
                 continue
@@ -855,6 +1005,14 @@ class Gateway:
             except _Rejected as error:
                 self._retire(model_id, f"refused: {error}")
                 continue
+            except MissingKey as error:
+                # A pool may mix providers whose keys arrive separately (an OpenRouter
+                # key alone is a live run): the keyless models are skipped, not fatal.
+                failed[model_id] = f"no key: {error}"
+                env = client_for(model_id).key_env
+                if env not in key_envs:
+                    key_envs.append(env)
+                continue
             except _TryNext as error:
                 failed[model_id] = f"failed: {error}"
                 continue
@@ -875,6 +1033,14 @@ class Gateway:
                 usd=usd,
                 measured=answer.measured,
                 exhausted=self.exhausted,
+            )
+        if key_envs and not self._retired and all(
+            reason.startswith("no key:") for reason in failed.values()
+        ):
+            # Nothing else rules the pool out: the run needs one of these variables.
+            raise MissingKey(
+                f"no model in the pool has a key ({', '.join(key_envs)} unset): "
+                "set one of them, or put it in the file named by " + ENV_FILE_VAR
             )
         raise NoModelAvailable({**self._retired, **failed})
 
@@ -910,12 +1076,20 @@ def _self_test() -> int:
         "clef-flash", "clef", "jev-latest", "gpt-6-luna-decisions",
         "deepseek-v4.1-flash-1017", "jev-1.13-free", "deepseek-v4.1-flash-free",
         "glm-5.3-flash-free",
+        "nvidia/nemotron-3-ultra-550b-a55b:free", "poolside/laguna-xs-2.1:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", "liquid/lfm-2.5-2.6b:free",
+        "dots-studio/dots-3-note-preview:free", "openrouter/free",
     }
-    check("registry holds the nine catalog models", set(REGISTRY) == catalog)
+    check("registry holds the catalog models", set(REGISTRY) == catalog)
     check("every model has a reachable surface",
           all((s.provider, s.surface) in SURFACES for s in REGISTRY.values()))
     check("every pool id is in the registry",
           all(model in REGISTRY for models in POOLS.values() for model in models))
+    check("OpenRouter models are chat models on the OpenRouter surface",
+          all(client_for(model).provider == "openrouter"
+              and client_for(model).surface == "chat"
+              and client_for(model).endpoint == "https://openrouter.ai/api/v1/chat/completions"
+              for model in POOLS["openrouter-text"] + POOLS["openrouter-vision"]))
 
     vision = ["gpt-6-luna-decisions", "deepseek-v4.1-flash-1017", "clef", "clef-flash",
               "jev-latest", "jev-1.13-free", "deepseek-v4.1-flash-free", "glm-5.3-flash-free"]
@@ -926,6 +1100,20 @@ def _self_test() -> int:
           pool("text") == ["clef-flash", "jev-latest", "jev-1.13-free",
                            "deepseek-v4.1-flash-free", "glm-5.3-flash-free"],
           f"{pool('text')}")
+    check("OpenRouter text pool ordering",
+          pool("openrouter-text") == [
+              "nvidia/nemotron-3-ultra-550b-a55b:free", "poolside/laguna-xs-2.1:free",
+              "openrouter/free", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+              "liquid/lfm-2.5-2.6b:free"],
+          f"{pool('openrouter-text')}")
+    check("OpenRouter vision pool ordering",
+          pool("openrouter-vision") == [
+              "dots-studio/dots-3-note-preview:free", "openrouter/free",
+              "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"],
+          f"{pool('openrouter-vision')}")
+    check("every OpenRouter pool model is free today",
+          all(REGISTRY[model].free and usable(REGISTRY[model])
+              for name in ("openrouter-text", "openrouter-vision") for model in POOLS[name]))
     check("pool() copies, callers cannot corrupt it", pool("text") is not POOLS["text"])
     try:
         pool("nope")
@@ -1062,16 +1250,53 @@ def _self_test() -> int:
     except _TryNext as error:
         check("systemone skips a menu wider than 64 options", "64" in str(error))
 
-    saved = {name: os.environ.pop(name) for name in ("XPL_SK_AGENT", "OC_SK_AGENT") if name in os.environ}
+    saved = {name: os.environ.pop(name)
+             for name in ("XPL_SK_AGENT", "OC_SK_AGENT", "OPENROUTER_API_KEY", ENV_FILE_VAR)
+             if name in os.environ}
     try:
         check("dry run needs no key", decide(Gateway(models=pool("vision"), dry_run=True)).model == vision[0])
-        for model, env in (("clef-flash", "XPL_SK_AGENT"), ("jev-1.13-free", "OC_SK_AGENT")):
+        for model, env in (("clef-flash", "XPL_SK_AGENT"), ("jev-1.13-free", "OC_SK_AGENT"),
+                           ("nvidia/nemotron-3-ultra-550b-a55b:free", "OPENROUTER_API_KEY")):
             try:
                 decide(Gateway(models=[model]))
                 check(f"a missing key names {env}", False)
             except MissingKey as error:
                 check(f"a missing key names {env}", env in str(error))
+        try:
+            decide(Gateway(models=["clef-flash", "nvidia/nemotron-3-ultra-550b-a55b:free"]))
+            check("a pool with no key at all raises MissingKey", False)
+        except MissingKey as error:
+            check("a pool with no key at all names every variable",
+                  "XPL_SK_AGENT" in str(error) and "OPENROUTER_API_KEY" in str(error))
+
+        # A key may arrive in the file OPENROUTER_ENV_FILE names: read once, never echoed,
+        # an exported variable always wins.
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "env"
+            path.write_text("# a local key file\nexport OPENROUTER_API_KEY=fake-file-key\n"
+                            "XPL_SK_AGENT=from-file\n")
+            os.environ[ENV_FILE_VAR] = str(path)
+            os.environ.pop("OPENROUTER_API_KEY", None)
+            os.environ["XPL_SK_AGENT"] = "already-set"
+            added = load_env_file()
+            check("OPENROUTER_ENV_FILE supplies the key it names",
+                  env_key("OPENROUTER_API_KEY") == "fake-file-key")
+            check("the env file never overrides an exported variable",
+                  os.environ["XPL_SK_AGENT"] == "already-set" and "XPL_SK_AGENT" not in added)
+            check("loading reports names, never values", added == ["OPENROUTER_API_KEY"], f"{added}")
+            check("a second load of the same file is a no-op", load_env_file() == [])
+            os.environ.pop("OPENROUTER_API_KEY")
+            os.environ[ENV_FILE_VAR] = str(Path(tmp) / "absent")
+            try:
+                decide(Gateway(models=["poolside/laguna-xs-2.1:free"]))
+                check("an unreadable env file still names the missing key", False)
+            except MissingKey as error:
+                check("an unreadable env file still names the missing key",
+                      "OPENROUTER_API_KEY" in str(error))
     finally:
+        os.environ.pop("OPENROUTER_API_KEY", None)
         os.environ.update(saved)
 
     print()
@@ -1092,6 +1317,8 @@ def main(argv: list[str] | None = None) -> int:
         help="report the secrets a live run needs; exit 2 when one is missing",
     )
     args = parser.parse_args(argv)
+    # Load a local key file at startup; a value is never printed, only used by a request.
+    load_env_file()
     try:
         if args.self_test:
             return _self_test()
@@ -1099,17 +1326,21 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(pool(args.pool), indent=2))
             return 0
         if args.check_keys:
-            needed = required_keys(pool("vision"))
-            absent = missing_keys(pool("vision"))
-            print(f"live run needs: {', '.join(needed)}")
-            if absent:
+            needed = sorted({env for models in POOLS.values() for env in required_keys(models)})
+            print(f"a live run needs one key per provider: {', '.join(needed)}")
+            states = pools_with_keys()
+            for name in sorted(states):
+                absent = states[name]
+                print(f"  {name}: {'ready' if not absent else 'missing ' + ', '.join(absent)}")
+            if all(states[name] for name in states):
                 print(
-                    f"agent_models: missing repository secret(s) {', '.join(absent)}: "
-                    "a live playtest cannot run. Add them, or run with --dry-run.",
+                    "agent_models: no pool has every key it needs: a live playtest cannot run. "
+                    f"Add one of {', '.join(needed)} as a repository secret, put it in the file "
+                    f"{ENV_FILE_VAR} names, or run with --dry-run.",
                     file=sys.stderr,
                 )
                 return 2
-            print("all keys present")
+            print("at least one pool is ready")
             return 0
         if args.demo:
             decision = Gateway(models=pool("text"), dry_run=True).decide(
