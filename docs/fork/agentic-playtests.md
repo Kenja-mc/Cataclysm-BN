@@ -64,6 +64,8 @@ Content scenarios, all listed by `python3 tests/e2e/playtest.py --list`:
 | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | `text`   | `clef-flash`, `jev-latest`, `jev-1.13-free`, `deepseek-v4.1-flash-free`, `glm-5.3-flash-free`                                                             | Curses surfaces, where the state is text  |
 | `vision` | `gpt-6-luna-decisions`, `deepseek-v4.1-flash-1017`, `clef`, `clef-flash`, `jev-latest`, `jev-1.13-free`, `deepseek-v4.1-flash-free`, `glm-5.3-flash-free` | Tiles surfaces, where a frame image helps |
+| `openrouter-text`   | `nvidia/nemotron-3-ultra-550b-a55b:free`, `poolside/laguna-xs-2.1:free`, `openrouter/free`, `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`, `liquid/lfm-2.5-2.6b:free` | Curses surfaces with only `OPENROUTER_API_KEY` |
+| `openrouter-vision` | `dots-studio/dots-3-note-preview:free`, `openrouter/free`, `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | Tiles surfaces with only `OPENROUTER_API_KEY` |
 
 The pools only hand out models that are usable on the day: a model whose free window has passed is
 dropped from the pool before the run starts.
@@ -78,9 +80,56 @@ dropped from the pool before the run starts.
 | `jev-1.13-free`            | System One | yes  | no    | OpenCode publishes no context size                 |
 | `deepseek-v4.1-flash-free` | Chat       | yes  | no    | OpenCode publishes no context size                 |
 | `glm-5.3-flash-free`       | Chat       | yes  | no    | OpenCode publishes no context size                 |
+| `nvidia/nemotron-3-ultra-550b-a55b:free` | Chat | yes | no | OpenRouter, free; verified 2026-10-21 |
+| `poolside/laguna-xs-2.1:free` | Chat | yes | no | OpenRouter, free; fast, small model |
+| `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | Chat | yes | yes | OpenRouter, free; shared upstream capacity |
+| `liquid/lfm-2.5-2.6b:free` | Chat | yes | no | OpenRouter, free; slow last resort |
+| `dots-studio/dots-3-note-preview:free` | Chat | yes | yes | OpenRouter, free; needs the image to stay on task |
+| `openrouter/free`          | Chat       | yes  | yes   | OpenRouter's router over its free tier             |
+
+The `openrouter-*` ids come from `GET https://openrouter.ai/api/v1/models` on 2026-10-21: the 21
+rows priced at zero. Only the ids that answered the harness's JSON-action prompt in a local probe
+are listed. The free models this account's data policy refuses (`nemotron-3.5-super-vl`,
+`minimax-m3.1-flash`, `flint`) and the gemma rows that were upstream-429 at the time are left out.
 
 A model that runs out of free tier is retired for the rest of the run and the next one in the pool
 takes over. The gateway never bills past a free tier, so a spent pool ends the run instead.
+
+## OpenRouter
+
+OpenRouter is the third chat surface: OpenAI-compatible, at
+`https://openrouter.ai/api/v1/chat/completions`, reached with one key, `OPENROUTER_API_KEY`, for
+every model in the `openrouter-text` and `openrouter-vision` pools. The harness sends the optional
+`HTTP-Referer` and `X-Title` attribution headers and treats an error object inside an HTTP 200
+reply as a failed attempt, because OpenRouter reports upstream failures that way.
+
+Every pooled model is a `:free` one, so a turn costs $0. OpenRouter still returns usage (prompt
+and completion tokens) in the reply, so the report counts those decisions as measured at $0. A
+free model that reports a price in the catalog is still billed as free by the gateway, which
+never dials a paid lane.
+
+A local key can stay out of the shell history: put `OPENROUTER_API_KEY=...` in a `KEY=VALUE` file
+and name the file with `OPENROUTER_ENV_FILE`. The harness reads it the first time it needs a key,
+once, never echoes a value, and an exported variable always wins over the file.
+
+```sh
+export OPENROUTER_ENV_FILE=~/.config/free-pool/env      # a KEY=VALUE file, mode 600
+python3 tests/e2e/agent_models.py --check-keys          # per-pool readiness, no network
+python3 tests/e2e/agent_playtest.py --scenario fork_features --mode curses --scheme modern \
+        --input kb --models openrouter-text --turns 10 --budget-usd 1 \
+        --report-dir /tmp/playtest-openrouter
+```
+
+In CI the same key is the repository secret `OPENROUTER_API_KEY`. When it is the only model
+secret, the plan job points every live leg at the matching pool: `openrouter-text` for the two
+curses legs, `openrouter-vision` for the two tiles legs. When `XPL_SK_AGENT` and `OC_SK_AGENT`
+are also set, the legs keep their `text` and `vision` defaults unless a dispatch passes `models`.
+Without any key the legs stay dry, as before.
+
+Free models come and go. When the pool starts retiring ids (a 404 for a withdrawn free endpoint, a
+429 from an upstream provider), refresh them from `GET https://openrouter.ai/api/v1/models` and
+update the dated comment on the registry entries. A `:free` model this account's data policy
+refuses is not pooled, even though the catalog lists it.
 
 ## Console requirements for the free tiers
 
@@ -98,13 +147,16 @@ card. With overflow on, a run that has used up its free tokens quietly starts sp
 
 ## Run one locally
 
-Export the keys by hand. The repository secrets `XPL_SK_AGENT` and `OC_SK_AGENT` are not set on
-`Kenja-mc/Cataclysm-BN` at the moment, so a local run is the only way to reach the live models
-until they are added under **Settings → Secrets and variables → Actions**.
+Export the keys by hand, or point the harness at a `KEY=VALUE` file with `OPENROUTER_ENV_FILE` so
+the value never reaches a command line. The repository secret `OPENROUTER_API_KEY` is set on
+`Kenja-mc/Cataclysm-BN`, so a nightly run or a dispatch plays live from the OpenRouter pools;
+`XPL_SK_AGENT` and `OC_SK_AGENT` are not set there, so the `text` and `vision` pools need a local
+key until they are added under **Settings → Secrets and variables → Actions**.
 
 ```sh
 export XPL_SK_AGENT=...    # api.experientiallabs.ai: clef, clef-flash, jev-latest, gpt-6-luna-decisions
 export OC_SK_AGENT=...     # opencode.ai: jev-1.13-free, deepseek-v4.1-flash-free, glm-5.3-flash-free
+export OPENROUTER_ENV_FILE=~/.config/free-pool/env   # openrouter.ai: the openrouter-* pools
 ```
 
 Check the wiring first. This needs no key, opens no socket and spends nothing:
@@ -194,10 +246,13 @@ Each leg ends in one of four verdicts:
 | `killed`        | 3         | A cap (dollars, wall clock or tokens) stopped a run. The leg does not fail, and a capped run cannot report success |
 | `harness-error` | 2         | The harness itself failed. This is the one verdict that fails the job                                              |
 
-Without both model secrets the workflow does not play live at all: it keeps only the first
+Without a usable model secret the workflow does not play live at all: it keeps only the first
 matching leg (`kb-classic-curses` by default), makes it a dry run with 3 turns, and says so in the
-job summary. Dispatch filters still apply, so a tiles-only request checks a tiles leg. The rest
-of the pipeline still runs: the end-to-end suite on every push, and the screenshot job on the schedule.
+job summary. A live leg needs one of `OPENROUTER_API_KEY` (on its own) or the pair
+`XPL_SK_AGENT` + `OC_SK_AGENT`. When only the OpenRouter key exists, the plan retargets every leg
+at the free pools: `openrouter-text` for curses, `openrouter-vision` for tiles. Dispatch filters
+still apply, so a tiles-only request checks a tiles leg. The rest of the pipeline still runs: the
+end-to-end suite on every push, and the screenshot job on the schedule.
 
 The end-to-end suite runs as four parallel shards. A single runner could not finish all 140 checks
 inside the job's two-hour timeout: the tail of the suite is slower on two cores than it is locally,

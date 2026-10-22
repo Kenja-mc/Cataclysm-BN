@@ -41,3 +41,23 @@ Adds an option to the options menu
 | step            | Step for floats in menu                                                                                                                                     |
 | hide            | Hides with `none`, `always`, `sdl_hide` ( with sdl ), `curses_hide` ( with curses ), `no_sound_hide` ( without sound ), `android_only` ( when not android ) |
 | deps            | Array of `option` ( other option id ) and `values` ( valid option values ) to use the config                                                                |
+
+## World Preset
+
+Adds a named set of world option values that the player can apply from the world options page.
+
+| Key         | Description                                                              |
+| ----------- | ------------------------------------------------------------------------ |
+| type        | Always `WORLD_PRESET`                                                    |
+| id          | Unique preset id                                                         |
+| name        | Visible preset name                                                      |
+| description | Shown next to the name in the preset picker                              |
+| values      | Object of option id to value; values are strings, numbers or booleans    |
+
+Presets are offered where a concrete world is edited: while the world is created, and in game on
+the Current world page. Applying one resets the world options page to its built-in defaults first,
+then sets the listed options, so a preset always produces the same world settings.
+
+Every entry is checked after all option definition files load. A preset that names an unknown
+option, an option outside the `world_default` page, a hidden option, or a value the option does
+not accept is dropped with a debug message.
