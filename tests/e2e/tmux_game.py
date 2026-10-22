@@ -216,10 +216,23 @@ def in_game(screen):
 
 
 def start_new_game(game, timeout=240):
-    """Language prompt -> New Game -> Play Now (default scenario) -> world -> in game."""
+    """Language prompt -> New Game -> Play Now (default scenario) -> world -> in game.
+
+    Each branch reads the screen again, so a late or doubled key only costs one pass. The title
+    menu is walked by what it shows: RIGHT switches tabs until the New Game sub-items appear and
+    DOWN then moves inside that tab. Blind DOWN presses would instead scroll whichever tab is
+    open, and the game can be left on the Load tab by a stray confirm.
+    """
     deadline = time.time() + timeout
     while time.time() < deadline:
         s = game.screen()
+        # The title menu draws over the last game frame, so its markers come first: the stale
+        # HEAD/TORSO pixels below it would otherwise pass for being in game.
+        if "Are you SURE" in s:
+            # A confirmation is cancelled, never answered: answering a quit prompt leaves the
+            # game on the title menu with no save.
+            game.keys("Escape", delay=1)
+            continue
         if "Welcome to Bright Nights" in s:
             game.saw_welcome = True
             game.welcome_screen = s
@@ -229,25 +242,21 @@ def start_new_game(game, timeout=240):
             game.saw_death_choice = True
             game.keys("r", delay=1)
             continue
-        if in_game(s) and "Are you SURE" not in s:
+        if "[New Game]" in s or "Play Now!  (Default Scenario)" in s:
+            if "Play Now!  (Default Scenario)" not in s:
+                # RIGHT walks the tab strip and wraps, so the New Game tab comes back around.
+                game.keys("Down" if "Custom Character" in s else "Right", delay=0.6)
+            else:
+                line = next((l for l in s.splitlines() if "Play Now!  (Default Scenario)" in l), "")
+                game.keys("Enter" if "»" in line else "Down", delay=1)
+        elif in_game(s):
             return
-        if "Select your language" in s:
+        elif "Select your language" in s:
             game.keys("1")
-        elif "Are you SURE" in s:
-            game.keys("Y", delay=1)
         elif "Finalize World" in s and "World Name" in s:
             game.keys("Tab", delay=1)
         elif "World Mods" in s:
             game.keys("Tab", "Tab", delay=0.6)
-        elif "Play Now!  (Default Scenario)" in s:
-            line = next((l for l in s.splitlines() if "»" in l), "")
-            if "Play Now!  (Default Scenario)" in line:
-                game.keys("Enter", delay=1)
-            else:
-                game.keys("Down")
-        elif "[New Game]" in s:
-            line = next((l for l in s.splitlines() if "[New Game]" in l), "")
-            game.keys("Down")
         elif not s.strip():
             # The first frame only shows up after some input.
             game.keys("F5", delay=1)

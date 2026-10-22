@@ -1,5 +1,4 @@
 import json
-import os
 import re
 import subprocess
 import tempfile
@@ -10,7 +9,7 @@ from pathlib import Path
 
 from helpers import HELPERS, arena, empty_inventory, give
 from options_menu import open_options
-from tmux_game import Game, start_new_game
+from fixtures import shared_game
 
 
 NEEDS = ("Pain", "Thirst", "Hunger", "Rest", "Heat")
@@ -23,41 +22,51 @@ LABEL_PANELS = ("Needs", "Movement", "Location", "Weapon", "Controls", "Log",
                 "Compass", "Comp.Compass", "Sim.Compass", "Map", "AI Needs")
 
 
+_layouts = {}
+
+
+def layout_userdir(moon):
+    """One config directory per layout, so every game for that layout shares a profile."""
+    if moon not in _layouts:
+        userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-hud-status-"))
+        config = userdir / "config"
+        config.mkdir()
+        enabled = {"Needs", "Movement", "Location", "Weapon", "Controls", "Log"}
+        if moon:
+            enabled.add("Moon")
+        # Wide Moon can overwrite the phase.
+        layout = "labels-narrow" if moon else "labels"
+        (config / "panel_options.json").write_text(json.dumps([{
+            "current_layout_id": layout,
+            "layouts": [{"layout_id": layout, "panels": [
+                {"name": name, "toggle": name in enabled} for name in LABEL_PANELS
+            ]}],
+        }]))
+        _layouts[moon] = userdir
+    return _layouts[moon]
+
+
+def hud_setup(game):
+    # A test may leave the pane or the avatar changed; both are part of the profile's start.
+    game.resize(140, 45)
+    empty_inventory(game)
+    arena(game)
+    healthy(game)
+
+
 @contextmanager
 def hud_game(tag, moon=False, **options):
-    userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-hud-status-"))
-    config = userdir / "config"
-    config.mkdir()
-    enabled = {"Needs", "Movement", "Location", "Weapon", "Controls", "Log"}
-    if moon:
-        enabled.add("Moon")
-    # Wide Moon can overwrite the phase.
-    layout = "labels-narrow" if moon else "labels"
-    (config / "panel_options.json").write_text(json.dumps([{
-        "current_layout_id": layout,
-        "layouts": [{"layout_id": layout, "panels": [
-            {"name": name, "toggle": name in enabled} for name in LABEL_PANELS
-        ]}],
-    }]))
-    game = Game(name=f"bn-e2e-hud-{tag}-{os.getpid()}", cols=140, rows=45,
-                userdir=userdir,
-                options={"SAFEMODE": "false", "SHOW_WELCOME": "false",
-                         "SHOW_TIPS": "false", "CONTROL_SCHEME": "modern",
-                         "SIDEBAR_POSITION": "right", "SIDEBAR_SPACERS": "false",
-                         "HUD_WEATHER_BOX": "off", "HUD_COMBAT_BOX": "off",
-                         "HUD_VEHICLE_BOX": "off", "HUD_ICONS": "ascii",
-                         "ANIMATIONS": "false",
-                         "24_HOUR": "24h", "USE_CELSIUS": "celsius",
-                         "YN_HOTKEYS": "false", "CHRONIC_PAIN": "false", **options})
-    try:
-        start_new_game(game)
-        game.define_lua(HELPERS)
-        empty_inventory(game)
-        arena(game)
-        healthy(game)
+    with shared_game(f"bn-e2e-hud-{tag}", cols=140, rows=45, userdir=layout_userdir(moon),
+                     define=HELPERS, setup=hud_setup,
+                     options={"SAFEMODE": "false", "SHOW_WELCOME": "false",
+                              "SHOW_TIPS": "false", "CONTROL_SCHEME": "modern",
+                              "SIDEBAR_POSITION": "right", "SIDEBAR_SPACERS": "false",
+                              "HUD_WEATHER_BOX": "off", "HUD_COMBAT_BOX": "off",
+                              "HUD_VEHICLE_BOX": "off", "HUD_ICONS": "ascii",
+                              "ANIMATIONS": "false",
+                              "24_HOUR": "24h", "USE_CELSIUS": "celsius",
+                              "YN_HOTKEYS": "false", "CHRONIC_PAIN": "false", **options}) as game:
         yield game
-    finally:
-        game.close()
 
 
 def healthy(game):
@@ -271,7 +280,10 @@ def weather_rows(screen, cols=140, sidebar_width=SIDEBAR_WIDTH):
     assert len(light) == 1, screen
     y = light[0]
     line = terrain[y]
-    left, right = line.index("│"), line.rindex("│")
+    left = line.index("│")
+    # The nearest closing border, not the last one on the row: a bordered sidebar to the right
+    # would otherwise become the box's right edge and pull map terrain into the rows.
+    right = line.index("│", left + 1)
     assert right > left, screen
     rows = [row[left + 1:right].strip() for row in terrain[y - 2:y + 2]]
     assert all(char in "─┌┐└┘╭╮╰╯" for char in terrain[y - 3][left:right + 1]), screen
