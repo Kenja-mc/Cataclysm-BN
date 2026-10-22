@@ -3,7 +3,8 @@
 A review of the nine tilesets in `gfx/` and the sheets in `data/json/external_tileset/`: identical
 sprites, visual clarity, and licenses. Full reports, contact sheets and the scripts that produced
 them are on the `research/textures` branch under `docs/fork/research/textures/`. Sprite references
-use `sheet#index`, the global index in `tile_config.json`.
+use `sheet#index`, the global index in `tile_config.json`. Follow-up:
+[issue 19](https://github.com/Kenja-mc/Cataclysm-BN/issues/19).
 
 ## Fixed
 
