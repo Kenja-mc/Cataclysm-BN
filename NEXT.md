@@ -73,9 +73,6 @@
   `pacman -S --needed ccache mold astyle`. The commits below were built and gated with them
   disabled (`-DCATA_CCACHE=OFF -DCMAKE_C_COMPILER_LAUNCHER= -DCMAKE_CXX_COMPILER_LAUNCHER= -DLINKER=`),
   so no astyle pass has reformatted the tree.
-- **Local tiles binary is stale**: it reports `60e711cc78` and rejects current data. Rebuild it
-  from a clean source tree before local tiles verification; the tiles checks above used CI's
-  freshly built binaries.
 - **Release workflows stay disabled** — Nightly Release, Experimental Release and Manual release are
   off; `gh workflow enable "<name>"` re-enables them. The nightlies need an initial `YYYY-MM-DD` tag
   and an `experimental` release before they can pass, and `docs.yml` chains off Experimental Release.
