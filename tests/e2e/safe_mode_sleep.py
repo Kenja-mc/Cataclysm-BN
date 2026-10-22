@@ -48,8 +48,14 @@ def test_safe_mode_repeats_hint_while_movement_is_blocked(_g):
         game.define_lua(HELPERS)
         arena(game)
         give(game, "diving_watch")
-        assert game.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(3,0)); "
-                        "out(gapi.get_monster_at(here(3,0)) ~= nil)") == ["true"]
+        # Glass cells keep each zombie in sight but away from the player: the pauses below give it
+        # turns, and a zombie that reaches the player buries the warnings under combat messages.
+        assert game.lua("function caged(x, y) for dx=-1,1 do for dy=-1,1 do if dx ~= 0 or dy ~= 0 then "
+                        "M:set_ter_at(here(x+dx,y+dy), TerId.new('t_reinforced_glass'):int_id()) end end end "
+                        "M:set_ter_at(here(x,y), TerId.new('t_floor'):int_id()) "
+                        "gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(x,y)) "
+                        "return gapi.get_monster_at(here(x,y)) ~= nil end "
+                        "out(caged(4,0))") == ["true"]
         # A zombie placed from Lua is only noticed when a turn passes, so the first key may still
         # run; keep pausing until the full warning is logged, then block one more action.
         for _ in range(4):
@@ -76,8 +82,7 @@ def test_safe_mode_repeats_hint_while_movement_is_blocked(_g):
 
         game.keys("'", delay=1.0)
         game.keys("x", delay=1.0)
-        assert game.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(4,0)); "
-                        "out(gapi.get_monster_at(here(4,0)) ~= nil)") == ["true"]
+        assert game.lua("out(caged(-4,0))") == ["true"]
         game.keys("w", delay=1.5)
         last = game.lua("local t=gapi.get_messages(1); out(t[#t].text)")
         assert last and "safe mode is on" in last[0], (
