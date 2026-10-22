@@ -28,6 +28,8 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Losing all worn clothes at once kept the Stylish morale bonus and logged a morale inconsistency.
 - Disconnecting a fluid grid tank deleted items lying on its tile; splitting a grid could drop
   liquid when a part had no capacity.
+- The BrownLikeBears tileset drew battleaxes as nothing, and ChestHole16 drew eight dinosaurs as
+  nothing: later tile entries pointed them at empty sprite cells.
 
 ### Maintenance
 

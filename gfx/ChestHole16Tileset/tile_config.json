@@ -58455,18 +58455,7 @@
           "id": "mon_yugg",
           "fg": 6390,
           "rotates": false
-        },
-
-{ "id": "L dinos", "fg": 0, "rotates": false },
-    { "id": "mon_spinosaurus",      "fg": 6392, "rotates": false },
-    { "id": "mon_tyrannosaurus",    "fg": 6393, "rotates": false },
-    { "id": "mon_triceratops",      "fg": 6394, "rotates": false },
-    { "id": "mon_stegosaurus",      "fg": 6395, "rotates": false },
-    { "id": "mon_ankylosaurus",     "fg": 6396, "rotates": false },
-    { "id": "mon_allosaurus",     "fg": 6397, "rotates": false },
-    { "id": "mon_parasaurolophus",    "fg": 6398, "rotates": false },
-    { "id": "mon_utahraptor",     "fg": 6399, "rotates": false }
-
+        }
     ]
     },
     {
