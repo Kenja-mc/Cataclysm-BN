@@ -1076,7 +1076,7 @@ bool game::start_game()
             .pocket_info = std::nullopt
         };
         get_overmapbuffer( current_dimension_id_ ).current_region_type = wt_ptr ?
-                wt_ptr->region_settings_id : "default";
+            wt_ptr->region_settings_id : "default";
         calendar::set_active_world_type( default_wt.str() );
     }
 
@@ -1863,7 +1863,7 @@ bool game::cleanup_at_end()
         std::vector<std::string> characters = list_active_saves();
         // remove current player from the active characters list, as they are dead
         std::vector<std::string>::iterator curchar = std::find( characters.begin(),
-                characters.end(), u.get_save_id() );
+            characters.end(), u.get_save_id() );
         if( curchar != characters.end() ) {
             characters.erase( curchar );
         }
@@ -2627,7 +2627,7 @@ void game::process_activity()
         const auto before_activity_moves_left = u.activity->get_moves_left();
         const auto before_avatar_moves = u.moves;
         const auto freeze_non_calendar_activity = debug_infinite_speed_can_freeze_time() &&
-                !activity_uses_calendar_duration_progress( before_activity_id );
+            !activity_uses_calendar_duration_progress( before_activity_id );
 
         u.activity->do_turn( u );
 
@@ -3273,9 +3273,9 @@ bool game::cancel_activity_or_ignore_query( const distraction_type type, const s
                          .context( "CANCEL_ACTIVITY_OR_IGNORE_QUERY" )
                          .message( force_uc ?
                                    pgettext( "cancel_activity_or_ignore_query",
-                                           "<color_light_red>%s %s (Case Sensitive)</color>" ) :
+                                       "<color_light_red>%s %s (Case Sensitive)</color>" ) :
                                    pgettext( "cancel_activity_or_ignore_query",
-                                           "<color_light_red>%s %s</color>" ),
+                                       "<color_light_red>%s %s</color>" ),
                                    text, u.activity->get_stop_phrase() )
                          .option( "YES", allow_key )
                          .option( "NO", allow_key )
@@ -4453,7 +4453,7 @@ bool game::load( const save_t &name )
         // The vehicle stores the IDs of the boarded players, so update it, too.
         if( u.in_vehicle ) {
             if( const std::optional<vpart_reference> vp = m.veh_at(
-                        u.bub_pos() ).part_with_feature( "BOARDABLE", true ) ) {
+                    u.bub_pos() ).part_with_feature( "BOARDABLE", true ) ) {
                 vp->part().passenger_id = u.getID();
             }
         }
@@ -4682,7 +4682,7 @@ void game::write_memorial_file( const std::string &filename, std::string sLastWo
 {
     const std::string &memorial_dir = PATH_INFO::memorialdir();
     const std::string &memorial_active_world_dir = memorial_dir +
-            world_generator->active_world->info->world_name + "/";
+        world_generator->active_world->info->world_name + "/";
 
     //Check if both dirs exist. Nested assure_dir_exist fails if the first dir of the nested dir does not exist.
     if( !assure_dir_exist( memorial_dir ) ) {
@@ -4758,7 +4758,7 @@ void game::disp_NPCs()
     const tripoint_abs_omt ppos = u.abs_omt_pos();
     const auto &lpos = u.bub_pos();
     std::vector<shared_ptr_fast<npc>> npcs = get_overmapbuffer(
-                                       current_dimension_id_ ).get_npcs_near_player( 100 );
+            current_dimension_id_ ).get_npcs_near_player( 100 );
     std::sort( npcs.begin(), npcs.end(), npc_dist_to_player() );
 
     catacurses::window w;
@@ -4937,12 +4937,12 @@ void game::draw_callback_t::operator()()
 void game::add_draw_callback( const shared_ptr_fast<draw_callback_t> &cb )
 {
     draw_callbacks.erase(
-        std::remove_if( draw_callbacks.begin(), draw_callbacks.end(),
+                      std::remove_if( draw_callbacks.begin(), draw_callbacks.end(),
     []( const weak_ptr_fast<draw_callback_t> &cbw ) {
         return cbw.expired();
     } ),
     draw_callbacks.end()
-    );
+                  );
     draw_callbacks.emplace_back( cb );
     cb->added = true;
     invalidate_main_ui_adaptor();
@@ -5347,7 +5347,7 @@ std::optional<tripoint_rel_ms> game::get_veh_dir_indicator_location( bool next )
 void game::draw_veh_dir_indicator( bool next )
 {
     if( const std::optional<tripoint_rel_ms> indicator_offset = get_veh_dir_indicator_location(
-                next ) ) {
+            next ) ) {
         auto col = next ? c_white : c_dark_gray;
         mvwputch( w_terrain, indicator_offset->xy().raw() - u.view_offset.xy().raw() + point( POSX, POSY ),
                   col, 'X' );
@@ -5854,8 +5854,7 @@ auto game::mon_info_update() -> void
             get_option<int>( "SAFEMODEIGNORETURNS" ) );
 
     const auto direction_index = []( const direction dir ) -> int {
-        switch( dir )
-        {
+        switch( dir ) {
             // *INDENT-OFF*
             case direction::ABOVENORTHWEST: case direction::NORTHWEST: case direction::BELOWNORTHWEST: return 7;
             case direction::ABOVENORTH:     case direction::NORTH:     case direction::BELOWNORTH:     return 0;
@@ -5875,8 +5874,7 @@ auto game::mon_info_update() -> void
     };
 
     const auto compass_direction_index = []( const direction dir ) -> int {
-        switch( dir )
-        {
+        switch( dir ) {
             // *INDENT-OFF*
             case direction::ABOVENORTHWEST: case direction::NORTHWEST: case direction::BELOWNORTHWEST: return 7;
             case direction::ABOVENORTH:     case direction::NORTH:     case direction::BELOWNORTH:     return 0;
@@ -5892,8 +5890,7 @@ auto game::mon_info_update() -> void
     };
 
     const auto player_attitude_from = []( const monster_attitude matt ) -> Attitude {
-        switch( matt )
-        {
+        switch( matt ) {
             case MATT_FRIEND:
             case MATT_FPASSIVE:
             case MATT_ZLAVE:
@@ -6531,7 +6528,7 @@ void game::monmove( const monster_activity_ai_mode mode, activity_monmove_cache 
 
     auto activity_lod_restore_local = std::vector<std::pair<monster *, int8_t>> {};
     const std::vector<std::pair<monster *, int8_t>> *activity_lod_restore =
-                &activity_lod_restore_local;
+        &activity_lod_restore_local;
     auto activity_ai_paused_local = std::unordered_set<monster *> {};
     const std::unordered_set<monster *> *activity_ai_paused = &activity_ai_paused_local;
     if( activity_skip_ai ) {
@@ -7711,7 +7708,7 @@ shared_ptr_fast<T> game::shared_from( const T &critter )
     }
     if( critter.is_monster() ) {
         if( const shared_ptr_fast<monster> mon_ptr = critter.get_mapbuffer().creature_tracker().find(
-                    critter.abs_pos() ) ) {
+                critter.abs_pos() ) ) {
             if( static_cast<const Creature *>( mon_ptr.get() ) == static_cast<const Creature *>( &critter ) ) {
                 return std::dynamic_pointer_cast<T>( mon_ptr );
             }
@@ -8085,7 +8082,7 @@ void static delete_cyborg_item( map &m, const tripoint_bub_ms &couch_pos, item *
 {
     // if this tile has an autodoc on a vehicle, delete the cyborg item from here
     if( const std::optional<vpart_reference> vp = get_map().veh_at( couch_pos ).part_with_feature(
-                flag_AUTODOC_COUCH, false ) ) {
+            flag_AUTODOC_COUCH, false ) ) {
         auto dest_veh = &vp->vehicle();
         int dest_part = vp->part_index();
 
@@ -8204,11 +8201,9 @@ bool game::forced_door_closing( const tripoint_bub_ms &p, const ter_id &door_typ
         return g->is_empty( p );
     };
     const auto get_random_point = [&]() -> tripoint_bub_ms {
-        if( auto pos = random_point( m.points_in_radius( p, 2 ), valid_location ) )
-        {
+        if( auto pos = random_point( m.points_in_radius( p, 2 ), valid_location ) ) {
             return  tripoint_bub_ms( p.raw() * 2 - ( *pos ).raw() );
-        } else
-        {
+        } else {
             return p;
         }
     };
@@ -8374,15 +8369,39 @@ void game::control_vehicle()
     static const itype_id fuel_type_animal( "animal" );
     int veh_part = -1;
     vehicle *veh = remoteveh();
+    const bool remote = veh != nullptr;
+    auto controls_pos = u.bub_pos();
     if( veh == nullptr ) {
         if( const optional_vpart_position vp = m.veh_at( u.bub_pos() ) ) {
             veh = &vp->vehicle();
             veh_part = vp->part_index();
         }
+    } else {
+        // A remotely controlled vehicle has no part under the avatar.  Passing -1 to the
+        // part-index lookups below indexes parts out of bounds, which crashed on large
+        // vehicles (#5413).  Prefer real controls: cam_control is REMOTE_CONTROLS without
+        // CONTROLS and can precede the controls part, so the first remote part may not
+        // satisfy the CONTROLS lookup.
+        const auto controls_parts = veh->get_avail_parts( "CONTROLS" );
+        if( !controls_parts.empty() ) {
+            const auto part = *controls_parts.begin();
+            veh_part = static_cast<int>( part.part_index() );
+            controls_pos = part.pos();
+        } else {
+            const auto remote_parts = veh->get_avail_parts( "REMOTE_CONTROLS" );
+            if( remote_parts.empty() ) {
+                veh = nullptr;
+            } else {
+                const auto part = *remote_parts.begin();
+                veh_part = static_cast<int>( part.part_index() );
+                controls_pos = part.pos();
+            }
+        }
     }
+    // use_controls() itself accepts a remote vehicle with only REMOTE_CONTROLS.
     if( veh != nullptr && veh->player_in_control( u ) &&
-        veh->avail_part_with_feature( veh_part, "CONTROLS", true ) >= 0 ) {
-        veh->use_controls( tripoint_bub_ms( u.bub_pos() ) );
+        ( remote || veh->avail_part_with_feature( veh_part, "CONTROLS", true ) >= 0 ) ) {
+        veh->use_controls( controls_pos );
     } else if( veh && veh->player_in_control( u ) &&
                veh->avail_part_with_feature( veh_part, "CONTROL_ANIMAL", true ) >= 0 ) {
         u.controlling_vehicle = false;
@@ -9342,8 +9361,8 @@ void game::examine( const tripoint_bub_ms &examp )
 void game::pickup()
 {
     const std::optional<tripoint_bub_ms> examp_ = choose_adjacent_highlight( _( "Pickup where?" ),
-            _( "There is nothing to pick up nearby." ),
-            ACTION_PICKUP, false );
+        _( "There is nothing to pick up nearby." ),
+        ACTION_PICKUP, false );
     if( !examp_ ) {
         return;
     }
@@ -9385,7 +9404,7 @@ void game::pickup_feet()
 {
     if( get_option<bool>( "NEW_PICKUP_MENU" ) ) {
         std::vector<pickup::pick_drop_selection> pickup_list = game_menus::inv::pickup_from_tile( g->u,
-                g->u.bub_pos() );
+            g->u.bub_pos() );
         g->u.assign_activity( std::make_unique<player_activity>( std::make_unique<pickup_activity_actor>
                               ( pickup_list, g->u.bub_pos() ) ) );
     } else {
@@ -9633,7 +9652,7 @@ void game::print_terrain_info( const tripoint_bub_ms &lp, const catacurses::wind
     const auto move_cost_color = move_cost_is_zero ? c_light_red : c_light_gray;
     const int move_cost_len = utf8_width( move_cost_str );
     const std::pair<std::string, nc_color> ll = get_light_level( std::max( 1.0,
-            LIGHT_AMBIENT_LIT - m.ambient_light_at( lp ) + 1.0 ) );
+        LIGHT_AMBIENT_LIT - m.ambient_light_at( lp ) + 1.0 ) );
     const int light_len = utf8_width( ll.first );
     const auto location_width = std::max( 0, max_width - move_cost_len - 1 );
     trim_and_print( w_look, point( column, line ), location_width, location_color, area_name );
@@ -10071,11 +10090,10 @@ void game::zones_manager()
     static const auto zone_construction_blueprint = zone_type_id( "CONSTRUCTION_BLUEPRINT" );
     auto zone_point_generator =
     [&]( const tripoint_abs_ms & start, const tripoint_abs_ms & end ) -> std::vector<tripoint_bub_ms> {
-        if( current_zone_type == zone_construction_blueprint )
-        {
+        if( current_zone_type == zone_construction_blueprint ) {
             if( current_bp_options ) {
                 const std::vector<tripoint_abs_ms> covered_points = current_bp_options->get_covered_points( start,
-                        end );
+                    end );
                 auto points = covered_points
                 | std::views::transform( []( const tripoint_abs_ms & p ) {
                     return abs_to_bub( p );
@@ -10097,8 +10115,7 @@ void game::zones_manager()
 
     auto query_position =
     [&]() -> std::optional<std::pair<tripoint_abs_ms, tripoint_abs_ms>> {
-        on_out_of_scope invalidate_current_ui( [&]()
-        {
+        on_out_of_scope invalidate_current_ui( [&]() {
             ui.mark_resize();
         } );
         restore_on_out_of_scope<bool> show_prev( show );
@@ -10118,13 +10135,13 @@ void game::zones_manager()
         auto center = u.bub_pos() + u.view_offset;
 
         const look_around_result first = look_around( /*show_window=*/false, center, center, false, true,
-                false );
+            false );
         if( first.position )
         {
             popup.message( "%s", _( "Select second point." ) );
 
             const look_around_result second = look_around( /*show_window=*/false, center, *first.position,
-                    true, true, false );
+                true, true, false );
             if( second.position ) {
                 auto first_abs = bub_to_abs( tripoint_bub_ms( std::min( first.position->x(),
                                              second.position->x() ),
@@ -11488,7 +11505,7 @@ static auto list_vehicles( const vehicle_list_t &vehicle_list ) -> vehicle_menu_
     std::optional<tripoint_bub_ms> trail_end;
     bool trail_end_x = false;
     shared_ptr_fast<game::draw_callback_t> trail_cb = create_trail_callback( trail_start, trail_end,
-            trail_end_x );
+        trail_end_x );
     g->add_draw_callback( trail_cb );
 
     do {
@@ -11715,7 +11732,7 @@ game::vmenu_ret game::list_items( const std::vector<map_item_stack> &item_list )
     const auto shown_item = [&]() -> const item & {
         const auto &groups = activeItem->vIG;
         const auto *picked = page_num >= 0 && page_num < static_cast<int>( groups.size() ) ? groups[page_num].example : nullptr;
-        return picked != nullptr ? *picked : *activeItem->example;
+        return picked != nullptr ? *picked :*activeItem->example;
     };
     int iCatSortNum = 0;
     int iScrollPos = 0;
@@ -11866,7 +11883,7 @@ game::vmenu_ret game::list_items( const std::vector<map_item_stack> &item_list )
     std::optional<tripoint_bub_ms> trail_end;
     bool trail_end_x = false;
     shared_ptr_fast<draw_callback_t> trail_cb = create_trail_callback( trail_start, trail_end,
-            trail_end_x );
+        trail_end_x );
     add_draw_callback( trail_cb );
 
     do {
@@ -12351,7 +12368,7 @@ game::vmenu_ret game::list_monsters( const std::vector<Creature *> &monster_list
     std::optional<tripoint_bub_ms> trail_end;
     bool trail_end_x = false;
     shared_ptr_fast<draw_callback_t> trail_cb = create_trail_callback( trail_start, trail_end,
-            trail_end_x );
+        trail_end_x );
     add_draw_callback( trail_cb );
 
     do {
@@ -12455,7 +12472,7 @@ static int get_initial_hotkey( const size_t menu_index )
 // There are options for optimization here, but the function is hit infrequently
 // enough that optimizing now is not a useful time expenditure.
 static std::vector<std::pair<item *, int>> generate_butcher_stack_display(
-        const std::vector<item *> &its )
+    const std::vector<item *> &its )
 {
     std::vector<std::pair<item *, int>> result;
     std::vector<std::string> result_strings;
@@ -13461,7 +13478,7 @@ bool game::walk_move( const tripoint_bub_ms &dest_loc, const bool via_ramp )
     const int mcost_to = m.move_cost( dest_loc ); //calculate this _after_ calling grabbed_move
     const bool fungus = m.has_flag_ter_or_furn( "FUNGUS", u.bub_pos() ) ||
                         m.has_flag_ter_or_furn( "FUNGUS",
-                                dest_loc ); //fungal furniture has no slowing effect on mycus characters
+                            dest_loc ); //fungal furniture has no slowing effect on mycus characters
     const bool slowed = ( ( u.mutation_value( "movecost_obstacle_modifier" ) > 0.5f && ( mcost_to > 2 ||
                             mcost_from > 2 ) ) ||
                           mcost_to > 4 || mcost_from > 4 ) &&
@@ -14577,12 +14594,11 @@ void game::update_performance_bubble()
     const bool has_activity = static_cast<bool>( u.activity );
 
     const activity_bubble_effect bubble_effect = has_activity
-            ? u.activity.get()->id().obj().bubble_effect()
-            : activity_bubble_effect::none;
+        ? u.activity.get()->id().obj().bubble_effect()
+        : activity_bubble_effect::none;
 
     const auto activity_target_size = [&]() -> int {
-        switch( bubble_effect )
-        {
+        switch( bubble_effect ) {
             case activity_bubble_effect::mobile:
                 return mobile_size;
             case activity_bubble_effect::idle:
@@ -15161,8 +15177,8 @@ void game::vertical_move( int movez, bool force, bool peeking )
             // ...and we're trying to move up
             else if( movez == 1 ) {
                 const std::optional<vpart_reference> vp = get_map().veh_at( u.bub_pos() + tripoint_rel_ms( 0, 0,
-                        movez ) ).part_with_feature( VPFLAG_BOARDABLE,
-                                                     true );
+                    movez ) ).part_with_feature( VPFLAG_BOARDABLE,
+                                                 true );
                 if( vp ) {
                     add_msg( m_info, _( "You can't board a boat from underneath it!" ) );
                     return;
@@ -15187,7 +15203,7 @@ void game::vertical_move( int movez, bool force, bool peeking )
 
     if( !force && !special_move ) {
         const std::optional<tripoint_bub_ms> pnt = find_or_make_stairs( m, z_after, rope_ladder,
-                peeking );
+            peeking );
         if( !pnt ) {
             return;
         }
@@ -17281,7 +17297,7 @@ void game::add_artifact_dreams( )
     } );
     std::vector<item *>      valid_arts;
     std::vector<std::vector<std::string>>
-                                       valid_dreams; // Tracking separately so we only need to check its req once
+    valid_dreams; // Tracking separately so we only need to check its req once
     //Pull the list of dreams
     add_msg( m_debug, "Checking %s carried artifacts", art_items.size() );
     for( auto &it : art_items ) {
@@ -17378,7 +17394,7 @@ std::vector<npc *> game::get_npcs_if( const std::function<bool( const npc & )> &
 }
 
 std::vector<weak_ptr_fast<npc>> game::get_npcs_pointers_if( const std::function<bool( const npc & )>
-                             &pred )
+        &pred )
 {
     std::vector<weak_ptr_fast<npc>> result;
     // Keep the range alive: a temporary in the range-for initializer dies before the loop runs.
