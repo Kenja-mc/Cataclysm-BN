@@ -9,7 +9,7 @@ from pathlib import Path
 
 from helpers import HELPERS, arena, empty_inventory, give
 from options_menu import open_options
-from fixtures import shared_game
+from fixtures import retire, shared_game
 
 
 NEEDS = ("Pain", "Thirst", "Hunger", "Rest", "Heat")
@@ -66,7 +66,12 @@ def hud_game(tag, moon=False, **options):
                               "ANIMATIONS": "false",
                               "24_HOUR": "24h", "USE_CELSIUS": "celsius",
                               "YN_HOTKEYS": "false", "CHRONIC_PAIN": "false", **options}) as game:
+        game.options_changed = False
         yield game
+        # The profile's options are the key the game is shared under; once a test changed one
+        # in-game, the game no longer matches its profile.
+        if game.options_changed:
+            retire(game)
 
 
 def healthy(game):
@@ -152,6 +157,7 @@ def resized_frame(game, cols, rows, ready, timeout=10.0):
 
 def set_hud_option(game, label, value):
     """Observe the first saved frame without an extra redraw."""
+    game.options_changed = True
     open_options(game)
     header = next(((line.index("[Interface]") + 2, y)
                    for y, line in enumerate(game.screen().splitlines())

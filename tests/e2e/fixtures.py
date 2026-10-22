@@ -30,6 +30,18 @@ def _key(options, cols, rows, keybindings, userdir):
     return json.dumps([sorted((options or {}).items()), cols, rows, str(keybindings), str(userdir)])
 
 
+def retire(game):
+    """Close a shared game so the next test with its profile starts a fresh one.
+
+    A test that changed an option in-game, or failed half-way through a menu, leaves state the
+    profile's setup cannot undo; handing that game to the next borrower makes test order matter.
+    """
+    for key, cached in list(_games.items()):
+        if cached is game:
+            del _games[key]
+    game.close()
+
+
 @contextmanager
 def shared_game(name, options=None, cols=140, rows=45, keybindings=None, userdir=None,
                 define="", setup=None):
@@ -47,4 +59,8 @@ def shared_game(name, options=None, cols=140, rows=45, keybindings=None, userdir
         game.dismiss_error_popup()
     if setup:
         setup(game)
-    yield game
+    try:
+        yield game
+    except BaseException:
+        retire(game)
+        raise
