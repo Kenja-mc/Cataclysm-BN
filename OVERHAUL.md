@@ -336,6 +336,11 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   loadout-only or the sidebar; Needs disappear from the sidebar only when all five fit
   in Status. Weather, weapon and mana sidebar fields likewise return when their box cannot
   fit or is disabled, including immediately after changing options or resizing.
+  **Compact corner bars** (Options → Interface) draws Weather and Status as one-row strips
+  instead of four-row and nine-row boxes, so the map keeps the rows. The Weather strip holds
+  the same readings on one line; the Status strip holds weapon, style, stance and mana, and adds
+  the five Needs when the row has room. The sidebar keeps the panels the full size boxes would
+  have hidden, so no reading is lost when a strip cannot carry it.
 - **Readable default typeface:** bundled JetBrains Mono NL Regular with Unifont fallback,
   anti-aliased at size 18, with 11 × 24 UI cells and square 24 × 24 map/overmap text cells.
   Oversized TTF glyphs shrink to fit their cells instead of losing strokes, including fallback

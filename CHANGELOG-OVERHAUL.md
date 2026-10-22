@@ -18,6 +18,9 @@ Upstream's own changes are in `docs/en/game/changelog`.
   parts.
 - **OpenRouter playtests**: decision-model playtests can use free OpenRouter models, locally from
   `OPENROUTER_ENV_FILE` and nightly in CI from the `OPENROUTER_API_KEY` secret.
+- **Compact corner bars**: an Interface option draws the weather and status readings as one-row
+  strips at the map corners. The sidebar keeps its panels, and the needs summary appears on the
+  status strip only when the row has room.
 
 ### Fixed
 
