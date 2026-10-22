@@ -25,7 +25,8 @@ This installs:
 
 - launcher wrappers → `~/.local/bin/cataclysm-bn`, `~/.local/bin/cataclysm-bn-tiles`
 - desktop entries → `~/.local/share/applications/` ("Cataclysm-BN" for tiles,
-  "Cataclysm-BN (Curses)" for the terminal version)
+  "Cataclysm-BN (Curses)" for the terminal version; `--no-curses-entry` leaves the terminal
+  version out of the app menu and keeps its `cataclysm-bn` command)
 - icon and metainfo, and a basepath config at `~/.config/cataclysm-bn/basepath`
 - the Otopack soundpack (music and ambience) in `data/sound/Otopack+ModsUpdates BN`, downloaded
   with `deno` through upstream's registry bundler. Downloaded audio and its credits stay outside
