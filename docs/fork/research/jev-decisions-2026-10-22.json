@@ -1,0 +1,333 @@
+{
+ "id": "decision_b3bd70f7faa856b05e9d474c50040843",
+ "model": "jev-latest",
+ "answers": {
+  "look_layer": {
+   "type": "choice",
+   "choice": "alt_wasd",
+   "confidence": 0.59,
+   "probabilities": {
+    "alt_wasd": 0.69,
+    "capital_wasd": 0.12,
+    "shift_wasd": 0.12,
+    "unbound_look": 0.07
+   }
+  },
+  "pickup": {
+   "type": "choice",
+   "choice": "g_one_G_all",
+   "confidence": 0.58,
+   "probabilities": {
+    "g_all": 0.17,
+    "g_one_G_all": 0.72,
+    "g_one_ctrl_g_all": 0.11
+   }
+  },
+  "drop": {
+   "type": "choice",
+   "choice": "ctrl_d",
+   "confidence": 0.55,
+   "probabilities": {
+    "ctrl_d": 0.7,
+    "panel_only": 0.19,
+    "alt_d": 0.11
+   }
+  },
+  "wield": {
+   "type": "choice",
+   "choice": "panel_h",
+   "confidence": 0.48,
+   "probabilities": {
+    "panel_h": 0.65,
+    "ctrl_w": 0.16,
+    "action_menu_only": 0.19
+   }
+  },
+  "wear": {
+   "type": "choice",
+   "choice": "panel_W",
+   "confidence": 0.4,
+   "probabilities": {
+    "panel_W": 0.6,
+    "ctrl_wear": 0.14,
+    "action_menu_only": 0.26
+   }
+  },
+  "eat": {
+   "type": "choice",
+   "choice": "ctrl_e",
+   "confidence": 0.53,
+   "probabilities": {
+    "N_nutrition": 0.21,
+    "ctrl_e": 0.69,
+    "action_menu_only": 0.1
+   }
+  },
+  "apply_use": {
+   "type": "choice",
+   "choice": "a_apply",
+   "confidence": 0.28,
+   "probabilities": {
+    "U_use": 0.41,
+    "a_apply": 0.52,
+    "action_menu_only": 0.07
+   }
+  },
+  "read": {
+   "type": "choice",
+   "choice": "R_read",
+   "confidence": 0.73,
+   "probabilities": {
+    "R_read": 0.82,
+    "ctrl_r": 0.12,
+    "action_menu_only": 0.06
+   }
+  },
+  "take_off": {
+   "type": "choice",
+   "choice": "T_takeoff",
+   "confidence": 0.76,
+   "probabilities": {
+    "T_takeoff": 0.84,
+    "ctrl_t": 0.04,
+    "action_menu_only": 0.12
+   }
+  },
+  "unload": {
+   "type": "choice",
+   "choice": "ctrl_u",
+   "confidence": 0.45,
+   "probabilities": {
+    "ctrl_u": 0.63,
+    "panel_only": 0.14,
+    "action_menu_only": 0.23
+   }
+  },
+  "craft": {
+   "type": "choice",
+   "choice": "c_craft",
+   "confidence": 0.34,
+   "probabilities": {
+    "ampersand": 0.16,
+    "c_craft": 0.56,
+    "action_menu_only": 0.28
+   }
+  },
+  "advinv": {
+   "type": "choice",
+   "choice": "I_upper",
+   "confidence": 0.67,
+   "probabilities": {
+    "I_upper": 0.78,
+    "slash": 0.08,
+    "action_menu_only": 0.14
+   }
+  },
+  "save_quit": {
+   "type": "choice",
+   "choice": "menu_only",
+   "confidence": 0.59,
+   "probabilities": {
+    "menu_only": 0.73,
+    "ctrl_s": 0.16,
+    "unbound": 0.11
+   }
+  },
+  "wait": {
+   "type": "choice",
+   "choice": "dot",
+   "confidence": 0.4,
+   "probabilities": {
+    "dot": 0.6,
+    "ctrl_x": 0.35,
+    "both": 0.05
+   }
+  },
+  "jump": {
+   "type": "choice",
+   "choice": "j_unused",
+   "confidence": 0.41,
+   "probabilities": {
+    "ctrl_space": 0.33,
+    "j_unused": 0.61,
+    "action_menu_only": 0.06
+   }
+  },
+  "center_view": {
+   "type": "choice",
+   "choice": "home",
+   "confidence": 0.23,
+   "probabilities": {
+    "home": 0.49,
+    "colon": 0.35,
+    "both_home_colon": 0.16
+   }
+  },
+  "vehicle": {
+   "type": "choice",
+   "choice": "V_upper",
+   "confidence": 0.64,
+   "probabilities": {
+    "V_upper": 0.76,
+    "caret_only": 0.03,
+    "ctrl_v": 0.21
+   }
+  },
+  "doors": {
+   "type": "choice",
+   "choice": "o_toggle",
+   "confidence": 0.67,
+   "probabilities": {
+    "o_toggle": 0.78,
+    "o_toggle_ctrl_c": 0.19,
+    "action_menu_only": 0.03
+   }
+  },
+  "smash": {
+   "type": "choice",
+   "choice": "unbound",
+   "confidence": 0.61,
+   "probabilities": {
+    "ctrl_v": 0.2,
+    "action_menu_only": 0.06,
+    "unbound": 0.74
+   }
+  },
+  "autoattack": {
+   "type": "choice",
+   "choice": "leave_unbound",
+   "confidence": 0.34,
+   "probabilities": {
+    "tab_gameplay": 0.33,
+    "leave_unbound": 0.67
+   }
+  },
+  "pause": {
+   "type": "choice",
+   "choice": "x_today",
+   "confidence": 0.3,
+   "probabilities": {
+    "x_today": 0.53,
+    "esc_pause": 0.37,
+    "space_pause": 0.1
+   }
+  },
+  "examine": {
+   "type": "choice",
+   "choice": "space",
+   "confidence": 0.97,
+   "probabilities": {
+    "space": 0.98,
+    "e_interact": 0.01,
+    "enter": 0.01
+   }
+  },
+  "attack_dir": {
+   "type": "choice",
+   "choice": "unbound",
+   "confidence": 0.31,
+   "probabilities": {
+    "unbound": 0.54,
+    "ctrl_dir": 0.36,
+    "alt_dir": 0.1
+   }
+  },
+  "overmap_pan": {
+   "type": "choice",
+   "choice": "wasd",
+   "confidence": 0.28,
+   "probabilities": {
+    "wasd": 0.52,
+    "hjkl": 0.24,
+    "wasd_plus_hjkl": 0.24
+   }
+  },
+  "quicksave": {
+   "type": "choice",
+   "choice": "f5_f9",
+   "confidence": 0.1,
+   "probabilities": {
+    "f5_f9": 0.4,
+    "unbound": 0.2,
+    "ctrl_s_ctrl_l": 0.4
+   }
+  },
+  "quick_stack": {
+   "type": "choice",
+   "choice": "ctrl_g",
+   "confidence": 0.33,
+   "probabilities": {
+    "ctrl_g": 0.55,
+    "panel_only": 0.09,
+    "unbound": 0.36
+   }
+  },
+  "missions": {
+   "type": "choice",
+   "choice": "classic_caps",
+   "confidence": 0.53,
+   "probabilities": {
+    "classic_caps": 0.69,
+    "single_menu": 0.2,
+    "mirror_modern": 0.11
+   }
+  },
+  "view_zoom": {
+   "type": "choice",
+   "choice": "wheel_plus_minus",
+   "confidence": 0.35,
+   "probabilities": {
+    "wheel_plus_minus": 0.57,
+    "wheel_only": 0.4,
+    "keys_only": 0.03
+   }
+  },
+  "movement_menu": {
+   "type": "choice",
+   "choice": "quote",
+   "confidence": 0.14,
+   "probabilities": {
+    "quote": 0.43,
+    "unbound": 0.31,
+    "ctrl_m_modes": 0.26
+   }
+  },
+  "fire_mode": {
+   "type": "choice",
+   "choice": "unbound",
+   "confidence": 0.73,
+   "probabilities": {
+    "F_upper": 0.13,
+    "ctrl_f": 0.05,
+    "unbound": 0.82
+   }
+  },
+  "classic_layer": {
+   "type": "choice",
+   "choice": "restore_all_free",
+   "confidence": 0.52,
+   "probabilities": {
+    "restore_all_free": 0.68,
+    "restore_common": 0.24,
+    "menu_first": 0.08
+   }
+  },
+  "gamepad": {
+   "type": "choice",
+   "choice": "menus_only",
+   "confidence": 0.23,
+   "probabilities": {
+    "menus_only": 0.49,
+    "full_profile": 0.31,
+    "separate_preset": 0.2
+   }
+  }
+ },
+ "usage": {
+  "input_tokens": 8356,
+  "output_tokens": 1343,
+  "cost": 0.0,
+  "is_byok": false
+ },
+ "provider": "typesafe"
+}
