@@ -272,6 +272,7 @@ void DynamicDataLoader::initialize()
     add( "OPTION", &load_ignored_type );
     add( "OPTION_GROUP", &load_ignored_type );
     add( "OPTION_SPACE", &load_ignored_type );
+    add( "WORLD_PRESET", &load_ignored_type );
     add( "json_flag", &json_flag::load_all );
     add( "mutation_flag", &json_trait_flag::load_all );
     add( "fault", &fault::load_fault );

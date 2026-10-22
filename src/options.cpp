@@ -43,6 +43,7 @@
 #include "string_utils.h"
 #include "title_screen.h"
 #include "translations.h"
+#include "ui.h"
 #include "ui_manager.h"
 #include "worldfactory.h"
 
@@ -231,6 +232,7 @@ namespace
 constexpr auto option_group_type = "OPTION_GROUP";
 constexpr auto option_space_type = "OPTION_SPACE";
 constexpr auto option_type = "OPTION";
+constexpr auto world_preset_type = "WORLD_PRESET";
 
 struct option_dependency_definition {
     std::string option;
@@ -359,6 +361,59 @@ auto read_option_dependencies( const JsonObject &jo ) -> std::vector<option_depe
         result.push_back( dep );
     }
     return result;
+}
+
+/// Parses the whole string, so trailing garbage is rejected rather than ignored as atoi does.
+template<typename T>
+auto parse_number( const std::string &text, T &out ) -> bool
+{
+    std::istringstream ss( text );
+    ss.imbue( std::locale::classic() );
+    if( !( ss >> out ) ) {
+        return false;
+    }
+    ss >> std::ws;
+    return ss.eof();
+}
+
+/// Preset values are the same strings the options file and worldoptions.json store.
+auto read_preset_value( const JsonMember &member ) -> std::string
+{
+    if( member.test_string() ) {
+        return member.get_string();
+    }
+    if( member.test_bool() ) {
+        return member.get_bool() ? "true" : "false";
+    }
+    if( member.test_int() ) {
+        return std::to_string( member.get_int() );
+    }
+    if( member.test_float() ) {
+        return string_format( "%.10g", member.get_float() );
+    }
+    member.throw_error( "A world preset value must be a string, number or bool" );
+    return {};
+}
+
+auto parse_world_preset( const JsonObject &jo ) -> options_manager::world_preset
+{
+    jo.allow_omitted_members();
+    const auto id = jo.get_string( "id" );
+    auto values = std::vector<std::pair<std::string, std::string>>();
+    if( jo.has_object( "values" ) ) {
+        for( const JsonMember member : jo.get_object( "values" ) ) {
+            if( member.is_comment() ) {
+                continue;
+            }
+            values.emplace_back( member.name(), read_preset_value( member ) );
+        }
+    }
+    return {
+        .id = id,
+        .name = read_translation_member( jo, "name", no_translation( id ) ),
+        .description = read_translation_member( jo, "description", no_translation( "" ) ),
+        .values = std::move( values ),
+    };
 }
 
 auto parse_option_group_definition( const JsonObject &jo ) -> option_group_definition
@@ -1448,6 +1503,33 @@ void options_manager::cOpt::setValue( const std::string &sSetIn )
     }
 }
 
+auto options_manager::cOpt::accepts_value( const std::string &value ) const -> bool
+{
+    if( sType == "string_select" ) {
+        return getItemPos( value ) != -1;
+    }
+    if( sType == "string_input" ) {
+        return iMaxLength <= 0 || value.size() <= static_cast<size_t>( iMaxLength );
+    }
+    if( sType == "bool" ) {
+        return value == "true" || value == "True" || value == "T" || value == "t" ||
+               value == "false" || value == "False" || value == "F" || value == "f";
+    }
+    if( sType == "int" ) {
+        int parsed = 0;
+        return parse_number( value, parsed ) && parsed >= iMin && parsed <= iMax;
+    }
+    if( sType == "int_map" ) {
+        int parsed = 0;
+        return parse_number( value, parsed ) && findInt( parsed ).has_value();
+    }
+    if( sType == "float" ) {
+        float parsed = 0.0f;
+        return parse_number( value, parsed ) && parsed >= fMin && parsed <= fMax;
+    }
+    return false;
+}
+
 /** Fill a mapping with values.
  * Scans all directories in @p dirname directory for
  * a file named @p filename.
@@ -1722,6 +1804,20 @@ auto options_manager::parse_option_definition_entry( const JsonObject &jo ) -> v
         return;
     }
 
+    if( type == world_preset_type ) {
+        auto preset = parse_world_preset( jo );
+        const auto duplicate = std::ranges::any_of( presets_,
+        [&]( const world_preset & existing ) {
+            return existing.id == preset.id;
+        } );
+        if( duplicate ) {
+            debugmsg( "Duplicate world preset '%s'", preset.id );
+            return;
+        }
+        presets_.push_back( std::move( preset ) );
+        return;
+    }
+
     jo.throw_error( string_format( "Unknown option definition type '%s'", type ), "type" );
 }
 
@@ -1766,11 +1862,48 @@ auto options_manager::load_option_definitions() -> void
 
         }
     }
+
+    // A preset file can name an option declared in another file, so validate once, after all load.
+    validate_world_presets();
+}
+
+auto options_manager::validate_world_presets() -> void
+{
+    std::erase_if( presets_, [&]( const world_preset & preset ) {
+        if( preset.values.empty() ) {
+            debugmsg( "World preset '%s' changes no options", preset.id );
+            return true;
+        }
+        const auto invalid = std::ranges::find_if( preset.values,
+        [&]( const std::pair<std::string, std::string> &entry ) {
+            const auto &[name, value] = entry;
+            if( !has_option( name ) ) {
+                debugmsg( "World preset '%s' references unknown option '%s'", preset.id, name );
+                return true;
+            }
+            const cOpt &opt = options[name];
+            if( opt.getPage() != world_default ) {
+                debugmsg( "World preset '%s' sets '%s', which is not a world option", preset.id, name );
+                return true;
+            }
+            if( opt.is_hidden() ) {
+                debugmsg( "World preset '%s' sets hidden option '%s'", preset.id, name );
+                return true;
+            }
+            if( !opt.accepts_value( value ) ) {
+                debugmsg( "World preset '%s' sets '%s' to invalid value '%s'", preset.id, name, value );
+                return true;
+            }
+            return false;
+        } );
+        return invalid != preset.values.end();
+    } );
 }
 
 void options_manager::init()
 {
     options.clear();
+    presets_.clear();
     groups_.clear();
     adding_to_group_.clear();
     for( Page &p : pages_ ) {
@@ -3963,6 +4096,16 @@ struct string_col {
     string_col( const std::string &s, nc_color col ) : s( s ), col( col ) { }
 };
 
+auto options_manager::reset_page_to_defaults( const Page &page ) -> void
+{
+    for( const PageItem &item : page.items_ ) {
+        if( item.type == ItemType::Option ) {
+            // get_option copies the definition into a world that predates the option.
+            get_option( item.data ).set_default();
+        }
+    }
+}
+
 std::string options_manager::show( bool ingame, const bool world_options_only,
                                    const std::function<bool()> &on_quit )
 {
@@ -4010,6 +4153,7 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
     const auto modern = ::get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
     ctxt.register_action( "RESET_OPTION", to_translation( "Reset to default" ) );
     ctxt.register_action( "RESET_PAGE", to_translation( "Reset page to defaults" ) );
+    ctxt.register_action( "WORLD_PRESET", to_translation( "Apply world preset" ) );
     if( modern ) {
         ctxt.register_action( "COORDINATE" );
         ctxt.register_action( "MOUSE_MOVE" );
@@ -4069,10 +4213,10 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
     ui.on_screen_resize( init_windows );
     init_windows( ui );
 
-    const auto visible_rows = [&]( const std::vector<PageItem> & items ) {
+    const auto visible_rows = [&]( const std::vector<PageItem> &items ) {
         return std::views::iota( 0, static_cast<int>( items.size() ) )
-               | std::views::filter( [&]( const int i ) { return items[i].type == ItemType::GroupHeader || groups_state[items[i].group]; } )
-               | std::ranges::to<std::vector>();
+        | std::views::filter( [&]( const int i ) { return items[i].type == ItemType::GroupHeader || groups_state[items[i].group]; } )
+        | std::ranges::to<std::vector>();
     };
     const auto tab_name = [&]( const int i ) -> std::string {
         return ingame && i == iWorldOptPage ? _( "Current world" ) : pages_[i].name_.translated();
@@ -4109,6 +4253,9 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
 
         auto &cOPTIONS = ( ingame || world_options_only ) && iCurrentPage == iWorldOptPage ?
                          ACTIVE_WORLD_OPTIONS : OPTIONS;
+        // Presets edit a concrete world, not the global defaults.
+        const bool can_apply_preset = ( ingame || world_options_only ) &&
+                                      iCurrentPage == iWorldOptPage;
 
         const Page &page = pages_[iCurrentPage];
         const std::vector<PageItem> &page_items = page.items_;
@@ -4241,18 +4388,24 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
             std::array<const char *, 2> actions;
             const char *label;
             int row = 0;
+            /// Only shown where a concrete world can be edited.
+            bool world_only = false;
         };
         constexpr auto hints = std::array {
             key_hint{ .actions = { "UP", "DOWN" }, .label = translate_marker( "move" ) },
             key_hint{ .actions = { "LEFT", "RIGHT" }, .label = translate_marker( "change" ) },
             key_hint{ .actions = { "RESET_OPTION" }, .label = translate_marker( "default" ), .row = 1 },
             key_hint{ .actions = { "RESET_PAGE" }, .label = translate_marker( "page default" ), .row = 1 },
+            key_hint{ .actions = { "WORLD_PRESET" }, .label = translate_marker( "preset" ), .row = 1, .world_only = true },
             key_hint{ .actions = { "PREV_TAB", "NEXT_TAB" }, .label = translate_marker( "page" ) },
             key_hint{ .actions = { "HELP_KEYBINDINGS" }, .label = translate_marker( "keys" ) },
             key_hint{ .actions = { "QUIT" }, .label = translate_marker( "done" ) },
         };
         auto guides = std::array<std::string, 2>();
         for( const auto &hint : hints ) {
+            if( hint.world_only && !can_apply_preset ) {
+                continue;
+            }
             auto keys = std::string();
             for( const auto *act : hint.actions ) {
                 if( act != nullptr && !inp_mngr.get_input_for_action( act, "OPTIONS" ).empty() ) {
@@ -4264,7 +4417,8 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
             }
         }
         reset_label_x = modern ? getmaxx( w_options_footer ) - utf8_width( reset_label ) : -1;
-        trim_and_print( w_options_footer, point_zero, getmaxx( w_options_footer ), c_light_gray, guides[0] );
+        trim_and_print( w_options_footer, point_zero, getmaxx( w_options_footer ), c_light_gray,
+                        guides[0] );
         trim_and_print( w_options_footer, point( 0, 1 ),
                         reset_label_x < 0 ? getmaxx( w_options_footer ) : reset_label_x - 1, c_light_gray, guides[1] );
         if( reset_label_x >= 0 ) {
@@ -4283,6 +4437,8 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
 
         auto &cOPTIONS = ( ingame || world_options_only ) && iCurrentPage == iWorldOptPage ?
                          ACTIVE_WORLD_OPTIONS : OPTIONS;
+        const bool can_apply_preset = ( ingame || world_options_only ) &&
+                                      iCurrentPage == iWorldOptPage;
 
         auto action = ctxt.handle_input();
 
@@ -4299,7 +4455,8 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
                     return std::nullopt;
                 }
                 const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
-                if( cell.x < 0 || cell.y < 0 || cell.x >= getmaxx( w ) || cell.y >= getmaxy( w ) ) {
+                if( cell.x < 0 || cell.y < 0 || cell.x >= getmaxx( w ) || cell.y >= getmaxy( w ) )
+                {
                     return std::nullopt;
                 }
                 return cell;
@@ -4455,12 +4612,42 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
             }
         } else if( action == "RESET_PAGE" ) {
             if( query_yn( _( "Reset all options on this page to their defaults?" ) ) ) {
+                reset_page_to_defaults( page );
+            }
+        } else if( action == "WORLD_PRESET" && can_apply_preset ) {
+            uilist menu;
+            menu.title = _( "Apply world preset" );
+            menu.addentry( 0, true, 0, _( "Default (reset page)" ) );
+            for( const world_preset &preset : presets_ ) {
+                menu.addentry_desc( static_cast<int>( menu.entries.size() ), true, 0,
+                                    preset.name.translated(), preset.description.translated() );
+            }
+            menu.query();
+            if( menu.ret < 0 ) {
+                continue;
+            }
+            if( menu.ret == 0 ) {
+                if( query_yn( _( "Reset all options on this page to their defaults?" ) ) ) {
+                    reset_page_to_defaults( page );
+                }
+                continue;
+            }
+            const world_preset &preset = presets_[menu.ret - 1];
+            if( !query_yn( _( "Apply the %s preset?  This resets this page to its defaults first." ),
+                           preset.name.translated() ) ) {
+                continue;
+            }
+            reset_page_to_defaults( page );
+            for( const auto &[name, value] : preset.values ) {
+                // get_option imports the definition when an old world lacks the option.
+                get_option( name ).setValue( value );
                 for( const PageItem &item : page_items ) {
-                    if( item.type == ItemType::Option ) {
-                        cOPTIONS[item.data].set_default();
+                    if( item.type == ItemType::Option && item.data == name && !item.group.empty() ) {
+                        groups_state[item.group] = true;
                     }
                 }
             }
+            continue;
         } else if( action == "QUIT" ) {
             break;
         }

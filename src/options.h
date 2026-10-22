@@ -43,6 +43,7 @@ class options_manager
         auto parse_option_definition_file( JsonIn &jsin ) -> void;
         auto parse_option_definition_entry( const JsonObject &jo ) -> void;
         auto reload_option_definitions_preserving_values() -> void;
+        auto validate_world_presets() -> void;
 
         std::map<std::string, std::string> post_json_verify;
 
@@ -127,6 +128,9 @@ class options_manager
                     return { "bool", "string", "string_select", "string_input" };
                 }
 
+                /// Whether `value` is a value this option would keep, given its type and range.
+                auto accepts_value( const std::string &value ) const -> bool;
+
                 void setPrerequisites( const std::string &sOption, const std::vector<std::string> &sAllowedValues );
                 void setPrerequisite( const std::string &sOption, const std::string &sAllowedValue = "true" ) {
                     setPrerequisites( sOption, { sAllowedValue } );
@@ -191,6 +195,14 @@ class options_manager
         };
 
         using options_container = std::unordered_map<std::string, cOpt>;
+
+        /// A named set of world option values, loaded from `WORLD_PRESET` JSON.
+        struct world_preset {
+            std::string id;
+            translation name;
+            translation description;
+            std::vector<std::pair<std::string, std::string>> values;
+        };
 
         void init();
         void add_options_general();
@@ -338,8 +350,11 @@ class options_manager
         };
 
         auto insert_page_item( Page &page, const PageItem &item ) -> void;
+        /// Sets every option on `page` to its built-in default.
+        auto reset_page_to_defaults( const Page &page ) -> void;
 
         std::vector<Page> pages_;
+        std::vector<world_preset> presets_;
         std::string adding_to_group_;
         std::vector<Group> groups_;
 

@@ -895,7 +895,14 @@ def extract_option_group(state, item):
              comment=f"Title of option group '{group_id}'")
     writestr(state, item.get("desc"),
              comment=f"Description of option group '{group_id}'")
-    
+
+def extract_world_preset(state, item):
+    preset_id = item.get("id")
+    writestr(state, item.get("name"),
+             comment=f"Name of world preset '{preset_id}'")
+    writestr(state, item.get("description"),
+             comment=f"Description of world preset '{preset_id}'")
+
 def extract_nested_category(state, item):
     nested_name = item.get("nested_name")
     writestr(state, nested_name, comment="Nested crafting category name")
@@ -939,6 +946,7 @@ extract_specials = {
     "weapon_category": extract_weapon_category,
     "OPTION": extract_option,
     "OPTION_GROUP": extract_option_group,    
+    "WORLD_PRESET": extract_world_preset,
     "map_feature_description": extract_map_feature_description,
     "enchantment_condition": extract_enchantment_condition,
     "enchantment_value": extract_enchantment_value,
