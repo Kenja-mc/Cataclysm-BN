@@ -3,7 +3,7 @@ import os
 import re
 import time
 
-from helpers import HELPERS, arena, empty_inventory, give, settle
+from helpers import HELPERS, arena, bub_pos, empty_inventory, give, settle
 from safe_click import see_everything
 from tmux_game import Game, start_new_game
 
@@ -47,8 +47,9 @@ def test_safe_mode_repeats_hint_while_movement_is_blocked(_g):
     try:
         start_new_game(game)
         game.define_lua(HELPERS)
+        # Strip rolled gear and traits so no starting item or morale can change what is warned.
+        empty_inventory(game)
         arena(game)
-        give(game, "diving_watch")
         # The shelter can start very dark; the zombies must be seen to be warned about, and rolled
         # wildlife must not be spotted first.
         see_everything(game, True)
@@ -72,10 +73,9 @@ def test_safe_mode_repeats_hint_while_movement_is_blocked(_g):
         warning, repeat_hint = safe_mode_messages(game)
         assert warning and not repeat_hint, "the first blocked action must give the full warning:\n" \
             + game.screen()
-        blocked_at = minutes_of_day(game)
-        assert blocked_at is not None, game.screen()
+        blocked_at = bub_pos(game)
         game.keys("w", delay=1.5)
-        assert minutes_of_day(game) == blocked_at, "safe mode must keep blocking the move"
+        assert bub_pos(game) == blocked_at, "safe mode must keep blocking the move:\n" + game.screen()
         # The hint is drawn while the blocked key is processed, which lands later on a loaded
         # runner than the fixed key delay allows for.
         try:
