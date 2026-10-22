@@ -1,0 +1,292 @@
+## Unbound in modern (110)
+
+- ADVANCED_INVENTORY ITEMS_DEFAULT Restore default layout
+- ADVANCED_INVENTORY SAVE_DEFAULT Save default layout
+- DEFAULTMODE SUICIDE Commit Suicide
+- DEFAULTMODE advinv Advanced Inventory management
+- DEFAULTMODE apply Apply or Use Item
+- DEFAULTMODE apply_wielded Apply or Use Wielded Item
+- DEFAULTMODE attack Attack in a direction
+- DEFAULTMODE auto_travel_mode Toggle Auto Travel Mode
+- DEFAULTMODE autoattack Autoattack
+- DEFAULTMODE autosafe Toggle Auto-Safemode
+- DEFAULTMODE bionics View/Activate Bionics
+- DEFAULTMODE body_status Body status
+- DEFAULTMODE butcher Butcher
+- DEFAULTMODE cast_last_spell Cast Last Spell
+- DEFAULTMODE cast_spell Spellcasting
+- DEFAULTMODE center Center View
+- DEFAULTMODE chat Chat with NPC
+- DEFAULTMODE close Close Door
+- DEFAULTMODE compare Compare two Items
+- DEFAULTMODE construct Construct Terrain
+- DEFAULTMODE control_vehicle Control Vehicle
+- DEFAULTMODE craft Craft Items
+- DEFAULTMODE debug_lighting View Lighting Map
+- DEFAULTMODE debug_mode Toggle Debug Mode
+- DEFAULTMODE debug_radiation View Radiation Map
+- DEFAULTMODE debug_scent View Scentmap
+- DEFAULTMODE debug_scent_type View Scent Type
+- DEFAULTMODE debug_submap_grid View Submap Grid
+- DEFAULTMODE debug_temp View Temperature Map
+- DEFAULTMODE debug_visibility View Visibility Map
+- DEFAULTMODE diary Open Diary
+- DEFAULTMODE disassemble Disassemble items
+- DEFAULTMODE drop Drop Item
+- DEFAULTMODE drop_adj Drop Item to Adjacent Tile
+- DEFAULTMODE eat Eat
+- DEFAULTMODE factions View Factions
+- DEFAULTMODE fire_burst Burst-Fire Wielded Item
+- DEFAULTMODE grab Grab something nearby
+- DEFAULTMODE haul Haul items along the ground
+- DEFAULTMODE item_action_menu Item Action Menu
+- DEFAULTMODE jump Jump across an adjacent tile
+- DEFAULTMODE listitems List all items around the player
+- DEFAULTMODE long_craft Craft as long as possible
+- DEFAULTMODE look Look Around
+- DEFAULTMODE loot Zone activities
+- DEFAULTMODE lua_reload Reload Lua Code
+- DEFAULTMODE messages View Message Log
+- DEFAULTMODE missions View Missions
+- DEFAULTMODE morale View Morale
+- DEFAULTMODE mutations View/Activate Mutations
+- DEFAULTMODE open Open Door
+- DEFAULTMODE open_autonotes Autonotes manager
+- DEFAULTMODE open_autopickup Autopickup manager
+- DEFAULTMODE open_color Color manager
+- DEFAULTMODE open_consume Consume Item Menu
+- DEFAULTMODE open_distraction_manager Distractions manager
+- DEFAULTMODE open_hhg Open Hitchhiker's Guide
+- DEFAULTMODE open_movement Movement Mode Menu
+- DEFAULTMODE open_options Options
+- DEFAULTMODE open_safemode Safe Mode manager
+- DEFAULTMODE open_wiki Open Wiki
+- DEFAULTMODE open_world_mods Active World Mods
+- DEFAULTMODE organize Swap Inventory Letters
+- DEFAULTMODE peek Peek Around Corners
+- DEFAULTMODE pick_style Select Martial Arts Style
+- DEFAULTMODE pickup Pick up items from one nearby tile
+- DEFAULTMODE pickup_feet Pickup Item(s) at Player Feet
+- DEFAULTMODE player_data View Player Info
+- DEFAULTMODE quick_stack Quick stack to nearby storage
+- DEFAULTMODE quickload Quickload
+- DEFAULTMODE quicksave Quicksave
+- DEFAULTMODE read Read
+- DEFAULTMODE recraft Recraft last recipe
+- DEFAULTMODE reload_tileset Reload Tileset
+- DEFAULTMODE reload_weapon Reload Weapons
+- DEFAULTMODE reload_wielded Reload Wielded Item
+- DEFAULTMODE reset_move Reset Movement to Walk
+- DEFAULTMODE salvage Salvage items
+- DEFAULTMODE save Save and Quit
+- DEFAULTMODE scores View Achievements, Scores, and Kills
+- DEFAULTMODE select_default_ammo Select default ammo for Wielded Item
+- DEFAULTMODE select_fire_mode Toggle attack mode of Wielded Item
+- DEFAULTMODE sky Look at the sky
+- DEFAULTMODE sleep Sleep
+- DEFAULTMODE smash Smash Nearby Terrain
+- DEFAULTMODE sort_armor Re-layer armor/clothing
+- DEFAULTMODE sort_pile Sort the pile you're standing on
+- DEFAULTMODE take_off Take Off Worn Item
+- DEFAULTMODE toggle_auto_features Toggle Auto Features
+- DEFAULTMODE toggle_auto_foraging Toggle Auto Foraging
+- DEFAULTMODE toggle_auto_mining Toggle Auto Mining
+- DEFAULTMODE toggle_auto_pickup Toggle Auto Pickup
+- DEFAULTMODE toggle_auto_pulp_butcher Toggle Auto Pulp/Butcher
+- DEFAULTMODE toggle_crouch Toggle Crouch
+- DEFAULTMODE toggle_fullscreen Toggle Fullscreen mode
+- DEFAULTMODE toggle_manual_combat_mode Toggle manual combat mode
+- DEFAULTMODE toggle_map_memory Toggle Map Memory
+- DEFAULTMODE toggle_panel_adm Sidebar Options
+- DEFAULTMODE toggle_pixel_minimap Toggle Minimap
+- DEFAULTMODE toggle_prone Toggle Prone
+- DEFAULTMODE toggle_run Toggle Run
+- DEFAULTMODE toggle_sidebar_style Switch Sidebar Style
+- DEFAULTMODE toggle_thief_mode Toggle thief mode
+- DEFAULTMODE toggle_zone_overlay Toggle Zone Overlay
+- DEFAULTMODE unload Unload or Empty Wielded Item
+- DEFAULTMODE unload_all Unload All Items
+- DEFAULTMODE wear Wear Item
+- DEFAULTMODE whitelist_enemy Whitelist enemy
+- DEFAULTMODE wield Wield
+- DEFAULTMODE zones Manage zones
+
+## Overloaded (one key, several controls in one context)
+
+### INVENTORY_ITEM
+- keyboard:f: FAVORITE_ADD (Favorite); FAVORITE_REMOVE (Unfavorite)
+- keyboard:h: WIELD (Wield); UNWIELD (Unwield)
+### UNCAT
+- keyboard:/: FILTER (Filter); SEARCH (Search)
+- keyboard:DOWN: DOWN (Pan down); TEXT.DOWN (Move cursor down)
+- keyboard:ESC: QUIT (Exit screen); TEXT.QUIT (Cancel text input)
+- keyboard:LEFT: LEFT (Pan left); TEXT.LEFT (Move cursor left)
+- keyboard:NPAGE: PAGE_DOWN (Page down); LEVEL_DOWN (Go Down); TEXT.PAGE_DOWN (Move cursor to next page)
+- keyboard:NUMPAD_6: RIGHT (Pan right); TEXT.CONFIRM (Confirm text input)
+- keyboard:PPAGE: PAGE_UP (Page up); LEVEL_UP (Go Up); TEXT.PAGE_UP (Move cursor to previous page)
+- keyboard:RETURN: CONFIRM (Confirm Choice); TEXT.CONFIRM (Confirm text input)
+- keyboard:RIGHT: RIGHT (Pan right); TEXT.RIGHT (Move cursor right)
+- keyboard:TAB: NEXT_TAB (Go to next tab); EDITMAP_TAB (Switch to move point / confirm)
+- keyboard:UP: UP (Pan up); TEXT.UP (Move cursor up)
+- keyboard:f: FILTER (Filter); TOGGLE_FAST_SCROLL (Toggle Fast Scroll)
+
+## Duplicated (one control, several keys)
+
+- ADVANCED_INVENTORY DOWN (Pan down): keyboard:s, keyboard:j, keyboard:DOWN, gamepad:JOY_DOWN
+- ADVANCED_INVENTORY EXAMINE (Examine): keyboard:e, keyboard:E
+- ADVANCED_INVENTORY ITEMS_CE (Select items @ center): keyboard:5, keyboard:NUMPAD_5
+- ADVANCED_INVENTORY ITEMS_CONTAINER (Select items in container): keyboard:c, keyboard:C
+- ADVANCED_INVENTORY ITEMS_E (Select items @ East): keyboard:6, keyboard:NUMPAD_6
+- ADVANCED_INVENTORY ITEMS_INVENTORY (Select items in inventory): keyboard:i, keyboard:I, keyboard:0, keyboard:NUMPAD_0
+- ADVANCED_INVENTORY ITEMS_N (Select items @ North): keyboard:8, keyboard:NUMPAD_8
+- ADVANCED_INVENTORY ITEMS_NE (Select items @ North-East): keyboard:9, keyboard:NUMPAD_9
+- ADVANCED_INVENTORY ITEMS_NW (Select items @ North-West): keyboard:7, keyboard:NUMPAD_7
+- ADVANCED_INVENTORY ITEMS_S (Select items @ South): keyboard:2, keyboard:NUMPAD_2
+- ADVANCED_INVENTORY ITEMS_SE (Select items @ South-East): keyboard:3, keyboard:NUMPAD_3
+- ADVANCED_INVENTORY ITEMS_SW (Select items @ South-West): keyboard:1, keyboard:NUMPAD_1
+- ADVANCED_INVENTORY ITEMS_W (Select items @ West): keyboard:4, keyboard:NUMPAD_4
+- ADVANCED_INVENTORY LEFT (Select left inventory): keyboard:a, keyboard:h, keyboard:LEFT, gamepad:JOY_LEFT
+- ADVANCED_INVENTORY RIGHT (Select right inventory): keyboard:d, keyboard:l, keyboard:RIGHT, gamepad:JOY_RIGHT
+- ADVANCED_INVENTORY TOGGLE_VEH (Toggle vehicle): keyboard:v, keyboard:V
+- ADVANCED_INVENTORY UP (Pan up): keyboard:w, keyboard:k, keyboard:UP, gamepad:JOY_UP
+- AUTO_NOTES ENABLE_MAPEXTRA_NOTE (Enable auto note for map extra): keyboard:e, keyboard:E
+- AUTO_PICKUP COPY_RULE (Copy rule): keyboard:c, keyboard:C
+- AUTO_PICKUP ENABLE_RULE (Enable rule): keyboard:e, keyboard:E
+- AUTO_PICKUP REMOVE_RULE (Remove rule): keyboard:r, keyboard:R
+- AUTO_PICKUP SWAP_RULE_GLOBAL_CHAR (Move rule global <-> character): keyboard:m, keyboard:M
+- AUTO_PICKUP TEST_RULE (Test rule): keyboard:t, keyboard:T
+- BIONICS DOWN (Move cursor down): keyboard:s, keyboard:DOWN, keyboard:2, keyboard:NUMPAD_2, gamepad:JOY_DOWN
+- BIONICS UP (Move cursor up): keyboard:w, keyboard:8, keyboard:UP, keyboard:NUMPAD_8, gamepad:JOY_UP
+- CANCEL_ACTIVITY_OR_IGNORE_QUERY IGNORE (Ignore further distractions and finish): keyboard:I, keyboard:i
+- CANCEL_ACTIVITY_OR_IGNORE_QUERY MANAGER (Open manager): keyboard:M, keyboard:m
+- CANCEL_ACTIVITY_OR_IGNORE_QUERY NO (No): keyboard:N, keyboard:n, keyboard:ESC
+- CANCEL_ACTIVITY_OR_IGNORE_QUERY YES (Yes): keyboard:Y, keyboard:y
+- COLORS LOAD_TEMPLATE (Load color template): keyboard:t, keyboard:T
+- COLORS REMOVE_CUSTOM (Remove custom color): keyboard:r, keyboard:R
+- CRAFTING HELP_RECIPE (Show recipe result): keyboard:e, keyboard:E
+- DEFAULTMODE DOWN (Move south): keyboard:s, keyboard:DOWN, keyboard:NUMPAD_2
+- DEFAULTMODE LEFT (Move west): keyboard:a, keyboard:LEFT, keyboard:NUMPAD_4
+- DEFAULTMODE LEFTDOWN (Move southwest): keyboard:z, keyboard:NUMPAD_1
+- DEFAULTMODE LEFTUP (Move northwest): keyboard:q, keyboard:NUMPAD_7
+- DEFAULTMODE RIGHT (Move east): keyboard:d, keyboard:RIGHT, keyboard:NUMPAD_6
+- DEFAULTMODE RIGHTDOWN (Move southeast): keyboard:c, keyboard:NUMPAD_3
+- DEFAULTMODE RIGHTUP (Move northeast): keyboard:e, keyboard:NUMPAD_9
+- DEFAULTMODE UP (Move north): keyboard:w, keyboard:UP, keyboard:NUMPAD_8
+- DEFAULTMODE pause (Pause): keyboard:x, keyboard:NUMPAD_5
+- EDITMAP_FEATURE CONFIRM_QUIT (Confirm & quit): keyboard:e, keyboard:u, keyboard:t
+- HELP_KEYBINDINGS DOWN (Pan down): keyboard:s, keyboard:DOWN, keyboard:NUMPAD_2
+- HELP_KEYBINDINGS UP (Pan up): keyboard:w, keyboard:UP, keyboard:NUMPAD_8
+- INVENTORY LEFT (Previous column): keyboard:a, keyboard:LEFT, keyboard:NUMPAD_4, gamepad:JOY_LEFT
+- INVENTORY_ITEM LEFT (Cancel): keyboard:a, keyboard:LEFT, keyboard:NUMPAD_4, gamepad:JOY_LEFT
+- ITEM_ACTIONS DOWN (Pan down): keyboard:s, keyboard:DOWN, keyboard:NUMPAD_2
+- ITEM_ACTIONS UP (Pan up): keyboard:w, keyboard:UP, keyboard:NUMPAD_8
+- LIST_ITEMS COMPARE (Compare): keyboard:I, keyboard:c, keyboard:C
+- LIST_ITEMS EXAMINE (Examine): keyboard:e, keyboard:E
+- LOOK DOWN (Move south): keyboard:s, keyboard:DOWN, keyboard:2, keyboard:NUMPAD_2
+- LOOK EXTENDED_DESCRIPTION (Show extended description): keyboard:v, keyboard:i
+- LOOK LEFT (Move west): keyboard:a, keyboard:LEFT, keyboard:4, keyboard:NUMPAD_4
+- LOOK LEFTDOWN (Move southwest): keyboard:z, keyboard:1, keyboard:NUMPAD_1
+- LOOK LEFTUP (Move northwest): keyboard:q, keyboard:7, keyboard:NUMPAD_7
+- LOOK RIGHT (Move east): keyboard:d, keyboard:RIGHT, keyboard:6, keyboard:NUMPAD_6
+- LOOK RIGHTDOWN (Move southeast): keyboard:c, keyboard:3, keyboard:NUMPAD_3
+- LOOK RIGHTUP (Move northeast): keyboard:e, keyboard:9, keyboard:NUMPAD_9
+- LOOK UP (Move north): keyboard:w, keyboard:UP, keyboard:8, keyboard:NUMPAD_8
+- LOOK zoom_in (Zoom in): keyboard:=, keyboard:+
+- MELEE_STYLE_PICKER DOWN (Pan down): keyboard:s, keyboard:DOWN, keyboard:NUMPAD_2
+- MELEE_STYLE_PICKER UP (Pan up): keyboard:w, keyboard:UP, keyboard:NUMPAD_8
+- MUTATIONS DOWN (Pan down): keyboard:s, keyboard:DOWN, keyboard:2, keyboard:NUMPAD_2, gamepad:JOY_DOWN
+- MUTATIONS UP (Pan up): keyboard:w, keyboard:UP, keyboard:8, keyboard:NUMPAD_8, gamepad:JOY_UP
+- NEW_CHAR_TRAITS TOGGLE_CHARACTER_PREVIEW_CLOTHES (Show/Hide Preview Outfit): keyboard:c, keyboard:C
+- NPC_TRADE DOWN (Move cursor down): keyboard:s, keyboard:DOWN, keyboard:NUMPAD_2, gamepad:JOY_DOWN
+- NPC_TRADE LEFT (Remove item from trade): keyboard:a, keyboard:LEFT, keyboard:NUMPAD_4, gamepad:JOY_LEFT
+- NPC_TRADE PAGE_DOWN (More): keyboard:NPAGE, keyboard:>
+- NPC_TRADE PAGE_UP (Back): keyboard:PPAGE, keyboard:NUMPAD_6, keyboard:<
+- NPC_TRADE RIGHT (Add item to trade): keyboard:d, keyboard:RIGHT, gamepad:JOY_RIGHT
+- NPC_TRADE UP (Move cursor up): keyboard:w, keyboard:UP, keyboard:NUMPAD_8, gamepad:JOY_UP
+- OVERMAP DOWN (Move south): keyboard:s, keyboard:DOWN, keyboard:2, keyboard:NUMPAD_2
+- OVERMAP LEFT (Move west): keyboard:a, keyboard:LEFT, keyboard:4, keyboard:NUMPAD_4
+- OVERMAP LEFTDOWN (Move southwest): keyboard:z, keyboard:1, keyboard:NUMPAD_1
+- OVERMAP LEFTUP (Move northwest): keyboard:q, keyboard:7, keyboard:NUMPAD_7
+- OVERMAP RIGHT (Move east): keyboard:d, keyboard:RIGHT, keyboard:6, keyboard:NUMPAD_6
+- OVERMAP RIGHTDOWN (Move southeast): keyboard:c, keyboard:3, keyboard:NUMPAD_3
+- OVERMAP RIGHTUP (Move northeast): keyboard:e, keyboard:9, keyboard:NUMPAD_9
+- OVERMAP UP (Move north): keyboard:w, keyboard:UP, keyboard:8, keyboard:NUMPAD_8
+- OVERMAP ZOOM_IN (Zoom In): keyboard:=, keyboard:+
+- PANEL_MGMT MOVE_PANEL (Select panel for moving): keyboard:S, keyboard:RETURN
+- PICKUP CONFIRM (Confirm Choice): keyboard:g, keyboard:RETURN
+- PICKUP DOWN (Next item): keyboard:s, keyboard:j, keyboard:DOWN, keyboard:NUMPAD_2, gamepad:JOY_DOWN
+- PICKUP LEFT (Unmark selected item): keyboard:a, keyboard:LEFT, keyboard:NUMPAD_4, gamepad:JOY_LEFT
+- PICKUP RIGHT (Mark selected item): keyboard:d, keyboard:l, keyboard:RIGHT, keyboard:NUMPAD_6, gamepad:JOY_RIGHT
+- PICKUP SCROLL_DOWN (Scroll down): keyboard:NPAGE, mouse:SCROLL_DOWN
+- PICKUP SCROLL_UP (Scroll up): keyboard:PPAGE, mouse:SCROLL_UP
+- PICKUP UP (Previous item): keyboard:w, keyboard:k, keyboard:UP, keyboard:NUMPAD_8, gamepad:JOY_UP
+- POPUP_WAIT QUIT (Cancel popup): keyboard:ESC, keyboard:SPACE, keyboard:RETURN
+- SAFEMODE COPY_RULE (Copy rule): keyboard:c, keyboard:C
+- SAFEMODE ENABLE_RULE (Enable rule): keyboard:e, keyboard:E
+- SAFEMODE REMOVE_RULE (Remove rule): keyboard:r, keyboard:R
+- SAFEMODE SWAP_RULE_GLOBAL_CHAR (Move rule global <-> character): keyboard:m, keyboard:M
+- SAFEMODE TEST_RULE (Test rule): keyboard:t, keyboard:T
+- SORT_ARMOR MOVE_ARMOR (Select armor for moving): keyboard:S, keyboard:RETURN
+- SPELL_SELECT DOWN (Select next spell): keyboard:s, keyboard:DOWN, keyboard:NUMPAD_2
+- SPELL_SELECT LEFT (Previous spell category): keyboard:a, keyboard:LEFT, keyboard:NUMPAD_4
+- SPELL_SELECT RIGHT (Next spell category): keyboard:d, keyboard:RIGHT, keyboard:NUMPAD_6
+- SPELL_SELECT UP (Select previous spell): keyboard:w, keyboard:UP, keyboard:NUMPAD_8
+- STRING_EDITOR TEXT.CONFIRM (Confirm text input): keyboard:CTRL+S, keyboard:CTRL+Y
+- TARGET AIM (Aim): keyboard:., keyboard:x, keyboard:5
+- TARGET DOWN (Move south): keyboard:s, keyboard:DOWN, keyboard:2, keyboard:NUMPAD_2
+- TARGET FIRE (Fire Weapon): keyboard:f, keyboard:RETURN, mouse:MOUSE_LEFT
+- TARGET LEFT (Move west): keyboard:a, keyboard:LEFT, keyboard:4, keyboard:NUMPAD_4
+- TARGET LEFTDOWN (Move southwest): keyboard:z, keyboard:1, keyboard:NUMPAD_1
+- TARGET LEFTUP (Move northwest): keyboard:q, keyboard:7, keyboard:NUMPAD_7
+- TARGET NEXT_TARGET (Next Target): keyboard:TAB, mouse:SCROLL_DOWN, keyboard:NPAGE
+- TARGET PREV_TARGET (Prev Target): keyboard:BACKTAB, mouse:SCROLL_UP, keyboard:PPAGE
+- TARGET RIGHT (Move east): keyboard:d, keyboard:RIGHT, keyboard:6, keyboard:NUMPAD_6
+- TARGET RIGHTDOWN (Move southeast): keyboard:c, keyboard:3, keyboard:NUMPAD_3
+- TARGET RIGHTUP (Move northeast): keyboard:e, keyboard:9, keyboard:NUMPAD_9
+- TARGET SWITCH_MODE (Switch Firing Mode): keyboard:F, keyboard:m
+- TARGET UP (Move north): keyboard:w, keyboard:UP, keyboard:8, keyboard:NUMPAD_8
+- TARGET zoom_in (Zoom in): keyboard:=, keyboard:+
+- UILIST DOWN (Pan down): keyboard:s, keyboard:DOWN, keyboard:NUMPAD_2
+- UILIST UP (Pan up): keyboard:w, keyboard:UP, keyboard:NUMPAD_8
+- UNCAT DOWN (Pan down): keyboard:j, keyboard:DOWN, keyboard:2, keyboard:NUMPAD_2, gamepad:JOY_DOWN
+- UNCAT FILTER (Filter): keyboard:f, keyboard:F, keyboard:/
+- UNCAT LEFT (Pan left): keyboard:h, keyboard:LEFT, keyboard:4, keyboard:NUMPAD_4, gamepad:JOY_LEFT
+- UNCAT LEFTDOWN (Pan down-left): keyboard:b, keyboard:1, keyboard:NUMPAD_1, gamepad:JOY_LEFTDOWN
+- UNCAT LEFTUP (Pan up-left): keyboard:y, keyboard:7, keyboard:NUMPAD_7, gamepad:JOY_LEFTUP
+- UNCAT LEVEL_DOWN (Go Down): keyboard:NPAGE, keyboard:>
+- UNCAT LEVEL_UP (Go Up): keyboard:PPAGE, keyboard:<
+- UNCAT QUIT (Exit screen): keyboard:ESC, keyboard:q, keyboard:Q, keyboard:SPACE, gamepad:JOY_3
+- UNCAT RESET_FILTER (Reset filter): keyboard:r, keyboard:R
+- UNCAT RIGHT (Pan right): keyboard:l, keyboard:RIGHT, keyboard:6, keyboard:NUMPAD_6, gamepad:JOY_RIGHT
+- UNCAT RIGHTDOWN (Pan down-right): keyboard:n, keyboard:3, keyboard:NUMPAD_3, gamepad:JOY_RIGHTDOWN
+- UNCAT RIGHTUP (Pan up-right): keyboard:u, keyboard:9, keyboard:NUMPAD_9, gamepad:JOY_RIGHTUP
+- UNCAT TEXT.CONFIRM (Confirm text input): keyboard:RETURN, keyboard:NUMPAD_6
+- UNCAT UP (Pan up): keyboard:k, keyboard:8, keyboard:UP, keyboard:NUMPAD_8, gamepad:JOY_UP
+- VEH_INTERACT DOWN (Move cursor south): keyboard:s, keyboard:DOWN, keyboard:2, keyboard:NUMPAD_2
+- VEH_INTERACT LEFT (Move cursor west): keyboard:a, keyboard:LEFT, keyboard:4, keyboard:NUMPAD_4
+- VEH_INTERACT LEFTDOWN (Move cursor southwest): keyboard:z, keyboard:1, keyboard:NUMPAD_1
+- VEH_INTERACT LEFTUP (Move cursor northwest): keyboard:q, keyboard:7, keyboard:NUMPAD_7
+- VEH_INTERACT RIGHT (Move cursor east): keyboard:d, keyboard:RIGHT, keyboard:6, keyboard:NUMPAD_6
+- VEH_INTERACT RIGHTDOWN (Move cursor southeast): keyboard:c, keyboard:3, keyboard:NUMPAD_3
+- VEH_INTERACT RIGHTUP (Move cursor northeast): keyboard:e, keyboard:9, keyboard:NUMPAD_9
+- VEH_INTERACT UP (Move cursor north): keyboard:w, keyboard:UP, keyboard:8, keyboard:NUMPAD_8
+- YESNO NO (No): keyboard:N, keyboard:n, keyboard:ESC
+- YESNO YES (Yes): keyboard:Y, keyboard:y
+- YESNOQUIT NO (No): keyboard:N, keyboard:n
+- YESNOQUIT QUIT (Quit): keyboard:Q, keyboard:q, keyboard:ESC
+- YESNOQUIT YES (Yes): keyboard:Y, keyboard:y
+- YES_NO_ALWAYS_NEVER ALWAYS (Always): keyboard:A, keyboard:a
+- YES_NO_ALWAYS_NEVER NEVER (Never): keyboard:E, keyboard:e
+- YES_NO_ALWAYS_NEVER NO (No): keyboard:N, keyboard:n, keyboard:ESC
+- YES_NO_ALWAYS_NEVER YES (Yes): keyboard:Y, keyboard:y
+- YN_IGNORE_QUERY ABORT (Abort): keyboard:A, keyboard:ESC
+- YN_IGNORE_QUERY IGNORE (Ignore further promts and finish): keyboard:I, keyboard:i
+- YN_IGNORE_QUERY YES (Yes): keyboard:Y, keyboard:y
+- ZONES_MANAGER ENABLE_ZONE (Enable zone): keyboard:e, keyboard:E
+- ZONES_MANAGER REMOVE_ZONE (Remove zone): keyboard:r, keyboard:R
+- ZONES_MANAGER SHOW_ZONE_ON_MAP (Show zone on map): keyboard:m, keyboard:M
+- ZONES_MANAGER TOGGLE_ZONE_OVERLAY (Toggle zone overlay): keyboard:o, keyboard:O
+- default DOWN (Pan down): keyboard:s, keyboard:j, keyboard:DOWN, keyboard:2, keyboard:NUMPAD_2, gamepad:JOY_DOWN
+- default LEFT (Pan left): keyboard:a, keyboard:h, keyboard:LEFT, keyboard:4, keyboard:NUMPAD_4, gamepad:JOY_LEFT
+- default RIGHT (Pan right): keyboard:d, keyboard:l, keyboard:RIGHT, keyboard:6, keyboard:NUMPAD_6, gamepad:JOY_RIGHT
+- default UP (Pan up): keyboard:w, keyboard:k, keyboard:8, keyboard:UP, keyboard:NUMPAD_8, gamepad:JOY_UP
