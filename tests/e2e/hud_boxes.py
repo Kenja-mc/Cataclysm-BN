@@ -132,7 +132,8 @@ def test_readable_map_glyphs(g):
     settle(g)
     s = g.screen()
     g.lua("M:set_ter_at(here(-1,-1), TerId.new('t_floor'):int_id()) M:set_ter_at(here(1,-1), TerId.new('t_floor'):int_id()) out('ok')")
-    x, y = g.find("@")
+    # Read the row from the same capture: a fresh screen can have scrolled by a line.
+    y = next(i for i, line in enumerate(s.splitlines()) if "@" in line)
     row = s.splitlines()[y - 1]
     assert "♣" in row and "τ" in row, "\n".join(s.splitlines()[y - 2:y + 2])
 
