@@ -2,6 +2,10 @@
 
 ## Next actions
 
+- **Main is current** — the modular end-to-end suite, world presets, stocked river barges, fluid
+  grid feedback, the remote-control and worn-morale fixes and the compact corner bars option are
+  merged with their docs. #17 records measured build-speed options (ccache and mold are wired in
+  the presets but off in the built trees).
 - **Future tickets stay open** — #1 (agentic UI/UX QA in CI) and #2 (two-player co-op) are designed
   future work, neither implemented nor closable. #3 is the upstream feature-watch tracker; its
   checkpoint matches `upstream/main` and every candidate is still unchecked. #14 asks for number-key
