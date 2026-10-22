@@ -1,16 +1,17 @@
 #!/bin/sh
 # install-cataclysm-bn.sh — install the Cataclysm: Bright Nights Overhaul fork as a launchable app
 #
-# Usage: bin/install-cataclysm-bn.sh [--system] [--uninstall]
+# Usage: bin/install-cataclysm-bn.sh [--system] [--uninstall] [--no-curses-entry]
 #
-#   --system    install system-wide under /usr/local (needs root)
-#   --uninstall remove the installed files (user or system, matching the install)
+#   --system          install system-wide under /usr/local (needs root)
+#   --uninstall       remove the installed files (user or system, matching the install)
+#   --no-curses-entry keep the curses launcher wrapper but leave it out of the desktop menu
 #
 # Default layout (user install, no root needed):
 #   ~/.local/bin/cataclysm-bn            -> launcher wrapper -> out/build/linux-curses/src/cataclysm-bn
 #   ~/.local/bin/cataclysm-bn-tiles      -> launcher wrapper -> out/build/linux-full/src/cataclysm-bn-tiles
 #   ~/.local/share/applications/org.cataclysmbn.CataclysmBN.desktop        (tiles, the default launchable)
-#   ~/.local/share/applications/org.cataclysmbn.CataclysmBN-curses.desktop (curses variant)
+#   ~/.local/share/applications/org.cataclysmbn.CataclysmBN-curses.desktop (curses variant, unless --no-curses-entry)
 #   ~/.local/share/icons/hicolor/scalable/apps/org.cataclysmbn.CataclysmBN.svg
 #   ~/.local/share/metainfo/org.cataclysmbn.CataclysmBN.metainfo.xml
 #
@@ -39,14 +40,16 @@ CATACLYSM_BN_TILES_BINARY=""
 
 usage() {
   cat <<'EOF'
-Usage: bin/install-cataclysm-bn.sh [--system] [--uninstall]
+Usage: bin/install-cataclysm-bn.sh [--system] [--uninstall] [--no-curses-entry]
 
 Install the Cataclysm: Bright Nights Overhaul fork as a launchable app.
 
 Options:
-  --system    Install system-wide under /usr/local (needs root).
-  --uninstall Remove the installed files (user or system).
-  --help      Show this help and exit.
+  --system          Install system-wide under /usr/local (needs root).
+  --uninstall       Remove the installed files (user or system).
+  --no-curses-entry Keep the curses launcher wrapper (for tests and terminals) but do not
+                    add "Cataclysm-BN (Curses)" to the desktop menu; removes an existing one.
+  --help            Show this help and exit.
 
 The launcher wrappers look up the game data directory (basepath) via:
   1. CATACLYSM_BN_BASEPATH environment variable
@@ -174,8 +177,12 @@ install_files() {
   if [ -n "$CATACLYSM_BN_CURSES_BINARY" ]; then
     create_wrapper "curses" "$INSTALLED_BIN/cataclysm-bn" "$CATACLYSM_BN_CURSES_BINARY"
     printf 'Installed launcher wrapper: %s/cataclysm-bn\n' "$INSTALLED_BIN"
-    cp "$ROOT/data/XDG/org.cataclysmbn.CataclysmBN-curses.desktop" "$INSTALLED_APPS/"
-    printf 'Installed desktop entry: %s/org.cataclysmbn.CataclysmBN-curses.desktop\n' "$INSTALLED_APPS"
+    if [ "$CURSES_ENTRY" = 1 ]; then
+      cp "$ROOT/data/XDG/org.cataclysmbn.CataclysmBN-curses.desktop" "$INSTALLED_APPS/"
+      printf 'Installed desktop entry: %s/org.cataclysmbn.CataclysmBN-curses.desktop\n' "$INSTALLED_APPS"
+    else
+      rm -f "$INSTALLED_APPS/org.cataclysmbn.CataclysmBN-curses.desktop"
+    fi
   fi
   if [ -n "$CATACLYSM_BN_TILES_BINARY" ]; then
     create_wrapper "tiles" "$INSTALLED_BIN/cataclysm-bn-tiles" "$CATACLYSM_BN_TILES_BINARY"
@@ -228,6 +235,15 @@ uninstall_files() {
 }
 
 # --- main ---
+CURSES_ENTRY=1
+for arg do
+  shift
+  if [ "$arg" = "--no-curses-entry" ]; then
+    CURSES_ENTRY=0
+  else
+    set -- "$@" "$arg"
+  fi
+done
 case "${1:-}" in
   --help|-h)
     usage
