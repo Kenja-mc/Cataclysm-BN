@@ -77,6 +77,12 @@ auto has_thermometer( const avatar &you ) -> bool
            you.has_enchantment_flag( enchantment_flag_id( "THERMOMETER" ) );
 }
 
+/// One-row corner bars leave the sidebar panels in place instead of replacing them.
+auto compact_bars() -> bool
+{
+    return get_option<bool>( "HUD_CORNER_BARS" );
+}
+
 enum class icon {
     sun, moon, cloud, rain, storm, snow, strange, underground, fists, melee, gun, bow, style,
     walk, run, crouch, prone, mana, compass, fuel, battery, pain, thirst, hunger, rest, heat
@@ -259,6 +265,22 @@ auto weather_lines( const avatar &you, const std::string &icons ) -> std::vector
                        underground ? glyph( icon::underground, icons ) :
                        glyph( weather_icon( w.weather_id.str() ), icons );
     const auto description = weather_text( you, underground );
+    if( compact_bars() ) {
+        const auto light = get_light_level( character_funcs::fine_detail_vision_mod( you ) );
+        const auto wind = wind_text( you, icons == "ascii" );
+        const auto label = icons == "ascii" ? std::string( _( "Weather" ) ) + ": " + description :
+                           description;
+        auto text = label;
+        text += "  │  " + season_day_text() + " " + time_text( you );
+        text += "  │  " + string_format( _( "Light: %s" ), light.first );
+        text += "  │  " + string_format( _( "Wind: %s" ), wind.text );
+        return { {
+                .icon = first, .icon_w = utf8_width( first ),
+                .icon_color = underground ? c_light_gray : w.weather_id->color,
+                .text = text,
+                .text_color = underground ? c_light_gray : w.weather_id->color
+            } };
+    }
     out.push_back( { .icon = first, .icon_w = utf8_width( first ),
                      .icon_color = underground ? c_light_gray : w.weather_id->color,
                      .text = icons == "ascii" ? std::string( _( "Weather" ) ) + ": " + description : description,
@@ -293,18 +315,7 @@ auto combat_lines( const avatar &you, const std::string &icons,
     }
     const auto name = you.is_armed() ? character_funcs::fmt_wielded_weapon( you ) : std::string(
                           _( "fists" ) );
-    {
-        const auto ic = icons == "ascii" ? std::string() : glyph( kind, icons );
-        out.push_back( { .icon = ic, .icon_w = utf8_width( ic ), .icon_color = c_light_cyan,
-                         .text = name, .text_color = c_light_gray, .label = _( "Weapon" ) } );
-    }
     const auto style = you.martial_arts_data->selected_style_name( you );
-    {
-        const auto ic = icons == "ascii" ? std::string() : glyph( icon::style, icons );
-        out.push_back( { .icon = ic, .icon_w = utf8_width( ic ), .icon_color = c_light_blue,
-                         .text = style.empty() ? _( "No style" ) : style, .text_color = c_light_gray,
-                         .label = _( "Style" ) } );
-    }
     auto stance_icon = icon::walk;
     auto stance_color = c_light_gray;
     auto stance_text = _( "Walking" );
@@ -320,6 +331,35 @@ auto combat_lines( const avatar &you, const std::string &icons,
         stance_icon = icon::prone;
         stance_color = c_brown;
         stance_text = _( "Prone" );
+    }
+    if( compact_bars() ) {
+        auto text = name + "  │  " + ( style.empty() ? _( "No style" ) : style ) + "  │  " +
+                    stance_text;
+        if( needs ) {
+            const auto values = needs_status::read( you );
+            text += string_format( _( "  │  Pain %s  Thirst %s  Hunger %s  Rest %s  Heat %s" ),
+                                   values.pain.text, values.thirst.text, values.hunger.text,
+                                   values.rest.text, values.heat.text );
+        }
+        if( hud_boxes::mana_matters( you ) ) {
+            text += string_format( _( "  │  Mana %s" ), hud_boxes::mana_reading( you ).text );
+        }
+        const auto ic = icons == "ascii" ? std::string() : glyph( kind, icons );
+        return { {
+                .icon = ic, .icon_w = utf8_width( ic ), .icon_color = c_light_cyan,
+                .text = text, .text_color = c_light_gray
+            } };
+    }
+    {
+        const auto ic = icons == "ascii" ? std::string() : glyph( kind, icons );
+        out.push_back( { .icon = ic, .icon_w = utf8_width( ic ), .icon_color = c_light_cyan,
+                         .text = name, .text_color = c_light_gray, .label = _( "Weapon" ) } );
+    }
+    {
+        const auto ic = icons == "ascii" ? std::string() : glyph( icon::style, icons );
+        out.push_back( { .icon = ic, .icon_w = utf8_width( ic ), .icon_color = c_light_blue,
+                         .text = style.empty() ? _( "No style" ) : style, .text_color = c_light_gray,
+                         .label = _( "Style" ) } );
     }
     {
         const auto ic = icons == "ascii" ? std::string() : glyph( stance_icon, icons );
@@ -348,6 +388,22 @@ auto combat_lines( const avatar &you, const std::string &icons,
                          .text = mana.text, .text_color = mana.color, .label = _( "Mana" ) } );
     }
     return out;
+}
+
+/// Columns the one-row weather bar needs, icon column included.
+auto weather_bar_width( const avatar &you, const std::string &icons ) -> int
+{
+    const auto lines = weather_lines( you, icons );
+    const auto &line = lines.front();
+    return line.icon_w + ( line.icon_w > 0 ? 1 : 0 ) + utf8_width( line.text );
+}
+
+/// Columns the one-row status bar needs, icon column included.
+auto combat_bar_width( const avatar &you, const std::string &icons, bool needs ) -> int
+{
+    const auto lines = combat_lines( you, icons, needs );
+    const auto &line = lines.front();
+    return line.icon_w + ( line.icon_w > 0 ? 1 : 0 ) + utf8_width( line.text );
 }
 
 struct vehicle_state {
@@ -531,7 +587,9 @@ struct layout_input {
     std::array<std::string, 3> corners;
     int label_width;
     int weather_inner;
+    int combat_inner;
     bool ascii;
+    bool bars;
     bool mana;
     int vehicle_rows;
 };
@@ -539,6 +597,9 @@ struct layout_input {
 struct layout {
     std::array<placement, 3> boxes;
     bool needs = false;
+    bool bars = false;
+    /// A one-row status bar only carries the needs summary when it fits.
+    bool bar_needs = false;
 };
 
 auto overlaps( const placement &a, const placement &b ) -> bool
@@ -567,12 +628,17 @@ auto calculate_layout( const layout_input &input ) -> layout
         auto candidate = placement{};
         if( index == 0 ) {
             candidate.inner = input.weather_inner;
-            candidate.rows = 4;
+            candidate.rows = input.bars ? 1 : 4;
         } else if( index == 1 ) {
-            candidate.label_width = input.label_width;
-            candidate.icon_width = input.ascii ? 0 : 3;
-            candidate.inner = candidate.icon_width + input.label_width + 3 + ( roomy ? 21 : 17 );
-            candidate.rows = 9 + input.mana;
+            if( input.bars ) {
+                candidate.inner = input.combat_inner;
+                candidate.rows = 1;
+            } else {
+                candidate.label_width = input.label_width;
+                candidate.icon_width = input.ascii ? 0 : 3;
+                candidate.inner = candidate.icon_width + input.label_width + 3 + ( roomy ? 21 : 17 );
+                candidate.rows = 9 + input.mana;
+            }
         } else {
             candidate.inner = roomy ? 32 : 28;
             candidate.rows = input.vehicle_rows;
@@ -598,7 +664,7 @@ auto calculate_layout( const layout_input &input ) -> layout
             result.boxes[index] = candidate;
             used[corner_index] += candidate.height();
             if( index == 1 ) {
-                result.needs = candidate.rows == 9 + input.mana;
+                result.needs = input.bars || candidate.rows == 9 + input.mana;
             }
         }
     }
@@ -632,21 +698,33 @@ auto plan_for( const avatar &you ) -> current_plan
                    current_vehicle( you );
     const auto icons = get_option<std::string>( "HUD_ICONS" );
     const auto ascii = icons == "ascii";
+    const auto bars = compact_bars();
     // Size every weather row, not only the date row; the description can outgrow it.
     const auto weather_inner = corners[0] == "off" ? 0 :
+                               bars ? weather_bar_width( you, icons ) :
                                std::max( { 38,
                                            utf8_width( season_day_text() ) + utf8_width( time_text( you ) ) +
                                            utf8_width( moon_phase_name( get_moon_phase( calendar::turn ) ) ) + 2 +
                                            ( ascii ? 0 : 2 ),
                                            weather_row_width( you, icons ) } );
-    return {
-        .geometry = calculate_layout( {
-            .width = width, .height = height, .corners = corners,
-            .label_width = label_width, .weather_inner = weather_inner, .ascii = ascii,
-            .mana = corners[1] != "off" && hud_boxes::mana_matters( you ), .vehicle_rows = vehicle.rows
-        } ),
-        .vehicle = std::move( vehicle )
-    };
+    // The needs summary is the widest part of the status bar, and the sidebar keeps its own
+    // needs panel, so the bar drops it rather than being pushed off the map.
+    auto bar_needs = false;
+    auto combat_inner = 0;
+    if( corners[1] != "off" && bars ) {
+        const auto full = combat_bar_width( you, icons, true );
+        bar_needs = full + 4 <= width;
+        combat_inner = bar_needs ? full : combat_bar_width( you, icons, false );
+    }
+    auto geometry = calculate_layout( {
+        .width = width, .height = height, .corners = corners,
+        .label_width = label_width, .weather_inner = weather_inner,
+        .combat_inner = combat_inner, .ascii = ascii, .bars = bars,
+        .mana = corners[1] != "off" && hud_boxes::mana_matters( you ), .vehicle_rows = vehicle.rows
+    } );
+    geometry.bars = bars;
+    geometry.bar_needs = bar_needs;
+    return { .geometry = geometry, .vehicle = std::move( vehicle ) };
 }
 
 } // namespace
@@ -678,7 +756,7 @@ auto mana_reading( const Character &you ) -> mana_text
 
 auto weather_box_shown() -> bool
 {
-    return plan_for( get_avatar() ).geometry.boxes[0].rows > 0;
+    return !compact_bars() && plan_for( get_avatar() ).geometry.boxes[0].rows > 0;
 }
 
 auto weather_box_shows_environment() -> bool
@@ -688,17 +766,17 @@ auto weather_box_shows_environment() -> bool
 
 auto combat_box_shown() -> bool
 {
-    return plan_for( get_avatar() ).geometry.boxes[1].rows > 0;
+    return !compact_bars() && plan_for( get_avatar() ).geometry.boxes[1].rows > 0;
 }
 
 auto status_box_shows_needs() -> bool
 {
-    return plan_for( get_avatar() ).geometry.needs;
+    return !compact_bars() && plan_for( get_avatar() ).geometry.needs;
 }
 
 auto combat_box_shows_mana( const Character &you ) -> bool
 {
-    return combat_box_shown() && mana_matters( you );
+    return !compact_bars() && combat_box_shown() && mana_matters( you );
 }
 
 auto vehicle_box_shown() -> bool
@@ -717,7 +795,8 @@ auto draw( const avatar &you, const catacurses::window &w ) -> void
             continue;
         }
         const auto lines = index == 0 ? weather_lines( you, icons ) :
-                           index == 1 ? combat_lines( you, icons, plan.geometry.needs ) :
+                           index == 1 ? combat_lines( you, icons, plan.geometry.bars ?
+                               plan.geometry.bar_needs : plan.geometry.needs ) :
                            vehicle_lines( plan.vehicle, icons );
         if( is_draw_tiles_mode() ) {
             auto &box_win = windows[index];

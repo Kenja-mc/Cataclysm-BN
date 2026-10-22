@@ -2169,6 +2169,10 @@ void options_manager::add_options_interface()
     },
     "bottom_right" );
 
+    add( "HUD_CORNER_BARS", interface, translate_marker( "Compact corner bars" ),
+         translate_marker( "Shows the weather and status readings as one-row bars in the map corners instead of four-row and nine-row boxes.  The status bar carries the needs summary when the row has room for it.  The sidebar keeps the panels it would otherwise hide." ),
+         false );
+
     add( "HUD_ICONS", interface, translate_marker( "Box icons" ),
          translate_marker( "Icons in the weather, status and vehicle boxes.  Unicode uses the bundled fallback font and keeps text labels.  Nerd Font requires your own compatible patched font.  Text only uses ASCII labels and works everywhere." ),
     { { "unicode", translate_marker( "Unicode" ) }, { "nerd", translate_marker( "Nerd Font" ) }, { "ascii", translate_marker( "Text only" ) } },

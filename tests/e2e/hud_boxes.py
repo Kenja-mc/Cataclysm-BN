@@ -70,6 +70,38 @@ def test_boxes_replace_sidebar_rows(g):
         off.close()
 
 
+def test_corner_bars_keep_sidebar_panels(g):
+    """HUD_CORNER_BARS puts each box on one row and leaves the sidebar panels in place."""
+    bars = Game(name="bn-e2e-corner-bars",
+                options={"SAFEMODE": "false", "HUD_CORNER_BARS": "true", "HUD_ICONS": "ascii"})
+    try:
+        start_new_game(bars)
+        bars.keys("x", delay=0.6)
+        s = bars.screen()
+        lines = s.splitlines()
+        weather = next((i for i, l in enumerate(lines) if "Weather:" in l), None)
+        assert weather is not None, "the weather bar is missing:\n" + s
+        row = lines[weather]
+        assert "Light:" in row and "Wind:" in row, \
+            "one weather row must hold every reading:\n" + row
+        assert lines[weather - 1].startswith("╭"), "the weather bar is one row:\n" + \
+            "\n".join(lines[weather - 1:weather + 2])
+        assert lines[weather + 1].startswith("╰"), "the weather bar is one row:\n" + \
+            "\n".join(lines[weather - 1:weather + 2])
+        combat = next((i for i, l in enumerate(lines) if "fists" in l and "Walking" in l), None)
+        assert combat is not None, "the status bar is missing:\n" + s
+        row = lines[combat]
+        # The starting loadout varies, so the row is checked for its shape: weapon, style, stance.
+        assert "Walking" in row and row.count("│") >= 2, \
+            "one status row must hold weapon, style and stance:\n" + row
+        assert lines[combat - 1].startswith("╭") and lines[combat + 1].startswith("╰"), \
+            "the status bar is one row:\n" + "\n".join(lines[combat - 1:combat + 2])
+        sidebar = "\n".join(l[96:] for l in lines)
+        assert re.search(r"Pain\s*:", sidebar), "the sidebar keeps its needs panel:\n" + s
+    finally:
+        bars.close()
+
+
 def test_body_panel(g):
     arena(g)
     settle(g)
@@ -122,6 +154,7 @@ def test_stance_toggle(g):
 TESTS = [
     test_hud_box_options,
     test_boxes_replace_sidebar_rows,
+    test_corner_bars_keep_sidebar_panels,
     test_body_panel,
     test_readable_map_glyphs,
     test_stance_toggle,
