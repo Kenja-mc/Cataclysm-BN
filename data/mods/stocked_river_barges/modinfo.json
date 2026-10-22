@@ -1,0 +1,10 @@
+[
+  {
+    "type": "MOD_INFO",
+    "id": "stocked_river_barges",
+    "name": "Stocked River Barges",
+    "description": "River barges carry a full load: more crates in the holds and the hull, stocked crew quarters, and a few of the sealed Hermex containers the deck graffiti warns about.",
+    "category": "content",
+    "dependencies": [ "bn" ]
+  }
+]
