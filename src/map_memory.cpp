@@ -118,14 +118,14 @@ void map_memory::clear_memorized_tile( const tripoint_abs_ms &pos )
 auto map_memory::get_locked_door( const tripoint_abs_ms &pos ) -> locked_door_kind
 {
     const auto p = project_remain<coords::sm>( pos );
-    const mm_submap &sm = get_submap( p.quotient_tripoint );
+    const auto &sm = get_submap( p.quotient_tripoint );
     return sm.locked_door( p.remainder );
 }
 
 auto map_memory::set_locked_door( const tripoint_abs_ms &pos, const locked_door_kind kind ) -> void
 {
     const auto p = project_remain<coords::sm>( pos );
-    mm_submap &sm = get_submap( p.quotient_tripoint );
+    auto &sm = get_submap( p.quotient_tripoint );
     sm.set_locked_door( p.remainder, kind );
 }
 

@@ -13,8 +13,8 @@ import zlib
 from dataclasses import dataclass
 from pathlib import Path
 
-from helpers import HELPERS, arena, settle, start_new_game, wait_until
-from tmux_game import Game
+from helpers import HELPERS, arena, save_and_quit, settle, start_new_game, wait_until
+from tmux_game import Game, in_game
 
 EAST_DOOR = (1, 0)
 NORTH_DOOR = (0, -1)
@@ -138,6 +138,7 @@ def test_only_attempted_locked_door_is_remembered(_g):
     try:
         two_locked_doors(game)
         avatar = abs_pos(game)
+        assert game.lua("out(gdebug.save_game())") == ["true"], "saving the pristine fixture failed"
         assert lock_knowledge(game) == [], "untried doors must not be marked"
 
         attempt_open_east(game)
@@ -145,8 +146,19 @@ def test_only_attempted_locked_door_is_remembered(_g):
         east = LockTile(avatar[0] + EAST_DOOR[0], avatar[1] + EAST_DOOR[1], avatar[2], "terrain")
         assert locks == [east], f"expected only the attempted east door, got {locks}"
 
-        # Reloading the same save must read the same knowledge back from disk.
-        assert lock_knowledge(game) == [east], "save did not round-trip the lock marker"
+        # Real quit, resume and load; then a fresh save must still carry the marker.
+        save_and_quit(game)
+        assert game.wait_for("MAIN MENU", timeout=60), game.screen()
+        game.keys("Enter", delay=1)  # the cursor defaults to Load when saves exist
+        assert game.wait_for("Load character from", timeout=30), game.screen()
+        game.keys("Enter", delay=1)  # the only character
+        assert wait_until(lambda: in_game(game.screen()), 60), "resume did not reach the game"
+        game.define_lua(HELPERS)
+        assert abs_pos(game) == avatar, "resume loaded the wrong character position"
+        assert game.lua("M:get_ter_at(here(1,0)):str_id():str()") == ["t_door_locked"], \
+            "the resumed world must keep the door locked"
+        assert save_and_read_locks(game) == [east], \
+            "lock knowledge did not survive quit, resume and save"
     finally:
         game.close()
 
