@@ -88,6 +88,48 @@ def test_wheel_selects_pickup_row(g):
         close_and_clean(g)
 
 
+def test_space_confirms_like_g(g):
+    open_pickup(g, "rock", "stick")
+    g.keys("Space", delay=1.5)
+    try:
+        assert "Weight" not in g.screen(), "Space should confirm the area pickup menu\n" + g.screen()
+        assert count_carried(g, "rock") + count_carried(g, "stick") == 1, "exactly the highlighted item"
+    finally:
+        close_and_clean(g)
+
+
+def test_space_picks_marked_row_with_quantity(g):
+    arena(g)
+    empty_inventory(g)
+    arena(g)
+    spawn(g, 0, 0, "rock", 5)
+    spawn(g, 0, 0, "stick")
+    rock = display_name(g, "rock")
+    g.keys("C-g", delay=0.2)
+    g.wait_for("Pick up")
+    g.wait_for("Weight")
+    g.keys("3", delay=0.3)
+    g.click(*row_of(g, rock))
+    g.keys("Space", delay=1.5)
+    try:
+        assert "Weight" not in g.screen(), "Space should confirm after marking a quantity\n" + g.screen()
+        assert count_carried(g, "rock") == 3, "the typed quantity must survive Space"
+        assert count_carried(g, "stick") == 0
+    finally:
+        close_and_clean(g)
+
+
+def test_escape_cancels_pickup_in_modern(g):
+    open_pickup(g, "rock")
+    g.keys("Right", delay=0.4)
+    g.keys("Escape", delay=0.8)
+    try:
+        assert "Weight" not in g.screen(), "Escape should cancel the area pickup menu\n" + g.screen()
+        assert count_carried(g, "rock") == 0
+    finally:
+        close_and_clean(g)
+
+
 def test_classic_empty_pickup_confirmation_takes_nothing(_g):
     g = Game(name="bn-e2e-pickup-classic", options={"CONTROL_SCHEME": "classic", "SAFEMODE": "false"})
     try:
@@ -105,6 +147,27 @@ def test_classic_empty_pickup_confirmation_takes_nothing(_g):
         g.close()
 
 
+def test_classic_space_still_cancels_pickup(_g):
+    g = Game(name="bn-e2e-pickup-classic-space", options={"CONTROL_SCHEME": "classic", "SAFEMODE": "false"})
+    try:
+        start_new_game(g)
+        g.define_lua(HELPERS)
+        empty_inventory(g)
+        arena(g)
+        spawn(g, 0, 0, "rock")
+        spawn(g, 0, 0, "stick")
+        g.keys("g", delay=1)
+        assert "Pick up" in g.screen() and "Weight" in g.screen(), g.screen()
+        g.keys("Right", delay=0.4)
+        g.keys("Space", delay=1)
+        assert "Weight" not in g.screen(), "Classic Space must still cancel the pickup menu\n" + g.screen()
+        assert count_carried(g, "rock") == count_carried(g, "stick") == 0
+    finally:
+        g.close()
+
+
 TESTS = [test_g_again_picks_up_the_highlighted_item, test_h_wields_from_pickup,
          test_mouse_marks_pickup_rows, test_pickup_context_action_takes_only_that_item,
-         test_classic_empty_pickup_confirmation_takes_nothing, test_wheel_selects_pickup_row]
+         test_classic_empty_pickup_confirmation_takes_nothing, test_wheel_selects_pickup_row,
+         test_space_confirms_like_g, test_space_picks_marked_row_with_quantity,
+         test_escape_cancels_pickup_in_modern, test_classic_space_still_cancels_pickup]
