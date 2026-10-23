@@ -2,10 +2,15 @@
 
 ## Next actions
 
-- **Main is current** — the modular end-to-end suite, world presets, stocked river barges, fluid
-  grid feedback, the remote-control and worn-morale fixes and the compact corner bars option are
-  merged with their docs. #17 records measured build-speed options (ccache and mold are wired in
-  the presets but off in the built trees).
+- **v0.1.0 is published** — tag `84b250d55e`; assets `BrightNightsOverhaul-windows-x64.zip` and
+  `BrightNightsOverhaul-linux-x64.tar.gz`, each with a `.sha256`; notes generated from this
+  changelog. Checked here: `releases/latest/download` resolves for both names, checksums pass, the
+  Linux archive runs and prints the tag commit, and the Windows zip holds the launchers, updater,
+  tiles exe and sound data. Still unproven: a real Windows machine, meaning SmartScreen,
+  `Launch Bright Nights.bat`, and one update after `v0.1.1` exists.
+- **Next release** — dispatch `fork-release.yml` with the version and `publish=true` per
+  `docs/fork/releasing.md`. #26 asks for a preflight list and a rehearsal dispatch that does not pin
+  the tag; the last two attempts each cost a cancel and a deleted tag.
 - **Control-scheme research is parked on `research/controls`** — the unbound, overloaded and
   duplicated binding lists, the decision-model picks and the first key-guess survey (42 trials).
   No binding file changed. The survey's clearest signals: nobody guessed `x` for wait (`.` was the
@@ -23,8 +28,7 @@
 - **Future tickets stay open** — #1 (agentic UI/UX QA in CI) and #2 (two-player co-op) are designed
   future work, neither implemented nor closable. #3 is the upstream feature-watch tracker; its
   checkpoint matches `upstream/main` and every candidate is still unchecked. #14 asks for number-key
-  rows with item thumbnails in list menus (SotS: The Pit style). After the first fork release,
-  make sure that #15's README download links resolve to the fork assets. #16's duration-based shards,
+  rows with item thumbnails in list menus (SotS: The Pit style). #16's duration-based shards,
   readiness polling and local parallel runner are merged. Keep the issue open for its slow-test
   key-delay audit and prepared save fixtures.
 
@@ -49,6 +53,10 @@
     Pushes check one dry playtest leg; filtered dry dispatches retain their requested surface.
     The end-to-end cap is 90 minutes because a cold build alone took 37 minutes. Live legs run on
     free models inside the nightly schedule, and both the legs and the triage job now pass.
+- **Title screen wordmark** — #24 asks to draw **Overhaul** as ASCII art under `Bright Nights` in
+  `data/title/en.title`, inside its 18-line and 80-column limit. The four empty padding rows can
+  carry a small alphabet, or the eight-row `Bright Nights` block can shrink to six rows and give the
+  new word its own six. The same file feeds the terminal and tiles screens.
 - **Next upstream merge** — the 2026-10-20 merge is `c682cb343a` (34 commits, base
   `5196022810`). It resolved five conflicts: `tankammo.json` and `generic/casing.json` keep
   upstream's `stackable`/`damage_states` and the fork's `looks_like`; `rifle ammo.json` keeps the
@@ -73,22 +81,20 @@
   allows: the docker socket is root-only, `sudo` asks for a password, and the rootless extras
   (`rootlesskit`, `slirp4netns`, `fuse-overlayfs`) are absent. A docker image needs
   `sudo usermod -aG docker "$USER"` first.
-- **Restore the build tools** — `ccache`, `mold` and `astyle` are missing on this machine, so the
-  preset build stops at the first compile (`ccache: command not found`) and `--target format`
-  reports `Artistic Style executable was not found`. Install with
-  `pacman -S --needed ccache mold astyle`. The commits below were built and gated with them
-  disabled (`-DCATA_CCACHE=OFF -DCMAKE_C_COMPILER_LAUNCHER= -DCMAKE_CXX_COMPILER_LAUNCHER= -DLINKER=`),
-  with file-scoped formatting before each build.
-- **Cut the first fork release** — `fork-release.yml` and its gate `fork-updater-test.yml` are in
-  place but have never run. Dispatch `v0.1.0` as described in `docs/fork/releasing.md`, then check
-  the Windows zip on a real Windows machine: SmartScreen, `Launch Bright Nights.bat`, and an
-  update to `v0.1.1`. Upstream's release workflows stay disabled:
+- **Install `astyle`** — `ccache` and `mold` are installed and measured as `AGENTS.md` records
+  (clean curses build 4 m 41 s, returning to a built state 0.7 s). `astyle` is still missing, so
+  `--target format` reports `Artistic Style executable was not found`. Install with
+  `pacman -S --needed astyle`; until then use
+  `env PATH=/tmp/bno-tools/usr/bin:/usr/bin:/bin build-scripts/format-cpp.sh <files>`.
+- **Windows check for v0.1.0** — the zip is published and passes every check possible here, but a
+  real Windows machine still has to confirm SmartScreen, `Launch Bright Nights.bat`, the window
+  title, and one update once `v0.1.1` exists. Upstream's release workflows stay disabled:
   nightlies need an initial `YYYY-MM-DD` tag and an `experimental` release, and `docs.yml` chains
   off Experimental Release.
-- **Watch the CI runs** — the detached service `bn-playtest-watch` writes the conclusions of the
-  `fork-playtest` run to `~/.local/state/cataclysm-bn/playtest-watch.log`. If the service is
-  gone after a restart, read the runs straight from GitHub with
-  `gh run list --workflow fork-playtest.yml --repo Kenja-mc/Cataclysm-BN`.
+- **CI runs are opt-in** — a push runs no gameplay suite. Nightly and manual `fork-playtest`
+  dispatches do, and a release build takes `run_playtests`. The `bn-playtest-watch` user service is
+  gone, so read runs with `gh-fork run list --workflow fork-playtest.yml --repo
+  Kenja-mc/Cataclysm-BN`.
 - The `matrix` workflow's red `clang, curses` job is a pre-existing cache-save error: with a warm
   ccache every compile is a hit, so the directory the action wants to save never appears.
 - **Two CI traps worth remembering** — a leg matrix built from a job output must go on `matrix:` as the
@@ -108,13 +114,14 @@
   mint-condition spawns randomly open doors. It avoids exhaust and camera vision, and every sampled
   cell must be hidden from direct sight. A transparent van and a camera-equipped tank were rejected.
   No redraw delay or post-drive cache invalidation is used.
-- **Native vehicle reload warning** — an idling combustion engine reported out-of-bounds sounds
-  after a same-session save/reload. The recraft fixture replaces unrelated vehicles before its
-  first craft; this isolates the crafting regression, not a repair of the native vehicle lifecycle.
+- **Vehicle lists follow the map** — `map::load` clears `dirty_vehicle_list` and every per-level
+  vehicle list before `set_abs_sub`, so a reload cannot fire engine sounds from the previous area.
+  `loading_a_map_rebuilds_active_vehicle_membership` fails without the fix. The unrelated `lost
+  grid` debugmsg when a map test runs before a vehicle test in one process is #23.
 - **CI/CD overhaul series** — issue #12 tracks #6 to #11: decision-model playtesting, the fork suite in
-  CI, a prepared build container, known failures, a performance gate and the release path. Issue #13
-  holds thirteen end-to-end harness traps with their symptoms and fixes; the remaining work is to
-  write them into the Gates section of `.agents/skills/test-quality/SKILL.md`.
+  CI, a prepared build container, known failures, a performance gate and the release path. #13 is
+  closed: nineteen end-to-end harness traps now sit in the Gates section of
+  `.agents/skills/test-quality/SKILL.md`.
 - **Audit follow-ups** — `sdl_font.cpp` now scales oversized
   glyphs rather than cropping, which needs one manual visual check for configs still holding
   `FONT_WIDTH=8`/`FONT_HEIGHT=16`; the Controls strip can be squeezed off an 80x25 sidebar when the
@@ -131,11 +138,11 @@
 - **Check redistribution rights before packaging** — resolve the gaps in
   [`asset-credits.md`](docs/fork/asset-credits.md), especially optional Otopack, Sokoban and
   the LARWICK font. Do not bundle optional downloaded audio under the Overhaul pack's CC0 grant.
-- **Resolve the harvest inventory limitation** — both GitHub-backed repos lack `issues/`;
-  the local helper fails with ENOENT, so the local draft count is unavailable, not zero.
-  No new harvest drafts were created; existing policy work remains in #3 and command-post#102.
-  New harness lessons went to the open #13 tracker instead, which owns the test-quality traps.
-  See the [maintained harvest summary](../ai-stack/command-post/logs/harvest/summary.md).
+- **Harvest drafts have no local home** — this repository has no `issues/` directory, so
+  `list_drafts.ts` exits 2 (missing directory, never zero drafts), and drafts go straight to the
+  GitHub tracker. Open policy tickets from the 2026-10-23 wrap-up: #25 (what a ccache hit proves)
+  and #27 (run a documented command before committing). The living lesson record is
+  `~/Projects/ai-stack/docs/records/harvest/summary.md`.
 
 ## Accounts and credentials
 
