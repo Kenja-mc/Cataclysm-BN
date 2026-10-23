@@ -184,14 +184,18 @@ def test_tutorial_lessons_supply_what_they_promise(_g):
     assert "<press_LEVEL_UP>" in SNIPPETS["LESSON_STAIRS"]
     assert "<press_LEVEL_UP>" in SNIPPETS["LESSON_DARK_NO_FLASH"]
     assert "<press_fire>" in SNIPPETS["LESSON_GUN_FIRE"]
-    assert "<press_NEXT_TARGET>" in SNIPPETS["LESSON_GUN_FIRE"]
     assert "'<'" not in SNIPPETS["LESSON_GUN_FIRE"] and "'>'" not in SNIPPETS["LESSON_GUN_FIRE"]
+    # Aiming-screen keys use the TARGET context; pre-aim commands stay on the main map.
+    for lesson_id in ("LESSON_GUN_FIRE", "LESSON_GUN_FIRE_MODERN"):
+        assert "<press_FIRE:TARGET>" in SNIPPETS[lesson_id], lesson_id
+        assert "<press_NEXT_TARGET:TARGET>" in SNIPPETS[lesson_id], lesson_id
+        assert "<press_QUIT:TARGET>" in SNIPPETS[lesson_id], lesson_id
+        assert "<press_fire>" in SNIPPETS[lesson_id], lesson_id
+    assert "<press_select_fire_mode>" in SNIPPETS["LESSON_GUN_FIRE_MODERN"]
     # Rebindable keys are expanded live, never copied from the shipped defaults.
     assert "<press_player_data>" in SNIPPETS["LESSON_WORE_STORAGE"]
     assert "<press_player_data>" in SNIPPETS["LESSON_WORE_MASK"]
     assert "press @" not in SNIPPETS["LESSON_WORE_STORAGE"] + SNIPPETS["LESSON_WORE_MASK"]
-    assert "<press_QUIT>" in SNIPPETS["LESSON_GUN_FIRE"]
-    assert "<press_QUIT>" in SNIPPETS["LESSON_GUN_FIRE_MODERN"]
     assert "escape key" not in SNIPPETS["LESSON_GUN_FIRE"]
     assert "Esc to cancel" not in SNIPPETS["LESSON_GUN_FIRE_MODERN"]
     for snippet_id in ("LESSON_LOOK_MODERN", "LESSON_SMASH_MODERN", "LESSON_WINDOW_MODERN"):
@@ -408,9 +412,106 @@ def test_tutorial_unbound_action_shows_reachable_route(_g):
             game.close()
 
 
+def lesson_popup(screen, prefix):
+    """The popup's own message text, without the surrounding sidebar and Controls strip."""
+    lines = screen.splitlines()
+    message_line = next((i for i, line in enumerate(lines) if prefix in line), None)
+    assert message_line is not None, screen
+    content_start = lines[message_line].index(prefix)
+    left = lines[message_line].rindex("│", 0, content_start)
+    start = message_line
+    while start > 0 and lines[start][left:left + 1] != "╭":
+        start -= 1
+    right = lines[start].index("╮", left)
+    end = start
+    while end < len(lines) and lines[end][left:left + 1] != "╰":
+        end += 1
+    return "\n".join(line[left + 1:right] for line in lines[start:end + 1])
+
+
+def test_tutorial_aim_keys_use_target_context(_g):
+    with TemporaryDirectory(prefix="bn-e2e-tutorial-target-") as directory:
+        userdir = Path(directory)
+        write_user_bindings(userdir, [
+            # Main-map commands keep their DEFAULTMODE bindings.
+            {"type": "keybinding", "id": "fire", "category": "DEFAULTMODE",
+             "bindings": [{"input_method": "keyboard", "key": "z"}]},
+            {"type": "keybinding", "id": "select_fire_mode", "category": "DEFAULTMODE",
+             "bindings": [{"input_method": "keyboard", "key": "y"}]},
+            # The aiming screen registers its own FIRE, NEXT_TARGET and QUIT ids.
+            {"type": "keybinding", "id": "NEXT_TARGET", "category": "TARGET",
+             "bindings": [{"input_method": "keyboard", "key": "k"}]},
+            {"type": "keybinding", "id": "QUIT", "category": "TARGET",
+             "bindings": [{"input_method": "keyboard", "key": "j"}]},
+        ])
+        game = Game(name="bn-e2e-tutorial-target", cols=174, rows=45,
+                    userdir=userdir, options=TUTORIAL_OPTIONS)
+        try:
+            initial_lessons(game, "modern")
+            game.define_lua(HELPERS)
+            empty_inventory(game)
+            assert game.lua("M:clear_items_at(here(0,0)) out('ok')") == ["ok"]
+            # The gun lesson waits for a real firearm to finish reloading.
+            assert game.lua(
+                "local a=gapi.get_avatar() "
+                "local gun=a:create_item(ItypeId.new('model_10_revolver'),-1) "
+                "a:create_item(ItypeId.new('38_special'),6) "
+                "out(a:wield(gun))") == ["true"]
+            game.keys("r", delay=0.5)
+            game.wait_for("Reload item")
+            game.keys("r", delay=0.5)
+            deadline = time.time() + 60
+            while time.time() < deadline and \
+                    lesson_prefix("LESSON_GUN_FIRE", "modern") not in game.screen():
+                game.keys("x", delay=0.25)
+            screen = lesson(game, "LESSON_GUN_FIRE", "modern")
+            popup = lesson_popup(screen, lesson_prefix("LESSON_GUN_FIRE", "modern"))
+            # Both contexts are named: the main map's custom keys...
+            assert re.search(r"\bz\b", popup), popup
+            assert re.search(r"\by\b", popup), popup
+            assert re.search(r"\bTAB\b", popup), popup
+            # ...and the aiming screen's own FIRE, NEXT_TARGET and QUIT bindings.
+            assert re.search(r"\bf\b", popup), popup
+            assert re.search(r"\bk\b", popup), popup
+            assert re.search(r"\bj\b", popup), popup
+            assert "ESC" not in popup, \
+                "the aiming cancel key must come from TARGET, not the global QUIT:\n" + popup
+        finally:
+            game.close()
+
+
+def test_tutorial_look_names_rebound_selection_keys(_g):
+    with TemporaryDirectory(prefix="bn-e2e-tutorial-look-") as directory:
+        userdir = Path(directory)
+        write_user_bindings(userdir, [{
+            "type": "keybinding", "id": "shift_n", "category": "DEFAULTMODE",
+            "bindings": [{"input_method": "keyboard", "key": "F"}],
+        }])
+        game = Game(name="bn-e2e-tutorial-look", cols=174, rows=45,
+                    userdir=userdir, options=TUTORIAL_OPTIONS)
+        try:
+            start_tutorial(game)
+            if lesson_prefix("LESSON_INTRO", "modern") not in game.screen():
+                game.keys("x", delay=0)
+            lesson(game, "LESSON_INTRO", "modern")
+            close_lesson(game, "LESSON_INTRO", "modern")
+            lesson(game, "LESSON_MOVE", "modern")
+            close_lesson(game, "LESSON_MOVE", "modern")
+            looking = lesson(game, "LESSON_LOOK", "modern")
+            popup = lesson_popup(looking, lesson_prefix("LESSON_LOOK", "modern"))
+            assert re.search(r"\bF\b", popup), \
+                "a rebound tile-selection key must be named:\n" + popup
+            assert "Shift + a movement key" not in popup, \
+                "shifted movement is only the route while it is really bound:\n" + popup
+        finally:
+            game.close()
+
+
 TESTS = [test_tutorial_lessons_supply_what_they_promise,
          test_modern_tutorial_routes_are_reachable,
          test_classic_tutorial_preserves_classic_controls,
          test_tutorial_move_names_replaced_binding,
          test_tutorial_names_action_key_rebound_during_play,
-         test_tutorial_unbound_action_shows_reachable_route]
+         test_tutorial_unbound_action_shows_reachable_route,
+         test_tutorial_aim_keys_use_target_context,
+         test_tutorial_look_names_rebound_selection_keys]
