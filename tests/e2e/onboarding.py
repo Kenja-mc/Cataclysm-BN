@@ -21,12 +21,26 @@ def test_death_mode_choice(g):
 
 def test_first_time_tip(g):
     arena(g)
-    g.lua("gapi.get_avatar():set_value('tip_seen_hostile','') out('ok')")
-    assert g.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(4,0)) out('ok')") == ["ok"]
-    settle(g)
-    assert "Tip: Something hostile" in g.screen(), g.screen()
-    assert g.lua("out(gapi.get_avatar():get_value('tip_seen_hostile'))") == ["1"]
-    g.lua("local m=gapi.get_monster_at(here(4,0)) if m then park(m) end out('ok')")
+    nightvision = g.lua("out(gapi.get_avatar():has_trait(MutationBranchId.new('DEBUG_NIGHTVISION')))") == ["true"]
+    try:
+        # The shelter can be very dark even at 08:00. Pin sight, not the rolled weather.
+        assert g.lua("TIP_HOSTILE=nil "
+                     "gapi.get_avatar():set_mutation(MutationBranchId.new('DEBUG_NIGHTVISION')) "
+                     "out('ok')") == ["ok"]
+        settle(g)
+        assert g.lua("gapi.get_avatar():set_value('tip_seen_hostile','') "
+                     "TIP_HOSTILE=gapi.place_monster_at(MonsterTypeId.new('mon_zombie'),here(4,0)) "
+                     "out(TIP_HOSTILE ~= nil)") == ["true"]
+        settle(g)
+        assert g.lua("out(gapi.get_avatar():sees(TIP_HOSTILE:get_pos_ms()))") == ["true"], \
+            "the hostile-tip fixture must put its zombie in sight:\n" + g.screen()
+        assert "Tip: Something hostile" in g.screen(), g.screen()
+        assert g.lua("out(gapi.get_avatar():get_value('tip_seen_hostile'))") == ["1"]
+    finally:
+        assert g.lua("if TIP_HOSTILE then park(TIP_HOSTILE) TIP_HOSTILE=nil end out('ok')") == ["ok"]
+        if not nightvision:
+            assert g.lua("gapi.get_avatar():unset_mutation(MutationBranchId.new('DEBUG_NIGHTVISION')) "
+                         "out('ok')") == ["ok"]
 
 
 def test_first_time_tips_stairs_and_save(g):
