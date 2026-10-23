@@ -12,6 +12,7 @@
 #include "json.h"
 #include "output.h"
 #include "point.h"
+#include "scrollbar_input.h"
 #include "sdl_wrappers.h"
 #include "string_formatter.h"
 #include "string_input_popup.h"
@@ -483,6 +484,15 @@ void Messages::dialog::init_first_time()
     // Calculate time string display width. The translated strings are expected to
     // be aligned, so we choose an arbitrary duration here to calculate the width.
     time_width = utf8_width( to_string_clipped( 1_turns, clipped_align::right ) );
+
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
 }
 
 void Messages::dialog::init( ui_adaptor &ui )
@@ -704,7 +714,37 @@ void Messages::dialog::input( const ui_adaptor &ui )
             filter.text( filter_str );
         }
     } else {
-        const std::string &action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" &&
+            ctxt.get_raw_input().type == input_event_t::mouse ) {
+            // Text scrolls three lines per notch.
+            if( action == "SCROLL_UP" ) {
+                offset = offset > 3 ? offset - 3 : 0;
+                action.clear();
+            } else if( action == "SCROLL_DOWN" ) {
+                const size_t last_offset = folded_filtered.size() > max_lines ?
+                                           folded_filtered.size() - max_lines : 0;
+                offset = std::min( last_offset, offset + 3 );
+                action.clear();
+            } else if( action == "SELECT" || action == "SEC_SELECT" ) {
+                // Messages are informational: a click only scrolls.
+                if( const auto mouse = ctxt.get_coordinates( w ) ) {
+                    const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
+                    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                        .offset = point( 0, border_width ),
+                        .viewport_size = static_cast<int>( max_lines ),
+                        .content_size = static_cast<int>( folded_filtered.size() ),
+                        .viewport_pos = static_cast<int>( offset ),
+                    }, cell );
+                    if( hit ) {
+                        offset = static_cast<size_t>( hit->viewport_pos );
+                    }
+                }
+                action.clear();
+            } else {
+                action.clear();
+            }
+        }
         if( action == "DOWN" && offset + max_lines < folded_filtered.size() ) {
             ++offset;
         } else if( action == "UP" && offset > 0 ) {

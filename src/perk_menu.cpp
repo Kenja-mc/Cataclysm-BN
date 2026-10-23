@@ -18,15 +18,18 @@
 #include "json.h"
 #include "map/mapdata.h"
 #include "messages.h"
+#include "options.h"
 #include "output.h"
 #include "player.h"
 #include "player_activity.h"
 #include "point.h"
 #include "relic.h"
 #include "requirements.h"
+#include "scrollbar_input.h"
 #include "skill.h"
 #include "string_formatter.h"
 #include "string_utils.h"
+#include "tab_input.h"
 #include "translations.h"
 #include "type_id.h"
 #include "ui.h"
@@ -148,7 +151,7 @@ void draw_perk_menu( Character &player )
             trim_and_print( w_list, print_from, list_width - 4, highlight ? c_white : c_light_gray,
                             cat_perks[i]->get_name() );
         }
-        draw_scrollbar( w_list, list_position, list_height, list_lines, point( list_width, 0 ) );
+        draw_scrollbar( w_list, list_position, list_height, list_lines, point( list_width - 1, 0 ) );
 
         wnoutrefresh( w_list );
 
@@ -166,7 +169,7 @@ void draw_perk_menu( Character &player )
             const point print_from( 2, i - info_scroll_min + 1 );
             trim_and_print( w_info, print_from, info_width - 4, c_white, description_lines[i] );
         }
-        draw_scrollbar( w_info, info_position, info_height, info_lines, point( info_width, 0 ) );
+        draw_scrollbar( w_info, info_position, info_height, info_lines, point( info_width - 1, 0 ) );
 
         wnoutrefresh( w_info );
     } );
@@ -180,10 +183,87 @@ void draw_perk_menu( Character &player )
     ctxt.register_action( "PREV_TAB" );
     ctxt.register_action( "NEXT_TAB" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
+
+    // Where the list rows of the category tab strip end, mirroring draw_cat_tabs().
+    const auto tab_at = [&]( int x ) {
+        return tab_input::index_at( all_categories, static_cast<size_t>( current_category ),
+                                    getmaxx( w_head ), x );
+    };
+    const auto window_cell = []( const auto & mouse,
+    const catacurses::window & w ) -> point {
+        return mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
+    };
 
     while( true ) {
         ui_manager::redraw();
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
+            if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
+                // The list pans one row; the description text three lines.
+                if( ctxt.get_coordinates( w_list ) ) {
+                    action = action == "SCROLL_UP" ? "UP" : "DOWN";
+                } else {
+                    const int step = action == "SCROLL_UP" ? -3 : 3;
+                    info_position = std::clamp( info_position + step, 0,
+                                                std::max( 0, info_lines - 1 ) );
+                    action.clear();
+                }
+            } else if( action == "SELECT" || action == "SEC_SELECT" ) {
+                action.clear();
+                if( const auto mouse = ctxt.get_coordinates( w_head ) ) {
+                    if( const auto tab = tab_at( window_cell( mouse, w_head ).x ) ) {
+                        if( *tab != current_category ) {
+                            info_position = 0;
+                            list_position = 0;
+                            current_category = *tab;
+                        }
+                    }
+                } else if( const auto mouse = ctxt.get_coordinates( w_list ) ) {
+                    const auto cell = window_cell( mouse, w_list );
+                    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                        .offset = point( list_width - 1, 0 ),
+                        .viewport_size = list_height,
+                        .content_size = list_lines,
+                        .viewport_pos = list_position,
+                        .scroll_to_last = true,
+                    }, cell );
+                    if( hit ) {
+                        list_position = hit->viewport_pos;
+                        info_position = 0;
+                    } else if( cell.x >= 1 && cell.x < list_width - 1 &&
+                               cell.y >= 1 && cell.y < list_height - 1 ) {
+                        const int idx = list_scroll_min + cell.y - 1;
+                        if( idx >= list_scroll_min && idx < list_scroll_max ) {
+                            list_position = idx;
+                            info_position = 0;
+                        }
+                    }
+                } else if( const auto mouse = ctxt.get_coordinates( w_info ) ) {
+                    const auto cell = window_cell( mouse, w_info );
+                    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                        .offset = point( info_width - 1, 0 ),
+                        .viewport_size = info_height,
+                        .content_size = info_lines,
+                        .viewport_pos = info_position,
+                        .scroll_to_last = true,
+                    }, cell );
+                    if( hit ) {
+                        info_position = hit->viewport_pos;
+                    }
+                }
+            } else {
+                action.clear();
+            }
+        }
         if( action == "PAGE_UP" ) {
             info_position -= 1;
             if( info_position < 0 ) { info_position = info_lines - 1; }

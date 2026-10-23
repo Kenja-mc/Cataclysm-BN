@@ -19,8 +19,10 @@
 #include "make_static.h"
 #include "options.h"
 #include "output.h"
+#include "scrollbar_input.h"
 #include "string_formatter.h"
 #include "string_id.h"
+#include "tab_input.h"
 #include "translations.h"
 #include "ui.h"
 #include "ui_manager.h"
@@ -580,6 +582,14 @@ void show_bionics_ui( Character &who )
 
     bionic_collection &bionics = *who.my_bionics;
     const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) != "classic";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
     auto available_chars = std::optional<invlet_wrapper> {};
     if( modern ) {
         available_chars.emplace(
@@ -680,6 +690,18 @@ void show_bionics_ui( Character &who )
 
     int scroll_position = 0;
     int cursor = 0;
+
+    // Row the mouse most recently clicked in the visible list; a second click on
+    // it runs the row's Enter action. Reset by any keyboard or scroll event.
+    std::optional<int> mouse_row;
+    // Keep the cursor row inside the visible list after a click jump.
+    const auto scroll_to_cursor = [&]() {
+        if( cursor < scroll_position ) {
+            scroll_position = cursor;
+        } else if( cursor - scroll_position >= LIST_HEIGHT ) {
+            scroll_position = std::max( 0, cursor - LIST_HEIGHT + 1 );
+        }
+    };
 
     //generate the tab title string and a count of the bionics owned
     bionic_menu_mode menu_mode = ACTIVATING;
@@ -782,9 +804,73 @@ void show_bionics_ui( Character &who )
         }
 #endif
 
-        const std::string action = ctxt.handle_input();
+        const std::string raw_action = ctxt.handle_input();
         const int ch = ctxt.get_raw_input().get_first_input();
         bionic *tmp = nullptr;
+        std::string action = raw_action;
+
+        if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
+            if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
+                action = action == "SCROLL_UP" ? "UP" : "DOWN";
+                mouse_row.reset();
+            } else if( action == "SELECT" || action == "SEC_SELECT" ) {
+                action.clear();
+                if( const auto mouse = ctxt.get_coordinates( w_tabs ) ) {
+                    const auto cell = mouse->xy().raw() + point( getmaxx( w_tabs ),
+                                      getmaxy( w_tabs ) ) / 2;
+                    const std::vector<std::string> tab_texts = {
+                        string_format( _( "ACTIVE (%i)" ), active.size() ),
+                        string_format( _( "PASSIVE (%i)" ), passive.size() )
+                    };
+                    if( const auto tab = tab_input::index_at( tab_texts,
+                            tab_mode == TAB_ACTIVE ? 0 : 1,
+                            getmaxx( w_tabs ), cell.x ) ) {
+                        const bionic_tab_mode clicked = *tab == 0 ? TAB_ACTIVE : TAB_PASSIVE;
+                        if( clicked != tab_mode ) {
+                            tab_mode = clicked;
+                            scroll_position = 0;
+                            cursor = 0;
+                            mouse_row.reset();
+                        }
+                    }
+                } else if( const auto mouse = ctxt.get_coordinates( wBio ) ) {
+                    const auto cell = mouse->xy().raw() + point( getmaxx( wBio ),
+                                      getmaxy( wBio ) ) / 2;
+                    const int list_size = static_cast<int>( current_bionic_list->size() );
+                    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                        .offset = point( 0, list_start_y ),
+                        .viewport_size = LIST_HEIGHT,
+                        .content_size = list_size,
+                        .viewport_pos = cursor,
+                        .scroll_to_last = true,
+                    }, cell );
+                    if( hit ) {
+                        cursor = hit->viewport_pos;
+                        scroll_to_cursor();
+                        mouse_row.reset();
+                    } else if( cell.x >= 2 && cell.x < getmaxx( wBio ) - 2 &&
+                               cell.y >= list_start_y && cell.y < list_start_y + LIST_HEIGHT ) {
+                        const int idx = scroll_position + cell.y - list_start_y;
+                        if( idx >= 0 && idx < list_size ) {
+                            if( mouse_row && *mouse_row == idx ) {
+                                // A second click on the same row runs its Enter action;
+                                // activation keeps its usual prompts.
+                                action = "CONFIRM";
+                                mouse_row.reset();
+                            } else {
+                                cursor = idx;
+                                scroll_to_cursor();
+                                mouse_row = idx;
+                            }
+                        }
+                    }
+                }
+            } else {
+                action.clear();
+            }
+        } else {
+            mouse_row.reset();
+        }
 
         if( action == "DOWN" ) {
             if( static_cast<size_t>( cursor ) < current_bionic_list->size() - 1 ) {

@@ -22,9 +22,11 @@
 #include "item_search.h"
 #include "itype.h"
 #include "npc.h"
+#include "options.h"
 #include "output.h"
 #include "player.h"
 #include "point.h"
+#include "scrollbar_input.h"
 #include "string_formatter.h"
 #include "string_input_popup.h"
 #include "string_utils.h"
@@ -178,6 +180,7 @@ auto trading_window::update_win( npc &np, const std::string &deal ) -> void
     // Draw borders, one of which is highlighted
     werase( w_them );
     werase( w_you );
+    click_targets.clear();
 
     // Colors for hinting if the trade will be accepted or not.
     const auto trade_color = npc_trading::npc_will_accept_trade( state, np ) ? c_green : c_red;
@@ -250,7 +253,7 @@ auto trading_window::update_win( npc &np, const std::string &deal ) -> void
     const auto hint_y1 = head_title_y;
     const auto hint_y2 = head_title_y + 1;
     const auto draw_hint = [&]( int x, int y, const std::string & key,
-    const std::string & label ) -> void {
+    const std::string & label, const std::string & action ) -> void {
         mvwprintz( w_head, point( x, y ), c_light_gray, "[" );
         x += 1;
         mvwprintz( w_head, point( x, y ), c_light_gray, key );
@@ -258,12 +261,17 @@ auto trading_window::update_win( npc &np, const std::string &deal ) -> void
         mvwprintz( w_head, point( x, y ), c_light_gray, "] " );
         x += 2;
         mvwprintz( w_head, point( x, y ), c_light_gray, label );
+        click_targets.push_back( click_target{ .min = point( x - utf8_width( key ) - 3, y ),
+                                               .max = point( x + utf8_width( label ), y + 1 ),
+                                               .action = action
+                                             } );
     };
-    draw_hint( grid_x, hint_y1, examine_key, examine_label );
-    draw_hint( grid_x + col0_w + utf8_width( hint_sep ), hint_y1, switch_key, switch_label );
-    draw_hint( grid_x, hint_y2, confirm_key, confirm_label );
+    draw_hint( grid_x, hint_y1, examine_key, examine_label, "EXAMINE" );
+    draw_hint( grid_x + col0_w + utf8_width( hint_sep ), hint_y1, switch_key, switch_label,
+               "SWITCH_LISTS" );
+    draw_hint( grid_x, hint_y2, confirm_key, confirm_label, "CONFIRM" );
     draw_hint( grid_x + col0_w + utf8_width( hint_sep ), hint_y2, autobalance_key,
-               autobalance_label );
+               autobalance_label, "AUTOBALANCE" );
 
     auto cost_str = std::string{ _( "Exchange" ) };
     if( !np.will_exchange_items_freely() ) {
@@ -276,6 +284,11 @@ auto trading_window::update_win( npc &np, const std::string &deal ) -> void
     const auto cost_w = utf8_width( cost_tag );
     const auto cost_x = 1 + ( head_inner_w - cost_w ) / 2;
     mvwprintz( w_head, point( cost_x, head_bottom_y ), trade_color, cost_tag );
+    // The exchange label doubles as the accept button; Enter keeps its confirmation.
+    click_targets.push_back( click_target{ .min = point( cost_x, head_bottom_y ),
+                                           .max = point( cost_x + cost_w, head_bottom_y + 1 ),
+                                           .action = "CONFIRM"
+                                         } );
 
     const auto category_key = ctxt.get_desc( "CATEGORY_SELECTION", 1 );
     const auto category_label_prefix = _( "< [" );
@@ -289,6 +302,7 @@ auto trading_window::update_win( npc &np, const std::string &deal ) -> void
                                       utf8_width( category_state_off ) + 1 +
                                       utf8_width( category_label_suffix );
     auto category_x = 1 + std::max( head_inner_w - category_label_width, 0 );
+    const auto category_label_x = category_x;
     mvwprintz( w_head, point( category_x, head_bottom_y ), c_white, category_label_prefix );
     category_x += utf8_width( category_label_prefix );
     mvwprintz( w_head, point( category_x, head_bottom_y ), c_yellow, category_key );
@@ -306,13 +320,23 @@ auto trading_window::update_win( npc &np, const std::string &deal ) -> void
     mvwprintz( w_head, point( category_x, head_bottom_y ), c_white, "]" );
     category_x += 1;
     mvwprintz( w_head, point( category_x, head_bottom_y ), c_white, category_label_suffix );
+    category_x += utf8_width( category_label_suffix );
+    click_targets.push_back( click_target{ .min = point( category_label_x, head_bottom_y ),
+                                           .max = point( category_x, head_bottom_y + 1 ),
+                                           .action = "CATEGORY_SELECTION"
+                                         } );
 
     auto keybinds_x = 1 + head_inner_w - head_keybinds_label_width;
+    const auto keybinds_label_x = keybinds_x;
     mvwprintz( w_head, point( keybinds_x, 0 ), c_white, head_keybinds_label_prefix );
     keybinds_x += utf8_width( head_keybinds_label_prefix );
     mvwprintz( w_head, point( keybinds_x, 0 ), c_yellow, "?" );
     keybinds_x += 1;
     mvwprintz( w_head, point( keybinds_x, 0 ), c_white, head_keybinds_label_middle );
+    click_targets.push_back( click_target{ .min = point( keybinds_label_x, 0 ),
+                                           .max = point( keybinds_label_x + head_keybinds_label_width, 1 ),
+                                           .action = "HELP_KEYBINDINGS"
+                                         } );
     draw_border( w_them, ( focus_them ? c_yellow : BORDER_COLOR ) );
     draw_border( w_you, ( !focus_them ? c_yellow : BORDER_COLOR ) );
     draw_border( w_info, BORDER_COLOR );
@@ -365,6 +389,8 @@ auto trading_window::update_win( npc &np, const std::string &deal ) -> void
         const auto &person = they ? static_cast<player &>( np ) :
                              static_cast<player &>( g->u );
         auto &w_whose = they ? w_them : w_you;
+        auto &row_at = they ? them_row_at : you_row_at;
+        row_at.clear();
         auto win_w = getmaxx( w_whose );
         // Borders
         win_w -= 2;
@@ -480,6 +506,7 @@ auto trading_window::update_win( npc &np, const std::string &deal ) -> void
                                         utf8_width( filter_suffix );
         const auto filter_y = getmaxy( w_whose ) - 1;
         auto filter_x = 1;
+        const auto filter_label_x = filter_x;
         mvwprintz( w_whose, point( filter_x, filter_y ), c_white, filter_prefix );
         filter_x += utf8_width( filter_prefix );
         mvwprintz( w_whose, point( filter_x, filter_y ), c_yellow, "/" );
@@ -501,6 +528,13 @@ auto trading_window::update_win( npc &np, const std::string &deal ) -> void
             filter_x += utf8_width( filter_text );
         }
         mvwprintz( w_whose, point( filter_x, filter_y ), c_white, filter_suffix );
+        filter_x += utf8_width( filter_suffix );
+        click_targets.push_back( click_target{ .min = point( filter_label_x, filter_y ),
+                                               .max = point( filter_x, filter_y + 1 ),
+                                               .action = "FILTER",
+                                               .target_them = they,
+                                               .in_pane = true
+                                             } );
         const auto draw_filter_help = show_filter_help && ( they == help_on_theirs );
         if( draw_filter_help ) {
             const auto help_start_y = 1;
@@ -537,6 +571,8 @@ auto trading_window::update_win( npc &np, const std::string &deal ) -> void
                 const auto category_y = static_cast<int>( row + 1 + trade_total_header_rows );
                 mvwprintz( w_whose, point( 2, category_y ), c_magenta,
                            trim_by_length( category_label, win_w - 1 ) );
+                // Clicking a category header selects the first item under it.
+                row_at[category_y] = i;
                 row++;
                 if( row >= entries_per_page ) {
                     break;
@@ -546,6 +582,7 @@ auto trading_window::update_win( npc &np, const std::string &deal ) -> void
             const auto is_cursor = ( they && focus_them && i == them_cursor ) ||
                                    ( !they && !focus_them && i == you_cursor );
             const auto row_y = static_cast<int>( row + 1 + trade_total_header_rows );
+            row_at[row_y] = i;
             const auto &owner_sells = they ? ip.u_has : ip.npc_has;
             const auto &owner_sells_charge = they ? ip.u_charges : ip.npc_charges;
             auto itname = it->display_name();
@@ -639,6 +676,19 @@ auto trading_window::update_win( npc &np, const std::string &deal ) -> void
                                                static_cast<int>( total_pages ) );
         const auto page_x = 1 + std::max( win_w - utf8_width( page_label ), 0 );
         mvwprintw( w_whose, point( page_x, paging_y ), page_label );
+        // '<' goes back one page, the rest of the label advances one page.
+        click_targets.push_back( click_target{ .min = point( page_x, paging_y ),
+                                               .max = point( page_x + 2, paging_y + 1 ),
+                                               .action = "PAGE_UP",
+                                               .target_them = they,
+                                               .in_pane = true
+                                             } );
+        click_targets.push_back( click_target{ .min = point( page_x + 2, paging_y ),
+                                               .max = point( page_x + utf8_width( page_label ), paging_y + 1 ),
+                                               .action = "PAGE_DOWN",
+                                               .target_them = they,
+                                               .in_pane = true
+                                             } );
     }
     const auto &info_list = focus_them ? state.theirs : state.yours;
     const auto &info_filtered = focus_them ? them_filtered : you_filtered;
@@ -721,12 +771,52 @@ auto trading_window::show_item_data( size_t index, bool target_is_theirs ) -> in
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
 
     auto result = info_popup_result::none;
     auto exit = false;
     while( !exit ) {
         ui_manager::redraw();
         auto action = ctxt.handle_input();
+        if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
+            // The item description is text: three lines per wheel notch.
+            if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
+                const auto inner_h = std::max( getmaxy( w_popup ) - 2, 1 );
+                const auto folded = foldstring( info_text, std::max( getmaxx( w_popup ) - 2, 1 ) );
+                const auto max_scroll = folded.size() > static_cast<size_t>( inner_h ) ?
+                                        folded.size() - static_cast<size_t>( inner_h ) : 0;
+                scroll_pos = action == "SCROLL_UP" ?
+                             ( scroll_pos > 3 ? scroll_pos - 3 : 0 ) :
+                             std::min( scroll_pos + 3, max_scroll );
+                action.clear();
+            } else if( action == "SELECT" || action == "SEC_SELECT" ) {
+                action.clear();
+                if( const auto mouse = ctxt.get_coordinates( w_popup ) ) {
+                    const auto cell = mouse->xy().raw() + point( getmaxx( w_popup ),
+                                      getmaxy( w_popup ) ) / 2;
+                    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                        .offset = point( getmaxx( w_popup ) - 1, 1 ),
+                        .viewport_size = std::max( getmaxy( w_popup ) - 2, 0 ),
+                        .content_size = static_cast<int>( foldstring( info_text,
+                                                         std::max( getmaxx( w_popup ) - 2, 1 ) ).size() ),
+                        .viewport_pos = static_cast<int>( scroll_pos ),
+                    }, cell );
+                    if( hit ) {
+                        scroll_pos = static_cast<size_t>( hit->viewport_pos );
+                    }
+                }
+            } else {
+                action.clear();
+            }
+        }
         if( action == "UP" ) {
             result = info_popup_result::move_up;
             exit = true;
@@ -805,6 +895,15 @@ auto trading_window::perform_trade( npc &np, const std::string &deal ) -> bool
 
     auto ctxt = input_context( "NPC_TRADE" );
     register_trade_actions( ctxt, true );
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
 
     auto ui = ui_adaptor{};
     ui.on_screen_resize( [this]( ui_adaptor & ui ) {
@@ -1106,6 +1205,64 @@ auto trading_window::perform_trade( npc &np, const std::string &deal ) -> bool
             return std::abs( lhs - current_amount ) > std::abs( rhs - current_amount );
         } );
     };
+    // The hotkey mark/unmark toggle. Also used when a second click lands on the
+    // same row; multi-count items keep their amount prompt.
+    const auto toggle_item_mark = [&]( item_pricing & ip ) -> void {
+        auto change_amount = 1;
+        auto &owner_sells = focus_them ? ip.u_has : ip.npc_has;
+        auto &owner_sells_charge = focus_them ? ip.u_charges : ip.npc_charges;
+
+        const auto calc_amount_hint = [&]() -> int {
+            if( ip.price > 0 ) {
+                if( focus_them && state.your_balance > 0 ) {
+                    return state.your_balance / ip.price;
+                } else if( !focus_them && state.your_balance < 0 ) {
+                    const auto amt = state.your_balance / ip.price;
+                    const auto rem = ( std::fmod( state.your_balance, ip.price ) == 0 ) ? 0 : 1;
+                    return amt - rem;
+                }
+            }
+            return 0;
+        };
+
+        if( ip.selected ) {
+            if( owner_sells_charge > 0 ) {
+                change_amount = owner_sells_charge;
+                owner_sells_charge = 0;
+            } else if( owner_sells > 0 ) {
+                change_amount = owner_sells;
+                owner_sells = 0;
+            }
+        } else if( ip.charges > 0 ) {
+            const auto hint = calc_amount_hint();
+            change_amount = get_var_trade( *ip.locs.front(), ip.charges, hint );
+            if( change_amount < 1 ) {
+                return;
+            }
+            owner_sells_charge = change_amount;
+        } else {
+            if( ip.count > 1 ) {
+                const auto hint = calc_amount_hint();
+                change_amount = get_var_trade( *ip.locs.front(), ip.count, hint );
+                if( change_amount < 1 ) {
+                    return;
+                }
+            }
+            owner_sells = change_amount;
+        }
+        ip.selected = !ip.selected;
+        if( ip.selected != focus_them ) {
+            change_amount *= -1;
+        }
+        const auto delta_price = static_cast<int>( ip.price * change_amount );
+        if( !np.will_exchange_items_freely() ) {
+            state.your_balance -= delta_price;
+        }
+        if( affects_npc_capacity( *ip.locs.front() ) ) {
+            state.volume_left += ip.vol * change_amount;
+            state.weight_left += ip.weight * change_amount;
+        }
+    };
     while( !exit ) {
         auto &target_list = focus_them ? state.theirs : state.yours;
         auto &filtered = focus_them ? them_filtered : you_filtered;
@@ -1127,7 +1284,143 @@ auto trading_window::perform_trade( npc &np, const std::string &deal ) -> bool
         }
         ui_manager::redraw();
 
-        const auto action = ctxt.handle_input();
+        auto action = ctxt.handle_input();
+        if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
+            if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
+                // One row per notch, like the arrow keys.
+                action = action == "SCROLL_UP" ? "UP" : "DOWN";
+                mouse_row_them.reset();
+                mouse_row_you.reset();
+            } else if( action == "SELECT" || action == "SEC_SELECT" ) {
+                action.clear();
+                const auto cell_in = [&]( const catacurses::window & w ) -> std::optional<point> {
+                    const auto mouse = ctxt.get_coordinates( w );
+                    if( !mouse ) {
+                        return std::nullopt;
+                    }
+                    return mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
+                };
+                const auto hit_test = [&]( point cell ) -> const click_target * {
+                    for( const click_target &target : click_targets ) {
+                        if( target.in_pane ) {
+                            continue;
+                        }
+                        if( cell.x >= target.min.x && cell.x < target.max.x &&
+                            cell.y >= target.min.y && cell.y < target.max.y ) {
+                            return &target;
+                        }
+                    }
+                    return nullptr;
+                };
+                // Filter and paging labels live in a pane, so they are tested with
+                // that pane's own coordinates.
+                const auto pane_hit_test = [&]( point cell, bool target_them ) -> const click_target * {
+                    for( const click_target &target : click_targets ) {
+                        if( !target.in_pane || target.target_them != target_them ) {
+                            continue;
+                        }
+                        if( cell.x >= target.min.x && cell.x < target.max.x &&
+                            cell.y >= target.min.y && cell.y < target.max.y ) {
+                            return &target;
+                        }
+                    }
+                    return nullptr;
+                };
+                const auto pane_sync = [&]() {
+                    clamp_cursor_to_list( clamp_cursor_options{
+                        .list = target_list,
+                        .filtered = filtered,
+                        .cursor = cursor,
+                        .offset = offset
+                    } );
+                    if( category_mode && !category_ranges.empty() ) {
+                        sync_category_cursor( target_list, filtered, category_ranges,
+                                              category_cursor, cursor );
+                    }
+                };
+                std::optional<point> pane_cell = cell_in( w_them );
+                bool they = true;
+                if( !pane_cell ) {
+                    pane_cell = cell_in( w_you );
+                    they = false;
+                }
+                const click_target *target = hit_test( cell_in( w_head ).value_or( point {-1, -1} ) );
+                if( target == nullptr && pane_cell ) {
+                    target = pane_hit_test( *pane_cell, they );
+                }
+                if( target != nullptr ) {
+                    // Drawn labels run their keybind actions; the deal itself keeps
+                    // the Enter confirmation prompt, and any layout change forgets
+                    // the pending row click.
+                    if( target->action != "CONFIRM" ) {
+                        mouse_row_them.reset();
+                        mouse_row_you.reset();
+                    }
+                    if( target->action == "SWITCH_LISTS" ) {
+                        action = "SWITCH_LISTS";
+                    } else if( target->action == "FILTER" || target->action == "PAGE_UP" ||
+                               target->action == "PAGE_DOWN" ) {
+                        // Pane labels act on the focused pane; the first click on the
+                        // other pane only moves the focus there.
+                        if( focus_them != target->target_them ) {
+                            focus_them = target->target_them;
+                            action.clear();
+                        } else {
+                            action = target->action;
+                        }
+                    } else {
+                        action = target->action;
+                    }
+                } else if( pane_cell ) {
+                    auto &mouse_row = they ? mouse_row_them : mouse_row_you;
+                    const auto &row_at = they ? them_row_at : you_row_at;
+                    const auto row_it = row_at.find( pane_cell->y );
+                    if( row_it != row_at.end() ) {
+                        const size_t idx = row_it->second;
+                        if( focus_them != they ) {
+                            // A first click on the other pane only focuses and selects.
+                            focus_them = they;
+                            auto &clicked_list = focus_them ? state.theirs : state.yours;
+                            auto &clicked_filtered = focus_them ? them_filtered : you_filtered;
+                            auto &clicked_cursor = focus_them ? them_cursor : you_cursor;
+                            auto &clicked_offset = focus_them ? them_off : you_off;
+                            clicked_cursor = idx;
+                            clamp_cursor_to_list( clamp_cursor_options{
+                                .list = clicked_list,
+                                .filtered = clicked_filtered,
+                                .cursor = clicked_cursor,
+                                .offset = clicked_offset
+                            } );
+                            if( category_mode ) {
+                                auto &clicked_category_cursor = focus_them ? them_category_cursor :
+                                                                you_category_cursor;
+                                const auto clicked_ranges = build_category_ranges( clicked_list,
+                                                           clicked_filtered );
+                                sync_category_cursor( clicked_list, clicked_filtered, clicked_ranges,
+                                                      clicked_category_cursor, clicked_cursor );
+                            }
+                            pending_count.reset();
+                        } else if( mouse_row && *mouse_row == idx ) {
+                            // A second click on the same row marks/unmarks the item.
+                            toggle_item_mark( target_list[filtered[idx]] );
+                            pending_count.reset();
+                            mouse_row = idx;
+                        } else {
+                            cursor = idx;
+                            pane_sync();
+                            pending_count.reset();
+                            mouse_row = idx;
+                        }
+                    }
+                }
+            } else {
+                action.clear();
+            }
+        } else {
+            // Keyboard, wheel-free navigation and content changes reset click tracking.
+            mouse_row_them.reset();
+            mouse_row_you.reset();
+        }
         if( action == "SWITCH_LISTS" ) {
             focus_them = !focus_them;
             if( category_mode ) {
@@ -1419,61 +1712,7 @@ auto trading_window::perform_trade( npc &np, const std::string &deal ) -> bool
                     }
                 }
                 auto &ip = target_list[filtered[ch_index]];
-                auto change_amount = 1;
-                auto &owner_sells = focus_them ? ip.u_has : ip.npc_has;
-                auto &owner_sells_charge = focus_them ? ip.u_charges : ip.npc_charges;
-
-                const auto calc_amount_hint = [&]() -> int {
-                    if( ip.price > 0 )
-                    {
-                        if( focus_them && state.your_balance > 0 ) {
-                            return state.your_balance / ip.price;
-                        } else if( !focus_them && state.your_balance < 0 ) {
-                            const auto amt = state.your_balance / ip.price;
-                            const auto rem = ( std::fmod( state.your_balance, ip.price ) == 0 ) ? 0 : 1;
-                            return amt - rem;
-                        }
-                    }
-                    return 0;
-                };
-
-                if( ip.selected ) {
-                    if( owner_sells_charge > 0 ) {
-                        change_amount = owner_sells_charge;
-                        owner_sells_charge = 0;
-                    } else if( owner_sells > 0 ) {
-                        change_amount = owner_sells;
-                        owner_sells = 0;
-                    }
-                } else if( ip.charges > 0 ) {
-                    const auto hint = calc_amount_hint();
-                    change_amount = get_var_trade( *ip.locs.front(), ip.charges, hint );
-                    if( change_amount < 1 ) {
-                        continue;
-                    }
-                    owner_sells_charge = change_amount;
-                } else {
-                    if( ip.count > 1 ) {
-                        const auto hint = calc_amount_hint();
-                        change_amount = get_var_trade( *ip.locs.front(), ip.count, hint );
-                        if( change_amount < 1 ) {
-                            continue;
-                        }
-                    }
-                    owner_sells = change_amount;
-                }
-                ip.selected = !ip.selected;
-                if( ip.selected != focus_them ) {
-                    change_amount *= -1;
-                }
-                const auto delta_price = static_cast<int>( ip.price * change_amount );
-                if( !np.will_exchange_items_freely() ) {
-                    state.your_balance -= delta_price;
-                }
-                if( affects_npc_capacity( *ip.locs.front() ) ) {
-                    state.volume_left += ip.vol * change_amount;
-                    state.weight_left += ip.weight * change_amount;
-                }
+                toggle_item_mark( ip );
             }
         }
     }
