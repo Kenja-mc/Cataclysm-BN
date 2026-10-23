@@ -112,6 +112,26 @@ void map_memory::clear_memorized_tile( const tripoint_abs_ms &pos )
     sm.set_symbol( p.remainder, mm_submap::default_symbol );
     sm.set_tile( p.remainder, mm_submap::default_tile );
     sm.set_terrain_tile( p.remainder, mm_submap::default_tile );
+    sm.set_locked_door( p.remainder, locked_door_kind::none );
+}
+
+auto map_memory::get_locked_door( const tripoint_abs_ms &pos ) -> locked_door_kind
+{
+    const auto p = project_remain<coords::sm>( pos );
+    const mm_submap &sm = get_submap( p.quotient_tripoint );
+    return sm.locked_door( p.remainder );
+}
+
+auto map_memory::set_locked_door( const tripoint_abs_ms &pos, const locked_door_kind kind ) -> void
+{
+    const auto p = project_remain<coords::sm>( pos );
+    mm_submap &sm = get_submap( p.quotient_tripoint );
+    sm.set_locked_door( p.remainder, kind );
+}
+
+auto map_memory::clear_locked_door( const tripoint_abs_ms &pos ) -> void
+{
+    set_locked_door( pos, locked_door_kind::none );
 }
 
 bool map_memory::prepare_region( const tripoint_abs_ms &p1, const tripoint_abs_ms &p2 )

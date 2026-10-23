@@ -186,7 +186,8 @@ auto scheme_companions( const bool classic ) -> std::vector<scheme_companion>
         { .id = "YN_HOTKEYS", .value = classic }, { .id = "MOUSE_TILE_SELECTION", .value = !classic },
         { .id = "MOUSE_MOVE", .value = classic },
         { .id = "ARROW_KEY_AIM", .value = !classic },
-        { .id = "CONTEXTUAL_INTERACT", .value = !classic } };
+        { .id = "CONTEXTUAL_INTERACT", .value = !classic },
+        { .id = "KNOWN_LOCKED_DOOR_ICONS", .value = !classic } };
 }
 
 } // namespace
@@ -2756,6 +2757,12 @@ void options_manager::add_options_graphics()
         { "color_pixel_darken", translate_marker( "Darkened" ) },
         { "color_pixel_sepia", translate_marker( "Sepia" ) }
     }, "color_pixel_sepia", COPT_CURSES_HIDE
+       );
+
+    add( "KNOWN_LOCKED_DOOR_ICONS", graphics, translate_marker( "Lock icons on doors you found locked" ),
+         translate_marker( "If true, draws a small lock icon on every door you personally found locked, "
+                           "including remembered doors outside your sight.  It never marks a door you have not tried." ),
+         true, COPT_CURSES_HIDE
        );
 
     add( "STATICZEFFECT", graphics, translate_marker( "Static z level effect" ),

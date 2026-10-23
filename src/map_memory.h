@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <string>
 
@@ -24,6 +25,13 @@ struct memorized_terrain_tile {
     }
 };
 
+/** What kind of door the avatar last found locked on a memorized tile. */
+enum class locked_door_kind : std::uint8_t {
+    none = 0,
+    terrain = 1,
+    vehicle = 2,
+};
+
 /** Represent a submap-sized chunk of tile memory. */
 struct mm_submap {
     public:
@@ -35,7 +43,45 @@ struct mm_submap {
 
         /** Whether this mm_submap is empty. Empty submaps are skipped during saving. */
         bool is_empty() const {
-            return tiles.empty() && symbols.empty() && terrain_tiles.empty();
+            return tiles.empty() && symbols.empty() && terrain_tiles.empty() &&
+                   !has_locked_doors();
+        }
+
+        /** Whether the avatar has ever found a door on this submap locked. */
+        auto has_locked_doors() const -> bool {
+            for( const auto kind : locked_doors ) {
+                if( kind != 0 ) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        auto locked_door( const point_sm_ms &p ) const -> locked_door_kind {
+            if( locked_doors.empty() ) {
+                return locked_door_kind::none;
+            }
+            return static_cast<locked_door_kind>( locked_doors[p.y() * SEEX + p.x()] );
+        }
+
+        auto set_locked_door( const point_sm_ms &p, const locked_door_kind kind ) -> void {
+            const auto index = p.y() * SEEX + p.x();
+            if( kind == locked_door_kind::none ) {
+                if( locked_doors.empty() ) {
+                    return;
+                }
+                locked_doors[index] = 0;
+                if( !has_locked_doors() ) {
+                    locked_doors.clear();
+                    locked_doors.shrink_to_fit();
+                }
+                return;
+            }
+            if( locked_doors.empty() ) {
+                locked_doors.reserve( SEEX * SEEY );
+                locked_doors.resize( SEEX * SEEY, 0 );
+            }
+            locked_doors[index] = static_cast<std::uint8_t>( kind );
         }
 
         const memorized_terrain_tile &tile( const point_sm_ms &p ) const {
@@ -97,6 +143,8 @@ struct mm_submap {
         std::vector<memorized_terrain_tile>
         terrain_tiles; // base terrain layer             — 0 or SEEX*SEEY
         std::vector<int> symbols; // holds either 0 or SEEX*SEEY elements
+        // What the avatar learned from an actual open attempt: 0 none, 1 terrain door, 2 vehicle door.
+        std::vector<std::uint8_t> locked_doors;
         bool valid = true;
 };
 
@@ -206,6 +254,26 @@ class map_memory
          * @param pos tile position, in global ms coords.
          */
         void clear_memorized_tile( const tripoint_abs_ms &pos );
+
+        /**
+         * Returns what kind of door the avatar last found locked at the given position,
+         * or locked_door_kind::none when no attempt has taught it that the door is locked.
+         * @param pos tile position, in global ms coords.
+         */
+        auto get_locked_door( const tripoint_abs_ms &pos ) -> locked_door_kind;
+
+        /**
+         * Records that the avatar's own open attempt found a locked door at the given position.
+         * @param pos tile position, in global ms coords.
+         * @param kind whether the door belongs to terrain or to a vehicle.
+         */
+        auto set_locked_door( const tripoint_abs_ms &pos, locked_door_kind kind ) -> void;
+
+        /**
+         * Forgets that a door at the given position was locked, e.g. after it was opened.
+         * @param pos tile position, in global ms coords.
+         */
+        auto clear_locked_door( const tripoint_abs_ms &pos ) -> void;
 
     private:
         std::map<tripoint_abs_sm, shared_ptr_fast<mm_submap>> submaps;

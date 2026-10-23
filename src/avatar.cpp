@@ -297,6 +297,22 @@ void avatar::clear_memorized_tile( const tripoint_abs_ms &pos )
     player_map_memory->clear_memorized_tile( pos );
 }
 
+auto avatar::get_known_locked_door( const tripoint_abs_ms &p ) const -> locked_door_kind
+{
+    return player_map_memory->get_locked_door( p );
+}
+
+auto avatar::remember_locked_door( const tripoint_abs_ms &p, const bool vehicle ) -> void
+{
+    player_map_memory->set_locked_door( p, vehicle ? locked_door_kind::vehicle :
+                                       locked_door_kind::terrain );
+}
+
+auto avatar::forget_locked_door( const tripoint_abs_ms &p ) -> void
+{
+    player_map_memory->clear_locked_door( p );
+}
+
 bool avatar::has_memorized_tile_for_autodrive( const tripoint_abs_ms &p ) const
 {
     return player_map_memory->has_memory_for_autodrive( p );

@@ -909,6 +909,11 @@ class cata_tiles
 
         bool draw_terrain( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
                            const bool ( &invisible )[5], int z_drop );
+        /** Draws or hides a small lock icon on a door the avatar's own attempt found locked. */
+        auto draw_known_locked_door( const tripoint_bub_ms &p,
+                                     std::multimap<point, formatted_text> &overlay_strings ) -> void;
+        /** Drops stale lock knowledge for a tile the avatar can currently see. */
+        auto refresh_known_locked_door( const tripoint_bub_ms &p ) -> void;
         bool draw_furniture( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
                              const bool ( &invisible )[5], int z_drop );
         bool draw_graffiti( const tripoint_bub_ms &p, lit_level ll, int &height_3d,

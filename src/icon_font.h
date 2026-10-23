@@ -44,6 +44,8 @@ inline constexpr auto moon_full = "\U0010F030";
 inline constexpr auto moon_waning_gibbous = "\U0010F031";
 inline constexpr auto moon_last_quarter = "\U0010F032";
 inline constexpr auto moon_waning_crescent = "\U0010F033";
+/// Door that the avatar found locked (Material Design "lock", U+F033E, one cell wide).
+inline constexpr auto lock = "\U000F033E";
 /// Whether this build draws text with SDL fonts and so has the bundled icon font.
 #if defined(TILES)
 inline constexpr auto bundled = true;
