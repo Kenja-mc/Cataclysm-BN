@@ -1059,8 +1059,8 @@ auto smash( const tripoint_bub_ms *target = nullptr ) -> void
                 se.volume = 70;
                 se.category = sounds::sound_t::combat;
                 se.description = _( "CRACK!" );
-                se.id = "smash";
-                se.variant = "glass";
+                se.id = "smash_success";
+                se.variant = "smash_glass_contents";
 
                 sounds::sound( se );
                 u.deal_damage( nullptr, bodypart_id( "hand_r" ), damage_instance( DT_CUT, rng( 0, vol ) ) );
