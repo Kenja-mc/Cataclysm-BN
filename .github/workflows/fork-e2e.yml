@@ -1,0 +1,134 @@
+name: fork-e2e
+
+on:
+  workflow_call:
+    inputs:
+      checkout-ref:
+        description: "Commit to playtest; defaults to the caller's commit."
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  LLVM_VERSION: "22"
+
+jobs:
+  e2e-suite:
+    if: github.repository == 'Kenja-mc/Cataclysm-BN'
+    name: Fork end-to-end suite (curses, shard ${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    # A warm shard finished the whole job in about 40 minutes; with a cold ccache the
+    # build took 37 minutes by itself, so 90 covers the build plus the suite. The cap
+    # only has to catch a hang, so a hung shard cannot hold a runner for two hours.
+    timeout-minutes: 90
+    # The full suite outgrew a single runner: its tail tests are slower there than they are
+    # locally, and the suite was still running when the job hit its two-hour timeout. Each
+    # shard builds the cache-warm curses binary and runs a balanced quarter of the
+    # registered checks, assigned by run.py from tests/e2e/durations.json.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          ref: ${{ inputs.checkout-ref }}
+
+      - name: install dependencies (ubuntu)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libncursesw5-dev mold gettext parallel libsqlite3-dev zlib1g-dev libvulkan-dev mesa-vulkan-drivers xvfb autoconf autoconf-archive automake libtool libltdl-dev tmux imagemagick
+          sudo locale-gen en_US.UTF-8
+
+      - name: Install SDL3-devel Dependencies (ubuntu)
+        run: |
+          sudo apt-get install libasound2-dev libpulse-dev libaudio-dev libjack-dev libsndio-dev libx11-dev \
+            libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev \
+            libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev \
+            libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev \
+            libfreetype-dev libharfbuzz-dev \
+            libtiff-dev libavif-dev libwebp-dev libjpeg-dev libjxl-dev \
+            libflac-dev libvorbis-dev libxmp-dev libmpg123-dev libwavpack-dev
+
+      - name: Setup LLVM build tools
+        uses: aminya/setup-cpp@v1
+        with:
+          compiler: llvm-${{ env.LLVM_VERSION }}
+          cmake: true
+          ninja: true
+          setup-cpp: false
+
+      - name: Show Clang version
+        run: clang++ --version
+
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: linux-clang-curses-${{ github.ref_name }}
+          restore-keys: |
+            linux-clang-curses-${{ github.ref_name }}
+            linux-clang-curses-main
+            linux-clang-curses-
+          max-size: 2G
+          verbose: 2
+          save: ${{ contains(fromJSON('["push", "workflow_dispatch", "schedule", "release"]'), github.event_name) }}
+
+      # The matrix workflow uploads linux-tiles-x64-pr-... for the same commit, but that
+      # artifact cannot supply this job's binary: the ci-tiles configure builds only
+      # cataclysm-bn-tiles and cata_test-tiles (CMakePresets.json, buildPreset "ci-tiles")
+      # and installs them under cataclysmbn-<label>/bin, while the end-to-end suite drives
+      # the curses binary (tests/e2e/tmux_game.py find_binary: out/build/linux-curses/src/
+      # cataclysm-bn, ./cataclysm-bn, build/src/cataclysm-bn). The curses binary is
+      # therefore always built here, from the same ccache the matrix workflow warms; the
+      # tiles package is reused by the tiles playtest leg, which does need it.
+      - name: Configure and build the curses game (ccache)
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: ci-curses
+          configurePresetAdditionalArgs: "['-DUSE_PREFIX_DATA_DIR=OFF', '-DCATA_FORMAT_TARGETS=OFF']"
+          buildPreset: ci-curses
+          buildPresetAdditionalArgs: "['--target', 'cataclysm-bn', '-j', '2']"
+
+      # Run the suite in its own job: nothing else loads this runner while a game is live,
+      # because slow input makes these tests fail. tmux and ImageMagick are the harness's
+      # own tools (tests/e2e/tiles.py captures frames with `magick`, or the 6.x binaries
+      # that the runners install); the curses suite unsets DISPLAY for every game it starts,
+      # so Xvfb is only here for harness code that wants a display, exactly as in the matrix
+      # workflow's test step.
+      - name: Run the fork end-to-end suite
+        env:
+          # Unbuffered, so the log names the test a stall happened in.
+          PYTHONUNBUFFERED: "1"
+        run: |
+          set -o pipefail
+          Xvfb :99 -screen 0 1280x1024x24 &
+          xvfb_pid=$!
+          trap 'kill "$xvfb_pid" 2>/dev/null || true' EXIT
+          export DISPLAY=:99
+          sleep 1
+          # --durations feeds the shard split from real CI cost once the artifacts are
+          # merged: python3 tests/e2e/merge_durations.py e2e-durations-shard-*.json --write
+          python3 tests/e2e/run.py --shard=${{ matrix.shard }}/4 \
+            --durations=e2e-durations-shard-${{ matrix.shard }}.json \
+            2>&1 | tee e2e-suite-shard-${{ matrix.shard }}.log
+
+      # Always: a failing suite is the interesting one, and the log is its only evidence.
+      # warn, not ignore: the suite writes e2e-suite.log as soon as it starts, so a missing
+      # log means the suite never started and a warning is worth reading. warn never fails.
+      - name: upload the suite log
+        if: always()
+        uses: actions/upload-artifact@v4.6.0
+        with:
+          name: e2e-suite-log-${{ matrix.shard }}
+          path: |
+            e2e-suite-shard-${{ matrix.shard }}.log
+            e2e-durations-shard-${{ matrix.shard }}.json
+            /tmp/bn-e2e-*
+          if-no-files-found: warn
+          retention-days: 14

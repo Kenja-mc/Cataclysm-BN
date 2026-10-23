@@ -25,12 +25,10 @@ name: fork-playtest
 # work to evaluate and no multiplayer behavior is enabled, so there is nothing to drive
 # yet. A co-op leg belongs here once that harness exists.
 #
-# A push proves the wiring with one dry playtest leg and spends nothing: live legs cost model
-# tokens and up to fifteen minutes each, so they run on the nightly schedule and when
-# dispatched. A live leg needs any one of these model secrets: OPENROUTER_API_KEY on its own
-# (the free openrouter-text / openrouter-vision pools, $0 per call), or both XPL_SK_AGENT and
-# OC_SK_AGENT. Without a usable key every run is that one dry leg; the plan job says so in the
-# run summary and picks the OpenRouter pools when that is the only key present.
+# Push/PR CI does not launch playtests. Manual dispatch selects the jobs below;
+# the existing nightly schedule still runs the full suite, model legs and screenshots.
+# A live leg needs OPENROUTER_API_KEY, or both XPL_SK_AGENT and OC_SK_AGENT.
+# Without a usable key, one dry leg checks the driver without model calls.
 #
 # The screenshots job is the fork's own visual check: nightly and on demand it replays the
 # fork features in the tiles build and regenerates docs/fork/images/features/ plus the page
@@ -46,19 +44,24 @@ name: fork-playtest
 # fails listing the unknown ids instead of letting each scenario die as a harness error.
 
 on:
-  push:
-    branches: [main]
-    paths-ignore: [docs/**, scripts/**, "**.md", "**.mdx"]
-  pull_request:
-    branches: [main]
-    paths-ignore: [docs/**, scripts/**, "**.md", "**.mdx"]
-    types: [opened, reopened, synchronize]
   schedule:
     # Nightly at 04:17 UTC. The matrix workflow runs weekly, so it may already have built a
     # tiles package for this commit; otherwise the tiles legs build their own binary.
     - cron: "17 4 * * *"
   workflow_dispatch:
     inputs:
+      run_e2e:
+        description: "Run the four-shard end-to-end suite"
+        type: boolean
+        default: true
+      run_agentic:
+        description: "Run the decision-model playtest legs"
+        type: boolean
+        default: true
+      run_screenshots:
+        description: "Capture the fork feature screenshots"
+        type: boolean
+        default: true
       scenario:
         description: "One scenario id from playtest.SCENARIOS (empty: the leg's content list; main_menu and tutorial are curses-only)"
         type: string
@@ -91,11 +94,10 @@ on:
         type: string
         default: ""
 
-# Superseded pushes and PR revisions need no further testing. Manual and scheduled runs
-# may have distinct inputs or already-spent model tokens, so let the running one finish.
+# Manual and nightly runs may have distinct inputs or spent model tokens; let them finish.
 concurrency:
-  group: fork-playtest-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref_name }}
-  cancel-in-progress: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+  group: fork-playtest-${{ github.event_name }}-${{ github.ref_name }}
+  cancel-in-progress: false
 
 # Least privilege: the jobs that run third-party code (the game under test) and the
 # model-driven loop hold read permissions only. The triage job, which files the one issue,
@@ -115,6 +117,7 @@ env:
 
 jobs:
   plan:
+    if: github.event_name == 'schedule' || inputs.run_agentic
     name: Plan the playtest matrix
     runs-on: ubuntu-slim
     timeout-minutes: 5
@@ -177,7 +180,6 @@ jobs:
           HAS_KEYS: ${{ steps.keys.outputs.has_keys }}
           OR_ONLY: ${{ steps.keys.outputs.or_only }}
           DRY_INPUT: ${{ inputs.dry_run }}
-          EVENT_NAME: ${{ github.event_name }}
           TURNS: ${{ env.TURNS }}
         run: |
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
@@ -253,15 +255,10 @@ jobs:
                   leg["models"] = ("openrouter-vision" if leg["mode"] == "tiles"
                                    else "openrouter-text")
 
-          # Without a usable model key no leg may call a model: the live legs wait and
-          # one dry leg proves the wiring on every push. A push with keys behaves the same
-          # way: live legs spend tokens and up to fifteen minutes each, so they belong to the
-          # nightly schedule and to dispatches. A dry_run dispatch does the same to whatever
-          # legs the inputs selected.
-          push = os.environ.get("EVENT_NAME") == "push"
-          dry = (os.environ.get("HAS_KEYS") != "true" or push
+          # Without a usable key, preserve the selected surface but make no model calls.
+          dry = (os.environ.get("HAS_KEYS") != "true"
                  or os.environ.get("DRY_INPUT") == "true")
-          if os.environ.get("HAS_KEYS") != "true" or push:
+          if os.environ.get("HAS_KEYS") != "true":
               # One leg is enough to prove the wiring. Keep the first leg the dispatch
               # filters selected, so a dry_run tiles dispatch still checks the tiles leg
               # instead of collapsing to no job at all.
@@ -285,129 +282,17 @@ jobs:
           print("::notice::playtest legs=%d" % len(legs), file=sys.stderr)
           PY
 
+
   e2e-suite:
-    name: Fork end-to-end suite (curses, shard ${{ matrix.shard }})
-    runs-on: ubuntu-latest
-    # A warm shard finished the whole job in about 40 minutes; with a cold ccache the
-    # build took 37 minutes by itself, so 90 covers the build plus the suite. The cap
-    # only has to catch a hang, so a hung shard cannot hold a runner for two hours.
-    timeout-minutes: 90
-    # The full suite outgrew a single runner: its tail tests are slower there than they are
-    # locally, and the suite was still running when the job hit its two-hour timeout. Each
-    # shard builds the same cache-warm curses binary and runs a balanced quarter of the 140
-    # checks: run.py assigns them longest first from tests/e2e/durations.json.
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [0, 1, 2, 3]
-    steps:
-      - name: checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: install dependencies (ubuntu)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libncursesw5-dev mold gettext parallel libsqlite3-dev zlib1g-dev libvulkan-dev mesa-vulkan-drivers xvfb autoconf autoconf-archive automake libtool libltdl-dev tmux imagemagick
-          sudo locale-gen en_US.UTF-8
-
-      - name: Install SDL3-devel Dependencies (ubuntu)
-        run: |
-          sudo apt-get install libasound2-dev libpulse-dev libaudio-dev libjack-dev libsndio-dev libx11-dev \
-            libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev \
-            libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev \
-            libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev \
-            libfreetype-dev libharfbuzz-dev \
-            libtiff-dev libavif-dev libwebp-dev libjpeg-dev libjxl-dev \
-            libflac-dev libvorbis-dev libxmp-dev libmpg123-dev libwavpack-dev
-
-      - name: Setup LLVM build tools
-        uses: aminya/setup-cpp@v1
-        with:
-          compiler: llvm-${{ env.LLVM_VERSION }}
-          cmake: true
-          ninja: true
-          setup-cpp: false
-
-      - name: Show Clang version
-        run: clang++ --version
-
-      - name: Setup ccache
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          key: linux-clang-curses-${{ github.ref_name }}
-          restore-keys: |
-            linux-clang-curses-${{ github.ref_name }}
-            linux-clang-curses-main
-            linux-clang-curses-
-          max-size: 2G
-          verbose: 2
-          save: ${{ github.event_name != 'pull_request' }}
-
-      # The matrix workflow uploads linux-tiles-x64-pr-... for the same commit, but that
-      # artifact cannot supply this job's binary: the ci-tiles configure builds only
-      # cataclysm-bn-tiles and cata_test-tiles (CMakePresets.json, buildPreset "ci-tiles")
-      # and installs them under cataclysmbn-<label>/bin, while the end-to-end suite drives
-      # the curses binary (tests/e2e/tmux_game.py find_binary: out/build/linux-curses/src/
-      # cataclysm-bn, ./cataclysm-bn, build/src/cataclysm-bn). The curses binary is
-      # therefore always built here, from the same ccache the matrix workflow warms; the
-      # tiles package is reused by the tiles playtest leg, which does need it.
-      - name: Configure and build the curses game (ccache)
-        uses: lukka/run-cmake@v10
-        with:
-          configurePreset: ci-curses
-          configurePresetAdditionalArgs: "['-DUSE_PREFIX_DATA_DIR=OFF', '-DCATA_FORMAT_TARGETS=OFF']"
-          buildPreset: ci-curses
-          buildPresetAdditionalArgs: "['--target', 'cataclysm-bn', '-j', '2']"
-
-      # Run the suite in its own job: nothing else loads this runner while a game is live,
-      # because slow input makes these tests fail. tmux and ImageMagick are the harness's
-      # own tools (tests/e2e/tiles.py captures frames with `magick`, or the 6.x binaries
-      # that the runners install); the curses suite unsets DISPLAY for every game it starts,
-      # so Xvfb is only here for harness code that wants a display, exactly as in the matrix
-      # workflow's test step.
-      - name: Run the fork end-to-end suite
-        env:
-          # Unbuffered, so the log names the test a stall happened in.
-          PYTHONUNBUFFERED: "1"
-        run: |
-          set -o pipefail
-          Xvfb :99 -screen 0 1280x1024x24 &
-          xvfb_pid=$!
-          trap 'kill "$xvfb_pid" 2>/dev/null || true' EXIT
-          export DISPLAY=:99
-          sleep 1
-          # --durations feeds the shard split from real CI cost once the artifacts are
-          # merged: python3 tests/e2e/merge_durations.py e2e-durations-shard-*.json --write
-          python3 tests/e2e/run.py --shard=${{ matrix.shard }}/4 \
-            --durations=e2e-durations-shard-${{ matrix.shard }}.json \
-            2>&1 | tee e2e-suite-shard-${{ matrix.shard }}.log
-
-      # Always: a failing suite is the interesting one, and the log is its only evidence.
-      # warn, not ignore: the suite writes e2e-suite.log as soon as it starts, so a missing
-      # log means the suite never started and a warning is worth reading. warn never fails.
-      - name: upload the suite log
-        if: always()
-        uses: actions/upload-artifact@v4.6.0
-        with:
-          name: e2e-suite-log-${{ matrix.shard }}
-          path: |
-            e2e-suite-shard-${{ matrix.shard }}.log
-            e2e-durations-shard-${{ matrix.shard }}.json
-            /tmp/bn-e2e-*
-          if-no-files-found: warn
-          retention-days: 14
+    if: github.event_name == 'schedule' || inputs.run_e2e
+    uses: ./.github/workflows/fork-e2e.yml
+    with:
+      checkout-ref: ${{ github.sha }}
 
   playtest:
     name: playtest ${{ matrix.name }}
     needs: plan
-    # The legs spend model tokens, so on a push the plan emits one dry leg: it proves the
-    # wiring and spends nothing. The live legs run on the nightly schedule and when
-    # dispatched; a pull request keeps the free end-to-end suite and can get a playtest by
-    # dispatching this workflow on its branch. An empty leg list is an empty matrix, which
-    # skips the job without a condition.
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'schedule' || inputs.run_agentic
     runs-on: ubuntu-latest
     timeout-minutes: 150
     # Two games at a time; the nightly schedule may run three. Never fail the other legs
@@ -895,7 +780,7 @@ jobs:
     # contents: read, so it cannot read the matrix run's tiles package (that needs
     # actions: read) and builds both binaries here instead; it uploads an artifact and
     # never commits or pushes the PNGs.
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'schedule' || inputs.run_screenshots
     permissions:
       contents: read
     steps:
