@@ -1454,11 +1454,12 @@ auto pickup::pick_up( const tripoint_bub_ms &p, int min, from_where get_items_fr
     pick_up_from_items( here, min, starting_pos );
 }
 
-auto pickup::nearby_items_for_pickup( const tripoint_bub_ms &center ) -> nearby_pickup_items
+auto pickup::nearby_items_for_pickup( const tripoint_bub_ms &center,
+                                      const int radius ) -> nearby_pickup_items
 {
     auto result = nearby_pickup_items{};
     auto &here = get_map();
-    for( const tripoint_bub_ms &pos : here.points_in_radius( center, 1 ) ) {
+    for( const tripoint_bub_ms &pos : here.points_in_radius( center, radius ) ) {
         if( here.obstructed_by_vehicle_rotation( center, pos ) ) {
             continue;
         }
@@ -1496,6 +1497,23 @@ auto pickup::pick_up_all_nearby() -> void
     const auto starting_pos = nearby.has_ground_items ? std::make_optional(
                                   g->u.bub_pos() ) : std::nullopt;
     pick_up_from_items( nearby.items, 0, starting_pos );
+}
+
+auto pickup::pick_up_all_at_feet() -> void
+{
+    const auto nearby = nearby_items_for_pickup( g->u.bub_pos(), 0 );
+    if( nearby.items.empty() ) {
+        add_msg( _( "There is nothing to pick up here." ) );
+        return;
+    }
+    auto locations = nearby.items | std::views::transform( []( const auto & it ) { return *it; } ) |
+    std::ranges::to<std::vector>();
+    const auto quantities = std::vector<int>( locations.size(), 0 );
+    auto targets = optimize_pickup( locations, quantities );
+    const auto starting_pos = nearby.has_ground_items ? std::make_optional( g->u.bub_pos() ) :
+                              std::nullopt;
+    g->u.assign_activity( std::make_unique<player_activity>( std::make_unique<pickup_activity_actor>(
+                targets, starting_pos ) ) );
 }
 
 //helper function for Pickup::pick_up

@@ -168,10 +168,12 @@
 </g>
 <g><rect x="388.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="395.0" y="349" font-size="15.0" font-weight="700">G</text>
-<text x="394.0" y="368" font-size="9.1" fill="currentColor">pick up all</text>
+<text x="394.0" y="368" font-size="9.1" fill="currentColor">take here</text>
+<text x="394.0" y="383" font-size="9" fill="var(--muted,currentColor)">Ctrl area</text>
 </g>
-<g><rect x="452.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
+<g><rect x="452.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="459.0" y="349" font-size="15.0" font-weight="700">H</text>
+<text x="458.0" y="368" font-size="12.0" fill="currentColor">health</text>
 </g>
 <g><rect x="516.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="523.0" y="349" font-size="15.0" font-weight="700">J</text>
@@ -387,7 +389,7 @@
 <text x="20" y="1127" font-size="14">Space: selected tile actions, or a flat nearby list with directions and a target highlight.</text>
 <text x="20" y="1152" font-size="14">RMB or Shift+direction selects; Jump and Smash require an explicit choice.</text>
 <text x="20" y="1177" font-size="14">Map RMB selects freely; LMB uses adjacent doors/items/furniture or attacks; never walks.</text>
-<text x="20" y="1202" font-size="14">g opens pickup; g confirms. Inventory/pickup: wheel scrolls; RMB opens item actions.</text>
+<text x="20" y="1202" font-size="14">g takes everything here; Ctrl+G opens area pickup; g/Enter confirms. h: health. PageUp/Down: stairs.</text>
 <text x="20" y="1227" font-size="14">Blank keycaps have no default map action. Local menu keys and Classic controls are unchanged.</text>
 <text x="20" y="1252" font-size="14">Classic terminal Ctrl+C/Z retain normal quit/suspend signal behavior.</text>
 </svg>

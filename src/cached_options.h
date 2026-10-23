@@ -135,7 +135,6 @@ extern int retained_omt_cache_length;
 /// Optional native tiles presentation.
 extern bool item_layering_enabled;
 extern bool cliff_shading_enabled;
-extern bool directional_stairs_enabled;
 extern bool item_thumbnails_enabled;
 
 /**

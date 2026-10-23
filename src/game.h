@@ -953,7 +953,7 @@ class game : public submap_load_listener
 
         void control_vehicle(); // Use vehicle controls  '^'
         void examine( const tripoint_bub_ms &p ); // Examine nearby terrain  'e'
-        void examine();
+        auto examine() -> action_id;
 
         void pickup(); // Pick up items from one nearby tile 'g', min 0
         void pickup_all(); // Pick up items from all nearby tiles ',', min 0

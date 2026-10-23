@@ -108,6 +108,8 @@ enum action_id : int {
     ACTION_PICKUP,
     /** Pick up items from all current/adjacent squares */
     ACTION_PICKUP_ALL,
+    /// Take everything underfoot without a selection menu.
+    ACTION_QUICK_PICKUP,
     /** Pick up items from current square. Auto pickup if only one item */
     ACTION_PICKUP_FEET,
     /** Grab or let go of an object */
@@ -286,6 +288,8 @@ enum action_id : int {
     ACTION_KEYBINDINGS,
     /** Display options window */
     ACTION_OPTIONS,
+    /** Display sound and volume controls */
+    ACTION_SOUND_MENU,
     /** Open autopickup manager */
     ACTION_AUTOPICKUP,
     /** Open autonotes manager */
@@ -634,7 +638,7 @@ bool can_butcher_at( const tripoint_bub_ms &p );
  * @param movez Direction to move. -1 for down, all other values for up
  * @returns true if movement is possible in the indicated direction, otherwise false
  */
-bool can_move_vertical_at( const map &here, const tripoint_bub_ms &p, int movez );
+bool can_move_vertical_at( const tripoint_bub_ms &p, int movez );
 
 /**
  * Test whether examine is possible

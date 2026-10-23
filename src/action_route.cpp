@@ -136,6 +136,7 @@ auto menu_category( const action_id act ) -> std::optional<std::string>
         case ACTION_ITEMACTION:
         case ACTION_TOGGLE_PANEL_ADM:
         case ACTION_TOGGLE_THIEF_MODE:
+        case ACTION_SOUND_MENU:
             return _( "Misc" );
         default:
             return std::nullopt;
@@ -189,6 +190,11 @@ auto action_route( const std::string &id ) -> std::string
 {
     if( const auto act = look_up_action( id ); act != ACTION_NULL ) {
         return action_route( act );
+    }
+    // Target cycling ids (NEXT_TARGET, PREV_TARGET) are only bound in the aiming context.
+    if( inp_mngr.get_input_for_action( id, "DEFAULTMODE" ).empty() &&
+        !inp_mngr.get_input_for_action( id, "TARGET" ).empty() ) {
+        return input_context( "TARGET" ).get_desc( id, 1 );
     }
     return input_context( "DEFAULTMODE" ).get_desc( id, 1 );
 }

@@ -39,7 +39,7 @@ to triage; reference the session commit SHA (shown by `--version` in the game's 
 - [ ] Shift+X cycles walk/run/crouch/prone; Status / Movement row agree; F2/F3/F4 are unbound
 - [ ] Enter's Quick stack sends items to nearby matching storage; worn/wielded/favorite items stay
 - [ ] Enter's Sort pile routes items to the right storage
-- [ ] Chat and other former global menu actions remain in Enter; F1 help, `?` all keys, `<`/`>` stairs
+- [ ] Chat and other former global menu actions remain in Enter; F1 help, `?` all keys, PageUp/PageDown (or `<`/`>`) stairs
 - [ ] **Vehicle box reads at 80×25:** azimuth, speed, fuel, battery visible
 - [ ] **While driving:** `ws throttle` / `ad steer` hints; **on release:** `wasd move` returns
 

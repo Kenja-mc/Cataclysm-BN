@@ -74,6 +74,7 @@
 #include "perk.h"
 #include "player.h"
 #include "player_activity.h"
+#include "pickup.h"
 #include "body_panel.h"
 #include "quick_stack.h"
 #include "popup.h"
@@ -83,6 +84,7 @@
 #include "safemode_ui.h"
 #include "salvage.h"
 #include "scores_ui.h"
+#include "sound_menu.h"
 #include "sounds.h"
 #include "string_formatter.h"
 #include "string_id.h"
@@ -2188,7 +2190,16 @@ bool game::handle_action()
                 return false;
             }
             const auto mouse_move = get_option<bool>( "MOUSE_MOVE" );
-            if( !mouse_move ) {
+            const auto own_tile = act == ACTION_SELECT && *mouse_target == u.bub_pos() &&
+                                  get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+            const auto own_choice = own_tile ? tile_selection::primary_choice( u, *mouse_target ) :
+                                    std::nullopt;
+            if( own_choice && ( own_choice->act == ACTION_MOVE_DOWN ||
+                                own_choice->act == ACTION_MOVE_UP ) ) {
+                act = tile_selection::resolve( u, m, *own_choice, *mouse_target );
+                aim_reticle::clear();
+                liveview.hide();
+            } else if( !mouse_move ) {
                 u.clear_destination();
                 destination_preview.clear();
                 if( !aim_reticle::select( u, m, *mouse_target ) ) {
@@ -2389,6 +2400,17 @@ bool game::handle_action()
     // actions allowed only while alive
     if( !u.is_dead_state() ) {
         ZoneScopedN( "handle_action_alive_switch" );
+        // Defer stairs to the normal action cases, retaining mount, vehicle and rope checks.
+        auto contextual_examined = false;
+        if( act == ACTION_EXAMINE && !mouse_target && !u.has_active_mutation( trait_SHELL2 ) &&
+            get_option<std::string>( "CONTROL_SCHEME" ) == "modern" &&
+            get_option<bool>( "CONTEXTUAL_INTERACT" ) ) {
+            const auto requested = examine();
+            contextual_examined = true;
+            if( requested != ACTION_NULL ) {
+                act = requested;
+            }
+        }
         switch( act ) {
             case ACTION_NULL:
             case NUM_ACTIONS:
@@ -2682,7 +2704,7 @@ bool game::handle_action()
                     u.manual_examine = true;
                     examine( *mouse_target );
                     u.manual_examine = false;
-                } else {
+                } else if( !contextual_examined ) {
                     examine();
                 }
                 break;
@@ -2724,6 +2746,16 @@ bool game::handle_action()
                     add_msg( m_info, _( "You can't pick anything up while you're riding." ) );
                 } else {
                     pickup_all();
+                }
+                break;
+
+            case ACTION_QUICK_PICKUP:
+                if( u.has_active_mutation( trait_SHELL2 ) ) {
+                    add_msg( m_info, _( "You can't pick anything up while you're in your shell." ) );
+                } else if( u.is_mounted() ) {
+                    add_msg( m_info, _( "You can't pick anything up while you're riding." ) );
+                } else {
+                    pickup::pick_up_all_at_feet();
                 }
                 break;
 
@@ -3230,6 +3262,10 @@ bool game::handle_action()
 
             case ACTION_OPTIONS:
                 get_options().show( true );
+                break;
+
+            case ACTION_SOUND_MENU:
+                show_sound_menu();
                 break;
 
             case ACTION_AUTOPICKUP:

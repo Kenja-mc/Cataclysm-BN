@@ -62,7 +62,6 @@ FungalOptions fungal_opt;
 
 auto item_layering_enabled = true;
 auto cliff_shading_enabled = true;
-auto directional_stairs_enabled = true;
 auto item_thumbnails_enabled = true;
 
 error_log_format_t error_log_format = error_log_format_t::human_readable;
