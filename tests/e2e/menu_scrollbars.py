@@ -3,11 +3,12 @@
 The bars are drawn over a border, so the tests find the real '^'/'v' pair on the
 screen instead of assuming a terminal size, then click cells inside that bar.
 """
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 from fixtures import shared_game
 from helpers import HELPERS, wait_until
-from options_menu import close_options, open_options
+from options_menu import close_options
 from tmux_game import Game, start_new_game
 
 
@@ -36,6 +37,13 @@ def menu_scrollbar(g, title):
     bar = find_scrollbar(g.screen())
     assert bar, "no drawn scrollbar in the open menu\n" + g.screen()
     return bar
+
+
+def open_main_menu(g):
+    deadline = time.time() + 20
+    while "MAIN MENU" not in g.screen():
+        assert time.time() < deadline, "Escape should open the main menu\n" + g.screen()
+        g.keys("Escape", delay=0.4)
 
 
 def selection_row(screen):
@@ -118,7 +126,9 @@ def test_options_and_keybindings_scrollbars(_g):
     g = Game(name="bn-e2e-menu-scrollbars-keys", cols=140, rows=45)
     try:
         start_new_game(g)
-        open_options(g)
+        open_main_menu(g)
+        g.keys("t", "o", delay=0.8)
+        g.wait_for(" OPTIONS ", timeout=10)
         for _ in range(8):
             bar = find_scrollbar(g.screen())
             if bar:
@@ -136,8 +146,7 @@ def test_options_and_keybindings_scrollbars(_g):
         assert selection_row(g.screen()) == first, "the upper track must return to the first option"
         close_options(g)
 
-        g.keys("Escape", delay=0.6)
-        g.wait_for("MAIN MENU", timeout=15)
+        open_main_menu(g)
         g.keys("t", "y", delay=0.8)
         g.wait_for("Keybindings", timeout=15)
         top, bottom, x = find_scrollbar(g.screen())
