@@ -373,6 +373,13 @@ void scrollable_text( const std::function<catacurses::window()> &init_window,
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
 
     catacurses::window w;
     int width = 0;
@@ -417,6 +424,21 @@ void scrollable_text( const std::function<catacurses::window()> &init_window,
         ui_manager::redraw();
 
         action = ctxt.handle_input();
+        if( modern && action == "SELECT" ) {
+            if( const auto mouse = ctxt.get_coordinates( w ) ) {
+                const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
+                if( const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                    .offset = point( width - 1, text2.y ),
+                    .viewport_size = text_h,
+                    .content_size = static_cast<int>( lines.size() ),
+                    .viewport_pos = std::min( beg_line, max_beg_line ),
+                    .scroll_to_last = false,
+                }, cell ) ) {
+                    beg_line = std::min( hit->viewport_pos, max_beg_line );
+                    continue;
+                }
+            }
+        }
         if( action == "UP" ) {
             if( beg_line > 0 ) {
                 --beg_line;
@@ -1080,6 +1102,13 @@ input_event draw_item_info( const std::function<catacurses::window()> &init_wind
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern && data.handle_scrolling ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
     if( data.any_input ) {
         ctxt.register_action( "ANY_INPUT" );
     }
@@ -1089,6 +1118,23 @@ input_event draw_item_info( const std::function<catacurses::window()> &init_wind
     while( !exit ) {
         ui_manager::redraw();
         action = ctxt.handle_input();
+        if( modern && data.handle_scrolling && action == "SELECT" ) {
+            if( const auto mouse = ctxt.get_coordinates( win ) ) {
+                const auto cell = mouse->xy().raw() + point( getmaxx( win ), getmaxy( win ) ) / 2;
+                const auto bar = point( data.scrollbar_left ? 0 : getmaxx( win ) - 1,
+                                        data.without_border && data.use_full_win ? 0 : 1 );
+                if( const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                    .offset = bar,
+                    .viewport_size = height,
+                    .content_size = static_cast<int>( folded.size() ),
+                    .viewport_pos = *data.ptr_selected,
+                    .scroll_to_last = false,
+                }, cell ) ) {
+                    *data.ptr_selected = hit->viewport_pos;
+                    continue;
+                }
+            }
+        }
         if( data.handle_scrolling && action == "PAGE_UP" ) {
             if( *data.ptr_selected > 0 ) {
                 --*data.ptr_selected;
@@ -1572,14 +1618,19 @@ int scrolling_text_view::text_width()
     return getmaxx( w_ ) - 1;
 }
 
-int scrolling_text_view::num_lines()
+auto scrolling_text_view::num_lines() const -> int
 {
     return text_.size();
 }
 
-int scrolling_text_view::max_offset()
+auto scrolling_text_view::max_offset() const -> int
 {
     return std::max( 0, num_lines() - getmaxy( w_ ) );
+}
+
+auto scrolling_text_view::scroll_to( int offset ) -> void
+{
+    offset_ = std::clamp( offset, 0, max_offset() );
 }
 
 void calcStartPos( int &iStartPos, const int iCurrentLine, const int iContentHeight,

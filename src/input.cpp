@@ -1402,6 +1402,15 @@ action_id input_context::display_menu( const bool permit_execute_action )
                 .scroll_to_last = false,
             }, mouse ) ) {
                 scroll_offset = static_cast<size_t>( hit->viewport_pos );
+            } else if( status != s_show ) {
+                const auto row = mouse.y - 10;
+                const auto index = row + static_cast<int>( scroll_offset );
+                if( row >= 0 && row < static_cast<int>( display_height ) &&
+                    row < static_cast<int>( hotkeys.size() ) &&
+                    index >= 0 && index < static_cast<int>( filtered_registered_actions.size() ) ) {
+                    raw_input_char = hotkeys[row];
+                    action.clear();
+                }
             }
         }
 

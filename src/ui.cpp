@@ -1108,6 +1108,7 @@ void uilist::query( bool loop, int timeout )
         return;
     }
     keypress = 0;
+    viewport_held = false;
     if( entries.empty() ) {
         ret = UILIST_ERROR;
         return;
@@ -1156,13 +1157,37 @@ void uilist::query( bool loop, int timeout )
                 }
                 if( !on_scrollbar ) {
                     const auto cell = mouse->xy().raw() + point( getmaxx( window ), getmaxy( window ) ) / 2;
+                    auto handled_click = false;
+                    if( ret_act == "SELECT" && categories.size() > 1 ) {
+                        const auto category_row = scrollbar_geometry().offset.y - 1;
+                        const auto label = "<< " +
+                                            categories[std::min( current_category, categories.size() - 1 )] + " >>";
+                        const auto label_x = pad_left + 2;
+                        const auto label_width = utf8_width( label );
+                        const auto max_width = std::max( 1, w_width - pad_left - pad_right - 4 );
+                        if( category_row >= 0 && cell.y == category_row && label_width <= max_width &&
+                            cell.x >= label_x && cell.x < label_x + label_width ) {
+                            if( cell.x < label_x + 2 ) {
+                                viewport_held = false;
+                                cycle_category( false );
+                                handled_click = true;
+                            } else if( cell.x >= label_x + label_width - 2 ) {
+                                viewport_held = false;
+                                cycle_category( true );
+                                handled_click = true;
+                            }
+                        }
+                    }
                     const auto end = std::min( vshift + vmax, static_cast<int>( fentries.size() ) );
-                    for( auto filtered_index = vshift; filtered_index < end; ++filtered_index ) {
+                    auto row_click = false;
+                    for( auto filtered_index = vshift; !handled_click && filtered_index < end;
+                         ++filtered_index ) {
                         const auto entry_index = fentries[filtered_index];
                         const auto &entry = entries[entry_index];
                         if( !entry.drawn_rect || !entry.drawn_rect->contains( cell ) ) {
                             continue;
                         }
+                        row_click = true;
                         if( entry.enabled || allow_disabled || hilight_disabled ) {
                             viewport_held = false;
                             selected = entry_index;
@@ -1175,6 +1200,9 @@ void uilist::query( bool loop, int timeout )
                             }
                         }
                         break;
+                    }
+                    if( !handled_click && !row_click && ret_act == "SELECT" && callback != nullptr ) {
+                        callback->mouse( this, ctxt, event, cell );
                     }
                 }
             }
