@@ -32,7 +32,8 @@ python3 tools/fold_equivalence/extract.py --mainline /path/to/mainline --fork . 
 # runtime: fork dump against the recorded mainline baseline
 out/build/linux-curses/src/cataclysm-bn --basepath ./ --dump-stats FOLDED \
   tests/fold_equivalence/baseline.json > /tmp/fold_fork.json
-python3 tools/fold_equivalence/compare.py tests/fold_equivalence/baseline.json /tmp/fold_fork.json
+python3 tools/fold_equivalence/compare.py --baseline tests/fold_equivalence/baseline.json \
+  --fork /tmp/fold_fork.json
 ```
 
 `compare.py` prints one line per differing field (old id, new id, view, field, mainline, fork) and
