@@ -38,6 +38,7 @@
 #include "popup.h"
 #include "sdlsound.h"
 #include "sdltiles.h"
+#include "scrollbar_input.h"
 #include "sounds.h"
 #include "string_formatter.h"
 #include "string_input_popup.h"
@@ -4363,7 +4364,7 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
             mvwprintz( w_options, point( value_col, line_pos ), name_value.second.col, value );
         }
 
-        draw_scrollbar( w_options_border, iCurrentLine, iContentHeight,
+        draw_scrollbar( w_options_border, curr_line_visible, iContentHeight,
                         static_cast<int>( visible_items.size() ),
                         point( 0, iTooltipHeight + 2 + iWorldOffset ), BORDER_COLOR );
         wnoutrefresh( w_options_border );
@@ -4479,7 +4480,55 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
             const auto mouse_action = action;
             const auto clicked = mouse_action != "MOUSE_MOVE";
             action.clear();
-            if( const auto cell = cell_in( w_options ) ) {
+            bool on_scrollbar = false;
+            if( clicked && mouse_action == "SELECT" ) {
+                if( const auto border_cell = cell_in( w_options_border ) ) {
+                    const auto visible = visible_rows( page_items );
+                    const auto current = std::ranges::find( visible, iCurrentLine );
+                    const auto current_row = current == visible.end() ? 0 :
+                                             static_cast<int>( current - visible.begin() );
+                    const auto hit = scrollbar_input::click(
+                    scrollbar_input::geometry{
+                        .offset = point( 0, iTooltipHeight + 2 + iWorldOffset ),
+                        .viewport_size = iContentHeight,
+                        .content_size = static_cast<int>( visible.size() ),
+                        .viewport_pos = current_row,
+                        .scroll_to_last = true,
+                    }, *border_cell );
+                    if( hit ) {
+                        const auto selectable_row = [&]( int row ) -> std::optional<int> {
+                            const int last = static_cast<int>( visible.size() ) - 1;
+                            if( last < 0 )
+                            {
+                                return std::nullopt;
+                            }
+                            row = std::clamp( row, 0, last );
+                            for( int i = row; i <= last; ++i )
+                            {
+                                if( page_items[visible[i]].type != ItemType::BlankLine )
+                                {
+                                    return visible[i];
+                                }
+                            }
+                            for( int i = row - 1; i >= 0; --i )
+                            {
+                                if( page_items[visible[i]].type != ItemType::BlankLine )
+                                {
+                                    return visible[i];
+                                }
+                            }
+                            return std::nullopt;
+                        };
+                        if( const auto line = selectable_row( hit->viewport_pos ) ) {
+                            iCurrentLine = *line;
+                        }
+                        on_scrollbar = true;
+                    }
+                }
+            }
+            if( on_scrollbar ) {
+                /* The click was consumed by the scrollbar; do not act on a row. */
+            } else if( const auto cell = cell_in( w_options ) ) {
                 const auto visible = visible_rows( page_items );
                 const auto row = iStartPos + cell->y;
                 if( row < static_cast<int>( visible.size() ) &&

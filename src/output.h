@@ -879,10 +879,12 @@ class scrolling_text_view
         void page_up();
         void page_down();
         void draw( const nc_color &base_color );
+        auto offset() const -> int { return offset_; }
+        auto num_lines() const -> int;
+        auto max_offset() const -> int;
+        auto scroll_to( int ) -> void;
     private:
         int text_width();
-        int num_lines();
-        int max_offset();
 
         catacurses::window &w_;
         std::vector<std::string> text_;

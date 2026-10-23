@@ -15,6 +15,7 @@
 #include "memory_fast.h"
 #include "pimpl.h"
 #include "point.h"
+#include "scrollbar_input.h"
 #include "string_formatter.h"
 
 class translation;
@@ -178,6 +179,10 @@ class uilist_callback
                           uilist * ) {
             return false;
         }
+        /// Mouse click at a window-relative cell, after list rows and the list scrollbar.
+        virtual auto mouse( uilist *, const input_context &, const input_event &, point /*cell*/ ) -> bool {
+            return false;
+        }
         virtual void refresh( uilist * ) {}
         virtual ~uilist_callback() = default;
 };
@@ -326,6 +331,7 @@ class uilist // NOLINT(cata-xy)
     private:
         int scroll_amount_from_action( const std::string &action );
         void apply_scrollbar();
+        auto scrollbar_geometry() const -> scrollbar_input::geometry;
         auto cycle_category( bool forward ) -> void;
         // This function assumes it's being called from `query` and should
         // not be made public.
@@ -429,6 +435,10 @@ class uilist // NOLINT(cata-xy)
         int desc_lines;
 
         bool started = false;
+
+        // A mouse scrollbar click moved the viewport without moving the selection.
+        // Keep that offset until the selection moves again.
+        bool viewport_held = false;
 
     public:
         // Results
