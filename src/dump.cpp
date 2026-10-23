@@ -2,6 +2,7 @@
 #include "consumption.h"
 #include "damage.h"
 #include "flat_set.h"
+#include "fold_dump.h"
 #include "game.h" // IWYU pragma: associated
 #include "init.h"
 #include "item.h"
@@ -35,6 +36,10 @@
 bool game::dump_stats( const std::string &what, dump_mode mode,
                        const std::vector<std::string> &opts )
 {
+    if( what == "FOLDED" ) {
+        return dump_folded_items( opts );
+    }
+
     try {
         init::load_core_bn_modfiles();
     } catch( const std::exception &err ) {
