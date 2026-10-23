@@ -10,5 +10,8 @@ class window;
 /// Sidebar strip listing the most used actions with their current key, lazygit-footer style.
 auto draw_keyhints( const avatar &you, const catacurses::window &w ) -> void;
 
+/// One-line menu hints, drawn after the top UI so full-screen menus cannot cover them.
+auto draw_menu_keyhints() -> void;
+
 /// One-time welcome card listing the core keys; shown on the first new game.
 auto show_welcome_once() -> void;

@@ -438,10 +438,6 @@ class input_context
             *this = other;
         }
 
-        virtual ~input_context() {
-            input_context_stack.remove( this );
-        }
-
         // HACK: hack to allow creating manual keybindings for getch() instances, uilists etc. that don't use an input_context outside of the Android version
         struct manual_key {
             manual_key( int _key, const std::string &_text ) : key( _key ), text( _text ) {}
@@ -518,6 +514,16 @@ class input_context
             return !( *this == other );
         }
 #endif
+
+        virtual ~input_context();
+
+        /// Contexts become active when they read input, not when binding helpers are constructed.
+        static auto get_active() -> const input_context *; // *NOPAD*
+        static auto active_context_version() -> size_t;
+        auto get_category() const -> const std::string & { return category; } // *NOPAD*
+        auto get_registered_actions() const -> const std::vector<std::string> & { // *NOPAD*
+            return registered_actions;
+        }
 
         /**
          * Register an action with this input context.
@@ -726,6 +732,8 @@ class input_context
         void reset_timeout();
     private:
 
+        static std::vector<const input_context *> active_contexts;
+        static size_t context_version;
         std::vector<std::string> registered_actions;
         std::string edittext;
     public:

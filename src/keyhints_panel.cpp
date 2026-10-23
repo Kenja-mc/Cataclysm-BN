@@ -12,8 +12,10 @@
 #include "cursesdef.h"
 #include "game.h"
 #include "input.h"
+#include "init.h"
 #include "options.h"
 #include "output.h"
+#include "panels.h"
 #include "string_formatter.h"
 #include "translations.h"
 #include "ui.h"
@@ -35,8 +37,12 @@ auto key_name( const char ch ) -> std::string
 
 auto first_key( const action_id act ) -> std::string
 {
-    const auto keys = keys_bound_to( act );
-    return keys.empty() ? std::string() : key_name( keys.front() );
+    const auto ctxt = input_context( "DEFAULTMODE" );
+    if( ctxt.key_bound_to( action_ident( act ), 0, false ).empty() ) {
+        return {};
+    }
+    const auto desc = ctxt.get_desc( action_ident( act ), 1 );
+    return desc == pgettext( "key name", "SPACE" ) ? key_name( ' ' ) : desc;
 }
 
 auto joined_keys( const std::vector<action_id> &acts ) -> std::string
@@ -73,7 +79,8 @@ auto peek_keys( const input_context &ctxt ) -> std::string
 auto collect_hints( const bool driving ) -> std::vector<hint>
 {
     const auto singles = std::vector<std::pair<action_id, std::string>> {
-        { ACTION_PAUSE, _( "wait" ) }, { ACTION_EXAMINE, _( "interact" ) }, { ACTION_PICKUP_ALL, _( "pick up" ) },
+        { ACTION_PAUSE, _( "wait" ) }, { ACTION_EXAMINE, _( "interact" ) },
+        { ACTION_PICKUP_ALL, _( "nearby items" ) }, { ACTION_BODY_STATUS, _( "health" ) },
         { ACTION_INVENTORY, _( "inventory" ) }, { ACTION_USE, _( "use" ) }, { ACTION_WIELD, _( "wield" ) },
         { ACTION_AUTOATTACK, _( "attack" ) }, { ACTION_FIRE, _( "fire" ) }, { ACTION_RELOAD_ITEM, _( "reload" ) }, { ACTION_CRAFT, _( "craft" ) },
         { ACTION_QUICK_STACK, _( "stash" ) }, { ACTION_SORT_PILE, _( "sort pile" ) }, { ACTION_MAP, _( "map" ) },
@@ -111,6 +118,7 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
             }
         };
         push_desc( "action_menu", _( "menus" ) );
+        push_desc( "quick_pickup", _( "pick up" ) );
         push( "?", _( "all keys" ) );
         push_desc( "NEXT_TARGET", _( "target" ) );
         push( first_key( ACTION_CYCLE_MOVE ), _( "stance" ) );
@@ -129,28 +137,81 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
     return hints;
 }
 
-} // namespace
-
-auto draw_keyhints( const avatar &you, const catacurses::window &w ) -> void
+auto menu_context() -> const input_context * // *NOPAD*
 {
-    werase( w );
-    const auto width = getmaxx( w ) - 1;
-    const auto height = getmaxy( w );
-    auto pos = point( 1, 0 );
-    // Building the hints walks every binding; only redo it when bindings or driving mode change.
+    const auto *ctxt = input_context::get_active();
+    return get_option<bool>( "CONTEXT_KEYHINTS" ) && ctxt &&
+           ctxt->get_category() != "DEFAULTMODE" ? ctxt : nullptr;
+}
+
+auto collect_menu_hints( const input_context &ctxt ) -> std::vector<hint>
+{
+    constexpr auto internal = std::array{ "ANY_INPUT", "COORDINATE", "MOUSE_MOVE", "SELECT",
+                                          "SEC_SELECT", "HELP_KEYBINDINGS", "TIMEOUT", "ERROR" };
+    constexpr auto priority = std::array{ "CRAFT", "SELECT_ALL", "CYCLE_BATCH", "FIRE", "CENTER",
+                                          "CONFIRM", "QUIT", "FILTER", "INVENTORY_FILTER", "UP", "DOWN",
+                                          "LEFT", "RIGHT", "WIELD", "WEAR" };
+    auto actions = std::vector<std::string>();
+    for( const auto &action : ctxt.get_registered_actions() ) {
+        if( std::ranges::find( internal, action ) == internal.end() &&
+            !action.starts_with( "debug_" ) && !action.starts_with( "TEXT." ) &&
+            !ctxt.key_bound_to( action, 0, false ).empty() ) {
+            actions.push_back( action );
+        }
+    }
+    const auto rank = [&]( const std::string & action ) {
+        return std::ranges::find( priority, action ) - priority.begin();
+    };
+    std::ranges::stable_sort( actions, [&]( const auto & a, const auto & b ) {
+        return rank( a ) < rank( b );
+    } );
+    auto hints = std::vector<hint>();
+    hints.reserve( actions.size() );
+    const auto keyboard = []( const input_event & event ) {
+        return event.type == input_event_t::keyboard;
+    };
+    for( const auto &action : actions ) {
+        auto keys = ctxt.get_desc( action, 1, keyboard );
+        auto label = remove_color_tags( ctxt.get_action_name( action ) );
+        const auto keys_width = utf8_width( keys );
+        const auto label_width = utf8_width( label );
+        hints.push_back( hint{ .keys = std::move( keys ), .label = std::move( label ),
+                               .keys_width = keys_width, .label_width = label_width } );
+    }
+    return hints;
+}
+
+auto cached_hints( const bool driving ) -> const std::vector<hint> & // *NOPAD*
+{
     static auto cached = std::vector<hint>();
     static auto cached_version = -1;
+    static auto cached_context = size_t{ 0 };
     static auto cached_driving = false;
-    const auto driving = you.controlling_vehicle || g->remoteveh() != nullptr;
-    if( cached_version != inp_mngr.bindings_version() || cached_driving != driving ) {
-        cached = collect_hints( driving );
-        cached_driving = driving;
+    const auto *ctxt = menu_context();
+    const auto context = ctxt ? input_context::active_context_version() : 0;
+    if( cached_version != inp_mngr.bindings_version() || cached_context != context ||
+        cached_driving != driving ) {
+        cached = ctxt ? collect_menu_hints( *ctxt ) : collect_hints( driving );
         cached_version = inp_mngr.bindings_version();
+        cached_context = context;
+        cached_driving = driving;
     }
-for( const auto &h : cached ) {
-    const auto len = h.keys_width + 1 + h.label_width;
-    if( pos.x > 1 && pos.x + len > width ) {
-            pos = point( 1, pos.y + 1 );
+    return cached;
+}
+
+auto draw_hints( const catacurses::window &w, const std::vector<hint> &hints,
+                 const point start ) -> void
+{
+    const auto width = getmaxx( w ) - 1;
+    const auto height = getmaxy( w );
+    auto pos = start;
+    for( const auto &h : hints ) {
+        const auto len = h.keys_width + 1 + h.label_width;
+        if( len > width - start.x ) {
+            continue;
+        }
+        if( pos.x > start.x && pos.x + len > width ) {
+            pos = point( start.x, pos.y + 1 );
         }
         if( pos.y >= height ) {
             break;
@@ -159,6 +220,38 @@ for( const auto &h : cached ) {
         mvwprintz( w, pos + point( h.keys_width + 1, 0 ), c_dark_gray, h.label );
         pos.x += len + 2;
     }
+}
+
+} // namespace
+
+auto draw_keyhints( const avatar &you, const catacurses::window &w ) -> void
+{
+    werase( w );
+    const auto driving = you.controlling_vehicle || g->remoteveh() != nullptr;
+    draw_hints( w, cached_hints( driving ), point( 1, 0 ) );
+    wnoutrefresh( w );
+}
+
+auto draw_menu_keyhints() -> void
+{
+    if( !g || g->uquit != QUIT_NO || !init::is_data_loaded() || !g->w_terrain ||
+        !menu_context() || TERMX < 1 || TERMY < 1 ) {
+        return;
+    }
+    const auto &panels = panel_manager::get_manager().get_current_layout();
+    if( !std::ranges::any_of( panels, []( const auto & panel ) {
+    return panel.get_name() == "Controls" && panel.toggle && panel.get_height() > 0;
+    } ) ) {
+        return;
+    }
+    static auto w = catacurses::window();
+    if( !w || getmaxx( w ) != TERMX || getbegy( w ) != TERMY - 1 ) {
+        w = catacurses::newwin( 1, TERMX, point( 0, TERMY - 1 ) );
+    }
+    werase( w );
+    const auto label = std::string( _( "Controls:" ) );
+    mvwprintz( w, point_zero, c_light_gray, label );
+    draw_hints( w, cached_hints( false ), point( utf8_width( label ) + 1, 0 ) );
     wnoutrefresh( w );
 }
 

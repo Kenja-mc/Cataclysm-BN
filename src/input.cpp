@@ -22,6 +22,7 @@
 #include "game.h"
 #include "help.h"
 #include "ime.h"
+#include "init.h"
 #include "json.h"
 #include "options.h"
 #include "output.h"
@@ -619,7 +620,7 @@ const action_attributes &input_manager::get_action_attributes(
 translation input_manager::get_default_action_name( const std::string &action_id ) const
 {
     const t_action_contexts::const_iterator default_action_context = action_contexts.find(
-                default_context_id );
+            default_context_id );
     if( default_action_context == action_contexts.end() ) {
         return no_translation( action_id );
     }
@@ -754,6 +755,31 @@ const std::string &input_context::input_to_action( const input_event &inp ) cons
     return CATA_ERROR;
 }
 
+std::vector<const input_context *> input_context::active_contexts;
+size_t input_context::context_version = 0;
+
+input_context::~input_context()
+{
+    const auto was_active = get_active() == this;
+    std::erase( active_contexts, this );
+    if( was_active ) {
+        ++context_version;
+    }
+#if defined(__ANDROID__)
+    input_context_stack.remove( this );
+#endif
+}
+
+auto input_context::get_active() -> const input_context * // *NOPAD*
+{
+    return active_contexts.empty() ? nullptr : active_contexts.back();
+}
+
+auto input_context::active_context_version() -> size_t
+{
+    return context_version;
+}
+
 #if defined(__ANDROID__)
 std::list<input_context *> input_context::input_context_stack;
 
@@ -795,6 +821,9 @@ void input_context::register_action( const std::string &action_descriptor,
     }
 
     registered_actions.push_back( action_descriptor );
+    if( get_active() == this ) {
+        ++context_version;
+    }
     if( !name.empty() ) {
         action_name_overrides[action_descriptor] = name;
     }
@@ -805,7 +834,7 @@ std::vector<char> input_context::keys_bound_to( const std::string &action_descri
 {
     std::vector<char> result;
     const std::vector<input_event> &events = inp_mngr.get_input_for_action( action_descriptor,
-            category );
+        category );
     for( const auto &events_event : events ) {
         // Ignore multi-key input and non-keyboard input
         // TODO: fix for Unicode.
@@ -869,7 +898,7 @@ std::string input_context::get_desc( const std::string &action_descriptor,
 
     bool is_local = false;
     const std::vector<input_event> &events = inp_mngr.get_input_for_action( action_descriptor,
-            category, &is_local );
+        category, &is_local );
 
     if( events.empty() ) {
         return is_local ? _( "Unbound locally!" ) : _( "Unbound globally!" );
@@ -986,6 +1015,15 @@ const std::string &input_context::handle_input()
 const std::string &input_context::handle_input( const int timeout )
 {
     ZoneScopedN( "input_context_handle_input" );
+    if( get_active() != this ) {
+        std::erase( active_contexts, this );
+        active_contexts.push_back( this );
+        ++context_version;
+        if( g && g->uquit == QUIT_NO && init::is_data_loaded() &&
+            get_option<bool>( "CONTEXT_KEYHINTS" ) ) {
+            ui_manager::redraw();
+        }
+    }
     const auto old_timeout = inp_mngr.get_timeout();
     if( timeout >= 0 ) {
         inp_mngr.set_timeout( timeout );
@@ -1215,8 +1253,8 @@ action_id input_context::display_menu( const bool permit_execute_action )
         legwidth = width - filter_pos.x * 2 - BORDER_SPACE;
         // +1 for end-of-text cursor
         spopup.window( w_help, filter_pos, filter_pos.x + legwidth + 1 )
-        .max_length( legwidth )
-        .context( ctxt );
+              .max_length( legwidth )
+              .context( ctxt );
         ui.position_from_window( w_help );
     };
     recalc_size( ui );
@@ -1231,7 +1269,7 @@ action_id input_context::display_menu( const bool permit_execute_action )
     // copy of registered_actions, but without the ANY_INPUT and COORDINATE, which should not be shown
     std::vector<std::string> org_registered_actions( registered_actions );
     org_registered_actions.erase( std::remove_if( org_registered_actions.begin(),
-                                  org_registered_actions.end(),
+            org_registered_actions.end(),
     []( const std::string & a ) {
         return a == ANY_INPUT || a == COORDINATE;
     } ), org_registered_actions.end() );
@@ -1276,7 +1314,7 @@ action_id input_context::display_menu( const bool permit_execute_action )
 
             bool overwrite_default;
             const action_attributes &attributes = inp_mngr.get_action_attributes( action_id, category,
-                                                  &overwrite_default );
+                &overwrite_default );
 
             char invlet;
             if( i < hotkeys.size() ) {
@@ -1582,7 +1620,7 @@ std::string input_context::get_action_name( const std::string &action_id ) const
     // this context that is masking the global hotkey. Fallback to the global
     // hotkey's name.
     const action_attributes &default_attributes = inp_mngr.get_action_attributes( action_id,
-            default_context_id );
+        default_context_id );
     if( !default_attributes.name.empty() ) {
         return default_attributes.name.translated();
     }
@@ -1615,7 +1653,7 @@ std::string input_context::press_x( const std::string &action_id,
         return _( "mouse movement" );
     }
     const input_manager::t_input_event_list &events = inp_mngr.get_input_for_action( action_id,
-            category );
+        category );
     if( events.empty() ) {
         return key_unbound;
     }
