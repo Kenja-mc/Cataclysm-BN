@@ -249,6 +249,7 @@
     "difficulty": 2,
     "value": 0,
     "item": "paperback",
+    "item_variant": "novel_mystery",
     "count": 3,
     "origins": [ "ORIGIN_SECONDARY" ],
     "dialogue": {

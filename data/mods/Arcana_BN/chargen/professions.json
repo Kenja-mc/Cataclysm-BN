@@ -617,7 +617,7 @@
           { "item": "sun_sword", "container-item": "scabbard" },
           { "item": "mana_gem_dull", "contents-group": "starting_mana_gem_440_dull_essence" },
           { "item": "smart_phone", "ammo-item": "battery", "charges": 200 },
-          { "item": "medium_battery_cell", "charges": 500 }
+          { "item": "medium_battery_cell", "charges": 750 }
         ]
       },
       "male": [ "boxer_shorts" ],

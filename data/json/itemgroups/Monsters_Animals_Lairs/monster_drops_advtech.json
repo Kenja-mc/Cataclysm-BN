@@ -197,7 +197,7 @@
     "subtype": "distribution",
     "entries": [
       { "item": "scrap", "prob": 15, "charges": [ 1, 5 ] },
-      { "item": "light_battery_cell", "prob": 10, "charges": [ 1, 100 ] },
+      { "item": "light_battery_cell", "prob": 10, "charges": [ 1, 150 ] },
       { "item": "alloy_sheet", "prob": 15 },
       { "item": "cable", "prob": 20, "charges": [ 5, 10 ] },
       { "item": "e_scrap", "prob": 10, "charges": [ 1, 5 ] },

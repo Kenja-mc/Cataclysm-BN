@@ -557,6 +557,17 @@
     "components": [ [ [ "water", 1 ], [ "water_clean", 1 ] ], [ [ "clay_lump", 6 ] ] ]
   },
   {
+    "result": "keg",
+    "type": "recipe",
+    "category": "CC_OTHER",
+    "subcategory": "CSC_OTHER_CONTAINERS",
+    "skill_used": "fabrication",
+    "difficulty": 4,
+    "time": "90 m",
+    "autolearn": true,
+    "using": [ [ "blacksmithing_intermediate", 30 ], [ "steel_standard", 8 ] ]
+  },
+  {
     "type": "recipe",
     "result": "stomach_sealed",
     "category": "CC_OTHER",
@@ -621,6 +632,18 @@
     "time": "1 h",
     "autolearn": true,
     "using": [ [ "blacksmithing_intermediate", 4 ], [ "steel_standard", 1 ] ]
+  },
+  {
+    "type": "recipe",
+    "result": "box_large",
+    "category": "CC_OTHER",
+    "subcategory": "CSC_OTHER_CONTAINERS",
+    "skill_used": "fabrication",
+    "difficulty": 1,
+    "time": "10 m",
+    "autolearn": true,
+    "qualities": [ { "id": "CUT", "level": 1 } ],
+    "components": [ [ [ "cardboard", 90 ] ], [ [ "duct_tape", 100 ] ] ]
   },
   {
     "type": "recipe",

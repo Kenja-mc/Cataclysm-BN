@@ -97,7 +97,7 @@
       { "item": "goggles_welding", "custom-flags": [ "no_auto_equip" ] },
       { "item": "smart_phone" },
       { "item": "tool_belt", "contents-item": [ "wrench", "screwdriver" ] },
-      { "item": "medium_battery_cell", "ammo-item": "battery", "charges": 500, "container-item": "welder" },
+      { "item": "medium_battery_cell", "ammo-item": "battery", "charges": 750, "container-item": "welder" },
       { "item": "duct_tape" },
       { "item": "mag_cars" },
       { "group": "snacks", "count": [ 1, 3 ] },

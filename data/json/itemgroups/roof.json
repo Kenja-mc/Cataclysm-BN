@@ -5,7 +5,11 @@
     "items": [
       { "item": "grenade", "prob": 5 },
       { "item": "binoculars", "prob": 5 },
-      { "item": "mre_ration", "prob": 20 },
+      { "item": "mre_ration", "prob": 5, "variant": "mre_maplesausage" },
+      { "item": "mre_ration", "prob": 5, "variant": "mre_ravioli" },
+      { "item": "mre_ration", "prob": 0, "variant": "mre_hashbrownbacon" },
+      { "item": "mre_ration", "prob": 5, "variant": "mre_lemontuna" },
+      { "item": "mre_ration", "prob": 5, "variant": "mre_asianbeef" },
       { "item": "ak47", "prob": 16 },
       { "item": "akmag30", "prob": 16 },
       { "item": "SVD", "prob": 4 },

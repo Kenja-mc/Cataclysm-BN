@@ -2,6 +2,7 @@
 
 #include <map>
 #include <optional>
+#include <set>
 #include <vector>
 
 #include "coordinates.h"
@@ -136,7 +137,8 @@ void print_dmg_msg( Creature &target, Creature *source, const dealt_damage_insta
 void prompt_select_default_ammo_for( avatar &u, item &w );
 
 /** Returns false if a gun misfires, jams, or has other problems, else returns true. */
-bool handle_gun_damage( Character &shooter, item &it );
+auto handle_gun_damage( Character &shooter, item &it,
+                        const std::set<ammo_effect_str_id> &effects ) -> bool;
 
 /* Adjusts provided sight dispersion to account for character stats */
 int effective_dispersion( const Character &who, int dispersion );

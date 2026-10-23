@@ -977,7 +977,7 @@
         "distribution": [
           { "item": "25mm_hei", "charges": [ 1, 5 ], "prob": 25 },
           { "item": "25mm_slug", "charges": [ 1, 5 ], "prob": 50 },
-          { "item": "25mm_slug", "charges": [ 1, 5 ], "prob": 25 }
+          { "item": "25mm_slug", "charges": [ 1, 5 ], "prob": 25, "stack_modifier": "black_powder" }
         ],
         "prob": 75
       },
@@ -985,7 +985,7 @@
         "distribution": [
           { "item": "25mm_hei", "charges": [ 1, 5 ], "prob": 25 },
           { "item": "25mm_slug", "charges": [ 1, 5 ], "prob": 50 },
-          { "item": "25mm_slug", "charges": [ 1, 5 ], "prob": 25 }
+          { "item": "25mm_slug", "charges": [ 1, 5 ], "prob": 25, "stack_modifier": "black_powder" }
         ],
         "prob": 50
       },

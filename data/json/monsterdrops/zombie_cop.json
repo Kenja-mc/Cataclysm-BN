@@ -120,7 +120,7 @@
       [ "joint", 20 ],
       [ "pipe_glass", 50 ],
       [ "pipe_glass_bong", 50 ],
-      { "item": "light_battery_cell", "charges": 100, "container-item": "dab_pen", "prob": 20 },
+      { "item": "light_battery_cell", "charges": 150, "container-item": "dab_pen", "prob": 20 },
       [ "dab_pen_disposable", 20 ],
       [ "improvised_grenade", 2 ],
       [ "molotov", 6 ],
