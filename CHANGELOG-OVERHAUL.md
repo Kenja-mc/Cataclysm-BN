@@ -311,7 +311,7 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Contextual Space choices no longer expose or act on unseen neighboring terrain.
 - Existing saved option values remain preferences, including an explicitly disabled bump attack;
   upgrading an older profile may need that option enabled once.
-- `bin/install-cataclysm-bn.sh` downloads the Otopack soundpack (music and ambience) through
+- `bin/install-bno.sh` downloads the Otopack soundpack (music and ambience) through
   upstream's registry bundler. Downloaded audio and its credits remain outside version control.
 
 ### Maintenance
@@ -398,9 +398,9 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Added
 
-- **Install the fork as a launchable app**: `bin/install-cataclysm-bn.sh` installs launcher
-  wrappers, desktop entries, an icon and a metainfo file into `~/.local`, plus a basepath config
-  at `~/.config/cataclysm-bn/basepath` and the `bin/feedback` workflow.
+- **Install the fork as a launchable app**: `bin/install-bno.sh` installs launcher
+  wrappers (`bno`, `bno-tiles`), desktop entries, an icon and a metainfo file into `~/.local`, plus
+  a basepath config at `~/.config/bright-nights-overhaul/basepath` and the `bin/feedback` workflow.
 
 ### Fixed
 
