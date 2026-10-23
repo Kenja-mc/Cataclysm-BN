@@ -1,7 +1,7 @@
 # Playing and giving feedback
 
-The fork's release workflow prepares Windows and Linux downloads. The steps below apply after a
-maintainer publishes the first fork release. Linux users can also build from source.
+Each fork release carries a Windows zip and a Linux archive. Linux users can also build from
+source.
 
 ## Windows: download and update
 
