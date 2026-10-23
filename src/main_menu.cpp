@@ -31,6 +31,7 @@
 #include "safemode_ui.h"
 #include "scenario.h"
 #include "sdlsound.h"
+#include "sound_menu.h"
 #include "sounds.h"
 #include "string_formatter.h"
 #include "text_snippets.h"
@@ -187,7 +188,7 @@ std::vector<int> main_menu::print_menu_items( const catacurses::window &w_in,
 
         std::string temp = shortcut_text( iSel == i ? hilite( c_yellow ) : c_yellow, vItems[i] );
         text += string_format( "[%s]", colorize( temp,
-                               iSel == i ? hilite( c_light_gray ) : c_light_gray ) );
+            iSel == i ? hilite( c_light_gray ) : c_light_gray ) );
     }
 
     int text_width = utf8_width_notags( text.c_str() );
@@ -381,7 +382,7 @@ void main_menu::print_menu( const catacurses::window &w_open, int iSel, const po
         center_print( w_open, window_height - 3, c_dark_gray,
                       _( "Bugs?  Suggestions?  Use links in MOTD to report them." ) );
         std::vector<std::string> lines = foldstring( string_format( _( "Tip of the day: %s" ),
-                                         vdaytip ), window_width - 2 );
+            vdaytip ), window_width - 2 );
         center_print( w_open, window_height - 2, c_light_cyan, lines[0] );
         if( lines.size() > 1 ) {
             center_print( w_open, window_height - 1, c_light_cyan, lines[1] );
@@ -420,7 +421,7 @@ void main_menu::print_menu( const catacurses::window &w_open, int iSel, const po
 
     iLine++;
     center_print( w_open, iLine, c_dark_gray, string_format( _( "Version: %s" ),
-                  getVersionString() ) );
+            getVersionString() ) );
 
     int menu_length = 0;
     for( size_t i = 0; i < vMenuItems.size(); ++i ) {
@@ -545,7 +546,7 @@ void main_menu::init_strings()
     if( !MAP_SHARING::isSharing() ) {
         // "Play Now" function doesn't play well together with shared maps
         vNewGameSubItems.emplace_back( pgettext( "Main Menu|New Game",
-                                       "Play Now!  (<D|d>efault Scenario)" ) );
+                "Play Now!  (<D|d>efault Scenario)" ) );
         vNewGameSubItems.emplace_back( pgettext( "Main Menu|New Game", "Play N<o|O>w!" ) );
 
         // Special games don't play well together with shared maps
@@ -601,6 +602,7 @@ void main_menu::init_strings()
     vSettingsSubItems.emplace_back( pgettext( "Main Menu|Settings", "Sa<f|F>emode" ) );
     vSettingsSubItems.emplace_back( pgettext( "Main Menu|Settings", "<D|d>istractions" ) );
     vSettingsSubItems.emplace_back( pgettext( "Main Menu|Settings", "Colo<r|R>s" ) );
+    vSettingsSubItems.emplace_back( pgettext( "Main Menu|Settings", "<S|s>ound & volume" ) );
 
     vSettingsHotkeys.clear();
     for( auto &item : vSettingsSubItems ) {
@@ -617,10 +619,10 @@ void main_menu::display_text( const std::string &text, const std::string &title,
     const int vert_off = clamp( ( w_open_height - FULL_SCREEN_HEIGHT ) / 2, getbegy( w_open ), TERMY );
 
     catacurses::window w_border = catacurses::newwin( b_height, FULL_SCREEN_WIDTH,
-                                  point( clamp( ( TERMX - FULL_SCREEN_WIDTH ) / 2, 0, TERMX ), vert_off ) );
+        point( clamp( ( TERMX - FULL_SCREEN_WIDTH ) / 2, 0, TERMX ), vert_off ) );
 
     catacurses::window w_text = catacurses::newwin( b_height - 2, FULL_SCREEN_WIDTH - 2,
-                                point( 1 + clamp( ( TERMX - FULL_SCREEN_WIDTH ) / 2, 0, TERMX ), 1 + vert_off ) );
+        point( 1 + clamp( ( TERMX - FULL_SCREEN_WIDTH ) / 2, 0, TERMX ), 1 + vert_off ) );
 
     draw_border( w_border, BORDER_COLOR, title );
 
@@ -898,6 +900,8 @@ bool main_menu::opening_screen()
                         get_distraction_manager().show();
                     } else if( sel2 == 5 ) {
                         all_colors.show_gui();
+                    } else if( sel2 == 6 ) {
+                        show_sound_menu();
                     }
                     break;
                 case main_menu_opts::WORLD:
