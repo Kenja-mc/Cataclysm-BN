@@ -1372,7 +1372,11 @@ action_id input_context::display_menu( const bool permit_execute_action )
         ui_manager::redraw();
 
         if( status == s_show ) {
-            filter_phrase = spopup.query_string( false );
+            const auto &query = spopup.query_string( false );
+            if( filter_phrase != query ) {
+                filter_phrase = query;
+                scroll_offset = 0;
+            }
             action = ctxt.input_to_action( ctxt.get_raw_input() );
         } else {
             action = ctxt.handle_input();

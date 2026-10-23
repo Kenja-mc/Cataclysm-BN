@@ -1382,7 +1382,6 @@
     "category": "HELP_KEYBINDINGS",
     "name": "Pan up",
     "bindings": [
-      { "input_method": "keyboard", "key": "w" },
       { "input_method": "keyboard", "key": "UP" },
       { "input_method": "keyboard", "key": "NUMPAD_8" }
     ]
@@ -1393,7 +1392,6 @@
     "category": "HELP_KEYBINDINGS",
     "name": "Pan down",
     "bindings": [
-      { "input_method": "keyboard", "key": "s" },
       { "input_method": "keyboard", "key": "DOWN" },
       { "input_method": "keyboard", "key": "NUMPAD_2" }
     ]
