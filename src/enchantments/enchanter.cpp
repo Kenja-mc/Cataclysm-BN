@@ -176,6 +176,8 @@ auto enchantment_selector_menu(std::vector<enchant_info> options, Character& use
         ctxt.register_action("MOUSE_MOVE");
         ctxt.register_action("SELECT");
         ctxt.register_action("SEC_SELECT");
+        ctxt.register_action("SCROLL_UP");
+        ctxt.register_action("SCROLL_DOWN");
     }
 
     ui.on_screen_resize([&](ui_adaptor& ui) {
@@ -323,6 +325,11 @@ auto enchantment_selector_menu(std::vector<enchant_info> options, Character& use
             }
         } else {
             last_clicked_ench = -1;
+        }
+        if (action == "SCROLL_UP") {
+            action = "UP";
+        } else if (action == "SCROLL_DOWN") {
+            action = "DOWN";
         }
         if (action == "PAGE_UP") {
             info_scroll -= scroll_info_lines;

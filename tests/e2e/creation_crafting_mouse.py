@@ -34,6 +34,15 @@ def _row_of(g, text, max_x=32):
     raise AssertionError(f"no list row for {text!r}\n{g.screen()}")
 
 
+def _click_creation_tab(g, name):
+    """Click a visible top tab and wait for its page."""
+    row = g.screen().splitlines()[1]
+    match = re.search(r"│" + re.escape(name) + r"│", row)
+    assert match, f"no {name} tab in:\\n{row}"
+    g.click(match.start() + 1, 1)
+    assert g.wait_for(f"<│{name}│>", timeout=10), g.screen()
+
+
 def _points_line(screen):
     return next((line for line in screen.splitlines() if "Points left:" in line), "")
 
@@ -133,8 +142,12 @@ def test_modern_construction_scrollbar_and_tab_click(_g):
 
         # The first list row click only selects; it must not start a construction.
         g.click(left + 5, 8)
-        assert "Construction speed" in g.screen(), (
-            "the first list row click must only select\n" + g.screen())
+        after_row = g.screen()
+        assert "Construction speed" in after_row, (
+            "the first list row click must only select\n" + after_row)
+        # A wheel notch moves the cursor one row, with no release packet.
+        g.type(f"\x1b[<65;{left + 6};9M", delay=1)
+        assert g.screen() != after_row, "a wheel notch must move the construction cursor"
 
         # Click a category tab that is not the selected one (it may be empty).
         row = moved.splitlines()[1]
@@ -192,6 +205,12 @@ def _reach_custom_character(g):
             # The available-mod list starts at screen column 30 in the centred 80-column dialog.
             g.click(30, 14)
             assert "Mod List" in g.screen(), "a world mod scrollbar click must keep the dialog\n" + g.screen()
+            row_four = g.screen().splitlines()[4]
+            tabs = [m.start() for m in re.finditer(r"\[[^]]+\]", row_four)]
+            if tabs:
+                g.click(tabs[-1] + 1, 4)
+                assert "Mod List" in g.screen(), (
+                    "a mod category tab click must keep the dialog\n" + g.screen())
             g.keys("Tab", "Tab", delay=1)
         elif "World Options" in s:
             g.keys("Tab", delay=1)
@@ -230,6 +249,36 @@ def test_modern_creation_traits_scrollbar_and_first_click_are_safe(_g):
         assert "<│TRAITS│>" in screen, screen
         assert _points_line(screen) == points_before, (
             "the first row click must not toggle a trait\n" + screen)
+
+        # Top tabs navigate through the existing pages; they never spend points.
+        _click_creation_tab(g, "STATS")
+        g.click(5, 6)
+        assert "<│STATS│>" in g.screen(), g.screen()
+
+        _click_creation_tab(g, "OVERVIEW")
+        g.click(5, 6)
+        g.click(5, 6)
+        assert g.wait_for("Enter name.", timeout=10), g.screen()
+        g.keys("Escape", delay=0.6)
+        assert "<│OVERVIEW│>" in g.screen(), g.screen()
+
+        _click_creation_tab(g, "POINTS")
+        pool_before = _points_line(g.screen())
+        screen = g.screen()
+        pool_line = next(line for line in screen.splitlines() if "Single pool" in line)
+        pool_x, pool_y = pool_line.index("Single pool"), next(
+            y for y, line in enumerate(screen.splitlines()) if "Single pool" in line)
+        g.click(pool_x, pool_y)
+        assert _points_line(g.screen()) == pool_before, (
+            "the first pool click must only select\n" + g.screen())
+        g.click(pool_x, pool_y)
+        pool_after = _points_line(g.screen())
+        assert pool_after and pool_after != pool_before, (
+            "the second click must apply the pool like Enter\n" + g.screen())
+        assert "=" not in pool_after, "single pool display must be applied\n" + g.screen()
+
+        _click_creation_tab(g, "TRAITS")
+        assert _points_line(g.screen()) == pool_after, g.screen()
         g.keys("Escape", delay=0.8)
         if "Return to main menu?" in g.screen():
             g.keys("Enter", delay=1)
