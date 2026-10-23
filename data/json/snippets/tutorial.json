@@ -145,7 +145,7 @@
       },
       {
         "id": "LESSON_GUN_FIRE",
-        "text": "Once you have a loaded gun wielded, you can fire it.  Press <press_fire> to fire a single shot.  With many guns, you can fire a burst by pressing <press_select_fire_mode>.  You'll automatically target the last monster you shot at, or the closest monster to you.  You can change your target with the movement keys, or cycle through monsters with <press_NEXT_TARGET>.  To fire, press <press_fire>; to cancel, press <press_QUIT>."
+        "text": "Once you have a loaded gun wielded, you can fire it.  Press <press_fire> to fire a single shot.  With many guns, you can fire a burst by pressing <press_select_fire_mode>.  You'll automatically target the last monster you shot at, or the closest monster to you.  You can change your target with the movement keys, or cycle through monsters with <press_NEXT_TARGET:TARGET>.  To fire, press <press_FIRE:TARGET>; to cancel, press <press_QUIT:TARGET>."
       },
       {
         "id": "LESSON_RECOIL",
@@ -243,7 +243,7 @@
       },
       {
         "id": "LESSON_GUN_FIRE_MODERN",
-        "text": "Once you have a loaded gun wielded, you can fire it.  Select a monster with <press_NEXT_TARGET> or by right-clicking it to lock it, then press <press_fire> to aim at it, or left-click the monster.  With many guns, you can change the fire mode with <press_select_fire_mode>.  While aiming, <press_NEXT_TARGET> cycles through monsters; press <press_fire> to shoot or <press_QUIT> to cancel."
+        "text": "Once you have a loaded gun wielded, you can fire it.  Select a monster with <press_NEXT_TARGET> or by right-clicking it to lock it, then press <press_fire> to aim at it, or left-click the monster.  With many guns, you can change the fire mode with <press_select_fire_mode>.  While aiming, <press_NEXT_TARGET:TARGET> cycles through monsters; press <press_FIRE:TARGET> to shoot or <press_QUIT:TARGET> to cancel."
       },
       {
         "id": "LESSON_DARK_MODERN",

@@ -1,6 +1,12 @@
 #include "action_route.h"
 
+#include <algorithm>
+#include <array>
+#include <cctype>
 #include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "input.h"
 #include "options.h"
@@ -153,6 +159,56 @@ auto bound_key( const action_id act ) -> std::string
     return keys.front() == ' ' ? std::string( _( "Space" ) ) : std::string( 1, keys.front() );
 }
 
+/// How the Modern scheme selects a tile: its directional selection keys.  They read as
+/// "Shift + a movement key" only while they really are the shifted movement keys.
+auto look_selection_route() -> std::optional<std::string>
+{
+    static const auto directions = std::array{
+        std::pair{ "shift_n", "UP" }, std::pair{ "shift_ne", "RIGHTUP" },
+        std::pair{ "shift_e", "RIGHT" }, std::pair{ "shift_se", "RIGHTDOWN" },
+        std::pair{ "shift_s", "DOWN" }, std::pair{ "shift_sw", "LEFTDOWN" },
+        std::pair{ "shift_w", "LEFT" }, std::pair{ "shift_nw", "LEFTUP" },
+    };
+    auto ctxt = input_context( "DEFAULTMODE" );
+    auto keys = std::vector<char>();
+    auto all_shifted_movement = true;
+    for( const auto &[selection, movement] : directions ) {
+        const auto selection_keys = ctxt.keys_bound_to( selection );
+        if( selection_keys.empty() ) {
+            all_shifted_movement = false;
+            continue;
+        }
+        const auto movement_keys = ctxt.keys_bound_to( movement );
+        for( const auto key : selection_keys ) {
+            keys.push_back( key );
+            const auto lower = static_cast<char>(
+                                   std::tolower( static_cast<unsigned char>( key ) ) );
+            if( key != lower || !std::ranges::contains( movement_keys, lower ) ) {
+                all_shifted_movement = false;
+            }
+        }
+    }
+    if( keys.empty() ) {
+        return std::nullopt;
+    }
+    if( all_shifted_movement ) {
+        return std::string( _( "Shift + a movement key" ) );
+    }
+    auto out = std::string();
+    auto seen = std::vector<char>();
+    for( const auto key : keys ) {
+        if( std::ranges::contains( seen, key ) ) {
+            continue;
+        }
+        seen.push_back( key );
+        if( !out.empty() ) {
+            out += ", ";
+        }
+        out += key == ' ' ? std::string( _( "Space" ) ) : std::string( 1, key );
+    }
+    return out;
+}
+
 } // namespace
 
 auto action_route( const action_id act ) -> std::string
@@ -169,7 +225,9 @@ auto action_route( const action_id act ) -> std::string
         }
     }
     if( act == ACTION_LOOK && get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
-        return _( "Shift + a movement key" );
+        if( const auto route = look_selection_route() ) {
+            return *route;
+        }
     }
     const auto inventory = bound_key( ACTION_INVENTORY );
     if( const auto button = item_panel_action( act ); button && !inventory.empty() ) {
@@ -197,4 +255,17 @@ auto action_route( const std::string &id ) -> std::string
         return input_context( "TARGET" ).get_desc( id, 1 );
     }
     return input_context( "DEFAULTMODE" ).get_desc( id, 1 );
+}
+
+auto action_route( const std::string &id, const std::string &context ) -> std::string
+{
+    if( context.empty() || context == "DEFAULTMODE" ) {
+        return action_route( id );
+    }
+    // The input manager already falls back to the binding the context would really use.
+    // A context without one keeps the old default-mode route instead of inventing a key.
+    if( !inp_mngr.get_input_for_action( id, context ).empty() ) {
+        return input_context( context ).get_desc( id, 1 );
+    }
+    return action_route( id );
 }
