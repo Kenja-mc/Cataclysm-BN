@@ -2600,6 +2600,13 @@
   },
   {
     "type": "keybinding",
+    "name": "Sound & volume",
+    "category": "DEFAULTMODE",
+    "id": "sound_menu",
+    "bindings": [  ]
+  },
+  {
+    "type": "keybinding",
     "name": "Autopickup manager",
     "category": "DEFAULTMODE",
     "id": "open_autopickup"
