@@ -4231,7 +4231,15 @@ std::optional<tripoint_bub_ms> input_context::get_coordinates( const catacurses:
     }
 
     const catacurses::window &capture_win = capture_win_ ? capture_win_ : g->w_terrain;
-    const window_dimensions dim = get_window_dimensions( capture_win );
+    auto dim = get_window_dimensions( capture_win );
+    if( use_tiles && use_tiles_overmap && capture_win == g->w_overmap ) {
+        // The overmap draws partial edge tiles that its curses window rounds away.
+        const auto pixels = point( OVERMAP_WINDOW_TERM_WIDTH * font->width,
+                                   OVERMAP_WINDOW_TERM_HEIGHT * font->height );
+        overmap_tilecontext->get_window_tile_counts( pixels.x, pixels.y,
+                dim.window_size_cell.x, dim.window_size_cell.y );
+        dim.window_size_pixel = pixels * get_scaling_factor();
+    }
 
     const int &fw = dim.scaled_font_size.x;
     const int &fh = dim.scaled_font_size.y;
