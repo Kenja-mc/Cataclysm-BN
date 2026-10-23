@@ -14,12 +14,18 @@
 - **Texture sweep** — `docs/fork/texture-sweep.md` (data on `research/textures`). Two empty-sprite
   bugs are fixed. #19 tracks the default tileset: its MShock-family provenance is unresolved and
   locked doors draw exactly like closed ones. RetroDays and its three derivatives are CC BY-SA 4.0.
+- **Before/after playtests** — #20 is future work: paired real screenshots and a control-path
+  comparison across revisions, with keys/clicks, menu hops, action counts and in-game time.
+  Reuse the existing native harness. Do not treat the partial local screenshot experiment as a gate.
+- **Driving dashboard** — #21 is future work: a Project Zomboid-inspired vehicle HUD that fits
+  the fork's tiles and terminal graphics, preserves driving controls and keeps the compact readout
+  available. Evaluate it with #20's future before/after harness.
 - **Future tickets stay open** — #1 (agentic UI/UX QA in CI) and #2 (two-player co-op) are designed
   future work, neither implemented nor closable. #3 is the upstream feature-watch tracker; its
   checkpoint matches `upstream/main` and every candidate is still unchecked. #14 asks for number-key
-  rows with item thumbnails in list menus (SotS: The Pit style); #15 covers the README download
-  badges that still point at upstream releases. #16's duration-based shards, readiness polling and
-  local parallel runner are merged. Keep the issue open: its remaining phases are the slow-test
+  rows with item thumbnails in list menus (SotS: The Pit style). After the first fork release,
+  make sure that #15's README download links resolve to the fork assets. #16's duration-based shards,
+  readiness polling and local parallel runner are merged. Keep the issue open for its slow-test
   key-delay audit and prepared save fixtures.
 
   - **Shard timings and the gate** — `tests/e2e/durations.json` holds CI-measured times
@@ -66,18 +72,21 @@
   scenarios in an unprivileged bubblewrap user namespace, which is the strongest isolation this host
   allows: the docker socket is root-only, `sudo` asks for a password, and the rootless extras
   (`rootlesskit`, `slirp4netns`, `fuse-overlayfs`) are absent. A docker image needs
-  `sudo usermod -aG docker kenja` first.
+  `sudo usermod -aG docker "$USER"` first.
 - **Restore the build tools** — `ccache`, `mold` and `astyle` are missing on this machine, so the
   preset build stops at the first compile (`ccache: command not found`) and `--target format`
   reports `Artistic Style executable was not found`. Install with
   `pacman -S --needed ccache mold astyle`. The commits below were built and gated with them
   disabled (`-DCATA_CCACHE=OFF -DCMAKE_C_COMPILER_LAUNCHER= -DCMAKE_CXX_COMPILER_LAUNCHER= -DLINKER=`),
-  so no astyle pass has reformatted the tree.
-- **Release workflows stay disabled** — Nightly Release, Experimental Release and Manual release are
-  off; `gh workflow enable "<name>"` re-enables them. The nightlies need an initial `YYYY-MM-DD` tag
-  and an `experimental` release before they can pass, and `docs.yml` chains off Experimental Release.
+  with file-scoped formatting before each build.
+- **Cut the first fork release** — `fork-release.yml` and its gate `fork-updater-test.yml` are in
+  place but have never run. Dispatch `v0.1.0` as described in `docs/fork/releasing.md`, then check
+  the Windows zip on a real Windows machine: SmartScreen, `Launch Bright Nights.bat`, and an
+  update to `v0.1.1`. Upstream's release workflows stay disabled:
+  nightlies need an initial `YYYY-MM-DD` tag and an `experimental` release, and `docs.yml` chains
+  off Experimental Release.
 - **Watch the CI runs** — the detached service `bn-playtest-watch` writes the conclusions of the
-  `fork-playtest` run to `/home/kenja/.local/state/cataclysm-bn/playtest-watch.log`. If the service is
+  `fork-playtest` run to `~/.local/state/cataclysm-bn/playtest-watch.log`. If the service is
   gone after a restart, read the runs straight from GitHub with
   `gh run list --workflow fork-playtest.yml --repo Kenja-mc/Cataclysm-BN`.
 - The `matrix` workflow's red `clang, curses` job is a pre-existing cache-save error: with a warm
@@ -130,30 +139,22 @@
 
 ## Accounts and credentials
 
-This repository belongs to the `Kenja-mc` GitHub account. The workstation's active `gh` account is
-a different one, so both the identity and the push credential are pinned per repository.
+Use native Git and GitHub credentials authorized for `Kenja-mc/Cataclysm-BN`. Keep repository
+identity and credentials separate from global defaults; never put tokens in tracked files.
 
-- **Commits** — `.git/config` sets `user.name` and `user.email` to `Kenja-mc`, so the global identity
-  never applies here.
-- **Push** — `.git/config` sets a `credential.https://github.com.helper` that reads the Kenja-mc
-  token from the gh keyring at push time, so `git push origin main` needs no flags and no inline
-  helper. Nothing global changes and no token is written to disk.
-- **gh** — the active account is `asmartin-ai`, which has pull-only access here: it cannot open
-  issues, comment or read secrets. Use `gh-fork` (in `~/.local/bin`), which sets the Kenja-mc token
-  for one call and refuses to change anything in `cataclysmbn/Cataclysm-BN`. Always pass
-  `--repo Kenja-mc/Cataclysm-BN`. Do not prefix a call with a raw `GH_TOKEN` instead: that path has
-  no guard.
-- **Never touch the upstream** — `cataclysmbn/Cataclysm-BN` is a source to merge from and nothing
-  else. Six CI issues were filed there by mistake, closed as off-topic, and the account was blocked
-  for it, so the guards are deliberate. `git config core.hooksPath .githooks` enables the pre-push
-  hook, `git remote set-url --push upstream DISABLED-fetch-only` blocks the push at the remote, and
-  `gh-fork` blocks the API path; a fresh clone needs the first two again. Fetching and merging
-  upstream are unaffected.
-- **Model secrets** — `XPL_SK_AGENT` and `OC_SK_AGENT` are still not repository secrets, verified
-  with the admin token. The nightly schedule runs its live legs on `openrouter/free` models at
-  $0.0000; the paid keys only widen the model pool. Experiential Labs also needs a saved card with
-  one settled charge of $1 or more, and its credit overflow switch left off: without both, a call
-  past the free allowance bills credits.
+- **Commits** — check the repository-local `user.name` and `user.email` before committing.
+  Use the fork maintainer's public GitHub identity and no-reply email.
+- **Push** — confirm that `origin` points to `Kenja-mc/Cataclysm-BN` and use the existing native
+  credential helper. Do not change global authentication or embed a token in a command.
+- **GitHub API** — use `gh-fork` and always pass `--repo Kenja-mc/Cataclysm-BN`. The wrapper
+  refuses upstream writes. Do not bypass it by supplying a raw `GH_TOKEN`.
+- **Never touch the upstream** — `cataclysmbn/Cataclysm-BN` is a source to fetch and merge from,
+  not a submission target. `git config core.hooksPath .githooks` enables the pre-push guard;
+  `git remote set-url --push upstream DISABLED-fetch-only` disables upstream pushes. A fresh
+  clone needs both guards. Fetching and merging upstream are unaffected.
+- **Model credentials** — keep live credentials in the harness's native authentication or
+  GitHub Actions secrets, not this repository. Look up current playtest models and secret
+  requirements in `.github/workflows/fork-playtest.yml` and `docs/fork/agentic-playtests.md`.
 
 ## Install the fork and give feedback
 

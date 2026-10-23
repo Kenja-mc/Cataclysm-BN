@@ -1,0 +1,273 @@
+name: fork-release
+
+# Publishes a Bright Nights Overhaul release on Kenja-mc/Cataclysm-BN (docs/fork/releasing.md).
+#
+# Trigger: push a tag vMAJOR.MINOR.PATCH (git push origin v0.1.0), or dispatch with a version,
+# which tags the dispatched commit. Upstream's own v0.x tags sit in every clone; the metadata
+# job refuses any commit without CHANGELOG-OVERHAUL.md, so pushing them by accident publishes
+# nothing.
+#
+# Builds: the Windows MSVC tiles x64 and Linux tiles x64 packages, through the same reusable
+# build.yml that upstream's Nightly Release and the weekly matrix use, with packaging on and
+# release upload off. The publish job then repackages them under stable names, so
+# https://github.com/Kenja-mc/Cataclysm-BN/releases/latest/download/<name> always works:
+#   BrightNightsOverhaul-windows-x64.zip     game + launcher/updater (build-scripts/windows-launcher)
+#   BrightNightsOverhaul-linux-x64.tar.gz    portable Linux tiles build
+#   <each>.sha256                            checked by bno-update.ps1 before installing
+# Release notes come from the dated sections of CHANGELOG-OVERHAUL.md newer than the previous
+# release (build-scripts/fork-release-notes.sh).
+#
+# Gate: fork-updater-test.yml must pass before anything is published. The release is created
+# as a draft, gets its assets, and only then becomes the latest release, so the updater never
+# sees a latest release without its download.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, like v0.1.0. Tags the commit this run builds."
+        required: true
+        type: string
+
+# One release at a time; never cancel a release that is already building.
+concurrency:
+  group: fork-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  metadata:
+    if: github.repository == 'Kenja-mc/Cataclysm-BN'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      sha: ${{ steps.meta.outputs.sha }}
+      previous_date: ${{ steps.meta.outputs.previous_date }}
+      make_latest: ${{ steps.meta.outputs.make_latest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - id: meta
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = push ]; then
+            version="$GITHUB_REF_NAME"
+          else
+            version="$INPUT_VERSION"
+          fi
+          if ! [[ "$version" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::version must look like v0.1.0, got '$version'"
+            exit 1
+          fi
+          if [ ! -f CHANGELOG-OVERHAUL.md ]; then
+            echo "::error::$GITHUB_SHA has no CHANGELOG-OVERHAUL.md, so it is not a fork commit (upstream tags are not released here)"
+            exit 1
+          fi
+
+          if [ "$EVENT" != push ]; then
+            tagged=$(git ls-remote --tags origin "refs/tags/$version^{}" | awk '{ print $1 }')
+            if [ -z "$tagged" ]; then
+              tagged=$(git ls-remote --tags origin "refs/tags/$version" | awk '{ print $1 }')
+            fi
+            if [ -n "$tagged" ] && [ "$tagged" != "$GITHUB_SHA" ]; then
+              echo "::error::tag $version already points at $tagged, not $GITHUB_SHA; pick a new version"
+              exit 1
+            fi
+          fi
+
+          # Inspect every page, not just the newest 30 releases. Never rewrite a published
+          # version: installed clients cannot notice changed files under the same version.
+          releases=$(gh api --paginate --slurp "repos/$GH_REPO/releases?per_page=100")
+          existing=$(jq -c --arg version "$version" '[.[][] | select(.tag_name == $version)]' <<< "$releases")
+          if jq -e 'any(.[]; .draft == false)' <<< "$existing" >/dev/null; then
+            echo "::error::$version is already published; choose a new version"
+            exit 1
+          fi
+          make_latest=true
+          latest=$(jq -r '.[][] | select(.draft == false and .prerelease == false) | .tag_name' <<< "$releases" |
+            grep -E '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' | sort -V | tail -n 1 || true)
+          if [ -n "$latest" ] && [ "$(printf '%s\n%s\n' "$latest" "$version" | sort -V | tail -n 1)" != "$version" ]; then
+            make_latest=false
+          fi
+          previous_date=$(jq -r --arg version "$version" \
+            '[.[][] | select(.draft == false and .prerelease == false and .tag_name != $version)] |
+            sort_by(.published_at) | reverse | .[0].published_at // ""' <<< "$releases" | cut -c1-10)
+
+          {
+            echo "version=$version"
+            echo "sha=$GITHUB_SHA"
+            echo "previous_date=$previous_date"
+            echo "make_latest=$make_latest"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "### Release $version"
+            echo "- commit: $GITHUB_SHA"
+            echo "- previous release published: ${previous_date:-none}"
+            echo "- becomes latest: $make_latest"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  updater-test:
+    needs: metadata
+    uses: ./.github/workflows/fork-updater-test.yml
+    permissions:
+      contents: read
+
+  build:
+    needs: metadata
+    uses: ./.github/workflows/build.yml
+    permissions:
+      contents: read
+    with:
+      version-label: ${{ needs.metadata.outputs.version }}
+      checkout-ref: ${{ needs.metadata.outputs.sha }}
+      mode: release
+      matrix-json: |
+        [
+          { "name": "Windows MSVC", "platform": "windows", "artifact": "windows-tiles-x64-msvc", "os": "windows-2022", "arch": "x64", "tiles": true, "sound": true, "ext": "zip", "content-type": "application/zip", "upload-artifact": true },
+          { "name": "Linux Tiles", "platform": "linux", "artifact": "linux-tiles-x64", "os": "ubuntu-latest", "tiles": true, "sound": true, "ext": "tar.gz", "content-type": "application/gzip", "upload-artifact": true }
+        ]
+      # No Transifex token in the fork; the fork's own tilesets and mods ship from the tree.
+      download-translations: false
+      bundle-tilesets: false
+      bundle-registry-mods: false
+      package-artifacts: true
+      upload-artifacts: true
+      upload-to-release: false
+
+  publish:
+    needs: [metadata, updater-test, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.metadata.outputs.version }}
+      SHA: ${{ needs.metadata.outputs.sha }}
+      PREVIOUS_DATE: ${{ needs.metadata.outputs.previous_date }}
+      MAKE_LATEST: ${{ needs.metadata.outputs.make_latest }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: Kenja-mc/Cataclysm-BN
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.metadata.outputs.sha }}
+
+      - name: Download the Windows build
+        uses: actions/download-artifact@v4
+        with:
+          # build.yml:824-825 uploads the installed Windows directory's CONTENTS.
+          name: windows-tiles-x64-msvc
+          path: ${{ runner.temp }}/pkg/BrightNightsOverhaul
+
+      - name: Download the Linux build
+        uses: actions/download-artifact@v4
+        with:
+          # Linux uploads a cbn-linux-tiles-x64-VERSION.tar.gz file, not its contents.
+          name: linux-tiles-x64
+          path: ${{ runner.temp }}/linux
+
+      - name: Package
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/out"
+          mkdir -p "$out"
+          launcher=build-scripts/windows-launcher
+
+          write_version() {
+            local dir=$1
+            {
+              echo "Bright Nights Overhaul $VERSION"
+              if [ -f "$dir/VERSION.txt" ]; then cat "$dir/VERSION.txt"; fi
+            } > "$RUNNER_TEMP/VERSION.txt"
+            mv "$RUNNER_TEMP/VERSION.txt" "$dir/VERSION.txt"
+          }
+
+          win="$RUNNER_TEMP/pkg/BrightNightsOverhaul"
+          for f in cataclysm-bn-tiles.exe data/font/bno-icons.ttf data/raw/fonts.json gfx mods; do
+            test -e "$win/$f" || { echo "::error::Windows build is missing $f"; exit 1; }
+          done
+          cp "$launcher/bno-update.ps1" "$launcher/Launch Bright Nights.bat" \
+            "$launcher/Update Bright Nights.bat" "$launcher/README-FIRST.txt" "$win/"
+          grep -q $'\r$' "$win/Launch Bright Nights.bat" || { echo "::error::launcher .bat lost its CRLF line endings"; exit 1; }
+          write_version "$win"
+          pwsh -NoProfile -NonInteractive -File "$launcher/bno-update.ps1" -WriteManifest "$win"
+          (cd "$RUNNER_TEMP/pkg" && zip -qr -X "$out/BrightNightsOverhaul-windows-x64.zip" BrightNightsOverhaul)
+
+          lin="$RUNNER_TEMP/linux"
+          tar -xzf "$lin/cbn-linux-tiles-x64-$VERSION.tar.gz" -C "$lin"
+          mv "$lin/cataclysmbn-$VERSION" "$lin/BrightNightsOverhaul"
+          test -x "$lin/BrightNightsOverhaul/cataclysm-bn-tiles"
+          write_version "$lin/BrightNightsOverhaul"
+          tar -C "$lin" -czf "$out/BrightNightsOverhaul-linux-x64.tar.gz" BrightNightsOverhaul
+
+          cd "$out"
+          for f in BrightNightsOverhaul-windows-x64.zip BrightNightsOverhaul-linux-x64.tar.gz; do
+            sha256sum "$f" > "$f.sha256"
+          done
+          ls -l "$out" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Release notes
+        run: |
+          set -euo pipefail
+          base="https://github.com/$GH_REPO"
+          {
+            echo "## Download"
+            echo
+            echo "| File | For |"
+            echo "| --- | --- |"
+            echo "| [BrightNightsOverhaul-windows-x64.zip]($base/releases/download/$VERSION/BrightNightsOverhaul-windows-x64.zip) | Windows 10 and 11, 64-bit |"
+            echo "| [BrightNightsOverhaul-linux-x64.tar.gz]($base/releases/download/$VERSION/BrightNightsOverhaul-linux-x64.tar.gz) | Linux, 64-bit |"
+            echo
+            echo "Windows: unzip, then double-click **Launch Bright Nights.bat**. It offers new versions"
+            echo "when they come out and keeps your saves. See the"
+            echo "[install guide]($base/blob/main/docs/fork/playing.md#windows-download-and-update)."
+            echo
+            build-scripts/fork-release-notes.sh CHANGELOG-OVERHAUL.md "$PREVIOUS_DATE"
+            echo
+            echo "All changes: [CHANGELOG-OVERHAUL.md]($base/blob/$VERSION/CHANGELOG-OVERHAUL.md)."
+            echo "Features: [OVERHAUL.md]($base/blob/$VERSION/OVERHAUL.md). Built from $SHA."
+          } > "$RUNNER_TEMP/notes.md"
+          cat "$RUNNER_TEMP/notes.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish
+        run: |
+          set -euo pipefail
+          title="Bright Nights Overhaul $VERSION"
+          base="https://github.com/$GH_REPO"
+          # A tag can change while the builds run. Recheck immediately before publication;
+          # a dispatch creates the missing lightweight tag only after all gates pass.
+          tagged=$(git ls-remote --tags origin "refs/tags/$VERSION^{}" | awk '{print $1}')
+          if [ -z "$tagged" ]; then
+            tagged=$(git ls-remote --tags origin "refs/tags/$VERSION" | awk '{print $1}')
+          fi
+          if [ -z "$tagged" ]; then
+            gh api "repos/$GH_REPO/git/refs" -f ref="refs/tags/$VERSION" -f sha="$SHA"
+          elif [ "$tagged" != "$SHA" ]; then
+            echo "::error::tag $VERSION moved to $tagged; refusing to publish builds from $SHA"
+            exit 1
+          fi
+          releases=$(gh api --paginate --slurp "repos/$GH_REPO/releases?per_page=100")
+          existing=$(jq -c --arg version "$VERSION" '.[][] | select(.tag_name == $version)' <<< "$releases")
+          if [ -n "$existing" ]; then
+            if [ "$(jq -r .draft <<< "$existing")" != true ]; then
+              echo "::error::$VERSION is already public; choose a new version"
+              exit 1
+            fi
+          else
+            gh release create "$VERSION" --repo "$GH_REPO" --draft --verify-tag \
+              --title "$title" --notes-file "$RUNNER_TEMP/notes.md"
+          fi
+          gh release upload "$VERSION" --repo "$GH_REPO" --clobber "$RUNNER_TEMP"/out/*
+          gh release edit "$VERSION" --repo "$GH_REPO" --title "$title" \
+            --notes-file "$RUNNER_TEMP/notes.md" --draft=false --latest="$MAKE_LATEST"
+          echo "Published $base/releases/tag/$VERSION" >> "$GITHUB_STEP_SUMMARY"

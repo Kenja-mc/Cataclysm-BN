@@ -37,15 +37,20 @@ Find a way to stop the Cataclysm ... or become one of its strongest monsters.
 
 ## Downloads
 
-### Executables
+Download this fork from [Bright Nights Overhaul releases][fork-releases].
+The first download appears after a maintainer publishes a fork release.
 
-[![Stable][stable-releases-badge]][stable-releases] [![Flatpak][flathub-badge]][flathub-releases]
+| Platform | File |
+| --- | --- |
+| Windows 64-bit | `BrightNightsOverhaul-windows-x64.zip` |
+| Linux 64-bit | `BrightNightsOverhaul-linux-x64.tar.gz` |
 
-[![Recent][all-releases-badge]][all-releases] [![Experiemental][experimental-badge]][experimental-releases]
+On Windows, extract the zip and run `Launch Bright Nights.bat`. It offers new versions and keeps
+your saves and settings. See the [installation and update guide](docs/fork/playing.md).
+Maintainers use the [release guide](docs/fork/releasing.md).
 
-### Launchers
-
-We do not support any launchers, none of them are maintained by any members of the development team and the vast majority of them do not keep up with our stable release cadence.
+Upstream Bright Nights releases, Flatpak packages and third-party launchers do not contain this
+fork's changes.
 
 ### Third Party Mods
 
@@ -55,17 +60,10 @@ Bright Nights uses a [mod registry](https://mods.cataclysmbn.org/) for easier di
 
 [![Source Code][source-badge]][source] [![Zip Archive][clone-badge]][clone]
 
-[stable-releases]: https://github.com/cataclysmbn/Cataclysm-BN/releases/latest "Download stable executable"
-[stable-releases-badge]: https://img.shields.io/github/v/release/cataclysmbn/Cataclysm-BN?style=for-the-badge&color=success&label=stable
-[all-releases]: https://github.com/cataclysmbn/Cataclysm-BN/releases?q=prerelease%3Atrue&expanded=true
-[all-releases-badge]: https://img.shields.io/github/v/release/cataclysmbn/Cataclysm-BN?style=for-the-badge&color=important&label=Latest%20Release&include_prereleases&sort=date
-[experimental-releases]: https://github.com/cataclysmbn/Cataclysm-BN/releases/tag/experimental
-[experimental-badge]: https://img.shields.io/github/v/release/cataclysmbn/Cataclysm-BN?style=for-the-badge&color=salmon&label=Experimental%20Release&include_prereleases&sort=date
-[flathub-releases]: https://flathub.org/apps/org.cataclysmbn.CataclysmBN
-[flathub-badge]: https://img.shields.io/flathub/v/org.cataclysmbn.CataclysmBN?style=for-the-badge&color=success
-[source]: https://github.com/cataclysmbn/Cataclysm-BN/archive/master.zip "The source can be downloaded as a .zip archive"
+[fork-releases]: https://github.com/Kenja-mc/Cataclysm-BN/releases/latest
+[source]: https://github.com/Kenja-mc/Cataclysm-BN/archive/refs/heads/main.zip "Download this fork's source"
 [source-badge]: https://img.shields.io/badge/Zip%20Archive-black?style=for-the-badge&logo=github
-[clone]: https://github.com/cataclysmbn/Cataclysm-BN/ "clone from our GitHub repo"
+[clone]: https://github.com/Kenja-mc/Cataclysm-BN/ "Clone this fork"
 [clone-badge]: https://img.shields.io/badge/Clone%20From%20Repo-black?style=for-the-badge&logo=github
 
 #### Building from source
