@@ -2488,8 +2488,8 @@ int iuse::crowbar( player *p, item *it, bool, const tripoint_bub_ms &pos )
                 se.volume = pry->break_noise;
                 se.category = sounds::sound_t::combat;
                 se.description = pry->break_sound.translated();
-                se.id = "smash";
-                se.variant = "door";
+                se.id = "smash_success";
+                se.variant = pry_furn ? g->m.furn( pnt ).id().str() : g->m.ter( pnt ).id().str();
                 sounds::sound( se );
                 if( pry_furn ) {
                     g->m.furn_set( pnt, pry->break_furn_type );
