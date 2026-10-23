@@ -15,6 +15,7 @@
 #    include "vpart_position.h"
 
 #    include <algorithm>
+#    include <cmath>
 
 // Local empty string for tile_search_params
 static const std::string empty_string;
@@ -139,6 +140,25 @@ auto vehicle_preview_window::calc_window_center_pixels() const -> point {
     const int center_x = win_pos.x * termx_pixels + (win_cols * termx_pixels) / 2;
     const int center_y = win_pos.y * termy_pixels + (win_lines * termy_pixels) / 2;
     return point(center_x, center_y);
+}
+
+auto vehicle_preview_window::mount_delta_at(point cell) const -> std::optional<point_rel_veh> {
+    if (!tilecontext || termx_pixels <= 0 || termy_pixels <= 0 || win_cols <= 0 || win_lines <= 0) {
+        return std::nullopt;
+    }
+    if (cell.x < 0 || cell.y < 0 || cell.x >= win_cols || cell.y >= win_lines) {
+        return std::nullopt;
+    }
+    // display() anchors each part tile's top-left at center + mount * tile size.
+    const int tile_w = std::max(1, tilecontext->get_tile_width());
+    const int tile_h = std::max(1, tilecontext->get_tile_height());
+    const point center((win_cols * termx_pixels) / 2, (win_lines * termy_pixels) / 2);
+    const point mouse(
+        cell.x * termx_pixels + termx_pixels / 2, cell.y * termy_pixels + termy_pixels / 2);
+    const point screen_q(
+        static_cast<int>(std::floor((mouse.x - center.x) / static_cast<double>(tile_w))),
+        static_cast<int>(std::floor((mouse.y - center.y) / static_cast<double>(tile_h))));
+    return point_rel_veh(screen_q).rotate(1);
 }
 
 void vehicle_preview_window::zoom_in() {
