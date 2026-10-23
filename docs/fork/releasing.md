@@ -15,7 +15,7 @@ workflow is `.github/workflows/fork-release.yml`; it never touches upstream.
    git push origin v0.1.0
    ```
 
-   Or, without a local tag, run the workflow from GitHub and type the version:
+   Or run the workflow from `main` and type the version:
 
    ```sh
    gh-fork workflow run fork-release.yml --repo Kenja-mc/Cataclysm-BN --ref main -f version=v0.1.0
@@ -23,6 +23,12 @@ workflow is `.github/workflows/fork-release.yml`; it never touches upstream.
 
 3. Watch it with `gh-fork run list --workflow fork-release.yml --repo Kenja-mc/Cataclysm-BN`.
    The Windows build is the slow part; wait for both builds and the updater gate.
+
+Publishing dispatches pin the version tag before building. A later push to `main` cannot
+change that tag or the built commit. No release becomes visible until its gates pass and all
+assets are uploaded. GitHub's job token can refuse to tag an older commit when workflow files
+differ from the default branch; for a historical commit, push its tag with your existing
+maintainer credentials. No extra personal access token is required.
 
 Gameplay playtests are optional and off by default for releases. Select **Run playtests** in
 the dispatch form, or add `-F run_playtests=true` to the command, to require the full suite.
@@ -51,32 +57,33 @@ a successful first run alone does not prove that the cache is reused.
 
 ## Versions
 
-| Part | Raise it when | Example |
-| --- | --- | --- |
+| Part     | Raise it when                                                                         | Example  |
+| -------- | ------------------------------------------------------------------------------------- | -------- |
 | `vX.0.0` | saves from the previous release no longer load, or a big change in how the game plays | `v1.0.0` |
-| `v0.X.0` | new features, new content, changed controls | `v0.2.0` |
-| `v0.0.X` | fixes only | `v0.1.1` |
+| `v0.X.0` | new features, new content, changed controls                                           | `v0.2.0` |
+| `v0.0.X` | fixes only                                                                            | `v0.1.1` |
 
 The first release is `v0.1.0`. Versions only go up: the updater installs a release when its
 version is higher than the player's `VERSION.txt`, and only the highest version becomes the
 "latest" release. A published version is immutable: a rerun refuses to replace it, because
 players already on that version would not receive the rebuilt files. Choose a new patch version.
-A failed draft can be retried for the same commit and version.
+A failed release can be retried for the same commit and version. Once its tag exists, rerun
+the failed jobs or dispatch from that tag, not from a newer `main`.
 
 ## What the workflow does
 
-| Job | What it does |
-| --- | --- |
-| `metadata` | Runs only in `Kenja-mc/Cataclysm-BN`. Checks canonical `v1.2.3` syntax, a fork changelog, matching existing tags, and that the version has not already been published. Queries all release pages before choosing whether this becomes latest. |
+| Job            | What it does                                                                                                                                                                                                                                                                                                                                                                                         |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `metadata`     | Runs only in `Kenja-mc/Cataclysm-BN`. Checks canonical `v1.2.3` syntax, a fork changelog, matching existing tags, and that the version has not already been published. Queries all release pages before choosing whether this becomes latest. Publishing dispatches create the missing tag at the selected SHA before builds start; build-only runs never create tags.                               |
 | `updater-test` | Runs `fork-updater-test.yml` on Windows: parses scripts with Windows PowerShell 5.1, runs PSScriptAnalyzer, and exercises a local HTTP release with both PowerShell versions. Tests preservation, rollback/replay, unsafe archives/manifests/journals, missing checksums, concurrent updaters and a running-game process. Logs and failing mock installs are uploaded as `windows-updater-evidence`. |
-| `build` | Builds the Windows MSVC tiles x64 and Linux tiles x64 packages through `build.yml`, the same reusable build upstream's releases use. No translations, no extra tilesets, no registry mods. |
-| `publish` | Downloads the Windows installed directory and Linux tarball from `build.yml`; adds the launcher, `README-FIRST.txt` and `bno-files.txt` to Windows; writes version headers and stable archives plus `.sha256` files. Rechecks the tag immediately before publication and creates a missing dispatch tag at the built SHA. Creates/reuses only a draft, uploads all assets, then publishes. Only the highest version becomes latest. |
+| `build`        | Builds the Windows MSVC tiles x64 and Linux tiles x64 packages through `build.yml`, the same reusable build upstream's releases use. No translations, no extra tilesets, no registry mods.                                                                                                                                                                                                           |
+| `publish`      | Downloads the Windows installed directory and Linux tarball from `build.yml`; adds the launcher, `README-FIRST.txt` and `bno-files.txt` to Windows; writes version headers and stable archives plus `.sha256` files. Requires the version tag to still match the built SHA. Creates/reuses only a draft, uploads all assets, then publishes. Only the highest version becomes latest.                |
 
 Release files keep the same names every time, so these links always point at the newest release:
 
-| File | Link |
-| --- | --- |
-| Windows zip | `https://github.com/Kenja-mc/Cataclysm-BN/releases/latest/download/BrightNightsOverhaul-windows-x64.zip` |
+| File          | Link                                                                                                      |
+| ------------- | --------------------------------------------------------------------------------------------------------- |
+| Windows zip   | `https://github.com/Kenja-mc/Cataclysm-BN/releases/latest/download/BrightNightsOverhaul-windows-x64.zip`  |
 | Linux archive | `https://github.com/Kenja-mc/Cataclysm-BN/releases/latest/download/BrightNightsOverhaul-linux-x64.tar.gz` |
 
 Each has a `.sha256` file next to it.
@@ -97,6 +104,14 @@ they would be.
 - Windows and Linux compiler-cache buckets do not include the release tag or branch name.
   They separate actual toolchains, architectures, build modes and artifacts. The compiler
   cache checks each compilation unit; successful units remain reusable if a later step fails.
+  Legacy `main` cache prefixes seed these ref-independent buckets on the next release run.
+- Linux's bundled SDL3 uses a C precompiled header. CI sets
+  `CCACHE_SLOPPINESS=include_file_ctime,include_file_mtime,time_macros,pch_defines` and
+  `CFLAGS=-Xclang -fno-pch-timestamp` so ccache can reuse it; local presets are unchanged.
+  See ccache's [precompiled-header requirements](https://ccache.dev/manual/latest.html#_precompiled_headers).
+- The full end-to-end suite runs on one runner, the only writer of its curses compiler
+  cache. Model playtest legs restore only; screenshots write the tiles cache once.
+  The separate weekly matrix has one writer per curses/tiles key.
 - The host shader compiler keeps its fetched dependencies and incremental build tree in a
   separate cache keyed by image, installed packages, toolchain and recipe. Every restore is
   followed by CMake configure/build, so tracking upstream `main` does not freeze an old tool.
@@ -119,13 +134,13 @@ The former `x-gha` provider has been removed from vcpkg.
 
 The files live in `build-scripts/windows-launcher/`:
 
-| File | Purpose |
-| --- | --- |
+| File                       | Purpose                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------- |
 | `Launch Bright Nights.bat` | What players double-click. Runs the updater in Launch mode, then starts `cataclysm-bn-tiles.exe`. |
-| `Update Bright Nights.bat` | Runs the updater in Check mode and waits for a key. |
-| `bno-update.ps1` | The updater. Windows PowerShell 5.1, ASCII only, no modules. |
-| `README-FIRST.txt` | Short player guide shipped in the zip. |
-| `test-bno-update.ps1` | The end-to-end test CI runs. Not shipped. |
+| `Update Bright Nights.bat` | Runs the updater in Check mode and waits for a key.                                               |
+| `bno-update.ps1`           | The updater. Windows PowerShell 5.1, ASCII only, no modules.                                      |
+| `README-FIRST.txt`         | Short player guide shipped in the zip.                                                            |
+| `test-bno-update.ps1`      | The end-to-end test CI runs. Not shipped.                                                         |
 
 On Windows the game keeps its user data in its own folder (`main.cpp` passes `"."` as the user
 directory because the Windows build sets neither `USE_HOME_DIR` nor `USE_XDG_DIR`). The updater

@@ -60,32 +60,32 @@ Content scenarios, all listed by `python3 tests/e2e/playtest.py --list`:
 
 `--models` takes a pool name or a comma-separated list of model ids.
 
-| Pool     | Models, in order                                                                                                                                          | For                                       |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| `text`   | `clef-flash`, `jev-latest`, `jev-1.13-free`, `deepseek-v4.1-flash-free`, `glm-5.3-flash-free`                                                             | Curses surfaces, where the state is text  |
-| `vision` | `gpt-6-luna-decisions`, `deepseek-v4.1-flash-1017`, `clef`, `clef-flash`, `jev-latest`, `jev-1.13-free`, `deepseek-v4.1-flash-free`, `glm-5.3-flash-free` | Tiles surfaces, where a frame image helps |
+| Pool                | Models, in order                                                                                                                                                             | For                                            |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `text`              | `clef-flash`, `jev-latest`, `jev-1.13-free`, `deepseek-v4.1-flash-free`, `glm-5.3-flash-free`                                                                                | Curses surfaces, where the state is text       |
+| `vision`            | `gpt-6-luna-decisions`, `deepseek-v4.1-flash-1017`, `clef`, `clef-flash`, `jev-latest`, `jev-1.13-free`, `deepseek-v4.1-flash-free`, `glm-5.3-flash-free`                    | Tiles surfaces, where a frame image helps      |
 | `openrouter-text`   | `nvidia/nemotron-3-ultra-550b-a55b:free`, `poolside/laguna-xs-2.1:free`, `openrouter/free`, `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`, `liquid/lfm-2.5-2.6b:free` | Curses surfaces with only `OPENROUTER_API_KEY` |
-| `openrouter-vision` | `dots-studio/dots-3-note-preview:free`, `openrouter/free`, `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | Tiles surfaces with only `OPENROUTER_API_KEY` |
+| `openrouter-vision` | `dots-studio/dots-3-note-preview:free`, `openrouter/free`, `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`                                                              | Tiles surfaces with only `OPENROUTER_API_KEY`  |
 
 The pools only hand out models that are usable on the day: a model whose free window has passed is
 dropped from the pool before the run starts.
 
-| Model                      | Surface    | Text | Image | Notes                                              |
-| -------------------------- | ---------- | ---- | ----- | -------------------------------------------------- |
-| `clef-flash`               | System One | yes  | no    | Free without a card                                |
-| `clef`                     | System One | yes  | yes   | Free without a card                                |
-| `jev-latest`               | System One | yes  | no    | 32,000 tokens shared by state and questions        |
-| `gpt-6-luna-decisions`     | Decisions  | yes  | yes   | Billed on input tokens only; free until 2026-11-14 |
-| `deepseek-v4.1-flash-1017` | Chat       | yes  | yes   | 3.75M in and 750k out per day                      |
-| `jev-1.13-free`            | System One | yes  | no    | OpenCode publishes no context size                 |
-| `deepseek-v4.1-flash-free` | Chat       | yes  | no    | OpenCode publishes no context size                 |
-| `glm-5.3-flash-free`       | Chat       | yes  | no    | OpenCode publishes no context size                 |
-| `nvidia/nemotron-3-ultra-550b-a55b:free` | Chat | yes | no | OpenRouter, free; verified 2026-10-21 |
-| `poolside/laguna-xs-2.1:free` | Chat | yes | no | OpenRouter, free; fast, small model |
-| `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | Chat | yes | yes | OpenRouter, free; shared upstream capacity |
-| `liquid/lfm-2.5-2.6b:free` | Chat | yes | no | OpenRouter, free; slow last resort |
-| `dots-studio/dots-3-note-preview:free` | Chat | yes | yes | OpenRouter, free; needs the image to stay on task |
-| `openrouter/free`          | Chat       | yes  | yes   | OpenRouter's router over its free tier             |
+| Model                                                | Surface    | Text | Image | Notes                                              |
+| ---------------------------------------------------- | ---------- | ---- | ----- | -------------------------------------------------- |
+| `clef-flash`                                         | System One | yes  | no    | Free without a card                                |
+| `clef`                                               | System One | yes  | yes   | Free without a card                                |
+| `jev-latest`                                         | System One | yes  | no    | 32,000 tokens shared by state and questions        |
+| `gpt-6-luna-decisions`                               | Decisions  | yes  | yes   | Billed on input tokens only; free until 2026-11-14 |
+| `deepseek-v4.1-flash-1017`                           | Chat       | yes  | yes   | 3.75M in and 750k out per day                      |
+| `jev-1.13-free`                                      | System One | yes  | no    | OpenCode publishes no context size                 |
+| `deepseek-v4.1-flash-free`                           | Chat       | yes  | no    | OpenCode publishes no context size                 |
+| `glm-5.3-flash-free`                                 | Chat       | yes  | no    | OpenCode publishes no context size                 |
+| `nvidia/nemotron-3-ultra-550b-a55b:free`             | Chat       | yes  | no    | OpenRouter, free; verified 2026-10-21              |
+| `poolside/laguna-xs-2.1:free`                        | Chat       | yes  | no    | OpenRouter, free; fast, small model                |
+| `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | Chat       | yes  | yes   | OpenRouter, free; shared upstream capacity         |
+| `liquid/lfm-2.5-2.6b:free`                           | Chat       | yes  | no    | OpenRouter, free; slow last resort                 |
+| `dots-studio/dots-3-note-preview:free`               | Chat       | yes  | yes   | OpenRouter, free; needs the image to stay on task  |
+| `openrouter/free`                                    | Chat       | yes  | yes   | OpenRouter's router over its free tier             |
 
 The `openrouter-*` ids come from `GET https://openrouter.ai/api/v1/models` on 2026-10-21: the 21
 rows priced at zero. Only the ids that answered the harness's JSON-action prompt in a local probe
@@ -231,8 +231,10 @@ The suite lives in reusable `fork-e2e.yml`. Releases expose it as the default-of
 updater checks remain mandatory. The cross-platform `matrix` workflow remains weekly and manual.
 Nightly tiles jobs reuse a matching package when available, or build their own binary.
 
-Four legs, each with its own content list (main menu and tutorial have no tiles surface, so both
-tiles legs walk two scenarios):
+Four legs are available, each with its own content list (main menu and tutorial have no tiles
+surface, so tiles legs walk two scenarios). Nightly and manual runs select only the first matching
+leg by default. Set dispatch input `all_legs=true` to run all matching legs; the mode, scheme and
+input filters still apply:
 
 | Leg                      | Mode   | Scheme  | Input    | Pool     | Content                                                      |
 | ------------------------ | ------ | ------- | -------- | -------- | ------------------------------------------------------------ |
@@ -261,17 +263,15 @@ at the free pools: `openrouter-text` for curses, `openrouter-vision` for tiles. 
 still apply, so a tiles-only request checks a tiles leg. End-to-end tests and screenshots are
 independent of model-key availability and run only when their manual option or the schedule selects them.
 
-The end-to-end suite runs as four parallel shards. A single runner could not finish the full suite
-inside the job's two-hour timeout: the tail of the suite is slower on two cores than it is locally,
-and the job was cancelled with the suite still running. Each shard builds the same cache-warm curses
-binary and runs a balanced quarter of the checks (`--shard=0/4`), and uploads its own log as
-`e2e-suite-log-<shard>`. `run.py` assigns the tests longest first into the lightest shard, using the
-per-test seconds in `tests/e2e/durations.json`; positional slicing put the three mouse tests in one
-shard and made it 47% longer than its neighbours. A local run is parallel by default;
-`--serial` keeps it in one process. `--durations=<path>` writes timings to the requested file; use
+The full end-to-end suite runs serially on one runner with a 150-minute timeout, including
+setup and the build. It uploads `e2e-suite-log`, containing `e2e-suite.log`,
+`e2e-durations.json` and the fixture lifecycle-check log. That job is the only curses-cache
+writer in the playtest workflow; model legs restore only, and screenshots write the tiles cache.
+A local run is still parallel by default; `--serial` keeps it in one process. `--shard=I/N`
+remains available for manual splits, balanced by `tests/e2e/durations.json`.
+`--durations=<path>` writes timings to the requested file; use
 `--durations=tests/e2e/durations.json` on a successful full, unfiltered run to refresh the manifest.
 Do not use a single `--shard` to refresh it: that records only that shard's tests.
-Rerun the suite afterward to verify the changed shard assignments.
 
 `python3 tests/e2e/feature_shots.py` runs on the nightly schedule or when `run_screenshots` is selected.
 It uploads `docs/fork/images/features/*.png` as an artifact and never commits them. Note the trap: `--only`

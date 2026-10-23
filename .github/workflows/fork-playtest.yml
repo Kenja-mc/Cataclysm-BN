@@ -20,11 +20,11 @@ name: fork-playtest
 # Combinations: the four the user asked for, one leg each. kb means keyboard only, kb-mouse
 # means keyboard plus mouse; the surface is either the curses build or the tiles build
 # under Xvfb: kb (classic scheme) and kb-mouse (modern scheme) in curses, kb (classic) and
-# kb-mouse (modern) in tiles. Co-op is the fifth combination the fork wants but has no
+# kb-mouse (modern) in tiles. Runs select one matching leg unless all_legs is requested.
+# Co-op is the fifth combination the fork wants but has no
 # harness: OVERHAUL.md ("Simple seamless co-op", fork issue #2) describes the co-op port as
 # work to evaluate and no multiplayer behavior is enabled, so there is nothing to drive
 # yet. A co-op leg belongs here once that harness exists.
-#
 # Push/PR CI does not launch playtests. Manual dispatch selects the jobs below;
 # the existing nightly schedule still runs the full suite, model legs and screenshots.
 # A live leg needs OPENROUTER_API_KEY, or both XPL_SK_AGENT and OC_SK_AGENT.
@@ -51,7 +51,7 @@ on:
   workflow_dispatch:
     inputs:
       run_e2e:
-        description: "Run the four-shard end-to-end suite"
+        description: "Run the full end-to-end suite on one runner"
         type: boolean
         default: true
       run_agentic:
@@ -62,6 +62,10 @@ on:
         description: "Capture the fork feature screenshots"
         type: boolean
         default: true
+      all_legs:
+        description: "Run all matching model playtest legs instead of the first"
+        type: boolean
+        default: false
       scenario:
         description: "One scenario id from playtest.SCENARIOS (empty: the leg's content list; main_menu and tutorial are curses-only)"
         type: string
@@ -108,9 +112,8 @@ permissions:
 
 env:
   LLVM_VERSION: "22"
-  # Kill switches, per scenario run: 30 turns, 15 minutes, $2. A nightly run with keys is
-  # twelve runs at most (both curses legs walk four scenarios, both tiles legs two), so $24
-  # of tokens; without keys every leg is a 3-turn dry run and spends nothing.
+  # Per scenario: 30 turns, 15 minutes, $2. The default curses leg walks four scenarios
+  # (at most $8); all_legs can walk twelve ($24). Without keys the single leg is dry.
   TURNS: "30"
   MAX_WALL_S: "900"
   BUDGET_USD: "2.00"
@@ -180,6 +183,7 @@ jobs:
           HAS_KEYS: ${{ steps.keys.outputs.has_keys }}
           OR_ONLY: ${{ steps.keys.outputs.or_only }}
           DRY_INPUT: ${{ inputs.dry_run }}
+          ALL_LEGS: ${{ github.event_name == 'workflow_dispatch' && inputs.all_legs }}
           TURNS: ${{ env.TURNS }}
         run: |
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
@@ -263,6 +267,8 @@ jobs:
               # filters selected, so a dry_run tiles dispatch still checks the tiles leg
               # instead of collapsing to no job at all.
               legs = legs[:1]
+          elif os.environ.get("ALL_LEGS") != "true":
+              legs = legs[:1]
           live_turns = int(os.environ.get("TURNS") or 30)
           for leg in legs:
               leg["dry"] = dry
@@ -282,7 +288,6 @@ jobs:
           print("::notice::playtest legs=%d" % len(legs), file=sys.stderr)
           PY
 
-
   e2e-suite:
     if: github.event_name == 'schedule' || inputs.run_e2e
     uses: ./.github/workflows/fork-e2e.yml
@@ -295,11 +300,10 @@ jobs:
     if: github.event_name == 'schedule' || inputs.run_agentic
     runs-on: ubuntu-latest
     timeout-minutes: 150
-    # Two games at a time; the nightly schedule may run three. Never fail the other legs
-    # because one of them found a defect.
+    # Explicit all_legs runs use at most two runners; a defect must not cancel other legs.
     strategy:
       fail-fast: false
-      max-parallel: ${{ github.event_name == 'schedule' && 3 || 2 }}
+      max-parallel: 2
       # The plan emits {"include": [...]}, so the whole object belongs on `matrix`. Placing
       # it under `matrix.include` makes the include an object instead of a list, which
       # yields no combinations and makes GitHub create no job at all, silently.
@@ -376,7 +380,8 @@ jobs:
             ${{ matrix.ccache_key }}-
           max-size: 2G
           verbose: 2
-          save: ${{ github.event_name != 'pull_request' }}
+          # The e2e and screenshot jobs save these builds once; model legs restore only.
+          save: false
 
       # Reuse the tiles package the matrix workflow built for this commit, when there is
       # one. It cannot supply the curses binary (see the e2e-suite job), so this job always

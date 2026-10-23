@@ -2,10 +2,10 @@ name: fork-release
 
 # Publishes a Bright Nights Overhaul release on Kenja-mc/Cataclysm-BN (docs/fork/releasing.md).
 #
-# Trigger: push a tag vMAJOR.MINOR.PATCH (git push origin v0.1.0), or dispatch with a version,
-# which tags the dispatched commit. Upstream's own v0.x tags sit in every clone; the metadata
-# job refuses any commit without CHANGELOG-OVERHAUL.md, so pushing them by accident publishes
-# nothing.
+# Trigger: push a tag vMAJOR.MINOR.PATCH (git push origin v0.1.0), or dispatch with a version.
+# Publishing dispatches pin the tag before building. Upstream's own v0.x tags sit in every
+# clone; the metadata job refuses any commit without CHANGELOG-OVERHAUL.md, so pushing them
+# by accident publishes nothing.
 #
 # Builds: the Windows MSVC tiles x64 and Linux tiles x64 packages, through the same reusable
 # build.yml that upstream's Nightly Release and the weekly matrix use, with packaging on and
@@ -27,7 +27,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to build, like v0.1.0. Publishing tags this commit."
+        description: "Version to build, like v0.1.0. Publishing pins its tag before building."
         required: true
         type: string
       publish:
@@ -36,7 +36,7 @@ on:
         default: true
         type: boolean
       run_playtests:
-        description: "Run the full four-shard gameplay suite and require it to pass before publishing."
+        description: "Run the full gameplay suite on one runner and require it to pass before publishing."
         required: false
         default: false
         type: boolean
@@ -53,6 +53,8 @@ jobs:
   metadata:
     if: github.repository == 'Kenja-mc/Cataclysm-BN'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
       version: ${{ steps.meta.outputs.version }}
       sha: ${{ steps.meta.outputs.sha }}
@@ -114,6 +116,15 @@ jobs:
           previous_date=$(jq -r --arg version "$version" \
             '[.[][] | select(.draft == false and .prerelease == false and .tag_name != $version)] |
             sort_by(.published_at) | reverse | .[0].published_at // ""' <<< "$releases" | cut -c1-10)
+
+          if [ "$EVENT" != push ] && [ "$PUBLISH_RELEASE" = true ] && [ -z "$tagged" ]; then
+            # Tagging an older workflow-changing commit can require permissions the job token
+            # cannot hold. Pin the selected commit now, not after a long build while main moves.
+            if ! gh api "repos/$GH_REPO/git/refs" -f ref="refs/tags/$version" -f sha="$GITHUB_SHA"; then
+              echo "::error::Cannot create $version at $GITHUB_SHA. Push that tag with your existing maintainer credentials, then use the tag-triggered release."
+              exit 1
+            fi
+          fi
 
           {
             echo "version=$version"
@@ -274,15 +285,12 @@ jobs:
           set -euo pipefail
           title="Bright Nights Overhaul $VERSION"
           base="https://github.com/$GH_REPO"
-          # A tag can change while the builds run. Recheck immediately before publication;
-          # a dispatch creates the missing lightweight tag only after all gates pass.
+          # Never publish assets if their version tag was removed or moved during the build.
           tagged=$(git ls-remote --tags origin "refs/tags/$VERSION^{}" | awk '{print $1}')
           if [ -z "$tagged" ]; then
             tagged=$(git ls-remote --tags origin "refs/tags/$VERSION" | awk '{print $1}')
           fi
-          if [ -z "$tagged" ]; then
-            gh api "repos/$GH_REPO/git/refs" -f ref="refs/tags/$VERSION" -f sha="$SHA"
-          elif [ "$tagged" != "$SHA" ]; then
+          if [ "$tagged" != "$SHA" ]; then
             echo "::error::tag $VERSION moved to $tagged; refusing to publish builds from $SHA"
             exit 1
           fi

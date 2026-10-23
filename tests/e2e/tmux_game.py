@@ -53,7 +53,7 @@ class Game:
 
     def screen(self):
         return subprocess.run(["tmux", "capture-pane", "-p", "-t", self.name],
-                              capture_output=True, text=True).stdout
+                              capture_output=True, text=True, check=True).stdout
 
     def resize(self, cols, rows):
         """Force the pane size: tmux sizes new windows from the server, not only from -x/-y."""
@@ -62,7 +62,7 @@ class Game:
 
     def screen_colors(self):
         return subprocess.run(["tmux", "capture-pane", "-p", "-e", "-t", self.name],
-                              capture_output=True, text=True).stdout
+                              capture_output=True, text=True, check=True).stdout
 
     def keys(self, *keys, delay=0.25):
         for k in keys:
@@ -73,7 +73,7 @@ class Game:
                 subprocess.run(["tmux", "send-keys", "-H", "-t", self.name, "--",
                                 *(f"{byte:02x}" for byte in code)], check=True)
             else:
-                subprocess.run(["tmux", "send-keys", "-t", self.name, "--", k])
+                subprocess.run(["tmux", "send-keys", "-t", self.name, "--", k], check=True)
             time.sleep(delay)
 
     def type(self, text, delay=0.05):
@@ -81,11 +81,11 @@ class Game:
         chunk = ""
         for ch in text:
             if chunk and chunk[-1] == ch:
-                subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", chunk])
+                subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", chunk], check=True)
                 time.sleep(0.08)
                 chunk = ""
             chunk += ch
-        subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", chunk])
+        subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", chunk], check=True)
         time.sleep(delay)
 
     def click(self, x, y, button=0):
@@ -94,7 +94,7 @@ class Game:
         Preserve the one-second observation window; wait longer if the redraw is still changing.
         """
         for suffix in ("M", "m"):
-            subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", f"\x1b[<{button};{x + 1};{y + 1}{suffix}"])
+            subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", f"\x1b[<{button};{x + 1};{y + 1}{suffix}"], check=True)
             time.sleep(0.05)
         self.settle_screen(minimum=1.0, timeout=1.5)
 
@@ -104,7 +104,7 @@ class Game:
         The second of stillness is the pan itself: while the cursor stays in an edge zone the
         game keeps panning on its timeouts, so the tests count steps per hover.
         """
-        subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", f"\x1b[<35;{x + 1};{y + 1}M"])
+        subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", f"\x1b[<35;{x + 1};{y + 1}M"], check=True)
         time.sleep(1)
 
     def find(self, ch):

@@ -13,6 +13,8 @@ from contextlib import contextmanager
 from tmux_game import Game, start_new_game
 
 _games = {}
+_borrowers = {}
+_retired = set()
 
 
 def _close_all():
@@ -31,11 +33,14 @@ def _key(options, cols, rows, keybindings, userdir, layout):
 
 
 def retire(game):
-    """Close a shared game so the next test with its profile starts a fresh one.
+    """Retire a profile, closing its game after the last active borrower exits.
 
     A test that changed an option in-game, or failed half-way through a menu, leaves state the
     profile's setup cannot undo; handing that game to the next borrower makes test order matter.
     """
+    if _borrowers.get(game, 0):
+        _retired.add(game)
+        return
     for key, cached in list(_games.items()):
         if cached is game:
             del _games[key]
@@ -45,22 +50,34 @@ def retire(game):
 @contextmanager
 def shared_game(name, options=None, cols=140, rows=45, keybindings=None, userdir=None,
                 define="", setup=None, layout="labels"):
-    """The game for this profile, with `setup` run before every test that borrows it."""
+    """Borrow a profile; nested failures cannot close another caller's active game."""
     key = _key(options, cols, rows, keybindings, userdir, layout)
     game = _games.get(key)
-    if game is None:
+    if game in _retired:
+        raise RuntimeError(f"game profile {game.name} was retired by an active borrower")
+    fresh = game is None
+    if fresh:
         game = Game(name=name, cols=cols, rows=rows, options=options,
                     keybindings=keybindings, userdir=userdir, layout=layout)
-        start_new_game(game)
-        if define:
-            game.define_lua(define)
         _games[key] = game
-    else:
-        game.dismiss_error_popup()
-    if setup:
-        setup(game)
+    _borrowers[game] = _borrowers.get(game, 0) + 1
     try:
+        if fresh:
+            start_new_game(game)
+            if define:
+                game.define_lua(define)
+        else:
+            game.dismiss_error_popup()
+        if setup:
+            setup(game)
         yield game
     except BaseException:
         retire(game)
         raise
+    finally:
+        _borrowers[game] -= 1
+        if not _borrowers[game]:
+            del _borrowers[game]
+            if game in _retired:
+                _retired.remove(game)
+                retire(game)
