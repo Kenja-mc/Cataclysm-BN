@@ -2119,7 +2119,7 @@ void options_manager::add_options_interface()
        );
 
     add( "ARROW_KEY_AIM", interface, translate_marker( "Arrow keys aim" ),
-         translate_marker( "Sword of the Stars: The Pit style.  If true, the arrow keys move a targeting reticle over the map instead of walking, without spending a turn.  In Modern, the fire command attacks a selected hostile within your melee weapon's reach, or aims at it with a firearm.  With a firearm and no hostile selected, it opens normal gun aiming.  Esc, walking or any other action that takes a turn takes the reticle away.  Turn it off to walk with the arrow keys." ),
+         translate_marker( "Sword of the Stars: The Pit style.  If true, the arrow keys move a targeting reticle over the map instead of walking, without spending a turn.  In Modern, the fire command attacks a selected hostile within your melee weapon's reach, or aims at it with a firearm.  With a melee weapon and no hostile selected, it attacks the nearest hostile in reach.  With a firearm and no hostile selected, it opens normal gun aiming.  Esc, walking or any other action that takes a turn takes the reticle away.  Turn it off to walk with the arrow keys." ),
          true
        );
 
