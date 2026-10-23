@@ -111,6 +111,10 @@ def test_vehicle_screen_diagonals(g):
     # Select the vehicle underfoot so contextual Examine cannot pick another nearby tile.
     x, y = g.find("@")
     g.click(x, y, button=2)
+    # Modern right click lists the selected tile's actions; the selection is what this test needs.
+    if "Interact with the" in g.screen():
+        g.keys("Escape", delay=0.3)
+        g.wait_gone("Interact with the")
     action_menu(g, "Interact", "Examine Nearby Terrain")
     if "Examine where?" in g.screen():
         g.keys("x", delay=0.2)

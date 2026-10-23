@@ -36,7 +36,8 @@ auto arrow_move( const action_id act, input_context &ctxt ) -> bool;
 /// Start at the nearest visible hostile, otherwise the player.
 auto move( avatar &you, map &m, const point_rel_ms &delta ) -> void;
 
-/// Keyboard fire may fall back to gun aiming; direct clicks never retarget.
+/// Keyboard fire with no selection attacks the nearest hostile in the weapon's reach, in
+/// place. Firearms fall back to their aiming screen. Direct clicks never retarget.
 /// ACTION_FIRE: aim; ACTION_NULL: handled; nullopt: no selection.
 auto attack( avatar &you, map &m, attack_mode mode ) -> std::optional<action_id>;
 

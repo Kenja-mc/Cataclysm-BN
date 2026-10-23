@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <set>
 #include <unordered_map>
 #include <utility>
@@ -25,9 +26,11 @@
 #include "input.h"
 #include "json.h"
 #include "mod_manager.h"
+#include "options.h"
 #include "output.h"
 #include "path_info.h"
 #include "point.h"
+#include "scrollbar_input.h"
 #include "string_formatter.h"
 #include "string_id.h"
 #include "string_input_popup.h"
@@ -548,6 +551,95 @@ int worldfactory::show_worldgen_tab_options( const catacurses::window &, WORLDIN
     return 0;
 }
 
+static auto mod_category_name( const mod_id &id ) -> std::string
+{
+    return id.is_valid() ? _( id->category.second ) : _( "MISSING MODS" );
+}
+
+/// Draw line occupied by the mod at `index`, category headers included.
+static auto mod_line_at_index( const std::vector<mod_id> &mods, size_t index ) -> int
+{
+    int line = 0;
+    std::string last;
+    for( size_t i = 0; i < mods.size(); ++i ) {
+        const std::string category = mod_category_name( mods[i] );
+        if( category != last ) {
+            last = category;
+            ++line;
+        }
+        if( i == index ) {
+            return line;
+        }
+        ++line;
+    }
+    return line;
+}
+
+/// Total drawn lines in a mod list, category headers included.
+static auto mod_line_count( const std::vector<mod_id> &mods ) -> int
+{
+    int line = 0;
+    std::string last;
+    for( const mod_id &id : mods ) {
+        const std::string category = mod_category_name( id );
+        if( category != last ) {
+            last = category;
+            ++line;
+        }
+        ++line;
+    }
+    return line;
+}
+
+static auto mod_first_line_is_category( const std::vector<mod_id> &mods ) -> bool
+{
+    return !mods.empty() && !mod_category_name( mods.front() ).empty();
+}
+
+/// Mod drawn exactly on `line`, if that line is not a category header.
+static auto mod_index_at_line( const std::vector<mod_id> &mods, int target ) -> std::optional<size_t>
+{
+    int line = 0;
+    std::string last;
+    for( size_t i = 0; i < mods.size(); ++i ) {
+        const std::string category = mod_category_name( mods[i] );
+        if( category != last ) {
+            last = category;
+            ++line;
+        }
+        if( line == target ) {
+            return i;
+        }
+        ++line;
+    }
+    return std::nullopt;
+}
+
+/// Nearest selectable mod at or after `target`, falling back to the one before.
+static auto mod_index_for_line( const std::vector<mod_id> &mods, int target ) -> std::optional<size_t>
+{
+    int line = 0;
+    std::string last;
+    std::optional<size_t> before;
+    for( size_t i = 0; i < mods.size(); ++i ) {
+        const std::string category = mod_category_name( mods[i] );
+        if( category != last ) {
+            last = category;
+            if( line == target ) {
+                // Category header: the next selectable row is this mod.
+                return i;
+            }
+            ++line;
+        }
+        if( line == target ) {
+            return i;
+        }
+        before = i;
+        ++line;
+    }
+    return before;
+}
+
 void worldfactory::draw_mod_list( const catacurses::window &w, int &start, size_t cursor,
                                   const std::vector<mod_id> &mods, bool is_active_list,
                                   const std::string &text_if_empty, const catacurses::window &w_shift )
@@ -707,6 +799,12 @@ void worldfactory::show_active_world_mods( const std::vector<mod_id> &world_mods
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
         draw_border( w_border, BORDER_COLOR, _( " ACTIVE WORLD MODS " ) );
@@ -720,7 +818,34 @@ void worldfactory::show_active_world_mods( const std::vector<mod_id> &world_mods
     while( true ) {
         ui_manager::redraw();
 
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        if( modern && action == "SELECT" ) {
+            action.clear();
+            const auto mouse = ctxt.get_coordinates( w_mods );
+            const auto cell = mouse ? std::optional<point>(
+                                  mouse->xy().raw() + point( getmaxx( w_mods ), getmaxy( w_mods ) ) / 2 ) :
+                              std::nullopt;
+            if( cell ) {
+                int active_line = mod_line_at_index( world_mods, static_cast<size_t>( cursor ) );
+                if( mod_first_line_is_category( world_mods ) && active_line == 1 ) {
+                    active_line = 0;
+                }
+                if( const auto hit = scrollbar_input::click(
+                scrollbar_input::geometry{
+                    .offset = point_zero,
+                    .viewport_size = getmaxy( w_mods ),
+                    .content_size = mod_line_count( world_mods ),
+                    .viewport_pos = active_line,
+                    .scroll_to_last = true,
+                }, *cell ) ) {
+                    if( const auto index = mod_index_for_line( world_mods, hit->viewport_pos ) ) {
+                        cursor = static_cast<int>( *index );
+                    }
+                } else if( const auto index = mod_index_at_line( world_mods, start + cell->y ) ) {
+                    cursor = static_cast<int>( *index );
+                }
+            }
+        }
 
         if( action == "UP" ) {
             cursor--;
@@ -816,6 +941,12 @@ int worldfactory::show_modselection_window( const catacurses::window &win,
     ctxt.register_action( "VIEW_MOD_DESCRIPTION" );
     ctxt.register_action( "FILTER" );
     ctxt.register_action( "TOGGLE_SHOW_OBSOLETE" );
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
 
     point filter_pos;
     int filter_view_len = 0;
@@ -874,6 +1005,7 @@ int worldfactory::show_modselection_window( const catacurses::window &win,
     size_t active_header = 0;
     int startsel[2] = {0, 0};
     size_t cursel[2] = {0, 0};
+    int last_clicked_mod[2] = { -1, -1 };
     size_t iCurrentTab = 0;
 
     struct mod_tab {
@@ -1136,7 +1268,83 @@ int worldfactory::show_modselection_window( const catacurses::window &win,
                              prev_selection;
         }
 
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        const bool mouse_select = modern && action == "SELECT";
+        if( mouse_select ) {
+            // get_coordinates() is relative to the window centre.
+            const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
+                const auto mouse = ctxt.get_coordinates( win );
+                if( !mouse )
+                {
+                    return std::nullopt;
+                }
+                const auto cell = mouse->xy().raw() + point( getmaxx( win ), getmaxy( win ) ) / 2;
+                if( cell.x < 0 || cell.y < 0 ||
+                    cell.x >= getmaxx( win ) || cell.y >= getmaxy( win ) )
+                {
+                    return std::nullopt;
+                }
+                return cell;
+            };
+            action.clear();
+            const auto click_list = [&]( const std::vector<mod_id> &mods,
+                                         const catacurses::window &win, int header ) -> bool {
+                const auto cell = cell_in( win );
+                if( !cell )
+                {
+                    return false;
+                }
+                const int cur = static_cast<int>( cursel[header] );
+                int active_line = mods.empty() ? 0 :
+                                  mod_line_at_index( mods, static_cast<size_t>( cur ) );
+                if( mod_first_line_is_category( mods ) && active_line == 1 ) {
+                    active_line = 0;
+                }
+                if( const auto hit = scrollbar_input::click(
+                scrollbar_input::geometry{
+                    .offset = point_zero,
+                    .viewport_size = getmaxy( win ),
+                    .content_size = mod_line_count( mods ),
+                    .viewport_pos = active_line,
+                    .scroll_to_last = true,
+                }, *cell ) ) {
+                    if( const auto index = mod_index_for_line( mods, hit->viewport_pos ) ) {
+                        cursel[header] = *index;
+                        selection = *index;
+                        active_header = header;
+                    }
+                    last_clicked_mod[0] = last_clicked_mod[1] = -1;
+                    return true;
+                }
+                if( cell->y >= 0 && cell->y < getmaxy( win ) ) {
+                    if( const auto index = mod_index_at_line( mods, startsel[header] + cell->y ) ) {
+                        const int clicked = static_cast<int>( *index );
+                        if( header == active_header && clicked == cur &&
+                            last_clicked_mod[header] == clicked ) {
+                            // Second click on the same row performs the keyboard action.
+                            action = "CONFIRM";
+                            last_clicked_mod[0] = last_clicked_mod[1] = -1;
+                        } else {
+                            cursel[header] = *index;
+                            selection = *index;
+                            active_header = header;
+                            last_clicked_mod[0] = last_clicked_mod[1] = -1;
+                            last_clicked_mod[header] = clicked;
+                        }
+                        return true;
+                    }
+                }
+                return false;
+            };
+            if( !click_list( all_tabs[iCurrentTab].mods, w_list, 0 ) ) {
+                if( !click_list( active_mod_order, w_active, 1 ) ) {
+                    last_clicked_mod[0] = last_clicked_mod[1] = -1;
+                }
+            }
+        } else {
+            // Keyboard navigation, filters and tab changes invalidate the click pair.
+            last_clicked_mod[0] = last_clicked_mod[1] = -1;
+        }
 
         if( action == "DOWN" ) {
             selection = next_selection;

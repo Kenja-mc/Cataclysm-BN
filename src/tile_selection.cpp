@@ -315,6 +315,81 @@ auto runs_unasked( const choice &c ) -> bool
     return c.act != ACTION_SMASH && c.act != ACTION_JUMP;
 }
 
+auto add_choice( std::vector<choice> &out, choice c ) -> void
+{
+    const auto already = [&c]( const choice & other ) {
+        return other.act == c.act;
+    };
+    if( !std::ranges::any_of( out, already ) ) {
+        out.push_back( std::move( c ) );
+    }
+}
+
+/// The actions a right click lists for a tile in reach. Unlike an explicit Space click, bare
+/// ground is left alone: every floor is bashable, but right-clicking open ground must only select.
+auto clicked_choices_at( const avatar &you, const tripoint_bub_ms &p ) -> std::vector<choice>
+{
+    auto &m = get_map();
+    auto out = interact_choices( you, p, false );
+    const auto inside = !m.is_outside( you.bub_pos() );
+    // Open doors count as flat ground, so name them with furniture as real objects.
+    const auto door = m.can_open_door( &you, p, inside ) || m.close_door( p, inside, true );
+    const auto solid = door || m.has_furn( p ) ||
+                       ( m.is_bashable( p ) && !m.has_flag( "FLAT", p ) );
+    const auto smashable = std::ranges::any_of( out, []( const choice & c ) {
+        return c.act == ACTION_SMASH;
+    } );
+    if( solid && !smashable ) {
+        add_choice( out, { .act = ACTION_SMASH,
+                           .label = string_format( _( "smash the %s" ), m.name( p ) ) } );
+    }
+    return out;
+}
+
+/// Actions worth listing for a tile the player cannot reach: the reason is shown, not acted on.
+auto distant_choices_at( const avatar &you, const tripoint_bub_ms &p ) -> std::vector<choice>
+{
+    auto &m = get_map();
+    auto out = std::vector<choice>();
+    if( p.z() != you.bub_pos().z() ) {
+        return out;
+    }
+    if( m.can_open_door( &you, p, !m.is_outside( you.bub_pos() ) ) ) {
+        add_choice( out, { .act = ACTION_OPEN, .label = string_format( _( "open the %s" ), m.name( p ) ) } );
+    }
+    if( m.close_door( p, !m.is_outside( you.bub_pos() ), true ) ) {
+        add_choice( out, { .act = ACTION_CLOSE, .label = string_format( _( "close the %s" ), m.name( p ) ) } );
+    }
+    if( !you.is_mounted() && m.has_items( p ) && m.sees_some_items( p, you ) ) {
+        add_choice( out, { .act = ACTION_PICKUP, .label = _( "pick up items" ) } );
+    }
+    if( can_examine_at( p ) ) {
+        add_choice( out, { .act = ACTION_EXAMINE,
+                           .label = string_format( _( "examine the %s" ), m.name( p ) ) } );
+    }
+    return out;
+}
+
+/// Displays the tile's actions and runs the picked one. Returns true when one ran.
+auto show_interaction_menu( avatar &you, const tripoint_bub_ms &p, const tile_actions &actions,
+                            std::vector<choice> choices, const bool in_reach ) -> bool
+{
+    auto menu = uilist();
+    menu.text = string_format( _( "Interact with the %s" ), get_map().name( p ) );
+    if( !in_reach ) {
+        menu.text += "\n" + std::string( _( "You can't reach that tile." ) );
+    }
+    for( auto index = 0; const auto &c : choices ) {
+        menu.addentry( index++, in_reach, hotkey_for( c.act ), c.label );
+    }
+    menu.query();
+    if( in_reach && menu.ret >= 0 && static_cast<size_t>( menu.ret ) < choices.size() ) {
+        run_interaction( you, { .c = choices[menu.ret], .pos = p, .actions = actions } );
+        return true;
+    }
+    return false;
+}
+
 } // namespace
 
 auto interact_at( avatar &you, const tripoint_bub_ms &p, const tile_actions &actions ) -> void
@@ -335,15 +410,22 @@ auto interact_at( avatar &you, const tripoint_bub_ms &p, const tile_actions &act
         run_interaction( you, { .c = choices.front(), .pos = p, .actions = actions } );
         return;
     }
-    auto menu = uilist();
-    menu.text = string_format( _( "Interact with the %s" ), get_map().name( p ) );
-for( auto index = 0; const auto &c : choices ) {
-    menu.addentry( index++, true, hotkey_for( c.act ), c.label );
+    show_interaction_menu( you, p, actions, choices, true );
+}
+
+auto interact_menu_at( avatar &you, const tripoint_bub_ms &p, const tile_actions &actions ) -> bool
+{
+    // Right click never runs a lone action. A tile out of reach still lists what it offers,
+    // disabled, so the player sees why the click did nothing else.
+    const auto in_reach = reachable( you, p );
+    if( !in_reach && ( p.z() != you.bub_pos().z() || !you.sees( p ) ) ) {
+        return false;
     }
-    menu.query();
-    if( menu.ret >= 0 && static_cast<size_t>( menu.ret ) < choices.size() ) {
-    run_interaction( you, { .c = choices[menu.ret], .pos = p, .actions = actions } );
+    auto choices = in_reach ? clicked_choices_at( you, p ) : distant_choices_at( you, p );
+    if( choices.empty() ) {
+        return false;
     }
+    return show_interaction_menu( you, p, actions, std::move( choices ), in_reach );
 }
 
 auto interact_nearby( avatar &you, const tile_actions &actions ) -> bool
@@ -481,13 +563,23 @@ auto hover( avatar &you, map &m, const std::optional<tripoint_bub_ms> &p ) -> vo
         pending_click.reset();
         if( get_option<std::string>( "CONTROL_SCHEME" ) != "modern" ) {
             hovered_hint = _( "left: attack; right: select" );
-        } else if( const auto primary = primary_choice( you, *p ) ) {
-            //~ Mouse hint: what a left click does on the hovered tile, e.g. "left: open the door".
-            hovered_hint = string_format( _( "left: %s; right: select" ), primary->label );
         } else if( has_hostile( you, *p ) ) {
-            hovered_hint = _( "left: attack; right: select" );
+            hovered_hint = _( "left: attack; right: lock" );
         } else {
-            hovered_hint = _( "click: select" );
+            // Reachable objects run their actions from the right click. Distant ones still list
+            // them, disabled, so the hint must promise a menu rather than a plain selection.
+            const auto actions = reachable( you, *p ) ? clicked_choices_at( you, *p ) :
+                                 distant_choices_at( you, *p );
+            const auto right = actions.empty() ? std::string( _( "right: select" ) ) :
+                               std::string( _( "right: actions" ) );
+            if( const auto primary = primary_choice( you, *p ) ) {
+                //~ Mouse hint: what a left click does on the hovered tile, e.g. "left: open the door".
+                hovered_hint = string_format( _( "left: %1$s; %2$s" ), primary->label, right );
+            } else if( !actions.empty() ) {
+                hovered_hint = right;
+            } else {
+                hovered_hint = _( "click: select" );
+            }
         }
         return;
     }

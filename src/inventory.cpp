@@ -13,6 +13,7 @@
 #include "flat_set.h"
 #include "game.h"
 #include "iexamine.h"
+#include "inventory_shortcuts.h"
 #include "inventory_ui.h" // auto inventory blocking
 #include "locations.h"
 #include "map/map.h"
@@ -248,6 +249,10 @@ char inventory::find_usable_cached_invlet( const itype_id &item_type )
 {
     // Some of our preferred letters might already be used.
     for( auto invlet : invlet_cache.invlets_for( item_type ) ) {
+        // Digits are never auto-assigned; the player assigns them manually.
+        if( invlet_is_manual_digit( invlet ) ) {
+            continue;
+        }
         // Don't overwrite user assignments.
         if( assigned_invlet.contains( invlet ) ) {
             continue;
@@ -385,7 +390,7 @@ void inventory::restack( player &p )
         item &topmost = *stack.front();
 
         const item *invlet_item = p.invlet_to_item( topmost.invlet );
-        if( !inv_chars.valid( topmost.invlet ) || ( invlet_item != nullptr &&
+        if( !invlet_is_kept( topmost.invlet ) || ( invlet_item != nullptr &&
                 position_by_item( invlet_item ) != idx ) ) {
             assign_empty_invlet( topmost, p );
             for( auto &stack_iter : stack ) {

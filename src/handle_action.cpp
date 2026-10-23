@@ -782,6 +782,7 @@ auto open( const tripoint_bub_ms *target = nullptr ) -> void
         const ter_str_id tid = here.ter( openp ).id();
 
         if( here.has_flag( flag_LOCKED, openp ) ) {
+            u.remember_locked_door( bub_to_abs( openp ), false );
             add_msg( m_info, _( "The door is locked!" ) );
             return;
         } else if( tid.obj().close ) {
@@ -2093,6 +2094,10 @@ bool game::handle_action()
         remote_vehicle != nullptr );
 
     std::optional<tripoint_bub_ms> mouse_target;
+    // A right-click action ran from inside the mouse branch; the normal tail still runs for it.
+    auto interaction_ran = false;
+    // Moves before that menu, so its cost is measured like any other action's.
+    auto moves_before_interaction = std::optional<int>();
     auto reticle_attack_mode = aim_reticle::attack_mode::fire_command;
     const auto directed_peek = action.starts_with( "PEEK_" ) ? peek_direction( action ) : std::nullopt;
 
@@ -2190,12 +2195,38 @@ bool game::handle_action()
                 return false;
             }
             const auto mouse_move = get_option<bool>( "MOUSE_MOVE" );
-            const auto own_tile = act == ACTION_SELECT && *mouse_target == u.bub_pos() &&
-                                  get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+            const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+            const auto own_tile = act == ACTION_SELECT && *mouse_target == u.bub_pos() && modern;
             const auto own_choice = own_tile ? tile_selection::primary_choice( u, *mouse_target ) :
                                     std::nullopt;
-            if( own_choice && ( own_choice->act == ACTION_MOVE_DOWN ||
-                                own_choice->act == ACTION_MOVE_UP ) ) {
+            if( act == ACTION_SEC_SELECT && modern && tile_selection::enabled() ) {
+                // Modern right click locks the clicked tile and offers what it can do. It never
+                // walks, never spends moves before a choice, and never runs a lone action.
+                u.clear_destination();
+                destination_preview.clear();
+                if( !aim_reticle::select( u, m, *mouse_target ) ) {
+                    return false;
+                }
+                liveview.show( *mouse_target );
+                if( tile_selection::has_hostile( u, *mouse_target ) ) {
+                    return false;
+                }
+                moves_before_interaction = u.moves;
+                const auto actions = tile_selection::tile_actions{
+                    .examine = []( const tripoint_bub_ms & p ) { g->examine( p ); },
+                    .pickup = []( const tripoint_bub_ms & p ) { g->pickup( p ); },
+                    .butcher = [] { g->butcher(); },
+                    .vertical = [&act]( const action_id vertical ) { act = vertical; }
+                };
+                interaction_ran = tile_selection::interact_menu_at( u, *mouse_target, actions );
+                if( !interaction_ran ) {
+                    return false;
+                }
+                if( act == ACTION_SEC_SELECT ) {
+                    act = ACTION_NULL;
+                }
+            } else if( own_choice && ( own_choice->act == ACTION_MOVE_DOWN ||
+                                       own_choice->act == ACTION_MOVE_UP ) ) {
                 act = tile_selection::resolve( u, m, *own_choice, *mouse_target );
                 aim_reticle::clear();
                 liveview.hide();
@@ -2211,7 +2242,6 @@ bool game::handle_action()
                 }
                 // Modern: a nearby tile with something to use gets its main action; the click
                 // attacks a hostile and otherwise only selects, so it never walks.
-                const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
                 const auto primary = modern ? tile_selection::primary_choice( u, *mouse_target ) :
                                      std::nullopt;
                 if( primary ) {
@@ -2283,7 +2313,7 @@ bool game::handle_action()
         }
     }
 
-    if( act == ACTION_NULL ) {
+    if( act == ACTION_NULL && !interaction_ran ) {
         ZoneScopedN( "handle_action_unknown_command" );
         const input_event &&evt = ctxt.get_raw_input();
         if( !evt.sequence.empty() ) {
@@ -2324,7 +2354,8 @@ bool game::handle_action()
         soffset = get_option<int>( "MOVE_VIEW_OFFSET" );
     }
 
-    const auto before_action_moves = inventory_moves.value_or( u.moves );
+    const auto before_action_moves = inventory_moves.value_or(
+                                         moves_before_interaction.value_or( u.moves ) );
     if( !u.is_dead_state() && act >= ACTION_SHIFT_N && act <= ACTION_SHIFT_NW &&
         get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
         const auto move = static_cast<action_id>( ACTION_MOVE_FORTH + act - ACTION_SHIFT_N );

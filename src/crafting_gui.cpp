@@ -37,6 +37,7 @@
 #include "recipe.h"
 #include "recipe_dictionary.h"
 #include "requirements.h"
+#include "scrollbar_input.h"
 #include "skill.h"
 #include "string_formatter.h"
 #include "string_input_popup.h"
@@ -52,6 +53,7 @@
 #include <cstring>
 #include <iterator>
 #include <map>
+#include <optional>
 #include <regex>
 #include <set>
 #include <string>
@@ -72,6 +74,12 @@ enum TAB_MODE {
     BATCH
 };
 
+struct craft_tab_hit {
+    point origin;
+    int width = 0;
+    int index = 0;
+};
+
 std::vector<std::string> craft_cat_list;
 std::map<std::string, std::vector<std::string> > craft_subcat_list;
 std::map<std::string, std::string> normalized_names;
@@ -82,11 +90,13 @@ static void draw_can_craft_indicator( const catacurses::window &w, const recipe 
                                       const Character &crafter );
 static void draw_recipe_tabs( const catacurses::window &w, const std::string &tab,
                               TAB_MODE mode, const bool filtered_unread,
-                              std::map<std::string, bool> &unread, int width_for_tabs );
+                              std::map<std::string, bool> &unread, int width_for_tabs,
+                              std::vector<craft_tab_hit> &hits );
 static void draw_recipe_subtabs( const catacurses::window &w, const std::string &tab,
                                  const std::string &subtab,
                                  const recipe_subset &available_recipes, TAB_MODE mode,
-                                 std::map<std::string, bool> &unread );
+                                 std::map<std::string, bool> &unread,
+                                 std::vector<craft_tab_hit> &hits );
 
 std::string peek_related_recipe( const recipe *current, const recipe_subset &available,
                                  const Character &crafter );
@@ -811,6 +821,11 @@ static input_context make_crafting_context( bool highlight_unread_recipes )
     ctxt.register_action( "TOGGLE_UNAVAILABLE" );
     ctxt.register_action( "CRAFT_PARTS", to_translation( "Craft parts first" ) );
     ctxt.register_action( "ASSIGN_NPC_CRAFT", to_translation( "Assign nearest NPC to craft" ) );
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
     if( highlight_unread_recipes ) {
         ctxt.register_action( "TOGGLE_RECIPE_UNREAD" );
         ctxt.register_action( "MARK_ALL_RECIPES_READ" );
@@ -917,6 +932,7 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
     int item_info_width = 0;
     const bool highlight_unread_recipes = get_option<bool>( "HIGHLIGHT_UNREAD_RECIPES" );
     const bool enable_nested_categories = get_option<bool>( "ENABLE_NESTED_CATEGORIES" );
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
 
     input_context ctxt = make_crafting_context( highlight_unread_recipes );
 
@@ -1014,6 +1030,14 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
     // (recalc fires when inventory changes, e.g. picking up items or crafting).
     std::unordered_map<const recipe *, std::string> part_markers;
     int line = 0;
+    // Last recipe row picked with the mouse, for click-then-confirm.
+    int last_clicked_recipe = -1;
+    // Geometry of the drawn scrollbars, refreshed by on_redraw.
+    int recipe_info_total_lines = 0;
+    int recipe_info_scrollbar_x = -1;
+    int recipe_list_click_end = 32;
+    std::vector<craft_tab_hit> head_tab_hits;
+    std::vector<craft_tab_hit> subtab_hits;
     bool unread_recipes_first = false;
     bool user_moved_line = false;
     bool recalc = true;
@@ -1094,6 +1118,8 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
 
     int recipe_scroll_window_min = 0;
     ui.on_redraw( [&]( ui_adaptor & ui ) {
+        recipe_info_total_lines = 0;
+        recipe_info_scrollbar_x = -1;
         int lost_width = 0;
         // Need to do this to get the width
         // But draw tabs removes the text
@@ -1103,10 +1129,10 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
 
         const TAB_MODE m = ( batch ) ? BATCH : ( filterstring.empty() ) ? NORMAL : FILTERED;
         draw_recipe_tabs( w_head, tab.cur(), m, is_filtered_unread, is_cat_unread,
-                          getmaxx( w_head ) - lost_width );
+                          getmaxx( w_head ) - lost_width, head_tab_hits );
         const auto &shown_recipes = show_unavailable ? all_recipes : available_recipes;
         draw_recipe_subtabs( w_subhead, tab.cur(), subtab.cur(), shown_recipes, m,
-                             is_subcat_unread[tab.cur()] );
+                             is_subcat_unread[tab.cur()], subtab_hits );
 
         if( !show_hidden ) {
             draw_hidden_amount( w_head, num_hidden, num_recipe );
@@ -1133,6 +1159,7 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
         mvwputch( w_data, point( width - 1, dataHeight - 1 ), BORDER_COLOR, LINE_XOOX ); // _|
 
         const int max_recipe_name_width = 27;
+        recipe_list_click_end = 1 + 1 + max_recipe_name_width + 3;
         int recmax = current.size();
 
         // Draw recipes with scroll list
@@ -1270,6 +1297,8 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
                 }
 
                 if( total_lines > dataLines ) {
+                    recipe_info_scrollbar_x = xpos + fold_width + 1;
+                    recipe_info_total_lines = total_lines;
                     scrollbar().offset_x( xpos + fold_width + 1 ).content_size( total_lines )
                     .viewport_pos( recipe_info_scroll ).viewport_size( dataLines )
                     .apply( w_data );
@@ -1720,7 +1749,112 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
 
         ui_manager::redraw();
         const int scroll_recipe_info_lines = catacurses::getmaxy( w_iteminfo ) - 4;
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        const bool mouse_select = modern && action == "SELECT";
+        if( mouse_select ) {
+            // get_coordinates() is relative to the window centre.
+            const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
+                const auto mouse = ctxt.get_coordinates( win );
+                if( !mouse )
+                {
+                    return std::nullopt;
+                }
+                const auto cell = mouse->xy().raw() + point( getmaxx( win ), getmaxy( win ) ) / 2;
+                if( cell.x < 0 || cell.y < 0 ||
+                    cell.x >= getmaxx( win ) || cell.y >= getmaxy( win ) )
+                {
+                    return std::nullopt;
+                }
+                return cell;
+            };
+            action.clear();
+            bool consumed = false;
+            if( const auto cell = cell_in( w_data ) ) {
+                if( const auto hit = scrollbar_input::click(
+                scrollbar_input::geometry{
+                    .offset = point_zero,
+                    .viewport_size = dataLines,
+                    .content_size = static_cast<int>( current.size() ),
+                    .viewport_pos = line,
+                    .scroll_to_last = true,
+                }, *cell ) ) {
+                    line = std::clamp( hit->viewport_pos, 0,
+                                       std::max( 0, static_cast<int>( current.size() ) - 1 ) );
+                    consumed = true;
+                } else if( recipe_info_scrollbar_x >= 0 && recipe_info_total_lines > 0 ) {
+                    if( const auto info_hit = scrollbar_input::click(
+                    scrollbar_input::geometry{
+                        .offset = point( recipe_info_scrollbar_x, 0 ),
+                        .viewport_size = dataLines,
+                        .content_size = recipe_info_total_lines,
+                        .viewport_pos = recipe_info_scroll,
+                        .scroll_to_last = false,
+                    }, *cell ) ) {
+                        recipe_info_scroll = info_hit->viewport_pos;
+                        consumed = true;
+                    }
+                }
+            }
+            if( consumed ) {
+                // Scrollbar clicks never craft or select the row underneath.
+                last_clicked_recipe = -1;
+            } else {
+                bool on_tab = false;
+                if( const auto cell = cell_in( w_head ) ) {
+                    if( cell->y <= 1 ) {
+                        for( const craft_tab_hit &span : head_tab_hits ) {
+                            if( cell->x >= span.origin.x && cell->x < span.origin.x + span.width ) {
+                                tab.set_index( static_cast<size_t>( span.index ) );
+                                subtab = list_circularizer<std::string>( craft_subcat_list[tab.cur()] );
+                                recalc = true;
+                                recalc_unread = highlight_unread_recipes;
+                                on_tab = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if( !on_tab ) {
+                    if( const auto cell = cell_in( w_subhead ) ) {
+                        if( cell->y == 0 ) {
+                            for( const craft_tab_hit &span : subtab_hits ) {
+                                if( cell->x >= span.origin.x && cell->x < span.origin.x + span.width ) {
+                                    subtab.set_index( static_cast<size_t>( span.index ) );
+                                    recalc = true;
+                                    recalc_unread = highlight_unread_recipes;
+                                    on_tab = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                if( on_tab ) {
+                    last_clicked_recipe = -1;
+                } else if( const auto cell = cell_in( w_data ) ) {
+                    const int row = recipe_scroll_window_min + cell->y;
+                    if( cell->y < dataLines && cell->x >= 2 && cell->x < recipe_list_click_end &&
+                        row >= 0 && row < static_cast<int>( current.size() ) ) {
+                        if( row == line && last_clicked_recipe == row ) {
+                            // Second click on the same row performs the keyboard action.
+                            action = "CONFIRM";
+                            last_clicked_recipe = -1;
+                        } else {
+                            line = row;
+                            user_moved_line = highlight_unread_recipes;
+                            last_clicked_recipe = row;
+                        }
+                    } else {
+                        last_clicked_recipe = -1;
+                    }
+                } else {
+                    last_clicked_recipe = -1;
+                }
+            }
+        } else {
+            // Keyboard navigation, filters and tab changes invalidate the click pair.
+            last_clicked_recipe = -1;
+        }
         if( action == "SCROLL_RECIPE_INFO_UP" ) {
             recipe_info_scroll -= dataLines;
             item_info_scroll -= dataLines;
@@ -2319,9 +2453,11 @@ static void draw_can_craft_indicator( const catacurses::window &w, const recipe 
 }
 
 static void draw_recipe_tabs( const catacurses::window &w, const std::string &tab, TAB_MODE mode,
-                              const bool filtered_unread, std::map<std::string, bool> &unread, int width_for_tabs )
+                              const bool filtered_unread, std::map<std::string, bool> &unread, int width_for_tabs,
+                              std::vector<craft_tab_hit> &hits )
 {
     werase( w );
+    hits.clear();
 
     switch( mode ) {
         case NORMAL: {
@@ -2343,6 +2479,41 @@ static void draw_recipe_tabs( const catacurses::window &w, const std::string &ta
             }
 
             draw_tabs( w, tabs, real_tab, width_for_tabs );
+
+            // Mirror draw_tabs() placement so clicks land on the drawn tab.
+            const int tab_step = 3;
+            int total_used_width = 0;
+            int current = 0;
+            const auto current_it = std::ranges::find( tabs, real_tab );
+            const size_t current_tab = static_cast<size_t>( current_it - tabs.begin() );
+            for( size_t i = 0; i < tabs.size(); ++i ) {
+                total_used_width += utf8_width( tabs[i] ) + tab_step;
+                if( i == current_tab ) {
+                    current = total_used_width;
+                }
+            }
+            int start = 0;
+            calcStartPos( start, current, width_for_tabs, total_used_width );
+            int start_i = 0;
+            if( start != 0 ) {
+                current = 0;
+                for( size_t i = 0; i < tabs.size(); ++i ) {
+                    current += utf8_width( tabs[i] ) + tab_step;
+                    if( current >= start ) {
+                        start_i = static_cast<int>( i ) + 1;
+                        break;
+                    }
+                }
+            }
+            int x = 2;
+            for( size_t i = static_cast<size_t>( start_i ); i < tabs.size(); ++i ) {
+                int newx = x + utf8_width( tabs[i] ) + tab_step;
+                if( newx <= width_for_tabs ) {
+                    hits.push_back( craft_tab_hit{ point( x, 0 ), utf8_width( tabs[i] ) + 2,
+                                                   static_cast<int>( i ) } );
+                }
+                x = newx;
+            }
             break;
         }
         case FILTERED: {
@@ -2370,9 +2541,11 @@ static void draw_recipe_tabs( const catacurses::window &w, const std::string &ta
 static void draw_recipe_subtabs( const catacurses::window &w, const std::string &tab,
                                  const std::string &subtab,
                                  const recipe_subset &available_recipes, TAB_MODE mode,
-                                 std::map<std::string, bool> &unread )
+                                 std::map<std::string, bool> &unread,
+                                 std::vector<craft_tab_hit> &hits )
 {
     werase( w );
+    hits.clear();
     int width = getmaxx( w );
     for( int i = 0; i < width; i++ ) {
         if( i == 0 ) {
@@ -2395,10 +2568,13 @@ static void draw_recipe_subtabs( const catacurses::window &w, const std::string 
             int pos_x = 2;
             // Step between tabs, two for tabs border
             int tab_step = 3;
+            int subtab_index = 0;
             for( const auto &stt : craft_subcat_list[tab] ) {
                 bool empty = available_recipes.empty_category( tab, stt != "CSC_ALL" ? stt : "" );
                 const std::string subtab_name = normalized_names[stt];
                 draw_subtab( w, pos_x, subtab_name, subtab == stt, true, empty );
+                hits.push_back( craft_tab_hit{ point( pos_x, 0 ), utf8_width( subtab_name ) + 2,
+                                               subtab_index++ } );
                 pos_x += utf8_width( subtab_name ) + tab_step;
                 if( unread[stt] ) {
                     mvwprintz( w, point( pos_x - 2, 0 ), c_light_green, "⁺" );

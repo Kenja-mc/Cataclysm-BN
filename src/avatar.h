@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <unordered_set>
@@ -24,6 +25,7 @@ class mission;
 class monster;
 class npc;
 class map_memory;
+enum class locked_door_kind : std::uint8_t;
 struct memorized_terrain_tile;
 
 namespace debug_menu
@@ -150,6 +152,12 @@ class avatar : public player
         int get_memorized_symbol( const tripoint_abs_ms &p ) const;
         void clear_memorized_overlay( const tripoint_abs_ms &pos );
         void clear_memorized_tile( const tripoint_abs_ms &pos );
+        /** Returns what the avatar learned about a locked door here, or none when untried. */
+        auto get_known_locked_door( const tripoint_abs_ms &p ) const -> locked_door_kind;
+        /** Records that the avatar's own open attempt found this door locked. */
+        auto remember_locked_door( const tripoint_abs_ms &p, bool vehicle ) -> void;
+        /** Forgets a known locked door, e.g. after opening it. */
+        auto forget_locked_door( const tripoint_abs_ms &p ) -> void;
         /** Returns last stored map tile in given location in tiles mode */
         bool has_memorized_tile_for_autodrive( const tripoint_abs_ms &p ) const;
 

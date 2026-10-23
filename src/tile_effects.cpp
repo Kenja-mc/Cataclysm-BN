@@ -103,6 +103,13 @@ auto phase_of( const tripoint_bub_ms &pos ) -> int
     return std::abs( pos.x() * 31 + pos.y() * 17 + pos.z() * 7 ) % 256;
 }
 
+/// Floor modulo keeps negative animation ticks inside the loop.
+auto loop_index( int tick, int count ) -> int
+{
+    const auto rem = tick % count;
+    return rem < 0 ? rem + count : rem;
+}
+
 } // namespace
 
 namespace tile_effects
@@ -119,8 +126,9 @@ auto overlay_tile_id( const overlay_options &opt, int idle_frame ) -> const std:
     if( stage == nullptr ) {
         return nullptr;
     }
-    const int frame = ( idle_frame / idle_frames_per_loop_frame + phase_of( opt.pos ) ) %
-                      stage->frame_count;
+    const auto tick = loop_index( idle_frame, idle_frames_per_loop_frame * stage->frame_count );
+    const auto frame = ( tick / idle_frames_per_loop_frame + phase_of( opt.pos ) ) %
+                       stage->frame_count;
     return &stage->frames[frame];
 }
 

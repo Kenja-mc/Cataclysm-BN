@@ -73,6 +73,12 @@ from interaction_routes import TESTS as INTERACTION_ROUTES_TESTS
 from tutorial_routes import TESTS as TUTORIAL_ROUTES_TESTS
 from grouped_sidebar import TESTS as GROUPED_SIDEBAR_TESTS
 from unbound_mouse import TESTS as UNBOUND_MOUSE_TESTS
+from menu_scrollbars import TESTS as MENU_SCROLLBARS_TESTS
+from overmap_controls import TESTS as OVERMAP_CONTROLS_TESTS
+from target_lock import TESTS as TARGET_LOCK_TESTS
+from numeric_invkeys import TESTS as NUMERIC_INVKEYS_TESTS
+from wear_refresh import TESTS as WEAR_REFRESH_TESTS
+from creation_crafting_mouse import TESTS as CREATION_CRAFTING_MOUSE_TESTS
 
 # The modules, in run order. A module's tests that take `g` run on the main game, so a
 # test that needs the state another left behind belongs after it in this order.
@@ -119,6 +125,12 @@ MODULES = [
     ("tutorial_routes", TUTORIAL_ROUTES_TESTS),
     ("grouped_sidebar", GROUPED_SIDEBAR_TESTS),
     ("unbound_mouse", UNBOUND_MOUSE_TESTS),
+    ("menu_scrollbars", MENU_SCROLLBARS_TESTS),
+    ("overmap_controls", OVERMAP_CONTROLS_TESTS),
+    ("target_lock", TARGET_LOCK_TESTS),
+    ("numeric_invkeys", NUMERIC_INVKEYS_TESTS),
+    ("wear_refresh", WEAR_REFRESH_TESTS),
+    ("creation_crafting_mouse", CREATION_CRAFTING_MOUSE_TESTS),
     # Applies and resets world options on the main world, so it runs last.
     ("world_presets", WORLD_PRESETS_TESTS),
 ]
@@ -172,6 +184,12 @@ SMOKE = [
     "test_classic_tutorial_preserves_classic_controls",
     "test_grouped_sidebar_fresh_default_has_no_map_overlays",
     "test_unbound_mouse_wheel_is_silent",
+    "test_uilist_scrollbar_jumps_and_arrows",
+    "test_m_toggles_overmap_without_travel",
+    "test_f_without_selection_attacks_an_adjacent_enemy",
+    "test_modern_reassign_accepts_digit_and_digit_selects_item",
+    "test_wear_moves_shirt_into_worn_and_keeps_menu_open",
+    "test_modern_crafting_scrollbar_moves_selection_without_crafting",
     "test_world_defaults_unchanged_without_preset",
 ]
 SMOKE_TESTS = [test for test in TESTS if test.__name__ in SMOKE]

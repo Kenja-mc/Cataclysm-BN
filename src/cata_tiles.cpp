@@ -23,6 +23,7 @@
 #    include "fstream_utils.h"
 #    include "game.h"
 #    include "game_constants.h"
+#    include "icon_font.h"
 #    include "init.h"
 #    include "input.h"
 #    include "int_id.h"
@@ -361,7 +362,8 @@ void idle_animation_manager::prepare_for_redraw()
     auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>( now );
     auto value = now_ms.time_since_epoch();
     // Aiming roughly at the standard 60 frames per second
-    frame = value.count() / 17;
+    // Bound the epoch-derived counter before narrowing to int.
+    frame = static_cast<int>( ( value.count() / 17 ) & 0x3FFFFFFF );
 }
 
 struct tile_render_info {
@@ -3824,9 +3826,17 @@ void cata_tiles::draw( point dest, const tripoint_bub_ms &center, int width, int
 
     {
         ZoneScopedN( "cata_tiles_draw_final_layers" );
+        const auto show_known_lock_icons = get_option<bool>( "KNOWN_LOCKED_DOOR_ICONS" );
         for( tile_render_info &p : draw_points ) {
             for( const auto f : final_drawing_layers ) {
                 ( this->*f )( p.pos, p.ll, p.height_3d, p.invisible, 0 );
+            }
+            // A visible tile may have changed since the avatar last tried its door.
+            if( !p.invisible[0] ) {
+                refresh_known_locked_door( p.pos );
+            }
+            if( show_known_lock_icons ) {
+                draw_known_locked_door( p.pos, overlay_strings );
             }
         }
 
@@ -5300,7 +5310,63 @@ auto items_on_furniture_surface( const tripoint_bub_ms &p ) -> bool
 
 } // namespace
 
-bool cata_tiles::draw_terrain( const tripoint_bub_ms &p, const lit_level ll, int &height_3d,
+auto cata_tiles::refresh_known_locked_door( const tripoint_bub_ms &p ) -> void
+{
+    auto &here = get_map();
+    auto &you = get_avatar();
+    const auto abs = bub_to_abs( p );
+    switch( you.get_known_locked_door( abs ) ) {
+        case locked_door_kind::none:
+            return;
+        case locked_door_kind::terrain:
+            // Seen again and no longer locked (opened, unlocked, destroyed or replaced).
+            if( !here.has_flag( "LOCKED", p ) ) {
+                you.forget_locked_door( abs );
+            }
+            return;
+        case locked_door_kind::vehicle: {
+            const auto vp = here.veh_at( p );
+            if( !vp ) {
+                you.forget_locked_door( abs );
+                return;
+            }
+            const auto openable = vp->part_with_feature( "OPENABLE", true );
+            const auto lock_part = vp->part_with_feature( "DOOR_LOCKING", true );
+            if( !openable || !lock_part || vp->vehicle().is_open( openable->part_index() ) ) {
+                you.forget_locked_door( abs );
+            }
+            return;
+        }
+    }
+}
+
+auto cata_tiles::draw_known_locked_door( const tripoint_bub_ms &p,
+        std::multimap<point, formatted_text> &overlay_strings ) -> void
+{
+    if( get_avatar().get_known_locked_door( bub_to_abs( p ) ) == locked_door_kind::none ) {
+        return;
+    }
+
+    // The item sprite named "lock" already exists in some tilesets; draw it over the door.
+    // It has a transparent background, so the door stays visible.
+    if( tileset_ptr && tileset_ptr->find_tile_type( "lock" ) ) {
+        const auto lock_tile_id = std::string( "lock" );
+        const auto tile = tile_search_params{ .id = lock_tile_id, .category = C_ITEM,
+                                              .subcategory = empty_string, .subtile = 0, .rota = 0 };
+        auto height_3d = 0;
+        if( draw_from_id_string( tile, p, std::nullopt, std::nullopt, lit_level::LIT,
+                                 false, 0, false, height_3d ) ) {
+            return;
+        }
+    }
+
+    // Every tileset gets the bundled Material Design padlock from the icon font.
+    overlay_strings.emplace(
+        player_to_screen( p.xy() ) + point( tile_width / 4, tile_height / 4 ),
+        formatted_text( icon_font::lock, catacurses::yellow, direction::NORTH ) );
+}
+
+bool cata_tiles::draw_terrain( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
                                const bool ( &invisible )[5], int z_drop )
 {
     map &here = get_map();

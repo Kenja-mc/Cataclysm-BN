@@ -7,8 +7,10 @@
 #include "char_validity_check.h"
 #include "ime.h"
 #include "input.h"
+#include "options.h"
 #include "output.h"
 #include "point.h"
+#include "scrollbar_input.h"
 #include "translations.h"
 #include "ui.h"
 #include "ui_manager.h"
@@ -130,6 +132,12 @@ void string_input_popup::create_context()
     ctxt->register_action( "SCROLL_DOWN" );
     ctxt->register_action( "NUMPAD_6" );
     ctxt->register_action( "ANY_INPUT" );
+    if( desc_view_ptr && get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        ctxt->register_action( "COORDINATE" );
+        ctxt->register_action( "MOUSE_MOVE" );
+        ctxt->register_action( "SELECT" );
+        ctxt->register_action( "SEC_SELECT" );
+    }
 }
 
 void string_input_popup::show_history( utf8_wrapper &ret )
@@ -438,6 +446,21 @@ const std::string &string_input_popup::query_string( const bool loop, const bool
         const input_event ev = ctxt->get_raw_input();
         ch = ev.type == input_event_t::keyboard ? ev.get_first_input() : 0;
         _handled = true;
+
+        if( desc_view_ptr && ev.type == input_event_t::mouse && action == "SELECT" &&
+            get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+            const auto cell = ev.mouse_pos - point( getbegx( w_description ), getbegy( w_description ) );
+            if( const auto hit = scrollbar_input::click( {
+                .offset = point_zero,
+                .viewport_size = getmaxy( w_description ),
+                .content_size = desc_view_ptr->num_lines(),
+                .viewport_pos = desc_view_ptr->offset(),
+                .scroll_to_last = false,
+            }, cell ) ) {
+                desc_view_ptr->scroll_to( hit->viewport_pos );
+            }
+            continue;
+        }
 
         if( callbacks[ch] ) {
             if( callbacks[ch]() ) {

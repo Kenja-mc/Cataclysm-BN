@@ -29,6 +29,7 @@
 #include "path_info.h"
 #include "popup.h"
 #include "profile.h"
+#include "scrollbar_input.h"
 #include "string_formatter.h"
 #include "string_input_popup.h"
 #include "string_utils.h"
@@ -1218,6 +1219,14 @@ action_id input_context::display_menu( const bool permit_execute_action )
     ctxt.register_action( "TEXT.INPUT_FROM_FILE" );
     ctxt.register_action( "ANY_INPUT" );
 
+    const bool modern_scheme = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern_scheme ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
+
     if( category != "HELP_KEYBINDINGS" ) {
         // avoiding inception!
         ctxt.register_action( "HELP_KEYBINDINGS" );
@@ -1378,6 +1387,30 @@ action_id input_context::display_menu( const bool permit_execute_action )
         filtered_registered_actions = filter_strings_by_phrase( org_registered_actions, filter_phrase );
         if( scroll_offset > filtered_registered_actions.size() ) {
             scroll_offset = 0;
+        }
+
+        if( modern_scheme && action == "SELECT" &&
+            ctxt.get_raw_input().type == input_event_t::mouse ) {
+            const auto mouse = ctxt.get_raw_input().mouse_pos -
+                               point( getbegx( w_help ), getbegy( w_help ) );
+            if( const auto hit = scrollbar_input::click( {
+                .offset = point( 0, 10 ),
+                .viewport_size = static_cast<int>( display_height ),
+                .content_size = static_cast<int>( filtered_registered_actions.size() ),
+                .viewport_pos = static_cast<int>( scroll_offset ),
+                .scroll_to_last = false,
+            }, mouse ) ) {
+                scroll_offset = static_cast<size_t>( hit->viewport_pos );
+            } else if( status != s_show ) {
+                const auto row = mouse.y - 10;
+                const auto index = row + static_cast<int>( scroll_offset );
+                if( row >= 0 && row < static_cast<int>( display_height ) &&
+                    row < static_cast<int>( hotkeys.size() ) &&
+                    index >= 0 && index < static_cast<int>( filtered_registered_actions.size() ) ) {
+                    raw_input_char = hotkeys[row];
+                    action.clear();
+                }
+            }
         }
 
         // In addition to the modifiable hotkeys, we also check for hardcoded

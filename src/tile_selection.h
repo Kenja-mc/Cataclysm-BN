@@ -48,6 +48,9 @@ struct tile_actions {
 };
 /// A picked tile: one safe action runs at once, several open a menu.
 auto interact_at( avatar &you, const tripoint_bub_ms &p, const tile_actions &actions ) -> void;
+/// Right click: always lists the tile's actions and never runs one. A tile out of reach lists
+/// what it offers, disabled, with the reason. True when the player picked and ran an action.
+auto interact_menu_at( avatar &you, const tripoint_bub_ms &p, const tile_actions &actions ) -> bool;
 /// Every action on the surrounding tiles in one menu; false when there is none.
 auto interact_nearby( avatar &you, const tile_actions &actions ) -> bool;
 /// The action a left click on a tile takes without moving, if there is one.

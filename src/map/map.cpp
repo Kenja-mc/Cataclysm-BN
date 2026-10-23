@@ -4698,6 +4698,34 @@ auto map::can_open_door(
 }
 
 
+namespace
+{
+
+/// Tells the avatar's map memory that its own open attempt found a door locked or unlocked.
+struct locked_door_record {
+    const map &here;
+    const map::interacting_entity &who;
+    const tripoint_bub_ms &p;
+    bool vehicle;
+    bool locked;
+};
+
+auto record_locked_door( const locked_door_record &params ) -> void
+{
+    const auto *ch = std::get_if<Character *>( &params.who );
+    if( ch == nullptr || *ch == nullptr || !( *ch )->is_avatar() ) {
+        return;
+    }
+    auto *const you = ( *ch )->as_avatar();
+    if( params.locked ) {
+        you->remember_locked_door( map_local_to_abs( params.here, params.p ), params.vehicle );
+    } else {
+        you->forget_locked_door( map_local_to_abs( params.here, params.p ) );
+    }
+}
+
+} // namespace
+
 auto map::open_door(const interacting_entity& who, const tripoint_bub_ms& p, const bool inside)
     -> bool {
     const auto& ter = this->ter(p).obj();
@@ -4757,6 +4785,7 @@ auto map::open_door_ter(
     se.variant = ter.id.str();
     sounds::sound(se);
     ter_set(p, ter.open);
+    record_locked_door( { .here = *this, .who = who, .p = p, .vehicle = false, .locked = false } );
 
     const auto is_schizo = std::visit(
         []<typename T>(T u) -> bool {
@@ -4808,6 +4837,7 @@ auto map::open_door_furn(
     se.variant = furn.id.str();
     sounds::sound(se);
     furn_set(p, furn.open);
+    record_locked_door( { .here = *this, .who = who, .p = p, .vehicle = false, .locked = false } );
     return true;
 }
 
@@ -4872,12 +4902,14 @@ auto map::open_door_veh(
         const auto dpart = veh.next_part_to_open(vp->part_index(), !inside);
         you->add_msg_if_player(
             _("The %1$s's %2$s is locked."), veh.name, veh.part_info(dpart).name());
+        record_locked_door( { .here = *this, .who = who, .p = p, .vehicle = true, .locked = true } );
 
         return false;
     }
 
     const int openable = vp->vehicle().next_part_to_open(vp->part_index(), !inside);
     vp->vehicle().open_all_at(openable);
+    record_locked_door( { .here = *this, .who = who, .p = p, .vehicle = true, .locked = false } );
     return true;
 }
 

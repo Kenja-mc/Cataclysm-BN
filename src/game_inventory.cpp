@@ -21,6 +21,7 @@
 #include "game.h"
 #include "input.h"
 #include "inventory.h"
+#include "inventory_shortcuts.h"
 #include "inventory_ui.h"
 #include "item.h"
 #include "item_category.h"
@@ -1897,7 +1898,7 @@ void game_menus::inv::reassign_letter( Character &who, item &it, int invlet )
         }
     }
 
-    if( !invlet || inv_chars.valid( invlet ) ) {
+    if( !invlet || invlet_is_kept( invlet ) ) {
         auto &invlets = who.inv_assigned_invlet();
         const auto iter = invlets.find( it.invlet );
         bool found = iter != invlets.end();
@@ -1913,9 +1914,12 @@ void game_menus::inv::reassign_letter( Character &who, item &it, int invlet )
 
 void game_menus::inv::prompt_reassign_letter( Character &who, item &it )
 {
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
     while( true ) {
         const int invlet = popup_getkey(
-                               _( "Enter new letter.  Press SPACE to clear a manually assigned letter, ESCAPE to cancel." ) );
+                               modern
+                               ? _( "Enter new letter or number (0-9).  Press SPACE to clear a manually assigned key, ESCAPE to cancel." )
+                               : _( "Enter new letter.  Press SPACE to clear a manually assigned letter, ESCAPE to cancel." ) );
 
         if( invlet == KEY_ESCAPE ) {
             break;
@@ -1928,7 +1932,8 @@ void game_menus::inv::prompt_reassign_letter( Character &who, item &it )
                        "If this is undesired, you may wish to change the setting in Options." ) );
             }
             break;
-        } else if( inv_chars.valid( invlet ) ) {
+        } else if( inv_chars.valid( invlet ) ||
+                   ( modern && invlet_is_manual_digit( invlet ) ) ) {
             reassign_letter( who, it, invlet );
             break;
         }
@@ -1950,8 +1955,13 @@ void game_menus::inv::swap_letters( player &p )
         return;
     }
 
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
     while( true ) {
-        const std::string invlets = colorize_symbols( inv_chars.get_allowed_chars(),
+        auto allowed_chars = inv_chars.get_allowed_chars();
+        if( modern ) {
+            allowed_chars += "0123456789";
+        }
+        const std::string invlets = colorize_symbols( allowed_chars,
         [ &p ]( const std::string::value_type & elem ) {
             if( p.inv_assigned_invlet().contains( elem ) ) {
                 return c_yellow;

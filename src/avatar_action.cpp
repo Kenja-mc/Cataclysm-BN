@@ -810,8 +810,10 @@ bool avatar_action::move( avatar &you, map &m, const tripoint_rel_ms &d )
     } else if( m.ter( dest_loc ) == t_door_locked || m.ter( dest_loc ) == t_door_locked_peep ||
                m.ter( dest_loc ) == t_door_locked_alarm || m.ter( dest_loc ) == t_door_locked_interior ) {
         // Don't drain move points for learning something you could learn just by looking
+        you.remember_locked_door( bub_to_abs( dest_loc ), false );
         add_msg( _( "That door is locked!" ) );
     } else if( m.ter( dest_loc ) == t_door_bar_locked ) {
+        you.remember_locked_door( bub_to_abs( dest_loc ), false );
         add_msg( _( "You rattle the bars but the door is locked!" ) );
     } else if( !you.is_auto_moving() && !m.passable( dest_loc ) &&
                get_option<std::string>( "CONTROL_SCHEME" ) != "classic" ) {

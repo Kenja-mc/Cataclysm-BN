@@ -1,6 +1,18 @@
 [
   {
     "type": "keybinding",
+    "id": "QUIT",
+    "category": "OVERMAP",
+    "name": "Close overmap",
+    "bindings": [
+      { "input_method": "keyboard", "key": "ESC" },
+      { "input_method": "keyboard", "key": "m" },
+      { "input_method": "keyboard", "key": "Q" },
+      { "input_method": "gamepad", "key": "JOY_3" }
+    ]
+  },
+  {
+    "type": "keybinding",
     "id": "COMBINE",
     "category": "INVENTORY_ITEM",
     "name": "Combine",

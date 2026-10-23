@@ -32,6 +32,7 @@
 #include "options.h"
 #include "popup.h"
 #include "rng.h"
+#include "scrollbar_input.h"
 #include "string_formatter.h"
 #include "string_input_popup.h"
 #include "ui_manager.h"
@@ -369,9 +370,18 @@ void scrollable_text( const std::function<catacurses::window()> &init_window,
     ctxt.register_action( "DOWN" );
     ctxt.register_action( "PAGE_UP" );
     ctxt.register_action( "PAGE_DOWN" );
+    ctxt.register_action( "SCROLL_UP" );
+    ctxt.register_action( "SCROLL_DOWN" );
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
 
     catacurses::window w;
     int width = 0;
@@ -416,6 +426,21 @@ void scrollable_text( const std::function<catacurses::window()> &init_window,
         ui_manager::redraw();
 
         action = ctxt.handle_input();
+        if( modern && action == "SELECT" ) {
+            if( const auto mouse = ctxt.get_coordinates( w ) ) {
+                const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
+                if( const auto hit = scrollbar_input::click( {
+                    .offset = point( width - 1, text2.y ),
+                    .viewport_size = text_h,
+                    .content_size = static_cast<int>( lines.size() ),
+                    .viewport_pos = std::min( beg_line, max_beg_line ),
+                    .scroll_to_last = false,
+                }, cell ) ) {
+                    beg_line = std::min( hit->viewport_pos, max_beg_line );
+                    continue;
+                }
+            }
+        }
         if( action == "UP" ) {
             if( beg_line > 0 ) {
                 --beg_line;
@@ -435,6 +460,10 @@ void scrollable_text( const std::function<catacurses::window()> &init_window,
             if( beg_line < max_beg_line ) {
                 beg_line += text_h;
             }
+        } else if( action == "SCROLL_UP" ) {
+            beg_line = std::max( 0, beg_line - 3 );
+        } else if( action == "SCROLL_DOWN" ) {
+            beg_line = std::min( max_beg_line, beg_line + 3 );
         }
     } while( action != "CONFIRM" && action != "QUIT" );
 }
@@ -1075,10 +1104,19 @@ input_event draw_item_info( const std::function<catacurses::window()> &init_wind
     if( data.handle_scrolling ) {
         ctxt.register_action( "PAGE_UP" );
         ctxt.register_action( "PAGE_DOWN" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
     }
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern && data.handle_scrolling ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
     if( data.any_input ) {
         ctxt.register_action( "ANY_INPUT" );
     }
@@ -1088,6 +1126,23 @@ input_event draw_item_info( const std::function<catacurses::window()> &init_wind
     while( !exit ) {
         ui_manager::redraw();
         action = ctxt.handle_input();
+        if( modern && data.handle_scrolling && action == "SELECT" ) {
+            if( const auto mouse = ctxt.get_coordinates( win ) ) {
+                const auto cell = mouse->xy().raw() + point( getmaxx( win ), getmaxy( win ) ) / 2;
+                const auto bar = point( data.scrollbar_left ? 0 : getmaxx( win ) - 1,
+                                        data.without_border && data.use_full_win ? 0 : 1 );
+                if( const auto hit = scrollbar_input::click( {
+                    .offset = bar,
+                    .viewport_size = height,
+                    .content_size = static_cast<int>( folded.size() ),
+                    .viewport_pos = *data.ptr_selected,
+                    .scroll_to_last = false,
+                }, cell ) ) {
+                    *data.ptr_selected = hit->viewport_pos;
+                    continue;
+                }
+            }
+        }
         if( data.handle_scrolling && action == "PAGE_UP" ) {
             if( *data.ptr_selected > 0 ) {
                 --*data.ptr_selected;
@@ -1097,6 +1152,11 @@ input_event draw_item_info( const std::function<catacurses::window()> &init_wind
                 ( height > 0 && static_cast<size_t>( *data.ptr_selected + height ) < folded.size() ) ) {
                 ++*data.ptr_selected;
             }
+        } else if( data.handle_scrolling && action == "SCROLL_UP" ) {
+            *data.ptr_selected = std::max( 0, *data.ptr_selected - 3 );
+        } else if( data.handle_scrolling && action == "SCROLL_DOWN" ) {
+            *data.ptr_selected = std::min( std::max( 0, static_cast<int>( folded.size() ) - height ),
+                                           *data.ptr_selected + 3 );
         } else if( action == "CONFIRM" || action == "QUIT" ) {
             exit = true;
         } else if( data.any_input && action == "ANY_INPUT" && !ctxt.get_raw_input().sequence.empty() ) {
@@ -1487,22 +1547,17 @@ void scrollbar::apply( const catacurses::window &window )
         mvwputch( window, point( offset_x_v, offset_y_v ), arrow_color_v, '^' );
         mvwputch( window, point( offset_x_v, offset_y_v + viewport_size_v - 1 ), arrow_color_v, 'v' );
 
-        int slot_size = viewport_size_v - 2;
-        int bar_size = std::max( 2, slot_size * viewport_size_v / content_size_v );
-        int scrollable_size = scroll_to_last_v ? content_size_v : content_size_v - viewport_size_v + 1;
+        const auto lay = scrollbar_input::layout_for( {
+            .offset = point( offset_x_v, offset_y_v ),
+            .viewport_size = viewport_size_v,
+            .content_size = content_size_v,
+            .viewport_pos = viewport_pos_v,
+            .scroll_to_last = scroll_to_last_v,
+        } );
+        const auto bar_end = lay.bar_start + lay.bar_size;
 
-        int bar_start;
-        if( viewport_pos_v == 0 ) {
-            bar_start = 0;
-        } else if( scrollable_size > 2 ) {
-            bar_start = ( slot_size - 1 - bar_size ) * ( viewport_pos_v - 1 ) / ( scrollable_size - 2 ) + 1;
-        } else {
-            bar_start = slot_size - bar_size;
-        }
-        int bar_end = bar_start + bar_size;
-
-        for( int i = 0; i < slot_size; ++i ) {
-            if( i >= bar_start && i < bar_end ) {
+        for( auto i = 0; i < lay.slot_size; ++i ) {
+            if( i >= lay.bar_start && i < bar_end ) {
                 mvwputch( window, point( offset_x_v, offset_y_v + 1 + i ), bar_color_v, LINE_XOXO );
             } else {
                 mvwputch( window, point( offset_x_v, offset_y_v + 1 + i ), slot_color_v, LINE_XOXO );
@@ -1576,14 +1631,19 @@ int scrolling_text_view::text_width()
     return getmaxx( w_ ) - 1;
 }
 
-int scrolling_text_view::num_lines()
+auto scrolling_text_view::num_lines() const -> int
 {
     return text_.size();
 }
 
-int scrolling_text_view::max_offset()
+auto scrolling_text_view::max_offset() const -> int
 {
     return std::max( 0, num_lines() - getmaxy( w_ ) );
+}
+
+auto scrolling_text_view::scroll_to( int offset ) -> void
+{
+    offset_ = std::clamp( offset, 0, max_offset() );
 }
 
 void calcStartPos( int &iStartPos, const int iCurrentLine, const int iContentHeight,

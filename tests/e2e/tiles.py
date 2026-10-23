@@ -16,6 +16,7 @@ Usage:
   python3 tests/e2e/tiles.py mouse [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py sound_menu [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py zoom [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
+  python3 tests/e2e/tiles.py overmap [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
 
 --root is the game tree (data and the curses build); --binary is the tiles executable.
 Artifacts (window captures, marker crops, logs, fixture asserts, result.json) stay in --out.
@@ -842,6 +843,78 @@ def tile_pitch(png, terrain_width, center_y):
     return sorted(widths)[len(widths) // 2]
 
 
+def case_overmap(session):
+    """Click the drawn cursor on partial-tile viewports without shifting the map."""
+    state_path = session.curses_userdir / "save" / session.world / "uistate.json"
+    state = json.loads(state_path.read_text())
+    state["overmap_blinking"] = False
+    state["overmap_show_overlays"] = True
+    state_path.write_text(json.dumps(state))
+    checks, observations = [], {}
+    for scale, columns, rows in ((1, 166, 60), (2, 90, 30)):
+        label = f"overmap-{scale}x"
+        options = {
+            "CONTROL_SCHEME": "modern", "SCALING_FACTOR": str(scale),
+            "FONT_WIDTH": "8", "FONT_HEIGHT": "16", "FONT_SIZE": "16",
+            "TERMINAL_X": str(columns), "TERMINAL_Y": str(rows),
+            "USE_TILES_OVERMAP": "true", "OVERMAP_TILES": "UNDEAD_PEOPLE_BASE",
+            "EDGE_SCROLL": "-1", "CURSOR_PANNING": "false",
+        }
+        with session.running_game(label, options) as live:
+            x11 = X11(session.display)
+            try:
+                window = x11.find_window(WINDOW_TITLE_PREFIX)
+                require(window is not None, f"{label}: window disappeared")
+
+                def settled(name, reference=None):
+                    previous = None
+                    deadline = time.time() + session.timeout
+                    while time.time() < deadline:
+                        require(live.proc.poll() is None, f"{label}: game exited")
+                        png = capture(session.display, window, session.artifacts / f"{label}-{name}.png")
+                        frame = frame_rgb(png)
+                        if frame == previous and (reference is None or frame != reference):
+                            return frame
+                        previous = frame
+                        time.sleep(0.3)
+                    raise Failure(f"{label}: {name} did not settle")
+
+                world = frame_rgb(live.frame)
+                width, height, _ = world
+                require((width, height) == (columns * 8 * scale, rows * 16 * scale),
+                        f"{label}: unexpected window dimensions {width}x{height}")
+                x11.focus_local(window, width // 3, height // 2)
+                x11.key("m")
+                before = settled("before", reference=world)
+                legend = min(55, max(28, columns // 5))
+                map_width = (columns - legend) * 8 * scale
+                tile = 32 * scale
+                center_x = ((map_width + tile - 1) // tile // 2) * tile + tile // 2
+                center_y = ((height + tile - 1) // tile // 2) * tile + tile // 2
+                x11.focus_local(window, center_x, center_y)
+                x11.click(1)
+                clicked = settled("clicked")
+                # A later popup acknowledges the click before the no-change assertion.
+                x11.key("Shift_L", "n")
+                settled("note-popup", reference=clicked)
+                x11.key("Escape")
+                after = settled("after")
+                changed = sum(before[2][i:i + 3] != after[2][i:i + 3]
+                              for i in range(0, len(before[2]), 3))
+                checks.append(Check(f"{scale}x cursor click does not pan",
+                                    changed == 0, f"{changed} pixels changed"))
+                x11.key("m")
+                returned = wait_for_frame(session, live.proc, live.run, session.timeout)
+                checks.append(Check(f"{scale}x m closes the overmap",
+                                    frame_shows_world(frame_rgb(returned)), str(returned)))
+                observations[label] = {"cursor": [center_x, center_y], "changed_pixels": changed}
+            finally:
+                x11.close()
+    return [check.detail for check in checks if not check.ok], {
+        "checks": [check.__dict__ for check in checks], "views": observations,
+    }
+
+
 def case_zoom(session):
     """Default keyboard and wheel zoom change the rendered tile pitch and spend no turn."""
     bindings = session.curses_userdir / "config" / "keybindings.json"
@@ -1007,7 +1080,7 @@ def case_sound_menu(session):
 
 
 CASES = {"minimap": case_minimap, "mouse": case_mouse, "sound_menu": case_sound_menu,
-         "zoom": case_zoom}
+         "zoom": case_zoom, "overmap": case_overmap}
 
 
 def main(argv=None):
