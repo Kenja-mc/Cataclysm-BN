@@ -27,6 +27,55 @@ Use when adding or changing automated tests.
 - Expected `DebugLog(DL::Error, ...)` still makes the test process fail even when assertions pass. Use
   `capture_debug_errors_during` for the injected failure only and assert its exact messages; never clear
   the global observed-error flag or disable the test runner's error check.
+- A shard split is a fixture-isolation test. Moving tests between shards changes which tests share a game;
+  re-partitioning exposed two order-dependent failures the old split hid. Run the full suite locally after
+  any change to `durations.json` or `shard_of()`.
+- A pooled game is keyed by its option set. `fixtures.shared_game` keys the pool on the options it was
+  created with, so a test that changes an option from inside the game leaves a game that no longer matches
+  its key; `fixtures.retire` now drops the game on an option change or a test failure.
+- A failed test must not close a game it borrowed. A test borrowing the runner's own profile through
+  `fixtures.shared_game` retired the runner's main game, and every later main-game test timed out on a
+  missing tmux pane. Shared games now count active borrowers and close after the last one exits, the runner
+  borrows per test, and tmux I/O raises on a missing pane (`tests/e2e/test_lifecycle.py`).
+- Each test process needs its own tmux server. Four parallel shards on one server starve each other of
+  input; `run.py` points `TMUX_TMPDIR` at a fresh directory, which must exist or tmux falls back to `/tmp`.
+- A hover stillness is not a poll. Edge panning runs on game timeouts, so `hover()`'s one-second pause is
+  the pan; replacing it with `settle_screen` panned one step short (`test_cursor_panning_return_center`,
+  45 -> 44).
+- Do not call `pos()` inside a combined Lua snippet. It prints through `out`, so the position arrives as
+  the first marker line and the real value second; call it in its own snippet.
+- `durations.json` must come from the CI runners. Local times are about 10x faster and mis-assign tests;
+  refresh from the `e2e-durations-shard-*` artifacts, then re-check the spread (8.3%).
+- A merge that adds a data type needs a rebuilt test binary. `--target cataclysm-bn` leaves `cata_test`
+  stale, and the shards then report an unrecognized JSON object for data the game accepts.
+- `Game.close()` deletes the private user directory. The tiles harness kills the tmux session instead, and
+  reads the save name before teardown.
+- `gh` resolves the repository from the git remotes and may pick `upstream` for this clone; pass
+  `--repo Kenja-mc/Cataclysm-BN`.
+- A shifted key needs the modifier in the key event. `Shift_L` plus `bracketright` sends `}`, while
+  `bracketright` alone sends `]`.
+- Capture a screenshot only after two identical world-view frames, or the shot shows loading artwork or a
+  title screen.
+- After an upstream merge, grep the whole item family, not only the conflicted files; a re-added line
+  merges cleanly and silently.
+- Keep parking inside the loaded map. `park()` moved creatures to `here(45 + k % 15, 45 + k // 15)`, so the
+  y offset grew every fifteen parks; after a few hundred parks a creature sat out of bounds and
+  `Sound with description [ hmm ] attempted to propagate from out of bounds location` opened a modal that
+  swallowed keys and failed four later tests. The ring is now bounded to 15x12 tiles inside the map.
+- Identify a popup sound's source type before blaming creature fixtures. `map::load` kept vehicles from the
+  previously loaded area in its per-z vehicle lists, so after save, quit and reload their idle engine sounds
+  ([ hmm ], [ vroom! ]) fired the out-of-bounds sound popup. The game now clears those lists; regression
+  test `loading_a_map_rebuilds_active_vehicle_membership` in `tests/map_test.cpp`.
+- Read a row and its index from the same capture. `test_readable_map_glyphs` captured the screen, then
+  called `Game.find('@')`, which reads a fresh screen; one line of scroll made the assertion look at the
+  wrong row. Compute the index from the captured string.
+- Do not prove a blocked move with the clock. The safe-mode test compared `minutes_of_day` before and after,
+  but the sidebar shows an approximate time when the starting outfit has no capacity and the watch tumbles
+  to the floor. Assert the avatar's position instead, and use `empty_inventory` for deterministic gear.
+- Pin sight for any check that must see a creature. The starting shelter can be very dark even at 08:00;
+  the hostile-tip test enables `DEBUG_NIGHTVISION` temporarily and asserts `sees` before checking the tip.
+  Clear rolled monsters first, as with the sound fixture.
+- Run an isolated suite with `bin/playtest-container.sh e2e [test-name ...]`.
 
 ## Cleanup
 

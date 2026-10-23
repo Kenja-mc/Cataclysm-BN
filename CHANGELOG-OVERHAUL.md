@@ -4,6 +4,63 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-23
+
+### Added
+
+- **Sound & volume** opens from Enter → Misc and from the title-screen Settings: sound and music
+  switches plus music, sound-effect and ambient volume. Changes apply at once and save on close.
+  Terminal builds explain that audio is unavailable. Music off leaves sounds on.
+- Modern uses stairs with PageUp/PageDown, and Space or a click on your own stairs tile uses them.
+  The old `<` / `>` bindings still work. Dynamic stair-direction sprites are gone.
+- Modern `g` takes everything on your tile without a menu; `Ctrl+G` opens the nearby pickup menu.
+- Modern `h` opens body status.
+- The Controls strip follows the menu that is open and shows that menu's keys above it; closing the
+  menu restores the map keys. `CONTEXT_KEYHINTS` turns this off.
+- The tutorial gives you a flashlight with a charged battery, and its weapon lesson spawns the
+  zombie it promises. The gun lesson starts from the ordinary reload key and waits for a loaded gun.
+- The fork installs beside an upstream Cataclysm-BN: `bin/install-bno.sh` provides `bno` and
+  `bno-tiles`, its own menu entry and icon, and `~/.local/share/bright-nights-overhaul` with
+  `~/.config/bright-nights-overhaul`. It copies old fork saves and settings once and leaves the
+  old directories for an upstream install.
+
+### Changed
+
+- The needs row is labelled **Body temp** and carries a cold or hot icon; mild warmth and chill no
+  longer press the row, so **Needs met** returns for a comfortable character. Rest uses one glyph,
+  and every icon row has an ASCII fallback in **Text only** mode.
+- The item folds are a recorded balance exception (see `AGENTS.md`): batteries, containers, black
+  powder, jewelry, games and variant prices keep their new behaviour, and `OVERHAUL.md` documents
+  it. The folds were repaired where they broke play: black powder keeps its misfire, fouling,
+  smoke, recycled and price effects, mixed stacks are disassemblable again, every battery spawn is
+  full at the new capacity, deleted recipes and loot entries are restored, and fetch missions can
+  ask for a variant.
+- Local builds use `-g1` and no longer generate Lua docs after every build: the game binary fell
+  from 805 MB to 390 MB, a tree from 4.5 GB to 2.3 GB, and a one-file rebuild from 11.0 s to 9.4 s.
+  Missing ccache or mold warns and falls back instead of failing. Stale test precompiled headers
+  were removed.
+- GitHub Actions runs the gameplay suite on one runner, and model playtests run one leg unless a
+  dispatch asks for all. Only one job per run writes each compiler cache, and the Linux precompiled
+  header is cacheable, so release builds no longer evict their own caches.
+
+### Fixed
+
+- Loading a map kept vehicles from the previously loaded area in its per-level lists, so a reload
+  could fire their engine sounds from an old position and open debug assertions.
+- A failing game borrowed from another test closed the runner's shared game; later tests then hit
+  a missing tmux pane. Games now close after their last borrower.
+- The harness waits with the active scheme's wait key: classic `x` opens look-around.
+- A release dispatch pins its version tag before building, so a later push cannot invalidate the
+  build, and publication no longer needs a personal token.
+- Tutorial stair, darkness, targeting and reload lessons name the active scheme's keys instead of
+  hard-coded letters.
+
+### Maintenance
+
+- `README.md`, `README.ja.md` and `README.ko.md` link the fork's own releases and screenshots.
+- The test-quality skill records the harness traps found in these runs, including the vehicle-cache
+  reload bug and the borrowed-game lifetime bug.
+
 ## 2026-10-22
 
 ### Added

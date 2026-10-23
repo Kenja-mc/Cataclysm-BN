@@ -3,7 +3,7 @@
 > **이 저장소는 오버홀 포크입니다.** WASD 조작과 마우스 타일 선택, 날씨·무기·신체 패널을 갖춘 모던한
 > 터미널 디자인, 루팅 구역 대신 쓰는 테라리아식 빠른 쌓기, 겹칠 수 있는 아이템 변형 등 잡일을
 > 줄이는 변경이 더해졌습니다. [OVERHAUL.md](./OVERHAUL.md),
-> [스크린샷](./docs/fork/visual-changes.md),
+> [스크린샷](./docs/fork/feature-screenshots.md),
 > [변경 기록](./CHANGELOG-OVERHAUL.md)을 참고하세요.
 
 <header align="center">
@@ -37,23 +37,29 @@
 
 ## 다운로드
 
-### 실행 파일
+이 포크는 [Bright Nights Overhaul 릴리스][fork-releases]에서 내려받을 수 있습니다.
+메인테이너가 포크 릴리스를 게시하면 첫 다운로드가 표시됩니다.
 
-[![Stable][stable-releases-badge]][stable-releases] [![Recent][all-releases-badge]][all-releases] [![Experiemental][experimental-badge]][experimental-releases]
+| 플랫폼         | 파일                                    |
+| -------------- | --------------------------------------- |
+| Windows 64비트 | `BrightNightsOverhaul-windows-x64.zip`  |
+| Linux 64비트   | `BrightNightsOverhaul-linux-x64.tar.gz` |
+
+Windows에서는 zip의 압축을 풀고 `Launch Bright Nights.bat`을 실행하세요. 새 버전을 알려 주고
+세이브와 설정을 유지합니다. 자세한 내용은 [설치 및 업데이트 안내](docs/fork/playing.md)를
+참고하세요. 메인테이너는 [릴리스 안내](docs/fork/releasing.md)를 따릅니다.
+
+업스트림 Bright Nights 릴리스와 Flatpak 패키지, 서드파티 런처에는 이 포크의 변경 사항이
+포함되어 있지 않습니다.
 
 ### 소스 코드
 
 [![Source Code][source-badge]][source] [![Zip Archive][clone-badge]][clone]
 
-[stable-releases]: https://github.com/cataclysmbn/Cataclysm-BN/releases/latest "안정판 실행 파일 내려받기"
-[stable-releases-badge]: https://img.shields.io/github/v/release/cataclysmbn/Cataclysm-BN?style=for-the-badge&color=success&label=안정판
-[all-releases]: https://github.com/cataclysmbn/Cataclysm-BN/releases?q=prerelease%3Atrue&expanded=true "실험판 실행 파일 내려받기"
-[all-releases-badge]: https://img.shields.io/github/v/release/cataclysmbn/Cataclysm-BN?style=for-the-badge&color=important&label=최신%20실험판&include_prereleases&sort=date
-[experimental-releases]: https://github.com/cataclysmbn/Cataclysm-BN/releases/tag/experimental
-[experimental-badge]: https://img.shields.io/github/v/release/cataclysmbn/Cataclysm-BN?style=for-the-badge&color=salmon&label=Experimental%20Release&include_prereleases&sort=date
-[source]: https://github.com/cataclysmbn/Cataclysm-BN/archive/master.zip "소스 코드를 .zip 아카이브로 다운로드할 수 있습니다"
+[fork-releases]: https://github.com/Kenja-mc/Cataclysm-BN/releases/latest
+[source]: https://github.com/Kenja-mc/Cataclysm-BN/archive/refs/heads/main.zip "이 포크의 소스 코드를 내려받기"
 [source-badge]: https://img.shields.io/badge/ZIP%20아카이브로%20내려받기-black?style=for-the-badge&logo=github
-[clone]: https://github.com/cataclysmbn/Cataclysm-BN/ "GitHub 저장소에서 클론할 수 있습니다"
+[clone]: https://github.com/Kenja-mc/Cataclysm-BN/ "이 포크를 클론"
 [clone-badge]: https://img.shields.io/badge/저장소에서%20클론하기-black?style=for-the-badge&logo=github
 
 ## 빌드하기

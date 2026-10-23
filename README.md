@@ -3,7 +3,7 @@
 > **This is the overhaul fork.** It adds WASD controls with mouse tile selection, a modern terminal
 > look with weather, weapon and body panels, Terraria-style quick stacking instead of loot zones,
 > stackable item variants and other ways to cut busywork. See [OVERHAUL.md](./OVERHAUL.md),
-> [the screenshots](./docs/fork/visual-changes.md) and [the changelog](./CHANGELOG-OVERHAUL.md).
+> [the screenshots](./docs/fork/feature-screenshots.md) and [the changelog](./CHANGELOG-OVERHAUL.md).
 
 <header align="center">
   <a><img src="docs/en/contribute/img/readme-title.png" title="screenshots of (clockwise from upper-right: Chaosvolt (x2), ExecutorBill, scarf005"></a>
@@ -40,10 +40,10 @@ Find a way to stop the Cataclysm ... or become one of its strongest monsters.
 Download this fork from [Bright Nights Overhaul releases][fork-releases].
 The first download appears after a maintainer publishes a fork release.
 
-| Platform | File |
-| --- | --- |
-| Windows 64-bit | `BrightNightsOverhaul-windows-x64.zip` |
-| Linux 64-bit | `BrightNightsOverhaul-linux-x64.tar.gz` |
+| Platform       | File                                    |
+| -------------- | --------------------------------------- |
+| Windows 64-bit | `BrightNightsOverhaul-windows-x64.zip`  |
+| Linux 64-bit   | `BrightNightsOverhaul-linux-x64.tar.gz` |
 
 On Windows, extract the zip and run `Launch Bright Nights.bat`. It offers new versions and keeps
 your saves and settings. See the [installation and update guide](docs/fork/playing.md).

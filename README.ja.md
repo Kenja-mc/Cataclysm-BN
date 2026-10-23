@@ -3,7 +3,7 @@
 > **これはオーバーホールフォークです。** WASD操作とマウスでのタイル選択、天気・武器・身体パネルを備えた
 > モダンなターミナル表示、ルートゾーンの代わりになるテラリア風クイックスタック、スタックできる
 > アイテムバリアントなど、手間を減らす変更が加えられています。[OVERHAUL.md](./OVERHAUL.md)、
-> [スクリーンショット](./docs/fork/visual-changes.md)、
+> [スクリーンショット](./docs/fork/feature-screenshots.md)、
 > [変更履歴](./CHANGELOG-OVERHAUL.md) をご覧ください。
 
 <header align="center">
@@ -33,23 +33,20 @@ Cataclysm: Bright Nightsは、ポストアポカリプスの世界を舞台に�
 
 ## ダウンロード
 
-### 実行ファイル
+このフォークは[Bright Nights Overhaulのリリース][fork-releases]からダウンロードできます。
+メンテナーがフォークのリリースを公開すると、最初のダウンロードが表示されます。
 
-[![Stable][stable-releases-badge]][stable-releases] [![Recent][all-releases-badge]][all-releases] [![Experiemental][experimental-badge]][experimental-releases] [![Flatpak][flathub-badge]][flathub-releases]
+| プラットフォーム | ファイル                                |
+| ---------------- | --------------------------------------- |
+| Windows 64ビット | `BrightNightsOverhaul-windows-x64.zip`  |
+| Linux 64ビット   | `BrightNightsOverhaul-linux-x64.tar.gz` |
 
-#### Linuxでの手順
+Windowsでは、zipを展開して`Launch Bright Nights.bat`を実行してください。新しいバージョンを
+通知し、セーブと設定を保持します。詳しくは[インストールと更新のガイド](docs/fork/playing.md)を
+ご覧ください。メンテナー向けの手順は[リリースガイド](docs/fork/releasing.md)にあります。
 
-ゲームが依存する多くの依存関係はデフォルトでインストールされている可能性が高いですが、一部はディストリビューションにデフォルトでインストールされていない可能性があります。
-
-人気のあるディストリビューションファミリー向けのコマンドは以下の通りです:
-
-- Ubuntu / Debian: `sudo apt install libsdl3-0 libsdl3-image-0 libsdl3-ttf-0 libsdl3-mixer-0 libfreetype6 zip libsqlite3-0`
-- Fedora: `sudo dnf install SDL3 SDL3_image SDL3_ttf SDL3_mixer freetype zip sqlite`
-- Arch: `sudo pacman -S sdl3 sdl3_image sdl3_ttf sdl3_mixer zip sqlite`
-
-### ランチャー
-
-主にサポートされているランチャーは[Catapult](https://github.com/qrrk/Catapult)で、BNとDDAの両方を扱うことができます(デフォルトはDDAなので、トップメニューで必ず変更してください!)
+上流のBright Nightsのリリース、Flatpakパッケージ、サードパーティ製ランチャーには、この
+フォークの変更は含まれていません。
 
 ### サードパーティMod
 
@@ -59,17 +56,10 @@ Bright Nightsは、メインゲームに同梱されていないModを簡単に�
 
 [![Source Code][source-badge]][source] [![Zip Archive][clone-badge]][clone]
 
-[stable-releases]: https://github.com/cataclysmbn/Cataclysm-BN/releases/latest "安定版の実行ファイルをダウンロード"
-[stable-releases-badge]: https://img.shields.io/github/v/release/cataclysmbn/Cataclysm-BN?style=for-the-badge&color=success&label=stable
-[all-releases]: https://github.com/cataclysmbn/Cataclysm-BN/releases?q=prerelease%3Atrue&expanded=true
-[all-releases-badge]: https://img.shields.io/github/v/release/cataclysmbn/Cataclysm-BN?style=for-the-badge&color=important&label=Latest%20Release&include_prereleases&sort=date
-[experimental-releases]: https://github.com/cataclysmbn/Cataclysm-BN/releases/tag/experimental
-[experimental-badge]: https://img.shields.io/github/v/release/cataclysmbn/Cataclysm-BN?style=for-the-badge&color=salmon&label=Experimental%20Release&include_prereleases&sort=date
-[flathub-releases]: https://flathub.org/apps/org.cataclysmbn.CataclysmBN
-[flathub-badge]: https://img.shields.io/flathub/v/org.cataclysmbn.CataclysmBN?style=for-the-badge&color=success
-[source]: https://github.com/cataclysmbn/Cataclysm-BN/archive/master.zip "ソースコードは.zip形式のアーカイブとしてダウンロードできます"
+[fork-releases]: https://github.com/Kenja-mc/Cataclysm-BN/releases/latest
+[source]: https://github.com/Kenja-mc/Cataclysm-BN/archive/refs/heads/main.zip "このフォークのソースコードをダウンロード"
 [source-badge]: https://img.shields.io/badge/Zip%20Archive-black?style=for-the-badge&logo=github
-[clone]: https://github.com/cataclysmbn/Cataclysm-BN/ "GitHubリポジトリからクローンする"
+[clone]: https://github.com/Kenja-mc/Cataclysm-BN/ "このフォークをクローン"
 [clone-badge]: https://img.shields.io/badge/Clone%20From%20Repo-black?style=for-the-badge&logo=github
 
 ## ビルド方法
