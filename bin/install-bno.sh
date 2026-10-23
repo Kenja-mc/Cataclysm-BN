@@ -1,59 +1,72 @@
 #!/bin/sh
-# install-cataclysm-bn.sh — install the Cataclysm: Bright Nights Overhaul fork as a launchable app
+# install-bno.sh — install the Bright Nights Overhaul fork next to an upstream Cataclysm-BN
 #
-# Usage: bin/install-cataclysm-bn.sh [--system] [--uninstall] [--no-curses-entry]
+# Usage: bin/install-bno.sh [--system] [--uninstall] [--no-curses-entry]
 #
 #   --system          install system-wide under /usr/local (needs root)
 #   --uninstall       remove the installed files (user or system, matching the install)
 #   --no-curses-entry keep the curses launcher wrapper but leave it out of the desktop menu
 #
 # Default layout (user install, no root needed):
-#   ~/.local/bin/cataclysm-bn            -> launcher wrapper -> out/build/linux-curses/src/cataclysm-bn
-#   ~/.local/bin/cataclysm-bn-tiles      -> launcher wrapper -> out/build/linux-full/src/cataclysm-bn-tiles
-#   ~/.local/share/applications/org.cataclysmbn.CataclysmBN.desktop        (tiles, the default launchable)
-#   ~/.local/share/applications/org.cataclysmbn.CataclysmBN-curses.desktop (curses variant, unless --no-curses-entry)
-#   ~/.local/share/icons/hicolor/scalable/apps/org.cataclysmbn.CataclysmBN.svg
-#   ~/.local/share/metainfo/org.cataclysmbn.CataclysmBN.metainfo.xml
+#   ~/.local/bin/bno                     -> launcher wrapper -> out/build/linux-curses/src/cataclysm-bn
+#   ~/.local/bin/bno-tiles               -> launcher wrapper -> out/build/linux-full/src/cataclysm-bn-tiles
+#   ~/.local/share/applications/io.github.kenja_mc.BrightNightsOverhaul.desktop        (tiles)
+#   ~/.local/share/applications/io.github.kenja_mc.BrightNightsOverhaul-curses.desktop (curses, unless --no-curses-entry)
+#   ~/.local/share/icons/hicolor/scalable/apps/io.github.kenja_mc.BrightNightsOverhaul.svg
 #
-# Data path is configured in this order of precedence:
-#   1. CATACLYSM_BN_BASEPATH environment variable
-#   2. ~/.config/cataclysm-bn/basepath (created by this script after install)
+# The fork keeps its own data, saves and settings, so it does not shadow an upstream install:
+#   saves:  ~/.local/share/bright-nights-overhaul/
+#   config: ~/.config/bright-nights-overhaul/
+#
+# Basepath lookup order:
+#   1. BNO_BASEPATH environment variable
+#   2. ~/.config/bright-nights-overhaul/basepath (created by this script after install)
 #   3. current working directory (launcher warns and falls back to ".")
+#
+# An existing ~/.local/share/cataclysm-bn or ~/.config/cataclysm-bn is copied once into the
+# fork's directories when these do not exist yet. The old directories are never changed.
 #
 # A user install also downloads the Otopack soundpack (music and ambience) into data/sound,
 # using upstream's registry bundler. This needs deno and network access; a failure leaves
 # the existing soundpacks available.
 #
-# After install, the fork is launchable from the desktop menu as "Cataclysm-BN"
-# (tiles) and "Cataclysm-BN (Curses)".
+# After install, the fork is launchable from the desktop menu as "Bright Nights Overhaul"
+# (tiles) and "Bright Nights Overhaul (Curses)".
 
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-CONFIG_DIR="$HOME/.config/cataclysm-bn"
+APP_ID="io.github.kenja_mc.BrightNightsOverhaul"
+DATA_HOME="$HOME/.local/share/bright-nights-overhaul"
+CONFIG_DIR="$HOME/.config/bright-nights-overhaul"
 
-# Baked path; the installer fills it in from the build tree.
+# Baked paths; the installer fills them in from the build tree.
 CATACLYSM_BN_CURSES_BINARY=""
 CATACLYSM_BN_TILES_BINARY=""
 
 usage() {
   cat <<'EOF'
-Usage: bin/install-cataclysm-bn.sh [--system] [--uninstall] [--no-curses-entry]
+Usage: bin/install-bno.sh [--system] [--uninstall] [--no-curses-entry]
 
-Install the Cataclysm: Bright Nights Overhaul fork as a launchable app.
+Install the Bright Nights Overhaul fork next to an upstream Cataclysm-BN install.
 
 Options:
   --system          Install system-wide under /usr/local (needs root).
-  --uninstall       Remove the installed files (user or system).
+  --uninstall       Remove the installed fork files (user or system); saves and settings stay.
   --no-curses-entry Keep the curses launcher wrapper (for tests and terminals) but do not
-                    add "Cataclysm-BN (Curses)" to the desktop menu; removes an existing one.
+                    add "Bright Nights Overhaul (Curses)" to the desktop menu; removes an
+                    existing one.
   --help            Show this help and exit.
 
-The launcher wrappers look up the game data directory (basepath) via:
-  1. CATACLYSM_BN_BASEPATH environment variable
-  2. ~/.config/cataclysm-bn/basepath config file (created by this script)
+The launcher wrappers keep the fork's saves and settings separate from upstream:
+  saves:   ~/.local/share/bright-nights-overhaul/
+  config:  ~/.config/bright-nights-overhaul/
+
+They look up the game data directory (basepath) via:
+  1. BNO_BASEPATH environment variable
+  2. ~/.config/bright-nights-overhaul/basepath config file (created by this script)
   3. the current working directory (warns and falls back to ".")
 
 A user install also downloads the Otopack soundpack (music and ambience) into data/sound
@@ -62,23 +75,20 @@ EOF
 }
 
 die() {
-  printf 'install-cataclysm-bn.sh: %s\n' "$*" >&2
+  printf 'install-bno.sh: %s\n' "$*" >&2
   exit 1
 }
 
-# Resolve INSTALLED_* destinations for the requested scope (""|"--system").
+# Resolve PREFIX and INSTALLED_* destinations for the requested scope (""|"--system").
 set_destinations() {
   if [ "${1:-}" = "--system" ]; then
-    INSTALLED_BIN="/usr/local/bin"
-    INSTALLED_APPS="/usr/local/share/applications"
-    INSTALLED_ICONS="/usr/local/share/icons/hicolor/scalable/apps"
-    INSTALLED_METAINFO="/usr/local/share/metainfo"
+    PREFIX="/usr/local"
   else
-    INSTALLED_BIN="$HOME/.local/bin"
-    INSTALLED_APPS="$HOME/.local/share/applications"
-    INSTALLED_ICONS="$HOME/.local/share/icons/hicolor/scalable/apps"
-    INSTALLED_METAINFO="$HOME/.local/share/metainfo"
+    PREFIX="$HOME/.local"
   fi
+  INSTALLED_BIN="$PREFIX/bin"
+  INSTALLED_APPS="$PREFIX/share/applications"
+  INSTALLED_ICONS="$PREFIX/share/icons/hicolor/scalable/apps"
 }
 
 detect_binaries() {
@@ -97,42 +107,86 @@ detect_binaries() {
   fi
 }
 
-create_wrapper() {
-  local kind="$1"   # curses | tiles
-  local outbin="$2" # ~/.local/bin/cataclysm-bn or ~/.local/bin/cataclysm-bn-tiles
-  local binary="$3" # baked path to the real binary
-
-  # Write a wrapper that resolves --basepath at launch time and execs the real binary.
-  cat > "$outbin" <<WRAPPER
-#!/bin/sh
-# cataclysm-bn ($kind) launcher wrapper — generated by bin/install-cataclysm-bn.sh
-# Runs the real binary with the fork's data directory as basepath.
-set -eu
-BINARY="$binary"
-if [ -z "\${CATACLYSM_BN_BASEPATH:-}" ]; then
-  if [ -f "$HOME/.config/cataclysm-bn/basepath" ]; then
-    # Skip comment lines and blanks; take the last path line; strip trailing whitespace.
-    export CATACLYSM_BN_BASEPATH="\$(grep -v '^[[:space:]]*#' "\$HOME/.config/cataclysm-bn/basepath" | \
-
-        grep -v '^[[:space:]]*$' | tail -n 1 | sed 's/[[:space:]]*$//')"
-
-  fi
-fi
-if [ -z "\${CATACLYSM_BN_BASEPATH:-}" ]; then
-  export CATACLYSM_BN_BASEPATH="."
-  printf 'cataclysm-bn: basepath not configured; using current directory\n' >&2
-  printf '  Set CATACLYSM_BN_BASEPATH=/path/to/Cataclysm-BN,\n' >&2
-  printf '  or run: %s\n' "$SCRIPT_DIR/install-cataclysm-bn.sh" >&2
-  printf '  to have this script create a config.\n' >&2
-fi
-  if [ "\$(basename "\$0")" = "cataclysm-bn-tiles" ]; then
-    if [ -z "\${DISPLAY:-}" ]; then
-      printf 'cataclysm-bn-tiles: no DISPLAY set; launch from a terminal or ensure a display is running.\\n' >&2
-      exit 1
+# Remove wrappers and menu files left by the old installer, but only with its marker present.
+cleanup_legacy() {
+  LEGACY_MARKER='generated by bin/install-cataclysm-bn.sh'
+  found=0
+  for wrapper in "$INSTALLED_BIN/cataclysm-bn" "$INSTALLED_BIN/cataclysm-bn-tiles"; do
+    if [ -f "$wrapper" ] && grep -qF "$LEGACY_MARKER" "$wrapper" 2>/dev/null; then
+      rm -f "$wrapper"
+      printf 'Removed legacy wrapper: %s\n' "$wrapper"
+      found=1
     fi
+  done
+  if [ "$found" = 1 ]; then
+    rm -f "$INSTALLED_APPS/org.cataclysmbn.CataclysmBN.desktop" \
+          "$INSTALLED_APPS/org.cataclysmbn.CataclysmBN-curses.desktop" \
+          "$INSTALLED_ICONS/org.cataclysmbn.CataclysmBN.svg" \
+          "$PREFIX/share/metainfo/org.cataclysmbn.CataclysmBN.metainfo.xml"
+    printf 'Removed legacy desktop entries, icon and metainfo from %s.\n' "$PREFIX"
   fi
-exec "\$BINARY" --basepath "\${CATACLYSM_BN_BASEPATH}/" --userdir "\$HOME/.local/share/cataclysm-bn" "\$@"
-WRAPPER
+}
+
+# Copy the old upstream-named directories once; never touch or delete the originals.
+migrate_legacy_dirs() {
+  old_data="$HOME/.local/share/cataclysm-bn"
+  old_config="$HOME/.config/cataclysm-bn"
+  if [ ! -e "$DATA_HOME" ] && [ -e "$old_data" ]; then
+    cp -a "$old_data" "$DATA_HOME"
+    printf 'Copied saves from %s to %s.\n' "$old_data" "$DATA_HOME"
+  fi
+  if [ ! -e "$CONFIG_DIR" ] && [ -e "$old_config" ]; then
+    cp -a "$old_config" "$CONFIG_DIR"
+    printf 'Copied settings from %s to %s.\n' "$old_config" "$CONFIG_DIR"
+  fi
+  if [ -e "$old_data" ] || [ -e "$old_config" ]; then
+    printf 'Left %s and %s in place for an upstream Cataclysm-BN install.\n' \
+      "$old_data" "$old_config"
+  fi
+}
+
+create_wrapper() {
+  kind="$1"   # curses | tiles
+  outbin="$2" # ~/.local/bin/bno or ~/.local/bin/bno-tiles
+  binary="$3" # baked path to the real binary
+
+  # Resolve the basepath at launch time and exec the real binary with the fork's own dirs.
+  {
+    printf '#!/bin/sh\n'
+    printf '# bno (%s) launcher wrapper — generated by bin/install-bno.sh\n' "$kind"
+    printf '# Runs the real binary with the fork data directory and separate save/config dirs.\n'
+    printf 'set -eu\n'
+    printf 'BINARY="%s"\n' "$binary"
+    cat <<'WRAPPER_BASE'
+BASE="${BNO_BASEPATH:-}"
+if [ -z "$BASE" ] && [ -f "$HOME/.config/bright-nights-overhaul/basepath" ]; then
+  # Skip comment lines and blanks; take the last path line; strip trailing whitespace.
+  BASE="$(grep -v '^[[:space:]]*#' "$HOME/.config/bright-nights-overhaul/basepath" \
+    | grep -v '^[[:space:]]*$' | tail -n 1 | sed 's/[[:space:]]*$//')"
+fi
+if [ -z "$BASE" ]; then
+  BASE="."
+  printf 'bno: basepath not configured; using current directory\n' >&2
+  printf '  Set BNO_BASEPATH=/path/to/Cataclysm-BN,\n' >&2
+  printf '  or run bin/install-bno.sh to create a config.\n' >&2
+fi
+WRAPPER_BASE
+    if [ "$kind" = "tiles" ]; then
+      cat <<'WRAPPER_TILES'
+if [ -z "${DISPLAY:-}" ]; then
+  printf 'bno-tiles: no DISPLAY set; launch from a terminal or ensure a display is running.\n' >&2
+  exit 1
+fi
+# SDL3 reads the app id from the environment; this sets the Wayland app_id and X11 WM_CLASS.
+export SDL_APP_ID=io.github.kenja_mc.BrightNightsOverhaul
+WRAPPER_TILES
+    fi
+    cat <<'WRAPPER_EXEC'
+exec "$BINARY" --basepath "$BASE/" \
+  --userdir "$HOME/.local/share/bright-nights-overhaul/" \
+  --configdir "$HOME/.config/bright-nights-overhaul/" "$@"
+WRAPPER_EXEC
+  } > "$outbin"
 
   chmod +x "$outbin"
 }
@@ -142,8 +196,8 @@ setup_config() {
   if [ ! -f "$CONFIG_DIR/basepath" ]; then
     # Default to the repo root so it works immediately after install.
     cat > "$CONFIG_DIR/basepath" <<EOF
-# Location of the Cataclysm: Bright Nights Overhaul fork's source directory (the game's data basepath).
-# Edit this if you move the repo. Override at launch with CATACLYSM_BN_BASEPATH instead.
+# Location of the Bright Nights Overhaul source directory (the game's data basepath).
+# Edit this if you move the repo. Override at launch with BNO_BASEPATH instead.
 $ROOT
 EOF
     printf 'Created %s/basepath pointing at the repo root (%s).\n' "$CONFIG_DIR" "$ROOT"
@@ -171,32 +225,32 @@ fetch_soundpack() {
 install_files() {
   detect_binaries
   set_destinations "${1:-}"
+  cleanup_legacy
+  migrate_legacy_dirs
+  setup_config
 
-  mkdir -p "$INSTALLED_BIN" "$INSTALLED_APPS" "$INSTALLED_ICONS" "$INSTALLED_METAINFO"
+  mkdir -p "$INSTALLED_BIN" "$INSTALLED_APPS" "$INSTALLED_ICONS"
 
   if [ -n "$CATACLYSM_BN_CURSES_BINARY" ]; then
-    create_wrapper "curses" "$INSTALLED_BIN/cataclysm-bn" "$CATACLYSM_BN_CURSES_BINARY"
-    printf 'Installed launcher wrapper: %s/cataclysm-bn\n' "$INSTALLED_BIN"
+    create_wrapper "curses" "$INSTALLED_BIN/bno" "$CATACLYSM_BN_CURSES_BINARY"
+    printf 'Installed launcher wrapper: %s/bno\n' "$INSTALLED_BIN"
     if [ "$CURSES_ENTRY" = 1 ]; then
-      cp "$ROOT/data/XDG/org.cataclysmbn.CataclysmBN-curses.desktop" "$INSTALLED_APPS/"
-      printf 'Installed desktop entry: %s/org.cataclysmbn.CataclysmBN-curses.desktop\n' "$INSTALLED_APPS"
+      cp "$ROOT/data/XDG/$APP_ID-curses.desktop" "$INSTALLED_APPS/"
+      printf 'Installed desktop entry: %s/%s-curses.desktop\n' "$INSTALLED_APPS" "$APP_ID"
     else
-      rm -f "$INSTALLED_APPS/org.cataclysmbn.CataclysmBN-curses.desktop"
+      rm -f "$INSTALLED_APPS/$APP_ID-curses.desktop"
     fi
   fi
   if [ -n "$CATACLYSM_BN_TILES_BINARY" ]; then
-    create_wrapper "tiles" "$INSTALLED_BIN/cataclysm-bn-tiles" "$CATACLYSM_BN_TILES_BINARY"
-    printf 'Installed launcher wrapper: %s/cataclysm-bn-tiles\n' "$INSTALLED_BIN"
-    cp "$ROOT/data/XDG/org.cataclysmbn.CataclysmBN.desktop" "$INSTALLED_APPS/"
-    printf 'Installed desktop entry: %s/org.cataclysmbn.CataclysmBN.desktop\n' "$INSTALLED_APPS"
+    create_wrapper "tiles" "$INSTALLED_BIN/bno-tiles" "$CATACLYSM_BN_TILES_BINARY"
+    printf 'Installed launcher wrapper: %s/bno-tiles\n' "$INSTALLED_BIN"
+    cp "$ROOT/data/XDG/$APP_ID.desktop" "$INSTALLED_APPS/"
+    printf 'Installed desktop entry: %s/%s.desktop\n' "$INSTALLED_APPS" "$APP_ID"
   fi
 
-  cp "$ROOT/data/XDG/org.cataclysmbn.CataclysmBN.svg" "$INSTALLED_ICONS/"
-  printf 'Installed icon: %s/org.cataclysmbn.CataclysmBN.svg\n' "$INSTALLED_ICONS"
-  cp "$ROOT/data/XDG/org.cataclysmbn.CataclysmBN.metainfo.xml" "$INSTALLED_METAINFO/"
-  printf 'Installed metainfo: %s/org.cataclysmbn.CataclysmBN.metainfo.xml\n' "$INSTALLED_METAINFO"
-
-  setup_config
+  # Same artwork as upstream, installed under the fork's own icon name.
+  cp "$ROOT/data/XDG/org.cataclysmbn.CataclysmBN.svg" "$INSTALLED_ICONS/$APP_ID.svg"
+  printf 'Installed icon: %s/%s.svg\n' "$INSTALLED_ICONS" "$APP_ID"
 
   # Refresh desktop menu and icon caches so the app appears immediately.
   if command -v update-desktop-database >/dev/null 2>&1; then
@@ -208,18 +262,17 @@ install_files() {
     gtk-update-icon-cache -q -t "$INSTALLED_ICONS" >/dev/null 2>&1 || true
   fi
 
-  echo "Install complete. Launch 'Cataclysm-BN' (tiles) or 'Cataclysm-BN (Curses)' from your app menu."
-  echo "Basepath config: $HOME/.config/cataclysm-bn/basepath"
+  echo "Install complete. Launch 'Bright Nights Overhaul' (tiles) or 'Bright Nights Overhaul (Curses)' from your app menu."
+  echo "Basepath config: $CONFIG_DIR/basepath"
+  echo "Saves and settings: $DATA_HOME and $CONFIG_DIR"
 }
 
 uninstall_files() {
   set_destinations "${1:-}"
 
-  rm -f "$INSTALLED_BIN/cataclysm-bn" "$INSTALLED_BIN/cataclysm-bn-tiles"
-  rm -f "$INSTALLED_APPS/org.cataclysmbn.CataclysmBN.desktop" \
-        "$INSTALLED_APPS/org.cataclysmbn.CataclysmBN-curses.desktop"
-  rm -f "$INSTALLED_ICONS/org.cataclysmbn.CataclysmBN.svg"
-  rm -f "$INSTALLED_METAINFO/org.cataclysmbn.CataclysmBN.metainfo.xml"
+  rm -f "$INSTALLED_BIN/bno" "$INSTALLED_BIN/bno-tiles"
+  rm -f "$INSTALLED_APPS/$APP_ID.desktop" "$INSTALLED_APPS/$APP_ID-curses.desktop"
+  rm -f "$INSTALLED_ICONS/$APP_ID.svg"
 
   if command -v update-desktop-database >/dev/null 2>&1; then
     update-desktop-database "$INSTALLED_APPS" >/dev/null 2>&1 || true
@@ -230,8 +283,8 @@ uninstall_files() {
 
   echo "Uninstall complete."
   echo "Note: your config and saved games were not touched:"
-  echo "  config:  $HOME/.config/cataclysm-bn/basepath"
-  echo "  games:   $HOME/.local/share/cataclysm-bn"
+  echo "  config:  $CONFIG_DIR"
+  echo "  games:   $DATA_HOME"
 }
 
 # --- main ---

@@ -11,7 +11,7 @@ credit files; those files retain the detailed per-sprite, per-sound and per-trac
   has a verified provenance chain. Explicit asset notices take precedence.
 - **Versioned assets**: tilesets, fonts, Basic/Overhaul sound effects, core content and in-tree mods.
 - **Optional local download**: Otopack BN Mk 2 is present under `data/sound/`, but is downloaded
-  separately by [the installer](../../bin/install-cataclysm-bn.sh). It is not covered by the
+  separately by [the installer](../../bin/install-bno.sh). It is not covered by the
   Overhaul pack's CC0 declaration.
 - **Packaging caveat**: [data/CMakeLists.txt](../../data/CMakeLists.txt) copies the data directory
   during release installation. An optional downloaded pack present in that directory can enter

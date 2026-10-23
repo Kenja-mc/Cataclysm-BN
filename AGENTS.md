@@ -13,6 +13,11 @@ learn and use. It keeps the BN game rules. `OVERHAUL.md` explains each change.
 ### Rules
 
 1. Do not change the game balance. Change the interface, the controls and duplicate item data only.
+   Two recorded exceptions, both listed in `OVERHAUL.md`: the item folds (batteries, containers,
+   black powder, jewelry, games, variant prices), whose balance changes the owner accepted, and
+   ungated fixes for upstream bugs. A fold must still not break play: spawned charges, ammo
+   effects, salvage and loot must keep working. Anything else that changes balance needs the
+   owner's approval first.
 2. Put a new behavior behind an option when a player can want the old behavior.
 3. Keep the classic control scheme the same as upstream.
 4. Do not add AI art.
@@ -29,16 +34,46 @@ learn and use. It keeps the BN game rules. `OVERHAUL.md` explains each change.
 ### Build
 
 Run these from the repository root. `linux-curses` is the fork's terminal build; `linux-full` adds
-tiles and sound. Every output path below is relative to `out/build/<preset>/`. The presets need
-`clang`, `mold` and `ccache` (`pacman -S --needed clang mold ccache`), and formatting needs
-`astyle` (`pacman -S astyle`): configure succeeds without them, but the build stops at the first
-compile with `ccache: command not found` and `format` with `Artistic Style executable was not found`.
+tiles and sound. Every output path below is relative to `out/build/<preset>/`. Install the local
+build tools on Arch:
 
 ```sh
-cmake --preset linux-curses
+sudo pacman -S --needed clang ccache mold
+ccache --max-size=20G
+```
+
+`clang` is required. If `ccache` or `mold` is absent, configure warns and uses uncached compilation
+or the default linker. Formatting also needs `astyle` (`sudo pacman -S --needed astyle`).
+After installing the tools, refresh both trees so old cache overrides do not survive:
+
+```sh
+cmake --preset linux-curses --fresh
 cmake --build --preset linux-curses --target cataclysm-bn cata_test
-cmake --preset linux-full
+cmake --preset linux-full --fresh
 cmake --build --preset linux-full --target cataclysm-bn-tiles cata_test-tiles
+ccache -s
+```
+
+Use `cmake --preset <preset>` without `--fresh` for later configuration changes. A fresh configure
+discards tree-specific `-D` overrides, so reapply any intentional ones. Both local presets use
+`-O2 -g1`: backtraces retain function names and file/line information in the binary, but debugger
+locals and types are omitted. CI and distribution presets keep their existing flags.
+The stale test PCH is removed; compile-command export no longer controls whether tests build.
+Local presets also turn off post-link Lua documentation generation, which otherwise runs the
+repository-wide formatter. Regenerate documentation explicitly when changing the Lua API.
+
+ccache uses its normal shared cache directory (or an explicit `CCACHE_DIR`); do not copy a cache
+into each worktree. Check `ccache -s` after a rebuild to confirm hits. A real source/header change
+still needs compilation; a no-op Ninja build does not invoke ccache.
+
+Each worktree needs its own `out` directory: never symlink another worktree's build tree, because
+Ninja records absolute source paths. Serialize configure/build operations on the same tree, for
+example from each worktree's own root:
+
+```sh
+mkdir -p out/build
+flock out/build/linux-curses.lock sh -c \
+  'cmake --preset linux-curses -B out/build/linux-curses && cmake --build out/build/linux-curses --target cataclysm-bn cata_test'
 ```
 
 | Target         | Path                                          |
@@ -77,11 +112,11 @@ Do all three tests before you push. All results must be good.
 
 3. Fork end-to-end tests, in proportion to the change:
 
-   | Change | Run |
-   |---|---|
-   | Docs only | Nothing |
-   | One feature | Its tests, then `python3 tests/e2e/run.py --tier=smoke` |
-   | Harness, build, data or shared fixture | The whole suite |
+   | Change                                 | Run                                                     |
+   | -------------------------------------- | ------------------------------------------------------- |
+   | Docs only                              | Nothing                                                 |
+   | One feature                            | Its tests, then `python3 tests/e2e/run.py --tier=smoke` |
+   | Harness, build, data or shared fixture | The whole suite                                         |
 
    `python3 tests/e2e/run.py` is parallel by default and takes about 10 minutes. Do not run other
    heavy work at the same time, because slow input makes these tests fail. Name filters run single
@@ -96,17 +131,18 @@ Write one end-to-end test for each new fork feature, in its own module under `te
 `TESTS` list registered in `run.py`. Reuse a game per option profile through `fixtures.py` instead
 of starting a new one. Do not write unit tests for fork features.
 
-The same suite runs on GitHub Actions in `.github/workflows/fork-playtest.yml`, as four shards
-because the two-core runners are much slower than this machine: a test there takes 58 to 145 seconds
-against about 50 here. Three traps were found doing that, and each of them cost whole runs:
+The same suite runs on GitHub Actions in `.github/workflows/fork-e2e.yml`, on one runner, only when
+selected: nightly, a manual `fork-playtest` dispatch, or the release `run_playtests` checkbox. The
+two-core runners are much slower than this machine (a test there takes 58 to 145 seconds against
+about 50 here). Three traps were found running it there, and each of them cost whole runs:
 
-* A check that reads the screen once, or after a fixed key delay, is a coin flip on the runners. Wait
+- A check that reads the screen once, or after a fixed key delay, is a coin flip on the runners. Wait
   for the text it needs with a bounded timeout (`Game.wait_for`) instead of sampling.
-* A game-side debug assertion opens a modal "An error has occurred!" popup that swallows every key,
+- A game-side debug assertion opens a modal "An error has occurred!" popup that swallows every key,
   and it then fails every later test in that game. The CI build keeps debug assertions on while a
   local build does not, so it only reproduces there. `Game.dismiss_error_popup` answers the popup and
   reports its text, and the suite calls it around every test.
-* An assertion over a span of the map must account for the fixture's own extent, such as a vehicle's
+- An assertion over a span of the map must account for the fixture's own extent, such as a vehicle's
   length, or it fails on one spawn and passes on the next.
 
 ### Where to find the fork code

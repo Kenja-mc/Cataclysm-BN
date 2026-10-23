@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Bright Nights Overhaul (Curses)
+Name[en_US]=Bright Nights Overhaul (Curses)
+Comment=A turn-based roguelike survival game with an improved modern interface
+Categories=Game;RolePlaying;
+Keywords=roguelike;science-fiction;apocalypse;turn-based;game;survival;cbn;bn;c++;overhaul;bno
+Icon=io.github.kenja_mc.BrightNightsOverhaul
+Exec=bno
+Terminal=true

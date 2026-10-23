@@ -29,7 +29,9 @@ direction prompts. Top-row numbers do not move you on the map.
   in one menu at the top of the screen, each named with its direction ("open the door (east)"), and
   lights up the tile of the highlighted row. A single safe action runs at once. With a tile selected
   (right click or Shift+direction), Space offers that tile's **Open**, **Close**, **Examine**,
-  **Pickup**, **Jump** and **Smash**. Standing on a corpse adds **Butcher**. Jumping and destructive
+  **Pickup**, **Jump** and **Smash**. Your own tile also offers **Ascend** or **Descend** when a
+  vertical transition is available; clicking your own stairs uses them. Standing on a corpse adds
+  **Butcher**. Jumping and destructive
   actions are explicit choices, never an automatic substitute; smashing ordinary floors and walls
   is only offered for a tile you picked.
 - **Shift+direction — select.** Shift+WASD/QEZC moves the selection marker one tile in that
@@ -108,28 +110,29 @@ therefore cause an extra safe-mode stop. Changes to passability discard the cach
 The welcome card also explains mouse selection, and a first tip suggests a starter goal: find water,
 food and a weapon, because houses usually have all three.
 
-| Key / family         | Action                                                     |
-| -------------------- | ---------------------------------------------------------- |
-| `w a s d`, `q e z c` | move; bump an enemy to melee attack                        |
-| Numpad               | move; numpad 5 waits one turn                              |
-| Shift+direction      | move the selection marker                                  |
-| Ctrl+direction       | physical peek (normal 200-move cost)                       |
-| Tab / Shift+Tab      | next / previous visible hostile                            |
-| `f`, `F`, `r`, `t`   | attack selected target / fire mode / reload / throw        |
+| Key / family         | Action                                                             |
+| -------------------- | ------------------------------------------------------------------ |
+| `w a s d`, `q e z c` | move; bump an enemy to melee attack                                |
+| Numpad               | move; numpad 5 waits one turn                                      |
+| Shift+direction      | move the selection marker                                          |
+| Ctrl+direction       | physical peek (normal 200-move cost)                               |
+| Tab / Shift+Tab      | next / previous visible hostile                                    |
+| `f`, `F`, `r`, `t`   | attack selected target / fire mode / reload / throw                |
 | Space                | nearby or selected-tile actions, including explicit Jump and Smash |
-| `g`                  | pick up from everything nearby                             |
-| `i`, `v`, `/`        | inventory / wield / advanced inventory                     |
-| `i`, then F5         | craft (also works with empty inventory)                    |
-| `@`, `P`, `B`        | character sheet / message log / butcher                    |
-| Enter                | all action groups; Info contains character/status screens  |
-| Shift+X              | cycle walk / run / crouch / prone                          |
-| `x` / Ctrl+X         | wait one turn / wait or rest a while                       |
-| `m`, `n`             | map / auto-explore                                         |
-| `<` / `>`            | stairs up / down                                           |
-| `!` / `'`            | safe mode / ignore enemy                                   |
-| F1 / `?`             | help / full keybinding list                                |
-| Esc                  | cancel selection, or main menu when no selection is active |
-| F12 / backtick       | developer debug menu / Lua console                         |
+| `g` / Ctrl+G         | take everything underfoot / choose items nearby            |
+| `i`, `v`, `/`        | inventory / wield / advanced inventory                             |
+| `i`, then F5         | craft (also works with empty inventory)                            |
+| `@`, `P`, `B`        | character sheet / message log / butcher                            |
+| Enter                | all action groups; Info contains character/status screens          |
+| Shift+X              | cycle walk / run / crouch / prone                                  |
+| `x` / Ctrl+X         | wait one turn / wait or rest a while                               |
+| `m`, `n`             | map / auto-explore                                                 |
+| PageUp / PageDown    | stairs up / down (also `<` / `>`)                           |
+| `h`                  | health and wounds                                          |
+| `!` / `'`            | safe mode / ignore enemy                                           |
+| F1 / `?`             | help / full keybinding list                                        |
+| Esc                  | cancel selection, or main menu when no selection is active         |
+| F12 / backtick       | developer debug menu / Lua console                                 |
 
 Walking into an enemy attacks it in both control schemes. Options → Interface → Attack by walking
 into enemies can disable this; in Modern, select a target and press `f` for a deliberate attack.
@@ -167,8 +170,9 @@ Inventory menus follow the usual list controls: hover highlights an item, left c
 several, such as drop), the mouse wheel scrolls, and right click on an item in the inventory (`i`)
 opens its actions, as in Sword of the Stars: The Pit. Right click outside the list cancels.
 
-**Pick up with the key you already pressed.** In Modern, `g` opens the pick-up menu and `g` again
-picks up: the marked items, or the highlighted item when nothing is marked. Enter still works.
+**Quick pickup and area pickup.** In Modern, `g` takes all ground and vehicle-cargo items on your
+own tile without a menu, using the normal pickup activity and its capacity handling. Ctrl+G opens
+the area pickup menu; `g` or Enter picks up marked items, or the highlighted item if none are marked.
 Inside pickup, local shortcuts act on the highlighted item: `h` wields it and `W` wears it.
 With the mouse, hover highlights a row, left click marks or unmarks it, and the wheel moves through
 the list. Right click lists Pick up, Wield and Wear; each acts on that item alone. The footer shows
@@ -202,7 +206,14 @@ keeps its first row or two instead of vanishing, so the core keys stay on screen
 The compass gives up rows first. Hidden panels do not reserve space, and sidebar spacers count
 toward the available height.
 While driving, the movement hints become `ws throttle` and `ad steer`. Releasing the controls
-restores the walking hints.
+restores the walking hints. With **Menu key hints** on (Options → Interface), opening a menu
+switches the Controls strip to that menu's registered keys. A one-line Controls footer is drawn
+over the bottom row of the active in-game menu, including inventory, pickup, crafting, look-around,
+aiming and the action menu. It is inactive on the title screen and while game data is unloaded.
+Closing the menu restores map keys. Hints include Ctrl-only bindings and
+follow rebinding. Hide the Controls panel to hide both displays, or turn Menu key hints off to
+keep the old map-only strip. This also applies in Classic when its Controls panel is enabled;
+it does not change Classic bindings.
 
 **Follower commands**: open Chat from Enter (or interact with a nearby follower), then `P` opens the command palette. Choose a follower
 when more than one is nearby. Change engagement, aiming, gun use, movement and item rules
@@ -228,7 +239,8 @@ scheme.
 
 **Contextual interact** (Options → Interface → Contextual interact, on by default in Modern):
 Space acts on the tile selected by right click or Shift+direction and lists its applicable
-actions, including Open, Close, Examine, Pickup, Butcher, Jump and Smash. Without a selected tile,
+actions, including Open, Close, Examine, Pickup, Butcher, Jump and Smash. On your own tile it also
+offers Ascend and Descend, using the same mount, vehicle and rope checks as the stair keys. Without a selected tile,
 Space gathers the actions of every tile around you into one list, named by direction, and
 highlights the tile of the highlighted row; a single safe action runs directly. Jump and Smash
 always need an explicit choice; Smash uses local `S` so `s` remains menu navigation. It never
@@ -308,9 +320,6 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 - **Cliff edge shading** (orthographic tiles): a narrow dark edge marks a visible drop into open
   air without covering the ground texture. Hidden openings are not revealed. Options → Graphics →
   Cliff edge shading restores the original view.
-- **Directional stairs** (tiles): stairs and ramps face an adjacent visible walkable opening.
-  Rotation stays anchored to the tile, including tilesets with oversized sprites. Turn it off
-  under Options → Graphics to use the original orientation.
 - **Item thumbnails in UI** (tiles): inventory and pickup rows show the item's real sprite,
   including jewelry variants and corpses. Filtering clears old thumbnails, and sprites stay inside
   their list window. Options → Graphics → Item thumbnails in UI turns them off.
@@ -329,7 +338,7 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   packs. It has no music: gunshots, deaths and ambience stay silent rather than use a sound that
   does not fit. Sources in `data/sound/Overhaul/CREDITS.md`. Music and ambience come from the
   Otopack, which upstream release builds include. A source checkout downloads it separately:
-  `bin/install-cataclysm-bn.sh` uses `build-scripts/bundle-registry-mods.ts` and keeps the pack's
+  `bin/install-bno.sh` uses `build-scripts/bundle-registry-mods.ts` and keeps the pack's
   credits with its files. Pick it under Options → General → Choose soundpack.
 
 - **Grouped right sidebar**, based on the Opus HUD proposal, keeps the map free of HUD boxes.
@@ -352,10 +361,13 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   A watch reveals exact time; without one, time is approximate above ground and unknown below.
   A thermometer adds outdoor temperature. Wind letters name its origin; arrows show its flow.
   Status shows weapon and ammo, stance, and the fighting style once one is chosen. Below them
-  it lists only the needs that call for attention (**Pain, Thirst, Hunger, Rest, Heat**), one row
-  each, or a single **Needs met** row when all are fine. Relevant mana remains `current/max`.
+  it lists only the needs that call for attention (**Pain, Thirst, Hunger, Rest, Body temp**), one
+  row each, or a single **Needs met** row when all are fine. Only a very hot or very cold body
+  presses the Body temp row: mild warmth and chill stay in the detailed panels. Relevant mana
+  remains `current/max`. Heat and cold each carry their own row icon; Rest uses one glyph.
   With icons the rows carry no labels; **Text only** keeps a label on every row. Normal gameplay
-  descriptors and colors remain intact; Heat describes body comfort, not outdoor temperature.
+  descriptors and colors remain intact; Body temp describes body comfort, not the outdoor
+  temperature.
   Options → Interface → Weather box / Status box moves or disables each box. Box icons selects
   **Text only**, Unicode or **Icon font**. The graphical version bundles the icon font: Material
   Design Icons and human stance figures for walking, running, crouching and lying prone (Pinhead,
@@ -384,7 +396,7 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   Speed, azimuth and fuel values stay readable at the minimum supported 80 × 25 terminal size.
 - **Body panel** (inspired by Project Zomboid's health screen): the sidebar lists every hurt limb
   and what is wrong with it (bleeding, infected, bitten, broken, bandaged, disinfected).
-  **Enter → Info → Body status** opens the full view with every limb's health and what to do
+  **`h`** in Modern, or **Enter → Info → Body status**, opens the full view with every limb's health and what to do
   about wounds. Hide it like any panel from the sidebar options. The Hitchhiker's Guide remains
   available through Enter and item context menus.
 - **Aligned sidebar**: every row uses one label width and one column grid, with a space after each
@@ -392,6 +404,14 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   already shows the sound level; turn it back on from the sidebar options.
 - Gun and ammo info show **loudness**: the noise of one shot and a word for it (quiet, loud, very
   loud, deafening). An unloaded gun shows its default ammo, like the other stats.
+
+## Sound & volume
+
+Open **Enter → Misc → Sound & volume** to toggle **Sound** and **Music** separately, or adjust
+**Music volume**, **Sound effect volume** and **Ambient volume** from 0 to 100%. Music starts on;
+it needs a soundpack with music. Up/Down selects a row, Left/Right changes it, and Enter toggles a
+switch or raises a volume. Changes apply immediately; **Escape** closes the menu and saves them.
+The terminal build instead shows “Sound is unavailable in this build.”; Escape closes that notice.
 
 ## Items and storage
 
@@ -441,9 +461,12 @@ that is optional:
 - **Black powder handloads stack with factory rounds.** The 75 `bp_*` ammo items are gone. A
   black powder round is the normal round with a _black powder_ stack modifier, so 30 factory 9mm
   and 10 handloads make one stack, shown as `9mm JHP (40, 10 black powder)`. Each shot rolls which
-  round fires, and only black powder shots hit softer, spread wider and kick less. Loading,
-  unloading and splitting keep the right share of handloads; handloads can't be pulled apart for
-  smokeless powder. The handloading recipes are still there, listed as `9mm JHP (black powder)`.
+  round fires, and only black powder shots hit softer, spread wider and kick less. They also keep
+  their handload misfire chance, black powder fouling and muzzle smoke, and cost half as much as
+  factory rounds. Loading, unloading and splitting keep the right share of handloads. Both mixed
+  and pure handload stacks disassemble using the base round's recipe and return plain components,
+  including smokeless powder where that recipe supplies it. The handloading recipes are still
+  there, listed as `9mm JHP (black powder)`.
   Rounds already defined as black powder, such as the .45-70 handload, keep their own ballistics
   without an extra modifier; applying both would reduce their damage twice.
 
@@ -540,16 +563,31 @@ once and let stacks count how many of their units carry it:
   "armor_penetration": 0.5,
   "dispersion": 1.2,
   "recoil": 0.76,
-  "blocks_disassembly": true
+  "price": 0.5,
+  "price_postapoc": 0.5,
+  "ammo_effects": [ "RECYCLED", "BLACKPOWDER", "MUZZLE_SMOKE" ],
+  "remove_ammo_effects": [ "NEVER_MISFIRES" ]
 }
 ```
 
 - A recipe marks its output with `"result_stack_modifier": "black_powder"`.
 - A `MIGRATION` with `"stack_modifier": "black_powder"` turns an old item id into the base item
   with every unit modified, so saves keep their handloads.
-- Stacks merge regardless of modifiers; counts add up on merge and split proportionally.
-- The shot multipliers apply per round fired. Other kinds of modifier can reuse the same counting
-  and only need their own effect hook.
+- Stacks merge regardless of modifiers; counts add up on merge and split proportionally, with
+  random rounding of fractional shares. Disassembly consumes the same proportional share and
+  returns the base recipe's plain components; modifiers do not block disassembly.
+- `damage`, `armor_penetration`, `dispersion` and `recoil` are multipliers, defaulting to `1`.
+  They apply only to the selected modified round, not the whole mixed stack.
+- `ammo_effects` adds ammo-effect ids; `remove_ammo_effects` removes them. Both default to empty
+  lists. Removals happen before additions. The selected round's effects are used for misfires,
+  cycling and fouling before firing, and for projectile effects such as muzzle smoke. A failed
+  firing attempt does not consume a round or its modifier count.
+  Ammo effect tooltips label how many rounds have each effect when a stack is mixed.
+- `price` and `price_postapoc` are per-modified-unit multipliers, both defaulting to `1`.
+  Prices weight plain and modified units by their actual counts, including rounds loaded in
+  magazines. A stack of 30 factory rounds and 10 half-price handloads costs as much as 35 factory
+  rounds, not 20 or 40.
+- A unit carries at most one stack modifier; different modifiers describe separate units.
 
 ## Item variants (for modders)
 
@@ -587,6 +625,7 @@ item type variants instead of new item types:
 - An item group entry can name the variant: `{ "item": "jewelry_ring", "variant": "gold_ring" }`.
 - A recipe can make a variant: `"result": "jewelry_ring", "result_variant": "gold_ring"` (with an
   `id_suffix` when several recipes share a result).
+- Variant-specific fetch missions use `item_variant` and consume only matching variants.
 - A `MIGRATION` with `"variant": "gold_ring"` maps an old item id onto the right variant.
 
 ## Bug fixes

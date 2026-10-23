@@ -19,12 +19,12 @@ info**, then **Run anyway**. Do not bypass a warning for a download from an unkn
 
 ### How updates work
 
-| What you do | What happens |
-| --- | --- |
-| Start the game with `Launch Bright Nights.bat` | It asks GitHub for the newest release. If that is newer than yours, it shows the new version and a link to what changed, then asks `Update to vX now? [Y/n]`. Press Enter to update, or type `n` to play the version you have. |
-| Start it with no internet, or GitHub does not answer in 5 seconds | The game starts without asking anything. |
-| Double-click `Update Bright Nights.bat` | It checks now and tells you the result, also when you already have the newest version. |
-| Start `cataclysm-bn-tiles.exe` directly | No update check. |
+| What you do                                                       | What happens                                                                                                                                                                                                                   |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Start the game with `Launch Bright Nights.bat`                    | It asks GitHub for the newest release. If that is newer than yours, it shows the new version and a link to what changed, then asks `Update to vX now? [Y/n]`. Press Enter to update, or type `n` to play the version you have. |
+| Start it with no internet, or GitHub does not answer in 5 seconds | The game starts without asking anything.                                                                                                                                                                                       |
+| Double-click `Update Bright Nights.bat`                           | It checks now and tells you the result, also when you already have the newest version.                                                                                                                                         |
+| Start `cataclysm-bn-tiles.exe` directly                           | No update check.                                                                                                                                                                                                               |
 
 An update downloads the new zip, checks it against the release's SHA-256 checksum, unpacks it,
 and then swaps the game files. Close the game first. If installation fails, the updater attempts
@@ -37,17 +37,17 @@ then try again. Do not delete the backup while recovery is incomplete.
 
 The Windows version keeps everything in its own folder, so the whole folder is your install.
 
-| Folder | What it holds | After an update |
-| --- | --- | --- |
-| `save\` | your worlds and characters | kept |
-| `config\` | options, key bindings, font settings | kept |
-| `memorial\`, `graveyard\` | records of dead characters | kept |
-| `templates\` | character templates | kept |
-| `font\` | fonts you added | kept |
-| `mods\`, `data\mods\` | mods | your own mods are kept; the release's mods are replaced |
-| `gfx\` | tilesets | your own tilesets are kept; the release's tilesets are replaced |
-| `sound\`, `data\sound\` | soundpacks | your own soundpacks are kept |
-| everything else (`data\json\`, the `.exe`, ...) | game files | replaced |
+| Folder                                          | What it holds                        | After an update                                                 |
+| ----------------------------------------------- | ------------------------------------ | --------------------------------------------------------------- |
+| `save\`                                         | your worlds and characters           | kept                                                            |
+| `config\`                                       | options, key bindings, font settings | kept                                                            |
+| `memorial\`, `graveyard\`                       | records of dead characters           | kept                                                            |
+| `templates\`                                    | character templates                  | kept                                                            |
+| `font\`                                         | fonts you added                      | kept                                                            |
+| `mods\`, `data\mods\`                           | mods                                 | your own mods are kept; the release's mods are replaced         |
+| `gfx\`                                          | tilesets                             | your own tilesets are kept; the release's tilesets are replaced |
+| `sound\`, `data\sound\`                         | soundpacks                           | your own soundpacks are kept                                    |
+| everything else (`data\json\`, the `.exe`, ...) | game files                           | replaced                                                        |
 
 To back up your games, copy `save\` and `config\`. To move the game, move the whole folder. Do
 not edit files in `data\json\` or other game folders: an update replaces them.
@@ -64,6 +64,13 @@ download the zip from the
 [Otopack BN Mk 2 release](https://github.com/NarandBD/Otopack-BN-Mk-2/releases/tag/sorrynotsorry),
 copy the `Otopack+ModsUpdates BN` folder from inside it into the game's `sound\` folder, choose it
 under **Options → General → Choose soundpack**, and restart. Updates keep it.
+
+While playing the sound-enabled graphical version, open **Enter → Misc → Sound & volume**.
+**Sound** controls all audio; **Music** switches music independently and starts on by default.
+The three volume rows control music, sound effects and ambience from 0 to 100%. Select a row
+with Up/Down and change it with Left/Right; Enter toggles a switch or raises a volume.
+Changes take effect at once. Press **Escape** to close the menu and save them.
+The terminal version has no audio and shows “Sound is unavailable in this build.” instead.
 
 ## Linux: download a release
 
@@ -95,42 +102,52 @@ cmake --build --preset linux-full --target cataclysm-bn-tiles
 Then run once from the repository root:
 
 ```sh
-./bin/install-cataclysm-bn.sh
+./bin/install-bno.sh
 ```
 
 This installs:
 
-- launcher wrappers → `~/.local/bin/cataclysm-bn`, `~/.local/bin/cataclysm-bn-tiles`
-- desktop entries → `~/.local/share/applications/` ("Cataclysm-BN" for tiles,
-  "Cataclysm-BN (Curses)" for the terminal version; `--no-curses-entry` leaves the terminal
-  version out of the app menu and keeps its `cataclysm-bn` command)
-- icon and metainfo, and a basepath config at `~/.config/cataclysm-bn/basepath`
+- launcher wrappers → `~/.local/bin/bno` (terminal), `~/.local/bin/bno-tiles` (graphics)
+- desktop entries → `~/.local/share/applications/` ("Bright Nights Overhaul" for tiles,
+  "Bright Nights Overhaul (Curses)" for the terminal version; `--no-curses-entry` leaves the
+  terminal version out of the app menu and keeps its `bno` command)
+- the app icon and a basepath config at `~/.config/bright-nights-overhaul/basepath`
 - the Otopack soundpack (music and ambience) in `data/sound/Otopack+ModsUpdates BN`, downloaded
   with `deno` through upstream's registry bundler. Downloaded audio and its credits stay outside
   version control. Choose it under **Options → General → Choose soundpack**, then restart.
   The game picks it by default only if you never saved another soundpack.
 
-The fork then appears in your app menu. The wrapper resolves the game's data directory from
-`CATACLYSM_BN_BASEPATH`, the config file, or the current directory.
+The fork then appears in your app menu next to an upstream Cataclysm-BN install. It uses its
+own app id (`io.github.kenja_mc.BrightNightsOverhaul`), commands, saves and settings, so the
+two installs do not replace or launch each other. The wrapper resolves the game's data
+directory from `BNO_BASEPATH`, the config file, or the current directory.
 
 ```sh
-cataclysm-bn          # terminal (curses) version
-cataclysm-bn-tiles    # tiles version
+bno          # terminal (curses) version
+bno-tiles    # tiles version
 ```
 
-For graphics, launch **Cataclysm-BN** from the app menu or run `cataclysm-bn-tiles`.
-The `cataclysm-bn` command launches the terminal version, which cannot display tiles.
+For graphics, launch **Bright Nights Overhaul** from the app menu or run `bno-tiles`.
+The `bno` command launches the terminal version, which cannot display tiles.
 The graphical version enables tiles by default and selects the bundled UnDeadPeople
 tileset (`UNDEAD_PEOPLE_BASE`). Menus are text-based, with item thumbnails in inventory
 and pickup lists; check the in-game map to see terrain and creature tiles.
-The installed launchers use `~/.local/share/cataclysm-bn` for saves. The supplied graphical
-build reads settings from `~/.config/cataclysm-bn`; the terminal build reads settings from
-`~/.local/share/cataclysm-bn/config`. Graphics settings therefore need to be changed in the
-graphical version.
+The installed launchers use `~/.local/share/bright-nights-overhaul` for saves. The supplied
+graphical build reads settings from `~/.config/bright-nights-overhaul`; the terminal build
+reads settings from `~/.local/share/bright-nights-overhaul/config`. Graphics settings
+therefore need to be changed in the graphical version.
 If you previously disabled tiles in the graphical version, enable **Use tiles** under
 **Options → Graphics**; launching it again does not override your saved preference.
 
-Run `./bin/install-cataclysm-bn.sh --uninstall` to remove the installation.
+The first install copies `~/.local/share/cataclysm-bn` and `~/.config/cataclysm-bn` to the
+new locations when these do not exist yet, so existing saves and settings carry over. The old
+directories are left unchanged for an upstream Cataclysm-BN install.
+
+Run `./bin/install-bno.sh --uninstall` to remove the fork's launchers and menu entries;
+saves and settings stay. To move back to upstream, launch upstream's own
+`cataclysm-bn` / `cataclysm-bn-tiles` (or its app-menu entry). To keep playing with the saves
+made in the fork, copy `~/.local/share/bright-nights-overhaul` and
+`~/.config/bright-nights-overhaul` over the old directories before removing the fork.
 
 ## Playtesting
 
@@ -177,7 +194,8 @@ Long-form write-ups should follow
   wait/rest; Shift+X cycles walk/run/crouch/prone, with F2/F3/F4 unbound.
 - **Inventory:** `i`, then select an item for Wield/Wear/Eat/Use/Read and other context actions.
   `v` opens Wield directly. F5 Craft remains available even when inventory is empty.
-  `g` opens and confirms pickup. Quick stack and sort pile remain in Enter.
+  `g` takes everything underfoot without a menu; Ctrl+G opens area pickup, where `g` or Enter
+  confirms. Quick stack and sort pile remain in Enter.
 - **Select and interact:** Shift+WASD/QEZC selects a tile without spending time.
   Space acts on that selection. Without a selection, it lists nearby actions with directions
   and highlights the tile of the current row. Jump and Smash need explicit choices (`S` for Smash).
@@ -191,7 +209,7 @@ Long-form write-ups should follow
   Weather, Character and Needs move off the map. Existing layouts remain selectable.
   Try Text only, Unicode and Icon font. Make sure that urgent needs, limb health and controls
   survive resizing to 80×25. A watch reveals exact time and a thermometer reveals temperature.
-  Body details remain in Enter → Info → Body status. `@` opens the character sheet and `P` the log.
+  `h` opens body details (also Enter → Info → Body status). `@` opens the character sheet and `P` the log.
   `F` opens fire-mode selection.
   Check vehicle/readout fallbacks at 80×25, driving hints (`ws`/`ad`), and their return to
   `wasd` on release. The new bundled typeface should show readable labels and complete glyphs.
