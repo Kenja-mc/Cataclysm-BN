@@ -787,10 +787,10 @@ void uilist::reposition( ui_adaptor &ui )
     ui.position_from_window( window );
 }
 
-void uilist::apply_scrollbar()
+auto uilist::scrollbar_geometry() const -> scrollbar_input::geometry
 {
-    int sbside = ( pad_left <= 0 ? 0 : w_width - 1 );
-    int estart = textformatted.size();
+    const auto sbside = pad_left <= 0 ? 0 : w_width - 1;
+    auto estart = static_cast<int>( textformatted.size() );
     if( estart > 0 ) {
         estart += 2;
     } else {
@@ -800,17 +800,30 @@ void uilist::apply_scrollbar()
         ++estart;
     }
 
+    return scrollbar_input::geometry{
+        .offset = point( sbside, estart ),
+        .viewport_size = vmax,
+        .content_size = static_cast<int>( fentries.size() ),
+        .viewport_pos = vshift,
+        .scroll_to_last = false,
+    };
+}
+
+void uilist::apply_scrollbar()
+{
+    const auto geometry = scrollbar_geometry();
+
     scrollbar()
-    .offset_x( sbside )
-    .offset_y( estart )
-    .content_size( fentries.size() )
-    .viewport_pos( vshift )
-    .viewport_size( vmax )
+    .offset_x( geometry.offset.x )
+    .offset_y( geometry.offset.y )
+    .content_size( geometry.content_size )
+    .viewport_pos( geometry.viewport_pos )
+    .viewport_size( geometry.viewport_size )
     .border_color( border_color )
     .arrow_color( border_color )
     .slot_color( c_light_gray )
     .bar_color( c_cyan_cyan )
-    .scroll_to_last( false )
+    .scroll_to_last( geometry.scroll_to_last )
     .apply( window );
 }
 
@@ -859,7 +872,11 @@ void uilist::show( ui_adaptor &ui )
                         _color_error, "%s", category_label );
     }
 
-    calcStartPos( vshift, fselected, vmax, fentries.size() );
+    if( viewport_held ) {
+        vshift = std::clamp( vshift, 0, std::max( 0, static_cast<int>( fentries.size() ) - vmax ) );
+    } else {
+        calcStartPos( vshift, fselected, vmax, fentries.size() );
+    }
 
     const int pad_size = std::max( 0, w_width - 2 - pad_left - pad_right );
     const std::string padspaces = std::string( pad_size, ' ' );
@@ -1123,35 +1140,49 @@ void uilist::query( bool loop, int timeout )
         const auto iter = keymap.find( keypress );
 
         if( scrollby( scroll_amount_from_action( ret_act ) ) ) {
-            /* nothing */
+            viewport_held = false;
         } else if( modern && event.type == input_event_t::mouse &&
                    ( ret_act == "SELECT" || ret_act == "MOUSE_MOVE" ) ) {
             const auto mouse = ctxt.get_coordinates( window );
             if( mouse ) {
-                const auto cell = mouse->xy().raw() + point( getmaxx( window ), getmaxy( window ) ) / 2;
-                const auto end = std::min( vshift + vmax, static_cast<int>( fentries.size() ) );
-                for( auto filtered_index = vshift; filtered_index < end; ++filtered_index ) {
-                    const auto entry_index = fentries[filtered_index];
-                    const auto &entry = entries[entry_index];
-                    if( !entry.drawn_rect || !entry.drawn_rect->contains( cell ) ) {
-                        continue;
+                bool on_scrollbar = false;
+                if( ret_act == "SELECT" ) {
+                    if( const auto hit = scrollbar_input::click( scrollbar_geometry(),
+                            mouse->xy().raw() ) ) {
+                        vshift = hit->viewport_pos;
+                        viewport_held = true;
+                        on_scrollbar = true;
                     }
-                    if( entry.enabled || allow_disabled || hilight_disabled ) {
-                        selected = entry_index;
-                        fselected = filtered_index;
-                        if( callback != nullptr ) {
-                            callback->select( this );
+                }
+                if( !on_scrollbar ) {
+                    const auto cell = mouse->xy().raw() + point( getmaxx( window ), getmaxy( window ) ) / 2;
+                    const auto end = std::min( vshift + vmax, static_cast<int>( fentries.size() ) );
+                    for( auto filtered_index = vshift; filtered_index < end; ++filtered_index ) {
+                        const auto entry_index = fentries[filtered_index];
+                        const auto &entry = entries[entry_index];
+                        if( !entry.drawn_rect || !entry.drawn_rect->contains( cell ) ) {
+                            continue;
                         }
-                        if( ret_act == "SELECT" && ( entry.enabled || allow_disabled ) ) {
-                            ret = entry.retval;
+                        if( entry.enabled || allow_disabled || hilight_disabled ) {
+                            viewport_held = false;
+                            selected = entry_index;
+                            fselected = filtered_index;
+                            if( callback != nullptr ) {
+                                callback->select( this );
+                            }
+                            if( ret_act == "SELECT" && ( entry.enabled || allow_disabled ) ) {
+                                ret = entry.retval;
+                            }
                         }
+                        break;
                     }
-                    break;
                 }
             }
         } else if( filtering && ret_act == "FILTER" ) {
+            viewport_held = false;
             inputfilter();
         } else if( categories.size() > 1 && ( ret_act == "LEFT" || ret_act == "RIGHT" ) ) {
+            viewport_held = false;
             cycle_category( ret_act == "RIGHT" );
         } else if( ( ret_act == "ANY_INPUT" ||
                      ( modern && ( ret_act == "LEFT" || ret_act == "RIGHT" ) &&
@@ -1163,6 +1194,7 @@ void uilist::query( bool loop, int timeout )
                 if( enabled || allow_disabled || hilight_disabled ) {
                     // Change the selection to display correctly when this function
                     // is called again.
+                    viewport_held = false;
                     fselected = std::distance( fentries.begin(), it );
                     selected = *it;
                     if( enabled || allow_disabled ) {
@@ -1189,6 +1221,7 @@ void uilist::query( bool loop, int timeout )
             ret = UILIST_TIMEOUT;
         } else {
             // including HELP_KEYBINDINGS, in case the caller wants to refresh their contents
+            viewport_held = false;
             bool unhandled = callback == nullptr || !callback->key( ctxt, event, selected, this );
             if( unhandled && allow_anykey ) {
                 ret = UILIST_UNBOUND;

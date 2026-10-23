@@ -32,6 +32,7 @@
 #include "options.h"
 #include "popup.h"
 #include "rng.h"
+#include "scrollbar_input.h"
 #include "string_formatter.h"
 #include "string_input_popup.h"
 #include "ui_manager.h"
@@ -1487,22 +1488,17 @@ void scrollbar::apply( const catacurses::window &window )
         mvwputch( window, point( offset_x_v, offset_y_v ), arrow_color_v, '^' );
         mvwputch( window, point( offset_x_v, offset_y_v + viewport_size_v - 1 ), arrow_color_v, 'v' );
 
-        int slot_size = viewport_size_v - 2;
-        int bar_size = std::max( 2, slot_size * viewport_size_v / content_size_v );
-        int scrollable_size = scroll_to_last_v ? content_size_v : content_size_v - viewport_size_v + 1;
+        const auto lay = scrollbar_input::layout_for( scrollbar_input::geometry{
+            .offset = point( offset_x_v, offset_y_v ),
+            .viewport_size = viewport_size_v,
+            .content_size = content_size_v,
+            .viewport_pos = viewport_pos_v,
+            .scroll_to_last = scroll_to_last_v,
+        } );
+        const auto bar_end = lay.bar_start + lay.bar_size;
 
-        int bar_start;
-        if( viewport_pos_v == 0 ) {
-            bar_start = 0;
-        } else if( scrollable_size > 2 ) {
-            bar_start = ( slot_size - 1 - bar_size ) * ( viewport_pos_v - 1 ) / ( scrollable_size - 2 ) + 1;
-        } else {
-            bar_start = slot_size - bar_size;
-        }
-        int bar_end = bar_start + bar_size;
-
-        for( int i = 0; i < slot_size; ++i ) {
-            if( i >= bar_start && i < bar_end ) {
+        for( auto i = 0; i < lay.slot_size; ++i ) {
+            if( i >= lay.bar_start && i < bar_end ) {
                 mvwputch( window, point( offset_x_v, offset_y_v + 1 + i ), bar_color_v, LINE_XOXO );
             } else {
                 mvwputch( window, point( offset_x_v, offset_y_v + 1 + i ), slot_color_v, LINE_XOXO );
