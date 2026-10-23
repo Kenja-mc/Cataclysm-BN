@@ -3830,12 +3830,12 @@ void cata_tiles::draw( point dest, const tripoint_bub_ms &center, int width, int
             for( const auto f : final_drawing_layers ) {
                 ( this->*f )( p.pos, p.ll, p.height_3d, p.invisible, 0 );
             }
-            // A visible tile may have changed since the avatar last tried its door.
-            if( !p.invisible[0] ) {
-                refresh_known_locked_door( p.pos );
-            }
-            if( show_known_lock_icons ) {
-                draw_known_locked_door( p.pos, overlay_strings );
+            // Remembered tiles only report knowledge; visible tiles are validated first.
+            const auto known = p.invisible[0]
+                               ? get_avatar().get_known_locked_door( bub_to_abs( p.pos ) )
+                               : refresh_known_locked_door( p.pos );
+            if( show_known_lock_icons && known != locked_door_kind::none ) {
+                draw_known_locked_door( p.pos, known, overlay_strings );
             }
         }
 
@@ -5309,40 +5309,44 @@ auto items_on_furniture_surface( const tripoint_bub_ms &p ) -> bool
 
 } // namespace
 
-auto cata_tiles::refresh_known_locked_door( const tripoint_bub_ms &p ) -> void
+auto cata_tiles::refresh_known_locked_door( const tripoint_bub_ms &p ) -> locked_door_kind
 {
     auto &here = get_map();
     auto &you = get_avatar();
     const auto abs = bub_to_abs( p );
     switch( you.get_known_locked_door( abs ) ) {
         case locked_door_kind::none:
-            return;
+            return locked_door_kind::none;
         case locked_door_kind::terrain:
             // Seen again and no longer locked (opened, unlocked, destroyed or replaced).
             if( !here.has_flag( "LOCKED", p ) ) {
                 you.forget_locked_door( abs );
+                return locked_door_kind::none;
             }
-            return;
+            return locked_door_kind::terrain;
         case locked_door_kind::vehicle: {
             const auto vp = here.veh_at( p );
             if( !vp ) {
                 you.forget_locked_door( abs );
-                return;
+                return locked_door_kind::none;
             }
             const auto openable = vp->part_with_feature( "OPENABLE", true );
             const auto lock_part = vp->part_with_feature( "DOOR_LOCKING", true );
-            if( !openable || !lock_part || vp->vehicle().is_open( openable->part_index() ) ) {
+            if( !openable || !lock_part || !lock_part->part().enabled ||
+                vp->vehicle().is_open( openable->part_index() ) ) {
                 you.forget_locked_door( abs );
+                return locked_door_kind::none;
             }
-            return;
+            return locked_door_kind::vehicle;
         }
     }
+    return locked_door_kind::none;
 }
 
-auto cata_tiles::draw_known_locked_door( const tripoint_bub_ms &p,
+auto cata_tiles::draw_known_locked_door( const tripoint_bub_ms &p, const locked_door_kind kind,
         std::multimap<point, formatted_text> &overlay_strings ) -> void
 {
-    if( get_avatar().get_known_locked_door( bub_to_abs( p ) ) == locked_door_kind::none ) {
+    if( kind == locked_door_kind::none ) {
         return;
     }
 
