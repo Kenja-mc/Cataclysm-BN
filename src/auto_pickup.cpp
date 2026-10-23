@@ -23,6 +23,7 @@
 #include "output.h"
 #include "path_info.h"
 #include "point.h"
+#include "scrollbar_input.h"
 #include "string_formatter.h"
 #include "string_input_popup.h"
 #include "string_utils.h"
@@ -90,6 +91,26 @@ void user_interface::show()
     int iColumn = 1;
     int iStartPos = 0;
 
+    // Matches the draw_scrollbar() call in on_redraw below.
+    const auto scrollbar_geometry = [&]() {
+        return scrollbar_input::geometry{
+            .offset = point( 0, 5 ),
+            .viewport_size = iContentHeight,
+            .content_size = static_cast<int>( tabs[iTab].new_rules.size() ),
+            .viewport_pos = iLine,
+            .scroll_to_last = true,
+        };
+    };
+    // Header rectangles of the tab titles and the global <S>witch label, -1 when not drawn.
+    struct header_label {
+        int x0 = 0;
+        int x1 = 0;
+        int index = 0;
+    };
+    auto tab_labels = std::vector<header_label>{};
+    auto switch_x0 = -1;
+    auto switch_x1 = -1;
+
     ui.on_redraw( [&]( const ui_adaptor & ) {
         // Redraw the border
         draw_border( w_border, BORDER_COLOR, title );
@@ -136,9 +157,12 @@ void user_interface::show()
 
         rule_list &cur_rules = tabs[iTab].new_rules;
         int locx = 17;
+        tab_labels.clear();
         for( size_t i = 0; i < tabs.size(); i++ ) {
             const auto color = iTab == i ? hilite( c_white ) : c_white;
+            const auto x0 = locx;
             locx += shortcut_print( w_header, point( locx, 2 ), c_white, color, tabs[i].title ) + 1;
+            tab_labels.push_back( { .x0 = x0, .x1 = locx - 1, .index = static_cast<int>( i ) } );
         }
 
         locx = 55;
@@ -147,7 +171,13 @@ void user_interface::show()
                                 get_option<bool>( "AUTO_PICKUP" ) ? c_light_green : c_light_red, c_white,
                                 get_option<bool>( "AUTO_PICKUP" ) ? _( "True" ) : _( "False" ) );
         locx += shortcut_print( w_header, point( locx, 1 ), c_white, c_light_green, "  " );
-        locx += shortcut_print( w_header, point( locx, 1 ), c_white, c_light_green, _( "<S>witch" ) );
+        if( is_autopickup ) {
+            switch_x0 = locx;
+            switch_x1 = locx + shortcut_print( w_header, point( locx, 1 ), c_white, c_light_green,
+                                               _( "<S>witch" ) );
+        } else {
+            switch_x0 = -1;
+        }
         shortcut_print( w_header, point( locx, 1 ), c_white, c_light_green, "  " );
 
         wnoutrefresh( w_header );
@@ -163,7 +193,8 @@ void user_interface::show()
             }
         }
 
-        draw_scrollbar( w_border, iLine, iContentHeight, cur_rules.size(), point( 0, 5 ) );
+        const auto sb = scrollbar_geometry();
+        draw_scrollbar( w_border, sb.viewport_pos, sb.viewport_size, sb.content_size, sb.offset );
         wnoutrefresh( w_border );
 
         calcStartPos( iStartPos, iLine, iContentHeight, cur_rules.size() );
@@ -220,6 +251,16 @@ void user_interface::show()
         ctxt.register_action( "SWAP_RULE_GLOBAL_CHAR" );
     }
 
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
+
     if( is_autopickup ) {
         ctxt.register_action( "SWITCH_AUTO_PICKUP_OPTION" );
     }
@@ -231,7 +272,65 @@ void user_interface::show()
 
         ui_manager::redraw();
 
-        const std::string action = ctxt.handle_input();
+        auto action = ctxt.handle_input();
+
+        // get_coordinates() is relative to the window centre.
+        const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
+            const auto mouse = ctxt.get_coordinates( win );
+            if( !mouse ) {
+                return std::nullopt;
+            }
+            const auto cell = mouse->xy().raw() + point( getmaxx( win ), getmaxy( win ) ) / 2;
+            if( cell.x < 0 || cell.y < 0 || cell.x >= getmaxx( win ) || cell.y >= getmaxy( win ) ) {
+                return std::nullopt;
+            }
+            return cell;
+        };
+
+        if( modern && action == "MOUSE_MOVE" ) {
+            // Hover never changes the selection.
+            action.clear();
+        } else if( modern && ( action == "SELECT" || action == "SEC_SELECT" ) ) {
+            auto consumed = false;
+            if( const auto border_cell = cell_in( w_border ) ) {
+                if( const auto hit = scrollbar_input::click( scrollbar_geometry(), *border_cell ) ) {
+                    iLine = hit->viewport_pos;
+                    iColumn = 1;
+                    consumed = true;
+                }
+            }
+            if( !consumed ) {
+                if( const auto header_cell = cell_in( w_header ) ) {
+                    for( const auto &tab_label : tab_labels ) {
+                        if( header_cell->y == 2 && header_cell->x >= tab_label.x0 &&
+                            header_cell->x < tab_label.x1 && static_cast<size_t>( tab_label.index ) != iTab ) {
+                            iTab = tab_label.index;
+                            iLine = 0;
+                            iColumn = 1;
+                            consumed = true;
+                            break;
+                        }
+                    }
+                    if( !consumed && header_cell->y == 1 && switch_x0 >= 0 &&
+                        header_cell->x >= switch_x0 && header_cell->x < switch_x1 ) {
+                        action = "SWITCH_AUTO_PICKUP_OPTION";
+                        consumed = true;
+                    }
+                } else if( const auto cell = cell_in( w ) ) {
+                    const auto row = iStartPos + cell->y;
+                    if( cell->y < iContentHeight && row < static_cast<int>( cur_rules.size() ) ) {
+                        iLine = row;
+                        // The I/E column starts at the w column separator x = 50.
+                        iColumn = cell->x >= 50 ? 2 : 1;
+                    }
+                    consumed = true;
+                }
+            }
+            if( !consumed ) {
+                // A click outside the drawn controls does nothing.
+                action.clear();
+            }
+        }
 
         if( action == "NEXT_TAB" ) {
             iTab++;
@@ -248,13 +347,13 @@ void user_interface::show()
             iLine = 0;
         } else if( action == "QUIT" ) {
             break;
-        } else if( action == "DOWN" ) {
+        } else if( action == "DOWN" || action == "SCROLL_DOWN" ) {
             iLine++;
             iColumn = 1;
             if( iLine >= static_cast<int>( cur_rules.size() ) ) {
                 iLine = 0;
             }
-        } else if( action == "UP" ) {
+        } else if( action == "UP" || action == "SCROLL_UP" ) {
             iLine--;
             iColumn = 1;
             if( iLine < 0 ) {

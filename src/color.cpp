@@ -15,8 +15,10 @@
 #include "json.h"
 #include "output.h"
 #include "path_info.h"
+#include "options.h"
 #include "point.h"
 #include "rng.h"
+#include "scrollbar_input.h"
 #include "string_formatter.h"
 #include "translations.h"
 #include "ui.h"
@@ -793,6 +795,26 @@ void color_manager::show_gui()
     ctxt.register_action( "REMOVE_CUSTOM" );
     ctxt.register_action( "LOAD_TEMPLATE" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
+
+    // Matches the draw_scrollbar() call in on_redraw below.
+    const auto scrollbar_geometry = [&]() {
+        return scrollbar_input::geometry{
+            .offset = point( 0, 5 ),
+            .viewport_size = iContentHeight,
+            .content_size = iMaxColors,
+            .viewport_pos = iCurrentLine,
+            .scroll_to_last = true,
+        };
+    };
 
     std::map<std::string, color_struct> name_color_map;
 
@@ -832,7 +854,8 @@ void color_manager::show_gui()
 
         calcStartPos( iStartPos, iCurrentLine, iContentHeight, iMaxColors );
 
-        draw_scrollbar( w_colors_border, iCurrentLine, iContentHeight, iMaxColors, point( 0, 5 ) );
+        const auto sb = scrollbar_geometry();
+        draw_scrollbar( w_colors_border, sb.viewport_pos, sb.viewport_size, sb.content_size, sb.offset );
         wnoutrefresh( w_colors_border );
 
         auto iter = name_color_map.begin();
@@ -872,16 +895,57 @@ void color_manager::show_gui()
     while( true ) {
         ui_manager::redraw();
 
-        const std::string action = ctxt.handle_input();
+        auto action = ctxt.handle_input();
+
+        // get_coordinates() is relative to the window centre.
+        const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
+            const auto mouse = ctxt.get_coordinates( win );
+            if( !mouse ) {
+                return std::nullopt;
+            }
+            const auto cell = mouse->xy().raw() + point( getmaxx( win ), getmaxy( win ) ) / 2;
+            if( cell.x < 0 || cell.y < 0 || cell.x >= getmaxx( win ) || cell.y >= getmaxy( win ) ) {
+                return std::nullopt;
+            }
+            return cell;
+        };
+
+        if( modern && action == "MOUSE_MOVE" ) {
+            // Hover never changes the selection.
+            action.clear();
+        } else if( modern && ( action == "SELECT" || action == "SEC_SELECT" ) ) {
+            auto consumed = false;
+            if( const auto border_cell = cell_in( w_colors_border ) ) {
+                if( const auto hit = scrollbar_input::click( scrollbar_geometry(), *border_cell ) ) {
+                    iCurrentLine = hit->viewport_pos;
+                    consumed = true;
+                }
+            }
+            if( !consumed ) {
+                if( const auto cell = cell_in( w_colors ) ) {
+                    const auto row = iStartPos + cell->y;
+                    if( cell->y < iContentHeight && row < iMaxColors ) {
+                        iCurrentLine = row;
+                        // The Normal/Invert columns split at the w column separator x = 48.
+                        iCurrentCol = cell->x >= 48 ? 2 : 1;
+                    }
+                    consumed = true;
+                }
+            }
+            if( !consumed ) {
+                // A click outside the drawn controls does nothing.
+                action.clear();
+            }
+        }
 
         if( action == "QUIT" ) {
             break;
-        } else if( action == "UP" ) {
+        } else if( action == "UP" || action == "SCROLL_UP" ) {
             iCurrentLine--;
             if( iCurrentLine < 0 ) {
                 iCurrentLine = iMaxColors - 1;
             }
-        } else if( action == "DOWN" ) {
+        } else if( action == "DOWN" || action == "SCROLL_DOWN" ) {
             iCurrentLine++;
             if( iCurrentLine >= static_cast<int>( iMaxColors ) ) {
                 iCurrentLine = 0;

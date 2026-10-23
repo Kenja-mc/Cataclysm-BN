@@ -13,6 +13,7 @@
 #include "options.h"
 #include "output.h"
 #include "point.h"
+#include "scrollbar_input.h"
 #include "translations.h"
 #include "ui_manager.h"
 #include "world.h"
@@ -213,6 +214,16 @@ void auto_note_manager_gui::show()
     ctx.register_action( "SWITCH_AUTO_NOTE_OPTION" );
     ctx.register_action( "HELP_KEYBINDINGS" );
 
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctx.register_action( "COORDINATE" );
+        ctx.register_action( "MOUSE_MOVE" );
+        ctx.register_action( "SELECT" );
+        ctx.register_action( "SEC_SELECT" );
+        ctx.register_action( "SCROLL_UP" );
+        ctx.register_action( "SCROLL_DOWN" );
+    }
+
     if( !emptyMode ) {
         ctx.register_cardinal();
         ctx.register_action( "CONFIRM" );
@@ -221,6 +232,20 @@ void auto_note_manager_gui::show()
         ctx.register_action( "DISABLE_MAPEXTRA_NOTE" );
         ctx.register_action( "CHANGE_MAPEXTRA_CHARACTER" );
     }
+
+    // Matches the draw_scrollbar() call in on_redraw below.
+    const auto scrollbar_geometry = [&]() {
+        return scrollbar_input::geometry{
+            .offset = point( 0, 4 ),
+            .viewport_size = iContentHeight,
+            .content_size = cacheSize,
+            .viewport_pos = currentLine,
+            .scroll_to_last = true,
+        };
+    };
+    // Header rectangle of the global <S>witch label, -1 when not drawn.
+    auto switch_x0 = -1;
+    auto switch_x1 = -1;
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
         // == Draw border
@@ -260,7 +285,9 @@ void auto_note_manager_gui::show()
                                     get_option<bool>( "AUTO_NOTES" ) ? _( "True" ) : _( "False" ) );
 
         currentX += shortcut_print( w_header, point( currentX, 0 ), c_white, c_light_green, "  " );
-        shortcut_print( w_header, point( currentX, 0 ), c_white, c_light_green, _( "<S>witch " ) );
+        switch_x0 = currentX;
+        switch_x1 = currentX + shortcut_print( w_header, point( currentX, 0 ), c_white, c_light_green,
+                                               _( "<S>witch " ) );
 
         // Clear table
         for( int y = 0; y < iContentHeight; y++ ) {
@@ -274,7 +301,8 @@ void auto_note_manager_gui::show()
             }
         }
 
-        draw_scrollbar( w_border, currentLine, iContentHeight, cacheSize, point( 0, 4 ) );
+        const auto sb = scrollbar_geometry();
+        draw_scrollbar( w_border, sb.viewport_pos, sb.viewport_size, sb.content_size, sb.offset );
 
         if( emptyMode ) {
             // NOLINTNEXTLINE(cata-use-named-point-constants)
@@ -323,7 +351,54 @@ void auto_note_manager_gui::show()
     while( true ) {
         ui_manager::redraw();
 
-        const std::string currentAction = ctx.handle_input();
+        auto currentAction = ctx.handle_input();
+
+        // get_coordinates() is relative to the window centre.
+        const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
+            const auto mouse = ctx.get_coordinates( win );
+            if( !mouse ) {
+                return std::nullopt;
+            }
+            const auto cell = mouse->xy().raw() + point( getmaxx( win ), getmaxy( win ) ) / 2;
+            if( cell.x < 0 || cell.y < 0 || cell.x >= getmaxx( win ) || cell.y >= getmaxy( win ) ) {
+                return std::nullopt;
+            }
+            return cell;
+        };
+
+        if( modern && currentAction == "MOUSE_MOVE" ) {
+            // Hover never changes the selection.
+            currentAction.clear();
+        } else if( modern && ( currentAction == "SELECT" || currentAction == "SEC_SELECT" ) ) {
+            auto consumed = false;
+            if( const auto border_cell = cell_in( w_border ) ) {
+                if( const auto hit = scrollbar_input::click( scrollbar_geometry(), *border_cell ) ) {
+                    currentLine = hit->viewport_pos;
+                    consumed = true;
+                }
+            }
+            if( !consumed ) {
+                if( const auto header_cell = cell_in( w_header ) ) {
+                    if( header_cell->y == 0 && switch_x0 >= 0 &&
+                        header_cell->x >= switch_x0 && header_cell->x < switch_x1 ) {
+                        currentAction = "SWITCH_AUTO_NOTE_OPTION";
+                        consumed = true;
+                    }
+                } else if( !emptyMode ) {
+                    if( const auto cell = cell_in( w ) ) {
+                        const auto row = startPosition + cell->y;
+                        if( cell->y < iContentHeight && row < cacheSize ) {
+                            currentLine = row;
+                        }
+                    }
+                    consumed = true;
+                }
+            }
+            if( !consumed ) {
+                // A click outside the drawn controls does nothing.
+                currentAction.clear();
+            }
+        }
 
         // Actions that also work with no items to display
         if( currentAction == "SWITCH_AUTO_NOTE_OPTION" ) {
@@ -345,13 +420,13 @@ void auto_note_manager_gui::show()
         const string_id<map_extra> &currentItem = displayCache[currentLine];
         std::pair<const map_extra, bool> &entry = mapExtraCache[currentItem];
 
-        if( currentAction == "UP" ) {
+        if( currentAction == "UP" || currentAction == "SCROLL_UP" ) {
             if( currentLine > 0 ) {
                 --currentLine;
             } else {
                 currentLine = cacheSize - 1;
             }
-        } else if( currentAction == "DOWN" ) {
+        } else if( currentAction == "DOWN" || currentAction == "SCROLL_DOWN" ) {
             if( currentLine == cacheSize - 1 ) {
                 currentLine = 0;
             } else {

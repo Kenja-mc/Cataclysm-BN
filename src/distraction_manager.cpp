@@ -9,9 +9,11 @@
 #include "cursesdef.h"
 #include "input.h"
 #include "json.h"
+#include "options.h"
 #include "output.h"
 #include "path_info.h"
 #include "point.h"
+#include "scrollbar_input.h"
 #include "translations.h"
 #include "ui.h"
 #include "ui_manager.h"
@@ -102,6 +104,26 @@ void distraction_manager_gui::show()
     ctx.register_action( "QUIT" );
     ctx.register_action( "HELP_KEYBINDINGS" );
     ctx.register_action( "CONFIRM" );
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctx.register_action( "COORDINATE" );
+        ctx.register_action( "MOUSE_MOVE" );
+        ctx.register_action( "SELECT" );
+        ctx.register_action( "SEC_SELECT" );
+        ctx.register_action( "SCROLL_UP" );
+        ctx.register_action( "SCROLL_DOWN" );
+    }
+
+    // Matches the draw_scrollbar() call in on_redraw below.
+    const auto scrollbar_geometry = [&]() {
+        return scrollbar_input::geometry{
+            .offset = point( 0, iHeaderHeight + 1 ),
+            .viewport_size = iContentHeight,
+            .content_size = num_distractions,
+            .viewport_pos = currentLine,
+            .scroll_to_last = true,
+        };
+    };
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
         // Draw border
@@ -139,8 +161,8 @@ void distraction_manager_gui::show()
             }
         }
 
-        draw_scrollbar( w_border, currentLine, iContentHeight, num_distractions, point( 0,
-                        iHeaderHeight + 1 ) );
+        const auto sb = scrollbar_geometry();
+        draw_scrollbar( w_border, sb.viewport_pos, sb.viewport_size, sb.content_size, sb.offset );
 
         calcStartPos( startPosition, currentLine, iContentHeight, num_distractions );
 
@@ -172,17 +194,58 @@ void distraction_manager_gui::show()
     while( true ) {
         ui_manager::redraw();
 
-        const std::string currentAction = ctx.handle_input();
+        auto currentAction = ctx.handle_input();
+
+        // get_coordinates() is relative to the window centre.
+        const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
+            const auto mouse = ctx.get_coordinates( win );
+            if( !mouse ) {
+                return std::nullopt;
+            }
+            const auto cell = mouse->xy().raw() + point( getmaxx( win ), getmaxy( win ) ) / 2;
+            if( cell.x < 0 || cell.y < 0 || cell.x >= getmaxx( win ) || cell.y >= getmaxy( win ) ) {
+                return std::nullopt;
+            }
+            return cell;
+        };
+
+        if( modern && currentAction == "MOUSE_MOVE" ) {
+            // Hover never changes the selection.
+            currentAction.clear();
+        } else if( modern && ( currentAction == "SELECT" || currentAction == "SEC_SELECT" ) ) {
+            auto consumed = false;
+            if( const auto border_cell = cell_in( w_border ) ) {
+                if( const auto hit = scrollbar_input::click( scrollbar_geometry(), *border_cell ) ) {
+                    currentLine = hit->viewport_pos;
+                    cur_distraction = distractions_status[currentLine];
+                    consumed = true;
+                }
+            }
+            if( !consumed ) {
+                if( const auto cell = cell_in( w ) ) {
+                    const auto row = startPosition + cell->y;
+                    if( cell->y < iContentHeight && row < num_distractions ) {
+                        currentLine = row;
+                        cur_distraction = distractions_status[currentLine];
+                    }
+                    consumed = true;
+                }
+            }
+            if( !consumed ) {
+                // A click outside the drawn controls does nothing.
+                currentAction.clear();
+            }
+        }
 
         if( currentAction == "QUIT" ) {
             save();
             break;
         }
 
-        if( currentAction == "UP" ) {
+        if( currentAction == "UP" || currentAction == "SCROLL_UP" ) {
             currentLine = modulo( currentLine - 1, num_distractions );
             cur_distraction = distractions_status[currentLine];
-        } else if( currentAction == "DOWN" ) {
+        } else if( currentAction == "DOWN" || currentAction == "SCROLL_DOWN" ) {
             currentLine = modulo( currentLine + 1, num_distractions );
             cur_distraction = distractions_status[currentLine];
         } else if( currentAction == "CONFIRM" ) {

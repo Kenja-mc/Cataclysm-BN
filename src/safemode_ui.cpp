@@ -24,6 +24,7 @@
 #include "output.h"
 #include "path_info.h"
 #include "point.h"
+#include "scrollbar_input.h"
 #include "string_formatter.h"
 #include "string_input_popup.h"
 #include "string_utils.h"
@@ -123,6 +124,36 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
         ctxt.register_action( "SWAP_RULE_GLOBAL_CHAR" );
     }
 
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
+
+    // Matches the draw_scrollbar() call in on_redraw below.
+    const auto scrollbar_geometry = [&]() {
+        return scrollbar_input::geometry{
+            .offset = point( 0, 5 ),
+            .viewport_size = content_height,
+            .content_size = static_cast<int>( ( tab == GLOBAL_TAB ? global_rules : character_rules ).size() ),
+            .viewport_pos = line,
+            .scroll_to_last = true,
+        };
+    };
+    // Header rectangles of the tab titles and the global <S>witch label, -1 when not drawn.
+    struct header_label {
+        int x0 = 0;
+        int x1 = 0;
+        int index = 0;
+    };
+    auto tab_labels = std::vector<header_label>{};
+    auto switch_x0 = -1;
+    auto switch_x1 = -1;
+
     ui.on_redraw( [&]( const ui_adaptor & ) {
         draw_border( w_border, BORDER_COLOR, custom_name_in );
 
@@ -174,10 +205,15 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
                    "Cat" ) );
 
         int locx = 17;
+        tab_labels.clear();
+        const auto global_x0 = locx;
         locx += shortcut_print( w_header, point( locx, 2 ), c_white,
                                 ( tab == GLOBAL_TAB ) ? hilite( c_white ) : c_white, _( "[<Global>]" ) ) + 1;
+        tab_labels.push_back( { .x0 = global_x0, .x1 = locx - 1, .index = GLOBAL_TAB } );
+        const auto char_x0 = locx;
         shortcut_print( w_header, point( locx, 2 ), c_white,
                         ( tab == CHARACTER_TAB ) ? hilite( c_white ) : c_white, _( "[<Character>]" ) );
+        tab_labels.push_back( { .x0 = char_x0, .x1 = locx + 13, .index = CHARACTER_TAB } );
 
         locx = 55;
         mvwprintz( w_header, point( locx, 0 ), c_white, _( "Safe Mode enabled:" ) );
@@ -185,7 +221,13 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
                                 ( ( get_option<bool>( "SAFEMODE" ) ) ? c_light_green : c_light_red ), c_white,
                                 ( ( get_option<bool>( "SAFEMODE" ) ) ? _( "True" ) : _( "False" ) ) );
         locx += shortcut_print( w_header, point( locx, 1 ), c_white, c_light_green, "  " );
-        locx += shortcut_print( w_header, point( locx, 1 ), c_white, c_light_green, _( "<S>witch" ) );
+        if( is_safemode_in ) {
+            switch_x0 = locx;
+            switch_x1 = locx + shortcut_print( w_header, point( locx, 1 ), c_white, c_light_green,
+                                               _( "<S>witch" ) );
+        } else {
+            switch_x0 = -1;
+        }
         shortcut_print( w_header, point( locx, 1 ), c_white, c_light_green, "  " );
 
         wnoutrefresh( w_header );
@@ -212,7 +254,8 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
             mvwprintz( w, point( 15, 10 ), c_white, _( "Press ~ to add a default ruleset to get started." ) );
         }
 
-        draw_scrollbar( w_border, line, content_height, current_tab.size(), point( 0, 5 ) );
+        const auto sb = scrollbar_geometry();
+        draw_scrollbar( w_border, sb.viewport_pos, sb.viewport_size, sb.content_size, sb.offset );
         wnoutrefresh( w_border );
 
         calcStartPos( start_pos, line, content_height, current_tab.size() );
@@ -255,7 +298,69 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
 
         ui_manager::redraw();
 
-        const std::string action = ctxt.handle_input();
+        auto action = ctxt.handle_input();
+
+        // get_coordinates() is relative to the window centre.
+        const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
+            const auto mouse = ctxt.get_coordinates( win );
+            if( !mouse ) {
+                return std::nullopt;
+            }
+            const auto cell = mouse->xy().raw() + point( getmaxx( win ), getmaxy( win ) ) / 2;
+            if( cell.x < 0 || cell.y < 0 || cell.x >= getmaxx( win ) || cell.y >= getmaxy( win ) ) {
+                return std::nullopt;
+            }
+            return cell;
+        };
+
+        if( modern && action == "MOUSE_MOVE" ) {
+            // Hover never changes the selection.
+            action.clear();
+        } else if( modern && ( action == "SELECT" || action == "SEC_SELECT" ) ) {
+            auto consumed = false;
+            if( const auto border_cell = cell_in( w_border ) ) {
+                if( const auto hit = scrollbar_input::click( scrollbar_geometry(), *border_cell ) ) {
+                    line = hit->viewport_pos;
+                    consumed = true;
+                }
+            }
+            if( !consumed ) {
+                if( const auto header_cell = cell_in( w_header ) ) {
+                    for( const auto &tab_label : tab_labels ) {
+                        if( header_cell->y == 2 && header_cell->x >= tab_label.x0 &&
+                            header_cell->x < tab_label.x1 && tab != tab_label.index ) {
+                            tab = tab_label.index;
+                            line = 0;
+                            consumed = true;
+                            break;
+                        }
+                    }
+                    if( !consumed && header_cell->y == 1 && switch_x0 >= 0 &&
+                        header_cell->x >= switch_x0 && header_cell->x < switch_x1 ) {
+                        action = "SWITCH_SAFEMODE_OPTION";
+                        consumed = true;
+                    }
+                } else if( const auto cell = cell_in( w ) ) {
+                    const auto row = start_pos + cell->y;
+                    if( !( tab == CHARACTER_TAB && g->u.name.empty() ) && cell->y < content_height &&
+                        row < static_cast<int>( current_tab.size() ) ) {
+                        line = row;
+                        // Cells of a column start two past its separator position.
+                        column = COLUMN_RULE;
+                        for( auto &pos : column_pos ) {
+                            if( cell->x >= pos.second + 2 ) {
+                                column = std::max( column, pos.first );
+                            }
+                        }
+                    }
+                    consumed = true;
+                }
+            }
+            if( !consumed ) {
+                // A click outside the drawn controls does nothing.
+                action.clear();
+            }
+        }
 
         if( action == "NEXT_TAB" ) {
             tab++;
@@ -273,12 +378,12 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
             break;
         } else if( tab == CHARACTER_TAB && g->u.name.empty() ) {
             //Only allow loaded games to use the char sheet
-        } else if( action == "DOWN" ) {
+        } else if( action == "DOWN" || action == "SCROLL_DOWN" ) {
             line++;
             if( line >= static_cast<int>( current_tab.size() ) ) {
                 line = 0;
             }
-        } else if( action == "UP" ) {
+        } else if( action == "UP" || action == "SCROLL_UP" ) {
             line--;
             if( line < 0 ) {
                 line = current_tab.size() - 1;
