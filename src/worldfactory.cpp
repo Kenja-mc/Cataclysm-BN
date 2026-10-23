@@ -430,11 +430,82 @@ WORLDINFO *worldfactory::pick_world( bool show_prompt, bool empty_only )
     ctxt.register_action( "NEXT_TAB" );
     ctxt.register_action( "PREV_TAB" );
     ctxt.register_action( "CONFIRM" );
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
+    auto last_clicked_world = -1;
 
     while( true ) {
         ui_manager::redraw();
 
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        const auto mouse_select = modern && action == "SELECT";
+        if( mouse_select ) {
+            action.clear();
+            const auto cell_in = [&]( const catacurses::window &win ) -> std::optional<point> {
+                const auto mouse = ctxt.get_coordinates( win );
+                if( !mouse ) {
+                    return std::nullopt;
+                }
+                const auto cell = mouse->xy().raw() + point( getmaxx( win ), getmaxy( win ) ) / 2;
+                if( cell.x < 0 || cell.y < 0 ||
+                    cell.x >= getmaxx( win ) || cell.y >= getmaxy( win ) ) {
+                    return std::nullopt;
+                }
+                return cell;
+            };
+            auto consumed = false;
+            if( const auto header = cell_in( w_worlds_header ) ) {
+                if( header->y == 0 ) {
+                    auto tab_x = 7;
+                    for( size_t i = 0; i < num_pages; ++i ) {
+                        if( world_pages[i].empty() ) {
+                            continue;
+                        }
+                        const auto label = string_format( "[%s]", string_format( _( "Page %lu" ), i + 1 ) );
+                        const auto label_width = utf8_width( label );
+                        if( header->x >= tab_x && header->x < tab_x + label_width ) {
+                            selpage = i;
+                            sel = 0;
+                            consumed = true;
+                            break;
+                        }
+                        tab_x += label_width + 1;
+                    }
+                }
+            }
+            if( !consumed ) {
+                if( const auto cell = cell_in( w_worlds ) ) {
+                    if( cell->y >= 0 && cell->y < static_cast<int>( world_pages[selpage].size() ) ) {
+                        const auto row = static_cast<size_t>( cell->y );
+                        if( row == sel && last_clicked_world == static_cast<int>( row ) ) {
+                            // Second click on the same row performs the keyboard action.
+                            action = "CONFIRM";
+                            last_clicked_world = -1;
+                        } else {
+                            sel = row;
+                            last_clicked_world = static_cast<int>( row );
+                        }
+                        consumed = true;
+                    }
+                }
+            }
+            if( !consumed ) {
+                last_clicked_world = -1;
+            }
+        } else {
+            last_clicked_world = -1;
+        }
+        if( action == "SCROLL_UP" ) {
+            action = "UP";
+        } else if( action == "SCROLL_DOWN" ) {
+            action = "DOWN";
+        }
 
         if( action == "QUIT" ) {
             break;
@@ -640,6 +711,29 @@ static auto mod_index_for_line( const std::vector<mod_id> &mods, int target ) ->
     return before;
 }
 
+/// Category index drawn on `line`, when that line is a category header.
+static auto mod_category_at_line( const std::vector<mod_id> &mods, int target )
+-> std::optional<int>
+{
+    auto line = 0;
+    auto last = std::string{};
+    for( const mod_id &id : mods ) {
+        const auto category = mod_category_name( id );
+        if( category != last ) {
+            last = category;
+            if( line == target ) {
+                return id.is_valid() ? std::optional<int>( id->category.first ) : std::nullopt;
+            }
+            ++line;
+        }
+        if( line == target ) {
+            return std::nullopt;
+        }
+        ++line;
+    }
+    return std::nullopt;
+}
+
 void worldfactory::draw_mod_list( const catacurses::window &w, int &start, size_t cursor,
                                   const std::vector<mod_id> &mods, bool is_active_list,
                                   const std::string &text_if_empty, const catacurses::window &w_shift )
@@ -804,6 +898,8 @@ void worldfactory::show_active_world_mods( const std::vector<mod_id> &world_mods
         ctxt.register_action( "MOUSE_MOVE" );
         ctxt.register_action( "SELECT" );
         ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
     }
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
@@ -845,6 +941,11 @@ void worldfactory::show_active_world_mods( const std::vector<mod_id> &world_mods
                     cursor = static_cast<int>( *index );
                 }
             }
+        }
+        if( action == "SCROLL_UP" ) {
+            action = "UP";
+        } else if( action == "SCROLL_DOWN" ) {
+            action = "DOWN";
         }
 
         if( action == "UP" ) {
@@ -946,6 +1047,8 @@ int worldfactory::show_modselection_window( const catacurses::window &win,
         ctxt.register_action( "MOUSE_MOVE" );
         ctxt.register_action( "SELECT" );
         ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
     }
 
     point filter_pos;
@@ -1287,6 +1390,42 @@ int worldfactory::show_modselection_window( const catacurses::window &win,
                 return cell;
             };
             action.clear();
+            auto on_category = false;
+            if( const auto mouse = ctxt.get_coordinates( win ) ) {
+                const auto cell = mouse->xy().raw() + point( getmaxx( win ), getmaxy( win ) ) / 2;
+                if( cell.y == 4 && active_header == 0 ) {
+                    auto tab_x = 2;
+                    for( size_t i = 0; i < get_mod_list_tabs().size(); ++i ) {
+                        const auto label = string_format( "[%s]",
+                                                          _( get_mod_list_tabs()[i].second ) );
+                        const auto label_width = utf8_width( label );
+                        if( cell.x >= tab_x && cell.x < tab_x + label_width ) {
+                            iCurrentTab = i;
+                            startsel[0] = 0;
+                            cursel[0] = 0;
+                            on_category = true;
+                            break;
+                        }
+                        tab_x += label_width + 1;
+                    }
+                }
+            }
+            if( on_category ) {
+                last_clicked_mod[0] = last_clicked_mod[1] = -1;
+            }
+            const auto select_tab_for_category = [&]( int category_index ) -> bool {
+                for( size_t i = 0; i < all_tabs.size(); ++i ) {
+                    for( const mod_id &mod : all_tabs[i].mods_unfiltered ) {
+                        if( mod->category.first == category_index ) {
+                            iCurrentTab = i;
+                            startsel[0] = 0;
+                            cursel[0] = 0;
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            };
             const auto click_list = [&]( const std::vector<mod_id> &mods,
                                          const catacurses::window &win, int header ) -> bool {
                 const auto cell = cell_in( win );
@@ -1333,17 +1472,33 @@ int worldfactory::show_modselection_window( const catacurses::window &win,
                         }
                         return true;
                     }
+                    if( header == 0 ) {
+                        if( const auto category = mod_category_at_line( mods,
+                                startsel[header] + cell->y ) ) {
+                            if( select_tab_for_category( *category ) ) {
+                                last_clicked_mod[0] = last_clicked_mod[1] = -1;
+                                return true;
+                            }
+                        }
+                    }
                 }
                 return false;
             };
-            if( !click_list( all_tabs[iCurrentTab].mods, w_list, 0 ) ) {
-                if( !click_list( active_mod_order, w_active, 1 ) ) {
-                    last_clicked_mod[0] = last_clicked_mod[1] = -1;
+            if( !on_category ) {
+                if( !click_list( all_tabs[iCurrentTab].mods, w_list, 0 ) ) {
+                    if( !click_list( active_mod_order, w_active, 1 ) ) {
+                        last_clicked_mod[0] = last_clicked_mod[1] = -1;
+                    }
                 }
             }
         } else {
             // Keyboard navigation, filters and tab changes invalidate the click pair.
             last_clicked_mod[0] = last_clicked_mod[1] = -1;
+        }
+        if( action == "SCROLL_UP" ) {
+            action = "UP";
+        } else if( action == "SCROLL_DOWN" ) {
+            action = "DOWN";
         }
 
         if( action == "DOWN" ) {

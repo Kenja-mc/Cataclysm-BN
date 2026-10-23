@@ -825,6 +825,8 @@ static input_context make_crafting_context( bool highlight_unread_recipes )
         ctxt.register_action( "MOUSE_MOVE" );
         ctxt.register_action( "SELECT" );
         ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
     }
     if( highlight_unread_recipes ) {
         ctxt.register_action( "TOGGLE_RECIPE_UNREAD" );
@@ -1854,6 +1856,11 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
         } else {
             // Keyboard navigation, filters and tab changes invalidate the click pair.
             last_clicked_recipe = -1;
+        }
+        if( action == "SCROLL_UP" ) {
+            action = "UP";
+        } else if( action == "SCROLL_DOWN" ) {
+            action = "DOWN";
         }
         if( action == "SCROLL_RECIPE_INFO_UP" ) {
             recipe_info_scroll -= dataLines;

@@ -212,6 +212,9 @@ enum struct tab_direction {
     QUIT
 };
 
+/// Page chosen by a top-tab click, consumed by avatar::create().
+static auto requested_character_tab = -1;
+
 tab_direction set_points( avatar &u, points_left &points );
 tab_direction set_stats( avatar &u, points_left &points );
 tab_direction set_traits( avatar &u, points_left &points );
@@ -708,18 +711,27 @@ bool avatar::create( character_type type, const std::string &tempname )
                 break;
         }
 
-        switch( result ) {
-            case tab_direction::NONE:
-                break;
-            case tab_direction::FORWARD:
-                tab++;
-                break;
-            case tab_direction::BACKWARD:
-                tab--;
-                break;
-            case tab_direction::QUIT:
-                tab = -1;
-                break;
+        if( requested_character_tab >= 0 && result == tab_direction::NONE ) {
+            const auto target = std::clamp( requested_character_tab, 0, get_max_tabs( prof ) );
+            // Keep the direction a normal adjacent page transition would hand to the target.
+            result = target > tab ? tab_direction::FORWARD :
+                     target < tab ? tab_direction::BACKWARD : tab_direction::NONE;
+            tab = target;
+            requested_character_tab = -1;
+        } else {
+            switch( result ) {
+                case tab_direction::NONE:
+                    break;
+                case tab_direction::FORWARD:
+                    tab++;
+                    break;
+                case tab_direction::BACKWARD:
+                    tab--;
+                    break;
+                case tab_direction::QUIT:
+                    tab = -1;
+                    break;
+            }
         }
 
         if( !( tab >= 0 && tab <= get_max_tabs( prof ) ) ) {
@@ -852,10 +864,17 @@ bool avatar::create( character_type type, const std::string &tempname )
     return true;
 }
 
-static void draw_character_tabs( const catacurses::window &w, const std::string &sTab,
-                                 const profession_id &prof )
+struct character_tab_hit {
+    point origin;
+    int width = 0;
+    int index = 0;
+};
+
+static std::vector<character_tab_hit> character_tab_hits;
+
+static auto character_tab_captions( const profession_id &prof ) -> std::vector<std::string>
 {
-    std::vector<std::string> tab_captions = {
+    std::vector<std::string> captions = {
         _( "POINTS" ),
         _( "SCENARIO" ),
         _( "PROFESSION" ),
@@ -866,13 +885,79 @@ static void draw_character_tabs( const catacurses::window &w, const std::string 
     };
     if( has_any_magic( prof ) && !( prof->forbids_spells() ||
                                     g->scen->forbids_spells() ) ) {
-        tab_captions.insert( tab_captions.begin() + 5, _( "MAGIC" ) );
+        captions.insert( captions.begin() + 5, _( "MAGIC" ) );
     }
     if( !prof->forbids_bionics() && !g->scen->forbids_bionics() ) {
-        tab_captions.insert( tab_captions.begin() + 5, _( "BIONICS" ) );
+        captions.insert( captions.begin() + 5, _( "BIONICS" ) );
     }
+    return captions;
+}
 
-    draw_tabs( w, tab_captions, sTab );
+/// Mirror draw_tabs() placement so top-tab clicks land on the drawn label.
+static auto record_character_tab_hits( const std::vector<std::string> &captions,
+                                       const std::string &current, int width ) -> void
+{
+    character_tab_hits.clear();
+    const auto tab_step = 3;
+    auto total_used_width = 0;
+    auto current_width = 0;
+    const auto current_it = std::ranges::find( captions, current );
+    const auto current_tab = static_cast<size_t>( current_it - captions.begin() );
+    for( size_t i = 0; i < captions.size(); ++i ) {
+        total_used_width += utf8_width( captions[i] ) + tab_step;
+        if( i == current_tab ) {
+            current_width = total_used_width;
+        }
+    }
+    auto start = 0;
+    calcStartPos( start, current_width, width, total_used_width );
+    auto start_i = 0;
+    if( start != 0 ) {
+        auto used = 0;
+        for( size_t i = 0; i < captions.size(); ++i ) {
+            used += utf8_width( captions[i] ) + tab_step;
+            if( used >= start ) {
+                start_i = static_cast<int>( i ) + 1;
+                break;
+            }
+        }
+    }
+    auto x = 2;
+    for( size_t i = static_cast<size_t>( start_i ); i < captions.size(); ++i ) {
+        const auto label_width = utf8_width( captions[i] );
+        const auto newx = x + label_width + tab_step;
+        if( newx <= width ) {
+            character_tab_hits.push_back( {
+                .origin = point( x, 0 ),
+                .width = label_width + 2,
+                .index = static_cast<int>( i ),
+            } );
+        }
+        x = newx;
+    }
+}
+
+static auto character_tab_click( point cell ) -> bool
+{
+    if( cell.y > 1 ) {
+        return false;
+    }
+    for( const character_tab_hit &hit : character_tab_hits ) {
+        if( cell.x >= hit.origin.x && cell.x < hit.origin.x + hit.width ) {
+            requested_character_tab = hit.index;
+            return true;
+        }
+    }
+    return false;
+}
+
+static void draw_character_tabs( const catacurses::window &w, const std::string &sTab,
+                                 const profession_id &prof )
+{
+    const auto captions = character_tab_captions( prof );
+
+    draw_tabs( w, captions, sTab );
+    record_character_tab_hits( captions, sTab, getmaxx( w ) );
     draw_border_below_tabs( w );
 
     for( int i = 1; i < TERMX - 1; i++ ) {
@@ -930,6 +1015,14 @@ tab_direction set_points( avatar &u, points_left &points )
     ctxt.register_action( "NEXT_TAB" );
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "CONFIRM" );
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
 
     const std::string point_pool = get_option<std::string>( "CHARACTER_POINT_POOLS" );
 
@@ -957,6 +1050,7 @@ tab_direction set_points( avatar &u, points_left &points )
     }
 
     int highlighted = 0;
+    auto last_clicked_option = -1;
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
         draw_character_tabs( w, _( "POINTS" ), u.prof );
@@ -990,7 +1084,39 @@ tab_direction set_points( avatar &u, points_left &points )
             highlighted = 0;
         }
         ui_manager::redraw();
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        const auto mouse_select = modern && action == "SELECT";
+        if( mouse_select ) {
+            const auto mouse = ctxt.get_coordinates( w );
+            const auto cell = mouse ? std::optional<point>(
+                                  mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2 ) :
+                              std::nullopt;
+            action.clear();
+            if( cell && character_tab_click( *cell ) ) {
+                return tab_direction::NONE;
+            }
+            if( cell && cell->x >= 2 && cell->y >= 5 &&
+                cell->y < 5 + static_cast<int>( opts.size() ) ) {
+                const auto row = cell->y - 5;
+                if( row == highlighted && last_clicked_option == row ) {
+                    // Second click on the same row performs the keyboard action.
+                    action = "CONFIRM";
+                    last_clicked_option = -1;
+                } else {
+                    highlighted = row;
+                    last_clicked_option = row;
+                }
+            } else {
+                last_clicked_option = -1;
+            }
+        } else {
+            last_clicked_option = -1;
+        }
+        if( action == "SCROLL_UP" ) {
+            action = "UP";
+        } else if( action == "SCROLL_DOWN" ) {
+            action = "DOWN";
+        }
         if( action == "DOWN" ) {
             highlighted++;
         } else if( action == "UP" ) {
@@ -1013,6 +1139,7 @@ tab_direction set_points( avatar &u, points_left &points )
 tab_direction set_stats( avatar &u, points_left &points )
 {
     const int max_stat_points = points.is_freeform() ? 20 : MAX_STAT;
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
 
     unsigned char sel = 1;
     const int iSecondColumn = std::max( 27, utf8_width( points.to_string(), true ) + 9 );
@@ -1023,6 +1150,13 @@ tab_direction set_stats( avatar &u, points_left &points )
     ctxt.register_action( "RANDOMIZE" );
     ctxt.register_action( "NEXT_TAB" );
     ctxt.register_action( "QUIT" );
+    if( modern ) {
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
 
     ui_adaptor ui;
     catacurses::window w;
@@ -1174,7 +1308,26 @@ tab_direction set_stats( avatar &u, points_left &points )
 
     do {
         ui_manager::redraw();
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        if( modern && action == "SELECT" ) {
+            const auto mouse = ctxt.get_coordinates( w );
+            const auto cell = mouse ? std::optional<point>(
+                                  mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2 ) :
+                              std::nullopt;
+            action.clear();
+            if( cell && character_tab_click( *cell ) ) {
+                return tab_direction::NONE;
+            }
+            if( cell && cell->x >= 2 && cell->x < iSecondColumn &&
+                cell->y >= 6 && cell->y <= 9 ) {
+                sel = static_cast<unsigned char>( cell->y - 5 );
+            }
+        }
+        if( action == "SCROLL_UP" ) {
+            action = "UP";
+        } else if( action == "SCROLL_DOWN" ) {
+            action = "DOWN";
+        }
         if( action == "DOWN" ) {
             if( sel < 4 ) {
                 sel++;
@@ -1418,6 +1571,8 @@ tab_direction set_traits( avatar &u, points_left &points )
         ctxt.register_action( "MOUSE_MOVE" );
         ctxt.register_action( "SELECT" );
         ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
     }
 #if defined(TILES)
     ctxt.register_action( "zoom_in" );
@@ -1548,6 +1703,9 @@ tab_direction set_traits( avatar &u, points_left &points )
                                   mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2 ) :
                               std::nullopt;
             action.clear();
+            if( cell && character_tab_click( *cell ) ) {
+                return tab_direction::NONE;
+            }
             bool consumed = false;
             const int content_height = static_cast<int>( iContentHeight );
             for( int page = 0; cell && page < used_pages; ++page ) {
@@ -1592,6 +1750,11 @@ tab_direction set_traits( avatar &u, points_left &points )
         } else {
             // Keyboard navigation and page switches invalidate the click pair.
             last_clicked_line[0] = last_clicked_line[1] = last_clicked_line[2] = -1;
+        }
+        if( action == "SCROLL_UP" ) {
+            action = "UP";
+        } else if( action == "SCROLL_DOWN" ) {
+            action = "DOWN";
         }
 #if defined(TILES)
         if( action == "zoom_in" && use_character_preview ) {
@@ -1918,6 +2081,8 @@ tab_direction set_bionics( avatar &u, points_left &points )
         ctxt.register_action( "MOUSE_MOVE" );
         ctxt.register_action( "SELECT" );
         ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
     }
 #if defined(TILES)
     ctxt.register_action( "zoom_in" );
@@ -2048,6 +2213,9 @@ tab_direction set_bionics( avatar &u, points_left &points )
                                   mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2 ) :
                               std::nullopt;
             action.clear();
+            if( cell && character_tab_click( *cell ) ) {
+                return tab_direction::NONE;
+            }
             bool consumed = false;
             const int content_height = static_cast<int>( iContentHeight );
             for( int page = 0; cell && page < used_pages; ++page ) {
@@ -2092,6 +2260,11 @@ tab_direction set_bionics( avatar &u, points_left &points )
         } else {
             // Keyboard navigation and page switches invalidate the click pair.
             last_clicked_line[0] = last_clicked_line[1] = last_clicked_line[2] = -1;
+        }
+        if( action == "SCROLL_UP" ) {
+            action = "UP";
+        } else if( action == "SCROLL_DOWN" ) {
+            action = "DOWN";
         }
 #if defined(TILES)
         if( action == "zoom_in" && use_character_preview ) {
@@ -2402,6 +2575,8 @@ tab_direction set_profession( avatar &u, points_left &points,
         ctxt.register_action( "MOUSE_MOVE" );
         ctxt.register_action( "SELECT" );
         ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
     }
 
     bool recalc_profs = true;
@@ -2734,6 +2909,9 @@ tab_direction set_profession( avatar &u, points_left &points,
                                   mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2 ) :
                               std::nullopt;
             action.clear();
+            if( cell && character_tab_click( *cell ) ) {
+                return tab_direction::NONE;
+            }
             bool consumed = false;
             if( cell ) {
                 if( const auto hit = scrollbar_input::click(
@@ -2773,6 +2951,11 @@ tab_direction set_profession( avatar &u, points_left &points,
         } else {
             // Keyboard navigation, filters and sorting invalidate the click pair.
             last_clicked_prof = -1;
+        }
+        if( action == "SCROLL_UP" ) {
+            action = "UP";
+        } else if( action == "SCROLL_DOWN" ) {
+            action = "DOWN";
         }
         if( action == "DOWN" ) {
             cur_id++;
@@ -3081,6 +3264,9 @@ tab_direction set_skills( avatar &u, points_left &points )
                                   mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2 ) :
                               std::nullopt;
             action.clear();
+            if( cell && character_tab_click( *cell ) ) {
+                return tab_direction::NONE;
+            }
             bool consumed = false;
             if( cell ) {
                 if( const auto hit = scrollbar_input::click(
@@ -3336,6 +3522,9 @@ tab_direction set_magic( avatar &u, points_left &points )
                                   mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2 ) :
                               std::nullopt;
             action.clear();
+            if( cell && character_tab_click( *cell ) ) {
+                return tab_direction::NONE;
+            }
             bool consumed = false;
             if( cell ) {
                 if( const auto hit = scrollbar_input::click(
@@ -3510,6 +3699,8 @@ tab_direction set_scenario( avatar &u, points_left &points,
         ctxt.register_action( "MOUSE_MOVE" );
         ctxt.register_action( "SELECT" );
         ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
     }
 
     bool recalc_scens = true;
@@ -3777,6 +3968,9 @@ tab_direction set_scenario( avatar &u, points_left &points,
                                   mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2 ) :
                               std::nullopt;
             action.clear();
+            if( cell && character_tab_click( *cell ) ) {
+                return tab_direction::NONE;
+            }
             bool consumed = false;
             if( cell ) {
                 if( const auto hit = scrollbar_input::click(
@@ -3814,6 +4008,11 @@ tab_direction set_scenario( avatar &u, points_left &points,
         } else {
             // Keyboard navigation, filters and sorting invalidate the click pair.
             last_clicked_scen = -1;
+        }
+        if( action == "SCROLL_UP" ) {
+            action = "UP";
+        } else if( action == "SCROLL_DOWN" ) {
+            action = "DOWN";
         }
         if( action == "DOWN" ) {
             cur_id++;
@@ -3989,6 +4188,8 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
     unsigned male_pos = 1 + utf8_width( _( "Gender:" ) );
     unsigned female_pos = 2 + male_pos + utf8_width( _( "Male" ) );
 
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+
     input_context ctxt( "NEW_CHAR_DESCRIPTION" );
     ctxt.register_cardinal();
     ctxt.register_action( "SAVE_TEMPLATE" );
@@ -4002,6 +4203,13 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
     ctxt.register_action( "REROLL_CHARACTER_WITH_SCENARIO" );
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "QUIT" );
+    if( modern ) {
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
 #if defined(TILES)
     ctxt.register_action( "zoom_in" );
     ctxt.register_action( "zoom_out" );
@@ -4041,6 +4249,17 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
     }
 
     char_creation::description_selector current_selector = char_creation::NAME;
+
+    enum class overview_click {
+        none,
+        name,
+        height,
+        age,
+        location,
+        male,
+        female,
+    };
+    auto last_clicked_overview = overview_click::none;
 
     bool no_name_entered = false;
     ui.on_redraw( [&]( const ui_adaptor & ) {
@@ -4490,7 +4709,89 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
         max_allowed_age = new_max_age;
         you.set_base_age( clamp( you.base_age(), min_allowed_age, max_allowed_age ) );
         ui_manager::redraw();
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        const auto mouse_select = modern && action == "SELECT";
+        if( mouse_select ) {
+            const auto mouse = ctxt.get_coordinates( w );
+            const auto cell = mouse ? std::optional<point>(
+                                  mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2 ) :
+                              std::nullopt;
+            action.clear();
+            if( cell && character_tab_click( *cell ) ) {
+                return tab_direction::NONE;
+            }
+            auto clicked = overview_click::none;
+            if( cell ) {
+                const auto male_begin = 46 + static_cast<int>( male_pos );
+                const auto female_begin = 46 + static_cast<int>( female_pos );
+                if( cell->y >= 5 && cell->y <= 7 && cell->x >= 2 && cell->x < 44 ) {
+                    clicked = overview_click::name;
+                } else if( cell->y == 5 && cell->x >= 80 && cell->x < 100 ) {
+                    clicked = overview_click::height;
+                } else if( cell->y == 6 && cell->x >= 80 && cell->x < 92 ) {
+                    clicked = overview_click::age;
+                } else if( cell->y >= 5 && cell->y <= 6 && cell->x >= location_column &&
+                           cell->x < location_column + location_width ) {
+                    clicked = overview_click::location;
+                } else if( cell->y == 5 && cell->x >= 46 && cell->x < 79 ) {
+                    clicked = cell->x >= female_begin ? overview_click::female
+                              : cell->x >= male_begin ? overview_click::male
+                              : overview_click::none;
+                }
+            }
+            if( clicked == overview_click::none ) {
+                last_clicked_overview = overview_click::none;
+            } else {
+                switch( clicked ) {
+                    case overview_click::name:
+                        current_selector = char_creation::NAME;
+                        break;
+                    case overview_click::height:
+                        current_selector = char_creation::HEIGHT;
+                        break;
+                    case overview_click::age:
+                        current_selector = char_creation::AGE;
+                        break;
+                    default:
+                        break;
+                }
+                if( last_clicked_overview == clicked ) {
+                    // Second click on the same control performs the keyboard action.
+                    switch( clicked ) {
+                        case overview_click::name:
+                        case overview_click::height:
+                        case overview_click::age:
+                            action = "CONFIRM";
+                            break;
+                        case overview_click::location:
+                            action = "CHOOSE_LOCATION";
+                            break;
+                        case overview_click::male:
+                            if( !you.male ) {
+                                action = "CHANGE_GENDER";
+                            }
+                            break;
+                        case overview_click::female:
+                            if( you.male ) {
+                                action = "CHANGE_GENDER";
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                    last_clicked_overview = overview_click::none;
+                } else {
+                    last_clicked_overview = clicked;
+                }
+            }
+        } else {
+            last_clicked_overview = overview_click::none;
+        }
+        if( action == "SCROLL_UP" ) {
+            action = "UP";
+        } else if( action == "SCROLL_DOWN" ) {
+            action = "DOWN";
+        }
 #if defined(TILES)
         if( action == "zoom_in" && use_character_preview ) {
             character_preview.zoom_in();

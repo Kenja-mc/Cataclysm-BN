@@ -498,6 +498,8 @@ std::optional<construction_id> construction_menu( const bool blueprint )
         ctxt.register_action( "MOUSE_MOVE" );
         ctxt.register_action( "SELECT" );
         ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
     }
 
     const std::vector<construction_category> &construct_cat = construction_categories::get_all();
@@ -1472,6 +1474,11 @@ std::optional<construction_id> construction_menu( const bool blueprint )
         } else {
             // Keyboard navigation, filters and tab changes invalidate the click pair.
             last_clicked_row = -1;
+        }
+        if( action == "SCROLL_UP" ) {
+            action = "UP";
+        } else if( action == "SCROLL_DOWN" ) {
+            action = "DOWN";
         }
         if( action == "FILTER" ) {
             struct filter_example {
