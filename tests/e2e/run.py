@@ -80,6 +80,7 @@ from numeric_invkeys import TESTS as NUMERIC_INVKEYS_TESTS
 from wear_refresh import TESTS as WEAR_REFRESH_TESTS
 from creation_crafting_mouse import TESTS as CREATION_CRAFTING_MOUSE_TESTS
 from keybinding_search import TESTS as KEYBINDING_SEARCH_TESTS
+from pulp_key import TESTS as PULP_KEY_TESTS
 
 # The modules, in run order. A module's tests that take `g` run on the main game, so a
 # test that needs the state another left behind belongs after it in this order.
@@ -133,6 +134,7 @@ MODULES = [
     ("wear_refresh", WEAR_REFRESH_TESTS),
     ("creation_crafting_mouse", CREATION_CRAFTING_MOUSE_TESTS),
     ("keybinding_search", KEYBINDING_SEARCH_TESTS),
+    ("pulp_key", PULP_KEY_TESTS),
     # Applies and resets world options on the main world, so it runs last.
     ("world_presets", WORLD_PRESETS_TESTS),
 ]
@@ -193,6 +195,7 @@ SMOKE = [
     "test_wear_moves_shirt_into_worn_and_keeps_menu_open",
     "test_modern_crafting_scrollbar_moves_selection_without_crafting",
     "test_letters_search_keybindings_after_scrolling",
+    "test_modern_p_pulps_the_chosen_corpse",
     "test_world_defaults_unchanged_without_preset",
 ]
 SMOKE_TESTS = [test for test in TESTS if test.__name__ in SMOKE]

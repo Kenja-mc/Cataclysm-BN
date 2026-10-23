@@ -469,7 +469,7 @@
     "name": "Smash Nearby Terrain",
     "category": "DEFAULTMODE",
     "id": "smash",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "p" } ]
   },
   {
     "type": "keybinding",
