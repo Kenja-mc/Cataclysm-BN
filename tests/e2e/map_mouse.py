@@ -1,4 +1,4 @@
-"""RMB selects for free; LMB attacks without implicit movement or interaction."""
+"""RMB selects for free; LMB acts on nearby usable tiles or attacks, never walks."""
 from contextlib import contextmanager
 import re
 
@@ -93,9 +93,10 @@ def mouse_view(game):
 
 def assert_no_map_context(game):
     screen = game.screen()
-    assert not re.search(r"\b(?:open the|close the|fire at|attack (?:the )?zombie|"
-                         r"pick up items|examine the|step here|walk here|step toward|"
-                         r"walk into danger)\b", screen), "map clicks must not open action menus:\n" + screen
+    assert not any(title in screen for title in ("Interact with what?", "Interact with the ")), \
+        "selection must not open an interaction menu:\n" + screen
+    assert not re.search(r"│\s*\S\s+(?:open the|close the|pick up items|examine the)\b[^│]*│", screen), \
+        "selection must not offer action rows:\n" + screen
 
 
 def assert_clicks_are_free(game, dx, dy):
@@ -125,14 +126,6 @@ def exercise_no_mouse_movement(game):
     assert_clicks_are_free(game, 3, 0)
     assert_clicks_are_free(game, -3, 0)
 
-    # Clicks on interactables must not become indirect movement, open, examine, or pickup actions.
-    assert game.lua("M:set_ter_at(here(1,0),TerId.new('t_door_c'):int_id()) "
-                    "M:set_furn_at(here(0,1),FurnId.new('f_fridge'):int_id()) "
-                    "M:create_item_at(here(-1,0),ItypeId.new('rock'),-1) out('ok')") == ["ok"]
-    for dx, dy in ((1, 0), (0, 1), (-1, 0)):
-        assert_clicks_are_free(game, dx, dy)
-    assert game.lua("out(M:get_ter_at(here(1,0)):str_id():str(),"
-                    "#M:get_items_at(here(-1,0)):items())") == ["t_door_c,1"]
 
 
 def test_map_clicks_never_move(_g):

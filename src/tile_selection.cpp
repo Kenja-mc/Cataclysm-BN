@@ -1,16 +1,24 @@
 #include "tile_selection.h"
 
+#include <algorithm>
 #include <optional>
+#include <ranges>
 
 #include "action.h"
 #include "avatar.h"
 #include "creature.h"
+#include "map/field.h"
+#include "map/field_type.h"
 #include "game.h"
+#include "gates.h"
+#include "iexamine.h"
 #include "input.h"
 #include "item.h"
+#include "line.h"
 #include "map/map.h"
 #include "messages.h"
 #include "monster.h"
+#include "mtype.h"
 #include "npc.h"
 #include "options.h"
 #include "player_activity.h"
@@ -19,9 +27,12 @@
 #include "translations.h"
 #include "trap.h"
 #include "travel/travel_destination.h"
+#include "ui.h"
 
 namespace
 {
+
+const auto trait_SHELL2 = trait_id( "SHELL2" );
 
 auto hovered_tile = std::optional<tripoint_bub_ms>();
 auto hovered_route = std::vector<tripoint_bub_ms>();
@@ -58,22 +69,23 @@ auto hostile_at( const avatar &you, const tripoint_bub_ms &p ) -> Creature * // 
 
 auto route_to( avatar &you, map &m, const tripoint_bub_ms &p ) -> std::vector<tripoint_bub_ms>
 {
-    return m.route( you.bub_pos(), p, you.get_legacy_pathfinding_settings(), you.get_legacy_path_avoid() );
+    return m.route( you.bub_pos(), p, you.get_legacy_pathfinding_settings(),
+    you.get_legacy_path_avoid() );
 }
 
 auto confirm_hint( const size_t n ) -> std::string
 {
     return string_format( vgettext( "click again to walk here (%d step)",
-                                    "click again to walk here (%d steps)", n ), n );
+           "click again to walk here (%d steps)", n ), n );
 }
 
 auto dangerous_dest( map &m, const avatar &you, const tripoint_bub_ms &p ) -> bool
 {
     if( m.dangerous_field_at( p ) ) {
-        return true;
-    }
-    const auto &tr = m.tr_at( p );
-    return !tr.is_null() && !tr.is_benign() && ( you.knows_trap( p ) || tr.can_see( p, you ) );
+    return true;
+}
+const auto &tr = m.tr_at( p );
+return !tr.is_null() && !tr.is_benign() && ( you.knows_trap( p ) || tr.can_see( p, you ) );
 }
 
 auto bound_key_suffix( const action_id act ) -> std::string
@@ -97,6 +109,52 @@ auto bound_key_suffix( const action_id act ) -> std::string
     }
     return cache[idx].value_or( std::string() );
 }
+
+auto hotkey_for( const action_id act ) -> int
+{
+    switch( act ) {
+    case ACTION_OPEN:
+        return 'o';
+    case ACTION_CLOSE:
+        return 'c';
+    case ACTION_EXAMINE:
+        return 'e';
+    case ACTION_PICKUP:
+        return 'g';
+    case ACTION_JUMP:
+        return 'j';
+    case ACTION_SMASH:
+        return 'S';
+    case ACTION_BUTCHER:
+        return 'B';
+    default:
+        return MENU_AUTOASSIGN;
+}
+}
+
+/// Lights up the tile of the highlighted menu row on the map.
+class tile_highlight : public uilist_callback
+{
+public:
+    explicit tile_highlight( const std::vector<tripoint_bub_ms> &tiles ) : tiles( tiles ) {
+            draw = make_shared_fast<game::draw_callback_t>( [this]() {
+                if( shown >= 0 && static_cast<size_t>( shown ) < this->tiles.size() ) {
+                    get_map().drawsq( g->w_terrain, this->tiles[shown], drawsq_params().highlight( true ) );
+                }
+            } );
+            g->add_draw_callback( draw );
+        }
+        void select( uilist *menu ) override {
+            if( menu->selected != shown ) {
+                shown = menu->selected;
+                g->invalidate_main_ui_adaptor();
+            }
+        }
+    private:
+        const std::vector<tripoint_bub_ms> &tiles;
+        shared_ptr_fast<game::draw_callback_t> draw;
+        int shown = -1;
+};
 
 } // namespace
 
@@ -140,28 +198,220 @@ auto choices_at( const avatar &you, const tripoint_bub_ms &p ) -> std::vector<ch
     return out;
 }
 
+auto reachable( const avatar &you, const tripoint_bub_ms &p ) -> bool
+{
+    auto &m = get_map();
+    return m.inbounds( p ) && p.z() == you.bub_pos().z() &&
+           square_dist( p.xy(), you.bub_pos().xy() ) <= 1 &&
+           !m.obstructed_by_vehicle_rotation( you.bub_pos(), p ) && you.sees( p );
+}
+
+auto interact_choices( const avatar &you, const tripoint_bub_ms &p,
+                       const bool explicit_tile ) -> std::vector<choice>
+{
+    auto &m = get_map();
+    const auto usable = [&]( const choice & c ) {
+        return !c.travel && c.act != ACTION_ATTACK && c.act != ACTION_FIRE &&
+               !( c.act == ACTION_PICKUP && you.is_mounted() );
+    };
+    auto out = choices_at( you, p ) | std::views::filter( usable ) | std::ranges::to<std::vector>();
+    if( p == you.bub_pos() && can_examine_at( p ) ) {
+        out.push_back( { .act = ACTION_EXAMINE, .label = string_format( _( "examine the %s" ), m.name( p ) ) } );
+    }
+    if( p == you.bub_pos() && !you.is_mounted() &&
+    std::ranges::any_of( m.i_at( p ), []( const item * it ) { return it->is_corpse(); } ) ) {
+        out.push_back( { .act = ACTION_BUTCHER, .label = _( "butcher a corpse" ) } );
+    }
+    if( p != you.bub_pos() ) {
+        const auto obstacle = m.impassable( p ) || m.has_furn( p ) || m.move_cost( p ) > 2 ||
+                              m.dangerous_field_at( p ) ||
+                              ( you.knows_trap( p ) && !m.tr_at( p ).is_benign() );
+        if( ( explicit_tile || obstacle ) && iexamine::can_jump_over_tile( you, p ) ) {
+            out.push_back( { .act = ACTION_JUMP, .label = string_format( _( "jump over the %s" ), m.name( p ) ) } );
+        }
+    }
+    const auto pulpable = std::ranges::any_of( m.i_at( p ), []( const item * it ) {
+        return it->is_corpse() && it->damage() < it->max_damage() &&
+               ( it->can_revive() || it->get_mtype()->zombify_into );
+    } );
+    const auto bashable_field = std::ranges::any_of( m.field_at( p ), []( const auto & fd ) {
+        return fd.first->bash_info.str_min != -1;
+    } );
+    // Every floor and wall is bashable, so a scan of the surroundings only offers the smashing
+    // a player is likely to want; a tile the player picked offers it for anything.
+    if( pulpable || bashable_field || ( explicit_tile && m.is_bashable( p ) ) ) {
+        out.push_back( { .act = ACTION_SMASH, .label = string_format( _( "smash the %s" ), m.name( p ) ) } );
+    }
+    return out;
+}
+
+namespace
+{
+
+struct interaction {
+    const choice &c;
+    tripoint_bub_ms pos;
+    const tile_actions &actions;
+};
+
+auto run_interaction( avatar &you, const interaction &what ) -> void
+{
+    const auto &p = what.pos;
+    if( !reachable( you, p ) ) {
+        return;
+    }
+    switch( what.c.act ) {
+        case ACTION_OPEN:
+            open_at( p );
+            break;
+        case ACTION_EXAMINE:
+            you.manual_examine = true;
+            what.actions.examine( p );
+            you.manual_examine = false;
+            break;
+        case ACTION_PICKUP:
+            what.actions.pickup( p );
+            break;
+        case ACTION_CLOSE:
+            if( you.is_mounted() && !you.mounted_creature->has_flag( MF_MOUNTABLE_DOORS ) ) {
+                add_msg( m_info, _( "You can't close things while you're riding." ) );
+            } else {
+                doors::close_door( get_map(), you, p );
+            }
+            break;
+        case ACTION_JUMP:
+            iexamine::jump_over_tile( you, p );
+            break;
+        case ACTION_SMASH:
+            smash_at( p );
+            break;
+        case ACTION_BUTCHER:
+            if( you.has_active_mutation( trait_SHELL2 ) ) {
+                add_msg( m_info, _( "You can't butcher while you're in your shell." ) );
+            } else {
+                what.actions.butcher();
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+/// Smashing and jumping are never done without asking.
+auto runs_unasked( const choice &c ) -> bool
+{
+    return c.act != ACTION_SMASH && c.act != ACTION_JUMP;
+}
+
+} // namespace
+
+auto interact_at( avatar &you, const tripoint_bub_ms &p, const tile_actions &actions ) -> void
+{
+    if( !reachable( you, p ) ) {
+    add_msg( _( "You can't reach that tile." ) );
+        return;
+    }
+    const auto choices = interact_choices( you, p, true );
+    if( choices.empty() ) {
+    add_msg( _( "There is nothing to interact with on that tile." ) );
+        return;
+    }
+    if( choices.size() == 1 && runs_unasked( choices.front() ) ) {
+        run_interaction( you, { .c = choices.front(), .pos = p, .actions = actions } );
+        return;
+    }
+    auto menu = uilist();
+    menu.text = string_format( _( "Interact with the %s" ), get_map().name( p ) );
+for( auto index = 0; const auto &c : choices ) {
+    menu.addentry( index++, true, hotkey_for( c.act ), c.label );
+    }
+    menu.query();
+    if( menu.ret >= 0 && static_cast<size_t>( menu.ret ) < choices.size() ) {
+    run_interaction( you, { .c = choices[menu.ret], .pos = p, .actions = actions } );
+    }
+}
+
+auto interact_nearby( avatar &you, const tile_actions &actions ) -> bool
+{
+    struct directed_choice {
+        tripoint_bub_ms pos;
+        choice c;
+    };
+    auto options = std::vector<directed_choice>();
+    for( const auto &p : get_map().points_in_radius( you.bub_pos(), 1 ) ) {
+        if( !reachable( you, p ) ) {
+            continue;
+        }
+        for( auto &c : interact_choices( you, p, false ) ) {
+            options.push_back( { .pos = p, .c = std::move( c ) } );
+        }
+    }
+    if( options.empty() ) {
+        return false;
+    }
+    if( options.size() == 1 && runs_unasked( options.front().c ) ) {
+        run_interaction( you, { .c = options.front().c, .pos = options.front().pos, .actions = actions } );
+        return true;
+    }
+    auto tiles = options | std::views::transform( &directed_choice::pos ) |
+                 std::ranges::to<std::vector>();
+    auto highlight = tile_highlight( tiles );
+    auto menu = uilist();
+    menu.title = _( "Interact with what?" );
+    // The menu sits at the top so the highlighted tile next to the avatar stays visible.
+    menu.w_y_setup = 0;
+    menu.callback = &highlight;
+    for( auto index = 0; const auto &dc : options ) {
+        const auto where = dc.pos == you.bub_pos() ? std::string( _( "here" ) ) :
+                           direction_name( direction_from( you.bub_pos().xy(), dc.pos.xy() ) );
+        //~ An action on a nearby tile and where it is, e.g. "open the door (north)".
+        menu.addentry( index++, true, MENU_AUTOASSIGN, string_format( _( "%1$s (%2$s)" ), dc.c.label,
+                where ) );
+    }
+    menu.query();
+    if( menu.ret >= 0 && static_cast<size_t>( menu.ret ) < options.size() ) {
+        const auto &picked = options[menu.ret];
+        run_interaction( you, { .c = picked.c, .pos = picked.pos, .actions = actions } );
+    }
+    return true;
+}
+
+auto primary_choice( const avatar &you, const tripoint_bub_ms &p ) -> std::optional<choice>
+{
+    if( !reachable( you, p ) || has_hostile( you, p ) ) {
+    return std::nullopt;
+}
+const auto choices = interact_choices( you, p, false );
+const auto found = std::ranges::find_if( choices, runs_unasked );
+return found == choices.end() ? std::nullopt : std::optional<choice>( *found );
+}
+
+auto has_hostile( const avatar &you, const tripoint_bub_ms &p ) -> bool
+{
+    return hostile_at( you, p ) != nullptr;
+}
 
 auto resolve( avatar &you, map &m, const choice &c, const tripoint_bub_ms &p ) -> action_id
 {
     if( !c.travel ) {
-        pending_click.reset();
+    pending_click.reset();
     }
 
     if( c.act == ACTION_OPEN ) {
-        // Walking into a closed door opens it.
-        return get_movement_action_from_delta( p - you.bub_pos(), iso_rotate::yes );
+    // Walking into a closed door opens it.
+    return get_movement_action_from_delta( p - you.bub_pos(), iso_rotate::yes );
     }
     if( c.act == ACTION_FIRE ) {
-        // Aim at the creature the hint named, not whichever hostile is nearest.
-        if( auto *target = hostile_at( you, p ) ) {
+    // Aim at the creature the hint named, not whichever hostile is nearest.
+    if( auto *target = hostile_at( you, p ) ) {
             you.last_target = g->shared_from( *target );
         }
         return c.act;
     }
     if( !c.travel ) {
-        return c.act;
-    }
-    if( !get_option<bool>( "MOUSE_MOVE" ) ) {
+    return c.act;
+}
+if( !get_option<bool>( "MOUSE_MOVE" ) ) {
         pending_click.reset();
         return ACTION_NULL;
     }
@@ -175,7 +425,7 @@ auto resolve( avatar &you, map &m, const choice &c, const tripoint_bub_ms &p ) -
         return ACTION_NULL;
     }
     if( safe && ( dist > 1 || dangerous ) && pending_click != p &&
-        ( dangerous || !hostiles ) ) {
+            ( dangerous || !hostiles ) ) {
         pending_click = p;
         hovered_route = route;
         hovered_hint = dangerous ? std::string( _( "click again: walk into danger" ) ) :
@@ -186,7 +436,7 @@ auto resolve( avatar &you, map &m, const choice &c, const tripoint_bub_ms &p ) -
     you.set_destination( route );
     const auto step = you.get_next_auto_move_direction();
     if( hostiles || step == ACTION_NULL ) {
-        you.clear_destination();
+    you.clear_destination();
     }
     return step;
 }
@@ -214,7 +464,16 @@ auto hover( avatar &you, map &m, const std::optional<tripoint_bub_ms> &p ) -> vo
     if( !mouse_move ) {
         hovered_route.clear();
         pending_click.reset();
-        hovered_hint = _( "left: attack; right: select" );
+        if( get_option<std::string>( "CONTROL_SCHEME" ) != "modern" ) {
+            hovered_hint = _( "left: attack; right: select" );
+        } else if( const auto primary = primary_choice( you, *p ) ) {
+            //~ Mouse hint: what a left click does on the hovered tile, e.g. "left: open the door".
+            hovered_hint = string_format( _( "left: %s; right: select" ), primary->label );
+        } else if( has_hostile( you, *p ) ) {
+            hovered_hint = _( "left: attack; right: select" );
+        } else {
+            hovered_hint = _( "click: select" );
+        }
         return;
     }
     const auto choices = choices_at( you, *p );

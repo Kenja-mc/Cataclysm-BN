@@ -27,6 +27,7 @@
 #include "json.h"
 #include "body_panel.h"
 #include "hud_boxes.h"
+#include "hud_sidebar.h"
 #include "keyhints_panel.h"
 #include "lua_sidebar_widgets.h"
 #include "magic/magic.h"
@@ -124,7 +125,7 @@ auto resolve_layout_entry_name( const panel_layout_entry &entry,
                                 const std::map<std::string, std::string> &lua_name_by_id ) -> std::optional<std::string>
 {
     if( entry.lua_id ) {
-        const auto it = lua_name_by_id.find( *entry.lua_id );
+    const auto it = lua_name_by_id.find( *entry.lua_id );
         if( it == lua_name_by_id.end() ) {
             return std::nullopt;
         }
@@ -200,7 +201,7 @@ auto resolve_widget_color( const sol::object &obj ) -> std::optional<nc_color>
     }
     if( obj.is<std::string>() ) {
         const auto id = get_all_colors().name_to_id( obj.as<std::string>(),
-                        report_color_error::no );
+            report_color_error::no );
         return get_all_colors().get( id );
     }
     return std::nullopt;
@@ -273,8 +274,8 @@ auto get_lua_widget_lines( const cata::lua_sidebar_widgets::widget_entry &widget
 auto should_render_lua_widget( const cata::lua_sidebar_widgets::widget_entry &widget ) -> bool
 {
     if( widget.panel_visible_fn ) {
-        try {
-            auto res = ( *widget.panel_visible_fn )();
+    try {
+        auto res = ( *widget.panel_visible_fn )();
             check_func_result( res );
             if( res.return_count() == 0 ) {
                 return true;
@@ -295,10 +296,10 @@ auto should_render_lua_widget( const cata::lua_sidebar_widgets::widget_entry &wi
         return false;
     }
     if( !widget.render ) {
-        return true;
-    }
-    try {
-        auto res = ( *widget.render )();
+    return true;
+}
+try {
+    auto res = ( *widget.render )();
         check_func_result( res );
         if( res.return_count() == 0 ) {
             return true;
@@ -358,7 +359,8 @@ auto make_lua_widget_panel( const cata::lua_sidebar_widgets::widget_entry &widge
     };
     auto render_func = [widget_id]() -> bool {
         const auto *entry = cata::lua_sidebar_widgets::find_widget( widget_id );
-        if( entry == nullptr ) {
+        if( entry == nullptr )
+        {
             return false;
         }
         return should_render_lua_widget( *entry );
@@ -532,7 +534,7 @@ void overmap_ui::draw_overmap_chunk( const catacurses::window &w_minimap, const 
         }
     }
     const int sight_points = player_character.overmap_sight_range( g->light_level(
-                                 player_character.bub_pos().z() ) );
+            player_character.bub_pos().z() ) );
     for( int i = -3; i <= 3; i++ ) {
         for( int j = -3; j <= 3; j++ ) {
             if( i > -3 && i < 3 && j > -3 && j < 3 ) {
@@ -568,7 +570,7 @@ static void decorate_panel( const std::string &name, const catacurses::window &w
     const std::string &title = name;
     static const char *title_suffix = " ";
     static const std::string full_title = string_format( "%s%s%s",
-                                          title_prefix, title, title_suffix );
+        title_prefix, title, title_suffix );
     const int start_pos = center_text_pos( full_title, 0, getmaxx( w ) - 1 );
     mvwprintz( w, point( start_pos, 0 ), c_white, title_prefix );
     wprintz( w, c_light_red, title );
@@ -705,19 +707,19 @@ static auto temp_delta( const avatar &u ) -> temp_delta_extremes
 static auto define_temp_level( const units::temperature lvl ) -> int
 {
     if( lvl > BODYTEMP_SCORCHING ) {
-        return 7;
-    } else if( lvl > BODYTEMP_VERY_HOT ) {
-        return 6;
-    } else if( lvl > BODYTEMP_HOT ) {
-        return 5;
-    } else if( lvl > BODYTEMP_COLD ) {
-        return 4;
-    } else if( lvl > BODYTEMP_VERY_COLD ) {
-        return 3;
-    } else if( lvl > BODYTEMP_FREEZING ) {
-        return 2;
-    }
-    return 1;
+    return 7;
+} else if( lvl > BODYTEMP_VERY_HOT ) {
+    return 6;
+} else if( lvl > BODYTEMP_HOT ) {
+    return 5;
+} else if( lvl > BODYTEMP_COLD ) {
+    return 4;
+} else if( lvl > BODYTEMP_VERY_COLD ) {
+    return 3;
+} else if( lvl > BODYTEMP_FREEZING ) {
+    return 2;
+}
+return 1;
 }
 
 static std::string temp_delta_string( const avatar &u )
@@ -818,7 +820,7 @@ auto needs_status::temperature( const avatar &u ) -> reading
         temp_color = c_blue;
         temp_string = _( "Freezing!" );
     }
-    return { .text = std::move( temp_string ), .color = temp_color };
+    return { .text = std::move( temp_string ), .color = temp_color, .fine = temp_color == c_green };
 }
 
 auto needs_status::read( const avatar &you ) -> readings
@@ -827,11 +829,13 @@ auto needs_status::read( const avatar &you ) -> readings
     auto thirst = you.get_thirst_description();
     auto hunger = you.get_hunger_description();
     auto rest = you.get_fatigue_description();
+    // Sated is the only hunger level with nothing to do; Engorged is a warning too.
+    const auto sated = hunger.second == c_green;
     return {
-        .pain = { .text = pain.first.empty() ? _( "None" ) : std::move( pain.first ), .color = pain.second },
-        .thirst = { .text = thirst.first.empty() ? _( "OK" ) : std::move( thirst.first ), .color = thirst.second },
-        .hunger = { .text = std::move( hunger.first ), .color = hunger.second },
-        .rest = { .text = rest.first.empty() ? _( "Rested" ) : std::move( rest.first ), .color = rest.second },
+        .pain = { .text = pain.first.empty() ? _( "None" ) : std::move( pain.first ), .color = pain.second, .fine = you.get_perceived_pain() <= 0 },
+        .thirst = { .text = thirst.first.empty() ? _( "OK" ) : std::move( thirst.first ), .color = thirst.second, .fine = you.get_thirst() <= thirst_levels::thirsty },
+        .hunger = { .text = std::move( hunger.first ), .color = hunger.second, .fine = sated },
+        .rest = { .text = rest.first.empty() ? _( "Rested" ) : std::move( rest.first ), .color = rest.second, .fine = you.get_fatigue() <= fatigue_levels::tired },
         .heat = temperature( you )
     };
 }
@@ -972,7 +976,8 @@ static std::pair<nc_color, std::string> power_stat( const avatar &u )
 
 static nc_color safe_color()
 {
-    nc_color s_color = g->safe_mode ? c_green : c_red;
+    auto s_color = g->safe_mode == SAFE_MODE_STOP ? c_yellow :
+                   g->safe_mode == SAFE_MODE_ON ? c_green : c_red;
     if( g->safe_mode == SAFE_MODE_OFF && get_option<bool>( "AUTOSAFEMODE" ) ) {
         int s_return = get_option<int>( "AUTOSAFEMODETURNS" );
         int iPercent = g->turnssincelastmon * 100 / s_return;
@@ -1328,23 +1333,23 @@ static std::string carry_volume_string( const avatar &u )
 static auto get_weight_color( const avatar &u ) -> nc_color
 {
     if( u.weight_carried() > u.weight_capacity() ) {
-        return c_red;
-    } else if( u.weight_carried() > u.weight_capacity() * 0.75 ) {
-        return c_yellow;
-    } else {
-        return c_light_gray;
-    }
+    return c_red;
+} else if( u.weight_carried() > u.weight_capacity() * 0.75 ) {
+    return c_yellow;
+} else {
+    return c_light_gray;
+}
 }
 
 static auto get_volume_color( const avatar &u ) -> nc_color
 {
     if( u.volume_carried() > u.volume_capacity() * 0.85 ) {
-        return c_red;
-    } else if( u.volume_carried() > u.volume_capacity() * 0.65 ) {
-        return c_yellow;
-    } else {
-        return c_light_gray;
-    }
+    return c_red;
+} else if( u.volume_carried() > u.volume_capacity() * 0.65 ) {
+    return c_yellow;
+} else {
+    return c_light_gray;
+}
 }
 
 static void draw_weightvolume_classic( const avatar &u, const catacurses::window &w )
@@ -1582,7 +1587,11 @@ struct location_rows {
 
 auto current_location_rows() -> location_rows
 {
-    return { .sky_and_time = !hud_boxes::weather_box_shown(), .light_and_date = !hud_boxes::weather_box_shows_environment() };
+    const auto grouped = hud_sidebar::active();
+    return {
+        .sky_and_time = !grouped && !hud_boxes::weather_box_shown(),
+        .light_and_date = !grouped && !hud_boxes::weather_box_shows_environment()
+    };
 }
 
 /// The 5x5 overmap beside the rows needs four of them.
@@ -1630,8 +1639,8 @@ static void draw_loc_labels( const avatar &u, const catacurses::window &w, bool 
         wprintz( w, ll.second, ll.first );
         print_label( w, { .pos = point( label_column, row++ ), .label = _( "Date" ) } );
         wprintz( w, c_light_gray, string_format( "%s, day %d",
-                 calendar::name_season( season_of_year( calendar::turn ) ),
-                 day_of_season<int>( calendar::turn ) + 1 ) );
+                calendar::name_season( season_of_year( calendar::turn ) ),
+                day_of_season<int>( calendar::turn ) + 1 ) );
     }
     if( rows.sky_and_time ) {
         print_label( w, { .pos = point( label_column, row ), .label = _( "Time" ) } );
@@ -1770,7 +1779,7 @@ static void draw_env_compact( avatar &u, const catacurses::window &w )
     mvwprintz( w, point( 8, 1 ), c_light_gray, "%s", u.martial_arts_data->selected_style_name( u ) );
     // location
     mvwprintz( w, point( 8, 2 ), c_white, utf8_truncate( ACTIVE_OVERMAP_BUFFER.ter(
-                   u.abs_omt_pos() )->get_name(), getmaxx( w ) - 8 ) );
+                u.abs_omt_pos() )->get_name(), getmaxx( w ) - 8 ) );
     // weather
     const weather_manager &weather = get_weather();
     if( g->get_levz() < 0 ) {
@@ -1925,15 +1934,15 @@ static void draw_armor_padding( const avatar &u, const catacurses::window &w )
 
     unsigned int max_length = getmaxx( w ) - 8;
     print_colored_text( w, point( 8, 0 ), color, color, get_armor( u, bodypart_id( "head" ),
-                        max_length ) );
+            max_length ) );
     print_colored_text( w, point( 8, 1 ), color, color, get_armor( u, bodypart_id( "torso" ),
-                        max_length ) );
+            max_length ) );
     print_colored_text( w, point( 8, 2 ), color, color, get_armor( u, bodypart_id( "arm_r" ),
-                        max_length ) );
+            max_length ) );
     print_colored_text( w, point( 8, 3 ), color, color, get_armor( u, bodypart_id( "leg_r" ),
-                        max_length ) );
+            max_length ) );
     print_colored_text( w, point( 8, 4 ), color, color, get_armor( u, bodypart_id( "foot_r" ),
-                        max_length ) );
+            max_length ) );
     wnoutrefresh( w );
 }
 
@@ -1950,15 +1959,15 @@ static void draw_armor( const avatar &u, const catacurses::window &w )
 
     unsigned int max_length = getmaxx( w ) - 7;
     print_colored_text( w, point( 7, 0 ), color, color, get_armor( u, bodypart_id( "head" ),
-                        max_length ) );
+            max_length ) );
     print_colored_text( w, point( 7, 1 ), color, color, get_armor( u, bodypart_id( "torso" ),
-                        max_length ) );
+            max_length ) );
     print_colored_text( w, point( 7, 2 ), color, color, get_armor( u, bodypart_id( "arm_r" ),
-                        max_length ) );
+            max_length ) );
     print_colored_text( w, point( 7, 3 ), color, color, get_armor( u, bodypart_id( "leg_r" ),
-                        max_length ) );
+            max_length ) );
     print_colored_text( w, point( 7, 4 ), color, color, get_armor( u, bodypart_id( "foot_r" ),
-                        max_length ) );
+            max_length ) );
     wnoutrefresh( w );
 }
 static std::string get_armor_comp( const avatar &u, bodypart_id bp )
@@ -2215,7 +2224,7 @@ static void draw_location_classic( const avatar &u, const catacurses::window &w 
     const auto col = print_label( w, { .pos = point( label_column, 0 ), .label = _( "Location" ) },
                                   label_pad_classic );
     mvwprintz( w, point( col, 0 ), c_white, "%s", utf8_truncate( ACTIVE_OVERMAP_BUFFER.ter(
-                   u.abs_omt_pos() )->get_name(), getmaxx( w ) - col ) );
+                u.abs_omt_pos() )->get_name(), getmaxx( w ) - col ) );
 
     wnoutrefresh( w );
 }
@@ -2381,8 +2390,8 @@ constexpr auto controls_short_rows = 2;
 
 auto panel_drawn( const std::string &name ) -> bool
 {
-    for( const auto &panel : panel_manager::get_manager().get_current_layout() ) {
-        if( panel.get_name() == name ) {
+for( const auto &panel : panel_manager::get_manager().get_current_layout() ) {
+    if( panel.get_name() == name ) {
             return panel.toggle && panel.render();
         }
     }
@@ -2405,7 +2414,8 @@ auto tail_budget() -> int
         }
         const auto height = panel.get_height();
         if( height == -2 ) {
-            budget -= sidebar::log_min_rows + spacer;
+            const auto log_rows = hud_sidebar::active() && TERMY < 40 ? 2 : sidebar::log_min_rows;
+            budget -= log_rows + spacer;
         } else if( height >= 0 ) {
             budget -= height + spacer;
         }
@@ -2416,6 +2426,10 @@ auto tail_budget() -> int
 auto controls_rows() -> int
 {
     const auto budget = tail_budget();
+    if( hud_sidebar::active() ) {
+        const auto compass = panel_drawn( "Compass" ) ? compass_dial_rows : 0;
+        return std::clamp( budget - compass, controls_short_rows, controls_full_rows );
+    }
     if( !panel_drawn( "Compass" ) ) {
         return std::clamp( budget, 1, controls_full_rows );
     }
@@ -2429,7 +2443,7 @@ auto controls_rows() -> int
 auto compass_rows() -> int
 {
     if( !panel_drawn( "Controls" ) ) {
-        return std::clamp( tail_budget(), 0, compass_full_rows );
+    return std::clamp( tail_budget(), 0, compass_full_rows );
     }
     return std::clamp( tail_budget() - controls_rows(), 0, compass_full_rows );
 }
@@ -2629,6 +2643,53 @@ static std::vector<window_panel> initialize_default_label_panels()
     return ret;
 }
 
+namespace
+{
+
+auto grouped_hud_panel( const hud_sidebar::section content,
+                        const std::string &name ) -> window_panel
+{
+    auto panel = window_panel( [content]( avatar & you, const catacurses::window & w ) {
+        hud_sidebar::draw( you, w, content );
+    }, name, 1, 44, true );
+    panel.set_height_override( [content]() { return hud_sidebar::height( content ); } );
+    return panel;
+}
+
+auto initialize_grouped_panels() -> std::vector<window_panel>
+{
+    auto ret = std::vector<window_panel>();
+    ret.push_back( grouped_hud_panel( hud_sidebar::section::weather, translate_marker( "Weather" ) ) );
+    ret.push_back( grouped_hud_panel( hud_sidebar::section::character,
+                                      translate_marker( "Character" ) ) );
+    ret.push_back( grouped_hud_panel( hud_sidebar::section::needs, translate_marker( "Needs" ) ) );
+    ret.emplace_back( draw_limb_wide, translate_marker( "Limbs" ), 2, 44, true );
+    ret.emplace_back( body_panel::draw, translate_marker( "Body" ), 3, 44, true );
+    ret.back().set_height_override( []() { return TERMY < 40 ? 2 : 3; } );
+    ret.emplace_back( draw_char_wide, translate_marker( "Movement" ), 2, 44, true );
+    ret.emplace_back( draw_stat_wide, translate_marker( "Stats" ), 2, 44, true );
+    auto vehicle = grouped_hud_panel( hud_sidebar::section::vehicle, translate_marker( "Vehicle" ) );
+    vehicle.render = veh_panel;
+    ret.push_back( std::move( vehicle ) );
+    ret.emplace_back( draw_weightvolume_labels, translate_marker( "Wgt/Vol" ), 2, 44, true );
+    ret.emplace_back( []( avatar & you, const catacurses::window & w ) {
+        draw_loc_labels( you, w, TERMY >= 40 );
+    }, translate_marker( "Location" ), 4, 44, true );
+    ret.back().set_height_override( []() { return TERMY < 40 ? 2 : 4; } );
+    ret.emplace_back( draw_compass_padding, translate_marker( "Compass" ), 8, 44, true );
+    ret.back().set_height_override( compass_rows );
+    ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 5, 44, true );
+    ret.back().set_height_override( controls_rows );
+    ret.emplace_back( draw_messages, translate_marker( "Log" ), -2, 44, true );
+#if defined(TILES)
+    ret.emplace_back( draw_mminimap, translate_marker( "Map" ), -1, 44, false,
+                      default_render, true );
+#endif
+    return ret;
+}
+
+} // namespace
+
 static std::map<std::string, std::vector<window_panel>> initialize_default_panel_layouts()
 {
     std::map<std::string, std::vector<window_panel>> ret;
@@ -2638,13 +2699,14 @@ static std::map<std::string, std::vector<window_panel>> initialize_default_panel
     ret.emplace( translate_marker( "labels-narrow" ),
                  initialize_default_label_narrow_panels() );
     ret.emplace( translate_marker( "labels" ), initialize_default_label_panels() );
+    ret.emplace( translate_marker( "grouped" ), initialize_grouped_panels() );
 
     return ret;
 }
 
 panel_manager::panel_manager()
 {
-    current_layout_id = "labels";
+    current_layout_id = "grouped";
     layouts = initialize_default_panel_layouts();
 }
 
@@ -2712,7 +2774,8 @@ auto panel_manager::sync_lua_panels() -> void
                                      const std::string & widget_id,
     const std::vector<window_panel> &layout ) -> std::optional<int> {
         const auto entry_it = find_saved_entry( entries, widget_id );
-        if( entry_it == entries.end() ) {
+        if( entry_it == entries.end() )
+        {
             return std::nullopt;
         }
         const auto entry_index = static_cast<size_t>(
@@ -2982,13 +3045,13 @@ void panel_manager::show_adm()
         col_offset = column_widths[0] + 2;
         int col_width = column_widths[1] - 4;
         mvwprintz( w, point( col_offset, 1 ), c_light_green, trunc_ellipse( ctxt.get_desc( "TOGGLE_PANEL" ),
-                   col_width ) + ":" );
+                col_width ) + ":" );
         mvwprintz( w, point( col_offset, 2 ), c_white, _( "Toggle panels on/off" ) );
         mvwprintz( w, point( col_offset, 3 ), c_light_green, trunc_ellipse( ctxt.get_desc( "MOVE_PANEL" ),
-                   col_width ) + ":" );
+                col_width ) + ":" );
         mvwprintz( w, point( col_offset, 4 ), c_white, _( "Change display order" ) );
         mvwprintz( w, point( col_offset, 5 ), c_light_green, trunc_ellipse( ctxt.get_desc( "QUIT" ),
-                   col_width ) + ":" );
+                col_width ) + ":" );
         mvwprintz( w, point( col_offset, 6 ), c_white, _( "Exit" ) );
 
         wnoutrefresh( w );

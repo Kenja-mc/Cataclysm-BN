@@ -15,6 +15,10 @@
 // Ensure that unifont is always loaded as a fallback font to prevent users from shooting themselves in the foot
 void ensure_unifont_loaded( std::vector<std::string> &font_list );
 
+// Ensure the bundled icon font (before unifont) and unifont end every typeface fallback list,
+// including user fonts.json files written before the icon font existed.
+void ensure_fallback_fonts_loaded( std::vector<std::string> &font_list );
+
 class font_loader
 {
     public:

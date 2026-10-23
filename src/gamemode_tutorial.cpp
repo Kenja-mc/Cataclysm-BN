@@ -14,6 +14,7 @@
 #include "map/mapdata.h"
 #include "map_iterator.h"
 #include "output.h"
+#include "options.h"
 #include "overmap/overmap.h"
 #include "overmap/overmapbuffer.h"
 #include "pldata.h"
@@ -189,10 +190,10 @@ void tutorial_game::per_turn()
     }
 
     for( const auto &p : here.points_in_radius( g->u.bub_pos(), 1 ) ) {
-        if( here.ter( p ) == t_door_o ) {
+        if( here.ter( p ) == t_door_c ) {
             add_message( tut_lesson::LESSON_OPEN );
             break;
-        } else if( here.ter( p ) == t_door_c ) {
+        } else if( here.ter( p ) == t_door_o ) {
             add_message( tut_lesson::LESSON_CLOSE );
             break;
         } else if( here.ter( p ) == t_window ) {
@@ -296,30 +297,29 @@ void tutorial_game::post_action( action_id act )
 
         case ACTION_EXAMINE:
             add_message( tut_lesson::LESSON_INTERACT );
-        /* fallthrough */
-        case ACTION_PICKUP: {
-            item &it = *item::spawn_temporary( g->u.last_item, calendar::start_of_cataclysm );
-            if( it.is_armor() ) {
-                add_message( tut_lesson::LESSON_GOT_ARMOR );
-            } else if( it.is_gun() ) {
-                add_message( tut_lesson::LESSON_GOT_GUN );
-            } else if( it.is_ammo() ) {
-                add_message( tut_lesson::LESSON_GOT_AMMO );
-            } else if( it.is_tool() ) {
-                add_message( tut_lesson::LESSON_GOT_TOOL );
-            } else if( it.is_food() ) {
-                add_message( tut_lesson::LESSON_GOT_FOOD );
-            } else if( it.is_melee() ) {
-                add_message( tut_lesson::LESSON_GOT_WEAPON );
-            }
-
-        }
-        break;
+            break;
 
         default:
             // TODO: add more actions here
             break;
 
+    }
+}
+
+auto tutorial_game::on_pickup( const item &it ) -> void
+{
+    if( it.is_armor() ) {
+    add_message( tut_lesson::LESSON_GOT_ARMOR );
+    } else if( it.is_gun() ) {
+    add_message( tut_lesson::LESSON_GOT_GUN );
+    } else if( it.is_ammo() ) {
+    add_message( tut_lesson::LESSON_GOT_AMMO );
+    } else if( it.is_tool() ) {
+    add_message( tut_lesson::LESSON_GOT_TOOL );
+    } else if( it.is_food() ) {
+    add_message( tut_lesson::LESSON_GOT_FOOD );
+    } else if( it.is_melee() ) {
+    add_message( tut_lesson::LESSON_GOT_WEAPON );
     }
 }
 
@@ -330,6 +330,11 @@ void tutorial_game::add_message( tut_lesson lesson )
     }
     tutorials_seen[lesson] = true;
     g->invalidate_main_ui_adaptor();
-    popup( expand_key_tags( SNIPPET.get_snippet_by_id( snippet_id( io::enum_to_string<tut_lesson>( lesson ) ) ).value_or(
-                                translation() ).translated() ), PF_ON_TOP );
+    const auto id = io::enum_to_string<tut_lesson>( lesson );
+    // Modern unbinds many classic keys, so its lessons describe its own way of doing things.
+    const auto modern_id = snippet_id( id + "_MODERN" );
+    const auto use_modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern" &&
+                            SNIPPET.get_snippet_by_id( modern_id ).has_value();
+    popup( expand_key_tags( SNIPPET.get_snippet_by_id( use_modern ? modern_id : snippet_id( id ) )
+                            .value_or( translation() ).translated() ), PF_ON_TOP );
 }

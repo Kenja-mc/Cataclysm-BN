@@ -61,6 +61,7 @@ struct tutorial_game : public special_game {
         void per_turn() override;
         void pre_action( action_id &act ) override;
         void post_action( action_id act ) override;
+        auto on_pickup( const item &it ) -> void override;
         void game_over() override { }
 
     private:

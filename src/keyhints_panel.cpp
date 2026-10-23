@@ -1,5 +1,7 @@
 #include "keyhints_panel.h"
 
+#include <algorithm>
+#include <array>
 #include <string>
 #include <vector>
 
@@ -46,6 +48,28 @@ auto joined_keys( const std::vector<action_id> &acts ) -> std::string
     return out;
 }
 
+/// "CTRL+WASD" when the four peek directions share a modifier, else the north peek key.
+auto peek_keys( const input_context &ctxt ) -> std::string
+{
+    constexpr auto ids = std::array{ "PEEK_N", "PEEK_W", "PEEK_S", "PEEK_E" };
+    if( std::ranges::any_of( ids, [&]( const char *id ) { return ctxt.key_bound_to( id, 0, false ).empty(); } ) ) {
+        return std::string();
+    }
+    auto prefix = std::string();
+    auto letters = std::string();
+    for( const auto *id : ids ) {
+        const auto desc = ctxt.get_desc( id, 1 );
+        const auto plus = desc.rfind( '+' );
+        if( plus == std::string::npos || plus + 2 != desc.size() ||
+            ( !prefix.empty() && desc.substr( 0, plus + 1 ) != prefix ) ) {
+            return ctxt.get_desc( "PEEK_N", 1 );
+        }
+        prefix = desc.substr( 0, plus + 1 );
+        letters += desc.back();
+    }
+    return prefix + letters;
+}
+
 auto collect_hints( const bool driving ) -> std::vector<hint>
 {
     const auto singles = std::vector<std::pair<action_id, std::string>> {
@@ -74,8 +98,10 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
         push( joined_keys( { ACTION_MOVE_FORTH, ACTION_MOVE_BACK } ), _( "throttle" ) );
         push( joined_keys( { ACTION_MOVE_LEFT, ACTION_MOVE_RIGHT } ), _( "steer" ) );
     } else {
-        push( joined_keys( { ACTION_MOVE_FORTH, ACTION_MOVE_LEFT, ACTION_MOVE_BACK, ACTION_MOVE_RIGHT } ), _( "move" ) );
-        push( joined_keys( { ACTION_MOVE_FORTH_LEFT, ACTION_MOVE_FORTH_RIGHT, ACTION_MOVE_BACK_LEFT, ACTION_MOVE_BACK_RIGHT } ), _( "diag" ) );
+        push( joined_keys( { ACTION_MOVE_FORTH, ACTION_MOVE_LEFT, ACTION_MOVE_BACK, ACTION_MOVE_RIGHT } ),
+              _( "move" ) );
+        push( joined_keys( { ACTION_MOVE_FORTH_LEFT, ACTION_MOVE_FORTH_RIGHT, ACTION_MOVE_BACK_LEFT, ACTION_MOVE_BACK_RIGHT } ),
+              _( "diag" ) );
     }
     if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
         const auto ctxt = input_context( "DEFAULTMODE" );
@@ -88,9 +114,10 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
         push( "?", _( "all keys" ) );
         push_desc( "NEXT_TARGET", _( "target" ) );
         push( first_key( ACTION_CYCLE_MOVE ), _( "stance" ) );
+        // Shift+direction moves the selection marker; calling it "look" made it read like peeking.
         push( joined_keys( { ACTION_SHIFT_N, ACTION_SHIFT_W, ACTION_SHIFT_S, ACTION_SHIFT_E } ),
-              _( "look" ) );
-        push_desc( "PEEK_N", _( "peek north" ) );
+              _( "select" ) );
+        push( peek_keys( ctxt ), _( "peek" ) );
     } else {
         push( "?", _( "all keys" ) );
     }
@@ -120,9 +147,9 @@ auto draw_keyhints( const avatar &you, const catacurses::window &w ) -> void
         cached_driving = driving;
         cached_version = inp_mngr.bindings_version();
     }
-    for( const auto &h : cached ) {
-        const auto len = h.keys_width + 1 + h.label_width;
-        if( pos.x > 1 && pos.x + len > width ) {
+for( const auto &h : cached ) {
+    const auto len = h.keys_width + 1 + h.label_width;
+    if( pos.x > 1 && pos.x + len > width ) {
             pos = point( 1, pos.y + 1 );
         }
         if( pos.y >= height ) {
@@ -138,10 +165,10 @@ auto draw_keyhints( const avatar &you, const catacurses::window &w ) -> void
 auto show_welcome_once() -> void
 {
     if( !get_option<bool>( "SHOW_WELCOME" ) ) {
-        return;
-    }
-    const auto key = []( const action_id act ) {
-        const auto k = first_key( act );
+    return;
+}
+const auto key = []( const action_id act ) {
+    const auto k = first_key( act );
         return colorize( k == _( "spc" ) ? std::string( _( "Space" ) ) : k, c_light_cyan );
     };
     auto text = string_format(
@@ -151,7 +178,7 @@ auto show_welcome_once() -> void
                     key( ACTION_MOVE_RIGHT ), key( ACTION_MOVE_FORTH_LEFT ), key( ACTION_MOVE_FORTH_RIGHT ),
                     key( ACTION_MOVE_BACK_LEFT ), key( ACTION_MOVE_BACK_RIGHT ), key( ACTION_PAUSE ) );
     if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
-        const auto ctxt = input_context( "DEFAULTMODE" );
+    const auto ctxt = input_context( "DEFAULTMODE" );
         const auto target_key = ctxt.key_bound_to( "NEXT_TARGET", 0, false );
         const auto next_target = target_key.empty() ? std::string() :
                                  colorize( ctxt.get_desc( "NEXT_TARGET" ), c_light_cyan );
@@ -159,7 +186,7 @@ auto show_welcome_once() -> void
                     _( "%1$s groups the secondary commands into menus; Info has your character and status screens.\n"
                        "%2$s opens inventory.  Select an item for Wield, Use, Eat or Drop; %3$s opens Craft from inventory.\n"
                        "%4$s interacts with the selected or nearby tile, including Open, Jump and Smash.  Destructive choices are explicit.\n"
-                       "Shift + movement looks in that direction; Ctrl + movement peeks with the normal time cost.\n"
+                       "Shift + movement selects the tile in that direction and describes it; Ctrl + movement peeks around a corner, which takes time.\n"
                        "%5$s cycles walking, running, crouching and prone.  %6$s selects a hostile target; %7$s attacks it.  You can also walk into adjacent enemies.\n"
                        "%8$s opens the map.  The Interact menu offers quick stack and sort pile for base storage, without sorting zones.\n\n" ),
                     key( ACTION_ACTIONMENU ), key( ACTION_INVENTORY ), key( ACTION_CRAFT ),
@@ -176,13 +203,16 @@ auto show_welcome_once() -> void
                     key( ACTION_QUICK_STACK ), key( ACTION_SORT_PILE ) );
     }
     if( !get_option<bool>( "MOUSE_MOVE" ) ) {
-        text += _( "Right-click selects a map tile; left-click attacks an enemy.  Move with the keyboard, not mouse clicks.\n\n" );
+    text += get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ?
+                _( "Left-click a nearby door, item or piece of furniture to use it, or an enemy to attack it; right-click selects a tile.  Clicks never walk.\n\n" )
+                :
+                _( "Right-click selects a map tile; left-click attacks an enemy.  Move with the keyboard, not mouse clicks.\n\n" );
     } else if( get_option<bool>( "MOUSE_TILE_SELECTION" ) ) {
-        text += _( "Hover a tile to see what a click does, click to walk there or act, and right-click for every option.\n\n" );
+    text += _( "Hover a tile to see what a click does, click to walk there or act, and right-click for every option.\n\n" );
     }
     if( !first_key( ACTION_AUTO_EXPLORE ).empty() ) {
-        text += string_format( _( "%s walks toward ground you have not seen yet.\n\n" ),
-                               key( ACTION_AUTO_EXPLORE ) );
+    text += string_format( _( "%s walks toward ground you have not seen yet.\n\n" ),
+                           key( ACTION_AUTO_EXPLORE ) );
     }
     text += _( "The Controls strip at the bottom of the sidebar shows the main keys; "
                "<color_light_cyan>?</color> on any screen lists every key." );
@@ -195,8 +225,8 @@ auto show_welcome_once() -> void
     death.selected = get_option<bool>( "PROMPT_ON_CHARACTER_DEATH" ) ? 1 : 0;
     death.query();
     if( death.ret == 0 || death.ret == 1 ) {
-        get_options().get_option( "PROMPT_ON_CHARACTER_DEATH" ).setValue( death.ret == 1 ? "true" :
-                "false" );
+    get_options().get_option( "PROMPT_ON_CHARACTER_DEATH" ).setValue( death.ret == 1 ? "true" :
+            "false" );
     }
     get_options().get_option( "SHOW_WELCOME" ).setValue( "false" );
     get_options().save();

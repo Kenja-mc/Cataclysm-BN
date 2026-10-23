@@ -1,11 +1,40 @@
 #include "font_loader.h"
 
 #include <algorithm>
+#include <string_view>
+
+namespace
+{
+
+auto matches_font( const std::string_view path, const std::string_view filename ) -> bool
+{
+    const auto separator = path.find_last_of( "/\\" );
+    const auto name = separator == std::string_view::npos ? path : path.substr( separator + 1 );
+    return name == filename || ( filename.ends_with( ".ttf" ) &&
+                                 name == filename.substr( 0, filename.size() - 4 ) );
+}
+
+} // namespace
 
 void ensure_unifont_loaded( std::vector<std::string> &font_list )
 {
-    if( !std::ranges::contains( font_list, "unifont" ) ) {
+    const auto is_unifont = []( const auto & font ) { return matches_font( font, "unifont.ttf" ); };
+    if( std::ranges::none_of( font_list, is_unifont ) ) {
         font_list.emplace_back( PATH_INFO::fontdir() + "unifont.ttf" );
+    }
+}
+
+void ensure_fallback_fonts_loaded( std::vector<std::string> &font_list )
+{
+    ensure_unifont_loaded( font_list );
+    const auto is_font = []( std::string_view file ) {
+        return [file]( const std::string & font ) {
+            return matches_font( font, file );
+        };
+    };
+    if( std::ranges::none_of( font_list, is_font( "bno-icons.ttf" ) ) ) {
+        font_list.insert( std::ranges::find_if( font_list, is_font( "unifont.ttf" ) ),
+                          PATH_INFO::fontdir() + "bno-icons.ttf" );
     }
 }
 
@@ -31,9 +60,9 @@ void font_loader::load_throws( const std::string &path )
             config.read( "overmap_typeface", overmap_typeface );
         }
 
-        ensure_unifont_loaded( typeface );
-        ensure_unifont_loaded( map_typeface );
-        ensure_unifont_loaded( overmap_typeface );
+        ensure_fallback_fonts_loaded( typeface );
+        ensure_fallback_fonts_loaded( map_typeface );
+        ensure_fallback_fonts_loaded( overmap_typeface );
 
     } catch( const std::exception &err ) {
         throw std::runtime_error( std::string( "loading font settings from " ) + path + " failed: " +

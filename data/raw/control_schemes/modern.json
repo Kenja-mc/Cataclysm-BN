@@ -419,28 +419,28 @@
   },
   {
     "type": "keybinding",
-    "name": "Look north",
+    "name": "Select tile north",
     "category": "DEFAULTMODE",
     "id": "shift_n",
     "bindings": [ { "input_method": "keyboard", "key": "W" } ]
   },
   {
     "type": "keybinding",
-    "name": "Look east",
+    "name": "Select tile east",
     "category": "DEFAULTMODE",
     "id": "shift_e",
     "bindings": [ { "input_method": "keyboard", "key": "D" } ]
   },
   {
     "type": "keybinding",
-    "name": "Look south",
+    "name": "Select tile south",
     "category": "DEFAULTMODE",
     "id": "shift_s",
     "bindings": [ { "input_method": "keyboard", "key": "S" } ]
   },
   {
     "type": "keybinding",
-    "name": "Look west",
+    "name": "Select tile west",
     "category": "DEFAULTMODE",
     "id": "shift_w",
     "bindings": [ { "input_method": "keyboard", "key": "A" } ]
@@ -562,7 +562,7 @@
     "name": "Wield",
     "category": "DEFAULTMODE",
     "id": "wield",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "v" } ]
   },
   {
     "type": "keybinding",
@@ -682,7 +682,7 @@
     "name": "Toggle attack mode of Wielded Item",
     "category": "DEFAULTMODE",
     "id": "select_fire_mode",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "F" } ]
   },
   {
     "type": "keybinding",
@@ -759,7 +759,7 @@
     "name": "View Player Info",
     "category": "DEFAULTMODE",
     "id": "player_data",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "@" } ]
   },
   {
     "type": "keybinding",
@@ -1777,7 +1777,7 @@
     "name": "Advanced Inventory management",
     "category": "DEFAULTMODE",
     "id": "advinv",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "/" } ]
   },
   {
     "type": "keybinding",
@@ -1798,7 +1798,7 @@
     "name": "Butcher",
     "category": "DEFAULTMODE",
     "id": "butcher",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "B" } ]
   },
   {
     "type": "keybinding",
@@ -1987,7 +1987,7 @@
     "name": "View Message Log",
     "category": "DEFAULTMODE",
     "id": "messages",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "P" } ]
   },
   {
     "type": "keybinding",
@@ -2005,28 +2005,28 @@
   },
   {
     "type": "keybinding",
-    "name": "Look northeast",
+    "name": "Select tile northeast",
     "category": "DEFAULTMODE",
     "id": "shift_ne",
     "bindings": [ { "input_method": "keyboard", "key": "E" } ]
   },
   {
     "type": "keybinding",
-    "name": "Look southeast",
+    "name": "Select tile southeast",
     "category": "DEFAULTMODE",
     "id": "shift_se",
     "bindings": [ { "input_method": "keyboard", "key": "C" } ]
   },
   {
     "type": "keybinding",
-    "name": "Look southwest",
+    "name": "Select tile southwest",
     "category": "DEFAULTMODE",
     "id": "shift_sw",
     "bindings": [ { "input_method": "keyboard", "key": "Z" } ]
   },
   {
     "type": "keybinding",
-    "name": "Look northwest",
+    "name": "Select tile northwest",
     "category": "DEFAULTMODE",
     "id": "shift_nw",
     "bindings": [ { "input_method": "keyboard", "key": "Q" } ]

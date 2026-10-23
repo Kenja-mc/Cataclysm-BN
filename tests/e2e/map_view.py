@@ -108,18 +108,25 @@ def test_vehicle_screen_diagonals(g):
     arena(g)
     from vehicle_box import spawn_vehicle
     spawn_vehicle(g, "bicycle")
+    # Select the vehicle underfoot so contextual Examine cannot pick another nearby tile.
+    x, y = g.find("@")
+    g.click(x, y, button=2)
     action_menu(g, "Interact", "Examine Nearby Terrain")
-    if "which tile?" in g.screen() or "Examine where?" in g.screen():
-        g.keys("x", delay=1.5)
-    if "Interact with the" in g.screen():
+    if "Examine where?" in g.screen():
+        g.keys("x", delay=0.2)
+    if "Interact with what?" in g.screen() or "Interact with the" in g.screen():
         choose_menu_entry(g, "examine the")
-    g.keys("e", delay=2)  # "Examine vehicle"
+    g.wait_for("Examine vehicle")
+    choose_menu_entry(g, "Examine vehicle")
+    g.wait_for("ESC-back")
     try:
         start = g.screen()
-        g.keys("s", delay=1.5)
+        g.keys("s", delay=0.2)
+        g.settle_screen()
         moved = g.screen()
         assert "ESC-back" in moved and moved != start, "s should move the cursor, not siphon"
-        g.keys("e", delay=1.5)
+        g.keys("e", delay=0.2)
+        g.settle_screen()
         diag = g.screen()
         assert "ESC-back" in diag and "new name" not in diag.lower() and diag != moved, "e should move diagonally, not rename"
     finally:

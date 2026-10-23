@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "action.h"
+#include "action_route.h"
 #include "avatar.h"
 #include "bodypart.h"
 #include "calendar.h"
@@ -36,23 +37,16 @@ struct tip {
 
 auto key( const action_id act ) -> std::string
 {
-    if( const auto bound = press_x( act, "", "", "" ); !bound.empty() ) {
-        return bound;
-    }
-    if( act == ACTION_EAT || act == ACTION_USE || act == ACTION_DROP ) {
-        return string_format( _( "%s → item actions" ),
-                              press_x( ACTION_INVENTORY, "", "", _( "Inventory" ) ) );
-    }
-    if( act == ACTION_SLEEP ) {
+    if( act == ACTION_SLEEP && press_x( act, "", "", "" ).empty() ) {
         return string_format( _( "%s → Sleep" ), press_x( ACTION_WAIT, "", "", _( "Wait menu" ) ) );
     }
-    return _( "(unbound)" );
+    return action_route( act );
 }
 
 auto hurt( const avatar &you ) -> bool
 {
-    for( const auto &bp : you.get_all_body_parts() ) {
-        if( you.get_part_hp_cur( bp ) < you.get_part_hp_max( bp ) * 3 / 4 ) {
+for( const auto &bp : you.get_all_body_parts() ) {
+    if( you.get_part_hp_cur( bp ) < you.get_part_hp_max( bp ) * 3 / 4 ) {
             return true;
         }
     }
@@ -66,9 +60,9 @@ auto tips() -> const std::vector<tip> & // *NOPAD*
             "hostile", []( const avatar & you ) { return !you.get_hostile_creatures( 15 ).empty(); },
             [] {
                 if( get_option<bool>( "BUMP_ATTACK" ) )
-                {
-                    return std::string(
-                        _( "Something hostile is in sight.  Walk into an adjacent enemy to attack; walking away works too." ) );
+            {
+                return std::string(
+                    _( "Something hostile is in sight.  Walk into an adjacent enemy to attack; walking away works too." ) );
                 }
                 if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" )
             {
@@ -77,13 +71,13 @@ auto tips() -> const std::vector<tip> & // *NOPAD*
                         _( "Something hostile is in sight.  Select it with %1$s, then attack with %2$s; walking away works too." ),
                         ctxt.get_desc( "NEXT_TARGET" ), key( ACTION_FIRE ) );
                 }
-            const auto attack = press_x( ACTION_ATTACK, "", "", "" );
-            if( !attack.empty() )
-        {
-            return string_format(
-                _( "Something hostile is in sight.  %s attacks in a direction; walking away works too." ), attack );
-            }
-            return std::string( _( "Something hostile is in sight.  Bump attacks are disabled; bind the directional attack command or keep your distance." ) );
+                const auto attack = press_x( ACTION_ATTACK, "", "", "" );
+                if( !attack.empty() )
+            {
+                return string_format(
+                    _( "Something hostile is in sight.  %s attacks in a direction; walking away works too." ), attack );
+                }
+                return std::string( _( "Something hostile is in sight.  Bump attacks are disabled; bind the directional attack command or keep your distance." ) );
             }
         },
         {
@@ -108,10 +102,11 @@ auto tips() -> const std::vector<tip> & // *NOPAD*
         },
         {
             "stairs",
-            []( const avatar & you ) {
+            []( const avatar & you )
+            {
                 const auto &here = get_map();
                 return here.has_flag( TFLAG_GOES_UP, you.bub_pos() ) ||
-                       here.has_flag( TFLAG_GOES_DOWN, you.bub_pos() );
+                           here.has_flag( TFLAG_GOES_DOWN, you.bub_pos() );
             },
             [] {
                 const auto ctxt = input_context( "DEFAULTMODE" );
@@ -137,8 +132,8 @@ auto tips() -> const std::vector<tip> & // *NOPAD*
                 const auto explore = press_x( ACTION_AUTO_EXPLORE, "", "", "" );
                 return string_format( _( "Start by finding water, food and a weapon; houses usually have all three.  "
                                          "%s opens the map." ), key( ACTION_MAP ) ) +
-                       ( explore.empty() ? std::string() :
-                         string_format( _( "  %s walks toward ground you have not seen yet." ), explore ) );
+                ( explore.empty() ? std::string() :
+                  string_format( _( "  %s walks toward ground you have not seen yet." ), explore ) );
             }
         },
     };
@@ -153,10 +148,10 @@ namespace first_tips
 auto check( avatar &you ) -> void
 {
     if( !get_option<bool>( "SHOW_TIPS" ) ) {
-        return;
-    }
-    for( const auto &t : tips() ) {
-        if( you.get_value( t.seen_key ).empty() && t.applies( you ) ) {
+    return;
+}
+for( const auto &t : tips() ) {
+    if( you.get_value( t.seen_key ).empty() && t.applies( you ) ) {
             you.set_value( t.seen_key, "1" );
             add_msg( game_message_params{ m_info, gmf_bypass_cooldown }, _( "Tip: %s" ), t.text() );
             return;

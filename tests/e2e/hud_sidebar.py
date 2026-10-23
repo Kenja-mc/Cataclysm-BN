@@ -1,13 +1,12 @@
 import json
 import os
 import re
-import subprocess
 import tempfile
-import time
 from pathlib import Path
 
 from helpers import HELPERS, action_menu, arena, give
 from tmux_game import Game, start_new_game
+from hud_status import regions, resized_frame
 
 
 def test_classic_weather_resize_preserves_facts_and_help(_g):
@@ -31,23 +30,24 @@ def test_classic_weather_resize_preserves_facts_and_help(_g):
         arena(game)
         give(game, "diving_watch", 1)
         for cols in (90, 140, 80, 140, 90):
-            subprocess.run(["tmux", "resize-window", "-t", game.name, "-x", str(cols), "-y", "45"], check=True)
-            for _ in range(100):
-                screen = game.screen()
-                terrain = "\n".join(line[:cols - 44] for line in screen.splitlines())
-                clocks = re.findall(r"\b\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AP]M)?\b", screen)
-                if bool(re.search(r"\bLight\s*:", terrain)) == (cols >= 90) and len(clocks) == 1:
-                    break
-                time.sleep(0.1)
-            sidebar = "\n".join(line[cols - 44:] for line in screen.splitlines())
+            game.resize(cols, 45)
+
+            def ready(screen):
+                sidebar = regions(screen, cols)[1]
+                return "all keys" in sidebar and "khjl move" in sidebar
+
+            screen = resized_frame(game, cols, 45, ready)
             clocks = re.findall(r"\b\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AP]M)?\b", screen)
             assert len(clocks) == 1, "the visible clock must not be duplicated:\n" + screen
-            terrain = "\n".join(line[:cols - 44] for line in screen.splitlines())
-            overlay = bool(re.search(r"\bLight\s*:", terrain))
-            assert overlay == (cols >= 90), screen
-            assert bool(re.search(r"Wind\s*:", sidebar)) == (not overlay), screen
-            assert bool(re.search(r"(Spring|Summer|Autumn|Winter),\s*Day\s+\d+", sidebar)) == (not overlay), screen
-            assert bool(re.search(r"Temp\s*:", sidebar)) == (not overlay), screen
+            # Fit policy can retain an overlay on a smaller map; facts, not breakpoints, are the contract.
+            for label in ("Light", "Wind"):
+                assert len(re.findall(r"\b" + label + r"\s*:", screen)) == 1, \
+                    f"{label} must stay visible exactly once:\n{screen}"
+            assert len(re.findall(r"\b(?:Spring|Summer|Autumn|Winter)(?:,\s*Day)?\s+\d+", screen)) == 1, screen
+            assert len(re.findall(r"[-+]?\d+(?:\.\d+)?\s*°\s*[CFK]", screen)) == 1, \
+                "the watch's temperature must stay visible without duplication:\n" + screen
+            assert "all keys" in screen and "khjl move" in screen, \
+                "Classic help must survive resizing:\n" + screen
     finally:
         game.close()
 

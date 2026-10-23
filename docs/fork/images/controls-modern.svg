@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1270" viewBox="0 0 1000 1270" font-family="sans-serif" fill="currentColor">
 <title>Modern control families on a 104-key ANSI keyboard</title>
-<desc>Standard 15-unit ANSI main keyboard, including unbound keys and modifiers. Navigation, arrow and numpad clusters are shown below, not in their physical position to the right of the main keyboard. Enter opens all actions, inventory groups equipment and crafting, Space groups tile actions. Shift-direction looks freely; Ctrl-direction physically peeks with the normal cost. Classic controls are unchanged.</desc>
+<desc>Standard 15-unit ANSI main keyboard, including unbound keys and modifiers. Navigation, arrow and numpad clusters are shown below, not in their physical position to the right of the main keyboard. Enter opens all actions, inventory groups equipment and crafting, Space groups tile actions. Shift-direction selects freely; Ctrl-direction physically peeks with the normal cost. Classic controls are unchanged.</desc>
 <text x="20" y="32" font-size="25" font-weight="700">Modern controls</text>
 <text x="20" y="57" font-size="14">ANSI layout · action below each key · ⇧ means Shift · direction modifiers are grouped in the legend</text>
 <g><rect x="20" y="84" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="27" y="105" font-size="15.0" font-weight="700">Esc</text>
-<text x="26" y="124" font-size="11.1" fill="currentColor">main menu</text>
+<text x="26" y="124" font-size="12.0" fill="currentColor">menu</text>
 </g>
 <g><rect x="148.0" y="84" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="155.0" y="105" font-size="15.0" font-weight="700">F1</text>
@@ -55,8 +55,10 @@
 <text x="90" y="231" font-size="10" fill="var(--muted,currentColor)">⇧ safe</text>
 <text x="90" y="243" font-size="10" fill="var(--muted,currentColor)">mode</text>
 </g>
-<g><rect x="148" y="176" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
+<g><rect x="148" y="176" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="155" y="197" font-size="15.0" font-weight="700">2</text>
+<text x="154" y="231" font-size="10" fill="var(--muted,currentColor)">⇧</text>
+<text x="154" y="243" font-size="10" fill="var(--muted,currentColor)">character</text>
 </g>
 <g><rect x="212" y="176" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="219" y="197" font-size="15.0" font-weight="700">3</text>
@@ -129,8 +131,10 @@
 <g><rect x="628.0" y="252" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="635.0" y="273" font-size="15.0" font-weight="700">O</text>
 </g>
-<g><rect x="692.0" y="252" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
+<g><rect x="692.0" y="252" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="699.0" y="273" font-size="15.0" font-weight="700">P</text>
+<text x="698.0" y="307" font-size="10" fill="var(--muted,currentColor)">⇧</text>
+<text x="698.0" y="319" font-size="10" fill="var(--muted,currentColor)">messages</text>
 </g>
 <g><rect x="756.0" y="252" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="763.0" y="273" font-size="15.0" font-weight="700">[</text>
@@ -159,6 +163,8 @@
 <g><rect x="324.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="331.0" y="349" font-size="15.0" font-weight="700">F</text>
 <text x="330.0" y="368" font-size="12.0" fill="currentColor">attack</text>
+<text x="330.0" y="383" font-size="10" fill="var(--muted,currentColor)">⇧ fire</text>
+<text x="330.0" y="395" font-size="10" fill="var(--muted,currentColor)">mode</text>
 </g>
 <g><rect x="388.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="395.0" y="349" font-size="15.0" font-weight="700">G</text>
@@ -181,7 +187,7 @@
 </g>
 <g><rect x="772.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="779.0" y="349" font-size="15.0" font-weight="700">'</text>
-<text x="778.0" y="368" font-size="9.0" fill="currentColor">ignore enemy</text>
+<text x="778.0" y="368" font-size="10.0" fill="currentColor">ignore foe</text>
 </g>
 <g><rect x="836.0" y="328" width="140.0" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="843.0" y="349" font-size="15.0" font-weight="700">Enter</text>
@@ -203,11 +209,13 @@
 <text x="299.0" y="425" font-size="15.0" font-weight="700">C</text>
 <text x="298.0" y="444" font-size="12.0" fill="currentColor">move se</text>
 </g>
-<g><rect x="356.0" y="404" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
+<g><rect x="356.0" y="404" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="363.0" y="425" font-size="15.0" font-weight="700">V</text>
+<text x="362.0" y="444" font-size="12.0" fill="currentColor">wield</text>
 </g>
-<g><rect x="420.0" y="404" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
+<g><rect x="420.0" y="404" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="427.0" y="425" font-size="15.0" font-weight="700">B</text>
+<text x="426.0" y="459" font-size="10" fill="var(--muted,currentColor)">⇧ butcher</text>
 </g>
 <g><rect x="484.0" y="404" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="491.0" y="425" font-size="15.0" font-weight="700">N</text>
@@ -229,7 +237,9 @@
 </g>
 <g><rect x="740.0" y="404" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="747.0" y="425" font-size="15.0" font-weight="700">/</text>
-<text x="746.0" y="459" font-size="10" fill="var(--muted,currentColor)">⇧ all keys</text>
+<text x="746.0" y="444" font-size="11.1" fill="currentColor">adv. inv.</text>
+<text x="746.0" y="459" font-size="10" fill="var(--muted,currentColor)">⇧ all</text>
+<text x="746.0" y="471" font-size="10" fill="var(--muted,currentColor)">keys</text>
 </g>
 <g><rect x="804.0" y="404" width="172.0" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="811.0" y="425" font-size="15.0" font-weight="700">Shift</text>
@@ -364,7 +374,7 @@
 <g><rect x="788" y="914" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="795" y="935" font-size="15.0" font-weight="700">.</text>
 </g>
-<text x="20" y="850" font-size="13">Shift + W A S D Q E Z C: free look; starts at you, accumulates.</text>
+<text x="20" y="850" font-size="13">Shift + W A S D Q E Z C: free tile selection; starts at you, accumulates.</text>
 <text x="20" y="876" font-size="13">Ctrl + W A S D Q E Z C: physical peek (200 moves); cancel returns.</text>
 <text x="20" y="902" font-size="13">Arrows: free aim reticle. Tab / Shift+Tab: next / previous hostile.</text>
 <text x="20" y="928" font-size="13">f attacks selection; guns use normal aim. Bump attacks still work.</text>
@@ -372,11 +382,11 @@
 <text x="20" y="980" font-size="13">Modern curses: Ctrl+C/Z are game chords, not quit/suspend signals.</text>
 <text x="20" y="1024" font-size="16" font-weight="700">Compact action families</text>
 <text x="20" y="1052" font-size="14">Enter: all action groups; Info → character sheet and body/status screens.</text>
-<text x="20" y="1077" font-size="14">i: inventory → select item → Wield / Wear / Eat / Use / Read and other item actions.</text>
-<text x="20" y="1102" font-size="14">Wield is equipment, not another primary key. Inventory F5: Craft, even when empty.</text>
-<text x="20" y="1127" font-size="14">Space: selected tile → Open / Close / Examine / Pickup / Jump / Smash as applicable.</text>
+<text x="20" y="1077" font-size="14">v: wield. i: inventory → item actions; inventory F5: Craft, even when empty.</text>
+<text x="20" y="1102" font-size="14">@: character; P: messages; B: butcher; F: fire mode; /: advanced inventory.</text>
+<text x="20" y="1127" font-size="14">Space: selected tile actions, or a flat nearby list with directions and a target highlight.</text>
 <text x="20" y="1152" font-size="14">RMB or Shift+direction selects; Jump and Smash require an explicit choice.</text>
-<text x="20" y="1177" font-size="14">Map RMB selects freely; LMB attacks. Modern clicks never walk.</text>
+<text x="20" y="1177" font-size="14">Map RMB selects freely; LMB uses adjacent doors/items/furniture or attacks; never walks.</text>
 <text x="20" y="1202" font-size="14">g opens pickup; g confirms. Inventory/pickup: wheel scrolls; RMB opens item actions.</text>
 <text x="20" y="1227" font-size="14">Blank keycaps have no default map action. Local menu keys and Classic controls are unchanged.</text>
 <text x="20" y="1252" font-size="14">Classic terminal Ctrl+C/Z retain normal quit/suspend signal behavior.</text>

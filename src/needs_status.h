@@ -12,6 +12,8 @@ namespace needs_status
 struct reading {
     std::string text;
     nc_color color;
+    /// No action needed; compact displays leave it out.
+    bool fine = true;
 };
 
 struct readings {

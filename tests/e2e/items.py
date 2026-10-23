@@ -165,7 +165,7 @@ def test_black_powder_survives_reloading(g):
         screen = g.screen()
         if "Stop reloading?" in screen:
             g.keys("I", delay=0)
-        return f"Weapon | ({loaded})" in screen
+        return re.search(rf"\({loaded}\)\s*\[[^\]]+\]", screen) is not None
 
     for loaded in range(1, 7):
         g.keys("r", delay=0)

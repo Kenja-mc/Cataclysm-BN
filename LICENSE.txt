@@ -10,6 +10,12 @@ GNU Unifont (data/font/unifont.ttf) is licensed under GNU General Public License
 
 JetBrains Mono NL (data/font/JetBrainsMonoNL-Regular.ttf), copyright 2020 The JetBrains Mono Project Authors, is licensed under the SIL Open Font License 1.1 (see data/font/OFL-JetBrainsMono.txt).
 
+BN Overhaul Icons (data/font/bno-icons.ttf), built by build-scripts/gen_icon_font.py from data/font/icons-src/, is licensed under the Apache License 2.0 (see data/font/icons-src/mdi/LICENSE-Apache-2.0.txt); its stance figures are public domain under CC0 1.0.
+
+Material Design Icons (data/font/icons-src/mdi/*.svg), @mdi/svg 7.4.47 by Pictogrammers (Austin Andrews and contributors), are licensed under the Apache License 2.0 (see data/font/icons-src/mdi/LICENSE and data/font/icons-src/mdi/LICENSE-Apache-2.0.txt).
+
+Pinhead stance icons (data/font/icons-src/pinhead/*.svg), Pinhead v16.26.0 by waysidemapping, are dedicated to the public domain under CC0 1.0 Universal (see data/font/icons-src/pinhead/LICENSE).
+
 Terminus Font (data/font/terminus.ttf) is licensed under the SIL Open Font License (see LICENSE-OFL-Terminus-Font.txt).
 
 CATCH unit-test framework (tests/catch/catch.hpp) is licensed under the Boost Software License. Visit https://github.com/philsquared/Catch/blob/master/LICENSE.txt to read the license.

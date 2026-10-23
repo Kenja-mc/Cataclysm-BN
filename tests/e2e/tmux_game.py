@@ -24,12 +24,18 @@ def find_binary():
 
 
 class Game:
-    def __init__(self, name="bn-e2e", cols=140, rows=45, options=None, keybindings=None, userdir=None):
+    def __init__(self, name="bn-e2e", cols=140, rows=45, options=None, keybindings=None,
+                 userdir=None, layout="labels"):
         # Sessions from two processes must not collide: local parallel shards run at once.
         self.name = f"{name}-{os.getpid()}"
         self.userdir = Path(userdir) if userdir else Path(tempfile.mkdtemp(prefix="bn-e2e-"))
         config = self.userdir / "config"
         config.mkdir(parents=True, exist_ok=True)
+        # Legacy HUD contracts are explicit fixtures, not assumptions about the fresh-user default.
+        # A caller's saved panel layout always wins; layout=None exercises the real fresh default.
+        panels = config / "panel_options.json"
+        if layout is not None and not panels.exists():
+            panels.write_text(json.dumps([{"current_layout_id": layout, "layouts": []}]))
         if options:
             (config / "options.json").write_text(json.dumps(
                 [{"info": "", "default": "", "name": k, "value": v} for k, v in options.items()]))
