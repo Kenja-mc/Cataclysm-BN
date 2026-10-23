@@ -68,6 +68,10 @@
         "text": "The item you just picked up is a good weapon!  To wield a weapon, press <press_wield>, then pick what to wield.  To wield nothing, either drop your weapon with <press_drop>, or press <press_wield> and pick it again to put it away.  A zombie has spawned nearby.  To attack it, press <press_autoattack> when it is next to you (in the classic control scheme, simply move into it)."
       },
       {
+        "id": "LESSON_GOT_WEAPON_ALONE",
+        "text": "The item you just picked up is a good weapon!  To wield a weapon, press <press_wield>, then pick what to wield.  To wield nothing, either drop your weapon with <press_drop>, or press <press_wield> and pick it again to put it away."
+      },
+      {
         "id": "LESSON_GOT_FOOD",
         "text": "The item you just picked up is a comestible!  To eat a comestible, press <press_eat>.  Comestibles are items you can use up, like food, drink, pills, etc.  Most food expires eventually, so be careful.  Some comestibles, especially drugs, can cause subtle, long-term effects."
       },
@@ -141,7 +145,7 @@
       },
       {
         "id": "LESSON_GUN_FIRE",
-        "text": "Once you have a loaded gun wielded, you can fire it.  Press <press_fire> to fire a single shot.  With many guns, you can fire a burst by pressing <press_select_fire_mode>.  You'll automatically target the last monster you shot at, or the closest monster to you.  You can change your target with the movement keys, or cycle through monsters with '<' and '>'.  To fire, press 'f' or '.'; to cancel, hit the escape key."
+        "text": "Once you have a loaded gun wielded, you can fire it.  Press <press_fire> to fire a single shot.  With many guns, you can fire a burst by pressing <press_select_fire_mode>.  You'll automatically target the last monster you shot at, or the closest monster to you.  You can change your target with the movement keys, or cycle through monsters with <press_NEXT_TARGET>.  To fire, press <press_fire>; to cancel, hit the escape key."
       },
       {
         "id": "LESSON_RECOIL",
@@ -149,11 +153,11 @@
       },
       {
         "id": "LESSON_STAIRS",
-        "text": "That yellow > next to you is a staircase leading down.  To go downstairs, step onto the staircase and press the '>' key.  Similarly, a yellow < is stairs leading up, and can be followed with the '<' key."
+        "text": "That yellow > next to you is a staircase leading down.  To go downstairs, step onto the staircase and press <press_LEVEL_DOWN>.  Similarly, a yellow < is stairs leading up, and can be followed with <press_LEVEL_UP>."
       },
       {
         "id": "LESSON_DARK_NO_FLASH",
-        "text": "It's dark down here!  Without a source of light, you'll be limited to seeing only one space in any direction.  You'll encounter darkness while underground or at night.  Press '<' to go back upstairs, and look around for a flashlight."
+        "text": "It's dark down here!  Without a source of light, you'll be limited to seeing only one space in any direction.  You'll encounter darkness while underground or at night.  Press <press_LEVEL_UP> to go back upstairs, and look around for a flashlight."
       },
       {
         "id": "LESSON_DARK",
@@ -195,7 +199,7 @@
       },
       {
         "id": "LESSON_PICKUP_MODERN",
-        "text": "You just stepped on a space with one or more items.  To pick them up, press <press_pickup_all> or click your own tile."
+        "text": "You just stepped on a space with one or more items.  Press <press_quick_pickup> to take everything on your tile without a menu.  Use <press_pickup_all> to choose items from the nearby tiles, or click your own tile to choose its items."
       },
       {
         "id": "LESSON_GOT_ARMOR_MODERN",
@@ -204,6 +208,10 @@
       {
         "id": "LESSON_GOT_WEAPON_MODERN",
         "text": "The item you just picked up is a good weapon!  To wield it, use <press_wield>.  To wield nothing, drop your weapon with <press_drop>, or use <press_wield> on it again to put it away.  A zombie has spawned nearby.  To attack it, walk into it or click it when it is next to you."
+      },
+      {
+        "id": "LESSON_GOT_WEAPON_ALONE_MODERN",
+        "text": "The item you just picked up is a good weapon!  To wield it, use <press_wield>.  To wield nothing, drop your weapon with <press_drop>, or use <press_wield> on it again to put it away."
       },
       {
         "id": "LESSON_GOT_FOOD_MODERN",

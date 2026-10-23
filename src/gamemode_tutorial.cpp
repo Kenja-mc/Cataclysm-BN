@@ -10,6 +10,7 @@
 #include "int_id.h"
 #include "inventory.h"
 #include "item.h"
+#include "line.h"
 #include "map/map.h"
 #include "map/mapdata.h"
 #include "map_iterator.h"
@@ -72,6 +73,7 @@ std::string enum_to_string<tut_lesson>( tut_lesson data )
         case tut_lesson::LESSON_ITEM_INTO_INV: return "LESSON_ITEM_INTO_INV";
         case tut_lesson::LESSON_GOT_ARMOR: return "LESSON_GOT_ARMOR";
         case tut_lesson::LESSON_GOT_WEAPON: return "LESSON_GOT_WEAPON";
+        case tut_lesson::LESSON_GOT_WEAPON_ALONE: return "LESSON_GOT_WEAPON_ALONE";
         case tut_lesson::LESSON_GOT_FOOD: return "LESSON_GOT_FOOD";
         case tut_lesson::LESSON_GOT_TOOL: return "LESSON_GOT_TOOL";
         case tut_lesson::LESSON_GOT_GUN: return "LESSON_GOT_GUN";
@@ -105,6 +107,29 @@ std::string enum_to_string<tut_lesson>( tut_lesson data )
 }
 } // namespace io
 
+namespace
+{
+
+/// Place up to `count` zombies on free, visible floor tiles near `near`; returns how many fit.
+auto spawn_tutorial_zombies( const tripoint_bub_ms &near, const int count ) -> int
+{
+    map &here = get_map();
+    int placed = 0;
+    for( const tripoint_bub_ms &p : closest_points_first( near, 8 ) ) {
+        // Leave the player a tile to step back to and never place inside a wall.
+        if( placed >= count || rl_dist( near, p ) < 2 || !here.inbounds( p ) ||
+            here.impassable( p ) || !here.sees( near, p, 8 ) ) {
+            continue;
+        }
+        if( g->place_critter_at( mon_zombie, p ) ) {
+            placed++;
+        }
+    }
+    return placed;
+}
+
+} // namespace
+
 bool tutorial_game::init()
 {
     // TODO: clean up old tutorial
@@ -113,6 +138,7 @@ bool tutorial_game::init()
     // Start at noon
     calendar::turn = calendar::turn_zero + 12_hours;
     tutorials_seen.clear();
+    gun_reload_pending = false;
     g->scent.reset();
     get_weather().update_weather();
     // We use a Z-factor of 10 so that we don't plop down tutorial rooms in the
@@ -179,6 +205,17 @@ void tutorial_game::per_turn()
         add_message( tut_lesson::LESSON_RECOIL );
     }
 
+    if( gun_reload_pending && !tutorials_seen[tut_lesson::LESSON_GUN_FIRE] ) {
+        const item &gun = g->u.primary_weapon();
+        if( gun.is_gun() && gun.ammo_remaining() > 0 ) {
+            gun_reload_pending = false;
+            spawn_tutorial_zombies( g->u.bub_pos(), 3 );
+            add_message( tut_lesson::LESSON_GUN_FIRE );
+        } else if( !gun.is_gun() ) {
+            gun_reload_pending = false;
+        }
+    }
+
     map &here = get_map();
     if( !tutorials_seen[tut_lesson::LESSON_BUTCHER] ) {
         for( const item * const &it : here.i_at( g->u.bub_pos() ) ) {
@@ -233,12 +270,12 @@ void tutorial_game::pre_action( action_id &act )
 void tutorial_game::post_action( action_id act )
 {
     switch( act ) {
+        case ACTION_RELOAD_ITEM:
         case ACTION_RELOAD_WEAPON:
+            // Both reload routes finish as an activity, so per_turn shows the lesson once the
+            // gun is actually loaded instead of when the reload menu is confirmed.
             if( g->u.primary_weapon().is_gun() && !tutorials_seen[tut_lesson::LESSON_GUN_FIRE] ) {
-                g->place_critter_at( mon_zombie, g->u.bub_pos() + point_rel_ms( 0, -6 ) );
-                g->place_critter_at( mon_zombie, g->u.bub_pos() + point_rel_ms( 2, -5 ) );
-                g->place_critter_at( mon_zombie, g->u.bub_pos() + point_rel_ms( -2, -5 ) );
-                add_message( tut_lesson::LESSON_GUN_FIRE );
+                gun_reload_pending = true;
             }
             break;
 
@@ -318,8 +355,12 @@ auto tutorial_game::on_pickup( const item &it ) -> void
     add_message( tut_lesson::LESSON_GOT_TOOL );
     } else if( it.is_food() ) {
     add_message( tut_lesson::LESSON_GOT_FOOD );
-    } else if( it.is_melee() ) {
-    add_message( tut_lesson::LESSON_GOT_WEAPON );
+    } else if( it.is_melee() &&
+               !tutorials_seen[tut_lesson::LESSON_GOT_WEAPON] &&
+               !tutorials_seen[tut_lesson::LESSON_GOT_WEAPON_ALONE] ) {
+    // The lesson promises a zombie to hit; use the variant that does not when none fits.
+    add_message( spawn_tutorial_zombies( g->u.bub_pos(), 1 ) > 0 ?
+                 tut_lesson::LESSON_GOT_WEAPON : tut_lesson::LESSON_GOT_WEAPON_ALONE );
     }
 }
 
