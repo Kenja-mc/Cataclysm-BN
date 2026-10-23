@@ -1393,8 +1393,7 @@ action_id input_context::display_menu( const bool permit_execute_action )
             ctxt.get_raw_input().type == input_event_t::mouse ) {
             const auto mouse = ctxt.get_raw_input().mouse_pos -
                                point( getbegx( w_help ), getbegy( w_help ) );
-            if( const auto hit = scrollbar_input::click(
-            scrollbar_input::geometry{
+            if( const auto hit = scrollbar_input::click( {
                 .offset = point( 0, 10 ),
                 .viewport_size = static_cast<int>( display_height ),
                 .content_size = static_cast<int>( filtered_registered_actions.size() ),

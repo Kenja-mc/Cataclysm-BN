@@ -4495,7 +4495,7 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
                     const auto current_row = current == visible.end() ? 0 :
                                              static_cast<int>( current - visible.begin() );
                     const auto hit = scrollbar_input::click(
-                    scrollbar_input::geometry{
+                    {
                         .offset = point( 0, iTooltipHeight + 2 + iWorldOffset ),
                         .viewport_size = iContentHeight,
                         .content_size = static_cast<int>( visible.size() ),
