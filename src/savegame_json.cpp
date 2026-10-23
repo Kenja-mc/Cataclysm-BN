@@ -3942,6 +3942,23 @@ void mm_submap::serialize( JsonOut &jsout ) const
 {
     jsout.start_array();
 
+    // Optional leading metadata object. Legacy saves start directly with the RLE element array;
+    // this build reads both layouts and always writes the metadata object when locks are known.
+    if( has_locked_doors() ) {
+        jsout.start_object();
+        for( const auto kind : { locked_door_kind::terrain, locked_door_kind::vehicle } ) {
+            jsout.member( kind == locked_door_kind::terrain ? "locked_terrain" : "locked_vehicle" );
+            jsout.start_array();
+            for( const auto p : submap_tiles() ) {
+                if( locked_door( p ) == kind ) {
+                    jsout.write( p.y() * SEEX + p.x() );
+                }
+            }
+            jsout.end_array();
+        }
+        jsout.end_object();
+    }
+
     // Uses RLE for compression.
     // Element format: [overlay_tile, subtile, rotation, symbol, ?terrain_str, terrain_sub, terrain_rot, ?count]
     // terrain fields are only written when non-empty, saving space for the ~92% of tiles with no furniture.
@@ -3986,6 +4003,24 @@ void mm_submap::serialize( JsonOut &jsout ) const
 void mm_submap::deserialize( JsonIn &jsin )
 {
     jsin.start_array();
+
+    if( jsin.test_object() ) {
+        auto jo = jsin.get_object();
+        const auto load_kind = [&]( const std::string &member, const locked_door_kind kind ) {
+            auto indexes = std::vector<int>{};
+            if( jo.has_member( member ) ) {
+                indexes = jo.get_int_array( member );
+            }
+            for( const auto index : indexes ) {
+                if( index < 0 || index >= SEEX * SEEY ) {
+                    continue;
+                }
+                set_locked_door( point_sm_ms( index % SEEX, index / SEEX ), kind );
+            }
+        };
+        load_kind( "locked_terrain", locked_door_kind::terrain );
+        load_kind( "locked_vehicle", locked_door_kind::vehicle );
+    }
 
     // Uses RLE for compression.
 

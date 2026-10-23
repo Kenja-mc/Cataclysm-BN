@@ -92,6 +92,8 @@ MDI = {
     "moon-waning-gibbous": 0xF0F66,
     "moon-last-quarter": 0xF0F63,
     "moon-waning-crescent": 0xF0F65,
+    # Appended last so the wide-copy codepoints of the icons above do not shift.
+    "lock": 0xF033E,
 }
 
 

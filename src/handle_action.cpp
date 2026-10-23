@@ -782,6 +782,7 @@ auto open( const tripoint_bub_ms *target = nullptr ) -> void
         const ter_str_id tid = here.ter( openp ).id();
 
         if( here.has_flag( flag_LOCKED, openp ) ) {
+            u.remember_locked_door( bub_to_abs( openp ), false );
             add_msg( m_info, _( "The door is locked!" ) );
             return;
         } else if( tid.obj().close ) {
