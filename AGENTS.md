@@ -65,6 +65,9 @@ repository-wide formatter. Regenerate documentation explicitly when changing the
 ccache uses its normal shared cache directory (or an explicit `CCACHE_DIR`); do not copy a cache
 into each worktree. Check `ccache -s` after a rebuild to confirm hits. A real source/header change
 still needs compilation; a no-op Ninja build does not invoke ccache.
+With both tools present on a 16-core machine, a clean curses build of the game and tests takes
+about 4 minutes 40 seconds, going back to a state that was built before takes under a second, and
+editing `src/game.cpp`, the largest file, still costs about 18 seconds.
 
 Each worktree needs its own `out` directory: never symlink another worktree's build tree, because
 Ninja records absolute source paths. Serialize configure/build operations on the same tree, for
