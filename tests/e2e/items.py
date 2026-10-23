@@ -47,6 +47,9 @@ def test_jewelry_is_one_item_per_form(g):
     """Rings, bracelets and the like are one item each; metal and gem are a variant the item remembers."""
     empty_inventory(g)
     arena(g)
+    # Wounds from a preceding test can interrupt the disassembly with a modal pain query.
+    assert g.lua("local u=gapi.get_avatar() u:clear_effects() u:set_all_parts_hp_to_max() "
+                 "u:set_pain(0) out('ok')") == ["ok"]
     assert g.lua("out(ItypeId.new('ruby_gold_ring'):is_valid(), ItypeId.new('copper_ring'):is_valid())") == ["false,false"]
     out = g.lua("local r=gapi.create_item(ItypeId.new('jewelry_ring'), -1) r:set_var_str('variant','ruby_gold_ring') "
                 "gapi.get_avatar():add_item(r) out(r:display_name(1))")
@@ -71,8 +74,10 @@ def test_jewelry_is_one_item_per_form(g):
     assert "gold (2) and 1 ruby" in g.screen(), "the yield lists the ring's gold and ruby\n" + g.screen()
     # A second Enter straight after the first is swallowed, so move the cursor in between.
     g.keys("Down", "Up", "Enter", delay=0.5)
+    assert wait_until(lambda: re.search(r"You disassemble the [^\n]*ruby and gold ring", g.screen()), 60), g.screen()
     assert wait_until(lambda: g.lua("count_at(0,0,'ruby')") == ["1"], 60), g.screen()
     assert g.lua("count_at(0,0,'gold_small')") == ["2"]
+    assert count_carried(g, "jewelry_ring") == 0
 
 
 def test_mixed_jewelry_stacks(g):

@@ -4,7 +4,7 @@ Tests that take `g` run on the runner's main game; box layouts start their own.
 """
 import re
 
-from helpers import action_menu, arena, bub_pos, settle
+from helpers import HELPERS, action_menu, arena, bub_pos, settle
 from tmux_game import Game, start_new_game
 
 # The date row contains nine sky cells, exactly one occupied by a sun or moon.
@@ -34,9 +34,9 @@ def test_hud_box_options(g):
         assert bottom, "\n".join(lines)
         top_edge = max(i for i, l in enumerate(lines[:bottom[-1]]) if l.startswith("╭"))
         box = "\n".join(l[:40] for l in lines[top_edge:bottom[-1] + 1])
-        assert "│ Weapon |" in box, "the bottom-left box must name the weapon:\n" + box
-        assert "│ Stance |" in box, "the bottom-left box must name the stance:\n" + box
-        assert not any(icon in box for icon in ("✶", "⚔", "☯", "•", "☹", "☕", "♨", "°", "✦", "✓")), \
+        assert re.search(r"│ Weapon\s+\|", box), "the bottom-left box must name the weapon:\n" + box
+        assert re.search(r"│ Stance\s+\|", box), "the bottom-left box must name the stance:\n" + box
+        assert not any(icon in box for icon in ("✶", "⚔", "☯", "•", "☹", "☕", "♨", "❄", "↑", "✦", "✓")), \
             "ASCII icons must stay text:\n" + box
     finally:
         other.close()
@@ -89,10 +89,16 @@ def test_boxes_replace_sidebar_rows(g):
 
 def test_corner_bars_keep_sidebar_panels(g):
     """HUD_CORNER_BARS puts each box on one row and leaves the sidebar panels in place."""
-    bars = Game(name="bn-e2e-corner-bars",
-                options={"SAFEMODE": "false", "HUD_CORNER_BARS": "true", "HUD_ICONS": "ascii"})
+    # The single-row readings must fit before we can check their sidebar ownership.
+    cols = 180
+    bars = Game(name="bn-e2e-corner-bars", cols=cols,
+                options={"SAFEMODE": "false", "HUD_CORNER_BARS": "true", "HUD_ICONS": "ascii",
+                         "24_HOUR": "24h"})
     try:
         start_new_game(bars)
+        bars.define_lua(HELPERS)
+        assert bars.lua("gapi.set_omt_weather_override(coords.project_to_omt(gapi.get_avatar():abs_pos()), "
+                        "1, 'clear', nil) out('ok')") == ["ok"]
         bars.keys("x", delay=0.6)
         s = bars.screen()
         lines = s.splitlines()
@@ -114,7 +120,7 @@ def test_corner_bars_keep_sidebar_panels(g):
         assert "No style" not in row, row
         assert lines[combat - 1].startswith("╭") and lines[combat + 1].startswith("╰"), \
             "the status bar is one row:\n" + "\n".join(lines[combat - 1:combat + 2])
-        sidebar = "\n".join(l[96:] for l in lines)
+        sidebar = "\n".join(l[cols - 44:] for l in lines)
         assert re.search(r"Pain\s*:", sidebar), "the sidebar keeps its needs panel:\n" + s
     finally:
         bars.close()

@@ -14,7 +14,7 @@ OPTIONS = {"CONTROL_SCHEME": "modern", "SAFEMODE": "false", "SHOW_WELCOME": "fal
            "SHOW_TIPS": "false", "SIDEBAR_POSITION": "right", "SIDEBAR_SPACERS": "false",
            "HUD_WEATHER_BOX": "top_left", "HUD_COMBAT_BOX": "top_left",
            "HUD_VEHICLE_BOX": "top_left", "HUD_ICONS": "unicode", "ANIMATIONS": "false"}
-NEED_LABELS = ("Pain", "Thirst", "Hunger", "Rest", "Heat")
+NEED_LABELS = ("Pain", "Thirst", "Hunger", "Rest", "Body temp")
 
 
 def grouped_setup(game):
@@ -76,12 +76,15 @@ def test_grouped_sidebar_resize_keeps_urgent_needs_and_controls(_g):
         for cols, rows in ((140, 45), (100, 41), (100, 40), (100, 39), (100, 30),
                            (80, 25), (140, 45)):
             game.resize(cols, rows)
+            # Narrow groups fold the needs summary, so a label may break at its space.
             screen = resized_frame(game, cols, rows, lambda s: all(
-                word in regions(s, cols)[1] for word in ("Thirst", "Hunger", "Heat", "all keys")))
+                word in regions(s, cols)[1] for word in ("Thirst", "Hunger", "all keys")) and
+                re.search(r"Body\s+temp", regions(s, cols)[1]))
             sidebar = assert_hud_on_right(screen, cols)
             assert "Needs met" not in sidebar, screen
             for label in NEED_LABELS:
-                assert len(re.findall(r"\b" + label + r"\b", sidebar)) == 1, \
+                pattern = r"\b" + r"\s+".join(label.split()) + r"\b"
+                assert len(re.findall(pattern, sidebar)) == 1, \
                     "every urgent need must survive resizing without duplication:\n" + screen
             for fact in ("HEAD", "TORSO", "Move", "Safe", "all keys"):
                 assert fact in sidebar, "essential status/control is missing after resize:\n" + screen

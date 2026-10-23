@@ -91,6 +91,8 @@ constexpr int label_pad = 6;
 constexpr int label_width = label_pad + 2;
 /// The classic layout runs one word longer, so its field is wider.
 constexpr int label_pad_classic = 8;
+/// The needs panel names body temperature, which needs one more cell than the other panels.
+constexpr int label_pad_needs = 9;
 /// Label columns of a sidebar row; a 44-cell layout fits three of them, a 32-cell layout two.
 constexpr int label_column = 0;
 constexpr int label_column_step = 15;
@@ -820,7 +822,13 @@ auto needs_status::temperature( const avatar &u ) -> reading
         temp_color = c_blue;
         temp_string = _( "Freezing!" );
     }
-    return { .text = std::move( temp_string ), .color = temp_color, .fine = temp_color == c_green };
+    // Mild warmth or chill asks for nothing, so the needs summary keeps its "Needs met" row;
+    // the detailed panels still show the value.
+    const auto level = define_temp_level( extreme_cur_temp );
+    const auto side = extreme_cur_temp < BODYTEMP_COLD ? thermal::cold :
+                      extreme_cur_temp > BODYTEMP_HOT ? thermal::hot : thermal::none;
+    return { .text = std::move( temp_string ), .color = temp_color,
+             .fine = level > 2 && level < 6, .side = side };
 }
 
 auto needs_status::read( const avatar &you ) -> readings
@@ -1725,15 +1733,17 @@ static void draw_needs_narrow( const avatar &u, const catacurses::window &w )
 {
     werase( w );
     const auto needs = needs_status::read( u );
-    const auto col = print_label( w, { .pos = point( label_column, 0 ), .label = _( "Pain" ) } );
+    const auto col = print_label( w, { .pos = point( label_column, 0 ), .label = _( "Pain" ) },
+                                  label_pad_needs );
     mvwprintz( w, point( col, 0 ), needs.pain.color, "%s", needs.pain.text );
-    print_label( w, { .pos = point( label_column, 1 ), .label = _( "Thirst" ) } );
+    print_label( w, { .pos = point( label_column, 1 ), .label = _( "Thirst" ) }, label_pad_needs );
     mvwprintz( w, point( col, 1 ), needs.thirst.color, "%s", needs.thirst.text );
-    print_label( w, { .pos = point( label_column, 2 ), .label = _( "Hunger" ) } );
+    print_label( w, { .pos = point( label_column, 2 ), .label = _( "Hunger" ) }, label_pad_needs );
     mvwprintz( w, point( col, 2 ), needs.hunger.color, "%s", needs.hunger.text );
-    print_label( w, { .pos = point( label_column, 3 ), .label = _( "Rest" ) } );
+    print_label( w, { .pos = point( label_column, 3 ), .label = _( "Rest" ) }, label_pad_needs );
     mvwprintz( w, point( col, 3 ), needs.rest.color, "%s", needs.rest.text );
-    print_label( w, { .pos = point( label_column, 4 ), .label = _( "Heat" ) } );
+    // Body comfort, not the outdoor temperature.
+    print_label( w, { .pos = point( label_column, 4 ), .label = _( "Body temp" ) }, label_pad_needs );
     mvwprintz( w, point( col, 4 ), needs.heat.color, "%s", needs.heat.text );
     wnoutrefresh( w );
 }
