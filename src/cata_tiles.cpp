@@ -361,7 +361,11 @@ void idle_animation_manager::prepare_for_redraw()
     auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>( now );
     auto value = now_ms.time_since_epoch();
     // Aiming roughly at the standard 60 frames per second
-    frame = value.count() / 17;
+    // The epoch count outgrew 32 bits long ago, and narrowing it to the int member
+    // wrapped the frame negative in late 2026, which made effect overlay drawing index
+    // before its frame arrays and crash the renderer. Mask to 30 bits so the counter
+    // stays non-negative and wraps only after roughly 500 days.
+    frame = static_cast<int>( ( value.count() / 17 ) & 0x3FFFFFFF );
 }
 
 struct tile_render_info {
@@ -6605,7 +6609,9 @@ void cata_tiles::draw_entity_with_overlays( const Character &ch, const tripoint_
         const int rota = ch.facing == FD_RIGHT ? 0 : 4;
 
         const auto [entity_bgCol, entity_fgCol] = get_character_color( ch, get_map(), p );
-        const tile_search_params tile { ent_name, C_NONE, "", corner, rota };
+        // subcategory must outlive this statement: tile_search_params stores a reference,
+        // and a literal "" would bind a temporary that dies before draw_from_id_string runs.
+        const tile_search_params tile { ent_name, C_NONE, empty_string, corner, rota };
         draw_from_id_string(
             tile, p, entity_bgCol, entity_fgCol,
             ll, false, 0, as_independent_entity, height_3d );
@@ -6675,7 +6681,7 @@ void cata_tiles::draw_entity_with_overlays( const Character &ch, const tripoint_
         const tile_effects::overlay_options opt{ .critter = ch, .pos = p };
         if( const std::string *frame_id = tile_effects::overlay_tile_id( opt,
             idle_animations.current_frame() ) ) {
-            const tile_search_params tile{ *frame_id, C_NONE, "", corner, 0 };
+            const tile_search_params tile{ *frame_id, C_NONE, empty_string, corner, 0 };
             draw_from_id_string( tile, p, std::nullopt, std::nullopt, ll, false, 0,
                                  as_independent_entity );
             idle_animations.mark_present();
