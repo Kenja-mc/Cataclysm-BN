@@ -402,11 +402,10 @@ def fit_marker_grid(blobs, expected):
 
 FIXTURE_LUA = (
     # An outdoor courtyard with an opaque ring; remove the shelter roof so daylight survives reload.
-    # The internal column hides (8,0). Alternating tile columns make the rendered tile width
-    # measurable from a frame, while both floors stay transparent for the sight checks.
+    # The internal column hides (8,0).
     "function minimap_fixture() "
-    "for dx=-11,11 do for dy=-11,11 do local p=here(dx,dy) local t=(dx%2==0) and 't_pavement' or 't_floor' "
-    "M:set_ter_at(p, TerId.new(t):int_id()) "
+    "for dx=-11,11 do for dy=-11,11 do local p=here(dx,dy) "
+    "M:set_ter_at(p, TerId.new('t_floor'):int_id()) "
     "local above=TripointBubMs.new(p.x,p.y,p.z+1) "
     "M:set_furn_at(above, FurnId.new('f_null'):int_id()) M:clear_items_at(above) "
     "M:set_ter_at(above, TerId.new('t_open_air'):int_id()) "
@@ -451,7 +450,7 @@ SIGHT_ASSERTS = [
 ]
 
 
-def build_fixture(game, work):
+def build_fixture(game, work, zoom_ruler=False):
     """Builds the fixture in the curses game and asserts it through bound objects, then saves."""
     game.define_lua(HELPERS + " " + FIXTURE_LUA)
     arena(game)
@@ -459,6 +458,12 @@ def build_fixture(game, work):
     settle(game)
     # Terrain changes can drop old shelter contents; clear that debris before placing the measured loot.
     require(game.lua("minimap_fixture()") == ["fixture"], "post-settle courtyard cleanup failed")
+    if zoom_ruler:
+        require(game.lua("for dx=-11,11 do for dy=-11,11 do "
+                         "local t=(dx%2==0) and 't_pavement' or 't_floor' "
+                         "M:set_ter_at(here(dx,dy),TerId.new(t):int_id()) end end "
+                         "for dy=-2,2 do M:set_ter_at(here(6,dy),TerId.new('t_wall'):int_id()) end "
+                         "out('ruler')") == ["ruler"], "zoom ruler setup did not finish")
     for dx, dy in GROUND_ITEMS.values():
         spawn(game, dx, dy, "rock")
     spawn(game, *HIDDEN_BEHIND_WALL, "rock")
@@ -560,14 +565,14 @@ class Session:
             self.xvfb = None
         subprocess.run(["tmux", "kill-server"], stderr=subprocess.DEVNULL, check=False)
 
-    def build_world(self):
+    def build_world(self, zoom_ruler=False):
         tmux_game.ROOT = self.root
         # INITIAL_TIME 12 starts the world at noon, so the fixture is lit the same way on every run.
         game = Game(name="bn-tiles-e2e-fixture", options={"SAFEMODE": "false", "INITIAL_TIME": "12"},
                     userdir=self.curses_userdir)
         try:
             start_new_game(game)
-            build_fixture(game, self.work)
+            build_fixture(game, self.work, zoom_ruler=zoom_ruler)
             (self.artifacts / "fixture-curses.txt").write_text(game.screen_colors())
         finally:
             subprocess.run(["tmux", "kill-session", "-t", game.name], stderr=subprocess.DEVNULL, check=False)
@@ -883,6 +888,10 @@ def case_zoom(session):
             zoomed = observe("keyboard-in")
             x11.key("minus")
             restored = observe("keyboard-out")
+            x11.key("Shift_L", "equal")
+            plus_zoomed = observe("keyboard-plus")
+            x11.key("minus")
+            plus_restored = observe("keyboard-plus-out")
             x11.click(4)
             wheel_zoomed = observe("wheel-in")
             x11.click(5)
@@ -902,6 +911,10 @@ def case_zoom(session):
                       f"{initial}px -> {zoomed}px"),
                 Check("keyboard zoom out restores the tile pitch", abs(restored / initial - 1) <= 0.05,
                       f"{initial}px -> {restored}px"),
+                Check("shifted plus zooms in", abs(plus_zoomed / initial - 2) <= 0.2,
+                      f"{initial}px -> {plus_zoomed}px"),
+                Check("minus restores after shifted plus", abs(plus_restored / initial - 1) <= 0.05,
+                      f"{initial}px -> {plus_restored}px"),
                 Check("mouse wheel zoom in doubles the tile pitch", abs(wheel_zoomed / initial - 2) <= 0.2,
                       f"{initial}px -> {wheel_zoomed}px"),
                 Check("mouse wheel zoom out restores the tile pitch",
@@ -1015,7 +1028,7 @@ def main(argv=None):
     failures, report = [], {}
     try:
         session.start()
-        session.build_world()
+        session.build_world(zoom_ruler=args.case == "zoom")
         failures, report = CASES[args.case](session)
     except Exception as exc:  # reported; the work tree is kept with the artifacts
         failures.append(f"{type(exc).__name__}: {exc}")
