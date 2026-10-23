@@ -9,6 +9,7 @@
 #include "game.h"
 #include "game_constants.h"
 #include "int_id.h"
+#include "item.h"
 #include "line.h"
 #include "map/field_type.h"
 #include "map/mapdata.h"
@@ -1918,8 +1919,11 @@ void mapgen_tutorial(mapgendata& dat) {
         m->spawn_item(point_omt_ms(7, SEEY * 2 - 4), itype_id("uzimag"));
         m->spawn_item(point_omt_ms(SEEX * 2 - 2, SEEY + 5), itype_id("bubblewrap"));
         m->spawn_item(point_omt_ms(SEEX * 2 - 2, SEEY + 6), itype_id("grenade"));
-        m->spawn_item(point_omt_ms(SEEX * 2 - 3, SEEY + 6), itype_id("flashlight"));
-        m->spawn_item(point_omt_ms(SEEX * 2 - 3, SEEY + 6), itype_id("light_battery_cell"));
+        // The dark lesson tells the player to use this flashlight, so it must come loaded:
+        // mapgen item charges are ignored for magazines, so the cell is built and inserted.
+        auto flashlight = item::spawn(itype_id("flashlight"), dat.when());
+        flashlight->put_in(item::spawn(itype_id("light_battery_cell"), dat.when(), 150));
+        m->spawn_an_item(point_omt_ms(SEEX * 2 - 3, SEEY + 6), std::move(flashlight), 0, 0);
         m->spawn_item(point_omt_ms(SEEX * 2 - 2, SEEY + 7), itype_id("cig"));
         m->spawn_item(point_omt_ms(SEEX * 2 - 2, SEEY + 7), itype_id("codeine"));
         m->spawn_item(point_omt_ms(SEEX * 2 - 3, SEEY + 7), itype_id("water"));

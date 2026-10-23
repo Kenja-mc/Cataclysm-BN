@@ -17,7 +17,7 @@ enum class tut_lesson : int {
     LESSON_WINDOW, LESSON_PICKUP, LESSON_EXAMINE, LESSON_INTERACT,
 
     LESSON_FULL_INV, LESSON_WIELD_NO_SPACE, LESSON_AUTOWIELD, LESSON_ITEM_INTO_INV,
-    LESSON_GOT_ARMOR, LESSON_GOT_WEAPON, LESSON_GOT_FOOD, LESSON_GOT_TOOL,
+    LESSON_GOT_ARMOR, LESSON_GOT_WEAPON, LESSON_GOT_WEAPON_ALONE, LESSON_GOT_FOOD, LESSON_GOT_TOOL,
     LESSON_GOT_GUN, LESSON_GOT_AMMO, LESSON_WORE_ARMOR, LESSON_WORE_STORAGE,
     LESSON_WORE_MASK,
 
@@ -68,6 +68,8 @@ struct tutorial_game : public special_game {
         void add_message( tut_lesson lesson );
 
         std::map<tut_lesson, bool> tutorials_seen;
+        /// A reload was started; the firing lesson waits until the gun really holds ammo.
+        bool gun_reload_pending = false;
 };
 
 
