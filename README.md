@@ -38,7 +38,6 @@ Find a way to stop the Cataclysm ... or become one of its strongest monsters.
 ## Downloads
 
 Download this fork from [Bright Nights Overhaul releases][fork-releases].
-The first download appears after a maintainer publishes a fork release.
 
 | Platform       | File                                    |
 | -------------- | --------------------------------------- |
