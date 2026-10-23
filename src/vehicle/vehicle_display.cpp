@@ -259,10 +259,11 @@ auto vehicle::print_part_list(
  * @param start_at Which vehicle part to start printing at.
  * @param start_limit the part index beyond which the display is full
  */
-void vehicle::print_vparts_descs(
-    const catacurses::window& win, int max_y, int width, int p, int& start_at,
-    int& start_limit) const {
-    if (p < 0 || p >= static_cast<int>(parts.size())) { return; }
+auto vehicle::print_vparts_descs(
+    const catacurses::window& win, int max_y, int width, int p, int& start_at, int& start_limit)
+    const -> desc_hint_rows {
+    auto hints = desc_hint_rows{};
+    if (p < 0 || p >= static_cast<int>(parts.size())) { return hints; }
 
     std::vector<int> pl = this->parts_at_relative(parts[p].mount, true);
     std::string msg;
@@ -288,6 +289,7 @@ void vehicle::print_vparts_descs(
     if (start_at) {
         msg += std::string("<color_yellow>") + "<  " + _("More parts here…") + "</color>\n";
         lines += 1;
+        hints.up = 0;
     }
     for (size_t i = start_at; i < pl.size(); i++) {
         const vehicle_part& vp = parts[pl[i]];
@@ -312,6 +314,8 @@ void vehicle::print_vparts_descs(
             lines += new_lines;
             start_limit = start_at;
         } else {
+            // fold_and_print uses the same folding, so this is the row the hint starts on.
+            hints.down = static_cast<int>(foldstring(msg, width - 2).size());
             msg += std::string("<color_yellow>") + _("More parts here…") + "  >" + "</color>\n";
             start_limit = i;
             break;
@@ -322,6 +326,7 @@ void vehicle::print_vparts_descs(
     // NOLINTNEXTLINE(cata-use-named-point-constants)
     fold_and_print(win, point(1, 0), width - 2, c_light_gray, msg);
     wnoutrefresh(win);
+    return hints;
 }
 
 /**

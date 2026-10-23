@@ -254,6 +254,13 @@ veh_interact::veh_interact(vehicle& veh, tripoint_mnt_veh p)
     main_context.register_action("ZOOM_IN");
     main_context.register_action("ZOOM_OUT");
     main_context.register_action("ANY_INPUT");
+    if (modern_mouse()) {
+        // Classic keeps the upstream keyboard-only screen; these actions only
+        // exist so the modern scheme can report clicks and wheel notches.
+        main_context.register_action("SELECT");
+        main_context.register_action("SCROLL_UP");
+        main_context.register_action("SCROLL_DOWN");
+    }
 
     count_durability();
     cache_tool_availability();
@@ -377,9 +384,13 @@ auto veh_interact::create_or_get_ui_adaptor() -> shared_ptr_fast<ui_adaptor> {
 
             werase(w_msg);
             if (!msg.has_value()) {
-                veh->print_vparts_descs(
+                const auto hints = veh->print_vparts_descs(
                     w_msg, getmaxy(w_msg), getmaxx(w_msg), cpart, start_at, start_limit);
+                msg_hint_up_y = hints.up;
+                msg_hint_down_y = hints.down;
             } else {
+                msg_hint_up_y.reset();
+                msg_hint_down_y.reset();
                 // NOLINTNEXTLINE(cata-use-named-point-constants)
                 fold_and_print(w_msg, point(1, 0), getmaxx(w_msg) - 2, c_light_red, msg.value());
             }
@@ -404,6 +415,128 @@ void veh_interact::hide_ui(const bool hide) {
     }
 }
 
+auto veh_interact::modern_mouse() -> bool {
+    return get_option<std::string>("CONTROL_SCHEME") == "modern";
+}
+
+auto veh_interact::mouse_input() -> bool {
+    return main_context.get_raw_input().type == input_event_t::mouse;
+}
+
+auto veh_interact::mouse_cell(const catacurses::window &win) -> std::optional<point> {
+    const auto mouse = main_context.get_coordinates(win);
+    if (!mouse) { return std::nullopt; }
+    // get_coordinates() is relative to the window centre.
+    const auto cell = mouse->xy().raw() + point(getmaxx(win), getmaxy(win)) / 2;
+    if (cell.x < 0 || cell.y < 0 || cell.x >= getmaxx(win) || cell.y >= getmaxy(win)) {
+        return std::nullopt;
+    }
+    return cell;
+}
+
+auto veh_interact::parts_row_at(point cell) const -> std::optional<int> {
+    if (cpart < 0) { return std::nullopt; }
+    const auto pl = veh->parts_at_relative(veh->part(cpart).mount, true);
+    const auto max_y = getmaxy(w_parts) - 1;
+    const auto top = parts_list_offset > 0 ? 1 : 0;
+    const auto row = cell.y - top;
+    // The last row holds the "more parts below" hint instead of a part.
+    if (row < 0 || cell.y >= max_y) { return std::nullopt; }
+    const auto index = row + parts_list_offset;
+    if (index < 0 || index >= static_cast<int>(pl.size())) { return std::nullopt; }
+    return index;
+}
+
+auto veh_interact::click_vehicle_grid(point cell) -> void {
+    auto mount_delta = point_rel_veh::zero();
+#if defined(TILES)
+    if (get_option<bool>("VEHICLE_EDIT_TILES") && is_draw_tiles_mode()) {
+        // The tile preview owns its zoom and pixel geometry, so ask it which
+        // mount is drawn under the clicked cell.
+        if (!tile_preview) { return; }
+        const auto delta = tile_preview->mount_delta_at(cell);
+        if (!delta) { return; }
+        mount_delta = *delta;
+    } else
+#endif
+    {
+        // Mirrors display_veh(): the cursor sits at the window centre and the
+        // screen uses the inverse of the keyboard direction rotation.
+        const auto center = point(getmaxx(w_disp) / 2, getmaxy(w_disp) / 2);
+        mount_delta = point_rel_veh(cell - center).rotate(1);
+    }
+    move_cursor(tripoint_rel_veh(mount_delta, 0));
+}
+
+auto veh_interact::main_mouse_action(const std::string &action) -> std::string {
+    if (!modern_mouse()) { return ""; }
+    if (action == "SCROLL_UP" || action == "SCROLL_DOWN") {
+        const auto delta = action == "SCROLL_UP" ? -1 : 1;
+        if (mouse_cell(w_list)) {
+            move_overview_line(delta);
+        } else if (mouse_cell(w_parts)) {
+            if (cpart >= 0) {
+                parts_list_offset = std::clamp(
+                    parts_list_offset + delta, 0,
+                    std::max(0, static_cast<int>(parts_here.size()) - 1));
+            }
+        } else if (mouse_cell(w_msg)) {
+            // The description is a line-by-line text viewer on DESC_LIST_*.
+            move_cursor(tripoint_rel_veh::zero(), delta);
+        }
+        return "";
+    }
+    if (action != "SELECT") { return ""; }
+    if (const auto cell = mouse_cell(w_mode)) {
+        if (cell->y == 0) {
+            for (const click_span &span : mode_action_spans) {
+                if (cell->x >= span.begin && cell->x < span.end) { return span.action; }
+            }
+        }
+        return "";
+    }
+    if (const auto cell = mouse_cell(w_disp)) {
+        click_vehicle_grid(*cell);
+        return "";
+    }
+    if (const auto cell = mouse_cell(w_list)) {
+        if (overview_hint_up_y && cell->y == *overview_hint_up_y) {
+            move_overview_line(-1);
+        } else if (overview_hint_down_y && cell->y == *overview_hint_down_y) {
+            move_overview_line(1);
+        } else if (cell->y >= 0 && cell->y < static_cast<int>(overview_row_at_y.size())) {
+            const auto idx = overview_row_at_y[cell->y];
+            if (idx >= 0 && idx < static_cast<int>(overview_opts.size())) {
+                move_cursor(overview_opts[idx].part->mount - vehicle_cursor);
+            }
+        }
+        return "";
+    }
+    if (const auto cell = mouse_cell(w_msg)) {
+        if (msg_hint_up_y && cell->y == *msg_hint_up_y) {
+            move_cursor(tripoint_rel_veh::zero(), -1);
+        } else if (msg_hint_down_y && cell->y == *msg_hint_down_y) {
+            move_cursor(tripoint_rel_veh::zero(), 1);
+        }
+        return "";
+    }
+    if (const auto cell = mouse_cell(w_parts)) {
+        if (cpart < 0) { return ""; }
+        if (parts_list_offset > 0 && cell->y == 0) {
+            parts_list_offset--;
+        } else {
+            const auto max_y = getmaxy(w_parts) - 1;
+            const auto top = parts_list_offset > 0 ? 1 : 0;
+            if (cell->y == max_y
+                && static_cast<int>(parts_here.size()) - parts_list_offset > max_y - top) {
+                parts_list_offset++;
+            }
+        }
+        return "";
+    }
+    return "";
+}
+
 void veh_interact::do_main_loop() {
     avatar& you = get_avatar();
     bool finish = false;
@@ -420,8 +553,9 @@ void veh_interact::do_main_loop() {
     while (!finish) {
         calc_overview();
         ui_manager::redraw();
-        const std::string action = main_context.handle_input();
+        auto action = main_context.handle_input();
         msg.reset();
+        if (mouse_input()) { action = main_mouse_action(action); }
         if (const std::optional<tripoint_rel_ms> vec = main_context.get_direction(action)) {
             const point_rel_veh vehicle_delta = vec->xy().rotate(1).reinterpret_as<point_rel_veh>();
             move_cursor(tripoint_rel_veh(vehicle_delta, vec->z()));
@@ -999,8 +1133,47 @@ void veh_interact::do_install() {
 
         ui_manager::redraw();
 
-        const std::string action = main_context.handle_input();
+        auto action = main_context.handle_input();
         msg.reset();
+        if (mouse_input()) {
+            if (modern_mouse() && action == "SELECT") {
+                const auto cell = mouse_cell(w_list);
+                const auto tab_hit = cell && cell->x >= 0
+                        && cell->x < static_cast<int>(install_tab_at_x.size())
+                    ? install_tab_at_x[cell->x]
+                    : -1;
+                const auto row_hit = cell && cell->y >= 0
+                        && cell->y < static_cast<int>(install_row_at_y.size())
+                    ? install_row_at_y[cell->y]
+                    : -1;
+                if (cell && cell->y == 0 && tab_hit >= 0) {
+                    // Switch tabs exactly like PREV_TAB/NEXT_TAB, including the filter.
+                    tab = static_cast<size_t>(tab_hit);
+                    tab_vparts.clear();
+                    pos = 0;
+                    copy_if(can_mount.begin(), can_mount.end(), back_inserter(tab_vparts),
+                            tab_filters[tab]);
+                    action.clear();
+                } else if (row_hit >= 0) {
+                    if (row_hit == pos) {
+                        action = "CONFIRM"; // a second click runs the keyboard confirm
+                    } else {
+                        pos = row_hit;
+                        action.clear();
+                    }
+                } else {
+                    action.clear();
+                }
+            } else if (modern_mouse() && (action == "SCROLL_UP" || action == "SCROLL_DOWN")) {
+                if (!tab_vparts.empty()) {
+                    move_in_list(
+                        pos, action == "SCROLL_UP" ? "UP" : "DOWN", tab_vparts.size(), 2);
+                }
+                action.clear();
+            } else {
+                action.clear();
+            }
+        }
         if (action == "FILTER") {
             string_input_popup()
                 .title(_("Search for part"))
@@ -1189,8 +1362,33 @@ void veh_interact::do_repair() {
 
         ui_manager::redraw();
 
-        const std::string action = main_context.handle_input();
+        auto action = main_context.handle_input();
         msg.reset();
+        if (mouse_input()) {
+            if (modern_mouse() && action == "SELECT") {
+                const auto cell = mouse_cell(w_parts);
+                const auto row = cell ? parts_row_at(*cell) : std::nullopt;
+                const auto iter = row
+                    ? std::find(need_repair.begin(), need_repair.end(), *row)
+                    : need_repair.end();
+                if (iter != need_repair.end()) {
+                    const auto hit = static_cast<int>(std::distance(need_repair.begin(), iter));
+                    if (hit == pos) {
+                        action = "CONFIRM"; // a second click runs the keyboard confirm
+                    } else {
+                        pos = hit;
+                        action.clear();
+                    }
+                } else {
+                    action.clear();
+                }
+            } else if (modern_mouse() && (action == "SCROLL_UP" || action == "SCROLL_DOWN")) {
+                move_in_list(pos, action == "SCROLL_UP" ? "UP" : "DOWN", need_repair.size());
+                action.clear();
+            } else {
+                action.clear();
+            }
+        }
         if ((action == "REPAIR" || action == "CONFIRM") && ok) {
             reason = cant_do('r');
             if (!can_repair()) { return; }
@@ -1598,8 +1796,12 @@ void veh_interact::display_overview() {
     werase(w_list);
     std::string last;
     int y = 0;
+    overview_row_at_y.assign(getmaxy(w_list), -1);
+    overview_hint_up_y.reset();
+    overview_hint_down_y.reset();
     if (overview_offset) {
         trim_and_print(w_list, point(1, y), getmaxx(w_list) - 1, c_yellow, _("'{' to scroll up"));
+        overview_hint_up_y = y;
         y++;
     }
     for (int idx = overview_offset; idx != static_cast<int>(overview_opts.size()); ++idx) {
@@ -1630,6 +1832,9 @@ void veh_interact::display_overview() {
 
         // print extra columns (if any)
         overview_opts[idx].details(pt, w_list, y);
+        if (y >= 0 && y < static_cast<int>(overview_row_at_y.size())) {
+            overview_row_at_y[y] = idx;
+        }
         y++;
         if (y < (getmaxy(w_list) - 1)) {
             overview_limit = overview_offset;
@@ -1637,6 +1842,7 @@ void veh_interact::display_overview() {
             overview_limit = idx;
             trim_and_print(
                 w_list, point(1, y), getmaxx(w_list) - 1, c_yellow, _("'}' to scroll down"));
+            overview_hint_down_y = y;
             break;
         }
     }
@@ -1688,8 +1894,33 @@ void veh_interact::overview(const overview_enable_t& enable, const overview_acti
 
         ui_manager::redraw();
 
-        const std::string input = main_context.handle_input();
+        auto input = main_context.handle_input();
         msg.reset();
+        if (mouse_input()) {
+            if (!modern_mouse()) { continue; }
+            if (input == "SCROLL_UP" || input == "SCROLL_DOWN") {
+                input = input == "SCROLL_UP" ? "UP" : "DOWN";
+            } else if (input == "SELECT") {
+                const auto cell = mouse_cell(w_list);
+                const auto idx = cell && cell->y >= 0
+                        && cell->y < static_cast<int>(overview_row_at_y.size())
+                    ? overview_row_at_y[cell->y]
+                    : -1;
+                if (idx >= 0 && idx < static_cast<int>(overview_opts.size())
+                    && overview_opts[idx].hotkey) {
+                    if (idx == overview_pos) {
+                        input = "CONFIRM"; // a second click runs the keyboard confirm
+                    } else {
+                        overview_pos = idx;
+                        continue;
+                    }
+                } else {
+                    continue;
+                }
+            } else {
+                continue;
+            }
+        }
         if (input == "CONFIRM" && overview_opts[overview_pos].hotkey && overview_action) {
             overview_action(*overview_opts[overview_pos].part);
             break;
@@ -1900,8 +2131,29 @@ void veh_interact::do_remove() {
         ui_manager::redraw();
 
         // read input
-        const std::string action = main_context.handle_input();
+        auto action = main_context.handle_input();
         msg.reset();
+        if (mouse_input()) {
+            if (modern_mouse() && action == "SELECT") {
+                const auto cell = mouse_cell(w_parts);
+                const auto row = cell ? parts_row_at(*cell) : std::nullopt;
+                if (row && *row < static_cast<int>(parts_here.size())) {
+                    if (*row == pos) {
+                        action = "CONFIRM"; // a second click runs the keyboard confirm
+                    } else {
+                        pos = *row;
+                        action.clear();
+                    }
+                } else {
+                    action.clear();
+                }
+            } else if (modern_mouse() && (action == "SCROLL_UP" || action == "SCROLL_DOWN")) {
+                move_in_list(pos, action == "SCROLL_UP" ? "UP" : "DOWN", parts_here.size());
+                action.clear();
+            } else {
+                action.clear();
+            }
+        }
         if (can_remove && (action == "REMOVE" || action == "CONFIRM")) {
             switch (reason) {
                 case DOUBLE_STACK:
@@ -2660,6 +2912,7 @@ static auto veh_act_desc(
  */
 void veh_interact::display_mode() {
     werase(w_mode);
+    mode_action_spans.clear();
 
     if (title.has_value()) {
         nc_color title_col = c_light_gray;
@@ -2667,36 +2920,58 @@ void veh_interact::display_mode() {
         print_colored_text(w_mode, point(1, 0), title_col, title_col, title.value());
     } else {
         constexpr size_t action_cnt = 12;
-        const std::array<std::string, action_cnt> actions = {{
-            veh_act_desc(main_context, "INSTALL", pgettext("veh_interact", "install"), cant_do('i')),
-            veh_act_desc(main_context, "REPAIR", pgettext("veh_interact", "repair"), cant_do('r')),
-            veh_act_desc(main_context, "MEND", pgettext("veh_interact", "mend"), cant_do('m')),
-            veh_act_desc(main_context, "REFILL", pgettext("veh_interact", "refill"), cant_do('f')),
-            veh_act_desc(main_context, "REMOVE", pgettext("veh_interact", "remove"), cant_do('o')),
-            veh_act_desc(main_context, "SIPHON", pgettext("veh_interact", "siphon"), cant_do('s')),
-            veh_act_desc(main_context, "UNLOAD", pgettext("veh_interact", "unload"), cant_do('d')),
-            veh_act_desc(main_context, "ASSIGN_CREW", pgettext("veh_interact", "crew"),
-                         cant_do('w')),
-            veh_act_desc(main_context, "RENAME", pgettext("veh_interact", "rename"),
-                         task_reason::CAN_DO),
-            veh_act_desc(main_context, "RELABEL", pgettext("veh_interact", "label"), cant_do('a')),
-            veh_act_desc(main_context, "CHANGE_SHAPE", pgettext("veh_interact", "shape"),
-                         cant_do('p')),
-            veh_act_desc(main_context, "QUIT", pgettext("veh_interact", "back"),
-                         task_reason::CAN_DO),
+        const std::array<std::pair<std::string, std::string>, action_cnt> actions = {{
+            {"INSTALL",
+             veh_act_desc(main_context, "INSTALL", pgettext("veh_interact", "install"),
+                          cant_do('i'))},
+            {"REPAIR",
+             veh_act_desc(main_context, "REPAIR", pgettext("veh_interact", "repair"),
+                          cant_do('r'))},
+            {"MEND",
+             veh_act_desc(main_context, "MEND", pgettext("veh_interact", "mend"), cant_do('m'))},
+            {"REFILL",
+             veh_act_desc(main_context, "REFILL", pgettext("veh_interact", "refill"),
+                          cant_do('f'))},
+            {"REMOVE",
+             veh_act_desc(main_context, "REMOVE", pgettext("veh_interact", "remove"),
+                          cant_do('o'))},
+            {"SIPHON",
+             veh_act_desc(main_context, "SIPHON", pgettext("veh_interact", "siphon"),
+                          cant_do('s'))},
+            {"UNLOAD",
+             veh_act_desc(main_context, "UNLOAD", pgettext("veh_interact", "unload"),
+                          cant_do('d'))},
+            {"ASSIGN_CREW",
+             veh_act_desc(main_context, "ASSIGN_CREW", pgettext("veh_interact", "crew"),
+                          cant_do('w'))},
+            {"RENAME",
+             veh_act_desc(main_context, "RENAME", pgettext("veh_interact", "rename"),
+                          task_reason::CAN_DO)},
+            {"RELABEL",
+             veh_act_desc(main_context, "RELABEL", pgettext("veh_interact", "label"),
+                          cant_do('a'))},
+            {"CHANGE_SHAPE",
+             veh_act_desc(main_context, "CHANGE_SHAPE", pgettext("veh_interact", "shape"),
+                          cant_do('p'))},
+            {"QUIT",
+             veh_act_desc(main_context, "QUIT", pgettext("veh_interact", "back"),
+                          task_reason::CAN_DO)},
         }};
 
         std::array<int, action_cnt + 1> pos;
         pos[0] = 0;
         for (size_t i = 0; i < action_cnt; i++) {
-            pos[i + 1] = pos[i] + utf8_width(actions[i], true);
+            pos[i + 1] = pos[i] + utf8_width(actions[i].second, true);
         }
         const int space = std::max<int>(getmaxx(w_mode) - pos.back(), action_cnt + 1);
         for (size_t i = 0; i < action_cnt; i++) {
             nc_color dummy = c_white;
-            print_colored_text(
-                w_mode, point(pos[i] + space * (i + 1) / (action_cnt + 1), 0), dummy, c_white,
-                actions[i]);
+            const auto x = pos[i]
+                + space * static_cast<int>(i + 1) / static_cast<int>(action_cnt + 1);
+            const auto width = utf8_width(actions[i].second, true);
+            mode_action_spans.push_back(
+                click_span{.begin = x, .end = x + width, .action = actions[i].first});
+            print_colored_text(w_mode, point(x, 0), dummy, c_white, actions[i].second);
         }
     }
     wnoutrefresh(w_mode);
@@ -2712,12 +2987,17 @@ void veh_interact::display_mode() {
 void veh_interact::display_list(
     size_t pos, const std::vector<const vpart_info*>& list, const int header) {
     werase(w_list);
+    install_row_at_y.assign(getmaxy(w_list), -1);
+    install_tab_at_x.assign(getmaxx(w_list), -1);
     int lines_per_page = page_size - header;
     size_t page = pos / lines_per_page;
     for (size_t i = page * lines_per_page; i < (page + 1) * lines_per_page && i < list.size();
          i++) {
         const vpart_info& info = *list[i];
         int y = i - page * lines_per_page + header;
+        if (y >= 0 && y < static_cast<int>(install_row_at_y.size())) {
+            install_row_at_y[y] = static_cast<int>(i);
+        }
         mvwputch(w_list, point(1, y), info.color, special_symbol(info.sym));
         nc_color col = can_potentially_install(info) ? c_white : c_dark_gray;
         trim_and_print(
@@ -2734,7 +3014,12 @@ void veh_interact::display_list(
             std::string tab_name = (tab == i) ? tab_list[i] : tab_list_short[i]; // full name for
                                                                                  // selected tab
             tab_x += (tab == i); // add a space before selected tab
+            const int tab_begin = tab_x;
             draw_subtab(w_list, tab_x, tab_name, tab == i, false);
+            const int tab_end = tab_x + 1 + utf8_width(tab_name);
+            for (int x = tab_begin; x <= tab_end && x < getmaxx(w_list); x++) {
+                if (x >= 0) { install_tab_at_x[x] = static_cast<int>(i); }
+            }
             tab_x += (1 + utf8_width(tab_name) + (tab == i)); // one space padding and add a space
                                                               // after selected tab
         }

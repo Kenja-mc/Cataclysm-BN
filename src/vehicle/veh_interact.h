@@ -11,6 +11,7 @@
 
 #include <functional>
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -174,6 +175,42 @@ private:
     void display_mode();
     void display_list(size_t pos, const std::vector<const vpart_info*>& list, int header = 0);
     void display_details(const vpart_info* part);
+
+    /// Drawn label span that maps a mouse click to an input action.
+    struct click_span {
+        int begin = 0;
+        int end = 0;
+        std::string action;
+    };
+    /// Action labels drawn in w_mode during the last redraw.
+    std::vector<click_span> mode_action_spans;
+    /// Overview option index for each drawn w_list row, -1 for all other rows.
+    std::vector<int> overview_row_at_y;
+    /// Installable part index for each drawn w_list row, -1 for all other rows.
+    std::vector<int> install_row_at_y;
+    /// Install tab index for each drawn w_list column of the tab row, -1 elsewhere.
+    std::vector<int> install_tab_at_x;
+    /// Row of the drawn overview "scroll up" hint, when present.
+    std::optional<int> overview_hint_up_y;
+    /// Row of the drawn overview "scroll down" hint, when present.
+    std::optional<int> overview_hint_down_y;
+    /// Row of the drawn description pane "more parts above" hint, when present.
+    std::optional<int> msg_hint_up_y;
+    /// Row of the drawn description pane "more parts below" hint, when present.
+    std::optional<int> msg_hint_down_y;
+
+    /// True under the modern control scheme, which owns all mouse selection.
+    static auto modern_mouse() -> bool;
+    /// True when the last input event came from the mouse.
+    auto mouse_input() -> bool;
+    /// Window-relative cell of the last mouse event when it lies inside win.
+    auto mouse_cell(const catacurses::window& win) -> std::optional<point>;
+    /// Handles a modern main-screen mouse action, returning a keyboard action to run.
+    auto main_mouse_action(const std::string& action) -> std::string;
+    /// Moves the vehicle cursor to the part drawn at a w_disp cell.
+    auto click_vehicle_grid(point cell) -> void;
+    /// Index in parts_here of the part drawn on a w_parts row.
+    auto parts_row_at(point cell) const -> std::optional<int>;
 
     struct part_option {
         part_option(
