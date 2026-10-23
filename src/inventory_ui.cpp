@@ -1377,6 +1377,13 @@ void inventory_selector::add_character_items( Character &character )
     }
 }
 
+auto inventory_selector::refresh_own_items( Character &character ) -> void
+{
+    own_gear_column.clear();
+    own_inv_column.clear();
+    add_character_items( character );
+}
+
 void inventory_selector::add_map_items( const tripoint_bub_ms &target )
 {
     if( g->m.accessible_items( target ) ) {
@@ -1898,7 +1905,13 @@ bool inventory_selector::wield( inventory_entry &entry )
     bool wield_result = u.can_wield( *item ).success();
     if( wield_result ) {
         remove_item( item );
-        u.wield( *item );
+        // Wielding may swap the previous weapon into the inventory, so rebuild
+        // both own columns and show the held weapon right away.
+        if( u.wield( *item ) ) {
+            refresh_own_items( u );
+            prepare_layout();
+            select( &u.primary_weapon() );
+        }
     } else {
         popup_getkey( u.can_wield( *item ).c_str() );
     }
@@ -1917,7 +1930,13 @@ bool inventory_selector::wear( inventory_entry &entry )
     if( wear_result ) {
         remove_item( item );
         auto to_move = item->detach();
-        u.wear_item( std::move( to_move ) );
+        // wear_item keeps the same item object when it succeeds, so the pointer
+        // can be shown again right away, now under the worn items category.
+        if( !u.wear_item( std::move( to_move ) ) ) {
+            add_item( own_gear_column, item, &item_category_id( "ITEMS_WORN" ).obj() );
+            prepare_layout();
+            select( item );
+        }
     } else {
         popup_getkey( u.can_wear( *item ).c_str() );
     }
