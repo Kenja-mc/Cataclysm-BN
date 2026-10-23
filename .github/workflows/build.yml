@@ -300,6 +300,9 @@ jobs:
         with:
           # Ref-independent buckets; ccache still checks compiler and source inputs.
           key: ${{ steps.windows-cache-config.outputs.ccache-key }}
+          # Seed the ref-independent bucket from the first release's main-branch cache.
+          restore-keys: |
+            windows-${{ matrix.artifact }}-${{ inputs.mode }}-main
           max-size: 3G
           verbose: 2
           # Native ccache validates each compilation unit, even if a later step fails.
@@ -363,6 +366,8 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ steps.linux-cache-config.outputs.ccache-key }}
+          restore-keys: |
+            ${{ matrix.artifact }}-main
           max-size: 500M
           verbose: 2
           save: ${{ env.CACHE_WRITE_ALLOWED == 'true' }}
@@ -408,6 +413,10 @@ jobs:
       # Build with CMake (Linux)
       - name: Configure and Build with CMake (Linux)
         if: runner.os == 'Linux' && (matrix.android == '' || matrix.android == 'none')
+        env:
+          CCACHE_SLOPPINESS: include_file_ctime,include_file_mtime,time_macros,pch_defines
+          # SDL3-shared uses a C PCH; leave the game's C++ cache inputs unchanged.
+          CFLAGS: -Xclang -fno-pch-timestamp
         uses: lukka/run-cmake@v10
         with:
           configurePreset: ${{ matrix.tiles && 'dist-tiles' || 'dist-curses' }}

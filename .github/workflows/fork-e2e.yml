@@ -19,20 +19,10 @@ env:
 jobs:
   e2e-suite:
     if: github.repository == 'Kenja-mc/Cataclysm-BN'
-    name: Fork end-to-end suite (curses, shard ${{ matrix.shard }})
+    name: Fork end-to-end suite (curses)
     runs-on: ubuntu-latest
-    # A warm shard finished the whole job in about 40 minutes; with a cold ccache the
-    # build took 37 minutes by itself, so 90 covers the build plus the suite. The cap
-    # only has to catch a hang, so a hung shard cannot hold a runner for two hours.
-    timeout-minutes: 90
-    # The full suite outgrew a single runner: its tail tests are slower there than they are
-    # locally, and the suite was still running when the job hit its two-hour timeout. Each
-    # shard builds the cache-warm curses binary and runs a balanced quarter of the
-    # registered checks, assigned by run.py from tests/e2e/durations.json.
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [0, 1, 2, 3]
+    # About 50 minutes of serial tests plus setup/build; leave room for cold caches.
+    timeout-minutes: 150
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
@@ -95,6 +85,14 @@ jobs:
           buildPreset: ci-curses
           buildPresetAdditionalArgs: "['--target', 'cataclysm-bn', '-j', '2']"
 
+      - name: Check game fixture lifetimes
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: |
+          set -o pipefail
+          python3 -m unittest discover -s tests/e2e -p test_lifecycle.py -v \
+            2>&1 | tee e2e-lifecycle.log
+
       # Run the suite in its own job: nothing else loads this runner while a game is live,
       # because slow input makes these tests fail. tmux and ImageMagick are the harness's
       # own tools (tests/e2e/tiles.py captures frames with `magick`, or the 6.x binaries
@@ -112,11 +110,8 @@ jobs:
           trap 'kill "$xvfb_pid" 2>/dev/null || true' EXIT
           export DISPLAY=:99
           sleep 1
-          # --durations feeds the shard split from real CI cost once the artifacts are
-          # merged: python3 tests/e2e/merge_durations.py e2e-durations-shard-*.json --write
-          python3 tests/e2e/run.py --shard=${{ matrix.shard }}/4 \
-            --durations=e2e-durations-shard-${{ matrix.shard }}.json \
-            2>&1 | tee e2e-suite-shard-${{ matrix.shard }}.log
+          python3 tests/e2e/run.py --serial --durations=e2e-durations.json \
+            2>&1 | tee e2e-suite.log
 
       # Always: a failing suite is the interesting one, and the log is its only evidence.
       # warn, not ignore: the suite writes e2e-suite.log as soon as it starts, so a missing
@@ -125,10 +120,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4.6.0
         with:
-          name: e2e-suite-log-${{ matrix.shard }}
+          name: e2e-suite-log
           path: |
-            e2e-suite-shard-${{ matrix.shard }}.log
-            e2e-durations-shard-${{ matrix.shard }}.json
+            e2e-suite.log
+            e2e-durations.json
+            e2e-lifecycle.log
             /tmp/bn-e2e-*
           if-no-files-found: warn
           retention-days: 14

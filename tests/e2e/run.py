@@ -22,7 +22,9 @@ import sys
 import tempfile
 import time
 import traceback
+from contextlib import nullcontext
 from pathlib import Path
+from subprocess import CalledProcessError
 
 from fixtures import shared_game
 from helpers import HELPERS, settle
@@ -38,6 +40,7 @@ from hud_boxes import TESTS as HUD_BOXES_TESTS
 from map_view import TESTS as MAP_VIEW_TESTS
 from combat import TESTS as COMBAT_TESTS
 from sound_feedback import TESTS as SOUND_FEEDBACK_TESTS
+from sound_menu import TESTS as SOUND_MENU_TESTS
 from safemode import TESTS as SAFEMODE_TESTS
 from char_creation import TESTS as CHAR_CREATION_TESTS
 from fluid_grid import TESTS as FLUID_GRID_TESTS
@@ -51,6 +54,7 @@ from construction_tab import TESTS as CONSTRUCTION_TAB_TESTS
 from dispose_menu import TESTS as DISPOSE_MENU_TESTS
 from fire_feedback import TESTS as FIRE_FEEDBACK_TESTS
 from keyhints_small import TESTS as KEYHINTS_SMALL_TESTS
+from context_keyhints import TESTS as CONTEXT_KEYHINTS_TESTS
 from safe_mode_sleep import TESTS as SAFE_MODE_SLEEP_TESTS
 from vehicle_memory import TESTS as VEHICLE_MEMORY_TESTS
 from aim_reticle import TESTS as AIM_RETICLE_TESTS
@@ -58,6 +62,7 @@ from safe_click import TESTS as SAFE_CLICK_TESTS
 from map_mouse import TESTS as MAP_MOUSE_TESTS
 from inventory_mouse import TESTS as INVENTORY_MOUSE_TESTS
 from pickup_flow import TESTS as PICKUP_FLOW_TESTS
+from modern_map_controls import TESTS as MODERN_MAP_CONTROLS_TESTS
 from options_menu import TESTS as OPTIONS_MENU_TESTS
 from inventory_hub import TESTS as INVENTORY_HUB_TESTS
 from contextual_hub import TESTS as CONTEXTUAL_HUB_TESTS
@@ -81,6 +86,7 @@ MODULES = [
     ("map_view", MAP_VIEW_TESTS),
     ("combat", COMBAT_TESTS),
     ("sound_feedback", SOUND_FEEDBACK_TESTS),
+    ("sound_menu", SOUND_MENU_TESTS),
     ("safemode", SAFEMODE_TESTS),
     ("char_creation", CHAR_CREATION_TESTS),
     ("fluid_grid", FLUID_GRID_TESTS),
@@ -94,6 +100,7 @@ MODULES = [
     ("dispose_menu", DISPOSE_MENU_TESTS),
     ("fire_feedback", FIRE_FEEDBACK_TESTS),
     ("keyhints_small", KEYHINTS_SMALL_TESTS),
+    ("context_keyhints", CONTEXT_KEYHINTS_TESTS),
     ("safe_mode_sleep", SAFE_MODE_SLEEP_TESTS),
     ("vehicle_memory", VEHICLE_MEMORY_TESTS),
     ("aim_reticle", AIM_RETICLE_TESTS),
@@ -101,6 +108,7 @@ MODULES = [
     ("map_mouse", MAP_MOUSE_TESTS),
     ("inventory_mouse", INVENTORY_MOUSE_TESTS),
     ("pickup_flow", PICKUP_FLOW_TESTS),
+    ("modern_map_controls", MODERN_MAP_CONTROLS_TESTS),
     ("options_menu", OPTIONS_MENU_TESTS),
     ("inventory_hub", INVENTORY_HUB_TESTS),
     ("contextual_hub", CONTEXTUAL_HUB_TESTS),
@@ -131,6 +139,7 @@ SMOKE = [
     "test_enemy_edge_arrows_off",
     "test_magnet_pull_through_monster",
     "test_sound_marker_fading",
+    "test_sound_menu_curses_unavailable",
     "test_smart_safe_mode_horde",
     "test_char_creation_overview_fits_small_terminal",
     "test_partial_grid_transfer_keeps_the_rest",
@@ -342,9 +351,7 @@ def main():
         g.define_lua(HELPERS)
         assert g.lua("gapi.get_avatar():set_mutation(MutationBranchId.new('DEBUG_STORAGE')) out('ok')") == ["ok"]
     else:
-        with shared_game("bn-e2e", options={"SAFEMODE": "false", "SOUND_MARKER_TURNS": "3"},
-                         define=HELPERS, setup=default_setup) as g:
-            return run_tests(chosen, g, record)
+        return run_tests(chosen, record=record)
     try:
         failures = run_tests(chosen, g, record)
     finally:
@@ -353,25 +360,41 @@ def main():
     return failures
 
 
-def run_tests(chosen, g, record):
+def run_tests(chosen, g=None, record=""):
     failures = 0
     timings = {}
     for test in chosen:
         started = time.time()
-        # A debug assertion popup left behind by an earlier test blocks every key, so
-        # clear it here rather than letting it fail this test as well.
-        g.dismiss_error_popup()
         try:
-            test(g)
+            # Borrow for one test, not the whole suite: a retired profile is replaced on
+            # the next iteration, while successful tests still share the cached game.
+            context = nullcontext(g) if g is not None else shared_game(
+                "bn-e2e", options={"SAFEMODE": "false", "SOUND_MARKER_TURNS": "3"},
+                define=HELPERS, setup=default_setup)
+            with context as game:
+                try:
+                    game.dismiss_error_popup()
+                    test(game)
+                except Exception:
+                    # Capture the failure before the fixture's final borrower closes it.
+                    try:
+                        print(game.screen())
+                    except CalledProcessError as error:
+                        print(f"tmux game unavailable: {error.stderr or error}")
+                    raise
             print(f"PASS {test.__name__} ({time.time() - started:.1f}s)")
             timings[test.__name__] = round(time.time() - started, 1)
         except Exception:
             failures += 1
             print(f"FAIL {test.__name__}")
             traceback.print_exc()
-            print(g.screen())
-            g.keys("Escape", delay=0.5)
-            g.dismiss_error_popup()
+            if g is not None:
+                # --keep deliberately preserves the same game, including after a failure.
+                try:
+                    g.keys("Escape", delay=0.5)
+                    g.dismiss_error_popup()
+                except CalledProcessError as error:
+                    print(f"kept tmux game unavailable: {error.stderr or error}")
     if record:
         Path(record).write_text(json.dumps(timings, indent=1, sort_keys=True) + "\n")
         print(f"recorded {len(timings)} test durations to {record}")
