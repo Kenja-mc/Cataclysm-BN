@@ -15,6 +15,7 @@ from pathlib import Path
 
 from helpers import HELPERS, arena, save_and_quit, settle, start_new_game, wait_until
 from tmux_game import Game, in_game
+from vehicle_box import spawn_vehicle, vehicle_game
 
 EAST_DOOR = (1, 0)
 NORTH_DOOR = (0, -1)
@@ -193,6 +194,55 @@ def test_opening_the_attempted_door_clears_the_marker(_g):
         game.close()
 
 
+def _nearest_locked_vehicle_door(game):
+    """Find an OPENABLE+DOOR_LOCKING vehicle tile and return its offset from the vehicle origin."""
+    reported = game.lua(
+        "local o=gapi.get_avatar():get_pos_ms() local r={} "
+        "for dx=-3,3 do for dy=-3,3 do "
+        "local p=TripointBubMs.new(o.x+dx,o.y+dy,o.z) "
+        "if M:has_vehicle_part_with_feature_at(p,'DOOR_LOCKING') and "
+        "M:has_vehicle_part_with_feature_at(p,'OPENABLE') then r[#r+1]=dx..','..dy end "
+        "end end out(table.concat(r,';'))")
+    offsets = [tuple(int(value) for value in entry.split(",")) for entry in reported[0].split(";")
+               if entry]
+    assert offsets, "the spawned car has no locked door parts:\n" + game.screen()
+    return min(offsets, key=lambda offset: abs(offset[0]) + abs(offset[1]))
+
+
+def test_vehicle_locked_door_knowledge_follows_attempts(_g):
+    # Undamaged debug spawn: locked doors and a vehicle that still needs hotwiring.
+    game = vehicle_game("bn-e2e-known-locks-vehicle", CONTROL_SCHEME="classic")
+    try:
+        spawn_vehicle(game)
+        origin = abs_pos(game)
+        assert save_and_read_locks(game) == [], "an untried locked vehicle door must not be marked"
+
+        dx, dy = _nearest_locked_vehicle_door(game)
+        # Stand one tile west of the door and try to open it eastwards.
+        assert game.lua(
+            f"local o=gapi.get_avatar():get_pos_ms() "
+            f"local p=TripointBubMs.new(o.x+{dx - 1},o.y+{dy},o.z) "
+            f"gapi.get_avatar():set_pos_ms(p) out('ok')") == ["ok"]
+        settle(game)
+        game.keys("o", "l", delay=0.3)
+        assert wait_until(lambda: "is locked" in game.screen(), 10), game.screen()
+
+        door = LockTile(origin[0] + dx, origin[1] + dy, origin[2], "vehicle")
+        locks = save_and_read_locks(game)
+        assert locks == [door], f"only the attempted vehicle door should be remembered, got {locks}"
+
+        # Real bound fixture: replace with the same car without lock parts, then open for real.
+        assert game.lua(
+            "local v=M:get_vehicles()[1] local p=v:pos() "
+            "out(M:replace_vehicle(p,'car',{locks=false}))") == ["true"]
+        settle(game)
+        game.keys("o", "l", delay=0.3)
+        assert save_and_read_locks(game) == [], \
+            "successfully opening the unlocked vehicle door must clear the marker"
+    finally:
+        game.close()
+
+
 def _change_one_option_and_save(game):
     """Open the options menu, flip any visible boolean, save, and return the written options."""
     from options_menu import open_options
@@ -311,4 +361,5 @@ def analyse_known_lock_icons(off_png, on_png, attempted_tile, untried_tile, arti
 
 TESTS = [test_only_attempted_locked_door_is_remembered,
          test_opening_the_attempted_door_clears_the_marker,
+         test_vehicle_locked_door_knowledge_follows_attempts,
          test_lock_icon_option_follows_the_control_scheme]
