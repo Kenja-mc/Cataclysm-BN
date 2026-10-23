@@ -29,7 +29,11 @@ Creation dates: impact-sounds 2019-12-19; interface-sounds 2020-02-11; digital-a
 | reload | {weapon ids,default,start,end} | ui/click_00{1-5}.ogg, ui/toggle_00{1-4}.ogg |
 | melee_swing | {small_bash,big_bash,small_cutting,big_cutting,default} | impact/plank_medium/wood_heavy/wood_light/metal_heavy_00{0-4}.ogg |
 | melee_hit_flesh / melee_hit_metal | {small_bash,big_bash,small_cutting,big_cutting,default} | impact/punch_/glass_/metal_*_00{0-4}.ogg |
-| bullet_hit | hit_flesh/hit_wall/hit_metal | impact/soft_medium/plate_medium/metal_medium_00{0-4}.ogg |
+| bullet_hit | hit_flesh/hit_wall/hit_metal/hit_glass | impact/soft_medium/plate_medium/metal_medium/glass_light_00{0-4}.ogg |
+| smash_success | smash_glass_contents | impact/glass_light_00{0-4}.ogg |
+| smash_success | glass window, door, wall, roof and railing terrain ids (for example t_window, t_window_domestic, t_window_taped, t_door_glass_*, t_wall_glass*, t_glass_roof, t_glass_railing, t_laminated_*, t_ballistic_*, t_reinforced_*, t_tempered_*, t_curtains, t_vat) | impact/glass_medium_00{0-4}.ogg |
+| smash_success | glass window-frame, skylight-frame, floor-light and ceiling-light ids (t_window_frame*, t_skylight_frame, t_thconc_floor_olight, f_olight*) | impact/glass_light_00{0-4}.ogg |
+| smash_success | glass furniture ids (f_bigmirror, f_displaycase*, f_glass_cabinet, f_vending*, f_aut_gas_console, f_cloning_vat*) | impact/glass_medium_00{0-4}.ogg |
 | deal_damage | hurt_f/hurt_m | impact/punch_medium_00{0-4}.ogg |
 | mon_bite | bite_hit/bite_miss | impact/glass_light_00{0-4}.ogg / ui/scratch_00{1-5}.ogg |
 | melee_attack | monster_melee_hit | impact/punch_heavy_00{0-4}.ogg |
@@ -47,7 +51,14 @@ recordings that sound like them, and a wrong sound is worse than none.
 
 - Audio format: Ogg Vorbis, 44100 Hz, mono, quality 4 (downmixed from the stereo originals with ffmpeg).
 - musicset.json is intentionally empty: no licensed background music is included.
-- Gaps (no CC0 source in the selected packs): engine_start/engine_stop, vehicle part ids, plmove
-  vehicle-part variants, fatigue_* breathing sounds, radio static/inaudible_chatter, weather sounds,
-  explosions, bash/slash/smash, footstep legacy variants, player_laugh, tool/trap/speech sounds,
-  menu tab/scroll sounds.
+- Glass breaking is mapped for the engine's real events: `smash_success` with the bashed object's
+  terrain/furniture id (windows, glass doors, walls, floors and glass furniture), with
+  `smash_glass_contents` for shattered loose items and glass weapons, and `bullet_hit`/`hit_glass`
+  for thrown glass containers. `smash_success` deliberately has no `default` variant: the engine
+  falls back to `default` when a variant is missing, which would make wood, metal, door and vehicle
+  bashes play glass.
+- Gaps (no CC0 source in the selected packs, or the event is not glass breaking): engine_start/engine_stop,
+  vehicle part ids, plmove vehicle-part variants, fatigue_* breathing sounds, radio
+  static/inaudible_chatter, weather sounds, explosions, non-glass bash/slash/smash, `smash_fail`,
+  glass-shard trap sounds (`trap`/`glass*`), footstep legacy variants, player_laugh,
+  tool/speech sounds, menu tab/scroll sounds.
