@@ -98,7 +98,11 @@ message(STATUS "Build realm is: ${CMAKE_SYSTEM_NAME} ${CMAKE_HOST_SYSTEM_PROCESS
 if (LINKER)
     find_program(CATA_LINKER NAMES "${LINKER}" "ld.${LINKER}" NO_CACHE)
     if (CATA_LINKER)
-        add_link_options("-fuse-ld=${CATA_LINKER}")
+        if (IS_ABSOLUTE "${LINKER}")
+            add_link_options("--ld-path=${CATA_LINKER}")
+        else ()
+            add_link_options("-fuse-ld=${LINKER}")
+        endif ()
     else ()
         message(WARNING
             "LINKER=${LINKER} was requested but not found; using the compiler's default linker. "
