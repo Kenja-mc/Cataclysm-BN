@@ -216,6 +216,7 @@ struct mission_type {
         // Points of origin
         std::vector<mission_origin> origins;
         itype_id item_id = itype_id::NULL_ID();
+        std::string item_variant;
         item_group_id group_id;
         itype_id container_id = itype_id::NULL_ID();
         bool remove_container = false;

@@ -227,7 +227,7 @@
           },
           { "collection": [ { "item": "advanced_ecig" }, { "item": "nicotine_liquid" } ], "prob": 10 },
           {
-            "collection": [ { "item": "light_battery_cell", "charges": 100, "container-item": "dab_pen" }, { "item": "thc_liquid" } ],
+            "collection": [ { "item": "light_battery_cell", "charges": 150, "container-item": "dab_pen" }, { "item": "thc_liquid" } ],
             "prob": 10
           },
           { "collection": [ { "item": "crackpipe" }, { "item": "crack" } ], "prob": 5 }

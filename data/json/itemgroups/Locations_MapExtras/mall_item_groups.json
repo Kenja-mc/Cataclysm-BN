@@ -268,7 +268,7 @@
       [ "joint", 5 ],
       [ "candy3_weed", 5 ],
       [ "seed_weed", 5 ],
-      { "item": "light_battery_cell", "charges": 100, "container-item": "dab_pen", "prob": 3 },
+      { "item": "light_battery_cell", "charges": 150, "container-item": "dab_pen", "prob": 3 },
       [ "dab_pen_disposable", 3 ],
       [ "thc_liquid", 3 ],
       [ "thc_wax", 3 ]

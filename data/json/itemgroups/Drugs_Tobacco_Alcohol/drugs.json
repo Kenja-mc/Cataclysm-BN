@@ -131,7 +131,7 @@
       [ "pipe_glass", 50 ],
       [ "pipe_glass_bong", 50 ],
       { "item": "rolling_paper", "prob": 70, "charges": 32 },
-      { "item": "light_battery_cell", "charges": 100, "container-item": "dab_pen", "prob": 20 },
+      { "item": "light_battery_cell", "charges": 150, "container-item": "dab_pen", "prob": 20 },
       [ "nectar_collector", 10 ]
     ]
   },
@@ -143,7 +143,7 @@
       [ "joint", 50 ],
       [ "thc_liquid", 20 ],
       [ "thc_wax", 20 ],
-      { "item": "light_battery_cell", "charges": 100, "container-item": "dab_pen", "prob": 20 },
+      { "item": "light_battery_cell", "charges": 150, "container-item": "dab_pen", "prob": 20 },
       [ "dab_pen_disposable", 30 ],
       [ "candy3_weed", 20 ],
       { "group": "jar_weed", "prob": 100 }
@@ -245,7 +245,7 @@
       [ "handrolled_cig", 10 ],
       [ "ecig", 20 ],
       [ "dab_pen_disposable", 20 ],
-      { "item": "light_battery_cell", "charges": 100, "container-item": "dab_pen", "prob": 20 },
+      { "item": "light_battery_cell", "charges": 150, "container-item": "dab_pen", "prob": 20 },
       [ "advanced_ecig", 10 ]
     ]
   },

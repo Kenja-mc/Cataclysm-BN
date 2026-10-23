@@ -32,6 +32,7 @@
     "color": "yellow",
     "ammo_type": "battery",
     "capacity": 150,
+    "count": 150,
     "looks_like": "battery",
     "flags": [ "NO_SALVAGE", "NO_UNLOAD", "RECHARGE", "MAG_COMPACT" ]
   },
@@ -73,6 +74,7 @@
     "color": "yellow",
     "ammo_type": "battery",
     "capacity": 750,
+    "count": 750,
     "looks_like": "battery",
     "flags": [ "NO_SALVAGE", "NO_UNLOAD", "RECHARGE", "MAG_COMPACT" ]
   },
@@ -114,6 +116,7 @@
     "color": "yellow",
     "ammo_type": "battery",
     "capacity": 1500,
+    "count": 1500,
     "looks_like": "battery",
     "flags": [ "NO_SALVAGE", "NO_UNLOAD", "RECHARGE", "MAG_BULKY" ]
   },

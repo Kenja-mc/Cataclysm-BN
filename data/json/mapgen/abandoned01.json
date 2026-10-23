@@ -406,8 +406,11 @@
         "G": "f_oven",
         "H": "f_armchair"
       },
-      "place_items": [ { "item": "trash_forest", "x": [ 2, 21 ], "y": [ 5, 19 ], "chance": 80, "repeat": [ 0, 2 ] } ],
-      "place_item": [ { "item": "teddy", "x": 14, "y": 2 }, { "item": "jewelry_locket", "x": 14, "y": 2 } ],
+      "place_items": [
+        { "item": "trash_forest", "x": [ 2, 21 ], "y": [ 5, 19 ], "chance": 80, "repeat": [ 0, 2 ] },
+        { "item": "folded_silver_locket", "x": 14, "y": 2, "chance": 100 }
+      ],
+      "place_item": [ { "item": "teddy", "x": 14, "y": 2 } ],
       "place_vehicles": [ { "vehicle": "car", "x": 5, "y": 7, "chance": 80, "fuel": 0, "status": 1, "rotation": 0 } ]
     }
   },

@@ -64,9 +64,9 @@
       "place_items": [
         { "item": "gi", "x": [ 3, 11 ], "y": [ 18, 18 ], "chance": 80, "repeat": [ 5, 8 ] },
         { "item": "judo_belts", "x": [ 3, 11 ], "y": [ 18, 18 ], "chance": 80, "repeat": [ 1, 2 ] },
-        { "item": "dojo_manuals", "x": [ 17, 19 ], "y": [ 19, 19 ], "chance": 100 }
-      ],
-      "place_item": [ { "item": "judo_belt", "x": 17, "y": 18 } ]
+        { "item": "dojo_manuals", "x": [ 17, 19 ], "y": [ 19, 19 ], "chance": 100 },
+        { "item": "folded_judo_belt_black", "x": 17, "y": 18, "chance": 100 }
+      ]
     }
   },
   {

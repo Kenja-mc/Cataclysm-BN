@@ -173,19 +173,19 @@ static const std::string flag_SHOOT_ME( "SHOOT_ME" );
 // Maximum duration of aim-and-fire loop, in turns
 static constexpr int AIF_DURATION_LIMIT = 10;
 
-static projectile make_gun_projectile( const item &gun );
+static auto make_gun_projectile( const item &gun,
+                                 const std::set<ammo_effect_str_id> &effects ) -> projectile;
 
 namespace
 {
 
-/// Draws the round about to fire; it may be one of a stack's modified units (black powder and so on).
-auto next_round_modifier( item &gun ) -> std::optional<stack_modifier_id>
+/// Modifier counts live on the rounds in a detachable magazine, or on the integral magazine.
+auto next_round_source( item &gun ) -> item & // *NOPAD*
 {
     if( item *mag = gun.magazine_current(); mag && !mag->contents.empty() ) {
-        auto &round = mag->contents.front();
-        return stack_modifiers::take_one( round, round.charges );
+        return mag->contents.front();
     }
-    return stack_modifiers::take_one( gun, gun.charges );
+    return gun;
 }
 
 } // namespace
@@ -273,14 +273,14 @@ auto get_shot_target( const shot_target_options &options ) -> tripoint_bub_ms
     const auto dy = options.target.y() - options.source.y();
     auto rad = std::atan2( dy, dx );
     const auto dispersion_angle = units::to_radians( std::min( units::from_arcmin( aim.dispersion ),
-                                  30_degrees ) );
+        30_degrees ) );
     rad += ( one_in( 2 ) ? 1 : -1 ) * dispersion_angle;
 
     const auto no_overshoot = options.proj.has_effect( ammo_effect_NO_OVERSHOOT ) ||
                               ( g->critter_at( options.target ) == nullptr && get_map().passable( options.target ) );
     const auto offset = std::min<int>( range, std::sqrt( aim.missed_by_tiles ) );
     auto new_range = no_overshoot ? range + rng( -offset, offset ) : rng( range - offset,
-                     options.proj.range );
+        options.proj.range );
     new_range = std::max( new_range, 1 );
     shot_target.x() = options.source.x() + roll_remainder( new_range * std::cos( rad ) );
     shot_target.y() = options.source.y() + roll_remainder( new_range * std::sin( rad ) );
@@ -304,7 +304,7 @@ auto get_pellet_target( const pellet_target_options &options ) -> tripoint_bub_m
                                  1.0 );
     const auto base_angle = std::atan2( dy, dx );
     const auto angle_offset = units::to_radians( rng_float( units::from_degrees( -options.half_angle ),
-                              units::from_degrees( options.half_angle ) ) );
+        units::from_degrees( options.half_angle ) ) );
     const auto pellet_angle = base_angle + angle_offset;
 
     auto pellet_target = options.target;
@@ -329,7 +329,7 @@ auto get_projectile_animation_symbol( const projectile &proj ) -> char
 auto projectile_draws_as_line( const projectile &proj ) -> bool
 {
     return proj.has_effect( ammo_effect_DRAW_AS_LINE ) ||
-           get_option<bool>( "BULLETS_AS_LASERS" );
+    get_option<bool>( "BULLETS_AS_LASERS" );
 }
 
 auto add_grouped_shot_hit( std::vector<grouped_shot_hit> &grouped_hits,
@@ -968,7 +968,8 @@ int ranged::gun_engagement_moves( const Character &who, const item &gun, int tar
     return mv;
 }
 
-bool ranged::handle_gun_damage( Character &shooter, item &it )
+auto ranged::handle_gun_damage( Character &shooter, item &it,
+                                const std::set<ammo_effect_str_id> &curammo_effects ) -> bool
 {
     // Below item (maximum dirt possible) should be greater than or equal to dirt range in item_group.cpp. Also keep in mind that monster drops can have specific ranges and these should be below the max!
     const double dirt_max_dbl = 10000;
@@ -984,7 +985,6 @@ bool ranged::handle_gun_damage( Character &shooter, item &it )
         return false;
     }
 
-    const auto &curammo_effects = it.ammo_effects();
     // If using an aux magazine for a gun, make the parent gun accumulate and track fouling instead of the gunmod that's doing the firing.
     item &parent = ( it.parent_item() != nullptr &&
                      it.has_flag( flag_USE_PARENT_GUN ) ) ? *it.parent_item() : it;
@@ -1102,8 +1102,8 @@ bool ranged::handle_gun_damage( Character &shooter, item &it )
         if( !curammo_effects.contains( ammo_effect_NON_FOULING ) && !parent.has_flag( flag_NON_FOULING ) ) {
             if( dirt < static_cast<int>( dirt_max_dbl ) ) {
                 dirtadder = curammo_effects.count( ammo_effect_BLACKPOWDER ) * ( 200 -
-                            ( firing.blackpowder_tolerance *
-                              2 ) );
+                    ( firing.blackpowder_tolerance *
+                      2 ) );
                 // dirtadder is the dirt-increasing number for shots fired with gunpowder-based ammo. Usually dirt level increases by 1, unless it's blackpowder, in which case it increases by a higher number, but there is a reduction for blackpowder resistance of a weapon.
                 if( dirtadder < 0 ) {
                     dirtadder = 0;
@@ -1194,12 +1194,12 @@ auto is_mountable_nearby( const map &m, const tripoint_bub_ms &pos ) -> bool
 auto can_use_heavy_weapon( const Character &who, const map &m, const tripoint_bub_ms &pos ) -> bool
 {
     if( who.is_mounted() && who.mounted_creature->has_flag( MF_RIDEABLE_MECH ) ) {
-        return true;
-    }
-    if( who.movement_mode_is( CMM_PRONE ) ) {
-        return true;
-    }
-    return is_mountable_nearby( m, pos );
+    return true;
+}
+if( who.movement_mode_is( CMM_PRONE ) ) {
+    return true;
+}
+return is_mountable_nearby( m, pos );
 }
 
 } // namespace ranged
@@ -1258,9 +1258,9 @@ auto apply_gun_recoil_to_vehicle( map &here, const Character &who, const tripoin
     const auto vehicle_mass_kg = std::max( 1.0, static_cast<double>( units::to_kilogram(
             veh->total_mass() ) ) );
     const auto recoil_velocity = static_cast<int>( std::round( static_cast<double>( gun_recoil ) *
-                                 shots * vehicle_recoil_velocity_scale *
-                                 get_option<float>( "VEHICLE_GUN_RECOIL_FACTOR" ) /
-                                 vehicle_mass_kg ) );
+        shots * vehicle_recoil_velocity_scale *
+        get_option<float>( "VEHICLE_GUN_RECOIL_FACTOR" ) /
+        vehicle_mass_kg ) );
     if( recoil_velocity == 0 ) {
         return;
     }
@@ -1290,7 +1290,7 @@ auto apply_gun_recoil_to_vehicle( map &here, const Character &who, const tripoin
     const auto lateral_velocity = final_velocity.dot_product( lateral_velocity_vec );
     const auto should_skid = veh->skidding || std::abs( lateral_velocity ) >= 1.0;
     const auto resulting_velocity = static_cast<int>( std::round( should_skid ?
-                                    final_velocity.magnitude() : std::abs( face_velocity ) ) );
+        final_velocity.magnitude() : std::abs( face_velocity ) ) );
     if( resulting_velocity == 0 ) {
         veh->velocity = 0;
         return;
@@ -1419,7 +1419,7 @@ int ranged::fire_gun( Character &who, const tripoint_bub_ms &target, int max_sho
     int character_recoil = shape ? recoil_vehicle( who ) : recoil_total( who );
     // Penalty is (intentionally) based off mode shots, not ammo-limited.
     dispersion_sources dispersion = calculate_dispersion( here, who, gun, character_recoil,
-                                    max_shots > 1 );
+        max_shots > 1 );
 
     bool aoe_attack = gun.gun_skill() == skill_launcher || shape;
     auto aim = target;
@@ -1437,7 +1437,14 @@ int ranged::fire_gun( Character &who, const tripoint_bub_ms &target, int max_sho
             who.add_msg_if_player( _( "You cycle your %s manually." ), gun.tname() );
         }
 
-        if( !ranged::handle_gun_damage( who, gun ) ) {
+        auto *round_source = gun.ammo_required() ? &next_round_source( gun ) : nullptr;
+        const auto round_mod = round_source ?
+                               stack_modifiers::select_one( *round_source, round_source->charges ) : std::nullopt;
+        auto round_effects = gun.ammo_effects();
+        if( round_mod ) {
+            ( *round_mod )->apply_ammo_effects( round_effects );
+        }
+        if( !ranged::handle_gun_damage( who, gun, round_effects ) ) {
             break;
         }
 
@@ -1445,8 +1452,7 @@ int ranged::fire_gun( Character &who, const tripoint_bub_ms &target, int max_sho
         const vehicle *in_veh = who.has_effect( effect_on_roof )
                                 ? veh_pointer_or_null( here.veh_at( who.bub_pos() ) )
                                 : nullptr;
-        const auto round_mod = gun.ammo_required() ? next_round_modifier( gun ) : std::nullopt;
-        projectile projectile = make_gun_projectile( gun );
+        projectile projectile = make_gun_projectile( gun, round_effects );
         auto shot_dispersion = dispersion;
         round_recoil = 1.0f;
         if( round_mod ) {
@@ -1466,16 +1472,16 @@ int ranged::fire_gun( Character &who, const tripoint_bub_ms &target, int max_sho
             int base_damage = projectile_damage.amount;
             int base_penetrate = projectile_damage.res_pen;
             int ench_damage_bonus = who.bonus_from_enchantments( base_damage,
-                                    enchantment_value_id( "RANGED_DAMAGE_" + projectile_damage.get_internal_name() ) );
+                enchantment_value_id( "RANGED_DAMAGE_" + projectile_damage.get_internal_name() ) );
             int ench_penetrate_bonus = who.bonus_from_enchantments( base_damage,
-                                       enchantment_value_id( "RANGED_ARMOR_PENETRATION_" + projectile_damage.get_internal_name() ) );
+                enchantment_value_id( "RANGED_ARMOR_PENETRATION_" + projectile_damage.get_internal_name() ) );
             if( ench_damage_bonus != 0 || ench_penetrate_bonus != 0 ) {
                 projectile_damage.amount += ench_damage_bonus;
                 projectile_damage.res_pen += ench_penetrate_bonus;
             }
         }
         int ench_range_bonus = who.bonus_from_enchantments( projectile.range,
-                               enchantment_value_id( "RANGED_RANGE" ), true );
+            enchantment_value_id( "RANGED_RANGE" ), true );
         // Ensure range doesn't go below 1
         projectile.range = std::max( 1, projectile.range + ench_range_bonus );
 
@@ -1596,6 +1602,9 @@ int ranged::fire_gun( Character &who, const tripoint_bub_ms &target, int max_sho
             who.rem_morale( MORALE_PYROMANIA_NOFIRE );
         }
 
+        if( round_source ) {
+            stack_modifiers::consume_selected( *round_source, gun.ammo_required(), round_mod );
+        }
         if( gun.ammo_consume( gun.ammo_required(), who.bub_pos() ) != gun.ammo_required() ) {
             debugmsg( "Unexpected shortage of ammo whilst firing %s", gun.tname() );
             break;
@@ -1618,7 +1627,8 @@ int ranged::fire_gun( Character &who, const tripoint_bub_ms &target, int max_sho
         const Character &shooter = who;
         // Now actually apply recoil for the future shots
         // But only for one shot, because bursts kinda suck
-        int gun_recoil = gun.gun_recoil( ranged::can_use_heavy_weapon( shooter, here, shooter.bub_pos() ) ) *
+        int gun_recoil = gun.gun_recoil( ranged::can_use_heavy_weapon( shooter, here,
+            shooter.bub_pos() ) ) *
                          round_recoil;
 
         // If user is currently able to fire a mounted gun freely, penalize dispersion
@@ -1700,7 +1710,7 @@ int throw_cost( const Character &c, const item &to_throw )
 
     // First apply weapon enchant
     move_cost += to_throw.bonus_from_enchantments( c, move_cost,
-                 enchantment_value_id( "ITEM_THROW_ATTACK_COST" ), true );
+        enchantment_value_id( "ITEM_THROW_ATTACK_COST" ), true );
     // Then apply character enchant
     move_cost += c.bonus_from_enchantments( move_cost, enchantment_value_id( "THROW_ATTACK_COST" ),
                                             true );
@@ -1860,7 +1870,7 @@ int throwing_dispersion( const Character &c, const item &to_throw, Creature *cri
         // It's easier to dodge at close range (thrower needs to adjust more)
         // Dodge x10 at point blank, x5 at 1 dist, then flat
         float effective_dodge = critter->get_dodge() * std::max( 1, 10 - 5 * rl_dist( c.bub_pos(),
-                                critter->bub_pos() ) );
+            critter->bub_pos() ) );
         dispersion += throw_dispersion_per_dodge( c, true ) * effective_dodge;
     }
     // 1 perception per 1 eye encumbrance
@@ -2029,7 +2039,7 @@ dealt_projectile_attack throw_item( Character &who, const tripoint_bub_ms &targe
 
     Creature *critter = g->critter_at( target, true );
     const dispersion_sources dispersion( ranged::throwing_dispersion( who, thrown, critter,
-                                         blind_throw_from_pos.has_value() ) );
+            blind_throw_from_pos.has_value() ) );
     const itype *thrown_type = thrown.type;
 
     // Put the item into the projectile
@@ -2106,11 +2116,11 @@ static int print_steadiness( const catacurses::window &w, int line_number, doubl
 
     if( get_option<std::string>( "ACCURACY_DISPLAY" ) == "numbers" ) {
         std::string steadiness_s = string_format( "%s: %d%%", _( "Steadiness" ),
-                                   static_cast<int>( 100.0 * steadiness ) );
+            static_cast<int>( 100.0 * steadiness ) );
         mvwprintw( w, point( 1, line_number++ ), steadiness_s );
     } else {
         const std::string &steadiness_bar = get_labeled_bar( steadiness, window_width,
-                                            _( "Steadiness" ), '*' );
+            _( "Steadiness" ), '*' );
         mvwprintw( w, point( 1, line_number++ ), steadiness_bar );
     }
 
@@ -2254,7 +2264,7 @@ static int print_ranged_chance( const catacurses::window &w, int line_number,
                 t_confidence[( aim_iter * 4 ) + 3] = string_format( "<color_light_blue>%d</color>", moves_to_fire );
             } else {
                 print_colored_text( w, point( 1, line_number ), col, col, string_format( _( "%s %s:" ), label,
-                                    aim_l ) );
+                        aim_l ) );
                 right_print( w, line_number++, 1, c_light_blue, _( "Moves" ) );
                 right_print( w, line_number, 1, c_light_blue, string_format( "%d", moves_to_fire ) );
             }
@@ -2288,7 +2298,7 @@ static int print_ranged_chance( const catacurses::window &w, int line_number,
                     int chance = std::min<int>( 100, 100.0 * ( config.aim_level * confidence ) ) - last_chance;
                     last_chance += chance;
                     return string_format( "%s: <color_%s>%3d%%</color>", pgettext( "aim_confidence",
-                                          config.label.c_str() ), config.color, chance );
+                            config.label.c_str() ), config.color, chance );
                 }, enumeration_conjunction::none );
                 line_number += fold_and_print_from( w, point( 1, line_number ), window_width, 0,
                                                     c_dark_gray, confidence_s );
@@ -2302,8 +2312,8 @@ static int print_ranged_chance( const catacurses::window &w, int line_number,
             }
                           );
             const std::string &confidence_bar = get_colored_bar( confidence, window_width, "",
-                                                confidence_ratings.begin(),
-                                                confidence_ratings.end() );
+                confidence_ratings.begin(),
+                confidence_ratings.end() );
 
             print_colored_text( w, point( 1, line_number++ ), col, col, confidence_bar );
         }
@@ -2360,7 +2370,7 @@ static int print_aim( const Character &p, const catacurses::window &w, int line_
 
     const double min_recoil = ranged::calculate_aim_cap( p, pos );
     const double effective_recoil = ranged::effective_dispersion( p,
-                                    p.primary_weapon().sight_dispersion() );
+        p.primary_weapon().sight_dispersion() );
     const double min_dispersion = std::max( min_recoil, effective_recoil );
     const double steadiness_range = MAX_RECOIL - min_dispersion;
     // This is a relative measure of how steady the player's aim is,
@@ -2447,7 +2457,7 @@ std::vector<ranged::aim_type> ranged::get_aim_types( const Character &who, const
     };
     // Remove duplicate thresholds.
     std::vector<int>::iterator thresholds_it = std::adjacent_find( thresholds.begin(),
-            thresholds.end() );
+        thresholds.end() );
     while( thresholds_it != thresholds.end() ) {
         thresholds.erase( thresholds_it );
         thresholds_it = std::adjacent_find( thresholds.begin(), thresholds.end() );
@@ -2470,7 +2480,8 @@ std::vector<ranged::aim_type> ranged::get_aim_types( const Character &who, const
     return aim_types;
 }
 
-static projectile make_gun_projectile( const item &gun )
+static auto make_gun_projectile( const item &gun,
+                                 const std::set<ammo_effect_str_id> &effects ) -> projectile
 {
     projectile proj;
     proj.speed = gun.gun_speed();
@@ -2478,7 +2489,7 @@ static projectile make_gun_projectile( const item &gun )
     proj.range = gun.gun_range();
     proj.aimedcritbonus = gun.gun_aimed_crit_bonus();
     proj.aimedcritmaxbonus = gun.gun_aimed_crit_max_bonus();
-    for( const ammo_effect_str_id &ae_id : gun.ammo_effects() ) {
+    for( const auto &ae_id : effects ) {
         proj.add_effect( ae_id );
     }
 
@@ -2537,15 +2548,15 @@ int ranged::time_to_attack( const Character &p, const item &firing, const item *
         const int sta_percent = ( 100 * p.get_stamina() ) / p.get_stamina_max();
         const int reload_stamina_penalty = ( sta_percent < 25 ) ? ( ( 25 - sta_percent ) * 2 ) : 0;
         item_reload_option opt = item_reload_option( p.as_player(), const_cast<item *>( &firing ), &firing,
-                                 *const_cast<item *>( loc ) );
+            *const_cast<item *>( loc ) );
         RAS_time = opt.moves() + reload_stamina_penalty;
     }
     int base_time = std::max( info.min_time,
                               info.base_time - info.time_reduction_per_level * p.get_skill_level( skill_used ) + RAS_time );
     // Apply enchantment bonus to reload time
     int ench_reload_bonus = p.bonus_from_enchantments( base_time,
-                            enchantment_value_id( "RANGED_RELOAD_TIME" ),
-                            true );
+        enchantment_value_id( "RANGED_RELOAD_TIME" ),
+        true );
     // Ensure we don't go below minimum time even with enchantments
     return std::max( info.min_time, base_time + ench_reload_bonus );
 }
@@ -2834,7 +2845,7 @@ dispersion_sources ranged::get_weapon_dispersion( const Character &who, const it
     // Apply enchantment bonus to dispersion
     int base_dispersion = static_cast<int>( dispersion.max() );
     int ench_dispersion_bonus = who.bonus_from_enchantments( base_dispersion,
-                                enchantment_value_id( "RANGED_DISPERSION" ), true );
+        enchantment_value_id( "RANGED_DISPERSION" ), true );
     dispersion.add_range( ench_dispersion_bonus );
 
     return dispersion;
@@ -2963,7 +2974,7 @@ double ranged::recoil_total( const Character &who )
 {
     double base_recoil = who.recoil + recoil_vehicle( who );
     double ench_recoil_bonus = who.bonus_from_enchantments( base_recoil,
-                               enchantment_value_id( "RANGED_RECOIL" ) );
+        enchantment_value_id( "RANGED_RECOIL" ) );
     // Recoil cannot be negative
     return std::max( 0.0, base_recoil + ench_recoil_bonus );
 }
@@ -3063,7 +3074,7 @@ int burst_penalty( const Character &p, const item &gun, int gun_recoil )
     int skill_lvl = std::min( p.get_skill_level( gun.gun_skill() ), MAX_SKILL );
 
     return std::max<int>( 0, 3 * ( gun_recoil - dex_effect ) / std::max( 1.0f,
-                          str_effect + skill_lvl ) );
+            str_effect + skill_lvl ) );
 }
 
 } // namespace ranged
@@ -3583,7 +3594,7 @@ bool target_ui::set_cursor_pos( const tripoint_bub_ms &new_pos )
 
     if( mode == TargetMode::Shape || ( mode == TargetMode::Fire && shape_gen ) ) {
         std::shared_ptr<shape> sh = shape_gen->create( src.raw(), dst.raw() );
-        projectile proj = make_gun_projectile( *relevant );
+        projectile proj = make_gun_projectile( *relevant, relevant->ammo_effects() );
         // Same as in map::shoot (should probably be a function!)
         int expected_bash_force = std::accumulate( proj.impact.begin(), proj.impact.end(), 0.0,
         []( double acc, const damage_unit & du ) {
@@ -3632,7 +3643,8 @@ void target_ui::update_target_list()
         return it != ally_blocked.end() && it->second;
     };
 
-    std::ranges::sort( targets, {}, [&]( const Creature * c ) -> std::tuple<bool, bool, bool, bool, int> {
+    std::ranges::sort( targets, {}, [&]( const Creature * c ) ->
+    std::tuple<bool, bool, bool, bool, int> {
         const auto target_pos = c->bub_pos();
         const auto z_diff = std::abs( player_pos.z() - target_pos.z() );
         const auto is_hostile = c->attitude_to( *you ) == Attitude::A_HOSTILE;
@@ -3726,7 +3738,7 @@ void target_ui::update_status()
         // TODO: it might be some other error, but that's highly unlikely to happen, so a catch-all 'Out of ammo' is fine
         status = Status::OutOfAmmo;
     } else if( mode == TargetMode::TurretManual && ( turret->query() != turret_data::status::ready ||
-               !ranged::gunmode_checks_common( *you, get_map(), msgbuf, relevant->gun_current_mode() ) ) ) {
+            !ranged::gunmode_checks_common( *you, get_map(), msgbuf, relevant->gun_current_mode() ) ) ) {
         status = Status::OutOfAmmo;
     } else if( ( src == dst ) && !( mode == TargetMode::Spell &&
                                     casting->is_valid_target( valid_target::target_self ) ) ) {
@@ -4398,9 +4410,9 @@ void target_ui::draw_controls_list( int text_y )
     if( mode == TargetMode::Fire || mode == TargetMode::TurretManual || ( mode == TargetMode::Shape &&
             relevant->is_gun() ) ) {
         lines.push_back( { 5, colored( col_enabled, string_format( _( "[%c] to switch firing modes." ),
-                                       bound_key( "SWITCH_MODE" ) ) ) } );
+                bound_key( "SWITCH_MODE" ) ) ) } );
         lines.push_back( { 6, colored( col_enabled, string_format( _( "[%c] to switch ammo." ),
-                                       bound_key( "SWITCH_AMMO" ) ) ) } );
+                bound_key( "SWITCH_AMMO" ) ) ) } );
     }
     if( mode == TargetMode::Turrets ) {
         const std::string label = draw_turret_lines
@@ -4961,7 +4973,7 @@ double ranged::aim_per_move( const Character &who, const item &gun, double recoi
     // Apply enchantment bonus to aim speed
 
     double ench_aim_bonus = who.bonus_from_enchantments( aim_speed,
-                            enchantment_value_id( "RANGED_AIM_SPEED" ) );
+        enchantment_value_id( "RANGED_AIM_SPEED" ) );
 
     // To prevent a bug where aiming does not proceed at all because the aiming speed drops below the game's minimum limit (5.0) due to debuffs (such as Cursed Artifacts),
     // so applying the max value once more.
@@ -5034,7 +5046,7 @@ std::optional<shape_factory> ranged::get_target_shape_factory( const item &gun )
     }
 
     const auto preview_shape_impl = std::shared_ptr<shape_factory_impl>( std::make_shared<cone_factory>(
-                                        units::from_degrees( shot_data->half_angle ), gun.gun_range() ) );
+            units::from_degrees( shot_data->half_angle ), gun.gun_range() ) );
     const auto preview_shape = shape_factory( preview_shape_impl );
     return std::optional<shape_factory>( preview_shape );
 }

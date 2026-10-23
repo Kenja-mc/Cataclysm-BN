@@ -11,6 +11,7 @@
 #include "item.h"
 #include "item_contents.h"
 #include "item_group.h"
+#include "item_variant.h"
 #include "kill_tracker.h"
 #include "line.h"
 #include "material.h"
@@ -364,7 +365,13 @@ void mission::wrap_up()
 
         case MGOAL_FIND_ITEM:
             comps.emplace_back( type->item_id, item_count );
-            u.consume_items( comps );
+            u.consume_items( comps, 1, [this]( const item & it ) {
+                if( type->item_variant.empty() ) {
+                    return true;
+                }
+                const auto *variant = item_variants::of( it );
+                return variant && variant->id == type->item_variant;
+            } );
             break;
         case MGOAL_FIND_ANY_ITEM:
             u.remove_mission_items( uid );
@@ -426,9 +433,16 @@ bool mission::is_complete( const character_id &_npc_id ) const
                 return false;
             }
             const inventory &tmp_inv = u.crafting_inventory();
-            // TODO: check for count_by_charges and use appropriate player::has_* function
-            if( !tmp_inv.has_amount( type->item_id, item_count ) ) {
-                return tmp_inv.has_amount( type->item_id, 1 ) && tmp_inv.has_charges( type->item_id, item_count );
+            const auto matches_variant = [this]( const item & it ) {
+                if( type->item_variant.empty() ) {
+                    return true;
+                }
+                const auto *variant = item_variants::of( it );
+                return variant && variant->id == type->item_variant;
+            };
+            if( !tmp_inv.has_amount( type->item_id, item_count, true, matches_variant ) ) {
+                return tmp_inv.has_amount( type->item_id, 1, true, matches_variant ) &&
+                       tmp_inv.charges_of( type->item_id, item_count, matches_variant ) >= item_count;
             }
         }
         return true;

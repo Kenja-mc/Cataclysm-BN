@@ -8,6 +8,9 @@
     "armor_penetration": 0.5,
     "dispersion": 1.2,
     "recoil": 0.76,
-    "blocks_disassembly": true
+    "price": 0.5,
+    "price_postapoc": 0.5,
+    "ammo_effects": [ "RECYCLED", "BLACKPOWDER", "MUZZLE_SMOKE" ],
+    "remove_ammo_effects": [ "NEVER_MISFIRES" ]
   }
 ]

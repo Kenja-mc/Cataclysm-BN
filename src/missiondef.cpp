@@ -12,6 +12,7 @@
 #include "generic_factory.h"
 #include "init.h"
 #include "item.h"
+#include "item_variant.h"
 #include "json.h"
 #include "npc.h"
 #include "type_id_implement.h"
@@ -249,6 +250,7 @@ void mission_type::load( const JsonObject &jo, const std::string &src )
     optional( jo, was_loaded, "description", description );
     optional( jo, was_loaded, "urgent", urgent );
     optional( jo, was_loaded, "item", item_id, itype_id::NULL_ID() );
+    optional( jo, was_loaded, "item_variant", item_variant );
     optional( jo, was_loaded, "item_group", group_id );
     optional( jo, was_loaded, "count", item_count, 1 );
     optional( jo, was_loaded, "required_container", container_id, itype_id::NULL_ID() );
@@ -320,6 +322,10 @@ void mission_type::check_consistency()
     for( const auto &m : get_all() ) {
         if( !m.item_id.is_empty() && !m.item_id.is_valid() ) {
             debugmsg( "Mission %s has undefined item id %s", m.id.c_str(), m.item_id.c_str() );
+        }
+        if( !m.item_variant.empty() && !item_variants::find( m.item_id, m.item_variant ) ) {
+            debugmsg( "Mission %s has undefined item variant %s for %s", m.id.c_str(),
+                      m.item_variant.c_str(), m.item_id.c_str() );
         }
         // 40 is an arbitrary limit, but it's enough to convey the meaning.
         // Any extra details and such belong in the 'description' field.

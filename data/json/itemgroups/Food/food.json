@@ -777,7 +777,32 @@
     "type": "item_group",
     "id": "MRE",
     "subtype": "distribution",
-    "entries": [ { "item": "mre_ration", "prob": 2400 } ]
+    "entries": [
+      { "item": "mre_ration", "variant": "mre_chilibeans" },
+      { "item": "mre_ration", "variant": "mre_bbqbeef" },
+      { "item": "mre_ration", "variant": "mre_chickennoodle" },
+      { "item": "mre_ration", "variant": "mre_spaghetti" },
+      { "item": "mre_ration", "variant": "mre_chicken" },
+      { "item": "mre_ration", "variant": "mre_beeftaco" },
+      { "item": "mre_ration", "variant": "mre_beef" },
+      { "item": "mre_ration", "variant": "mre_meatball" },
+      { "item": "mre_ration", "variant": "mre_beefstew" },
+      { "item": "mre_ration", "variant": "mre_chilimac" },
+      { "item": "mre_ration", "variant": "mre_veggy" },
+      { "item": "mre_ration", "variant": "mre_macaronimarinara" },
+      { "item": "mre_ration", "variant": "mre_cheesetort" },
+      { "item": "mre_ration", "variant": "mre_mushroomfettuccine" },
+      { "item": "mre_ration", "variant": "mre_mexicanchickenstew" },
+      { "item": "mre_ration", "variant": "mre_maplesausage" },
+      { "item": "mre_ration", "variant": "mre_ravioli" },
+      { "item": "mre_ration", "variant": "mre_hashbrownbacon" },
+      { "item": "mre_ration", "variant": "mre_lemontuna" },
+      { "item": "mre_ration", "variant": "mre_asianbeef" },
+      { "item": "mre_ration", "variant": "mre_chickenpesto" },
+      { "item": "mre_ration", "variant": "mre_southwestbeef" },
+      { "item": "mre_ration", "variant": "mre_hotdog" },
+      { "item": "mre_ration", "variant": "mre_omelette" }
+    ]
   },
   {
     "type": "item_group",

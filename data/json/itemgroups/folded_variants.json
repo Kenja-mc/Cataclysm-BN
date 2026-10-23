@@ -1,0 +1,176 @@
+[
+  {
+    "type": "item_group",
+    "id": "folded_battleship",
+    "subtype": "collection",
+    "entries": [ { "item": "board_game", "variant": "battleship" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_catan",
+    "subtype": "collection",
+    "entries": [ { "item": "tabletop_game", "variant": "catan" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_clue",
+    "subtype": "collection",
+    "entries": [ { "item": "board_game", "variant": "clue" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_diamond_ring",
+    "subtype": "collection",
+    "entries": [ { "item": "jewelry_ring", "variant": "diamond_ring" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_dnd",
+    "subtype": "collection",
+    "entries": [ { "item": "tabletop_game", "variant": "dnd" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_essay_book",
+    "subtype": "collection",
+    "entries": [ { "item": "paperback", "variant": "essay_book" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_g_warhammer",
+    "subtype": "collection",
+    "entries": [ { "item": "tabletop_game", "variant": "g_warhammer" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_g_warhammer40k",
+    "subtype": "collection",
+    "entries": [ { "item": "tabletop_game", "variant": "g_warhammer40k" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_judo_belt_black",
+    "subtype": "collection",
+    "entries": [ { "item": "judo_belt", "variant": "judo_belt_black" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_judo_belt_blue",
+    "subtype": "collection",
+    "entries": [ { "item": "judo_belt", "variant": "judo_belt_blue" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_judo_belt_orange",
+    "subtype": "collection",
+    "entries": [ { "item": "judo_belt", "variant": "judo_belt_orange" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_mre_beef_box",
+    "subtype": "collection",
+    "entries": [ { "item": "mre_ration", "variant": "mre_beef" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_mre_chicken_box",
+    "subtype": "collection",
+    "entries": [ { "item": "mre_ration", "variant": "mre_chicken" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_mre_hashbrownbacon_box",
+    "subtype": "collection",
+    "entries": [ { "item": "mre_ration", "variant": "mre_hashbrownbacon" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_mre_hotdog_box",
+    "subtype": "collection",
+    "entries": [ { "item": "mre_ration", "variant": "mre_hotdog" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_mre_macaronimarinara_box",
+    "subtype": "collection",
+    "entries": [ { "item": "mre_ration", "variant": "mre_macaronimarinara" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_mre_meatball_box",
+    "subtype": "collection",
+    "entries": [ { "item": "mre_ration", "variant": "mre_meatball" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_mre_ravioli_box",
+    "subtype": "collection",
+    "entries": [ { "item": "mre_ration", "variant": "mre_ravioli" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_mre_veggy_box",
+    "subtype": "collection",
+    "entries": [ { "item": "mre_ration", "variant": "mre_veggy" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_novel_crime",
+    "subtype": "collection",
+    "entries": [ { "item": "paperback", "variant": "novel_crime" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_novel_erotic",
+    "subtype": "collection",
+    "entries": [ { "item": "paperback", "variant": "novel_erotic" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_novel_experimental",
+    "subtype": "collection",
+    "entries": [ { "item": "paperback", "variant": "novel_experimental" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_novel_fantasy",
+    "subtype": "collection",
+    "entries": [ { "item": "paperback", "variant": "novel_fantasy" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_novel_horror",
+    "subtype": "collection",
+    "entries": [ { "item": "paperback", "variant": "novel_horror" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_novel_sports",
+    "subtype": "collection",
+    "entries": [ { "item": "paperback", "variant": "novel_sports" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_novel_thriller",
+    "subtype": "collection",
+    "entries": [ { "item": "paperback", "variant": "novel_thriller" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_pictionary",
+    "subtype": "collection",
+    "entries": [ { "item": "board_game", "variant": "pictionary" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_poetry_book",
+    "subtype": "collection",
+    "entries": [ { "item": "paperback", "variant": "poetry_book" } ]
+  },
+  {
+    "type": "item_group",
+    "id": "folded_silver_locket",
+    "subtype": "collection",
+    "entries": [ { "item": "jewelry_locket", "variant": "silver_locket" } ]
+  }
+]

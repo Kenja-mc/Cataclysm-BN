@@ -701,20 +701,20 @@
     "id": "ammo_light_batteries",
     "subtype": "distribution",
     "entries": [
-      { "item": "light_battery_cell", "prob": 25, "charges-min": 0, "charges-max": 100 },
-      { "item": "light_battery_cell", "prob": 12, "charges-min": 0, "charges-max": 50 },
+      { "item": "light_battery_cell", "prob": 25, "charges-min": 0, "charges-max": 150 },
+      { "item": "light_battery_cell", "prob": 12, "charges-min": 0, "charges-max": 150 },
       { "item": "light_battery_cell", "prob": 9, "charges-min": 0, "charges-max": 150 },
-      { "item": "light_battery_cell", "prob": 50, "charges-min": 0, "charges-max": 300 }
+      { "item": "light_battery_cell", "prob": 50, "charges-min": 0, "charges-max": 150 }
     ]
   },
   {
     "type": "item_group",
     "id": "ammo_light_batteries_full",
     "items": [
-      { "item": "light_battery_cell", "prob": 25, "charges-min": 100, "charges-max": 100 },
-      { "item": "light_battery_cell", "prob": 12, "charges-min": 50, "charges-max": 50 },
+      { "item": "light_battery_cell", "prob": 25, "charges-min": 150, "charges-max": 150 },
+      { "item": "light_battery_cell", "prob": 12, "charges-min": 150, "charges-max": 150 },
       { "item": "light_battery_cell", "prob": 9, "charges-min": 150, "charges-max": 150 },
-      { "item": "light_battery_cell", "prob": 50, "charges-min": 300, "charges-max": 300 }
+      { "item": "light_battery_cell", "prob": 50, "charges-min": 150, "charges-max": 150 }
     ]
   },
   {
@@ -722,9 +722,9 @@
     "id": "ammo_medium_batteries",
     "subtype": "distribution",
     "entries": [
-      { "item": "medium_battery_cell", "prob": 40, "charges-min": 0, "charges-max": 500 },
+      { "item": "medium_battery_cell", "prob": 40, "charges-min": 0, "charges-max": 750 },
       { "item": "medium_battery_cell", "prob": 10, "charges-min": 0, "charges-max": 750 },
-      { "item": "medium_battery_cell", "prob": 80, "charges-min": 0, "charges-max": 1500 }
+      { "item": "medium_battery_cell", "prob": 80, "charges-min": 0, "charges-max": 750 }
     ]
   },
   {
@@ -732,9 +732,9 @@
     "id": "ammo_medium_batteries_full",
     "subtype": "distribution",
     "entries": [
-      { "item": "medium_battery_cell", "prob": 40, "charges-min": 500, "charges-max": 500 },
+      { "item": "medium_battery_cell", "prob": 40, "charges-min": 750, "charges-max": 750 },
       { "item": "medium_battery_cell", "prob": 10, "charges-min": 750, "charges-max": 750 },
-      { "item": "medium_battery_cell", "prob": 80, "charges-min": 1500, "charges-max": 1500 }
+      { "item": "medium_battery_cell", "prob": 80, "charges-min": 750, "charges-max": 750 }
     ]
   },
   {
@@ -742,9 +742,9 @@
     "id": "ammo_heavy_batteries",
     "subtype": "distribution",
     "entries": [
-      { "item": "heavy_battery_cell", "prob": 40, "charges-min": 0, "charges-max": 1000 },
+      { "item": "heavy_battery_cell", "prob": 40, "charges-min": 0, "charges-max": 1500 },
       { "item": "heavy_battery_cell", "prob": 10, "charges-min": 0, "charges-max": 1500 },
-      { "item": "heavy_battery_cell", "prob": 80, "charges-min": 0, "charges-max": 3000 }
+      { "item": "heavy_battery_cell", "prob": 80, "charges-min": 0, "charges-max": 1500 }
     ]
   },
   {
@@ -752,9 +752,9 @@
     "id": "ammo_heavy_batteries_full",
     "subtype": "distribution",
     "entries": [
-      { "item": "heavy_battery_cell", "prob": 40, "charges-min": 1000, "charges-max": 1000 },
+      { "item": "heavy_battery_cell", "prob": 40, "charges-min": 1500, "charges-max": 1500 },
       { "item": "heavy_battery_cell", "prob": 10, "charges-min": 1500, "charges-max": 1500 },
-      { "item": "heavy_battery_cell", "prob": 80, "charges-min": 3000, "charges-max": 3000 }
+      { "item": "heavy_battery_cell", "prob": 80, "charges-min": 1500, "charges-max": 1500 }
     ]
   },
   {
