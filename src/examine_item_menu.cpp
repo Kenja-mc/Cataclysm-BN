@@ -63,6 +63,15 @@ bool run(
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
 
+    // The list is driven by hand below, so uilist's built-in mouse handling never runs; answer
+    // the modern scheme's mouse here instead. Classic keeps keyboard-only navigation.
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+    }
+
     int info_area_scroll_pos = 0;
     constexpr int info_area_scroll_step = 3;
     temperature_flag temperature = rot::temp::for_location( get_map(), itm );
@@ -361,6 +370,31 @@ bool run(
         ui_manager::redraw();
 
         const std::string &action = ctxt.handle_input();
+
+        if( modern && action == "SELECT" ) {
+            if( const auto mouse = ctxt.get_coordinates( action_list.window ) ) {
+                const auto cell = mouse->xy().raw() + point( getmaxx( action_list.window ),
+                                  getmaxy( action_list.window ) ) / 2;
+                // Drop, throw and friends are destructive, so the first click on a row only
+                // selects it; clicking the already selected row again runs its action.
+                for( size_t i = 0; i < action_list.entries.size(); ++i ) {
+                    const auto &entry = action_list.entries[i];
+                    if( !entry.drawn_rect || !entry.drawn_rect->contains( cell ) ||
+                        !entry.enabled ) {
+                        continue;
+                    }
+                    if( selected_action != static_cast<int>( i ) ) {
+                        selected_action = static_cast<int>( i );
+                        action_list.set_selected( selected_action );
+                    } else {
+                        ret_val = actions[selected_action].on_select();
+                        exit = true;
+                    }
+                    break;
+                }
+                continue;
+            }
+        }
 
         if( action == "QUIT" || action == "LEFT" ) {
             ret_val = false;
