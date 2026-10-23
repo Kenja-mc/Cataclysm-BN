@@ -19,12 +19,14 @@
 #include "json.h"
 #include "map/mapdata.h"
 #include "messages.h"
+#include "options.h"
 #include "output.h"
 #include "player.h"
 #include "player_activity.h"
 #include "point.h"
 #include "relic.h"
 #include "requirements.h"
+#include "scrollbar_input.h"
 #include "skill.h"
 #include "string_formatter.h"
 #include "string_utils.h"
@@ -36,6 +38,7 @@
 
 #include <algorithm>
 #include <numeric>
+#include <optional>
 #include <ranges>
 #include <string>
 #include <type_traits>
@@ -169,6 +172,11 @@ auto enchantment_selector_menu(std::vector<enchant_info> options, Character& use
     ctxt.register_action("PAGE_UP", to_translation("Fast scroll up"));
     ctxt.register_action("PAGE_DOWN", to_translation("Fast scroll down"));
     ctxt.register_action("HELP_KEYBINDINGS");
+    if (get_option<std::string>("CONTROL_SCHEME") == "modern") {
+        ctxt.register_action("MOUSE_MOVE");
+        ctxt.register_action("SELECT");
+        ctxt.register_action("SEC_SELECT");
+    }
 
     ui.on_screen_resize([&](ui_adaptor& ui) {
         width = TERMX / 2 - 2;
@@ -184,6 +192,7 @@ auto enchantment_selector_menu(std::vector<enchant_info> options, Character& use
     std::vector<std::string> names;
     for (const auto& ench_info : options) { names.push_back(ench_info.name); }
     int line = 0;
+    int last_clicked_ench = -1;
     int names_scroll_min = 0;
     int names_scroll_max = 0;
     int info_lines = 0;
@@ -234,7 +243,87 @@ auto enchantment_selector_menu(std::vector<enchant_info> options, Character& use
     while (true) {
         ui_manager::redraw();
         const int scroll_info_lines = catacurses::getmaxy(w_info) - 4;
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        const bool mouse_select = get_option<std::string>("CONTROL_SCHEME") == "modern"
+                                  && action == "SELECT";
+        if (mouse_select) {
+            const auto cell_in = [&](const catacurses::window& win) -> std::optional<point> {
+                const auto mouse = ctxt.get_coordinates(win);
+                if (!mouse) { return std::nullopt; }
+                const auto cell = mouse->xy().raw() + point(getmaxx(win), getmaxy(win)) / 2;
+                if (cell.x < 0 || cell.y < 0 || cell.x >= getmaxx(win) || cell.y >= getmaxy(win)) {
+                    return std::nullopt;
+                }
+                return cell;
+            };
+            action.clear();
+            bool consumed = false;
+            if (const auto cell = cell_in(w_ench)) {
+                if (const auto hit = scrollbar_input::click(
+                scrollbar_input::geometry{
+                    .offset = point(width, 0),
+                    .viewport_size = TERMY,
+                    .content_size = num_options,
+                    .viewport_pos = line,
+                    .scroll_to_last = true,
+                }, *cell)) {
+                    line = std::clamp(hit->viewport_pos, 0, std::max(0, num_options - 1));
+                    consumed = true;
+                }
+            }
+            if (!consumed) {
+                if (const auto cell = cell_in(w_info)) {
+                    if (num_options > 0 && info_lines > height) {
+                        // Long info text is drawn last, on top of the list mirror.
+                        if (const auto hit = scrollbar_input::click(
+                        scrollbar_input::geometry{
+                            .offset = point(width, 0),
+                            .viewport_size = TERMY,
+                            .content_size = info_lines,
+                            .viewport_pos = info_scroll,
+                            .scroll_to_last = false,
+                        }, *cell)) {
+                            info_scroll = hit->viewport_pos;
+                            consumed = true;
+                        }
+                    } else if (const auto hit = scrollbar_input::click(
+                    scrollbar_input::geometry{
+                        .offset = point(width, 0),
+                        .viewport_size = height,
+                        .content_size = num_options,
+                        .viewport_pos = line,
+                        .scroll_to_last = true,
+                    }, *cell)) {
+                        line = std::clamp(hit->viewport_pos, 0, std::max(0, num_options - 1));
+                        consumed = true;
+                    }
+                }
+            }
+            if (consumed) {
+                // A scrollbar click never applies an enchantment.
+                last_clicked_ench = -1;
+            } else if (const auto cell = cell_in(w_ench)) {
+                const int row = names_scroll_min + (cell->y - 1);
+                if (cell->y >= 1 && cell->y <= height && cell->x >= 1 && cell->x < width &&
+                    row >= 0 && row < num_options) {
+                    if (row == line && last_clicked_ench == row) {
+                        // Second click on the same row performs the keyboard action.
+                        action = "CONFIRM";
+                        last_clicked_ench = -1;
+                    } else {
+                        line = row;
+                        info_scroll = 0;
+                        last_clicked_ench = row;
+                    }
+                } else {
+                    last_clicked_ench = -1;
+                }
+            } else {
+                last_clicked_ench = -1;
+            }
+        } else {
+            last_clicked_ench = -1;
+        }
         if (action == "PAGE_UP") {
             info_scroll -= scroll_info_lines;
             if (info_scroll < 0) { info_scroll = info_lines; }

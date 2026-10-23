@@ -1202,7 +1202,7 @@ void uilist::query( bool loop, int timeout )
                         break;
                     }
                     if( !handled_click && !row_click && ret_act == "SELECT" && callback != nullptr ) {
-                        callback->mouse( this, ctxt, event, cell );
+                        callback->mouse( this, cell );
                     }
                 }
             }

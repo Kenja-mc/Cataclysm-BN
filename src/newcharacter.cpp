@@ -63,6 +63,7 @@
 #include "recipe_dictionary.h"
 #include "rng.h"
 #include "scenario.h"
+#include "scrollbar_input.h"
 #include "sdltiles.h"
 #include "skill.h"
 #include "start_location.h"
@@ -1253,6 +1254,7 @@ tab_direction set_stats( avatar &u, points_left &points )
 tab_direction set_traits( avatar &u, points_left &points )
 {
     const int max_trait_points = get_option<int>( "MAX_TRAIT_POINTS" );
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
 
     // Track how many good / bad POINTS we have; cap both at MAX_TRAIT_POINTS
     int num_good = 0;
@@ -1342,7 +1344,9 @@ tab_direction set_traits( avatar &u, points_left &points )
     int iCurWorkingPage = 0;
     int iStartPos[3] = { 0, 0, 0 };
     int iCurrentLine[3] = { 0, 0, 0 };
+    int last_clicked_line[3] = { -1, -1, -1 };
     size_t traits_size[3];
+    const size_t *click_sizes = traits_size;
     for( int i = 0; i < 3; i++ ) {
         traits_size[i] = vStartingTraits[i].size();
     }
@@ -1410,6 +1414,11 @@ tab_direction set_traits( avatar &u, points_left &points )
     ctxt.register_action( "REROLL_CHARACTER_WITH_SCENARIO" );
     ctxt.register_action( "REROLL_APPEARANCE" );
     ctxt.register_action( "QUIT" );
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
 #if defined(TILES)
     ctxt.register_action( "zoom_in" );
     ctxt.register_action( "zoom_out" );
@@ -1530,7 +1539,60 @@ tab_direction set_traits( avatar &u, points_left &points )
 
     do {
         ui_manager::redraw();
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        const bool mouse_select = modern && action == "SELECT";
+        if( mouse_select ) {
+            // get_coordinates() is relative to the window centre.
+            const auto mouse = ctxt.get_coordinates( w );
+            const auto cell = mouse ? std::optional<point>(
+                                  mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2 ) :
+                              std::nullopt;
+            action.clear();
+            bool consumed = false;
+            const int content_height = static_cast<int>( iContentHeight );
+            for( int page = 0; cell && page < used_pages; ++page ) {
+                if( const auto hit = scrollbar_input::click(
+                scrollbar_input::geometry{
+                    .offset = point( static_cast<int>( page_width ) * page, 5 ),
+                    .viewport_size = content_height,
+                    .content_size = static_cast<int>( click_sizes[page] ),
+                    .viewport_pos = iCurrentLine[page],
+                    .scroll_to_last = true,
+                }, *cell ) ) {
+                    iCurWorkingPage = page;
+                    iCurrentLine[page] = std::clamp( hit->viewport_pos, 0,
+                                                    std::max( 0, static_cast<int>( click_sizes[page] ) - 1 ) );
+                    consumed = true;
+                    break;
+                }
+            }
+            if( cell && !consumed && cell->y >= 5 && cell->y < 5 + content_height ) {
+                const int page = cell->x / static_cast<int>( page_width );
+                if( page >= 0 && page < used_pages ) {
+                    const int row = iStartPos[page] + ( cell->y - 5 );
+                    if( row >= 0 && row < static_cast<int>( click_sizes[page] ) ) {
+                        if( page == iCurWorkingPage && row == iCurrentLine[page] &&
+                            last_clicked_line[page] == row ) {
+                            // Second click on the same row performs the keyboard action.
+                            action = "CONFIRM";
+                            last_clicked_line[page] = -1;
+                        } else {
+                            iCurWorkingPage = page;
+                            iCurrentLine[page] = row;
+                            last_clicked_line[page] = row;
+                        }
+                    } else {
+                        last_clicked_line[page] = -1;
+                    }
+                }
+            }
+            if( consumed ) {
+                last_clicked_line[0] = last_clicked_line[1] = last_clicked_line[2] = -1;
+            }
+        } else {
+            // Keyboard navigation and page switches invalidate the click pair.
+            last_clicked_line[0] = last_clicked_line[1] = last_clicked_line[2] = -1;
+        }
 #if defined(TILES)
         if( action == "zoom_in" && use_character_preview ) {
             character_preview.zoom_in();
@@ -1705,6 +1767,7 @@ tab_direction set_traits( avatar &u, points_left &points )
 tab_direction set_bionics( avatar &u, points_left &points )
 {
     const int max_trait_points = get_option<int>( "MAX_TRAIT_POINTS" );
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
 
     // Track how many good / bad POINTS we have; cap both at MAX_TRAIT_POINTS
     int num_good = 0;
@@ -1781,7 +1844,9 @@ tab_direction set_bionics( avatar &u, points_left &points )
     int iCurWorkingPage = 0;
     int iStartPos[3] = { 0, 0, 0 };
     int iCurrentLine[3] = { 0, 0, 0 };
+    int last_clicked_line[3] = { -1, -1, -1 };
     size_t bionics_size[3];
+    const size_t *click_sizes = bionics_size;
     for( int i = 0; i < 3; i++ ) {
         bionics_size[i] = vStartingBionics[i].size();
     }
@@ -1849,6 +1914,11 @@ tab_direction set_bionics( avatar &u, points_left &points )
     ctxt.register_action( "REROLL_CHARACTER_WITH_SCENARIO" );
     ctxt.register_action( "REROLL_APPEARANCE" );
     ctxt.register_action( "QUIT" );
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
 #if defined(TILES)
     ctxt.register_action( "zoom_in" );
     ctxt.register_action( "zoom_out" );
@@ -1969,7 +2039,60 @@ tab_direction set_bionics( avatar &u, points_left &points )
 
     do {
         ui_manager::redraw();
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        const bool mouse_select = modern && action == "SELECT";
+        if( mouse_select ) {
+            // get_coordinates() is relative to the window centre.
+            const auto mouse = ctxt.get_coordinates( w );
+            const auto cell = mouse ? std::optional<point>(
+                                  mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2 ) :
+                              std::nullopt;
+            action.clear();
+            bool consumed = false;
+            const int content_height = static_cast<int>( iContentHeight );
+            for( int page = 0; cell && page < used_pages; ++page ) {
+                if( const auto hit = scrollbar_input::click(
+                scrollbar_input::geometry{
+                    .offset = point( static_cast<int>( page_width ) * page, 5 ),
+                    .viewport_size = content_height,
+                    .content_size = static_cast<int>( click_sizes[page] ),
+                    .viewport_pos = iCurrentLine[page],
+                    .scroll_to_last = true,
+                }, *cell ) ) {
+                    iCurWorkingPage = page;
+                    iCurrentLine[page] = std::clamp( hit->viewport_pos, 0,
+                                                    std::max( 0, static_cast<int>( click_sizes[page] ) - 1 ) );
+                    consumed = true;
+                    break;
+                }
+            }
+            if( cell && !consumed && cell->y >= 5 && cell->y < 5 + content_height ) {
+                const int page = cell->x / static_cast<int>( page_width );
+                if( page >= 0 && page < used_pages ) {
+                    const int row = iStartPos[page] + ( cell->y - 5 );
+                    if( row >= 0 && row < static_cast<int>( click_sizes[page] ) ) {
+                        if( page == iCurWorkingPage && row == iCurrentLine[page] &&
+                            last_clicked_line[page] == row ) {
+                            // Second click on the same row performs the keyboard action.
+                            action = "CONFIRM";
+                            last_clicked_line[page] = -1;
+                        } else {
+                            iCurWorkingPage = page;
+                            iCurrentLine[page] = row;
+                            last_clicked_line[page] = row;
+                        }
+                    } else {
+                        last_clicked_line[page] = -1;
+                    }
+                }
+            }
+            if( consumed ) {
+                last_clicked_line[0] = last_clicked_line[1] = last_clicked_line[2] = -1;
+            }
+        } else {
+            // Keyboard navigation and page switches invalidate the click pair.
+            last_clicked_line[0] = last_clicked_line[1] = last_clicked_line[2] = -1;
+        }
 #if defined(TILES)
         if( action == "zoom_in" && use_character_preview ) {
             character_preview.zoom_in();
@@ -2218,6 +2341,8 @@ tab_direction set_profession( avatar &u, points_left &points,
     int desc_offset = 0;
     int iContentHeight = 0;
     int iStartPos = 0;
+    int last_clicked_prof = -1;
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
 
     ui_adaptor ui;
     catacurses::window w;
@@ -2273,6 +2398,11 @@ tab_direction set_profession( avatar &u, points_left &points,
     ctxt.register_action( "RANDOMIZE" );
     ctxt.register_action( "FILTER" );
     ctxt.register_action( "QUIT" );
+    if( modern ) {
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
 
     bool recalc_profs = true;
     int profs_length = 0;
@@ -2596,7 +2726,54 @@ tab_direction set_profession( avatar &u, points_left &points,
         }
 
         ui_manager::redraw();
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        const bool mouse_select = modern && action == "SELECT";
+        if( mouse_select ) {
+            const auto mouse = ctxt.get_coordinates( w );
+            const auto cell = mouse ? std::optional<point>(
+                                  mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2 ) :
+                              std::nullopt;
+            action.clear();
+            bool consumed = false;
+            if( cell ) {
+                if( const auto hit = scrollbar_input::click(
+                scrollbar_input::geometry{
+                    .offset = point( 0, 5 ),
+                    .viewport_size = iContentHeight,
+                    .content_size = profs_length,
+                    .viewport_pos = cur_id,
+                    .scroll_to_last = true,
+                }, *cell ) ) {
+                    cur_id = std::clamp( hit->viewport_pos, 0, std::max( 0, profs_length - 1 ) );
+                    desc_offset = 0;
+                    consumed = true;
+                }
+            }
+            if( consumed ) {
+                last_clicked_prof = -1;
+            } else if( cell && cell->y >= 5 && cell->y < 5 + iContentHeight &&
+                       cell->x >= 1 && cell->x < TERMX / 2 ) {
+                const int row = iStartPos + ( cell->y - 5 );
+                if( row >= 0 && row < profs_length ) {
+                    if( row == cur_id && last_clicked_prof == row ) {
+                        // Second click on the same row performs the keyboard action.
+                        action = "CONFIRM";
+                        last_clicked_prof = -1;
+                    } else {
+                        cur_id = row;
+                        desc_offset = 0;
+                        last_clicked_prof = row;
+                    }
+                } else {
+                    last_clicked_prof = -1;
+                }
+            } else {
+                last_clicked_prof = -1;
+            }
+        } else {
+            // Keyboard navigation, filters and sorting invalidate the click pair.
+            last_clicked_prof = -1;
+        }
         if( action == "DOWN" ) {
             cur_id++;
             if( cur_id > profs_length - 1 ) {
@@ -2685,6 +2862,7 @@ static int skill_increment_cost( const Character &u, const skill_id &skill )
 
 tab_direction set_skills( avatar &u, points_left &points )
 {
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
     ui_adaptor ui;
     catacurses::window w;
     catacurses::window w_description;
@@ -2721,6 +2899,7 @@ tab_direction set_skills( avatar &u, points_left &points )
     int cur_pos = 0;
     const Skill *currentSkill = skill_list[cur_pos].first;
     int selected = 0;
+    int description_line_count = 0;
 
     input_context ctxt( "NEW_CHAR_SKILLS" );
     ctxt.register_cardinal();
@@ -2731,6 +2910,11 @@ tab_direction set_skills( avatar &u, points_left &points )
     ctxt.register_action( "RANDOMIZE" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
     ctxt.register_action( "QUIT" );
+    if( modern ) {
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
 
     std::map<skill_id, int> prof_skills;
     const auto &pskills = u.prof->skills();
@@ -2822,6 +3006,7 @@ tab_direction set_skills( avatar &u, points_left &points )
 
         const auto vFolded = foldstring( rec_disp, getmaxx( w_description ) );
         int iLines = vFolded.size();
+        description_line_count = iLines;
 
         if( selected < 0 ) {
             selected = 0;
@@ -2889,7 +3074,56 @@ tab_direction set_skills( avatar &u, points_left &points )
 
     do {
         ui_manager::redraw();
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        if( modern && action == "SELECT" ) {
+            const auto mouse = ctxt.get_coordinates( w );
+            const auto cell = mouse ? std::optional<point>(
+                                  mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2 ) :
+                              std::nullopt;
+            action.clear();
+            bool consumed = false;
+            if( cell ) {
+                if( const auto hit = scrollbar_input::click(
+                scrollbar_input::geometry{
+                    .offset = point( getmaxx( w ) - 1, 5 ),
+                    .viewport_size = iContentHeight,
+                    .content_size = description_line_count,
+                    .viewport_pos = selected,
+                    .scroll_to_last = false,
+                }, *cell ) ) {
+                    selected = hit->viewport_pos;
+                    consumed = true;
+                } else if( const auto list_hit = scrollbar_input::click(
+                scrollbar_input::geometry{
+                    .offset = point( 0, 5 ),
+                    .viewport_size = iContentHeight - 1,
+                    .content_size = display_line - 1,
+                    .viewport_pos = skill_list[cur_pos].second - 1,
+                    .scroll_to_last = true,
+                }, *cell ) ) {
+                    int found = num_skills - 1;
+                    for( int i = 0; i < num_skills; ++i ) {
+                        if( skill_list[i].second - 1 >= list_hit->viewport_pos ) {
+                            found = i;
+                            break;
+                        }
+                    }
+                    cur_pos = found;
+                    currentSkill = skill_list[cur_pos].first;
+                    consumed = true;
+                }
+            }
+            if( !consumed && cell && cell->y >= 5 && cell->y < 5 + iContentHeight &&
+                cell->x >= 2 && cell->x < 31 ) {
+                for( int i = 0; i < num_skills; ++i ) {
+                    if( 5 + skill_list[i].second - cur_offset == cell->y ) {
+                        cur_pos = i;
+                        currentSkill = skill_list[cur_pos].first;
+                        break;
+                    }
+                }
+            }
+        }
         if( action == "DOWN" ) {
             cur_pos = modulo( cur_pos + 1, num_skills );
             currentSkill = skill_list[cur_pos].first;
@@ -2930,6 +3164,7 @@ tab_direction set_skills( avatar &u, points_left &points )
 
 tab_direction set_magic( avatar &u, points_left &points )
 {
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
     ui_adaptor ui;
     catacurses::window w;
     catacurses::window w_description;
@@ -2984,6 +3219,7 @@ tab_direction set_magic( avatar &u, points_left &points )
     int cur_pos = 0;
     spell_id current_spell = spell_list[cur_pos].first;
     int selected = 0;
+    int description_line_count = 0;
 
     input_context ctxt( "NEW_CHAR_SKILLS" );
     ctxt.register_cardinal();
@@ -2994,6 +3230,11 @@ tab_direction set_magic( avatar &u, points_left &points )
     ctxt.register_action( "RANDOMIZE" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
     ctxt.register_action( "QUIT" );
+    if( modern ) {
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
 
     const int remaining_points_length = utf8_width( points.to_string(), true );
 
@@ -3023,6 +3264,7 @@ tab_direction set_magic( avatar &u, points_left &points )
 
         const auto vFolded = foldstring( rec_disp, getmaxx( w_description ) );
         int iLines = vFolded.size();
+        description_line_count = iLines;
 
         if( selected < 0 ) {
             selected = 0;
@@ -3087,7 +3329,56 @@ tab_direction set_magic( avatar &u, points_left &points )
 
     do {
         ui_manager::redraw();
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        if( modern && action == "SELECT" ) {
+            const auto mouse = ctxt.get_coordinates( w );
+            const auto cell = mouse ? std::optional<point>(
+                                  mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2 ) :
+                              std::nullopt;
+            action.clear();
+            bool consumed = false;
+            if( cell ) {
+                if( const auto hit = scrollbar_input::click(
+                scrollbar_input::geometry{
+                    .offset = point( getmaxx( w ) - 1, 5 ),
+                    .viewport_size = iContentHeight,
+                    .content_size = description_line_count,
+                    .viewport_pos = selected,
+                    .scroll_to_last = false,
+                }, *cell ) ) {
+                    selected = hit->viewport_pos;
+                    consumed = true;
+                } else if( const auto list_hit = scrollbar_input::click(
+                scrollbar_input::geometry{
+                    .offset = point( 0, 5 ),
+                    .viewport_size = iContentHeight - 1,
+                    .content_size = display_line - 1,
+                    .viewport_pos = spell_list[cur_pos].second - 1,
+                    .scroll_to_last = true,
+                }, *cell ) ) {
+                    int found = num_spells - 1;
+                    for( int i = 0; i < num_spells; ++i ) {
+                        if( spell_list[i].second - 1 >= list_hit->viewport_pos ) {
+                            found = i;
+                            break;
+                        }
+                    }
+                    cur_pos = found;
+                    current_spell = spell_list[cur_pos].first;
+                    consumed = true;
+                }
+            }
+            if( !consumed && cell && cell->y >= 5 && cell->y < 5 + iContentHeight &&
+                cell->x >= 2 && cell->x < 31 ) {
+                for( int i = 0; i < num_spells; ++i ) {
+                    if( 5 + spell_list[i].second - cur_offset == cell->y ) {
+                        cur_pos = i;
+                        current_spell = spell_list[cur_pos].first;
+                        break;
+                    }
+                }
+            }
+        }
         if( action == "DOWN" ) {
             cur_pos = modulo( cur_pos + 1, num_spells );
             current_spell = spell_list[cur_pos].first;
@@ -3178,6 +3469,8 @@ tab_direction set_scenario( avatar &u, points_left &points,
     tab_direction retval = tab_direction::NONE;
     int iContentHeight = 0;
     int iStartPos = 0;
+    int last_clicked_scen = -1;
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
 
     ui_adaptor ui;
     catacurses::window w;
@@ -3213,6 +3506,11 @@ tab_direction set_scenario( avatar &u, points_left &points,
     ctxt.register_action( "RANDOMIZE" );
     ctxt.register_action( "FILTER" );
     ctxt.register_action( "QUIT" );
+    if( modern ) {
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
 
     bool recalc_scens = true;
     int scens_length = 0;
@@ -3471,7 +3769,52 @@ tab_direction set_scenario( avatar &u, points_left &points,
         }
 
         ui_manager::redraw();
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        const bool mouse_select = modern && action == "SELECT";
+        if( mouse_select ) {
+            const auto mouse = ctxt.get_coordinates( w );
+            const auto cell = mouse ? std::optional<point>(
+                                  mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2 ) :
+                              std::nullopt;
+            action.clear();
+            bool consumed = false;
+            if( cell ) {
+                if( const auto hit = scrollbar_input::click(
+                scrollbar_input::geometry{
+                    .offset = point( 0, 5 ),
+                    .viewport_size = iContentHeight,
+                    .content_size = scens_length,
+                    .viewport_pos = cur_id,
+                    .scroll_to_last = true,
+                }, *cell ) ) {
+                    cur_id = std::clamp( hit->viewport_pos, 0, std::max( 0, scens_length - 1 ) );
+                    consumed = true;
+                }
+            }
+            if( consumed ) {
+                last_clicked_scen = -1;
+            } else if( cell && cell->y >= 5 && cell->y < 5 + iContentHeight &&
+                       cell->x >= 1 && cell->x < TERMX / 2 ) {
+                const int row = iStartPos + ( cell->y - 5 );
+                if( row >= 0 && row < scens_length ) {
+                    if( row == cur_id && last_clicked_scen == row ) {
+                        // Second click on the same row performs the keyboard action.
+                        action = "CONFIRM";
+                        last_clicked_scen = -1;
+                    } else {
+                        cur_id = row;
+                        last_clicked_scen = row;
+                    }
+                } else {
+                    last_clicked_scen = -1;
+                }
+            } else {
+                last_clicked_scen = -1;
+            }
+        } else {
+            // Keyboard navigation, filters and sorting invalidate the click pair.
+            last_clicked_scen = -1;
+        }
         if( action == "DOWN" ) {
             cur_id++;
             if( cur_id > scens_length - 1 ) {

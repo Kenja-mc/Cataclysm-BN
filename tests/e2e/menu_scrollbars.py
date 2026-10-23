@@ -45,7 +45,6 @@ def open_main_menu(g):
         assert time.time() < deadline, "Escape should open the main menu\n" + g.screen()
         g.keys("Escape", delay=0.4)
 
-
 def selection_row(screen):
     rows = [y for y, line in enumerate(screen.splitlines()) if ">>" in line]
     assert rows, "the list has no selected row\n" + screen
