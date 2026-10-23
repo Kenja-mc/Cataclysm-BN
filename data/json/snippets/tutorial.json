@@ -9,7 +9,7 @@
       },
       {
         "id": "LESSON_MOVE",
-        "text": "The '@' character in the center of the screen represents you.  To move, press <press_UP>, <press_LEFT>, <press_DOWN> or <press_RIGHT> (the arrow keys and numpad work too), and <press_LEFTUP>, <press_RIGHTUP>, <press_LEFTDOWN> or <press_RIGHTDOWN> to step diagonally.  To have your character wait in place, press <press_pause>."
+        "text": "The '@' character in the center of the screen represents you.  To move, press <press_UP>, <press_LEFT>, <press_DOWN> or <press_RIGHT>, and <press_LEFTUP>, <press_RIGHTUP>, <press_LEFTDOWN> or <press_RIGHTDOWN> to step diagonally.  To have your character wait in place, press <press_pause>."
       },
       {
         "id": "LESSON_LOOK",
@@ -93,11 +93,11 @@
       },
       {
         "id": "LESSON_WORE_STORAGE",
-        "text": "You just put on an article of clothing that provides ample storage space.  This will allow you to carry much more stuff, but be aware that there is also a limit on the weight you can carry which depends on strength.  The item you put on also encumbered your torso.  This will make combat a little more difficult.  To check encumbrance, press @."
+        "text": "You just put on an article of clothing that provides ample storage space.  This will allow you to carry much more stuff, but be aware that there is also a limit on the weight you can carry which depends on strength.  The item you put on also encumbered your torso.  This will make combat a little more difficult.  To check encumbrance, press <press_player_data>."
       },
       {
         "id": "LESSON_WORE_MASK",
-        "text": "You just put on an article of clothing that protects against the environment.  The most common and important are respiratory devices, which will protect you against smoke, air-born toxins or organisms, and other common hazards.  However, they also make it a little harder to breath when running, so you'll move more slowly.  To check encumbrance, press @."
+        "text": "You just put on an article of clothing that protects against the environment.  The most common and important are respiratory devices, which will protect you against smoke, air-born toxins or organisms, and other common hazards.  However, they also make it a little harder to breath when running, so you'll move more slowly.  To check encumbrance, press <press_player_data>."
       },
       {
         "id": "LESSON_WEAPON_INFO",
@@ -145,7 +145,7 @@
       },
       {
         "id": "LESSON_GUN_FIRE",
-        "text": "Once you have a loaded gun wielded, you can fire it.  Press <press_fire> to fire a single shot.  With many guns, you can fire a burst by pressing <press_select_fire_mode>.  You'll automatically target the last monster you shot at, or the closest monster to you.  You can change your target with the movement keys, or cycle through monsters with <press_NEXT_TARGET>.  To fire, press <press_fire>; to cancel, hit the escape key."
+        "text": "Once you have a loaded gun wielded, you can fire it.  Press <press_fire> to fire a single shot.  With many guns, you can fire a burst by pressing <press_select_fire_mode>.  You'll automatically target the last monster you shot at, or the closest monster to you.  You can change your target with the movement keys, or cycle through monsters with <press_NEXT_TARGET>.  To fire, press <press_fire>; to cancel, press <press_QUIT>."
       },
       {
         "id": "LESSON_RECOIL",
@@ -175,27 +175,27 @@
     "text": [
       {
         "id": "LESSON_MOVE_MODERN",
-        "text": "The '@' character in the center of the screen represents you.  To move, press <press_UP>, <press_LEFT>, <press_DOWN> or <press_RIGHT> (the numpad works too), and <press_LEFTUP>, <press_RIGHTUP>, <press_LEFTDOWN> or <press_RIGHTDOWN> to step diagonally.  To have your character wait in place, press <press_pause>.  The arrow keys move a targeting marker instead of your character."
+        "text": "The '@' character in the center of the screen represents you.  To move, press <press_UP>, <press_LEFT>, <press_DOWN> or <press_RIGHT>, and <press_LEFTUP>, <press_RIGHTUP>, <press_LEFTDOWN> or <press_RIGHTDOWN> to step diagonally.  To have your character wait in place, press <press_pause>.  In the Modern scheme, an arrow key assigned to movement moves a targeting marker instead of your character while Arrow keys aim is on."
       },
       {
         "id": "LESSON_LOOK_MODERN",
-        "text": "To see what the symbols around you mean, hold Shift and press a movement key, or right-click a tile.  A marker selects the tile and the side panel describes the terrain, monsters, and items there.  Esc clears the selection."
+        "text": "To see what the symbols around you mean, select a tile with <press_look>, or right-click it to lock the selection.  The side panel describes the terrain, monsters, and items there.  Moving the mouse does not move the locked tile; select another tile to change it, and press Escape to clear it."
       },
       {
         "id": "LESSON_OPEN_MODERN",
-        "text": "That brown '+' next to you is a closed door.  To open it, walk into it, click it, or press <press_examine> while standing next to it."
+        "text": "That brown '+' next to you is a closed door.  To open it, walk into it, click it, or press <press_examine> while standing next to it.  Right-clicking it opens its action menu instead."
       },
       {
         "id": "LESSON_CLOSE_MODERN",
-        "text": "You can close an open door by clicking it, or by pressing <press_examine> while standing next to it.  Closing doors behind you can often slow down throngs of monsters greatly."
+        "text": "You can close an open door by clicking it, or by pressing <press_examine> while standing next to it.  Right-clicking it opens its action menu instead.  Closing doors behind you can often slow down throngs of monsters greatly."
       },
       {
         "id": "LESSON_SMASH_MODERN",
-        "text": "Most monsters will have to smash their way through a closed door.  If a door is locked or stuck, you can smash it: select it (right-click it, or hold Shift and press its direction), press <press_examine> and choose to smash it."
+        "text": "Most monsters will have to smash their way through a closed door.  If a door is locked or stuck, you can smash it: right-click it and choose to smash it, or select it with <press_look>, press <press_examine>, and choose to smash it."
       },
       {
         "id": "LESSON_WINDOW_MODERN",
-        "text": "You can smash through windows: select the window (right-click it, or hold Shift and press its direction), press <press_examine> and choose to smash it.  A smashed window takes a long time to climb through, and it's possible to hurt yourself on the broken glass, but it's a good last-ditch escape route.  You can smash through other things, too."
+        "text": "You can smash through windows: right-click a window and choose to smash it, or select it with <press_look>, press <press_examine>, and choose to smash it.  A smashed window takes a long time to climb through, and it's possible to hurt yourself on the broken glass, but it's a good last-ditch escape route.  You can smash through other things, too."
       },
       {
         "id": "LESSON_PICKUP_MODERN",
@@ -243,7 +243,7 @@
       },
       {
         "id": "LESSON_GUN_FIRE_MODERN",
-        "text": "Once you have a loaded gun wielded, you can fire it.  Select a monster with <press_NEXT_TARGET> or by right-clicking it, then press <press_fire> to aim at it, or left-click the monster.  With many guns, you can change the fire mode with <press_select_fire_mode>.  While aiming, <press_NEXT_TARGET> cycles through monsters; press <press_fire> to shoot or Esc to cancel."
+        "text": "Once you have a loaded gun wielded, you can fire it.  Select a monster with <press_NEXT_TARGET> or by right-clicking it to lock it, then press <press_fire> to aim at it, or left-click the monster.  With many guns, you can change the fire mode with <press_select_fire_mode>.  While aiming, <press_NEXT_TARGET> cycles through monsters; press <press_fire> to shoot or <press_QUIT> to cancel."
       },
       {
         "id": "LESSON_DARK_MODERN",

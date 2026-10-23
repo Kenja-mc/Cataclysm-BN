@@ -1,7 +1,9 @@
 """Built-in tutorial text must describe routes a player can actually follow."""
 import json
 import re
+import time
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from aim_reticle import action_clock
 from helpers import HELPERS, arena, bub_pos, count_at, count_carried, empty_inventory, spawn, wait_until
@@ -13,6 +15,12 @@ from tmux_game import Game
 SNIPPETS = {entry["id"]: entry["text"]
             for group in json.loads(Path("data/json/snippets/tutorial.json").read_text())
             for entry in group["text"]}
+
+TUTORIAL_OPTIONS = {
+    "CONTROL_SCHEME": "modern", "SAFEMODE": "false", "SHOW_WELCOME": "false",
+    "SHOW_TIPS": "false", "CONTEXTUAL_INTERACT": "true", "MOUSE_MOVE": "false",
+    "AUTOSELECT_SINGLE_VALID_TARGET": "false",
+}
 
 
 def lesson_prefix(lesson, scheme):
@@ -178,6 +186,19 @@ def test_tutorial_lessons_supply_what_they_promise(_g):
     assert "<press_fire>" in SNIPPETS["LESSON_GUN_FIRE"]
     assert "<press_NEXT_TARGET>" in SNIPPETS["LESSON_GUN_FIRE"]
     assert "'<'" not in SNIPPETS["LESSON_GUN_FIRE"] and "'>'" not in SNIPPETS["LESSON_GUN_FIRE"]
+    # Rebindable keys are expanded live, never copied from the shipped defaults.
+    assert "<press_player_data>" in SNIPPETS["LESSON_WORE_STORAGE"]
+    assert "<press_player_data>" in SNIPPETS["LESSON_WORE_MASK"]
+    assert "press @" not in SNIPPETS["LESSON_WORE_STORAGE"] + SNIPPETS["LESSON_WORE_MASK"]
+    assert "<press_QUIT>" in SNIPPETS["LESSON_GUN_FIRE"]
+    assert "<press_QUIT>" in SNIPPETS["LESSON_GUN_FIRE_MODERN"]
+    assert "escape key" not in SNIPPETS["LESSON_GUN_FIRE"]
+    assert "Esc to cancel" not in SNIPPETS["LESSON_GUN_FIRE_MODERN"]
+    for snippet_id in ("LESSON_LOOK_MODERN", "LESSON_SMASH_MODERN", "LESSON_WINDOW_MODERN"):
+        assert "<press_look>" in SNIPPETS[snippet_id], snippet_id
+        assert "hold Shift" not in SNIPPETS[snippet_id], snippet_id
+    assert "numpad work too" not in SNIPPETS["LESSON_MOVE"]
+    assert "numpad works too" not in SNIPPETS["LESSON_MOVE_MODERN"]
     game = Game(name="bn-e2e-tutorial-supplies", cols=174, rows=45, options={
         "CONTROL_SCHEME": "modern", "SAFEMODE": "false", "SHOW_WELCOME": "false",
         "SHOW_TIPS": "false", "CONTEXTUAL_INTERACT": "true", "MOUSE_MOVE": "false",
@@ -266,6 +287,130 @@ def test_classic_tutorial_preserves_classic_controls(_g):
         game.close()
 
 
+def write_user_bindings(directory, rows):
+    """Seed a real user keybinding file, as the in-game keybinding screen would save it."""
+    config = directory / "config"
+    config.mkdir(parents=True, exist_ok=True)
+    (config / "keybindings.json").write_text(json.dumps(rows))
+
+
+def test_tutorial_move_names_replaced_binding(_g):
+    with TemporaryDirectory(prefix="bn-e2e-tutorial-key-") as directory:
+        userdir = Path(directory)
+        write_user_bindings(userdir, [{
+            "type": "keybinding", "id": "UP", "category": "DEFAULTMODE",
+            "bindings": [{"input_method": "keyboard", "key": "j"}],
+        }])
+        game = Game(name="bn-e2e-tutorial-move-key", cols=174, rows=45,
+                    userdir=userdir, options=TUTORIAL_OPTIONS)
+        try:
+            start_tutorial(game)
+            if lesson_prefix("LESSON_INTRO", "modern") not in game.screen():
+                game.keys("x", delay=0)
+            # The movement lesson is shown before a move can happen, so check both the text
+            # and that the named key really moves afterwards.
+            lesson(game, "LESSON_INTRO", "modern")
+            close_lesson(game, "LESSON_INTRO", "modern")
+            movement = lesson(game, "LESSON_MOVE", "modern")
+            assert re.search(r"\bj\b", movement), \
+                "the lesson must name the key the player bound for north:\n" + movement
+            assert not re.search(r"\bw\b", movement), \
+                "the replaced shipped default must not be named:\n" + movement
+            close_lesson(game, "LESSON_MOVE", "modern")
+            close_lesson(game, "LESSON_LOOK", "modern")
+            for name in ("LESSON_RECOIL", "LESSON_PICKUP"):
+                lesson(game, name, "modern")
+                close_lesson(game, name, "modern")
+            game.wait_gone("Cancel popup")
+            game.define_lua(HELPERS)
+            position = bub_pos(game)
+            game.keys("j", delay=0.2)
+            assert wait_until(lambda: bub_pos(game) == (position[0], position[1] - 1, position[2]), 10), \
+                "the bound key must really move the character north:\n" + game.screen()
+        finally:
+            game.close()
+
+
+def test_tutorial_names_action_key_rebound_during_play(_g):
+    game = Game(name="bn-e2e-tutorial-live-key", cols=174, rows=45, options=TUTORIAL_OPTIONS)
+    try:
+        initial_lessons(game, "modern")
+        game.define_lua(HELPERS)
+        empty_inventory(game)
+        assert game.lua("M:clear_items_at(here(0,0)) out('ok')") == ["ok"]
+        # Choose the existing Add local mode, then the filtered row, then the new key.
+        game.keys("?", delay=0.8)
+        game.wait_for("Keybindings")
+        # The filter is a text entry: send one key at a time so the game does not drop any.
+        for ch in "apply":
+            game.keys(ch, delay=0.2)
+        game.wait_for("Apply or Use Item")
+        game.keys("+", delay=0.5)
+        game.wait_for("a Apply or Use Item")
+        game.keys("a", delay=0.5)
+        game.wait_for("New key for")
+        game.keys("j", delay=0.4)
+        game.keys("Escape", delay=0.5)
+        game.wait_for("Save changes?")
+        game.keys("y", "Enter", delay=0.6)
+        game.wait_gone("Keybindings")
+        spawn(game, 0, 0, "flashlight")
+        game.keys("g", delay=0)
+        tool = lesson(game, "LESSON_GOT_TOOL", "modern")
+        assert "use j" in tool, \
+            "the lesson must name the key bound during play:\n" + tool
+        assert "→ item" not in tool, \
+            "a bound action must not fall back to the menu route:\n" + tool
+        close_lesson(game, "LESSON_GOT_TOOL", "modern")
+        # The taught key is live: it opens the real use-item menu for the flashlight.
+        game.keys("j", delay=0.6)
+        game.wait_for("Use item")
+        game.wait_for("flashlight")
+        game.keys("Escape", delay=0.4)
+    finally:
+        game.close()
+
+
+def test_tutorial_unbound_action_shows_reachable_route(_g):
+    with TemporaryDirectory(prefix="bn-e2e-tutorial-unbound-") as directory:
+        userdir = Path(directory)
+        write_user_bindings(userdir, [{
+            "type": "keybinding", "id": "wield", "category": "DEFAULTMODE",
+            "bindings": [], "is_deleted": True,
+        }])
+        game = Game(name="bn-e2e-tutorial-unbound", cols=174, rows=45,
+                    userdir=userdir, options=TUTORIAL_OPTIONS)
+        try:
+            initial_lessons(game, "modern")
+            game.define_lua(HELPERS)
+            empty_inventory(game)
+            assert game.lua("M:clear_items_at(here(0,0)) out('ok')") == ["ok"]
+            spawn(game, 0, 0, "machete")
+            game.keys("g", delay=0)
+            deadline = time.time() + 60
+            while time.time() < deadline:
+                screen = game.screen()
+                found = next((name for name in ("LESSON_GOT_WEAPON", "LESSON_GOT_WEAPON_ALONE")
+                              if lesson_prefix(name, "modern") in screen), None)
+                if found:
+                    break
+                time.sleep(0.1)
+            else:
+                raise AssertionError("no weapon lesson after the pickup:\n" + game.screen())
+            weapon = lesson(game, found, "modern")
+            # The popup wraps mid-route, so check the route pieces rather than one line.
+            assert re.search(r"i → item →", weapon) and "Wield" in weapon, \
+                "an unbound wield key must teach the item panel route:\n" + weapon
+            assert not re.search(r"\bv\b", weapon), \
+                "the cleared shipped default must not be named:\n" + weapon
+            close_lesson(game, found, "modern")
+        finally:
+            game.close()
+
+
 TESTS = [test_tutorial_lessons_supply_what_they_promise,
          test_modern_tutorial_routes_are_reachable,
-         test_classic_tutorial_preserves_classic_controls]
+         test_classic_tutorial_preserves_classic_controls,
+         test_tutorial_move_names_replaced_binding,
+         test_tutorial_names_action_key_rebound_during_play,
+         test_tutorial_unbound_action_shows_reachable_route]
