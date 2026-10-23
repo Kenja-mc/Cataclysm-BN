@@ -14,6 +14,7 @@ Flow for each case:
 Usage:
   python3 tests/e2e/tiles.py minimap [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py mouse [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
+  python3 tests/e2e/tiles.py sound_menu [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
 
 --root is the game tree (data and the curses build); --binary is the tiles executable.
 Artifacts (window captures, marker crops, logs, fixture asserts, result.json) stay in --out.
@@ -793,7 +794,83 @@ def case_mouse(session):
     return [], observations
 
 
-CASES = {"minimap": case_minimap, "mouse": case_mouse}
+def case_sound_menu(session):
+    """Drive the tiles menu; check saved settings, not audible output or OCR."""
+    bindings = session.curses_userdir / "config" / "keybindings.json"
+    rows = json.loads(bindings.read_text()) if bindings.exists() else []
+    rows = [row for row in rows if not (row.get("category") == "DEFAULTMODE"
+                                      and row.get("id") == "sound_menu")]
+    rows.append({"type": "keybinding", "id": "sound_menu", "category": "DEFAULTMODE",
+                 "bindings": [{"input_method": "keyboard", "key": "F7"}]})
+    bindings.write_text(json.dumps(rows))
+    options = {"CONTROL_SCHEME": "modern", "SOUND_ENABLED": "true",
+               "MUSIC_VOLUME": "64", "SOUND_EFFECT_VOLUME": "64", "AMBIENT_SOUND_VOLUME": "64"}
+    observations = {}
+    with session.running_game("sound-menu", options) as live:
+        paths = (live.run / "userdir" / "config" / "options.json",
+                 live.run / "xdg" / "cataclysm-bn" / "options.json")
+        saved_path = None
+        x11 = X11(session.display)
+        try:
+            window = x11.find_window(WINDOW_TITLE_PREFIX)
+            require(window is not None, "sound menu: game window disappeared")
+            x11.focus_local(window, 0, 0)
+
+            def open_menu(label):
+                x11.key("F7")
+                wait_for_frame(session, live.proc, live.run, session.timeout)
+                capture(session.display, window, session.artifacts / f"sound-menu-{label}.png")
+
+            def saved_values(expected):
+                nonlocal saved_path
+                deadline = time.monotonic() + 15
+                last = {}
+                while time.monotonic() < deadline:
+                    for path in (saved_path,) if saved_path else paths:
+                        try:
+                            values = {row["name"]: row["value"] for row in json.loads(path.read_text())}
+                        except (FileNotFoundError, json.JSONDecodeError):
+                            continue
+                        last[str(path)] = {name: values.get(name) for name in expected}
+                        if all(values.get(name) == value for name, value in expected.items()):
+                            saved_path = path
+                            return {name: values[name] for name in expected}
+                    time.sleep(0.1)
+                raise AssertionError(f"sound menu did not persist {expected}: {last}")
+
+            # Leave MUSIC_ENABLED unpatched: the first save also checks its true default.
+            open_menu("initial")
+            x11.key("Left")
+            x11.key("Escape")
+            initial = {**options, "SOUND_ENABLED": "false", "MUSIC_ENABLED": "true"}
+            observations["sound_off"] = saved_values(initial)
+
+            open_menu("sound-off")
+            x11.key("Right")
+            x11.key("Down")
+            x11.key("Return")
+            for _ in range(3):
+                x11.key("Down")
+                x11.key("Right")
+            x11.key("Escape")
+            changed = {**options, "MUSIC_ENABLED": "false", "MUSIC_VOLUME": "72",
+                       "SOUND_EFFECT_VOLUME": "72", "AMBIENT_SOUND_VOLUME": "72"}
+            observations["music_off_volumes_raised"] = saved_values(changed)
+
+            open_menu("changed")
+            x11.key("Down")
+            x11.key("Return")
+            for _ in range(3):
+                x11.key("Down")
+                x11.key("Left")
+            x11.key("Escape")
+            observations["restored"] = saved_values({**options, "MUSIC_ENABLED": "true"})
+        finally:
+            x11.close()
+    return [], observations
+
+
+CASES = {"minimap": case_minimap, "mouse": case_mouse, "sound_menu": case_sound_menu}
 
 
 def main(argv=None):

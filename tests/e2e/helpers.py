@@ -1,4 +1,5 @@
 """Shared Lua helpers and Python wrappers for e2e tests and the playtest harness."""
+import json
 import re
 import time
 
@@ -82,9 +83,25 @@ def empty_inventory(g):
                  "a:set_mutation(MutationBranchId.new('DEBUG_STORAGE')) out('ok')") == ["ok"]
 
 
+def option_value(g, name, default=None):
+    """Read one option from the game's saved config, or the default when it is unset."""
+    path = g.userdir / "config" / "options.json"
+    try:
+        entries = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return default
+    for entry in entries:
+        if entry.get("name") == name:
+            return entry.get("value", default)
+    return default
+
+
 def settle(g):
-    # Let queued moves play out so the sidebar and map are current.
-    g.keys("x", delay=0.6)
+    """Advance one turn with the scheme's wait key.
+
+    Classic binds `x` to look-around, so one scheme's wait key opens a screen in the other.
+    """
+    g.keys("." if option_value(g, "CONTROL_SCHEME") == "classic" else "x", delay=0.6)
 
 
 def choose_menu_entry(g, label):
