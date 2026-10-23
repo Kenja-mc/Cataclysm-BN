@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <iterator>
 #include <map>
+#include <optional>
+#include <string>
 #include <vector>
 
 #include "cata_utility.h"
@@ -720,15 +722,28 @@ void color_manager::clear()
     }
 }
 
-static void draw_header( const catacurses::window &w )
+struct color_header_label {
+    int x0 = 0;
+    int x1 = 0;
+    std::string action;
+};
+
+static void draw_header( const catacurses::window &w, std::vector<color_header_label> &labels )
 {
+    labels.clear();
     int tmpx = 0;
-    tmpx += shortcut_print( w, point( tmpx, 0 ), c_white, c_light_green,
-                            _( "<R>emove custom color" ) ) + 2;
-    tmpx += shortcut_print( w, point( tmpx, 0 ), c_white, c_light_green,
-                            _( "<Arrow Keys> To navigate" ) ) + 2;
-    tmpx += shortcut_print( w, point( tmpx, 0 ), c_white, c_light_green, _( "<Enter>-Edit" ) ) + 2;
-    shortcut_print( w, point( tmpx, 0 ), c_white, c_light_green, _( "Load <T>emplate" ) );
+    const auto draw_label = [&]( const std::string & text, const std::string & action ) {
+        const auto x0 = tmpx;
+        tmpx += static_cast<int>( shortcut_print( w, point( x0, 0 ), c_white, c_light_green, text ) );
+        if( !action.empty() ) {
+            labels.push_back( { .x0 = x0, .x1 = tmpx, .action = action } );
+        }
+        tmpx += 2;
+    };
+    draw_label( _( "<R>emove custom color" ), "REMOVE_CUSTOM" );
+    draw_label( _( "<Arrow Keys> To navigate" ), std::string() );
+    draw_label( _( "<Enter>-Edit" ), "CONFIRM" );
+    draw_label( _( "Load <T>emplate" ), "LOAD_TEMPLATE" );
 
     // NOLINTNEXTLINE(cata-use-named-point-constants)
     mvwprintz( w, point( 0, 1 ), c_white, _( "Some color changes may require a restart." ) );
@@ -816,6 +831,13 @@ void color_manager::show_gui()
         };
     };
 
+    // Header rectangles of the drawn shortcut labels.
+    auto header_labels = std::vector<color_header_label>{};
+    // Row of the last plain click, -1 when the next click starts a new pair.
+    auto last_click_row = -1;
+    // A row click leaves the view where it is, so a second click hits the same row.
+    auto preserve_view = false;
+
     std::map<std::string, color_struct> name_color_map;
 
     for( const auto &pr : name_map ) {
@@ -837,7 +859,7 @@ void color_manager::show_gui()
         }
         wnoutrefresh( w_colors_border );
 
-        draw_header( w_colors_header );
+        draw_header( w_colors_header, header_labels );
 
         // Clear all lines
         for( int i = 0; i < iContentHeight; i++ ) {
@@ -852,7 +874,16 @@ void color_manager::show_gui()
             }
         }
 
-        calcStartPos( iStartPos, iCurrentLine, iContentHeight, iMaxColors );
+        if( preserve_view ) {
+            if( iStartPos > iCurrentLine ) {
+                iStartPos = iCurrentLine;
+            }
+            if( iCurrentLine >= iStartPos + iContentHeight ) {
+                iStartPos = iCurrentLine - iContentHeight + 1;
+            }
+        } else {
+            calcStartPos( iStartPos, iCurrentLine, iContentHeight, iMaxColors );
+        }
 
         const auto sb = scrollbar_geometry();
         draw_scrollbar( w_colors_border, sb.viewport_pos, sb.viewport_size, sb.content_size, sb.offset );
@@ -910,24 +941,57 @@ void color_manager::show_gui()
             return cell;
         };
 
+        auto mouse_hover = false;
+        auto mouse_handled = false;
         if( modern && action == "MOUSE_MOVE" ) {
             // Hover never changes the selection.
             action.clear();
-        } else if( modern && ( action == "SELECT" || action == "SEC_SELECT" ) ) {
+            mouse_hover = true;
+        } else if( modern && action == "SEC_SELECT" ) {
+            // Right click cancels, like the other modern list menus.
+            action = "QUIT";
+            mouse_handled = true;
+        } else if( modern && action == "SELECT" ) {
+            mouse_handled = true;
             auto consumed = false;
             if( const auto border_cell = cell_in( w_colors_border ) ) {
                 if( const auto hit = scrollbar_input::click( scrollbar_geometry(), *border_cell ) ) {
                     iCurrentLine = hit->viewport_pos;
+                    last_click_row = -1;
+                    preserve_view = false;
                     consumed = true;
                 }
             }
             if( !consumed ) {
-                if( const auto cell = cell_in( w_colors ) ) {
+                if( const auto header_cell = cell_in( w_colors_header ) ) {
+                    if( header_cell->y == 0 ) {
+                        for( const auto &label : header_labels ) {
+                            if( header_cell->x >= label.x0 && header_cell->x < label.x1 ) {
+                                action = label.action;
+                                last_click_row = -1;
+                                preserve_view = false;
+                                consumed = true;
+                                break;
+                            }
+                        }
+                    }
+                } else if( const auto cell = cell_in( w_colors ) ) {
                     const auto row = iStartPos + cell->y;
                     if( cell->y < iContentHeight && row < iMaxColors ) {
-                        iCurrentLine = row;
-                        // The Normal/Invert columns split at the w column separator x = 48.
-                        iCurrentCol = cell->x >= 48 ? 2 : 1;
+                        // The Normal/Invert split is the w column separator at x = 48.
+                        const auto clicked_col = cell->x > 48 ? 2 : 1;
+                        if( row == last_click_row ) {
+                            // The second click on the same row runs Enter.
+                            iCurrentCol = clicked_col;
+                            action = "CONFIRM";
+                            last_click_row = -1;
+                            preserve_view = false;
+                        } else {
+                            iCurrentLine = row;
+                            iCurrentCol = clicked_col;
+                            last_click_row = row;
+                            preserve_view = true;
+                        }
                     }
                     consumed = true;
                 }
@@ -935,7 +999,14 @@ void color_manager::show_gui()
             if( !consumed ) {
                 // A click outside the drawn controls does nothing.
                 action.clear();
+                last_click_row = -1;
+                preserve_view = false;
             }
+        }
+        if( !mouse_handled && !mouse_hover ) {
+            // Keyboard and wheel input end a click pair.
+            last_click_row = -1;
+            preserve_view = false;
         }
 
         if( action == "QUIT" ) {

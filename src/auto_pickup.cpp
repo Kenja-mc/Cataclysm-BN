@@ -4,7 +4,10 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
+#include <optional>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "avatar.h"
 #include "color.h"
@@ -101,15 +104,24 @@ void user_interface::show()
             .scroll_to_last = true,
         };
     };
-    // Header rectangles of the tab titles and the global <S>witch label, -1 when not drawn.
-    struct header_label {
+    // Header rectangles of the tab titles and the shortcut labels.
+    struct tab_box {
         int x0 = 0;
         int x1 = 0;
         int index = 0;
     };
-    auto tab_labels = std::vector<header_label>{};
-    auto switch_x0 = -1;
-    auto switch_x1 = -1;
+    struct click_label {
+        int x0 = 0;
+        int y = 0;
+        int x1 = 0;
+        std::string action;
+    };
+    auto tab_labels = std::vector<tab_box>{};
+    auto header_labels = std::vector<click_label>{};
+    // Row of the last plain click, -1 when the next click starts a new pair.
+    auto last_click_row = -1;
+    // A row click leaves the view where it is, so a second click hits the same row.
+    auto preserve_view = false;
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
         // Redraw the border
@@ -125,22 +137,31 @@ void user_interface::show()
         wnoutrefresh( w_border );
 
         // Redraw the header
+        header_labels.clear();
         int tmpx = 0;
-        tmpx += shortcut_print( w_header, point( tmpx, 0 ), c_white, c_light_green, _( "<A>dd" ) ) + 2;
-        tmpx += shortcut_print( w_header, point( tmpx, 0 ), c_white, c_light_green, _( "<R>emove" ) ) + 2;
-        tmpx += shortcut_print( w_header, point( tmpx, 0 ), c_white, c_light_green, _( "<C>opy" ) ) + 2;
-        tmpx += shortcut_print( w_header, point( tmpx, 0 ), c_white, c_light_green, _( "<M>ove" ) ) + 2;
-        tmpx += shortcut_print( w_header, point( tmpx, 0 ), c_white, c_light_green, _( "<E>nable" ) ) + 2;
-        tmpx += shortcut_print( w_header, point( tmpx, 0 ), c_white, c_light_green, _( "<D>isable" ) ) + 2;
+        const auto draw_label = [&]( int y, const std::string & text, const std::string & action ) {
+            const auto x0 = tmpx;
+            tmpx += static_cast<int>( shortcut_print( w_header, point( x0, y ), c_white, c_light_green,
+                                     text ) );
+            if( !action.empty() ) {
+                header_labels.push_back( { .x0 = x0, .y = y, .x1 = tmpx, .action = action } );
+            }
+            tmpx += 2;
+        };
+        draw_label( 0, _( "<A>dd" ), "ADD_RULE" );
+        draw_label( 0, _( "<R>emove" ), "REMOVE_RULE" );
+        draw_label( 0, _( "<C>opy" ), "COPY_RULE" );
+        // "<M>ove" depends on a direction key, so it is not a click target.
+        draw_label( 0, _( "<M>ove" ), std::string() );
+        draw_label( 0, _( "<E>nable" ), "ENABLE_RULE" );
+        draw_label( 0, _( "<D>isable" ), "DISABLE_RULE" );
         if( !g->u.name.empty() ) {
-            shortcut_print( w_header, point( tmpx, 0 ), c_white, c_light_green, _( "<T>est" ) );
+            draw_label( 0, _( "<T>est" ), "TEST_RULE" );
         }
         tmpx = 0;
-        tmpx += shortcut_print( w_header, point( tmpx, 1 ), c_white, c_light_green,
-                                _( "<+-> Move up/down" ) ) + 2;
-        tmpx += shortcut_print( w_header, point( tmpx, 1 ), c_white, c_light_green,
-                                _( "<Enter>-Edit" ) ) + 2;
-        shortcut_print( w_header, point( tmpx, 1 ), c_white, c_light_green, _( "<Tab>-Switch Page" ) );
+        draw_label( 1, _( "<+-> Move up/down" ), std::string() );
+        draw_label( 1, _( "<Enter>-Edit" ), "CONFIRM" );
+        draw_label( 1, _( "<Tab>-Switch Page" ), "NEXT_TAB" );
 
         for( int i = 0; i < 78; i++ ) {
             if( i == 4 || i == 50 || i == 60 ) {
@@ -172,11 +193,11 @@ void user_interface::show()
                                 get_option<bool>( "AUTO_PICKUP" ) ? _( "True" ) : _( "False" ) );
         locx += shortcut_print( w_header, point( locx, 1 ), c_white, c_light_green, "  " );
         if( is_autopickup ) {
-            switch_x0 = locx;
-            switch_x1 = locx + shortcut_print( w_header, point( locx, 1 ), c_white, c_light_green,
-                                               _( "<S>witch" ) );
-        } else {
-            switch_x0 = -1;
+            const auto switch_x0 = locx;
+            const auto switch_len = static_cast<int>( shortcut_print( w_header, point( locx, 1 ), c_white,
+                                      c_light_green, _( "<S>witch" ) ) );
+            header_labels.push_back( { .x0 = switch_x0, .y = 1, .x1 = switch_x0 + switch_len,
+                                       .action = "SWITCH_AUTO_PICKUP_OPTION" } );
         }
         shortcut_print( w_header, point( locx, 1 ), c_white, c_light_green, "  " );
 
@@ -197,7 +218,16 @@ void user_interface::show()
         draw_scrollbar( w_border, sb.viewport_pos, sb.viewport_size, sb.content_size, sb.offset );
         wnoutrefresh( w_border );
 
-        calcStartPos( iStartPos, iLine, iContentHeight, cur_rules.size() );
+        if( preserve_view ) {
+            if( iStartPos > iLine ) {
+                iStartPos = iLine;
+            }
+            if( iLine >= iStartPos + iContentHeight ) {
+                iStartPos = iLine - iContentHeight + 1;
+            }
+        } else {
+            calcStartPos( iStartPos, iLine, iContentHeight, cur_rules.size() );
+        }
 
         // display auto pickup
         for( int i = iStartPos; i < static_cast<int>( cur_rules.size() ); i++ ) {
@@ -287,41 +317,72 @@ void user_interface::show()
             return cell;
         };
 
+        auto mouse_hover = false;
+        auto mouse_handled = false;
         if( modern && action == "MOUSE_MOVE" ) {
             // Hover never changes the selection.
             action.clear();
-        } else if( modern && ( action == "SELECT" || action == "SEC_SELECT" ) ) {
+            mouse_hover = true;
+        } else if( modern && action == "SEC_SELECT" ) {
+            // Right click cancels, like the other modern list menus.
+            action = "QUIT";
+            mouse_handled = true;
+        } else if( modern && action == "SELECT" ) {
+            mouse_handled = true;
             auto consumed = false;
             if( const auto border_cell = cell_in( w_border ) ) {
                 if( const auto hit = scrollbar_input::click( scrollbar_geometry(), *border_cell ) ) {
                     iLine = hit->viewport_pos;
                     iColumn = 1;
+                    last_click_row = -1;
+                    preserve_view = false;
                     consumed = true;
                 }
             }
             if( !consumed ) {
                 if( const auto header_cell = cell_in( w_header ) ) {
-                    for( const auto &tab_label : tab_labels ) {
-                        if( header_cell->y == 2 && header_cell->x >= tab_label.x0 &&
-                            header_cell->x < tab_label.x1 && static_cast<size_t>( tab_label.index ) != iTab ) {
-                            iTab = tab_label.index;
-                            iLine = 0;
-                            iColumn = 1;
+                    for( const auto &label : header_labels ) {
+                        if( header_cell->y == label.y && header_cell->x >= label.x0 &&
+                            header_cell->x < label.x1 ) {
+                            action = label.action;
+                            last_click_row = -1;
+                            preserve_view = false;
                             consumed = true;
                             break;
                         }
                     }
-                    if( !consumed && header_cell->y == 1 && switch_x0 >= 0 &&
-                        header_cell->x >= switch_x0 && header_cell->x < switch_x1 ) {
-                        action = "SWITCH_AUTO_PICKUP_OPTION";
-                        consumed = true;
+                    if( !consumed ) {
+                        for( const auto &tab_label : tab_labels ) {
+                            if( header_cell->y == 2 && header_cell->x >= tab_label.x0 &&
+                                header_cell->x < tab_label.x1 &&
+                                static_cast<size_t>( tab_label.index ) != iTab ) {
+                                iTab = tab_label.index;
+                                iLine = 0;
+                                iColumn = 1;
+                                last_click_row = -1;
+                                preserve_view = false;
+                                consumed = true;
+                                break;
+                            }
+                        }
                     }
                 } else if( const auto cell = cell_in( w ) ) {
                     const auto row = iStartPos + cell->y;
                     if( cell->y < iContentHeight && row < static_cast<int>( cur_rules.size() ) ) {
-                        iLine = row;
-                        // The I/E column starts at the w column separator x = 50.
-                        iColumn = cell->x >= 50 ? 2 : 1;
+                        // The I/E text starts two cells past the w separator at x = 50.
+                        const auto clicked_column = cell->x >= 52 ? 2 : 1;
+                        if( row == last_click_row ) {
+                            // The second click on the same row runs Enter.
+                            iColumn = clicked_column;
+                            action = "CONFIRM";
+                            last_click_row = -1;
+                            preserve_view = false;
+                        } else {
+                            iLine = row;
+                            iColumn = clicked_column;
+                            last_click_row = row;
+                            preserve_view = true;
+                        }
                     }
                     consumed = true;
                 }
@@ -329,7 +390,14 @@ void user_interface::show()
             if( !consumed ) {
                 // A click outside the drawn controls does nothing.
                 action.clear();
+                last_click_row = -1;
+                preserve_view = false;
             }
+        }
+        if( !mouse_handled && !mouse_hover ) {
+            // Keyboard and wheel input end a click pair.
+            last_click_row = -1;
+            preserve_view = false;
         }
 
         if( action == "NEXT_TAB" ) {

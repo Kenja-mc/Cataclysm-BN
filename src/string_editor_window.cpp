@@ -668,7 +668,9 @@ std::pair<bool, std::string> string_editor_window::query_string()
             return { true, _utext.str() };
         } else if( modern && action == "MOUSE_MOVE" ) {
             // Hovering never scrolls or edits.
-        } else if( modern && ( action == "SELECT" || action == "SEC_SELECT" ) ) {
+        } else if( modern && action == "SEC_SELECT" ) {
+            // The secondary click is inert, so it never reaches text entry.
+        } else if( modern && action == "SELECT" ) {
             // A click only scrolls the view; it never injects characters or runs commands.
             if( edit.empty() ) {
                 const auto mouse = ctxt->get_coordinates( _win );

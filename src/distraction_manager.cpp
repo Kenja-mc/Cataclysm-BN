@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <fstream>
+#include <optional>
 #include <string>
 
 #include "cata_utility.h"
@@ -124,6 +125,10 @@ void distraction_manager_gui::show()
             .scroll_to_last = true,
         };
     };
+    // Row of the last plain click, -1 when the next click starts a new pair.
+    auto last_click_row = -1;
+    // A row click leaves the view where it is, so a second click hits the same row.
+    auto preserve_view = false;
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
         // Draw border
@@ -164,7 +169,16 @@ void distraction_manager_gui::show()
         const auto sb = scrollbar_geometry();
         draw_scrollbar( w_border, sb.viewport_pos, sb.viewport_size, sb.content_size, sb.offset );
 
-        calcStartPos( startPosition, currentLine, iContentHeight, num_distractions );
+        if( preserve_view ) {
+            if( startPosition > currentLine ) {
+                startPosition = currentLine;
+            }
+            if( currentLine >= startPosition + iContentHeight ) {
+                startPosition = currentLine - iContentHeight + 1;
+            }
+        } else {
+            calcStartPos( startPosition, currentLine, iContentHeight, num_distractions );
+        }
 
         for( int i = startPosition; i < num_distractions; ++i ) {
             if( !distractions.contains( distractions_status[i] ) ) {
@@ -209,15 +223,25 @@ void distraction_manager_gui::show()
             return cell;
         };
 
+        auto mouse_hover = false;
+        auto mouse_handled = false;
         if( modern && currentAction == "MOUSE_MOVE" ) {
             // Hover never changes the selection.
             currentAction.clear();
-        } else if( modern && ( currentAction == "SELECT" || currentAction == "SEC_SELECT" ) ) {
+            mouse_hover = true;
+        } else if( modern && currentAction == "SEC_SELECT" ) {
+            // Right click cancels, like the other modern list menus.
+            currentAction = "QUIT";
+            mouse_handled = true;
+        } else if( modern && currentAction == "SELECT" ) {
+            mouse_handled = true;
             auto consumed = false;
             if( const auto border_cell = cell_in( w_border ) ) {
                 if( const auto hit = scrollbar_input::click( scrollbar_geometry(), *border_cell ) ) {
                     currentLine = hit->viewport_pos;
                     cur_distraction = distractions_status[currentLine];
+                    last_click_row = -1;
+                    preserve_view = false;
                     consumed = true;
                 }
             }
@@ -225,8 +249,17 @@ void distraction_manager_gui::show()
                 if( const auto cell = cell_in( w ) ) {
                     const auto row = startPosition + cell->y;
                     if( cell->y < iContentHeight && row < num_distractions ) {
-                        currentLine = row;
-                        cur_distraction = distractions_status[currentLine];
+                        if( row == last_click_row ) {
+                            // The second click on the same row runs Enter.
+                            currentAction = "CONFIRM";
+                            last_click_row = -1;
+                            preserve_view = false;
+                        } else {
+                            currentLine = row;
+                            cur_distraction = distractions_status[currentLine];
+                            last_click_row = row;
+                            preserve_view = true;
+                        }
                     }
                     consumed = true;
                 }
@@ -234,7 +267,14 @@ void distraction_manager_gui::show()
             if( !consumed ) {
                 // A click outside the drawn controls does nothing.
                 currentAction.clear();
+                last_click_row = -1;
+                preserve_view = false;
             }
+        }
+        if( !mouse_handled && !mouse_hover ) {
+            // Keyboard and wheel input end a click pair.
+            last_click_row = -1;
+            preserve_view = false;
         }
 
         if( currentAction == "QUIT" ) {

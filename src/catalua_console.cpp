@@ -360,10 +360,10 @@ void show_lua_console_impl()
 
         auto act = ctxt.handle_input();
 
-        if( modern && act == "MOUSE_MOVE" ) {
-            // Hovering never scrolls or edits.
+        if( modern && ( act == "MOUSE_MOVE" || act == "SEC_SELECT" ) ) {
+            // Hovering and the secondary click never scroll or edit.
             act.clear();
-        } else if( modern && ( act == "SELECT" || act == "SEC_SELECT" ) ) {
+        } else if( modern && act == "SELECT" ) {
             // A click only scrolls the log view; it never injects characters or runs commands.
             if( const auto mouse = ctxt.get_coordinates( w_console ) ) {
                 const auto cell = mouse->xy().raw() + point( getmaxx( w_console ),

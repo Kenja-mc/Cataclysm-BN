@@ -1,7 +1,8 @@
 """Modern scheme mouse support in the utility menus.
 
-Real UI assertions on the auto pickup rules list (rows, columns, tabs, switch
-label, scrollbar arrows and track, wheel) and on the Lua console / string
+Real UI assertions on the auto pickup rules list (rows, columns, tabs, header
+labels, scrollbar arrows and track, wheel, and the first click only selecting a
+row while a second click on it runs Enter) and on the Lua console / string
 editor (text entry survives clicks, scrollbar clicks only scroll).
 
 Smoke recipes for the consumers without a dedicated test (Esc opens the
@@ -141,6 +142,40 @@ def test_autopickup_clicks_select_rows_columns_tabs_and_switch(_g):
         # Keyboard still works after all the clicks.
         g.keys("Down", delay=0.5)
         wait_marker(g, 2)
+
+        # The row the keyboard already selected still needs a full click pair:
+        # the first click must not activate it.
+        g.click(10, 6)
+        wait_marker(g, 2)
+        assert "Pickup Rule:" not in g.screen(), \
+            "a single click must not activate the keyboard selected row\n" + g.screen()
+
+        # A second click on the same row runs Enter and opens the rule editor.
+        g.click(10, 6)
+        g.wait_for("Pickup Rule:", timeout=10)
+        assert "rule002" in g.screen(), f"the double clicked row must be edited\n{g.screen()}"
+        g.keys("Escape", delay=1)
+        g.wait_gone("Pickup Rule:", timeout=10)
+
+        # Clicking another row between the clicks starts a new pair.
+        g.click(10, 11)
+        wait_marker(g, 7)
+        assert "Pickup Rule:" not in g.screen(), \
+            "a click on a different row must not activate the previous one\n" + g.screen()
+
+        # The visible "<A>dd" label opens the same prompt as the keyboard.
+        g.click(2, 1)
+        g.wait_for("Pickup Rule:", timeout=10)
+        g.keys("Escape", delay=1)
+        g.wait_gone("Pickup Rule:", timeout=10)
+
+        # The visible "<R>emove" label drops the selected rule.
+        g.click(10, 1)
+        deadline = time.time() + 5
+        while time.time() < deadline and "rule007" in g.screen():
+            time.sleep(0.1)
+        assert "rule007" not in g.screen(), \
+            "the remove label must drop the selected rule\n" + g.screen()
 
         g.keys("Escape", delay=1)
         if "Save changes?" in g.screen():
