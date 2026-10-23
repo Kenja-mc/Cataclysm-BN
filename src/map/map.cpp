@@ -7482,6 +7482,8 @@ auto map::get_dir_circle(const tripoint_bub_ms& f, const tripoint_bub_ms& t) con
 
 void map::load(const point_abs_sm& w, const bool update_vehicle, const bool pump_events) {
     funnel_locations_.clear();
+    dirty_vehicle_list.clear();
+    for (auto z = -OVERMAP_DEPTH; z <= OVERMAP_HEIGHT; ++z) { clear_vehicle_list(z); }
     set_abs_sub(w);
     for (const auto p : bubble_submaps()) {
         loadn(p, update_vehicle);
