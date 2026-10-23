@@ -96,7 +96,42 @@ message(STATUS "${PROJECT_NAME} build environment --")
 message(STATUS "Build realm is: ${CMAKE_SYSTEM_NAME} ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 
 if (LINKER)
-    add_link_options("-fuse-ld=${LINKER}")
+    find_program(CATA_LINKER NAMES "${LINKER}" "ld.${LINKER}" NO_CACHE)
+    if (CATA_LINKER)
+        add_link_options("-fuse-ld=${CATA_LINKER}")
+    else ()
+        message(WARNING
+            "LINKER=${LINKER} was requested but not found; using the compiler's default linker. "
+            "Install the linker (Arch: sudo pacman -S --needed mold), then rerun "
+            "cmake --preset <preset> --fresh.")
+        set(LINKER "" CACHE STRING "Custom Linker to use" FORCE)
+    endif ()
+endif ()
+
+find_program(CCACHE_FOUND ccache)
+if (CATA_CCACHE)
+    if (CCACHE_FOUND)
+        # Share cached objects between worktrees without hashing the build directory.
+        set(CATA_CCACHE_CMD
+            "${CMAKE_COMMAND}" -E env
+            "CCACHE_BASEDIR=${CMAKE_SOURCE_DIR}"
+            "CCACHE_NOHASHDIR=true"
+            "${CCACHE_FOUND}"
+        )
+        set(CMAKE_C_COMPILER_LAUNCHER ${CATA_CCACHE_CMD})
+        set(CMAKE_CXX_COMPILER_LAUNCHER ${CATA_CCACHE_CMD})
+        message(STATUS "Compiler cache: ${CCACHE_FOUND}")
+    else ()
+        message(WARNING
+            "CATA_CCACHE=ON but ccache was not found; compiling without a cache. "
+            "Install ccache (Arch: sudo pacman -S --needed ccache), then rerun "
+            "cmake --preset <preset> --fresh.")
+        foreach (lang C CXX)
+            if ("${CMAKE_${lang}_COMPILER_LAUNCHER}" MATCHES "(^|[/;])ccache($|;)")
+                set(CMAKE_${lang}_COMPILER_LAUNCHER "" CACHE STRING "Compiler launcher" FORCE)
+            endif ()
+        endforeach ()
+    endif ()
 endif ()
 
 # For multi-config generators (e.g. Visual Studio), CMAKE_BUILD_TYPE is not used;
@@ -773,23 +808,6 @@ if (USE_XDG_DIR)
     add_definitions(-DUSE_XDG_DIR)
 endif ()
 
-find_program(CCACHE_FOUND ccache)
-if (CCACHE_FOUND AND CATA_CCACHE)
-    # Configure ccache for git worktrees
-    # Set base_dir to make paths relative, enabling cache sharing across worktrees
-    # see https://ccache.dev/manual/latest.html#_configuration_options
-    set(CATA_CCACHE_CMD
-        "${CMAKE_COMMAND}" -E env
-        "CCACHE_BASEDIR=${CMAKE_SOURCE_DIR}"
-        "CCACHE_NOHASHDIR=true"
-        "${CCACHE_FOUND}"
-    )
-
-    set(CMAKE_C_COMPILER_LAUNCHER   ${CATA_CCACHE_CMD})
-    set(CMAKE_CXX_COMPILER_LAUNCHER ${CATA_CCACHE_CMD})
-    set(CMAKE_C_LINKER_LAUNCHER     ${CATA_CCACHE_CMD})
-    set(CMAKE_CXX_LINKER_LAUNCHER   ${CATA_CCACHE_CMD})
-endif ()
 
 add_subdirectory(src)
 add_subdirectory(data)
