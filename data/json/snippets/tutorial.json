@@ -164,5 +164,83 @@
         "text": "~ is a terrain symbol that indicates water.  From a water source like this, you can fill any containers you might have.  Examine the water (<press_examine>) and press 'c' to fill a container, then select a watertight container to put the water into."
       }
     ]
+  },
+  {
+    "type": "snippet",
+    "category": "tutorial_messages_modern",
+    "text": [
+      {
+        "id": "LESSON_MOVE_MODERN",
+        "text": "The '@' character in the center of the screen represents you.  To move, press <press_UP>, <press_LEFT>, <press_DOWN> or <press_RIGHT> (the numpad works too), and <press_LEFTUP>, <press_RIGHTUP>, <press_LEFTDOWN> or <press_RIGHTDOWN> to step diagonally.  To have your character wait in place, press <press_pause>.  The arrow keys move a targeting marker instead of your character."
+      },
+      {
+        "id": "LESSON_LOOK_MODERN",
+        "text": "To see what the symbols around you mean, hold Shift and press a movement key, or right-click a tile.  A marker selects the tile and the side panel describes the terrain, monsters, and items there.  Esc clears the selection."
+      },
+      {
+        "id": "LESSON_OPEN_MODERN",
+        "text": "That brown '+' next to you is a closed door.  To open it, walk into it, click it, or press <press_examine> while standing next to it."
+      },
+      {
+        "id": "LESSON_CLOSE_MODERN",
+        "text": "You can close an open door by clicking it, or by pressing <press_examine> while standing next to it.  Closing doors behind you can often slow down throngs of monsters greatly."
+      },
+      {
+        "id": "LESSON_SMASH_MODERN",
+        "text": "Most monsters will have to smash their way through a closed door.  If a door is locked or stuck, you can smash it: select it (right-click it, or hold Shift and press its direction), press <press_examine> and choose to smash it."
+      },
+      {
+        "id": "LESSON_WINDOW_MODERN",
+        "text": "You can smash through windows: select the window (right-click it, or hold Shift and press its direction), press <press_examine> and choose to smash it.  A smashed window takes a long time to climb through, and it's possible to hurt yourself on the broken glass, but it's a good last-ditch escape route.  You can smash through other things, too."
+      },
+      {
+        "id": "LESSON_PICKUP_MODERN",
+        "text": "You just stepped on a space with one or more items.  To pick them up, press <press_pickup_all> or click your own tile."
+      },
+      {
+        "id": "LESSON_GOT_ARMOR_MODERN",
+        "text": "The item you just picked up is a type of clothing!  To wear clothing, use <press_wear>.  To take it off, use <press_take_off>, or take it off and drop it in one step with <press_drop>."
+      },
+      {
+        "id": "LESSON_GOT_WEAPON_MODERN",
+        "text": "The item you just picked up is a good weapon!  To wield it, use <press_wield>.  To wield nothing, drop your weapon with <press_drop>, or use <press_wield> on it again to put it away.  A zombie has spawned nearby.  To attack it, walk into it or click it when it is next to you."
+      },
+      {
+        "id": "LESSON_GOT_FOOD_MODERN",
+        "text": "The item you just picked up is a comestible!  To eat a comestible, use <press_eat>.  Comestibles are items you can use up, like food, drink, pills, etc.  Most food expires eventually, so be careful.  Some comestibles, especially drugs, can cause subtle, long-term effects."
+      },
+      {
+        "id": "LESSON_GOT_TOOL_MODERN",
+        "text": "The item you just picked up is a tool!  To activate a tool, use <press_apply>.  Some tools have a set charge, which can be reloaded once depleted.  Other are single-use items, and still others are reusable."
+      },
+      {
+        "id": "LESSON_WORE_STORAGE_MODERN",
+        "text": "You just put on an article of clothing that provides ample storage space.  This will allow you to carry much more stuff, but be aware that there is also a limit on the weight you can carry which depends on strength.  The item you put on also encumbered your torso.  This will make combat a little more difficult.  To check encumbrance, use <press_player_data>."
+      },
+      {
+        "id": "LESSON_WORE_MASK_MODERN",
+        "text": "You just put on an article of clothing that protects against the environment.  The most common and important are respiratory devices, which will protect you against smoke, air-born toxins or organisms, and other common hazards.  However, they also make it a little harder to breath when running, so you'll move more slowly.  To check encumbrance, use <press_player_data>."
+      },
+      {
+        "id": "LESSON_BUTCHER_MODERN",
+        "text": "When you kill a monster it will often leave behind a corpse.  Corpses can be important sources of food, but you must Butcher them by standing on the corpse and using <press_butcher>.  You'll need a bladed weapon in your inventory, preferably a small, very sharp one.  An unskilled butcher may only get a few pieces of meat, or none at all.  Note that many monsters, such as zombies, leave tainted meat, unsuitable for consumption."
+      },
+      {
+        "id": "LESSON_TOOK_CIG_MODERN",
+        "text": "That drug you just took placed an effect on you.  To check your effects, use <press_player_data>.  Most only last a short while, while others, like chronic disease, last until cured by some other means."
+      },
+      {
+        "id": "LESSON_GUN_LOAD_MODERN",
+        "text": "To use a gun, first wield it with <press_wield>.  Next you need to reload using <press_reload_item>, assuming you have the proper ammo.  If you wish to unload your gun, possibly to change ammunition types, use <press_unload>."
+      },
+      {
+        "id": "LESSON_GUN_FIRE_MODERN",
+        "text": "Once you have a loaded gun wielded, you can fire it.  Select a monster with <press_NEXT_TARGET> or by right-clicking it, then press <press_fire> to aim at it, or left-click the monster.  With many guns, you can change the fire mode with <press_select_fire_mode>.  While aiming, <press_NEXT_TARGET> cycles through monsters; press <press_fire> to shoot or Esc to cancel."
+      },
+      {
+        "id": "LESSON_DARK_MODERN",
+        "text": "It's dark down here!  Fortunately, you have a flashlight.  To turn it on, use <press_apply> on your flashlight."
+      }
+    ]
   }
 ]

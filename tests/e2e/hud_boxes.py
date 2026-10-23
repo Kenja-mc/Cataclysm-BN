@@ -7,9 +7,18 @@ import re
 from helpers import action_menu, arena, bub_pos, settle
 from tmux_game import Game, start_new_game
 
-# src/panels_utility.cpp: four of the nine names carry no "moon" word at all.
-MOON_PHASES = ("new moon", "waxing crescent", "half moon", "waxing gibbous", "full moon",
-               "waning gibbous", "waning crescent", "dark moon")
+# The date row contains nine sky cells, exactly one occupied by a sun or moon.
+SKY_BODIES = "☼○☽◑◕●◐☾"
+SKY_TRACK = re.compile("[" + re.escape("-*o)]DOC[(") + r"]{9}|[·" + SKY_BODIES + r"]{9}")
+
+
+def sky_track(row):
+    tracks = [match.group() for match in SKY_TRACK.finditer(row)]
+    assert len(tracks) == 1, "expected one nine-cell sky track:\n" + row
+    track = tracks[0]
+    assert sum(char not in "-·" for char in track) == 1, \
+        "exactly one sky cell must contain a sun or moon:\n" + row
+    return track
 
 
 def test_hud_box_options(g):
@@ -27,7 +36,7 @@ def test_hud_box_options(g):
         box = "\n".join(l[:40] for l in lines[top_edge:bottom[-1] + 1])
         assert "│ Weapon |" in box, "the bottom-left box must name the weapon:\n" + box
         assert "│ Stance |" in box, "the bottom-left box must name the stance:\n" + box
-        assert not any(icon in box for icon in ("✶", "⚔", "☯", "•", "☹", "☕", "♨", "°", "✦")), \
+        assert not any(icon in box for icon in ("✶", "⚔", "☯", "•", "☹", "☕", "♨", "°", "✦", "✓")), \
             "ASCII icons must stay text:\n" + box
     finally:
         other.close()
@@ -43,10 +52,18 @@ def test_boxes_replace_sidebar_rows(g):
     assert lines[0].startswith("╭"), "the box frame starts on the top line:\n" + s
     boxes = "\n".join(l[:40] for l in lines[:18])
     assert any(icon in boxes for icon in ("☼", "☾", "☁", "☂", "↯", "❄", "◎", "▼")), "weather icon: " + boxes
-    for fact in ("Light:", "Wind:", "Weapon", "Mana"):
+    for fact in ("Light:", "Wind:"):
         assert fact in boxes, f"{fact} belongs in a box:\n" + boxes
-    assert any(phase in boxes.lower() for phase in MOON_PHASES), \
-        "box should show the moon phase: " + boxes
+    # Unicode icons name the status rows, so the Weapon and Mana labels are gone.
+    assert re.search(r"│ [✶⚔⌖➶]\s+\S", boxes), "the status box must show the weapon row:\n" + boxes
+    assert "No style" not in boxes, "an unset martial style must not take a HUD row:\n" + boxes
+    assert re.search(r"│ ✦\s+1/\d+", boxes), "the status box must show mana as current/max:\n" + boxes
+    assert not re.search(r"\b(Weapon|Stance|Mana)\s*\|", boxes), "icon rows carry no labels:\n" + boxes
+    track = [line for line in boxes.splitlines() if SKY_TRACK.search(line)]
+    assert len(track) == 1, "the clock row must end in the sky track:\n" + boxes
+    sky_track(track[0])
+    assert not re.search(r"(new|full|half|dark) moon|crescent|gibbous", boxes.lower()), \
+        "the moon phase name is gone from the box:\n" + boxes
     assert re.search(r"(Spring|Summer|Autumn|Winter) \d+", boxes), \
         "box should show the season and day: " + boxes
     # tmux drops trailing blanks, so a short line is all map; the sidebar starts at column 96.
@@ -92,9 +109,9 @@ def test_corner_bars_keep_sidebar_panels(g):
         combat = next((i for i, l in enumerate(lines) if l.startswith("│") and "Walking" in l), None)
         assert combat is not None, "the status bar is missing:\n" + s
         row = lines[combat]
-        # The row is checked for its shape: weapon, style and stance, separated by bars.
         assert "Walking" in row and row.count("│") >= 2, \
-            "one status row must hold weapon, style and stance:\n" + row
+            "one status row must hold the loadout and stance:\n" + row
+        assert "No style" not in row, row
         assert lines[combat - 1].startswith("╭") and lines[combat + 1].startswith("╰"), \
             "the status bar is one row:\n" + "\n".join(lines[combat - 1:combat + 2])
         sidebar = "\n".join(l[96:] for l in lines)

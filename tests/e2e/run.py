@@ -64,6 +64,9 @@ from contextual_hub import TESTS as CONTEXTUAL_HUB_TESTS
 from grouped_controls import TESTS as GROUPED_CONTROLS_TESTS
 from hud_status import TESTS as HUD_STATUS_TESTS
 from world_presets import TESTS as WORLD_PRESETS_TESTS
+from interaction_routes import TESTS as INTERACTION_ROUTES_TESTS
+from tutorial_routes import TESTS as TUTORIAL_ROUTES_TESTS
+from grouped_sidebar import TESTS as GROUPED_SIDEBAR_TESTS
 
 # The modules, in run order. A module's tests that take `g` run on the main game, so a
 # test that needs the state another left behind belongs after it in this order.
@@ -103,6 +106,9 @@ MODULES = [
     ("contextual_hub", CONTEXTUAL_HUB_TESTS),
     ("grouped_controls", GROUPED_CONTROLS_TESTS),
     ("hud_status", HUD_STATUS_TESTS),
+    ("interaction_routes", INTERACTION_ROUTES_TESTS),
+    ("tutorial_routes", TUTORIAL_ROUTES_TESTS),
+    ("grouped_sidebar", GROUPED_SIDEBAR_TESTS),
     # Applies and resets world options on the main world, so it runs last.
     ("world_presets", WORLD_PRESETS_TESTS),
 ]
@@ -148,9 +154,12 @@ SMOKE = [
     "test_g_again_picks_up_the_highlighted_item",
     "test_options_reset_to_default",
     "test_classic_inventory_has_no_craft_hub",
-    "test_contextual_interact_multiple_doors",
+    "test_contextual_no_selection_lists_nearby_actions",
     "test_grouped_distant_melee_selection_never_redirects_or_walks",
     "test_status_short_narrow_fallback_retains_needs",
+    "test_contextual_left_click_opens_and_closes_without_walking",
+    "test_classic_tutorial_preserves_classic_controls",
+    "test_grouped_sidebar_fresh_default_has_no_map_overlays",
     "test_world_defaults_unchanged_without_preset",
 ]
 SMOKE_TESTS = [test for test in TESTS if test.__name__ in SMOKE]

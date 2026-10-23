@@ -1,11 +1,15 @@
 # Visual changes
 
 Screens captured from the terminal build (132×42, Tokyo Night palette) by
-`tests/e2e`'s tmux harness, so they show the real game, not mock-ups. These earlier captures can
-show obsolete control labels; use `OVERHAUL.md` for current keys and
-`CHANGELOG-OVERHAUL.md` for changes by date.
+`tests/e2e`'s tmux harness, so they show the real game, not mock-ups. These earlier captures predate
+the grouped right sidebar and can show obsolete controls. Use `OVERHAUL.md` for current behavior
+and `CHANGELOG-OVERHAUL.md` for changes by date.
 
 ## In game
+
+New configurations use the **grouped** sidebar, based on the Opus HUD proposal. Weather,
+Character and Needs sit on the right instead of covering map tiles. Existing saved layouts stay
+unchanged. Select grouped in **Enter → Misc → Sidebar Options** to try it.
 
 ![Earlier in-game capture: weather and weapon boxes, body panel, and obsolete Controls-strip shortcuts](images/game.png)
 
@@ -30,9 +34,9 @@ sidebar options.
 ![Obsolete Modern click-to-walk hint: an earlier Mouse View capture](images/hover.png)
 
 Modern uses keyboard-only movement. Hovering inspects a tile; right click selects it freely,
-and left click attacks the clicked hostile. Space offers actions for the selected tile, including
-explicit Jump and Smash choices. The capture above predates this behavior: Modern clicks no
-longer walk. Classic retains upstream mouse movement.
+and left click uses an adjacent door, item or furniture, or attacks the clicked hostile.
+Space offers actions for the selected tile, including explicit Jump and Smash choices.
+With nothing selected, Space lists nearby actions and highlights their tiles. Classic retains upstream mouse movement.
 
 Tile hit-testing follows the display scaling factor and the sidebar position, so moving the
 sidebar left or choosing 2x scaling does not shift the tile under the pointer. Menu clicks use

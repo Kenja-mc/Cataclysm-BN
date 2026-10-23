@@ -540,7 +540,7 @@ class game : public submap_load_listener
         std::vector<Creature *> get_creatures_if( const std::function<bool( const Creature & )> &pred );
         std::vector<npc *> get_npcs_if( const std::function<bool( const npc & )> &pred );
         std::vector<weak_ptr_fast<npc>> get_npcs_pointers_if( const std::function<bool( const npc & )>
-                                     &pred );
+                &pred );
         /**
          * Returns a creature matching a predicate. Only living (not dead) creatures
          * are checked. Returns `nullptr` if no creature matches the predicate.
@@ -739,6 +739,7 @@ class game : public submap_load_listener
 
         bool has_gametype() const;
         special_game_type gametype() const;
+        auto on_pickup( const item &it ) -> void;
 
         void toggle_fullscreen();
         void toggle_pixel_minimap();

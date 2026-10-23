@@ -199,12 +199,26 @@ def menu_rows(screen: str, limit: int = MAX_MENU_ROWS, colored: str = "") -> tup
     rows: list[Row] = []
     seen: set[str] = set()
     colored_lines = colored.splitlines()
-    for y, line in enumerate(screen.splitlines()):
-        match = _ROW_RE.match(line)
+    lines = screen.splitlines()
+    frame = next(((y, match) for y, line in enumerate(lines)
+                  if (match := _UILIST_TITLE_RE.search(line))), None)
+    left, right, top, bottom = 0, None, -1, len(lines)
+    if frame:
+        top, title = frame
+        left, right = title.start(), title.end() + 1
+        bottom = next((y for y in range(top + 1, len(lines))
+                       if lines[y][left:left + 1] in ("╰", "└", "+")
+                       and lines[y][right - 1:right] in ("╯", "┘", "+")), len(lines))
+    for y in range(top + 1, bottom):
+        line = lines[y]
+        match = _ROW_RE.match(line[left:right])
         if match:
-            candidates = [(match.start(2), match.group(1),
+            candidates = [(left + match.start(2), match.group(1),
                            re.split(r"[│|┃]", match.group(2))[0].strip())]
         else:
+            # A titled menu owns its rectangle; background HUD/log text is not a menu row.
+            if frame:
+                continue
             # The main menu puts every entry on one line, each in its own bracket.
             candidates = [(bracketed.start(), colored_hotkey(colored_lines[y], bracketed.group(1))
                            if y < len(colored_lines) else "", bracketed.group(1).strip())
@@ -245,18 +259,22 @@ _TITLE_RULES = (("world_mods", "World Mods"), ("ingame_menu", "MAIN MENU"))
 _MAIN_MENU_MARKERS = ("[New Game]", "[MOTD]", "Tip of the day", "Cataclysm: Bright Nights")
 _NEW_GAME_MARKERS = ("Custom Character", "Preset Character", "Defence mode", "Play Now!")
 _FRAME_TITLE_RE = re.compile(r"[─-]{4,}\s*([^│|┃─-┤├┌┐└┘]{1,60}?)\s*[─-]{4,}")
+_UILIST_TITLE_RE = re.compile(r"[╭┌+][─-]*<\s*([^<>│|┃]{1,60}?)\s*>[─-]{2,}")
 
 
 def framed_title(screen: str) -> str:
-    """Title of a bordered frame in the middle of the pane, or "" when there is none.
+    """Title of a menu frame, including top-aligned uilists.
 
-    Every uilist prints its title on the top border.  The middle-band test keeps the fork's
-    corner HUD boxes (weather, status, vehicle) from reading as an open menu.
+    Explicit uilist title brackets distinguish menus from corner HUD boxes. Other frame titles
+    still need to be in the middle band so ordinary corner readings do not become menus.
     """
     lines = screen.splitlines()
     if not lines:
         return ""
     for y, line in enumerate(lines):
+        match = _UILIST_TITLE_RE.search(line)
+        if match:
+            return match.group(1).strip()
         if not 0.25 * len(lines) <= y <= 0.75 * len(lines):
             continue
         match = _FRAME_TITLE_RE.search(line)
@@ -271,19 +289,19 @@ def classify_screen(screen: str) -> str:
         return "unknown"
     if _NEW_GAME_MARKERS[2] in screen or "Play Now!  (Default Scenario)" in screen:
         return "new_game_menu"
-    for menu, markers in _SCREEN_RULES:
-        if all(marker in screen for marker in markers):
-            return menu
     title = framed_title(screen)
     for menu, prefix in _TITLE_RULES:
         if title.startswith(prefix):
             return menu
     if title.startswith("Actions"):
         return "action_menu"
-    if any(marker in screen for marker in _MAIN_MENU_MARKERS):
-        return "new_game_menu" if any(m in screen for m in _NEW_GAME_MARKERS) else "main_menu"
     if title:
         return "menu"
+    for menu, markers in _SCREEN_RULES:
+        if all(marker in screen for marker in markers):
+            return menu
+    if any(marker in screen for marker in _MAIN_MENU_MARKERS):
+        return "new_game_menu" if any(m in screen for m in _NEW_GAME_MARKERS) else "main_menu"
     from tmux_game import in_game  # local: keeps this module importable without the harness
     return "game" if in_game(screen) else "unknown"
 

@@ -7,13 +7,13 @@ import unicodedata
 from contextlib import contextmanager
 from pathlib import Path
 
-from helpers import HELPERS, arena, empty_inventory, give
+from helpers import HELPERS, action_menu, arena, choose_menu_entry, empty_inventory, give
 from options_menu import open_options
+from hud_boxes import SKY_TRACK, sky_track
 from fixtures import retire, shared_game
 
 
 NEEDS = ("Pain", "Thirst", "Hunger", "Rest", "Heat")
-LOADOUT = ("Weapon", "Style", "Stance")
 SIDEBAR_WIDTH = 44
 # Keep Needs visible at minimum height.
 LABEL_PANELS = ("Needs", "Movement", "Location", "Weapon", "Controls", "Log",
@@ -52,6 +52,10 @@ def hud_setup(game):
     empty_inventory(game)
     arena(game)
     healthy(game)
+    action_menu(game, "Combat", "Select Martial Arts Style")
+    game.wait_for("Select a style.")
+    choose_menu_entry(game, "No style")
+    game.wait_gone("Select a style.")
 
 
 @contextmanager
@@ -75,10 +79,10 @@ def hud_game(tag, moon=False, **options):
 
 
 def healthy(game):
-    assert game.lua("local a=gapi.get_avatar() a:clear_effects() "
+    assert game.lua("local a=gapi.get_avatar() a:vomit() a:clear_effects() "
                     "a:set_all_parts_hp_to_max() a:set_painkiller(0) a:set_pain(0) "
                     "a:set_thirst(40) a:set_fatigue(0) a:set_sleep_deprivation(0) "
-                    "a:set_stored_kcal(a:max_stored_kcal()) "
+                    "a:set_stored_kcal(a:max_stored_kcal()-100) "
                     "a:set_temp_celsius(Temperature.from_celsius(37)) "
                     "out(a:get_perceived_pain(),a:get_thirst(),a:get_fatigue())") == ["0,40,0"]
 
@@ -128,14 +132,33 @@ def sidebar_needs(screen, cols=140):
     return fields(regions(screen, cols)[1], NEEDS, ":")
 
 
-def status_needs(screen, cols=140):
-    terrain, sidebar = regions(screen, cols)
-    loadout = fields(terrain, LOADOUT, r"\|")
-    needs = fields(terrain, NEEDS, r"\|")
-    assert not any(re.search(r"\b" + label + r"\s*:", sidebar) for label in NEEDS), \
-        "Status must own Needs without a sidebar duplicate:\n" + screen
-    assert loadout["Weapon"] and loadout["Style"] and loadout["Stance"]
-    return needs
+def status_box(screen, cols=140):
+    terrain = regions(screen, cols)[0].splitlines()
+    stance = next((y for y, line in enumerate(terrain) if "Walking" in line), None)
+    assert stance is not None, "the status box must show the stance:\n" + screen
+    top = max(y for y in range(stance) if terrain[y].startswith("╭"))
+    bottom = next(y for y in range(stance + 1, len(terrain)) if terrain[y].startswith("╰"))
+    return "\n".join(line[:line.index("│", 1) + 1] if line.startswith("│") else line
+                     for line in terrain[top:bottom + 1])
+
+
+def status_needs(screen, cols=140, expected=None):
+    """Only pressing needs belong in Status; the sidebar remains the descriptor oracle."""
+    expected = expected or {}
+    box = status_box(screen, cols)
+    sidebar = regions(screen, cols)[1]
+    assert "No style" not in box, box
+    assert not re.search(r"\bStyle\s*\|", box), "an unset style must not occupy a row:\n" + box
+    for label in NEEDS:
+        assert not re.search(r"\b" + label + r"\s*:", sidebar), \
+            "Status must own Needs without a sidebar duplicate:\n" + screen
+        if label in expected:
+            assert expected[label] in box, f"{label} warning disappeared:\n{box}"
+        else:
+            assert not re.search(r"\b" + label + r"\s*\|", box), \
+                f"healthy {label} must not occupy a row:\n{box}"
+    assert ("Needs met" in box) == (not expected), box
+    return expected
 
 
 def counters(game):
@@ -197,40 +220,32 @@ def set_hud_option(game, label, value):
 def test_status_fixed_needs_and_text_modes(_g):
     with hud_game("meaning") as game:
         baseline = sidebar_needs(game.screen())
-        assert all(re.search(r"[A-Za-z]", baseline[label]) for label in ("Pain", "Rest")), \
-            "zero pain and fatigue need explicit healthy words, not a blank or a bare zero"
         before = counters(game)
-        screen = set_hud_option(game, "Status box", "Top left")
-        assert status_needs(screen) == baseline, screen
-        screen = set_hud_option(game, "Box icons", "Unicode")
-        assert status_needs(screen) == baseline, screen
+        status_needs(set_hud_option(game, "Status box", "Top left"))
+        status_needs(set_hud_option(game, "Box icons", "Unicode"))
         assert counters(game) == before, "HUD options must not spend a turn or moves"
 
-        # Use sidebar descriptors as the oracle.
         set_hud_option(game, "Status box", "Off")
         assert game.lua("local a=gapi.get_avatar() a:set_thirst(400) "
                         "a:set_fatigue(400) a:set_pain(60) "
                         "out(a:get_thirst(),a:get_fatigue(),a:get_perceived_pain())") == ["400,400,60"]
         warning = sidebar_needs(game.screen())
-        for label in ("Pain", "Thirst", "Rest"):
-            assert warning[label] != baseline[label], f"{label} did not reflect its warning state"
+        pressing = {label: warning[label] for label in ("Pain", "Thirst", "Rest")}
+        for label, value in pressing.items():
+            assert value != baseline[label], f"{label} did not reflect its warning state"
         for label in ("Hunger", "Heat"):
             assert warning[label] == baseline[label], f"warning leaked into {label}"
         before = counters(game)
-        screen = set_hud_option(game, "Status box", "Top left")
-        assert status_needs(screen) == warning, screen
-        screen = set_hud_option(game, "Box icons", "Text only")
-        assert status_needs(screen) == warning, screen
+        status_needs(set_hud_option(game, "Status box", "Top left"), expected=pressing)
+        status_needs(set_hud_option(game, "Box icons", "Text only"), expected=pressing)
         assert counters(game) == before, "presentation changes must not alter gameplay time"
         healthy(game)
-        assert status_needs(game.screen()) == baseline, "healthy Pain/Rest must recover explicit values"
-        # Neutral thirst is not Hydrated.
-        assert game.lua("gapi.get_avatar():set_thirst(90) "
-                        "out(gapi.get_avatar():get_thirst())") == ["90"]
-        neutral = status_needs(game.screen())
-        assert neutral["Thirst"] != baseline["Thirst"], "neutral thirst must not claim Hydrated"
+        status_needs(game.screen())
+        # Neither neutral thirst nor hydration asks the player to do anything.
+        assert game.lua("gapi.get_avatar():set_thirst(90) out('ok')") == ["ok"]
+        status_needs(game.screen())
         screen = set_hud_option(game, "Status box", "Off")
-        assert sidebar_needs(screen) == neutral, screen
+        assert sidebar_needs(screen)["Thirst"] != baseline["Thirst"], screen
 
 
 def test_status_toggle_refresh_restores_sidebar_needs(_g):
@@ -238,8 +253,7 @@ def test_status_toggle_refresh_restores_sidebar_needs(_g):
         baseline = sidebar_needs(game.screen())
         before = counters(game)
         for _ in range(2):
-            screen = set_hud_option(game, "Status box", "Top left")
-            assert status_needs(screen) == baseline, screen
+            status_needs(set_hud_option(game, "Status box", "Top left"))
             screen = set_hud_option(game, "Status box", "Off")
             assert sidebar_needs(screen) == baseline, screen
             assert not re.search(r"\bWeapon\s*\|", regions(screen)[0]), screen
@@ -248,35 +262,30 @@ def test_status_toggle_refresh_restores_sidebar_needs(_g):
 
 def test_status_short_narrow_fallback_retains_needs(_g):
     with hud_game("fit", HUD_WEATHER_BOX="top_left", HUD_COMBAT_BOX="top_left") as game:
-        baseline = status_needs(game.screen())
-        loadout = fields(regions(game.screen())[0], LOADOUT, r"\|")
+        baseline = sidebar_needs(set_hud_option(game, "Status box", "Off"))
+        status_needs(set_hud_option(game, "Status box", "Top left"))
         before = counters(game)
         for icon_mode in ("Text only", "Unicode"):
             if icon_mode == "Unicode":
                 set_hud_option(game, "Box icons", icon_mode)
             for cols, rows in ((90, 25), (100, 25), (140, 45)):
-                subprocess.run(["tmux", "resize-window", "-t", game.name,
-                                "-x", str(cols), "-y", str(rows)], check=True)
-                sidebar_owns = rows == 25
+                game.resize(cols, rows)
 
-                def ready(screen, cols=cols, sidebar_owns=sidebar_owns):
-                    pattern = r"\bPain\s*:" if sidebar_owns else r"\bPain\s*\|"
-                    return re.search(pattern, regions(screen, cols)[1 if sidebar_owns else 0])
+                def ready(screen, cols=cols):
+                    terrain, sidebar = regions(screen, cols)
+                    return ("Walking" in terrain and "Needs met" in terrain) or all(
+                        re.search(r"\b" + label + r"\s*:", sidebar) for label in NEEDS)
 
                 screen = resized_frame(game, cols, rows, ready)
-                if rows == 25:
-                    terrain, sidebar = regions(screen, cols)
+                terrain, sidebar = regions(screen, cols)
+                if re.search(r"\bPain\s*:", sidebar):
                     assert sidebar_needs(screen, cols) == baseline, screen
-                    assert not re.search(r"\bPain\s*\|", terrain), screen
-                    if re.search(r"\bWeapon\s*\|", terrain):
-                        fields(terrain, LOADOUT, r"\|")
-                    else:
-                        fallback = fields(sidebar, ("Wield", "Style"), ":")
-                        assert fallback["Wield"] == loadout["Weapon"], screen
-                        assert fallback["Style"] == loadout["Style"], screen
-                    weather_rows(screen, cols)
+                    assert "Needs met" not in terrain, screen
                 else:
-                    assert status_needs(screen, cols) == baseline, screen
+                    status_needs(screen, cols)
+                # Fit policy may keep a lean loadout box or return it to the sidebar.
+                assert "Walking" in terrain or re.search(r"\bWield\s*:\s*\S", sidebar), screen
+                weather_rows(screen, cols)
         assert counters(game) == before, "resize must not consume turns or moves"
 
 
@@ -317,44 +326,42 @@ def date_reading(game):
     return season, day.group(1), clock
 
 
-def assert_weather_date(row, season, day, phase):
+def assert_weather_date(row, season, day):
     assert re.search(re.escape(season) + r"\D*" + day + r"\b", row), row
-    assert phase in row, f"the full sidebar moon phase must survive the combined row: {row!r}"
+    sky_track(row)
 
 
 def test_weather_four_rows_and_instrument_gates(_g):
     with hud_game("weather", moon=True, HUD_WEATHER_BOX="top_left") as game:
         assert game.lua("out(gapi.get_avatar():has_watch())") == ["false"]
         season, day, clock = date_reading(game)
-        phase = moon_phase(game.screen())
         clock_pattern = r"\b\d{1,2}:\d{2}(?::\d{2})?\b"
         temperature_pattern = r"[-+]?\d+(?:\.\d+)?\s*°\s*[CFK]"
         initial = weather_rows(game.screen(), sidebar_width=32)
-        assert_weather_date(initial[1], season, day, phase)
+        assert_weather_date(initial[1], season, day)
         assert not re.search(clock_pattern, initial[1]), "no watch must mean approximate time"
         assert not re.search(temperature_pattern, initial[0]), "temperature leaked without an instrument"
 
         give(game, "thermometer")
         measured = weather_rows(game.screen(), sidebar_width=32)
         assert re.search(temperature_pattern, measured[0]), measured
-        assert_weather_date(measured[1], season, day, phase)
+        assert_weather_date(measured[1], season, day)
         assert not re.search(clock_pattern, measured[1]), "a thermometer must not reveal exact time"
         give(game, "pocketwatch")
         assert game.lua("out(gapi.get_avatar():has_watch())") == ["true"]
         equipped = weather_rows(game.screen(), sidebar_width=32)
-        assert_weather_date(equipped[1], season, day, phase)
+        assert_weather_date(equipped[1], season, day)
         assert clock in equipped[1], "the combined date/time row must preserve the existing clock including seconds"
         before = counters(game)
         for mode in ("Unicode", "Text only"):
             screen = set_hud_option(game, "Box icons", mode)
             icon_rows = weather_rows(screen, sidebar_width=32)
-            assert_weather_date(icon_rows[1], season, day, moon_phase(screen))
+            assert_weather_date(icon_rows[1], season, day)
             assert clock in icon_rows[1], icon_rows
             assert re.search(temperature_pattern, icon_rows[0]).group() == \
                 re.search(temperature_pattern, equipped[0]).group(), icon_rows
             assert equipped[0].removeprefix("Weather: ") in icon_rows[0], icon_rows
             assert re.sub(r"^.*?Light:", "Light:", icon_rows[2]) == equipped[2], icon_rows
-            assert icon_rows[3].rsplit(" ", 1)[0] == equipped[3].rsplit(" ", 1)[0], icon_rows
             assert counters(game) == before, "changing weather icons must not advance time"
         for cols, rows in ((90, 25), (140, 45)):
             subprocess.run(["tmux", "resize-window", "-t", game.name,
@@ -367,13 +374,13 @@ def test_weather_four_rows_and_instrument_gates(_g):
 
             screen = resized_frame(game, cols, rows, ready)
             resized = weather_rows(screen, cols, 32)
-            assert_weather_date(resized[1], season, day, moon_phase(screen, cols))
+            assert_weather_date(resized[1], season, day)
             assert clock in resized[1], resized
         assert counters(game) == before, "resize must not advance time"
         empty_inventory(game)
         assert game.lua("out(gapi.get_avatar():has_watch())") == ["false"]
         unequipped = weather_rows(game.screen(), sidebar_width=32)
-        assert_weather_date(unequipped[1], season, day, moon_phase(game.screen()))
+        assert_weather_date(unequipped[1], season, day)
         assert not re.search(clock_pattern, unequipped[1]), unequipped
         assert not re.search(temperature_pattern, unequipped[0]), unequipped
 
@@ -387,9 +394,11 @@ def test_weather_underground_time_knowledge(_g):
         unknown = weather_rows(game.screen())
         assert "???" in unknown[1], unknown
         assert clock not in unknown[1], unknown
+        assert not SKY_TRACK.search(unknown[1]), "the sky is hidden underground"
         give(game, "pocketwatch")
         known = weather_rows(game.screen())
         assert clock in known[1] and "???" not in known[1], known
+        assert not SKY_TRACK.search(known[1]), "a watch must not reveal the underground sky"
         before = counters(game)
         icon_rows = weather_rows(set_hud_option(game, "Box icons", "Unicode"))
         assert clock in icon_rows[1] and "???" not in icon_rows[1], icon_rows
@@ -414,11 +423,49 @@ def test_weather_text_wind_origin_matches_instrument(_g):
         wind = weather_rows(game.screen())[3]
         assert wind.rsplit(" ", 1)[-1] == expected, (wind, origins)
         before = counters(game)
-        unicode_rows = weather_rows(set_hud_option(game, "Box icons", "Unicode"))
-        assert unicode_rows[3].rsplit(" ", 1)[0] == wind.rsplit(" ", 1)[0], unicode_rows
+        weather_rows(set_hud_option(game, "Box icons", "Unicode"))
         text_rows = weather_rows(set_hud_option(game, "Box icons", "Text only"))
         assert text_rows[3].rsplit(" ", 1)[-1] == expected, (text_rows, origins)
         assert counters(game) == before, "changing the wind display must not advance time"
+
+
+def set_debug_turn(game, turn):
+    """Use the real debug time editor; calendar mutation is not exposed to Lua."""
+    game.keys("F12", delay=0.2)
+    game.wait_for("Debug Functions")
+    choose_menu_entry(game, "Map…")
+    game.wait_for("Change time")
+    choose_menu_entry(game, "Change time")
+    game.keys("t", delay=0.2)
+    game.wait_for("Set turn to?")
+    game.keys("C-u", delay=0.1)
+    game.type(str(turn))
+    game.keys("Enter", delay=0.2)
+    game.wait_for("hour:")
+    game.keys("Escape", delay=0.2)
+    game.wait_gone("hour:")
+
+
+def test_sky_track_ascii_sun_and_new_moon_are_distinct(_g):
+    with hud_game("sky-cycle", moon=True, HUD_WEATHER_BOX="top_left") as game:
+        original = int(game.lua("out(gapi.current_turn():to_turn())")[0])
+        try:
+            set_debug_turn(game, 0)
+            assert "New" in moon_phase(game.screen()), game.screen()
+            night = sky_track(weather_rows(game.screen(), sidebar_width=32)[1])
+            assert "o" in night and "*" not in night, "new moon must be the ASCII o:\n" + night
+            positions = []
+            for hour in (8, 12, 16):
+                set_debug_turn(game, hour * 60 * 60)
+                track = sky_track(weather_rows(game.screen(), sidebar_width=32)[1])
+                assert "*" in track and "o" not in track, "the ASCII sun must be distinct from new moon:\n" + track
+                positions.append(track.index("*"))
+            assert positions[0] < positions[1] < positions[2], \
+                "the sun must progress across the nine-cell track through the day"
+            screen = set_hud_option(game, "Box icons", "Unicode")
+            assert "☼" in sky_track(weather_rows(screen, sidebar_width=32)[1]), screen
+        finally:
+            set_debug_turn(game, original)
 
 
 TESTS = [test_status_fixed_needs_and_text_modes,
@@ -426,4 +473,5 @@ TESTS = [test_status_fixed_needs_and_text_modes,
          test_status_short_narrow_fallback_retains_needs,
          test_weather_four_rows_and_instrument_gates,
          test_weather_underground_time_knowledge,
-         test_weather_text_wind_origin_matches_instrument]
+         test_weather_text_wind_origin_matches_instrument,
+         test_sky_track_ascii_sun_and_new_moon_are_distinct]

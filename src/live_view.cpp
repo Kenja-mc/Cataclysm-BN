@@ -67,7 +67,8 @@ void live_view::show( const tripoint_bub_ms &p )
             draw_border( win );
             center_print( win, 0, c_white, _( "< <color_green>Mouse View</color> >" ) );
             if( const auto hint = tile_selection::hint(); !hint.empty() ) {
-                center_print( win, getmaxy( win ) - 1, c_light_green, "< " + hint + " >" );
+                const auto footer = "< " + trim_by_length( hint, getmaxx( win ) - 6 ) + " >";
+                center_print( win, getmaxy( win ) - 1, c_light_green, footer );
             }
             wnoutrefresh( win );
         } );

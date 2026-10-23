@@ -13,6 +13,9 @@ from tmux_game import Game
 def test_auto_explore(g):
     """n walks toward unseen ground without a rolled NPC or monster blocking the route."""
     exploration_arena(g)
+    # The view can extend beyond the arena's local sweep; rolled hostiles there still stop n.
+    assert g.lua("for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end "
+                 "for _,n in ipairs(gapi.get_all_npcs()) do park(n) end out('ok')") == ["ok"]
     start = bub_pos(g)
     g.keys("n", delay=0.6)
     assert wait_until(lambda: bub_pos(g) != start, timeout=15), "n should start walking:\n" + g.screen()

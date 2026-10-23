@@ -3,6 +3,7 @@ import os
 import re
 import time
 
+from contextual_hub import colored_cells
 from helpers import HELPERS, arena, bub_pos, empty_inventory, give, settle
 from safe_click import see_everything
 from tmux_game import Game, start_new_game
@@ -56,6 +57,17 @@ def test_safe_mode_repeats_hint_while_movement_is_blocked(_g):
         assert game.lua("for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end out('ok')") \
             == ["ok"]
         settle(game)
+        def safe_indicator():
+            for line in game.screen_colors().splitlines():
+                cells = colored_cells(line)
+                visible = "".join(char for char, _ in cells)
+                found = re.search(r"\bSafe\s*:\s*(On|Off)\b", visible)
+                if found:
+                    return cells[found.start(1)][1]
+            raise AssertionError("the safe-mode status is missing:\n" + game.screen())
+
+        enabled_color = safe_indicator()
+        assert enabled_color["fg"] in (32, 92), "enabled safe mode must be green"
         # Glass cells keep each zombie in sight but away from the player: the pauses below give it
         # turns, and a zombie that reaches the player buries the warnings under combat messages.
         assert game.lua("function caged(x, y) for dx=-1,1 do for dy=-1,1 do if dx ~= 0 or dy ~= 0 then "
@@ -76,6 +88,10 @@ def test_safe_mode_repeats_hint_while_movement_is_blocked(_g):
         blocked_at = bub_pos(game)
         game.keys("w", delay=1.5)
         assert bub_pos(game) == blocked_at, "safe mode must keep blocking the move:\n" + game.screen()
+        blocked_color = safe_indicator()
+        assert blocked_color["fg"] in (33, 93), \
+            "blocked safe mode must be yellow, distinct from enabled green:\n" + game.screen_colors()
+        assert blocked_color != enabled_color
         # The hint is drawn while the blocked key is processed, which lands later on a loaded
         # runner than the fixed key delay allows for.
         try:

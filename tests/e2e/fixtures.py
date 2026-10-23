@@ -26,8 +26,8 @@ def _close_all():
 atexit.register(_close_all)
 
 
-def _key(options, cols, rows, keybindings, userdir):
-    return json.dumps([sorted((options or {}).items()), cols, rows, str(keybindings), str(userdir)])
+def _key(options, cols, rows, keybindings, userdir, layout):
+    return json.dumps([sorted((options or {}).items()), cols, rows, str(keybindings), str(userdir), layout])
 
 
 def retire(game):
@@ -44,13 +44,13 @@ def retire(game):
 
 @contextmanager
 def shared_game(name, options=None, cols=140, rows=45, keybindings=None, userdir=None,
-                define="", setup=None):
+                define="", setup=None, layout="labels"):
     """The game for this profile, with `setup` run before every test that borrows it."""
-    key = _key(options, cols, rows, keybindings, userdir)
+    key = _key(options, cols, rows, keybindings, userdir, layout)
     game = _games.get(key)
     if game is None:
         game = Game(name=name, cols=cols, rows=rows, options=options,
-                    keybindings=keybindings, userdir=userdir)
+                    keybindings=keybindings, userdir=userdir, layout=layout)
         start_new_game(game)
         if define:
             game.define_lua(define)

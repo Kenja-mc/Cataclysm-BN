@@ -25,6 +25,7 @@
 #include "game.h"
 #include "game_constants.h"
 #include "input.h"
+#include "icon_font.h"
 #include "json.h"
 #include "language.h"
 #include "line.h"
@@ -303,57 +304,57 @@ auto read_translation_member( const JsonObject &jo, const std::string &member_na
                               const translation &fallback ) -> translation
 {
     if( !jo.has_member( member_name ) ) {
-        return fallback;
-    }
+    return fallback;
+}
 
-    auto result = fallback;
-    result.deserialize( *jo.get_raw( member_name ) );
-    return result;
+auto result = fallback;
+result.deserialize( *jo.get_raw( member_name ) );
+return result;
 }
 
 auto read_option_hide( const JsonObject &jo ) -> options_manager::copt_hide_t
 {
     if( !jo.has_string( "hide" ) ) {
-        return options_manager::COPT_NO_HIDE;
-    }
-
-    const auto hide = jo.get_string( "hide" );
-    if( hide == "none" ) {
-        return options_manager::COPT_NO_HIDE;
-    }
-    if( hide == "always" ) {
-        return options_manager::COPT_ALWAYS_HIDE;
-    }
-    if( hide == "sdl_hide" ) {
-        return options_manager::COPT_SDL_HIDE;
-    }
-    if( hide == "curses_hide" ) {
-        return options_manager::COPT_CURSES_HIDE;
-    }
-    if( hide == "posix_curses_hide" ) {
-        return options_manager::COPT_POSIX_CURSES_HIDE;
-    }
-    if( hide == "no_sound_hide" ) {
-        return options_manager::COPT_NO_SOUND_HIDE;
-    }
-    if( hide == "android_only" ) {
-        return options_manager::COPT_ANDROID_HIDE;
-    }
-
-    jo.throw_error( string_format( "Unknown option hide rule '%s'", hide ), "hide" );
     return options_manager::COPT_NO_HIDE;
+}
+
+const auto hide = jo.get_string( "hide" );
+if( hide == "none" ) {
+    return options_manager::COPT_NO_HIDE;
+}
+if( hide == "always" ) {
+    return options_manager::COPT_ALWAYS_HIDE;
+}
+if( hide == "sdl_hide" ) {
+    return options_manager::COPT_SDL_HIDE;
+}
+if( hide == "curses_hide" ) {
+    return options_manager::COPT_CURSES_HIDE;
+}
+if( hide == "posix_curses_hide" ) {
+    return options_manager::COPT_POSIX_CURSES_HIDE;
+}
+if( hide == "no_sound_hide" ) {
+    return options_manager::COPT_NO_SOUND_HIDE;
+}
+if( hide == "android_only" ) {
+    return options_manager::COPT_ANDROID_HIDE;
+}
+
+jo.throw_error( string_format( "Unknown option hide rule '%s'", hide ), "hide" );
+return options_manager::COPT_NO_HIDE;
 }
 
 auto read_option_dependencies( const JsonObject &jo ) -> std::vector<option_dependency_definition>
 {
     if( !jo.has_array( "deps" ) ) {
-        return {};
-    }
+    return {};
+}
 
-    auto result = std::vector<option_dependency_definition>();
-    for( const JsonObject dep_jo : jo.get_array( "deps" ) ) {
-        auto dep = option_dependency_definition{ .option = dep_jo.get_string( "option" ), .values = {} };
-        if( dep_jo.has_array( "values" ) ) {
+auto result = std::vector<option_dependency_definition>();
+for( const JsonObject dep_jo : jo.get_array( "deps" ) ) {
+    auto dep = option_dependency_definition{ .option = dep_jo.get_string( "option" ), .values = {} };
+    if( dep_jo.has_array( "values" ) ) {
             for( const std::string value : dep_jo.get_array( "values" ) ) {
                 dep.values.push_back( value );
             }
@@ -370,26 +371,26 @@ auto parse_number( const std::string &text, T &out ) -> bool
     std::istringstream ss( text );
     ss.imbue( std::locale::classic() );
     if( !( ss >> out ) ) {
-        return false;
-    }
-    ss >> std::ws;
-    return ss.eof();
+    return false;
+}
+ss >> std::ws;
+return ss.eof();
 }
 
 /// Preset values are the same strings the options file and worldoptions.json store.
 auto read_preset_value( const JsonMember &member ) -> std::string
 {
     if( member.test_string() ) {
-        return member.get_string();
+    return member.get_string();
     }
     if( member.test_bool() ) {
-        return member.get_bool() ? "true" : "false";
+    return member.get_bool() ? "true" : "false";
     }
     if( member.test_int() ) {
-        return std::to_string( member.get_int() );
+    return std::to_string( member.get_int() );
     }
     if( member.test_float() ) {
-        return string_format( "%.10g", member.get_float() );
+    return string_format( "%.10g", member.get_float() );
     }
     member.throw_error( "A world preset value must be a string, number or bool" );
     return {};
@@ -433,7 +434,7 @@ auto parse_string_items( const JsonObject &jo ) -> std::vector<options_manager::
     auto result = std::vector<options_manager::id_and_option>();
     for( const JsonObject item_jo : jo.get_array( "items" ) ) {
         const auto label = read_translation_member( item_jo, "label",
-                           no_translation( item_jo.get_string( "value" ) ) );
+            no_translation( item_jo.get_string( "value" ) ) );
         result.emplace_back( item_jo.get_string( "value" ), label );
     }
     return result;
@@ -489,7 +490,7 @@ auto parse_option_definition( const JsonObject &jo ) -> option_definition
     };
 
     if( option.stype == "bool" ) {
-        option.default_bool = jo.get_bool( "default" );
+    option.default_bool = jo.get_bool( "default" );
         option.has_default_bool_android = jo.has_bool( "default_android" );
         option.default_bool_android = jo.get_bool( "default_android", option.default_bool );
 #if defined(__ANDROID__)
@@ -498,7 +499,7 @@ auto parse_option_definition( const JsonObject &jo ) -> option_definition
         }
 #endif
     } else if( option.stype == "int" ) {
-        option.min_int = jo.get_int( "min" );
+    option.min_int = jo.get_int( "min" );
         option.max_int = jo.get_int( "max" );
         option.default_int = jo.get_int( "default" );
         option.has_default_int_android = jo.has_int( "default_android" );
@@ -509,12 +510,12 @@ auto parse_option_definition( const JsonObject &jo ) -> option_definition
         }
 #endif
     } else if( option.stype == "float" ) {
-        option.min_float = static_cast<float>( jo.get_float( "min" ) );
+    option.min_float = static_cast<float>( jo.get_float( "min" ) );
         option.max_float = static_cast<float>( jo.get_float( "max" ) );
         option.default_float = static_cast<float>( jo.get_float( "default" ) );
         option.has_default_float_android = jo.has_float( "default_android" );
         option.default_float_android = static_cast<float>( jo.get_float( "default_android",
-                                       option.default_float ) );
+            option.default_float ) );
 #if defined(__ANDROID__)
         if( option.has_default_float_android ) {
             option.default_float = option.default_float_android;
@@ -522,7 +523,7 @@ auto parse_option_definition( const JsonObject &jo ) -> option_definition
 #endif
         option.step_float = static_cast<float>( jo.get_float( "step" ) );
     } else if( option.stype == "string_input" ) {
-        option.default_string = jo.get_string( "default" );
+    option.default_string = jo.get_string( "default" );
         if( jo.has_string( "default_android" ) ) {
             option.default_string_android = jo.get_string( "default_android" );
 #if defined(__ANDROID__)
@@ -531,7 +532,7 @@ auto parse_option_definition( const JsonObject &jo ) -> option_definition
         }
         option.max_length = jo.get_int( "max_length" );
     } else if( option.stype == "string_select" ) {
-        option.default_string = jo.get_string( "default" );
+    option.default_string = jo.get_string( "default" );
         if( jo.has_string( "default_android" ) ) {
             option.default_string_android = jo.get_string( "default_android" );
 #if defined(__ANDROID__)
@@ -540,7 +541,7 @@ auto parse_option_definition( const JsonObject &jo ) -> option_definition
         }
         option.items = parse_string_items( jo );
     } else if( option.stype == "int_map" ) {
-        option.default_int = jo.get_int( "default" );
+    option.default_int = jo.get_int( "default" );
         option.has_default_int_android = jo.has_int( "default_android" );
         option.default_int_android = jo.get_int( "default_android", option.default_int );
 #if defined(__ANDROID__)
@@ -570,7 +571,7 @@ auto capture_option_values( const options_manager::options_container &container 
 auto restore_option_values( const std::map<std::string, std::string> &values,
                             options_manager::options_container &container ) -> void
 {
-    for( const auto &[name, value] : values ) {
+for( const auto &[name, value] : values ) {
         if( container.contains( name ) ) {
             container[name].setValue( value );
         }
@@ -580,7 +581,7 @@ auto restore_option_values( const std::map<std::string, std::string> &values,
 auto sync_snapshot_keys( const options_manager::options_container &current,
                          options_manager::options_container &snapshot ) -> void
 {
-    for( const auto &[name, option] : current ) {
+for( const auto &[name, option] : current ) {
         if( !snapshot.contains( name ) ) {
             snapshot.emplace( name, option );
         }
@@ -669,7 +670,7 @@ void options_manager::addOptionToPage( const std::string &name, const std::strin
 auto options_manager::insert_page_item( Page &page, const PageItem &item ) -> void
 {
     if( item.group.empty() ) {
-        page.items_.push_back( item );
+    page.items_.push_back( item );
         return;
     }
 
@@ -678,7 +679,7 @@ auto options_manager::insert_page_item( Page &page, const PageItem &item ) -> vo
         return existing.group == item.group;
     } );
     if( group_range == page.items_.rend() ) {
-        page.items_.push_back( item );
+    page.items_.push_back( item );
         return;
     }
 
@@ -1591,7 +1592,7 @@ std::vector<options_manager::id_and_option> options_manager::load_tilesets_from(
     // Use local map as build_resource_list will clear the first parameter
     std::map<std::string, std::string> local_tilesets;
     auto tileset_names = build_resource_list( local_tilesets, "tileset", path,
-                         PATH_INFO::tileset_conf() );
+        PATH_INFO::tileset_conf() );
 
     // Copy found tilesets
     TILESETS.insert( local_tilesets.begin(), local_tilesets.end() );
@@ -1633,7 +1634,7 @@ std::vector<options_manager::id_and_option> options_manager::load_soundpack_from
     // build_resource_list will clear &resource_option - first param
     std::map<std::string, std::string> local_soundpacks;
     auto soundpack_names = build_resource_list( local_soundpacks, "soundpack", path,
-                           PATH_INFO::soundpack_conf() );
+        PATH_INFO::soundpack_conf() );
 
     // Copy over found soundpacks
     SOUNDPACKS.insert( local_soundpacks.begin(), local_soundpacks.end() );
@@ -1704,12 +1705,14 @@ auto options_manager::parse_option_definition_entry( const JsonObject &jo ) -> v
 {
     const auto type = jo.get_string( "type" );
     const auto has_page = [&]( const std::string & page_id ) -> bool {
-        return std::ranges::any_of( pages_, [&]( const Page & page ) {
+        return std::ranges::any_of( pages_, [&]( const Page & page )
+        {
             return page.id_ == page_id;
         } );
     };
     const auto has_group = [&]( const std::string & group_id ) -> bool {
-        return std::ranges::any_of( groups_, [&]( const Group & group ) {
+        return std::ranges::any_of( groups_, [&]( const Group & group )
+        {
             return group.id_ == group_id;
         } );
     };
@@ -1824,7 +1827,7 @@ auto options_manager::parse_option_definition_entry( const JsonObject &jo ) -> v
 auto options_manager::parse_option_definition_file( JsonIn &jsin ) -> void
 {
     if( jsin.test_object() ) {
-        auto jo = jsin.get_object();
+    auto jo = jsin.get_object();
         parse_option_definition_entry( jo );
         jo.finish();
         return;
@@ -1832,7 +1835,7 @@ auto options_manager::parse_option_definition_file( JsonIn &jsin ) -> void
 
     jsin.start_array();
     while( !jsin.end_array() ) {
-        auto jo = jsin.get_object();
+    auto jo = jsin.get_object();
         parse_option_definition_entry( jo );
         jo.finish();
     }
@@ -2119,7 +2122,7 @@ void options_manager::add_options_interface()
 
     add( "CONTEXTUAL_INTERACT", interface,
          translate_marker( "Contextual interact" ),
-         translate_marker( "In Modern, Space interacts with a selected nearby visible tile, or asks for a nearby direction when nothing is selected.  Open, close, examine, pickup, jump and smash share this control; jump and smash require an explicit choice.  Off and in Classic, keep the original examine behavior." ),
+         translate_marker( "In Modern, Space interacts with a selected nearby visible tile, or lists nearby actions when nothing is selected.  Jump and smash require an explicit choice.  Off and in Classic, Space keeps the original examine behavior.  This option governs Space, not Modern contextual mouse clicks." ),
          true
        );
 
@@ -2144,7 +2147,7 @@ void options_manager::add_options_interface()
        );
 
     add( "HUD_WEATHER_BOX", interface, translate_marker( "Weather box" ),
-         translate_marker( "A map box with four rows: weather and known temperature, date/time and moon phase, light, and wind.  Exact time needs a clock; without one, time is unknown underground.  Temperature needs a thermometer.  Wind letters name its origin; arrows show its flow.  Matching sidebar fields step aside only when the box fits." ),
+         translate_marker( "A map box with weather and known temperature, date/time and the sun or moon, light, and wind.  Exact time needs a clock; temperature needs a thermometer.  The grouped sidebar layout puts these readings in the sidebar instead." ),
     {
         { "top_left", translate_marker( "Top left" ) }, { "top_right", translate_marker( "Top right" ) },
         { "bottom_left", translate_marker( "Bottom left" ) }, { "bottom_right", translate_marker( "Bottom right" ) },
@@ -2153,7 +2156,7 @@ void options_manager::add_options_interface()
     "top_left" );
 
     add( "HUD_COMBAT_BOX", interface, translate_marker( "Status box" ),
-    translate_marker( "A map box for your weapon, fighting style, stance, Pain, Thirst, Hunger, Rest and Heat.  Needs keep fixed positions and labels in both icon and text modes.  Matching sidebar fields step aside only when the box fits; smaller views keep the sidebar fallback." ), {
+    translate_marker( "A map box for your weapon, chosen fighting style, stance and needs that call for attention.  Text only keeps labels.  The grouped sidebar layout puts these readings in the sidebar instead." ), {
         { "top_left", translate_marker( "Top left" ) }, { "top_right", translate_marker( "Top right" ) },
         { "bottom_left", translate_marker( "Bottom left" ) }, { "bottom_right", translate_marker( "Bottom right" ) },
         { "off", translate_marker( "Off" ) }
@@ -2161,7 +2164,7 @@ void options_manager::add_options_interface()
     "top_left" );
 
     add( "HUD_VEHICLE_BOX", interface, translate_marker( "Vehicle box" ),
-         translate_marker( "A small box on the map showing vehicle info: speed, fuel, heading, engine state and battery.  Shown automatically aboard a vehicle or when remote-controlling one." ),
+         translate_marker( "Vehicle speed, fuel, heading, engine state and battery, shown aboard a vehicle or when remote-controlling one.  The grouped sidebar layout puts these readings in the sidebar instead." ),
     {
         { "top_left", translate_marker( "Top left" ) }, { "top_right", translate_marker( "Top right" ) },
         { "bottom_left", translate_marker( "Bottom left" ) }, { "bottom_right", translate_marker( "Bottom right" ) },
@@ -2170,13 +2173,13 @@ void options_manager::add_options_interface()
     "bottom_right" );
 
     add( "HUD_CORNER_BARS", interface, translate_marker( "Compact corner bars" ),
-         translate_marker( "Shows the weather and status readings as one-row bars in the map corners instead of four-row and nine-row boxes.  The status bar carries the needs summary when the row has room for it.  The sidebar keeps the panels it would otherwise hide." ),
+         translate_marker( "Shows the weather and status readings as one-row bars in the map corners instead of boxes.  The status bar carries the needs summary when the row has room for it.  The sidebar keeps the panels it would otherwise hide." ),
          false );
 
     add( "HUD_ICONS", interface, translate_marker( "Box icons" ),
-         translate_marker( "Icons in the weather, status and vehicle boxes.  Unicode uses the bundled fallback font and keeps text labels.  Nerd Font requires your own compatible patched font.  Text only uses ASCII labels and works everywhere." ),
-    { { "unicode", translate_marker( "Unicode" ) }, { "nerd", translate_marker( "Nerd Font" ) }, { "ascii", translate_marker( "Text only" ) } },
-    "unicode" );
+         translate_marker( "Icons in the weather, status and vehicle boxes.  Icon font draws Material Design Icons and human stance figures; the graphical version bundles it, and a terminal needs a Nerd Font.  Unicode uses common symbols.  Text only uses ASCII labels and works everywhere." ),
+    { { "unicode", translate_marker( "Unicode" ) }, { "nerd", translate_marker( "Icon font" ) }, { "ascii", translate_marker( "Text only" ) } },
+    icon_font::bundled ? "nerd" : "unicode" );
 
     add( "SHOW_TIPS", interface, translate_marker( "Show first-time tips" ),
          translate_marker( "If true, a one-line tip appears in the message log the first time your character gets hungry, hurt, sees a hostile and so on." ),
@@ -4102,8 +4105,8 @@ struct string_col {
 
 auto options_manager::reset_page_to_defaults( const Page &page ) -> void
 {
-    for( const PageItem &item : page.items_ ) {
-        if( item.type == ItemType::Option ) {
+for( const PageItem &item : page.items_ ) {
+    if( item.type == ItemType::Option ) {
             // get_option copies the definition into a world that predates the option.
             get_option( item.data ).set_default();
         }
@@ -4229,7 +4232,8 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
     const auto first_tab_x = 7;
     const auto tab_at = [&]( const int x ) -> std::optional<int> {
         auto left = first_tab_x;
-        for( int i = 0; i < static_cast<int>( pages_.size() ); i++ ) {
+        for( int i = 0; i < static_cast<int>( pages_.size() ); i++ )
+        {
             const auto right = left + utf8_width( tab_name( i ) ) + 2;
             if( x >= left && x < right ) {
                 return i;
@@ -4273,7 +4277,8 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
         const auto fmt_name_value = [&]( const PageItem & it, bool is_selected )
         -> std::pair<string_col, string_col> {
             const auto in_group_prefix = "  ";
-            switch( it.type ) {
+            switch( it.type )
+            {
                 case ItemType::BlankLine: {
                     std::string name = it.group.empty() ? "" : in_group_prefix;
                     return { string_col( name, c_white ), string_col() };
@@ -4455,7 +4460,8 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
             // get_coordinates() is relative to the window centre.
             const auto cell_in = [&]( const catacurses::window & w ) -> std::optional<point> {
                 const auto mouse = ctxt.get_coordinates( w );
-                if( !mouse ) {
+                if( !mouse )
+                {
                     return std::nullopt;
                 }
                 const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
@@ -4550,7 +4556,8 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
 
         const auto is_selectable = [&]( int i ) -> bool {
             const PageItem &curr_item = page_items[i];
-            switch( curr_item.type ) {
+            switch( curr_item.type )
+            {
                 case ItemType::BlankLine:
                     return false;
                 case ItemType::GroupHeader:
@@ -4826,7 +4833,7 @@ void options_manager::deserialize( JsonIn &jsin )
 
         const std::string name = migrateOptionName( joOptions.get_string( "name" ) );
         const std::string value = migrateOptionValue( joOptions.get_string( "name" ),
-                                  joOptions.get_string( "value" ) );
+            joOptions.get_string( "value" ) );
 
         add_retry( name, value );
         options[ name ].setValue( value );

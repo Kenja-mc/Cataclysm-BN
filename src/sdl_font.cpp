@@ -1,5 +1,8 @@
 #if defined(TILES)
 #include "sdl_font.h"
+
+#include <cmath>
+
 #include "output.h"
 #include "platform_win.h"
 #include "string_utils.h"
@@ -59,18 +62,18 @@ std::unique_ptr<Font> Font::load_font( SDL_Renderer_Ptr &renderer, SDL_PixelForm
         // Try to load as bitmap font from user font dir, then from font dir.
         try {
             return std::unique_ptr<Font>( std::make_unique<BitmapFont>( renderer, format, width, height,
-                                          palette,
-                                          typeface ) );
+                    palette,
+                    typeface ) );
         } catch( std::exception & ) {
             try {
                 return std::unique_ptr<Font>( std::make_unique<BitmapFont>( renderer, format, width, height,
-                                              palette,
-                                              PATH_INFO::user_fontdir() + typeface ) );
+                        palette,
+                        PATH_INFO::user_fontdir() + typeface ) );
             } catch( std::exception & ) {
                 try {
                     return std::unique_ptr<Font>( std::make_unique<BitmapFont>( renderer, format, width, height,
-                                                  palette,
-                                                  PATH_INFO::fontdir() + typeface ) );
+                            palette,
+                            PATH_INFO::fontdir() + typeface ) );
                 } catch( std::exception &err ) {
                     dbg( DL::Error ) << "Failed to load font " << typeface << ": " << err.what();
                     // Continue to load as truetype font
@@ -81,7 +84,7 @@ std::unique_ptr<Font> Font::load_font( SDL_Renderer_Ptr &renderer, SDL_PixelForm
     // Not loaded as bitmap font (or it failed), try to load as truetype
     try {
         return std::unique_ptr<Font>( std::make_unique<CachedTTFFont>( width, height,
-                                      palette, typeface, fontsize, fontblending ) );
+                palette, typeface, fontsize, fontblending ) );
     } catch( std::exception &err ) {
         dbg( DL::Error ) << "Failed to load font " << typeface << ": " << err.what();
     }
@@ -344,16 +347,20 @@ SDL_Texture_Ptr CachedTTFFont::create_glyph( const SDL_Renderer_Ptr &renderer,
     }
     const auto cell_width = width * static_cast<int>( utf8_wrapper( ch ).display_width() );
     auto surface = SDL_Surface_Ptr( SDL_CreateSurface( cell_width, height, SDL_PIXELFORMAT_RGBA32 ) );
-    const auto glyph_width = std::min( sglyph->w, cell_width );
-    const auto glyph_height = std::min( sglyph->h, height );
+    const auto scaled = sglyph->w > cell_width || sglyph->h > height;
+    // Shrink oversized glyphs by one factor so icons keep their shape.
+    const auto scale = scaled ? std::min( static_cast<float>( cell_width ) / sglyph->w,
+                                          static_cast<float>( height ) / sglyph->h ) : 1.0f;
+    const auto glyph_width = std::min( static_cast<int>( std::lround( sglyph->w * scale ) ),
+                                       cell_width );
+    const auto glyph_height = std::min( static_cast<int>( std::lround( sglyph->h * scale ) ), height );
     const auto dst_rect = SDL_Rect{
         .x = ( cell_width - glyph_width ) / 2, .y = ( height - glyph_height ) / 2,
         .w = glyph_width, .h = glyph_height
     };
-    const auto scaled = sglyph->w > cell_width || sglyph->h > height;
     const auto copied = scaled ?
                         SDL_BlitSurfaceScaled( sglyph.get(), nullptr, surface.get(), &dst_rect,
-                                fontblending ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST ) :
+                            fontblending ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST ) :
                         SDL_BlitSurface( sglyph.get(), nullptr, surface.get(), &dst_rect );
     if( !printErrorIf( !copied, "Failed to fit glyph into font cell" ) ) {
         sglyph = std::move( surface );
@@ -645,7 +652,7 @@ FontFallbackList::FontFallbackList(
 {
     for( const std::string &typeface : typefaces ) {
         std::unique_ptr<Font> font = Font::load_font( renderer, format, typeface, fontsize, w, h, palette,
-                                     fontblending );
+            fontblending );
         if( !font ) {
             throw std::runtime_error( "Cannot load font " + typeface );
         }

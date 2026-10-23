@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "action.h"
+#include "action_route.h"
 #include "cata_utility.h"
 #include "catacharset.h"
 #include "color.h"
@@ -31,17 +32,14 @@
 std::string expand_key_tags( const std::string &text )
 {
     auto out = text;
-    for( auto pos = out.find( "<press_" ); pos != std::string::npos; pos = out.find( "<press_", pos ) ) {
+    for( auto pos = out.find( "<press_" ); pos != std::string::npos;
+         pos = out.find( "<press_", pos ) ) {
         const auto end = out.find( '>', pos );
         if( end == std::string::npos ) {
             break;
         }
-        const auto action = look_up_action( out.substr( pos + 7, end - pos - 7 ) );
-        const auto keys = keys_bound_to( action );
-        // One key reads better than every binding ("w", not "w or UP or 8 or NUMPAD_8").
-        const auto key = keys.empty() ? press_x( action, "", "" )
-                         : keys.front() == ' ' ? std::string( _( "Space" ) ) : std::string( 1, keys.front() );
-        const auto replacement = "<color_light_blue>" + key + "</color>";
+        const auto replacement = "<color_light_blue>" + action_route( out.substr( pos + 7,
+            end - pos - 7 ) ) + "</color>";
         out.replace( pos, end - pos + 1, replacement );
         pos += replacement.size();
     }
@@ -169,7 +167,7 @@ void help::display_help()
     const auto init_windows = [&]( ui_adaptor & ui ) {
         w_help_border = catacurses::newwin( FULL_SCREEN_HEIGHT, FULL_SCREEN_WIDTH,
                                             point( TERMX > FULL_SCREEN_WIDTH ? ( TERMX - FULL_SCREEN_WIDTH ) / 2 : 0,
-                                                    TERMY > FULL_SCREEN_HEIGHT ? ( TERMY - FULL_SCREEN_HEIGHT ) / 2 : 0 ) );
+                                                TERMY > FULL_SCREEN_HEIGHT ? ( TERMY - FULL_SCREEN_HEIGHT ) / 2 : 0 ) );
         w_help = catacurses::newwin( FULL_SCREEN_HEIGHT - 2, FULL_SCREEN_WIDTH - 2,
                                      point( 1 + ( TERMX > FULL_SCREEN_WIDTH ? ( TERMX - FULL_SCREEN_WIDTH ) / 2 : 0 ),
                                             1 + ( TERMY > FULL_SCREEN_HEIGHT ? ( TERMY - FULL_SCREEN_HEIGHT ) / 2 : 0 ) ) );

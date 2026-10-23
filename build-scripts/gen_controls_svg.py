@@ -33,13 +33,13 @@ ABBREV = {
     "Throw Item": "throw",
     "Open Inventory": "inventory",
     "Pick up items from all nearby tiles": "pick up all",
-    "Ignore Nearby Enemy": "ignore enemy",
+    "Ignore Nearby Enemy": "ignore foe",
     "Action Menu": "all actions",
     "Explore the nearest unexplored area": "auto-explore",
     "View Map": "map",
     "Examine Nearby Terrain": "tile actions",
     "View Help": "help",
-    "Main Menu": "main menu",
+    "Main Menu": "menu",
     "Fire Wielded Item": "attack",
     "Debug Menu": "debug",
     "Ascend stairs": "stairs up",
@@ -50,6 +50,12 @@ ACTION_LABELS = {
     "cycle_move": "mode",
     "NEXT_TARGET": "next target",
     "PREV_TARGET": "prev target",
+    "wield": "wield",
+    "player_data": "character",
+    "messages": "messages",
+    "butcher": "butcher",
+    "select_fire_mode": "fire mode",
+    "advinv": "adv. inv.",
 }
 DIRECTIONS = ("n", "w", "s", "e", "nw", "ne", "sw", "se")
 LOOK_ACTIONS = tuple(f"shift_{direction}" for direction in DIRECTIONS)
@@ -110,7 +116,7 @@ def load_entries():
                           / OVERLAY_FILE).read_text(encoding="utf-8"))
     for entry in overlay:
         if entry.get("category") == "DEFAULTMODE":
-            entries[entry["id"]] = entry  # same id+category replaces bindings
+            entries[entry["id"]] = {**entries.get(entry["id"], {}), **entry}
     return entries
 
 
@@ -140,7 +146,7 @@ def render_svg(keymap, entries):
         'modifiers. Navigation, arrow and numpad clusters are shown below, not '
         'in their physical position to the right of the main keyboard. '
         'Enter opens all actions, inventory groups equipment and crafting, '
-        'Space groups tile actions. Shift-direction looks freely; Ctrl-direction '
+        'Space groups tile actions. Shift-direction selects freely; Ctrl-direction '
         'physically peeks with the normal cost. Classic controls are unchanged.</desc>',
         '<text x="20" y="32" font-size="25" font-weight="700">Modern controls</text>',
         '<text x="20" y="57" font-size="14">ANSI layout · action below each key · '
@@ -173,7 +179,7 @@ def render_svg(keymap, entries):
                 f'font-size="{font_size:.1f}" fill="{color}">{esc(name)}</text>')
         for index, name in enumerate(shifted):
             label = "⇧ " + name
-            chunks = wrap(label, width=max(8, int((width - 10) / 5)))
+            chunks = wrap(label, width=max(8, int((width - 14) / 5)))
             for line_index, chunk in enumerate(chunks):
                 add(f'<text x="{x + 6}" y="{y + 55 + index * 24 + line_index * 12}" '
                     f'font-size="10" fill="var(--muted,currentColor)">'
@@ -225,7 +231,7 @@ def render_svg(keymap, entries):
     look_keys = " ".join(first_binding(action) for action in LOOK_ACTIONS)
     peek_keys = " ".join(first_binding(action).removeprefix("Ctrl+") for action in PEEK_ACTIONS)
     legend = (
-        f'Shift + {look_keys}: free look; starts at you, accumulates.',
+        f'Shift + {look_keys}: free tile selection; starts at you, accumulates.',
         f'Ctrl + {peek_keys}: physical peek (200 moves); cancel returns.',
         'Arrows: free aim reticle. Tab / Shift+Tab: next / previous hostile.',
         'f attacks selection; guns use normal aim. Bump attacks still work.',
@@ -237,11 +243,13 @@ def render_svg(keymap, entries):
 
     notes = (
         f'{first_binding("action_menu")}: all action groups; Info → character sheet and body/status screens.',
-        'i: inventory → select item → Wield / Wear / Eat / Use / Read and other item actions.',
-        'Wield is equipment, not another primary key. Inventory F5: Craft, even when empty.',
-        'Space: selected tile → Open / Close / Examine / Pickup / Jump / Smash as applicable.',
+        f'{first_binding("wield")}: wield. i: inventory → item actions; inventory F5: Craft, even when empty.',
+        f'{first_binding("player_data")}: character; {first_binding("messages")}: messages; '
+        f'{first_binding("butcher")}: butcher; {first_binding("select_fire_mode")}: fire mode; '
+        f'{first_binding("advinv")}: advanced inventory.',
+        'Space: selected tile actions, or a flat nearby list with directions and a target highlight.',
         'RMB or Shift+direction selects; Jump and Smash require an explicit choice.',
-        'Map RMB selects freely; LMB attacks. Modern clicks never walk.',
+        'Map RMB selects freely; LMB uses adjacent doors/items/furniture or attacks; never walks.',
         'g opens pickup; g confirms. Inventory/pickup: wheel scrolls; RMB opens item actions.',
         'Blank keycaps have no default map action. Local menu keys and Classic controls are unchanged.',
         'Classic terminal Ctrl+C/Z retain normal quit/suspend signal behavior.',
