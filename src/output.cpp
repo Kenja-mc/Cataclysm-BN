@@ -370,6 +370,8 @@ void scrollable_text( const std::function<catacurses::window()> &init_window,
     ctxt.register_action( "DOWN" );
     ctxt.register_action( "PAGE_UP" );
     ctxt.register_action( "PAGE_DOWN" );
+    ctxt.register_action( "SCROLL_UP" );
+    ctxt.register_action( "SCROLL_DOWN" );
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
@@ -458,6 +460,10 @@ void scrollable_text( const std::function<catacurses::window()> &init_window,
             if( beg_line < max_beg_line ) {
                 beg_line += text_h;
             }
+        } else if( action == "SCROLL_UP" ) {
+            beg_line = std::max( 0, beg_line - 3 );
+        } else if( action == "SCROLL_DOWN" ) {
+            beg_line = std::min( max_beg_line, beg_line + 3 );
         }
     } while( action != "CONFIRM" && action != "QUIT" );
 }
@@ -1098,6 +1104,8 @@ input_event draw_item_info( const std::function<catacurses::window()> &init_wind
     if( data.handle_scrolling ) {
         ctxt.register_action( "PAGE_UP" );
         ctxt.register_action( "PAGE_DOWN" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
     }
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "QUIT" );
@@ -1144,6 +1152,11 @@ input_event draw_item_info( const std::function<catacurses::window()> &init_wind
                 ( height > 0 && static_cast<size_t>( *data.ptr_selected + height ) < folded.size() ) ) {
                 ++*data.ptr_selected;
             }
+        } else if( data.handle_scrolling && action == "SCROLL_UP" ) {
+            *data.ptr_selected = std::max( 0, *data.ptr_selected - 3 );
+        } else if( data.handle_scrolling && action == "SCROLL_DOWN" ) {
+            *data.ptr_selected = std::min( std::max( 0, static_cast<int>( folded.size() ) - height ),
+                                           *data.ptr_selected + 3 );
         } else if( action == "CONFIRM" || action == "QUIT" ) {
             exit = true;
         } else if( data.any_input && action == "ANY_INPUT" && !ctxt.get_raw_input().sequence.empty() ) {
