@@ -1,5 +1,7 @@
 #include "advanced_inv.h"
 
+#include <optional>
+
 #include "activity_actor.h"
 #include "activity_actor_definitions.h"
 #include "auto_pickup.h"
@@ -1041,6 +1043,12 @@ input_context advanced_inventory::register_ctxt() const
 
     ctxt.register_action( "ITEMS_DEFAULT" );
     ctxt.register_action( "SAVE_DEFAULT" );
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
 
     return ctxt;
 }
@@ -1411,6 +1419,31 @@ void advanced_inventory::display()
         } );
     }
 
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    // get_coordinates() is relative to the window centre.
+    auto click_cell = []( input_context &ctxt, const catacurses::window &w ) -> std::optional<point> {
+        const auto mouse = ctxt.get_coordinates( w );
+        if( !mouse ) {
+            return std::nullopt;
+        }
+        const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
+        if( cell.x < 0 || cell.y < 0 || cell.x >= getmaxx( w ) || cell.y >= getmaxy( w ) ) {
+            return std::nullopt;
+        }
+        return cell;
+    };
+    // print_items() draws page rows starting six rows down the pane window.
+    auto select_clicked_row = [&]( advanced_inventory_pane &pane, int cell_y ) -> void {
+        const auto row = cell_y - 6;
+        if( itemsPerPage <= 0 || row < 0 || row >= itemsPerPage ) {
+            return;
+        }
+        const auto idx = pane.index / itemsPerPage * itemsPerPage + row;
+        if( idx >= 0 && idx < static_cast<int>( pane.items.size() ) && pane.items[idx].is_item_entry() ) {
+            pane.index = idx;
+        }
+    };
+
     while( !exit ) {
         if( g->u.moves < 0 ) {
             do_return_entry();
@@ -1552,6 +1585,26 @@ void advanced_inventory::display()
             src = right;
         } else if( action == "TOGGLE_TAB" ) {
             src = dest;
+        } else if( modern && action == "SELECT" ) {
+            // A click focuses the clicked pane and selects the clicked row; it never moves items.
+            for( const side p : { left, right } ) {
+                const auto cell = click_cell( ctxt, panes[p].window );
+                if( !cell ) {
+                    continue;
+                }
+                src = p;
+                select_clicked_row( panes[p], cell->y );
+                break;
+            }
+        } else if( modern && ( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) ) {
+            // The wheel scrolls whichever pane the cursor is over, one row per notch.
+            const auto delta = action == "SCROLL_DOWN" ? +1 : -1;
+            for( const side p : { left, right } ) {
+                if( click_cell( ctxt, panes[p].window ) ) {
+                    panes[p].scroll_by( delta );
+                    break;
+                }
+            }
         } else if( action == "TOGGLE_VEH" ) {
             if( squares[spane.get_area()].can_store_in_vehicle() ) {
                 // swap the panes if going vehicle will show the same tile

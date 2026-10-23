@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -22,6 +23,7 @@
 #include "inventory.h"
 #include "item.h"
 #include "line.h"
+#include "options.h"
 #include "output.h"
 #include "player_activity.h"
 #include "string_formatter.h"
@@ -547,6 +549,12 @@ void show_armor_layers_ui( Character &who )
     ctxt.register_action( "REMOVE_ARMOR" );
     ctxt.register_action( "USAGE_HELP" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
 
     auto do_return_entry = []() {
         avatar &you = get_avatar();
@@ -778,10 +786,108 @@ void show_armor_layers_ui( Character &who )
         leftListIndex = std::min( leftListIndex, new_index_upper_bound );
 
         ui_manager::redraw();
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
         if( who.is_npc() && action == "ASSIGN_INVLETS" ) {
             // It doesn't make sense to assign invlets to NPC items
             continue;
+        }
+
+        // get_coordinates() is relative to the window centre.
+        const auto click_cell = []( input_context &ctxt, const catacurses::window &w ) -> std::optional<point> {
+            const auto mouse = ctxt.get_coordinates( w );
+            if( !mouse ) {
+                return std::nullopt;
+            }
+            const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
+            if( cell.x < 0 || cell.y < 0 || cell.x >= getmaxx( w ) || cell.y >= getmaxy( w ) ) {
+                return std::nullopt;
+            }
+            return cell;
+        };
+
+        if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
+            // The wheel repeats the keys that scroll the pane under the cursor, one row per notch.
+            if( click_cell( ctxt, w_sort_left ) ) {
+                action = action == "SCROLL_UP" ? "UP" : "DOWN";
+            } else if( click_cell( ctxt, w_sort_right ) ) {
+                action = action == "SCROLL_UP" ? "PREV_TAB" : "NEXT_TAB";
+            } else {
+                action.clear();
+            }
+        } else if( action == "SELECT" ) {
+            action.clear();
+            if( const auto cell = click_cell( ctxt, w_sort_left ) ) {
+                if( cell->y == cont_h - 1 && cell->x >= left_w - utf8_width( _( "<more>" ) ) &&
+                    leftListOffset + leftListLines < leftListSize ) {
+                    // The <more> hint repeats its existing scroll action.
+                    action = "DOWN";
+                } else {
+                    // Clicking a worn row only moves the cursor; reordering stays on the keyboard.
+                    const auto itemindex = leftListOffset + cell->y - 1;
+                    if( cell->y >= 1 && cell->y <= leftListLines && itemindex >= 0 &&
+                        itemindex < leftListSize ) {
+                        leftListIndex = itemindex;
+                    }
+                }
+            } else if( const auto cell = click_cell( ctxt, w_sort_cat ) ) {
+                // The arrows around the body part name switch tabs, like LEFT/RIGHT.
+                const auto prefix = utf8_width( _( "Sort Armor" ) );
+                const auto name_width = utf8_width(
+                    bp.id() ? body_part_name_as_heading( bp, 1 ) : _( "All" ) );
+                if( cell->x >= prefix + 2 && cell->x <= prefix + 3 ) {
+                    action = "LEFT";
+                } else if( cell->x >= prefix + 6 + name_width && cell->x <= prefix + 7 + name_width ) {
+                    action = "RIGHT";
+                }
+            } else if( const auto cell = click_cell( ctxt, w_sort_right ) ) {
+                if( cell->y == cont_h - 1 && cell->x >= right_w - utf8_width( _( "<more>" ) ) ) {
+                    // The <more> hint repeats its existing scroll action.
+                    action = "NEXT_TAB";
+                } else {
+                    // Clicking a body part name shows that part; the list itself stays read-only.
+                    const auto combine_bp = [&who]( const bodypart_id & cover ) -> bool {
+                        const bodypart_id opposite = cover.obj().opposite_part;
+                        return cover != opposite &&
+                        items_cover_bp( who, cover ) == items_cover_bp( who, opposite );
+                    };
+                    auto parts = cata::flat_set<bodypart_id>{};
+                    for( const bodypart_id &cover : armor_cat ) {
+                        if( !combine_bp( cover ) || parts.count( cover.obj().opposite_part ) == 0 ) {
+                            parts.insert( cover );
+                        }
+                    }
+                    auto pos = 1;
+                    auto curr = 0;
+                    auto clicked_part = std::optional<bodypart_id>{};
+                    for( const bodypart_id &cover : parts ) {
+                        if( cover.id().is_null() ) {
+                            continue;
+                        }
+                        if( curr >= rightListOffset && pos <= rightListLines ) {
+                            if( cell->y == pos ) {
+                                clicked_part = cover;
+                            }
+                            pos++;
+                        }
+                        curr++;
+                        const auto rows = static_cast<int>( items_cover_bp( who, cover ).size() );
+                        for( auto i = 0; i < rows; i++ ) {
+                            if( curr >= rightListOffset && pos <= rightListLines ) {
+                                pos++;
+                            }
+                            curr++;
+                        }
+                    }
+                    if( clicked_part && *clicked_part != armor_cat[tabindex] ) {
+                        const auto found = std::ranges::find( armor_cat, *clicked_part );
+                        if( found != armor_cat.end() ) {
+                            tabindex = static_cast<int>( std::distance( armor_cat.begin(), found ) );
+                            leftListIndex = leftListOffset = 0;
+                            selected = -1;
+                        }
+                    }
+                }
+            }
         }
 
         // Helper function for moving items in the list
