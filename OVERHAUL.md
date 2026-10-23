@@ -794,6 +794,11 @@ checked-in manifest, so the shard split follows CI's timings instead of a fast l
 Refresh the manifest only from a successful full run, and rerun the suite afterward: updated
 timings change which tests share a game.
 
+CI playtests do not start automatically on pushes or pull requests. Nightly and manual runs
+use `.github/workflows/fork-playtest.yml`; manual runs can select the suite, model playtests
+and screenshots independently. Releases offer a default-off `run_playtests` checkbox. When
+selected, the shared `.github/workflows/fork-e2e.yml` suite must pass before publication.
+
 The tiles checks also need the tiles binary, ImageMagick's `magick`, Xvfb, the X11/XTest libraries
 and a software Vulkan driver:
 

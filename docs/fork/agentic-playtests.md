@@ -216,13 +216,20 @@ Exit codes tell a reader what happened:
 
 ## What CI runs
 
-`.github/workflows/fork-playtest.yml` is the only place this runs unattended. It runs on pushes,
-pull requests, a nightly schedule and a manual dispatch. A push runs one dry leg with three turns:
-it proves the wiring and spends nothing, and a newer push cancels the older run. The four live
-legs below run on the nightly schedule and on dispatch, where their tokens and fifteen-minute
-walls are actually wanted. The cross-platform `matrix` workflow runs weekly and on dispatch only.
-Scheduled runs warm its caches and run its tests; dispatches also produce packaged artifacts.
-The nightly tiles jobs reuse a matching package when available, or build their own binary.
+`.github/workflows/fork-playtest.yml` runs nightly and on manual dispatch, not on pushes or
+pull requests. A manual run independently selects `run_e2e`, `run_agentic` and
+`run_screenshots`; all three default on because dispatching this workflow is an explicit opt-in.
+The nightly schedule still runs all three. To request only the end-to-end suite:
+
+```sh
+gh-fork workflow run fork-playtest.yml --repo Kenja-mc/Cataclysm-BN --ref main \
+  -F run_e2e=true -F run_agentic=false -F run_screenshots=false
+```
+
+The suite lives in reusable `fork-e2e.yml`. Releases expose it as the default-off
+`run_playtests` checkbox; when selected, it must pass before publication. Builds and Windows
+updater checks remain mandatory. The cross-platform `matrix` workflow remains weekly and manual.
+Nightly tiles jobs reuse a matching package when available, or build their own binary.
 
 Four legs, each with its own content list (main menu and tutorial have no tiles surface, so both
 tiles legs walk two scenarios):
@@ -251,23 +258,23 @@ matching leg (`kb-classic-curses` by default), makes it a dry run with 3 turns, 
 job summary. A live leg needs one of `OPENROUTER_API_KEY` (on its own) or the pair
 `XPL_SK_AGENT` + `OC_SK_AGENT`. When only the OpenRouter key exists, the plan retargets every leg
 at the free pools: `openrouter-text` for curses, `openrouter-vision` for tiles. Dispatch filters
-still apply, so a tiles-only request checks a tiles leg. The rest of the pipeline still runs: the
-end-to-end suite on every push, and the screenshot job on the schedule.
+still apply, so a tiles-only request checks a tiles leg. End-to-end tests and screenshots are
+independent of model-key availability and run only when their manual option or the schedule selects them.
 
-The end-to-end suite runs as four parallel shards. A single runner could not finish all 140 checks
+The end-to-end suite runs as four parallel shards. A single runner could not finish the full suite
 inside the job's two-hour timeout: the tail of the suite is slower on two cores than it is locally,
 and the job was cancelled with the suite still running. Each shard builds the same cache-warm curses
 binary and runs a balanced quarter of the checks (`--shard=0/4`), and uploads its own log as
 `e2e-suite-log-<shard>`. `run.py` assigns the tests longest first into the lightest shard, using the
 per-test seconds in `tests/e2e/durations.json`; positional slicing put the three mouse tests in one
-shard and made it 47% longer than its neighbours. A local run is serial unless it is asked for
-`--parallel=4`. `--durations=<path>` writes timings to the requested file; use
+shard and made it 47% longer than its neighbours. A local run is parallel by default;
+`--serial` keeps it in one process. `--durations=<path>` writes timings to the requested file; use
 `--durations=tests/e2e/durations.json` on a successful full, unfiltered run to refresh the manifest.
 Do not use a single `--shard` to refresh it: that records only that shard's tests.
 Rerun the suite afterward to verify the changed shard assignments.
 
-`python3 tests/e2e/feature_shots.py` runs on schedule and dispatch only. It uploads
-`docs/fork/images/features/*.png` as an artifact and never commits them. Note the trap: `--only`
+`python3 tests/e2e/feature_shots.py` runs on the nightly schedule or when `run_screenshots` is selected.
+It uploads `docs/fork/images/features/*.png` as an artifact and never commits them. Note the trap: `--only`
 rewrites the feature page with just the shots it captured, so leave it off when regenerating the
 whole set.
 

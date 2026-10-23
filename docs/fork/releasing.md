@@ -24,9 +24,30 @@ workflow is `.github/workflows/fork-release.yml`; it never touches upstream.
 3. Watch it with `gh-fork run list --workflow fork-release.yml --repo Kenja-mc/Cataclysm-BN`.
    The Windows build is the slow part; wait for both builds and the updater gate.
 
+Gameplay playtests are optional and off by default for releases. Select **Run playtests** in
+the dispatch form, or add `-F run_playtests=true` to the command, to require the full suite.
+A selected suite must pass; skipping it is allowed only when it was not requested.
+Windows updater checks and both platform builds are always required.
+
 Push the one tag by name. Never run `git push --tags`: every clone also has upstream's `v0.5.2`
 to `v0.13.0` tags. The workflow refuses any commit without `CHANGELOG-OVERHAUL.md`, so those
 tags would only produce failed runs, but they would still clutter the fork.
+
+## Validate builds without publishing
+
+Use an unpublished version label and disable publication when checking workflow changes or
+warming dependency caches:
+
+```sh
+gh-fork workflow run fork-release.yml --repo Kenja-mc/Cataclysm-BN --ref main \
+  -f version=v0.1.1 -F publish=false
+```
+
+This runs both platform builds and the Windows updater gate and retains their CI artifacts.
+Add `-F run_playtests=true` to exercise the optional gameplay gate as well.
+The publish job is skipped: no version tag or GitHub release is created. Repeat the same
+commit and label to check warm-cache reuse. Check cache-hit messages and actual build timings;
+a successful first run alone does not prove that the cache is reused.
 
 ## Versions
 
@@ -65,6 +86,34 @@ The release notes are a download table followed by every dated section of
 section for the first release). Including that day avoids omitting same-day fixes, but can repeat
 earlier changes from that day. `build-scripts/fork-release-notes.sh CHANGELOG-OVERHAUL.md 2026-10-20` shows what
 they would be.
+
+## Dependency reuse
+
+- Windows restores vcpkg's compiled package archives from GitHub Actions cache. The key covers
+  the architecture, runner OS, actual MSVC/SDK/CMake toolchain, manifest, overlays and build
+  configuration. Compatible older manifests can seed the cache; vcpkg's native ABI hashes
+  still decide which packages can be installed. New archives are saved only by successful,
+  trusted runs. Pull-request events restore only.
+- Windows and Linux compiler-cache buckets do not include the release tag or branch name.
+  They separate actual toolchains, architectures, build modes and artifacts. The compiler
+  cache checks each compilation unit; successful units remain reusable if a later step fails.
+- The host shader compiler keeps its fetched dependencies and incremental build tree in a
+  separate cache keyed by image, installed packages, toolchain and recipe. Every restore is
+  followed by CMake configure/build, so tracking upstream `main` does not freeze an old tool.
+  Snapshots record the upstream revision actually built. Pull-request events do not save them.
+- System packages still go through apt on each fresh Linux runner. Do not restore `/usr` or
+  a package-manager database from cache: those files must stay consistent with the runner image.
+
+The first matching run fills a cache. Use the build-only mode above for a second run, then
+inspect the vcpkg restore summary, native compiler-cache statistics and shader compiler timings.
+An exact archive-cache hit is not proof that every package ABI matched.
+
+Prefer dispatching from `main` to seed reusable caches: GitHub exposes default-branch caches
+to other refs, but a cache created only on one release tag is not shared with later tags.
+
+The supported vcpkg backend is [`files`](https://learn.microsoft.com/en-us/vcpkg/reference/binarycaching#files),
+persisted with [GitHub Actions cache](https://github.com/actions/cache).
+The former `x-gha` provider has been removed from vcpkg.
 
 ## The Windows launcher and updater
 

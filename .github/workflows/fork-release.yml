@@ -27,9 +27,19 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to release, like v0.1.0. Tags the commit this run builds."
+        description: "Version to build, like v0.1.0. Publishing tags this commit."
         required: true
         type: string
+      publish:
+        description: "Publish after the gates pass. Disable to validate builds and warm caches without creating a tag or release."
+        required: false
+        default: true
+        type: boolean
+      run_playtests:
+        description: "Run the full four-shard gameplay suite and require it to pass before publishing."
+        required: false
+        default: false
+        type: boolean
 
 # One release at a time; never cancel a release that is already building.
 concurrency:
@@ -58,6 +68,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           EVENT: ${{ github.event_name }}
+          PUBLISH_RELEASE: ${{ github.event_name == 'push' || inputs.publish }}
           INPUT_VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
@@ -114,6 +125,7 @@ jobs:
             echo "### Release $version"
             echo "- commit: $GITHUB_SHA"
             echo "- previous release published: ${previous_date:-none}"
+            echo "- publication enabled: $PUBLISH_RELEASE"
             echo "- becomes latest: $make_latest"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -145,8 +157,26 @@ jobs:
       upload-artifacts: true
       upload-to-release: false
 
+  playtests:
+    if: inputs.run_playtests
+    needs: metadata
+    uses: ./.github/workflows/fork-e2e.yml
+    permissions:
+      actions: read
+      contents: read
+    with:
+      checkout-ref: ${{ needs.metadata.outputs.sha }}
+
   publish:
-    needs: [metadata, updater-test, build]
+    if: >-
+      always() && !cancelled() &&
+      (github.event_name == 'push' || inputs.publish) &&
+      needs.metadata.result == 'success' &&
+      needs.updater-test.result == 'success' &&
+      needs.build.result == 'success' &&
+      (needs.playtests.result == 'success' ||
+       (inputs.run_playtests != true && needs.playtests.result == 'skipped'))
+    needs: [metadata, updater-test, build, playtests]
     runs-on: ubuntu-latest
     permissions:
       contents: write

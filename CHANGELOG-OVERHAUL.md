@@ -46,6 +46,11 @@ Upstream's own changes are in `docs/en/game/changelog`.
   dispatched, reusing `build.yml` for the Windows MSVC and Linux tiles builds; release notes come
   from this changelog. `fork-updater-test.yml` gates it by updating a mock Windows install from a
   local zip under Windows PowerShell 5.1 and 7. See `docs/fork/releasing.md`.
+- Future release builds reuse vcpkg binary packages, host shader tools and compiler caches
+  across release refs, with toolchain and dependency checks.
+- Pushes and pull requests no longer start gameplay playtests automatically. Release playtests
+  are an optional, default-off gate; nightly and manually selected playtests remain available.
+  Build-only dispatches can validate the pipeline without creating a tag or release.
 
 ## 2026-10-21
 
