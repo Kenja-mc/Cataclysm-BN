@@ -17,6 +17,7 @@ Usage:
   python3 tests/e2e/tiles.py sound_menu [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py zoom [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py overmap [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
+  python3 tests/e2e/tiles.py known_locks [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
 
 --root is the game tree (data and the curses build); --binary is the tiles executable.
 Artifacts (window captures, marker crops, logs, fixture asserts, result.json) stay in --out.
@@ -1003,6 +1004,46 @@ def case_zoom(session):
                       "initial_turn": initial_turn, "final_turn": final_turn, "frames": frames}
 
 
+def case_known_locks(session):
+    """Only a door found locked gets a marker, at either display scale."""
+    from known_locks import analyse_known_lock_icons
+
+    failures, observations = [], {}
+    for scale, columns, rows in ((1, 160, 60), (2, 96, 30)):
+        label = f"known-locks-{scale}x"
+        options = {
+            "CONTROL_SCHEME": "modern", "SCALING_FACTOR": str(scale),
+            "FONT_WIDTH": "8", "FONT_HEIGHT": "16", "FONT_SIZE": "16",
+            "TERMINAL_X": str(columns), "TERMINAL_Y": str(rows),
+            "TILES": "UNDEAD_PEOPLE_BASE", "SIDEBAR_POSITION": "right",
+            "MOUSE_MOVE": "false", "CURSOR_PANNING": "false",
+        }
+        off = session.launch(f"{label}-off", {**options, "KNOWN_LOCKED_DOOR_ICONS": "false"})
+        on = session.launch(f"{label}-on", {**options, "KNOWN_LOCKED_DOOR_ICONS": "true"})
+        width, height, _ = frame_rgb(off)
+        require((width, height) == (columns * 8 * scale, rows * 16 * scale),
+                f"{label}: unexpected window dimensions {width}x{height}")
+        tile = 32 * scale
+        terrain_width = width - ZOOM_SIDEBAR_CELLS * ZOOM_FONT_WIDTH * scale
+        avatar_x = terrain_width // tile // 2 * tile
+        avatar_y = height // tile // 2 * tile
+
+        def tile_rect(dx, dy):
+            x, y = avatar_x + dx * tile, avatar_y + dy * tile
+            return x, y, x + tile, y + tile
+
+        attempted, untried = tile_rect(1, 0), tile_rect(0, -1)
+        crops = session.artifacts / label
+        crops.mkdir()
+        checks = analyse_known_lock_icons(off, on, attempted, untried, crops)
+        failures.extend(f"{label}: {check.name}: {check.detail}" for check in checks if not check.ok)
+        observations[label] = {
+            "attempted_tile": attempted, "untried_tile": untried,
+            "checks": [check.__dict__ for check in checks],
+        }
+    return failures, observations
+
+
 def case_sound_menu(session):
     """Drive the tiles menu; check saved settings, not audible output or OCR."""
     bindings = session.curses_userdir / "config" / "keybindings.json"
@@ -1080,7 +1121,7 @@ def case_sound_menu(session):
 
 
 CASES = {"minimap": case_minimap, "mouse": case_mouse, "sound_menu": case_sound_menu,
-         "zoom": case_zoom, "overmap": case_overmap}
+         "zoom": case_zoom, "overmap": case_overmap, "known_locks": case_known_locks}
 
 
 def main(argv=None):
@@ -1101,7 +1142,11 @@ def main(argv=None):
     failures, report = [], {}
     try:
         session.start()
-        session.build_world(zoom_ruler=args.case == "zoom")
+        if args.case == "known_locks":
+            from known_locks import build_known_lock_world
+            build_known_lock_world(session)
+        else:
+            session.build_world(zoom_ruler=args.case == "zoom")
         failures, report = CASES[args.case](session)
     except Exception as exc:  # reported; the work tree is kept with the artifacts
         failures.append(f"{type(exc).__name__}: {exc}")
