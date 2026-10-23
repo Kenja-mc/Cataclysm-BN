@@ -1,0 +1,120 @@
+name: fork-updater-test
+
+# Tests the Windows launcher and updater shipped in BrightNightsOverhaul-windows-x64.zip
+# (build-scripts/windows-launcher/). It runs on changes to those files and as the gate in
+# front of every fork release (fork-release.yml calls it). No network: test-bno-update.ps1
+# updates a mock v0.1.0 install from a local v0.2.0 zip and checks that saves, settings and
+# user mods survive, and that damaged downloads and failures half way change nothing.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "build-scripts/windows-launcher/**"
+      - ".github/workflows/fork-updater-test.yml"
+      - ".github/workflows/fork-release.yml"
+      - "src/path_info.cpp"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+  pull_request:
+    paths:
+      - "build-scripts/windows-launcher/**"
+      - ".github/workflows/fork-updater-test.yml"
+      - ".github/workflows/fork-release.yml"
+      - "src/path_info.cpp"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+  workflow_call:
+  workflow_dispatch:
+
+# github.workflow is the caller's name when fork-release.yml calls this file, so a release
+# never shares a group with (or is cancelled by) a push-triggered run.
+concurrency:
+  group: ${{ github.workflow }}-updater-test-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  updater:
+    name: Windows updater
+    runs-on: windows-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: build-scripts/windows-launcher
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse with Windows PowerShell 5.1, ASCII and CRLF checks
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $bad = 0
+          foreach ($f in Get-ChildItem -File) {
+            $bytes = [System.IO.File]::ReadAllBytes($f.FullName)
+            if (@($bytes | Where-Object { $_ -gt 127 }).Count -gt 0) {
+              Write-Host "::error file=build-scripts/windows-launcher/$($f.Name)::non-ASCII bytes (Windows PowerShell 5.1 and cmd.exe misread them)"
+              $bad++
+            }
+            if ($f.Extension -eq '.bat') {
+              for ($i = 0; $i -lt $bytes.Length; $i++) {
+                if ($bytes[$i] -eq 10 -and ($i -eq 0 -or $bytes[$i - 1] -ne 13)) {
+                  Write-Host "::error file=build-scripts/windows-launcher/$($f.Name)::LF without CR (check .gitattributes)"
+                  $bad++
+                  break
+                }
+              }
+            }
+          }
+          foreach ($f in Get-ChildItem -Filter *.ps1) {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref]$tokens, [ref]$errors)
+            foreach ($e in @($errors)) {
+              Write-Host "::error file=build-scripts/windows-launcher/$($f.Name),line=$($e.Extent.StartLineNumber)::$($e.Message)"
+              $bad++
+            }
+          }
+          Write-Host "PowerShell $($PSVersionTable.PSVersion)"
+          if ($bad -gt 0) { exit 1 }
+
+      - name: PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not (Get-Module -ListAvailable -Name PSScriptAnalyzer)) {
+            Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force
+          }
+          # PSAvoidUsingWriteHost: the scripts talk to a person at a console on purpose.
+          # PSReviewUnusedParameter: it misses script parameters read inside functions.
+          $results = @(Invoke-ScriptAnalyzer -Path . -Recurse -Severity Warning, Error `
+              -ExcludeRule PSAvoidUsingWriteHost, PSReviewUnusedParameter)
+          foreach ($r in $results) {
+            Write-Host "::error file=build-scripts/windows-launcher/$($r.ScriptName),line=$($r.Line)::$($r.RuleName): $($r.Message)"
+          }
+          if ($results.Count -gt 0) { exit 1 }
+
+      - name: Update test (Windows PowerShell 5.1)
+        shell: pwsh
+        run: |
+          & "$PSHOME/pwsh.exe" -NoProfile -File ./test-bno-update.ps1 -Shell powershell.exe 2>&1 | Tee-Object updater-ps51.log
+          exit $LASTEXITCODE
+
+      - name: Update test (PowerShell 7)
+        shell: pwsh
+        if: ${{ !cancelled() }}
+        run: |
+          & "$PSHOME/pwsh.exe" -NoProfile -File ./test-bno-update.ps1 -Shell pwsh 2>&1 | Tee-Object updater-ps7.log
+          exit $LASTEXITCODE
+
+      - name: Preserve updater evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-updater-evidence
+          path: |
+            build-scripts/windows-launcher/updater-*.log
+            ${{ runner.temp }}/bno-update-test-*/
+          include-hidden-files: true
+          if-no-files-found: warn

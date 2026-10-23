@@ -1,9 +1,86 @@
 # Playing and giving feedback
 
-This fork ships with a ready-to-play install and a small feedback workflow. Everything below
-works from a normal terminal or the desktop menu.
+The fork's release workflow prepares Windows and Linux downloads. The steps below apply after a
+maintainer publishes the first fork release. Linux users can also build from source.
 
-## Installation
+## Windows: download and update
+
+You do not need to build anything on Windows.
+
+1. Open the [latest release](https://github.com/Kenja-mc/Cataclysm-BN/releases/latest) and
+   download `BrightNightsOverhaul-windows-x64.zip`.
+2. Right-click the zip, choose **Extract All**, and pick a folder you can write to, such as
+   `Documents\Games`. Do not use `C:\Program Files`: the game keeps your saves in its own folder.
+3. Open the `BrightNightsOverhaul` folder and double-click **Launch Bright Nights.bat**.
+
+If Windows shows "Windows protected your PC", first confirm you downloaded the zip from the
+fork's release page above. This build is unsigned. If you trust that source, choose **More
+info**, then **Run anyway**. Do not bypass a warning for a download from an unknown source.
+
+### How updates work
+
+| What you do | What happens |
+| --- | --- |
+| Start the game with `Launch Bright Nights.bat` | It asks GitHub for the newest release. If that is newer than yours, it shows the new version and a link to what changed, then asks `Update to vX now? [Y/n]`. Press Enter to update, or type `n` to play the version you have. |
+| Start it with no internet, or GitHub does not answer in 5 seconds | The game starts without asking anything. |
+| Double-click `Update Bright Nights.bat` | It checks now and tells you the result, also when you already have the newest version. |
+| Start `cataclysm-bn-tiles.exe` directly | No update check. |
+
+An update downloads the new zip, checks it against the release's SHA-256 checksum, unpacks it,
+and then swaps the game files. Close the game first. If installation fails, the updater attempts
+to restore the old files. If the computer turns off during an update, the next launch restores
+them before checking for another update. If recovery cannot finish, the launcher does not start
+the game: keep `.bno-update\backup` and the error message, close any game or updater process,
+then try again. Do not delete the backup while recovery is incomplete.
+
+### Where your files live
+
+The Windows version keeps everything in its own folder, so the whole folder is your install.
+
+| Folder | What it holds | After an update |
+| --- | --- | --- |
+| `save\` | your worlds and characters | kept |
+| `config\` | options, key bindings, font settings | kept |
+| `memorial\`, `graveyard\` | records of dead characters | kept |
+| `templates\` | character templates | kept |
+| `font\` | fonts you added | kept |
+| `mods\`, `data\mods\` | mods | your own mods are kept; the release's mods are replaced |
+| `gfx\` | tilesets | your own tilesets are kept; the release's tilesets are replaced |
+| `sound\`, `data\sound\` | soundpacks | your own soundpacks are kept |
+| everything else (`data\json\`, the `.exe`, ...) | game files | replaced |
+
+To back up your games, copy `save\` and `config\`. To move the game, move the whole folder. Do
+not edit files in `data\json\` or other game folders: an update replaces them.
+
+Use unique folder names for your own mods, tilesets and soundpacks: an entry with the same name
+as shipped content belongs to the release and is replaced. The updater refuses links/junctions
+in an install being updated; use ordinary folders. A second updater or a running game blocks
+installation and recovery.
+
+### Music
+
+The release has no music, because the Otopack soundpack does not allow redistribution. To add it,
+download the zip from the
+[Otopack BN Mk 2 release](https://github.com/NarandBD/Otopack-BN-Mk-2/releases/tag/sorrynotsorry),
+copy the `Otopack+ModsUpdates BN` folder from inside it into the game's `sound\` folder, choose it
+under **Options → General → Choose soundpack**, and restart. Updates keep it.
+
+## Linux: download a release
+
+Download `BrightNightsOverhaul-linux-x64.tar.gz` from the
+[latest release](https://github.com/Kenja-mc/Cataclysm-BN/releases/latest), then:
+
+```sh
+tar -xzf BrightNightsOverhaul-linux-x64.tar.gz
+./BrightNightsOverhaul/cataclysm-launcher
+```
+
+The Linux release keeps saves and settings in `~/.cataclysm-bn/`, outside the game folder. There
+is no automatic updater on Linux. To update, download the new release, delete the old
+`BrightNightsOverhaul` folder (your saves are not in it) and unpack the new one in its place.
+`VERSION.txt` in the folder shows the version you have.
+
+## Building from source on Linux
 
 Build the terminal and graphics versions first. The presets need `clang`, `mold` and `ccache`
 installed:
@@ -99,18 +176,23 @@ Long-form write-ups should follow
   normal gun aiming. Enter groups all actions (Info for character/status screens). Ctrl+X opens
   wait/rest; Shift+X cycles walk/run/crouch/prone, with F2/F3/F4 unbound.
 - **Inventory:** `i`, then select an item for Wield/Wear/Eat/Use/Read and other context actions.
-  Wield is equipment, not a primary map key. Check the visible F5 Craft entry even when empty.
-  `g` opens/confirms pickup. Quick stack, sort pile and other former map-menu keys remain in Enter.
-- **Look and interact:** Shift+WASD/QEZC moves a free reticle from the player, accumulating one
-  tile per press. Space acts on that selection or the RMB-selected tile and offers applicable
-  Open/Close/Examine/Pickup/Jump/Smash choices; Jump and Smash require explicit choices (`S` for Smash).
-  Ctrl+WASD/QEZC peeks physically for the normal 200 moves and returns on cancel. In Modern
-  curses, Ctrl+C/Z must act as game chords rather than quit/suspend; Classic keeps normal signals.
-- **Mouse:** map right click selects freely; left click attacks the clicked hostile.
-  No Modern map click walks. Classic retains upstream mouse behavior.
-- **HUD:** four-row Weather and loadout/needs Status boxes; check Text only and Unicode modes,
-  fixed Pain/Thirst/Hunger/Rest/Heat order, watch/thermometer gates and sidebar restoration on
-  toggles or narrow/short resizes. Body details remain in Enter → Info → Body status.
+  `v` opens Wield directly. F5 Craft remains available even when inventory is empty.
+  `g` opens and confirms pickup. Quick stack and sort pile remain in Enter.
+- **Select and interact:** Shift+WASD/QEZC selects a tile without spending time.
+  Space acts on that selection. Without a selection, it lists nearby actions with directions
+  and highlights the tile of the current row. Jump and Smash need explicit choices (`S` for Smash).
+  Space offers Butcher for a corpse underfoot. `B` also opens Butcher.
+  Ctrl+WASD/QEZC physically peeks for the normal 200 moves, then returns without clearing selection.
+  In Modern curses, Ctrl+C/Z are game chords. Classic keeps normal terminal signals.
+- **Mouse:** right click selects a map tile. Left click uses an adjacent door, item or furniture,
+  attacks a hostile, or selects other tiles. Default Modern clicks do not walk.
+  Classic keeps upstream mouse behavior.
+- **HUD:** select **grouped** in Enter → Misc → Sidebar Options for the new right-sidebar layout.
+  Weather, Character and Needs move off the map. Existing layouts remain selectable.
+  Try Text only, Unicode and Icon font. Make sure that urgent needs, limb health and controls
+  survive resizing to 80×25. A watch reveals exact time and a thermometer reveals temperature.
+  Body details remain in Enter → Info → Body status. `@` opens the character sheet and `P` the log.
+  `F` opens fire-mode selection.
   Check vehicle/readout fallbacks at 80×25, driving hints (`ws`/`ad`), and their return to
   `wasd` on release. The new bundled typeface should show readable labels and complete glyphs.
 - **Targeting:** gun aiming starts on the reachable hostile and warns about allies in the line of

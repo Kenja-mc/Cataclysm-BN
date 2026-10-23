@@ -4,6 +4,49 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-22
+
+### Added
+
+- The grouped sidebar puts Weather, Character and Needs on the right and leaves the map clear.
+  It is the default for new configurations. Existing saved layouts stay unchanged.
+  Select `grouped` in Enter → Misc → Sidebar Options to try it.
+- The tiles build includes Material Design Icons and human stance figures from Pinhead (CC0).
+  No separate icon-font installation is needed.
+- **Windows download with updates**: the fork release workflow prepares a Windows zip
+  and a Linux archive with fixed names. On Windows, `Launch Bright Nights.bat` offers each new
+  release before the game starts, checks the download's SHA-256, keeps saves, settings and added
+  mods, tilesets and soundpacks, and puts the old files back if anything fails. Without internet
+  the game just starts. See `docs/fork/playing.md`.
+
+### Changed
+
+- Status lists urgent needs, or one `Needs met` row. An unchosen fighting style takes no row.
+- A short sky track replaces the written moon phase, with distinct sun and moon symbols.
+- Modern left click uses adjacent doors, items and furniture. Other empty tiles are selected, not walked to.
+- Space lists nearby actions in one menu with directions and a highlight for the selected action.
+  A corpse underfoot offers Butcher.
+- Modern adds `v` for Wield, `@` for character information, `P` for messages, `B` for Butcher
+  and `F` for fire mode. Shift selects tiles. Ctrl physically peeks and keeps the selection.
+
+### Fixed
+
+- Tutorial lessons name reachable actions for each control scheme. Item lessons follow successful
+  pickups, including Modern `g`, rather than firing before the pickup activity finishes.
+- The tutorial teaches opening beside a closed door and closing beside an open door.
+- Safe mode shows its blocked state in yellow instead of the enabled state's green.
+- Long contextual mouse hints keep the tile inspector's border intact.
+
+### Maintenance
+
+- Regenerated the Modern keyboard diagram with the direct equipment/info shortcuts, contextual
+  mouse actions, Shift selection and Ctrl peeking. Key labels stay inside their keycaps.
+
+- `fork-release.yml` builds and publishes a release when a `v*` tag is pushed or a version is
+  dispatched, reusing `build.yml` for the Windows MSVC and Linux tiles builds; release notes come
+  from this changelog. `fork-updater-test.yml` gates it by updating a mock Windows install from a
+  local zip under Windows PowerShell 5.1 and 7. See `docs/fork/releasing.md`.
+
 ## 2026-10-21
 
 ### Added
