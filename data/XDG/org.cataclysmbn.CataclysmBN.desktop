@@ -1,12 +1,11 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
+
 Name=Cataclysm-BN
-Name[en_US]=Cataclysm-BN
-Comment=A turn-based roguelike survival game with an improved modern interface
+Comment=A graphical post-apocalyptic roguelike that focuses on gameplay over realism
 Categories=Game;RolePlaying;
-Keywords=roguelike;science-fiction;apocalypse;turn-based;tiles;game;survival;cbn;bn;c++
+
 Icon=org.cataclysmbn.CataclysmBN
 Exec=cataclysm-bn-tiles
 Terminal=false
-StartupWMClass=cataclysm-bn
