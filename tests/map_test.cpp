@@ -1567,6 +1567,39 @@ TEST_CASE("binding_dimensions_rebuilds_vehicle_caches", "[map][vehicle][dimensio
     CHECK(here.get_cache_ref(0).vehicle_list.contains(veh));
 }
 
+TEST_CASE("loading_a_map_rebuilds_active_vehicle_membership", "[map][vehicle][load]") {
+    clear_all_state();
+    const auto cleanup = on_out_of_scope([]() { clear_all_state(); });
+    auto here = map(2);
+    const auto original = get_map().get_abs_sub();
+    const auto destination = original + point_rel_sm(here.getmapsize(), 0);
+    const auto pos = tripoint_bub_ms(13, 13, 0);
+    here.load(original, true);
+    auto* const first = here.add_vehicle(vproto_id("none"), pos, 0_degrees, 0, 0);
+    REQUIRE(first != nullptr);
+    REQUIRE(first->install_part(tripoint_mnt_veh::zero(), vpart_id("frame_vertical")) >= 0);
+    here.add_vehicle_to_cache(first);
+    REQUIRE(here.get_cache_ref(0).vehicle_list.contains(first));
+
+    here.load(destination, true);
+    CHECK_FALSE(here.get_cache_ref(0).vehicle_list.contains(first));
+    auto* const second = here.add_vehicle(vproto_id("none"), pos, 0_degrees, 0, 0);
+    REQUIRE(second != nullptr);
+    REQUIRE(second->install_part(tripoint_mnt_veh::zero(), vpart_id("frame_vertical")) >= 0);
+    here.add_vehicle_to_cache(second);
+    REQUIRE(here.get_cache_ref(0).vehicle_list.contains(second));
+
+    here.load(original, true);
+    CHECK(here.get_cache_ref(0).vehicle_list.contains(first));
+    CHECK_FALSE(here.get_cache_ref(0).vehicle_list.contains(second));
+    REQUIRE(here.veh_at(pos).has_value());
+    CHECK(&here.veh_at(pos)->vehicle() == first);
+
+    here.load(destination, false);
+    CHECK(here.get_cache_ref(0).vehicle_list.empty());
+    CHECK(here.get_cache_ref(0).veh_cached_parts.empty());
+}
+
 TEST_CASE("placed_monsters_inherit_bound_dimension") {
     clear_all_state();
 
