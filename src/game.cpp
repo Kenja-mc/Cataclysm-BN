@@ -3589,7 +3589,8 @@ auto game::handle_mouseview( input_context &ctxt, std::string &action,
                 ui_manager::redraw();
             }
         }
-    } while( action == "MOUSE_MOVE" ); // Freeze animation when moving the mouse
+    } while( action == "MOUSE_MOVE" ||
+             ( action == "ANY_INPUT" && ctxt.get_raw_input().type == input_event_t::mouse ) );
     // Cursor panning: continue panning when the cursor rests at the edge.
     if( action == "TIMEOUT" && cursor_pan_view( ctxt ) ) {
             const std::optional<tripoint_bub_ms> panned_pos = ctxt.get_coordinates( w_terrain );
