@@ -141,7 +141,7 @@ def test_legacy_map_clicks_never_move(_g):
         exercise_no_mouse_movement(game)
 
 
-def test_right_click_selects_without_map_context(_g):
+def test_right_click_locks_enemies_and_opens_object_actions(_g):
     with no_mouse_movement_game("bn-e2e-map-select-no-context") as game:
         assert game.lua("local a=gapi.get_avatar() local w=a:create_item(ItypeId.new('model_10_revolver'),-1) "
                         "w:ammo_set(ItypeId.new('38_special'),6) out(a:wield(w))") == ["true"]
@@ -150,13 +150,26 @@ def test_right_click_selects_without_map_context(_g):
                         "local m=gapi.place_monster_at(MonsterTypeId.new('mon_zombie'),here(3,0)) "
                         "MAP_MOUSE_TARGETS={m} out(m ~= nil)") == ["true"]
         before = mouse_state(game)
-        for dx in (1, 3):
-            x, y = game.find("@")
-            game.click(x + dx, y, button=2)
-            assert_no_map_context(game)
-            assert "< Firing " not in game.screen(), "RMB selects an armed target without entering aim"
-            assert "Mouse View" in game.screen(), "RMB must inspect the selected tile:\n" + game.screen()
-            assert mouse_state(game) == before, "RMB selection must not act, move, or damage either creature"
+        # An enemy right click only locks: no aim window, no action list.
+        x, y = game.find("@")
+        game.click(x + 3, y, button=2)
+        assert "< Firing " not in game.screen(), "RMB selects an armed target without entering aim"
+        assert_no_map_context(game)
+        assert "Mouse View" in game.screen(), "RMB must inspect the selected tile:\n" + game.screen()
+        assert mouse_state(game) == before, "RMB selection must not act, move, or damage either creature"
+        # An object right click lists its actions at once, still for free.
+        x, y = game.find("@")
+        game.click(x + 1, y, button=2)
+        screen = game.screen()
+        assert "Interact with the" in screen, "RMB must list the door's actions:\n" + screen
+        assert "close the" in screen and "smash the" in screen, screen
+        assert mouse_state(game) == before, "listing actions must not act, move, or spend time"
+        game.keys("Escape", delay=0.6)
+        game.wait_gone("Interact with the")
+        assert "Mouse View" in game.screen(), "closing the actions must keep the selection"
+        assert mouse_state(game) == before, "closing the actions must stay free"
+        game.keys("Escape", delay=0.6)
+        assert "Mouse View" not in game.screen(), "Escape must clear the kept selection"
 
 
 def test_mouse_selects_when_arrow_aim_disabled(_g):
@@ -304,7 +317,8 @@ def test_smart_targeting(_g):
         assert "Ally in the line of fire: Labrador mutt" in panel, \
             "cycling to the blocked hostile should name the ally in the way:\n" + panel
 TESTS = [test_map_clicks_never_move, test_legacy_map_clicks_never_move,
-         test_right_click_selects_without_map_context, test_mouse_selects_when_arrow_aim_disabled,
+         test_right_click_locks_enemies_and_opens_object_actions,
+         test_mouse_selects_when_arrow_aim_disabled,
          test_right_click_selection_f_targets_selected_enemy,
          test_left_click_aims_at_clicked_enemy_and_fires, test_classic_aiming_keeps_mouse_buttons,
          test_hover_inspects_without_acting, test_left_click_attacks_adjacent_enemy,

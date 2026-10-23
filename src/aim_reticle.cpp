@@ -102,6 +102,32 @@ auto weapon_reaches( const avatar &you, const Creature &target ) -> bool
     return dist <= std::max( 1, weapon.reach_range( you ) );
 }
 
+/// The nearest visible hostile the wielded melee weapon reaches. Firearms keep their aim screen.
+auto nearest_hostile_in_reach( const avatar &you ) -> std::optional<tripoint_bub_ms>
+{
+    const auto &weapon = you.primary_weapon();
+    if( weapon.is_gun() && !weapon.gun_current_mode().melee() ) {
+        return std::nullopt;
+    }
+    const auto reach = std::max( 1, weapon.reach_range( you ) );
+    auto best = std::optional<target_rank>();
+    for( const auto &critter : g->all_creatures() ) {
+        const auto p = critter.bub_pos();
+        if( p.z() != you.bub_pos().z() || !is_hostile( you, critter ) || !you.sees( p ) ) {
+            continue;
+        }
+        const auto distance = rl_dist( you.bub_pos(), p );
+        if( distance > reach ) {
+            continue;
+        }
+        const auto rank = target_rank{ .distance = distance, .pos = p };
+        if( !best || rank_less( rank, *best ) ) {
+            best = rank;
+        }
+    }
+    return best ? std::optional<tripoint_bub_ms>( best->pos ) : std::nullopt;
+}
+
 } // namespace
 
 namespace aim_reticle
@@ -178,7 +204,22 @@ auto move( avatar &you, map &m, const point_rel_ms &delta ) -> void
 auto attack( avatar &you, map &m, const attack_mode mode ) -> std::optional<action_id>
 {
     if( !reticle ) {
-        return std::nullopt;
+        if( mode == attack_mode::direct ) {
+            return std::nullopt;
+        }
+        // Fire with nothing selected strikes the nearest hostile the weapon already reaches.
+        // It never takes a step, and a firearm falls through to its normal aiming screen.
+        const auto target = nearest_hostile_in_reach( you );
+        if( !target ) {
+            return std::nullopt;
+        }
+        const auto diff = *target - you.bub_pos();
+        if( std::abs( diff.x() ) <= 1 && std::abs( diff.y() ) <= 1 && diff.z() == 0 ) {
+            avatar_action::attack_at( you, m, tripoint_rel_ms( diff.xy(), 0 ) );
+        } else {
+            you.reach_attack( *target );
+        }
+        return ACTION_NULL;
     }
     const auto p = *reticle;
     auto *target = hostile_at( you, p );

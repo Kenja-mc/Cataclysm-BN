@@ -34,6 +34,11 @@ def contextual_game(name, **options):
 def select_tile(game, dx, dy):
     x, y = game.find("@")
     game.click(x + dx, y + dy, button=2)
+    # Modern right click also lists a reachable object's actions. These tests exercise the
+    # Space route, so close that list and keep the selection before pressing Space.
+    if "Interact with the" in game.screen():
+        game.keys("Escape", delay=0.3)
+        game.wait_gone("Interact with the")
 
 
 def doors(game, selected_dx=1):

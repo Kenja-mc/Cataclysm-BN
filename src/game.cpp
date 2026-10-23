@@ -3558,11 +3558,14 @@ auto game::handle_mouseview( input_context &ctxt, std::string &action,
     const auto cursor_panning = get_option<bool>( "CURSOR_PANNING" );
     const auto edge_scroll = cursor_panning ? get_option<int>( "EDGE_SCROLL" ) : -1;
     const auto pan_timeout = edge_scroll;
+    // A locked selection owns the inspector and the only highlight. The pointer cannot
+    // replace it, and edge panning cannot slide the view away under it.
+    const auto selection_locked = aim_reticle::active();
 
     do {
         {
             ZoneScopedN( "handle_mouseview_handle_input" );
-            const auto panning = cursor_panning && edge_scroll >= 0 &&
+            const auto panning = !selection_locked && cursor_panning && edge_scroll >= 0 &&
                                  last_cursor_pan_direction != tripoint_rel_ms::zero();
             const auto timeout = panning
                                  ? ( poll_timeout < 0 ? pan_timeout : std::min( poll_timeout, pan_timeout ) )
@@ -3571,6 +3574,12 @@ auto game::handle_mouseview( input_context &ctxt, std::string &action,
         }
         if( action == "MOUSE_MOVE" ) {
             ZoneScopedN( "handle_mouseview_mouse_move" );
+            if( selection_locked ) {
+                // Moving the pointer cannot move what is already locked. A click is a new
+                // input and still changes the selection when it is handled.
+                last_cursor_pan_direction = tripoint_rel_ms::zero();
+                continue;
+            }
             const auto mouse_pos = ctxt.get_coordinates( w_terrain );
             if( mouse_pos && ( !liveview_pos || *mouse_pos != *liveview_pos ) ) {
                 liveview_pos = mouse_pos;
@@ -3592,7 +3601,7 @@ auto game::handle_mouseview( input_context &ctxt, std::string &action,
     } while( action == "MOUSE_MOVE" ||
              ( action == "ANY_INPUT" && ctxt.get_raw_input().type == input_event_t::mouse ) );
     // Cursor panning: continue panning when the cursor rests at the edge.
-    if( action == "TIMEOUT" && cursor_pan_view( ctxt ) ) {
+    if( action == "TIMEOUT" && !selection_locked && cursor_pan_view( ctxt ) ) {
             const std::optional<tripoint_bub_ms> panned_pos = ctxt.get_coordinates( w_terrain );
             tile_selection::hover( u, m, panned_pos );
             ui_manager::redraw();
