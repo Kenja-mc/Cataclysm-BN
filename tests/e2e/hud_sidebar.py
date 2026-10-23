@@ -40,9 +40,9 @@ def test_classic_weather_resize_preserves_facts_and_help(_g):
             clocks = re.findall(r"\b\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AP]M)?\b", screen)
             assert len(clocks) == 1, "the visible clock must not be duplicated:\n" + screen
             # Fit policy can retain an overlay on a smaller map; facts, not breakpoints, are the contract.
-            for label in ("Light", "Wind"):
-                assert len(re.findall(r"\b" + label + r"\s*:", screen)) == 1, \
-                    f"{label} must stay visible exactly once:\n{screen}"
+            for label in (r"Light(?:ing)?", "Wind"):
+                readings = re.findall(r"\b" + label + r"\s*:\s*(\S+)", screen)
+                assert len(readings) == 1, f"{label} must stay visible exactly once:\n{screen}"
             assert len(re.findall(r"\b(?:Spring|Summer|Autumn|Winter)(?:,\s*Day)?\s+\d+", screen)) == 1, screen
             assert len(re.findall(r"[-+]?\d+(?:\.\d+)?\s*°\s*[CFK]", screen)) == 1, \
                 "the watch's temperature must stay visible without duplication:\n" + screen

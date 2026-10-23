@@ -13,7 +13,7 @@ from hud_boxes import SKY_TRACK, sky_track
 from fixtures import retire, shared_game
 
 
-NEEDS = ("Pain", "Thirst", "Hunger", "Rest", "Heat")
+NEEDS = ("Pain", "Thirst", "Hunger", "Rest", "Body temp")
 SIDEBAR_WIDTH = 44
 # Keep Needs visible at minimum height.
 LABEL_PANELS = ("Needs", "Movement", "Location", "Weapon", "Controls", "Log",
@@ -25,9 +25,10 @@ LABEL_PANELS = ("Needs", "Movement", "Location", "Weapon", "Controls", "Log",
 _layouts = {}
 
 
-def layout_userdir(moon):
-    """One config directory per layout, so every game for that layout shares a profile."""
-    if moon not in _layouts:
+def layout_userdir(moon, options):
+    """Seed each option profile independently, including after retirement deletes its directory."""
+    key = (moon, tuple(sorted(options.items())))
+    if key not in _layouts or not (_layouts[key] / "config" / "panel_options.json").exists():
         userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-hud-status-"))
         config = userdir / "config"
         config.mkdir()
@@ -42,8 +43,8 @@ def layout_userdir(moon):
                 {"name": name, "toggle": name in enabled} for name in LABEL_PANELS
             ]}],
         }]))
-        _layouts[moon] = userdir
-    return _layouts[moon]
+        _layouts[key] = userdir
+    return _layouts[key]
 
 
 def hud_setup(game):
@@ -60,7 +61,7 @@ def hud_setup(game):
 
 @contextmanager
 def hud_game(tag, moon=False, **options):
-    with shared_game(f"bn-e2e-hud-{tag}", cols=140, rows=45, userdir=layout_userdir(moon),
+    with shared_game(f"bn-e2e-hud-{tag}", cols=140, rows=45, userdir=layout_userdir(moon, options),
                      define=HELPERS, setup=hud_setup,
                      options={"SAFEMODE": "false", "SHOW_WELCOME": "false",
                               "SHOW_TIPS": "false", "CONTROL_SCHEME": "modern",
@@ -233,7 +234,7 @@ def test_status_fixed_needs_and_text_modes(_g):
         pressing = {label: warning[label] for label in ("Pain", "Thirst", "Rest")}
         for label, value in pressing.items():
             assert value != baseline[label], f"{label} did not reflect its warning state"
-        for label in ("Hunger", "Heat"):
+        for label in ("Hunger", "Body temp"):
             assert warning[label] == baseline[label], f"warning leaked into {label}"
         before = counters(game)
         status_needs(set_hud_option(game, "Status box", "Top left"), expected=pressing)
@@ -289,6 +290,39 @@ def test_status_short_narrow_fallback_retains_needs(_g):
         assert counters(game) == before, "resize must not consume turns or moves"
 
 
+def body_temp(game, celsius):
+    """The moodle is the readback: Lua sets the body temperature, the HUD shows it."""
+    assert game.lua("local a=gapi.get_avatar() "
+                    f"a:set_temp_celsius(Temperature.from_celsius({celsius})) "
+                    "out('set')") == ["set"]
+    return game.screen()
+
+
+def test_temperature_row_names_comfort_and_mild_chill_is_fine(_g):
+    """Mild chill keeps Needs met; only the extremes press the row, in the cold direction."""
+    with hud_game("bodytemp") as game:
+        set_hud_option(game, "Status box", "Top left")
+        screen = set_hud_option(game, "Box icons", "Unicode")
+        assert "Needs met" in status_box(screen), screen
+        screen = body_temp(game, 33)
+        box = status_box(screen)
+        assert "Needs met" in box, "a mildly chilly body asks for nothing:\n" + box
+        assert "Body temp" not in box and "Chilly" not in box, box
+        screen = body_temp(game, 29)
+        box = status_box(screen)
+        assert "Needs met" not in box, "a very cold body must press the row:\n" + box
+        assert re.search(r"│\s*❄\s+Very cold", box), "the cold row needs its snowflake:\n" + box
+        assert not re.search(r"\bHeat\b", box), "no row may call a cold body heat:\n" + box
+        assert game.lua("local a=gapi.get_avatar() a:set_fatigue(400) out('ok')") == ["ok"]
+        box = status_box(game.screen())
+        assert re.search(r"│\s*z\s+Dead Tired", box), "Rest needs one glyph:\n" + box
+        assert "zz" not in box, "the two-letter sleep glyph must be gone:\n" + box
+        # The detailed panel keeps the full value under a neutral, direction-free label.
+        assert sidebar_needs(set_hud_option(game, "Status box", "Off"))["Body temp"] == "Very cold!", \
+            game.screen()
+        assert not re.search(r"\bHeat\b", game.screen()), game.screen()
+
+
 def weather_rows(screen, cols=140, sidebar_width=SIDEBAR_WIDTH):
     terrain = regions(screen, cols, sidebar_width)[0].splitlines()
     light = [y for y, line in enumerate(terrain) if re.search(r"\bLight\s*:", line)]
@@ -338,6 +372,8 @@ def test_weather_four_rows_and_instrument_gates(_g):
         clock_pattern = r"\b\d{1,2}:\d{2}(?::\d{2})?\b"
         temperature_pattern = r"[-+]?\d+(?:\.\d+)?\s*°\s*[CFK]"
         initial = weather_rows(game.screen(), sidebar_width=32)
+        assert initial[1].startswith("t ") and initial[2].startswith("l Light:") and \
+            initial[3].startswith("w Wind:"), initial
         assert_weather_date(initial[1], season, day)
         assert not re.search(clock_pattern, initial[1]), "no watch must mean approximate time"
         assert not re.search(temperature_pattern, initial[0]), "temperature leaked without an instrument"
@@ -353,15 +389,15 @@ def test_weather_four_rows_and_instrument_gates(_g):
         assert_weather_date(equipped[1], season, day)
         assert clock in equipped[1], "the combined date/time row must preserve the existing clock including seconds"
         before = counters(game)
-        for mode in ("Unicode", "Text only"):
+        for mode, light_icon in (("Unicode", "⊙"), ("Text only", "l")):
             screen = set_hud_option(game, "Box icons", mode)
             icon_rows = weather_rows(screen, sidebar_width=32)
             assert_weather_date(icon_rows[1], season, day)
             assert clock in icon_rows[1], icon_rows
             assert re.search(temperature_pattern, icon_rows[0]).group() == \
                 re.search(temperature_pattern, equipped[0]).group(), icon_rows
-            assert equipped[0].removeprefix("Weather: ") in icon_rows[0], icon_rows
-            assert re.sub(r"^.*?Light:", "Light:", icon_rows[2]) == equipped[2], icon_rows
+            assert equipped[0].split("Weather:", 1)[1].strip() in icon_rows[0], icon_rows
+            assert icon_rows[2] == light_icon + " Light:" + equipped[2].split("Light:", 1)[1], icon_rows
             assert counters(game) == before, "changing weather icons must not advance time"
         for cols, rows in ((90, 25), (140, 45)):
             subprocess.run(["tmux", "resize-window", "-t", game.name,
@@ -471,6 +507,7 @@ def test_sky_track_ascii_sun_and_new_moon_are_distinct(_g):
 TESTS = [test_status_fixed_needs_and_text_modes,
          test_status_toggle_refresh_restores_sidebar_needs,
          test_status_short_narrow_fallback_retains_needs,
+         test_temperature_row_names_comfort_and_mild_chill_is_fine,
          test_weather_four_rows_and_instrument_gates,
          test_weather_underground_time_knowledge,
          test_weather_text_wind_origin_matches_instrument,

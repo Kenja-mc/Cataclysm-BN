@@ -89,8 +89,8 @@ auto compact_bars() -> bool
 
 enum class icon {
     sun, moon, cloud, rain, storm, snow, strange, underground, fists, melee, gun, bow, style,
-    walk, run, crouch, prone, mana, compass, fuel, battery, pain, thirst, hunger, rest, heat,
-    clock, light, wind, needs_met
+    walk, run, crouch, prone, mana, compass, fuel, battery, pain, thirst, hunger, rest, temp,
+    cold, hot, clock, light, wind, needs_met
 };
 
 struct glyph_set {
@@ -164,23 +164,27 @@ auto glyph( const icon i, const std::string &style ) -> std::string
         case icon::battery:
             return pick( { .uni = "↯", .mdi = "\U000F0079", .bundled = icon_font::battery, .ascii = "B" } );
         case icon::pain:
-            return pick( { .uni = "☹", .mdi = "\U000F0DAF", .bundled = icon_font::bandage, .ascii = "" } );
+            return pick( { .uni = "☹", .mdi = "\U000F0DAF", .bundled = icon_font::bandage, .ascii = "x" } );
         case icon::thirst:
-            return pick( { .uni = "☕", .mdi = "\U000F01AB", .bundled = icon_font::cup_water, .ascii = "" } );
+            return pick( { .uni = "☕", .mdi = "\U000F01AB", .bundled = icon_font::cup_water, .ascii = "~" } );
         case icon::hunger:
-            return pick( { .uni = "♨", .mdi = "\U000F141F", .bundled = icon_font::food_drumstick, .ascii = "" } );
+            return pick( { .uni = "♨", .mdi = "\U000F141F", .bundled = icon_font::food_drumstick, .ascii = "@" } );
         case icon::rest:
-            return pick( { .uni = "zz", .mdi = "\U000F0904", .bundled = icon_font::power_sleep, .ascii = "" } );
-        case icon::heat:
-            return pick( { .uni = "°", .mdi = "\U000F050F", .bundled = icon_font::thermometer, .ascii = "" } );
+            return pick( { .uni = "z", .mdi = "\U000F0904", .bundled = icon_font::power_sleep, .ascii = "z" } );
+        case icon::temp:
+            return pick( { .uni = "⇅", .mdi = "\U000F050F", .bundled = icon_font::thermometer, .ascii = "=" } );
+        case icon::cold:
+            return pick( { .uni = "❄", .mdi = "\U000F0598", .bundled = icon_font::weather_snowy, .ascii = "*" } );
+        case icon::hot:
+            return pick( { .uni = "↑", .mdi = "\U000F050F", .bundled = icon_font::thermometer, .ascii = "^" } );
         case icon::clock:
-            return pick( { .uni = "◷", .mdi = "\U000F0150", .bundled = icon_font::clock_outline, .ascii = "" } );
+            return pick( { .uni = "◷", .mdi = "\U000F0150", .bundled = icon_font::clock_outline, .ascii = "t" } );
         case icon::light:
-            return pick( { .uni = "⊙", .mdi = "\U000F06E8", .bundled = icon_font::lightbulb_on, .ascii = "" } );
+            return pick( { .uni = "⊙", .mdi = "\U000F06E8", .bundled = icon_font::lightbulb_on, .ascii = "l" } );
         case icon::wind:
-            return pick( { .uni = "≈", .mdi = "\U000F059D", .bundled = icon_font::weather_windy, .ascii = "" } );
+            return pick( { .uni = "≈", .mdi = "\U000F059D", .bundled = icon_font::weather_windy, .ascii = "w" } );
         case icon::needs_met:
-            return pick( { .uni = "✓", .mdi = "\U000F012C", .bundled = icon_font::check, .ascii = "" } );
+            return pick( { .uni = "✓", .mdi = "\U000F012C", .bundled = icon_font::check, .ascii = "+" } );
     }
     return "?";
 }
@@ -382,6 +386,15 @@ struct need_row {
     needs_status::reading value;
 };
 
+/// Only the extremes of the temperature reading reach the summary, so each carries its own icon.
+auto temperature_icon( const needs_status::reading &value ) -> icon
+{
+    if( value.side == needs_status::thermal::cold ) {
+        return icon::cold;
+    }
+    return value.side == needs_status::thermal::hot ? icon::hot : icon::temp;
+}
+
 /// Only needs that call for attention; a satisfied need would fill a row with good news.
 auto pressing_needs( const avatar &you ) -> std::vector<need_row>
 {
@@ -391,7 +404,9 @@ auto pressing_needs( const avatar &you ) -> std::vector<need_row>
         need_row{ .symbol = icon::thirst, .label = _( "Thirst" ), .value = values.thirst },
         need_row{ .symbol = icon::hunger, .label = _( "Hunger" ), .value = values.hunger },
         need_row{ .symbol = icon::rest, .label = _( "Rest" ), .value = values.rest },
-        need_row{ .symbol = icon::heat, .label = _( "Heat" ), .value = values.heat }
+        need_row{
+            .symbol = temperature_icon( values.heat ), .label = _( "Body temp" ),
+            .value = values.heat }
     };
     return all
     | std::views::filter( []( const need_row & n ) { return !n.value.fine; } )
@@ -776,7 +791,7 @@ const auto corners = std::array{
 auto label_width = 0;
 for( const auto *label : {
     _( "Weapon" ), _( "Style" ), _( "Stance" ), _( "Needs" ), _( "Pain" ),
-        _( "Thirst" ), _( "Hunger" ), _( "Rest" ), _( "Heat" ), _( "Mana" )
+        _( "Thirst" ), _( "Hunger" ), _( "Rest" ), _( "Body temp" ), _( "Mana" )
     } ) {
         label_width = std::max( label_width, utf8_width( label ) );
     }
