@@ -1,12 +1,14 @@
 #pragma once
 
 #include <map>
+#include <optional>
 #include <string>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "cursesdef.h"
 #include "input.h"
+#include "point.h"
 
 class JsonIn;
 
@@ -18,12 +20,15 @@ class help
 
     private:
         void deserialize( JsonIn &jsin );
-        void draw_menu( const catacurses::window &win );
+        void draw_menu( const catacurses::window &win, const std::optional<size_t> &selected );
         std::string get_note_colors();
         std::string get_dir_grid();
 
         std::map<int, std::pair<std::string, std::vector<std::string> > > help_texts;
         std::vector< std::vector<std::string> > hotkeys;
+        /// Window-relative start and printed width of each rendered topic row, in the same
+        /// order as the hotkeys vector. Filled by draw_menu, read by the click handler.
+        std::vector<std::pair<point, int>> menu_rows;
 
         input_context ctxt;
 };

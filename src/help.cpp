@@ -19,6 +19,7 @@
 #include "fstream_utils.h"
 #include "input.h"
 #include "json.h"
+#include "options.h"
 #include "output.h"
 #include "path_info.h"
 #include "point.h"
@@ -123,7 +124,7 @@ std::string help::get_dir_grid()
     return movement;
 }
 
-void help::draw_menu( const catacurses::window &win )
+void help::draw_menu( const catacurses::window &win, const std::optional<size_t> &selected )
 {
     werase( win );
     // NOLINTNEXTLINE(cata-use-named-point-constants)
@@ -133,14 +134,18 @@ void help::draw_menu( const catacurses::window &win )
 
     size_t half_size = help_texts.size() / 2 + 1;
     int second_column = divide_round_up( getmaxx( win ), 2 );
+    menu_rows.clear();
+    menu_rows.resize( help_texts.size() );
     for( size_t i = 0; i < help_texts.size(); i++ ) {
         std::string cat_name = _( help_texts[i].first );
         if( i < half_size ) {
             second_column = std::max( second_column, utf8_width( cat_name ) + 4 );
         }
 
-        shortcut_print( win, point( i < half_size ? 1 : second_column, y + i % half_size ),
-                        c_white, c_light_blue, cat_name );
+        const auto pos = point( i < half_size ? 1 : second_column, y + i % half_size );
+        const auto text_color = selected && *selected == i ? h_white : c_white;
+        menu_rows[i] = { pos, static_cast<int>( shortcut_print( win, pos, text_color, c_light_blue,
+                          cat_name ) ) };
     }
 
     wnoutrefresh( win );
@@ -182,46 +187,92 @@ void help::display_help()
     // for the menu shortcuts
     ctxt.register_action( "ANY_INPUT" );
 
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
+
     std::string action;
+    auto selected_topic = size_t{ 0 };
+
+    const auto show_topic = [&]( size_t i ) {
+        std::vector<std::string> i18n_help_texts;
+        i18n_help_texts.reserve( help_texts[i].second.size() );
+        std::transform( help_texts[i].second.begin(), help_texts[i].second.end(),
+        std::back_inserter( i18n_help_texts ), [&]( std::string & line ) {
+            return expand_key_tags( _( line ) );
+        } );
+
+        if( !i18n_help_texts.empty() ) {
+            ui.on_screen_resize( nullptr );
+
+            const auto get_w_help_border = [&]() {
+                init_windows( ui );
+                return w_help_border;
+            };
+
+            scrollable_text( get_w_help_border, _( " HELP " ),
+                             std::accumulate( i18n_help_texts.begin() + 1, i18n_help_texts.end(),
+                                              i18n_help_texts.front(),
+            []( const std::string & lhs, const std::string & rhs ) {
+                return lhs + "\n\n" + rhs;
+            } ) );
+
+            ui.on_screen_resize( init_windows );
+        }
+    };
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
         draw_border( w_help_border, BORDER_COLOR, _( " HELP " ), c_black_white );
         wnoutrefresh( w_help_border );
-        draw_menu( w_help );
+        const auto cursor = modern ? std::optional<size_t>( selected_topic ) : std::nullopt;
+        draw_menu( w_help, cursor );
     } );
 
     do {
         ui_manager::redraw();
 
         action = ctxt.handle_input();
+        if( modern && action == "SELECT" ) {
+            if( const auto mouse = ctxt.get_coordinates( w_help ) ) {
+                const auto cell = mouse->xy().raw() + point( getmaxx( w_help ),
+                                  getmaxy( w_help ) ) / 2;
+                for( size_t i = 0; i < menu_rows.size(); ++i ) {
+                    const auto &row = menu_rows[i];
+                    if( cell.y == row.first.y && cell.x >= row.first.x &&
+                        cell.x < row.first.x + row.second ) {
+                        show_topic( i );
+                        action = "CONFIRM";
+                        break;
+                    }
+                }
+            }
+            continue;
+        } else if( modern && ( action == "SCROLL_UP" || action == "UP" ) ) {
+            if( selected_topic > 0 ) {
+                --selected_topic;
+            }
+            continue;
+        } else if( modern && ( action == "SCROLL_DOWN" || action == "DOWN" ) ) {
+            if( selected_topic + 1 < help_texts.size() ) {
+                ++selected_topic;
+            }
+            continue;
+        } else if( action == "CONFIRM" && modern ) {
+            show_topic( selected_topic );
+            action = "CONFIRM";
+            continue;
+        }
         std::string sInput = ctxt.get_raw_input().text;
         for( size_t i = 0; i < hotkeys.size(); ++i ) {
             for( const std::string &hotkey : hotkeys[i] ) {
                 if( sInput == hotkey ) {
-                    std::vector<std::string> i18n_help_texts;
-                    i18n_help_texts.reserve( help_texts[i].second.size() );
-                    std::transform( help_texts[i].second.begin(), help_texts[i].second.end(),
-                    std::back_inserter( i18n_help_texts ), [&]( std::string & line ) {
-                        return expand_key_tags( _( line ) );
-                    } );
-
-                    if( !i18n_help_texts.empty() ) {
-                        ui.on_screen_resize( nullptr );
-
-                        const auto get_w_help_border = [&]() {
-                            init_windows( ui );
-                            return w_help_border;
-                        };
-
-                        scrollable_text( get_w_help_border, _( " HELP " ),
-                                         std::accumulate( i18n_help_texts.begin() + 1, i18n_help_texts.end(),
-                                                          i18n_help_texts.front(),
-                        []( const std::string & lhs, const std::string & rhs ) {
-                            return lhs + "\n\n" + rhs;
-                        } ) );
-
-                        ui.on_screen_resize( init_windows );
-                    }
+                    show_topic( i );
+                    selected_topic = i;
                     action = "CONFIRM";
                     break;
                 }
