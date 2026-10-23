@@ -1953,6 +1953,13 @@ void options_manager::add_options_general()
 
     get_option( "SOUNDPACKS" ).setPrerequisite( "SOUND_ENABLED" );
 
+    add( "MUSIC_ENABLED", general, translate_marker( "Music enabled" ),
+         translate_marker( "If true, background music is enabled.  Sound effects and ambience are unaffected." ),
+         true, COPT_NO_SOUND_HIDE
+       );
+
+    get_option( "MUSIC_ENABLED" ).setPrerequisite( "SOUND_ENABLED" );
+
     add( "MUSIC_VOLUME", general, translate_marker( "Music volume" ),
          translate_marker( "Adjust the volume of the music being played in the background." ),
          0, 128, 100, COPT_NO_SOUND_HIDE
@@ -2094,6 +2101,11 @@ void options_manager::add_options_interface()
          translate_marker( "Modern: WASD movement, Space for contextual interaction, Inventory for item actions and crafting, and Enter for secondary menus.  Shift plus movement looks, Ctrl plus movement peeks, Shift+X cycles movement modes, and Tab cycles targets.  Classic: the original vi-keys and numpad layout, with capital Y/N prompts.  Both schemes allow attacks by walking into enemies.  Your own key changes are kept either way." ),
     { { "modern", translate_marker( "Modern (WASD)" ) }, { "classic", translate_marker( "Classic" ) } },
     "modern" );
+
+    add( "CONTEXT_KEYHINTS", interface, translate_marker( "Menu key hints" ),
+         translate_marker( "If true and the Controls sidebar panel is enabled, show the current menu's keys in the panel and a one-line footer above full-screen menus.  Closing a menu restores map keys.  If false, keep the map-only Controls strip." ),
+         true
+       );
 
     add( "MOUSE_TILE_SELECTION", interface, translate_marker( "Mouse tile selection" ),
          translate_marker( "If true, hovering a map tile highlights it and shows its contents.  With mouse movement off, right click selects a tile or target without taking a turn; left click attacks the clicked hostile.  With mouse movement on, left click performs the suggested action or walks there and right click lists options.  If false, hovering shows no highlight, while clicks still use the reticle when mouse movement is off." ),
@@ -2776,13 +2788,6 @@ void options_manager::add_options_graphics()
        );
 
     get_option( "CLIFF_SHADING" ).setPrerequisite( "USE_TILES" );
-
-    add( "DIRECTIONAL_STAIRS", graphics, translate_marker( "Directional stairs" ),
-         translate_marker( "If true, orient stairs and ramps toward adjacent visible walkable tiles." ),
-         true, COPT_CURSES_HIDE
-       );
-
-    get_option( "DIRECTIONAL_STAIRS" ).setPrerequisite( "USE_TILES" );
 
     add( "ITEM_THUMBNAILS", graphics, translate_marker( "Item thumbnails in UI" ),
          translate_marker( "If true, item sprites are shown in inventory and pickup UI." ),
@@ -4914,7 +4919,6 @@ void options_manager::cache_to_globals()
     overmap_transparency = ::get_option<bool>( "OVERMAP_TRANSPARENCY" );
     item_layering_enabled = ::get_option<bool>( "ITEM_LAYERING" );
     cliff_shading_enabled = ::get_option<bool>( "CLIFF_SHADING" );
-    directional_stairs_enabled = ::get_option<bool>( "DIRECTIONAL_STAIRS" );
     item_thumbnails_enabled = ::get_option<bool>( "ITEM_THUMBNAILS" );
     PICKUP_RANGE = ::get_option<int>( "PICKUP_RANGE" );
 

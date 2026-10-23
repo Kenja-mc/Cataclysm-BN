@@ -485,6 +485,13 @@
     "name": "Pick up items from all nearby tiles",
     "category": "DEFAULTMODE",
     "id": "pickup_all",
+    "bindings": [ { "input_method": "keyboard", "key": "CTRL+G" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "quick_pickup",
+    "category": "DEFAULTMODE",
+    "name": "Take everything underfoot",
     "bindings": [ { "input_method": "keyboard", "key": "g" } ]
   },
   {
@@ -921,6 +928,13 @@
     "id": "body_status",
     "category": "DEFAULTMODE",
     "name": "Body status",
+    "bindings": [ { "input_method": "keyboard", "key": "h" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "sound_menu",
+    "category": "DEFAULTMODE",
+    "name": "Sound & volume",
     "bindings": [  ]
   },
   {
@@ -2141,14 +2155,14 @@
     "id": "LEVEL_UP",
     "category": "DEFAULTMODE",
     "name": "Ascend stairs",
-    "bindings": [ { "input_method": "keyboard", "key": "<" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "PPAGE" }, { "input_method": "keyboard", "key": "<" } ]
   },
   {
     "type": "keybinding",
     "id": "LEVEL_DOWN",
     "category": "DEFAULTMODE",
     "name": "Descend stairs",
-    "bindings": [ { "input_method": "keyboard", "key": ">" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "NPAGE" }, { "input_method": "keyboard", "key": ">" } ]
   },
   {
     "type": "keybinding",

@@ -3839,6 +3839,9 @@ input_context get_default_mode_input_context()
     ctxt.register_action( "advinv" );
     ctxt.register_action( "pickup" );
     ctxt.register_action( "pickup_all" );
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        ctxt.register_action( "quick_pickup" );
+    }
     ctxt.register_action( "pickup_feet" );
     ctxt.register_action( "grab" );
     ctxt.register_action( "haul" );
@@ -3910,6 +3913,7 @@ input_context get_default_mode_input_context()
     ctxt.register_action( "help" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
     ctxt.register_action( "open_options" );
+    ctxt.register_action( "sound_menu" );
     ctxt.register_action( "open_autopickup" );
     ctxt.register_action( "open_autonotes" );
     ctxt.register_action( "open_safemode" );
@@ -8951,7 +8955,7 @@ bool game::npc_menu( npc &who, const bool &force )
     return true;
 }
 
-void game::examine()
+auto game::examine() -> action_id
 {
     const auto contextual = get_option<bool>( "CONTEXTUAL_INTERACT" ) &&
                             get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
@@ -8961,21 +8965,23 @@ void game::examine()
     const optional_vpart_position vp = m.veh_at( u.bub_pos() );
     if( vp && vp->vehicle().player_in_control( u ) && !selected ) {
         examine( u.bub_pos() );
-        return;
+        return ACTION_NULL;
     }
 
     if( contextual ) {
+        auto deferred = ACTION_NULL;
         const auto actions = tile_selection::tile_actions{
             .examine = [this]( const tripoint_bub_ms & p ) { examine( p ); },
             .pickup = [this]( const tripoint_bub_ms & p ) { pickup( p ); },
-            .butcher = [this] { butcher(); }
+            .butcher = [this] { butcher(); },
+            .vertical = [&deferred]( const action_id act ) { deferred = act; }
         };
         if( selected ) {
             tile_selection::interact_at( u, *selected, actions );
-            return;
+            return deferred;
         }
         if( tile_selection::interact_nearby( u, actions ) ) {
-            return;
+            return deferred;
         }
     }
 
@@ -8990,7 +8996,7 @@ void game::examine()
     const bool auto_select = get_option<bool>( "AUTOSELECT_SINGLE_VALID_TARGET" );
     if( valid.empty() && auto_select ) {
         add_msg( _( "There is nothing that can be examined nearby." ) );
-        return;
+        return ACTION_NULL;
     }
     std::optional<tripoint_bub_ms> examp_;
     if( valid.size() == 1 && auto_select ) {
@@ -9007,11 +9013,12 @@ void game::examine()
         examp_ = choose_adjacent( _( "Examine where?" ), false );
     }
     if( !examp_ ) {
-        return;
+        return ACTION_NULL;
     }
     u.manual_examine = true;
     examine( *examp_ );
     u.manual_examine = false;
+    return ACTION_NULL;
 }
 
 static std::string get_fire_fuel_string( const tripoint_bub_ms &examp )

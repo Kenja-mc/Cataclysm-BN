@@ -23,12 +23,11 @@ from tmux_game import Game, start_new_game
 from tiles import Failure, Session, X11, capture, frame_rgb, require
 
 OFF = {name: "false" for name in (
-    "ITEM_LAYERING", "CLIFF_SHADING", "DIRECTIONAL_STAIRS", "ITEM_THUMBNAILS")}
+    "ITEM_LAYERING", "CLIFF_SHADING", "ITEM_THUMBNAILS")}
 OFF["TILES"] = "UNDEAD_PEOPLE_BASE"
 TABLES = {(-4, -6), (-1, -6), (-2, -4)}
 CLIFF_EDGES = ({(3, y) for y in range(4, 7)} | {(6, y) for y in range(4, 7)} |
                {(x, 3) for x in (4, 5)} | {(x, 7) for x in (4, 5)})
-ROTATED_STAIRS = {(-8, 6), (7, 7), (-3, 9), (9, -7)}
 SPRITES = ("rock", "ruby_gold_ring", "corpse_mon_zombie")
 
 FIXTURE_LUA = """
@@ -50,19 +49,6 @@ function render_clean()
     end end
     out('clean')
 end
----@class RenderOffset
----@field x integer
----@field y integer
----@param center RenderOffset
----@param opening RenderOffset
-function render_stair(center,opening)
-    for _,d in ipairs({{0,1},{1,0},{-1,0},{0,-1}}) do
-        local open=d[1]==opening.x and d[2]==opening.y
-        M:set_ter_at(here(center.x+d[1],center.y+d[2]),
-                    TerId.new(open and 't_pavement' or 't_wall'):int_id())
-    end
-    M:set_ter_at(here(center.x,center.y),TerId.new('t_stairs_down'):int_id())
-end
 function render_geometry()
     for dy=-4,2 do for _,dx in ipairs({-6,6}) do
         M:set_ter_at(here(dx,dy),TerId.new('t_wall'):int_id())
@@ -71,12 +57,6 @@ function render_geometry()
         M:set_ter_at(here(dx,dy),TerId.new('t_open_air'):int_id())
     end end
     M:set_ter_at(here(-7,0),TerId.new('t_open_air'):int_id())
-    render_stair({x=-8,y=6},{x=1,y=0})
-    render_stair({x=7,y=7},{x=-1,y=0})
-    render_stair({x=-3,y=9},{x=0,y=-1})
-    render_stair({x=0,y=-9},{x=0,y=1})
-    render_stair({x=9,y=-7},{x=-1,y=0})
-    M:set_ter_at(here(9,-6),TerId.new('t_pavement'):int_id())
     for _,d in ipairs({{-4,-6},{-1,-6},{-2,-4}}) do
         M:set_furn_at(here(d[1],d[2]),FurnId.new('f_table'):int_id())
         M:create_item_at(here(d[1],d[2]),ItypeId.new('rock'),-1)
@@ -106,8 +86,6 @@ end
 function render_sight()
     local a=gapi.get_avatar()
     out(a:sees(here(-6,0)),a:sees(here(-7,0)))
-    out(a:sees(here(9,-7)),a:sees(here(8,-7)),a:sees(here(9,-6)))
-    out(a:sees(here(-8,6)),a:sees(here(7,7)),a:sees(here(-3,9)),a:sees(here(0,-9)))
 end
 """
 
@@ -131,8 +109,8 @@ class RenderSession(Session):
             settle(game)
             sight = game.lua("render_sight()")
             (self.artifacts / "fixture-sight.json").write_text(json.dumps(sight))
-            require(sight == ["true,false", "true,true,false", "true,true,true,true"],
-                    f"fixture must expose ledges/visible openings but hide occluded openings: {sight}")
+            require(sight == ["true,false"],
+                    f"fixture must expose the ledge but hide the tile beyond the wall: {sight}")
             require(game.lua("out(gdebug.save_game())") == ["true"], game.screen())
             (self.artifacts / "fixture-curses.ansi").write_text(game.screen_colors())
         finally:
@@ -151,7 +129,7 @@ class RenderSession(Session):
                 require(window is not None, "running game window disappeared")
                 x11.focus(window, 0, 0)
                 for key in keys:
-                    x11.key(key)
+                    x11.key(*(key if isinstance(key, tuple) else (key,)))
                 previous = None
                 deadline = time.monotonic() + self.timeout
                 while time.monotonic() < deadline:
@@ -253,7 +231,7 @@ def template_positions(frame, template):
 
 def check_thumbnails(session):
     evidence = []
-    for menu, keys in (("inventory", ["i"]), ("pickup", ["i", "Escape", "g"])):
+    for menu, keys in (("inventory", ["i"]), ("pickup", ["i", "Escape", ("Control_L", "g")])):
         off = frame_rgb(session.launch_keyed(menu + "-off", OFF, keys))
         on = frame_rgb(session.launch_keyed(menu + "-on", {**OFF, "ITEM_THUMBNAILS": "true"}, keys))
         size = (2 * on[0] // 132, on[1] // 60)
@@ -297,8 +275,7 @@ def main():
         baseline = frame_rgb(session.launch("baseline", OFF))
         grid = world_grid(baseline, session.root)
         (artifacts / "grid.json").write_text(json.dumps(grid))
-        for feature, expected in (("ITEM_LAYERING", TABLES), ("CLIFF_SHADING", CLIFF_EDGES),
-                                  ("DIRECTIONAL_STAIRS", ROTATED_STAIRS)):
+        for feature, expected in (("ITEM_LAYERING", TABLES), ("CLIFF_SHADING", CLIFF_EDGES)):
             checks.append(check_world_feature(session, baseline, feature, expected, grid))
         checks.append(check_thumbnails(session))
     except Exception as exc:

@@ -1,4 +1,4 @@
-"""Modern pickup menu: the key that opened it confirms, main-game keys act, and the mouse marks rows."""
+"""Modern area pickup: g confirms, local keys act, and the mouse marks rows."""
 from helpers import HELPERS, arena, count_carried, empty_inventory, spawn, start_new_game
 from inventory_mouse import display_name, row_of, wielded
 from tmux_game import Game
@@ -11,8 +11,9 @@ def open_pickup(g, *items):
     names = {item: display_name(g, item) for item in items}
     for dx, item in enumerate(items):
         spawn(g, dx, 0, item)
-    g.keys("g", delay=1.5)
-    assert "Pick up" in g.screen() and "Weight" in g.screen(), "g should open the pickup menu\n" + g.screen()
+    g.keys("C-g", delay=0.2)
+    g.wait_for("Pick up")
+    g.wait_for("Weight")
     return names
 
 
@@ -26,7 +27,7 @@ def test_g_again_picks_up_the_highlighted_item(g):
     open_pickup(g, "rock", "stick")
     g.keys("g", delay=1.5)
     try:
-        assert "Weight" not in g.screen(), "g again should confirm\n" + g.screen()
+        assert "Weight" not in g.screen(), "g should confirm the area pickup menu\n" + g.screen()
         assert count_carried(g, "rock") + count_carried(g, "stick") == 1, "exactly the highlighted item"
     finally:
         close_and_clean(g)

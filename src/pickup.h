@@ -30,7 +30,8 @@ struct nearby_pickup_items {
  */
 auto do_pickup( std::vector<pick_drop_selection> &targets, bool autopickup ) -> bool;
 auto query_thief() -> bool;
-auto nearby_items_for_pickup( const tripoint_bub_ms &center ) -> nearby_pickup_items;
+auto nearby_items_for_pickup( const tripoint_bub_ms &center,
+                              int radius = 1 ) -> nearby_pickup_items;
 
 enum from_where : int {
     from_cargo = 0,
@@ -42,6 +43,8 @@ enum from_where : int {
 auto pick_up( const tripoint_bub_ms &p, int min, from_where get_items_from = prompt ) -> void;
 /** Pick up items from the player's tile and every adjacent tile. */
 auto pick_up_all_nearby() -> void;
+/// Queue every ground and cargo item on the player's tile through the pickup activity.
+auto pick_up_all_at_feet() -> void;
 /** Determines the cost of moving an item by a character. */
 auto cost_to_move_item( const Character &who, const item &it ) -> int;
 

@@ -185,6 +185,14 @@ auto choices_at( const avatar &you, const tripoint_bub_ms &p ) -> std::vector<ch
     if( adjacent && m.close_door( p, !m.is_outside( you.bub_pos() ), true ) ) {
         out.push_back( { .act = ACTION_CLOSE, .label = string_format( _( "close the %s" ), m.name( p ) ) } );
     }
+    if( dist == 0 && get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        if( can_move_vertical_at( p, -1 ) ) {
+            out.push_back( { .act = ACTION_MOVE_DOWN, .label = _( "descend" ) } );
+        }
+        if( can_move_vertical_at( p, 1 ) ) {
+            out.push_back( { .act = ACTION_MOVE_UP, .label = _( "ascend" ) } );
+        }
+    }
     if( dist <= 1 && m.has_items( p ) && m.sees_some_items( p, you ) ) {
         out.push_back( { .act = ACTION_PICKUP, .label = _( "pick up items" ) } );
     }
@@ -261,6 +269,10 @@ auto run_interaction( avatar &you, const interaction &what ) -> void
         return;
     }
     switch( what.c.act ) {
+        case ACTION_MOVE_DOWN:
+        case ACTION_MOVE_UP:
+            what.actions.vertical( what.c.act );
+            break;
         case ACTION_OPEN:
             open_at( p );
             break;
@@ -316,7 +328,10 @@ auto interact_at( avatar &you, const tripoint_bub_ms &p, const tile_actions &act
     add_msg( _( "There is nothing to interact with on that tile." ) );
         return;
     }
-    if( choices.size() == 1 && runs_unasked( choices.front() ) ) {
+    const auto lone_vertical = ( choices.front().act == ACTION_MOVE_DOWN ||
+                                 choices.front().act == ACTION_MOVE_UP ) &&
+                               std::ranges::count_if( choices, runs_unasked ) == 1;
+    if( ( choices.size() == 1 || lone_vertical ) && runs_unasked( choices.front() ) ) {
         run_interaction( you, { .c = choices.front(), .pos = p, .actions = actions } );
         return;
     }

@@ -100,6 +100,7 @@ std::string io::enum_to_string<action_id>( action_id data )
             PAIR( ACTION_JUMP )
             PAIR( ACTION_PICKUP )
             PAIR( ACTION_PICKUP_ALL )
+            PAIR( ACTION_QUICK_PICKUP )
             PAIR( ACTION_PICKUP_FEET )
             PAIR( ACTION_GRAB )
             PAIR( ACTION_HAUL )
@@ -186,6 +187,7 @@ std::string io::enum_to_string<action_id>( action_id data )
             PAIR( ACTION_DIARY )
             PAIR( ACTION_KEYBINDINGS )
             PAIR( ACTION_OPTIONS )
+            PAIR( ACTION_SOUND_MENU )
             PAIR( ACTION_AUTOPICKUP )
             PAIR( ACTION_AUTONOTES )
             PAIR( ACTION_SAFEMODE )
@@ -327,6 +329,8 @@ std::string action_ident( action_id act )
             return "pickup";
         case ACTION_PICKUP_ALL:
             return "pickup_all";
+        case ACTION_QUICK_PICKUP:
+            return "quick_pickup";
         case ACTION_PICKUP_FEET:
             return "pickup_feet";
         case ACTION_GRAB:
@@ -559,6 +563,8 @@ std::string action_ident( action_id act )
             return "HELP_KEYBINDINGS";
         case ACTION_OPTIONS:
             return "open_options";
+        case ACTION_SOUND_MENU:
+            return "sound_menu";
         case ACTION_AUTOPICKUP:
             return "open_autopickup";
         case ACTION_AUTONOTES:
@@ -620,6 +626,7 @@ bool can_action_change_worldstate( const action_id act )
         case ACTION_MAIN_MENU:
         case ACTION_KEYBINDINGS:
         case ACTION_OPTIONS:
+        case ACTION_SOUND_MENU:
         case ACTION_AUTOPICKUP:
         case ACTION_AUTONOTES:
         case ACTION_SAFEMODE:
@@ -895,6 +902,7 @@ bool can_interact_at( action_id action, const tripoint_bub_ms &p )
         case ACTION_PICKUP:
         case ACTION_PICKUP_ALL:
         case ACTION_PICKUP_FEET:
+        case ACTION_QUICK_PICKUP:
             return can_pickup_at( p );
         default:
             return false;
@@ -1205,7 +1213,7 @@ action_id handle_action_menu()
         } else if( category_id == "misc" ) {
             register_actions( {
                 ACTION_WAIT, ACTION_SLEEP, ACTION_BIONICS, ACTION_MUTATIONS, ACTION_PERKS,
-                ACTION_CONTROL_VEHICLE, ACTION_ITEMACTION, ACTION_TOGGLE_THIEF_MODE,
+                ACTION_CONTROL_VEHICLE, ACTION_ITEMACTION, ACTION_TOGGLE_THIEF_MODE, ACTION_SOUND_MENU,
                 // Modern unbinds the sidebar options key, so the menu keeps them reachable.
                 ACTION_TOGGLE_PANEL_ADM
             } );
@@ -1266,7 +1274,8 @@ action_id handle_main_menu()
     const auto register_actions = make_register_actions( entries, ctxt );
 
     register_actions( {
-        ACTION_OPEN_WIKI, ACTION_OPEN_HHG, ACTION_HELP, ACTION_KEYBINDINGS, ACTION_OPTIONS, ACTION_AUTOPICKUP, ACTION_AUTONOTES,
+        ACTION_OPEN_WIKI, ACTION_OPEN_HHG, ACTION_HELP, ACTION_KEYBINDINGS, ACTION_OPTIONS,
+        ACTION_SOUND_MENU, ACTION_AUTOPICKUP, ACTION_AUTONOTES,
         ACTION_SAFEMODE, ACTION_DISTRACTION_MANAGER, ACTION_COLOR, ACTION_WORLD_MODS,
         ACTION_ACTIONMENU, ACTION_QUICKSAVE, ACTION_SAVE, ACTION_DEBUG, ACTION_LUA_CONSOLE,
         ACTION_LUA_RELOAD

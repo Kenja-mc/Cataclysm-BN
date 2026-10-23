@@ -140,7 +140,7 @@ class texture
             srcrect( rect ) { }
         texture( SDL_Texture_SharedPtr ptr, const SDL_Rect &rect ) : sdl_texture_ptr( ptr ),
             srcrect( { static_cast<float>( rect.x ), static_cast<float>( rect.y ),
-                     static_cast<float>( rect.w ), static_cast<float>( rect.h ) } ) { }
+            static_cast<float>( rect.w ), static_cast<float>( rect.h ) } ) { }
         texture() = default;
 
         /// Returns the width (first) and height (second) of the stored texture.
@@ -163,11 +163,11 @@ class texture
                              const SDL_Point *const center, const SDL_FlipMode flip ) const {
             const std::optional<SDL_FRect> fdst = dstrect
                                                   ? std::optional<SDL_FRect>( SDL_FRect{ float( dstrect->x ), float( dstrect->y ),
-                                                          float( dstrect->w ), float( dstrect->h ) } )
+                                                      float( dstrect->w ), float( dstrect->h ) } )
                                                   : std::nullopt;
             const std::optional<SDL_FPoint> fcenter = center
-                    ? std::optional<SDL_FPoint>( SDL_FPoint{ float( center->x ), float( center->y ) } )
-                    : std::nullopt;
+                ? std::optional<SDL_FPoint>( SDL_FPoint{ float( center->x ), float( center->y ) } )
+                : std::nullopt;
             return SDL_RenderTextureRotated( renderer.get(), sdl_texture_ptr.get(), &srcrect,
                                              fdst ? &fdst.value() : nullptr, angle,
                                              fcenter ? &fcenter.value() : nullptr, flip );
@@ -693,8 +693,6 @@ struct tile_search_params {
     int subtile;
     // rotation: { UP = 0, LEFT = 1, DOWN = 2, RIGHT = 3 }
     int rota;
-    // Terrain that faces a side (stairs, ramps, slopes): rota applies although the tileset does not rotate it.
-    bool directional = false;
 };
 
 class cata_tiles
@@ -826,7 +824,6 @@ class cata_tiles
             int retract;
             size_t warp_hash;
             const render_light_tint &light_tint;
-            bool anchor_to_tile = false;
         };
 
         /// Draw a foreground or background sprite, accumulating its stacked height.

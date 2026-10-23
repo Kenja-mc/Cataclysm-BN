@@ -139,7 +139,7 @@ TEST_CASE(
     auto restore_keybindings = user_keybindings_file_guard();
     auto modern = override_option("CONTROL_SCHEME", "modern");
     const auto pickup_keys = [] {
-        return input_context("DEFAULTMODE").keys_bound_to("pickup_all");
+        return input_context("DEFAULTMODE").keys_bound_to("pickup_all", false);
     };
     const auto user_pickup_comma = std::string(R"({
   "type": "keybinding",
@@ -157,13 +157,13 @@ TEST_CASE(
         inp_mngr.save();
         inp_mngr.init();
         CHECK(contains_key(pickup_keys(), ','));
-        CHECK_FALSE(contains_key(pickup_keys(), 'g'));
+        CHECK_FALSE(contains_key(pickup_keys(), inp_mngr.get_keycode("CTRL+G")));
     }
 
     SECTION("older files that repeat the upstream default follow the scheme") {
         write_user_keybindings(user_pickup_comma);
         inp_mngr.init();
-        CHECK(contains_key(pickup_keys(), 'g'));
+        CHECK(contains_key(pickup_keys(), inp_mngr.get_keycode("CTRL+G")));
         CHECK_FALSE(contains_key(pickup_keys(), ','));
     }
 }

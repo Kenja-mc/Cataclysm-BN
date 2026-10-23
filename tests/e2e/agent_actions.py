@@ -323,7 +323,7 @@ _GAME_ACTIONS: tuple[tuple[str, str, str, tuple[str, ...]], ...] = (
     ("inventory", "open the inventory", "DEFAULTMODE", ("inventory",)),
     ("action_menu", "open the action menu: every grouped action", "DEFAULTMODE", ("action_menu",)),
     ("interact", "interact with the selected or nearby tile", "DEFAULTMODE", ("examine",)),
-    ("pickup", "pick up items", "DEFAULTMODE", ("pickup", "pickup_all")),
+    ("pickup", "pick up items", "DEFAULTMODE", ("quick_pickup", "pickup", "pickup_all")),
     ("pickup_all", "pick up from all nearby tiles", "DEFAULTMODE", ("pickup_all",)),
     ("look", "look around", "DEFAULTMODE", ("look",)),
     ("look_north", "look north", "DEFAULTMODE", ("shift_n",)),
@@ -371,7 +371,7 @@ def _game_actions(scheme: str) -> list[ActionSpec]:
         for candidate in candidates:
             keys = bound_keys(scheme, context, candidate)[:1]  # one key: aliases are alternatives
             if keys:
-                if keys not in used:  # modern resolves pickup and pickup_all to the same key
+                if keys not in used:
                     actions.append(_spec(action_id, label, keys))
                     used.add(keys)
                 break
