@@ -149,7 +149,9 @@ def test_options_and_keybindings_scrollbars(_g):
         open_main_menu(g)
         g.keys("t", "y", delay=0.8)
         g.wait_for("Keybindings", timeout=15)
-        top, bottom, x = find_scrollbar(g.screen())
+        bar = find_scrollbar(g.screen())
+        assert bar, "the keybindings screen should draw a list scrollbar\n" + g.screen()
+        top, bottom, x = bar
         before = g.screen().splitlines()[top + 5]
         g.click(x, bottom - 1)
         assert g.screen().splitlines()[top + 5] != before, \
