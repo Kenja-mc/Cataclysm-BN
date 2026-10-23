@@ -10,6 +10,8 @@
 #include "cached_options.h"
 #include "cursesdef.h"
 #include "game_ui.h"
+#include "input.h"
+#include "keyhints_panel.h"
 #include "point.h"
 #include "sdltiles.h"
 #include "profile.h"
@@ -329,6 +331,16 @@ void ui_adaptor::redraw_invalidated()
         return;
     }
 
+    static auto last_context = size_t{ 0 };
+    const auto context = input_context::active_context_version();
+    if( last_context != context ) {
+        // Also restore the footer's old screen area when a smaller menu closes.
+        for( ui_adaptor &ui : ui_stack ) {
+            ui.invalidated = true;
+        }
+        last_context = context;
+    }
+
     restore_on_out_of_scope<bool> prev_redraw_in_progress( redraw_in_progress );
     restore_on_out_of_scope<bool> prev_restart_redrawing( restart_redrawing );
     redraw_in_progress = true;
@@ -423,6 +435,9 @@ void ui_adaptor::redraw_invalidated()
                         ui.invalidated = false;
                     }
                 }
+            }
+            if( !restart_redrawing && !showing_debug_message ) {
+                draw_menu_keyhints();
             }
             if( !restart_redrawing && cursor_pos.has_value() ) {
                 restore_cursor( cursor_pos.value() );
