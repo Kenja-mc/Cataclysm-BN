@@ -1053,6 +1053,14 @@ static auto normalize_mod_load_order( std::vector<mod_id> mods ) -> std::vector<
     return mods;
 }
 
+void init::load_modfiles_for_dump( const std::vector<mod_id> &packs )
+{
+    clear_loaded_data();
+
+    loading_ui ui( false );
+    load_and_finalize_packs( ui, _( "Loading content packs" ), normalize_mod_load_order( packs ) );
+}
+
 void init::load_core_bn_modfiles()
 {
     clear_loaded_data();

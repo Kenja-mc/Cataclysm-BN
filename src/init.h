@@ -196,6 +196,12 @@ bool is_data_loaded();
 void load_core_bn_modfiles();
 
 /**
+ * Load & finalize an explicit mod list, used by QA dumps.
+ * @throw std::exception if the loaded data is not valid.
+ */
+void load_modfiles_for_dump( const std::vector<mod_id> &packs );
+
+/**
  * Load & finalize modlist needed for the current world.
  * @param ui structure for load progress display
  * @param artifact_file file with per-world artifact definitions
