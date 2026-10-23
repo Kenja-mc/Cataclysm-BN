@@ -43,6 +43,7 @@
 #include "point.h"
 #include "requirements.h"
 #include "rng.h"
+#include "scrollbar_input.h"
 #include "skill.h"
 #include "string_formatter.h"
 #include "string_id.h"
@@ -440,6 +441,14 @@ std::optional<construction_id> construction_menu( const bool blueprint )
     const int w_list_x0 = 1;
     catacurses::window w_list;
 
+    struct click_span {
+        point origin;
+        int width = 0;
+        int index = 0;
+    };
+    std::vector<click_span> visible_tab_hits;
+    int last_clicked_row = -1;
+
     std::vector<std::string> notes;
     int pos_x = 0;
     int available_window_width = 0;
@@ -484,6 +493,12 @@ std::optional<construction_id> construction_menu( const bool blueprint )
     ctxt.register_action( "HELP_KEYBINDINGS" );
     ctxt.register_action( "FILTER" );
     ctxt.register_action( "RESET_FILTER" );
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
 
     const std::vector<construction_category> &construct_cat = construction_categories::get_all();
     std::vector<size_t> construct_cat_order;
@@ -1000,9 +1015,11 @@ std::optional<construction_id> construction_menu( const bool blueprint )
             }
         }
         if( filter_mode ) {
+            visible_tab_hits.clear();
             const std::string display_label = label_for( 0 );
             draw_tab( w_tabs, 2, display_label, true );
         } else {
+            visible_tab_hits.clear();
             int start_x = 2;
             const auto selected_visible_tab = tabindex - first_tab;
             for( size_t idx = 0; idx < visible_tabs.size(); ++idx ) {
@@ -1012,6 +1029,8 @@ std::optional<construction_id> construction_menu( const bool blueprint )
                 const std::string display_label = base_label;
                 const auto label_width = utf8_width( display_label );
                 draw_tab( w_tabs, start_x, display_label, is_selected );
+                visible_tab_hits.push_back( click_span{ point( start_x, 1 ), label_width + 2,
+                                                        static_cast<int>( label_index ) } );
                 start_x += label_width + 3;
             }
             if( first_tab > 0 ) {
@@ -1375,7 +1394,85 @@ std::optional<construction_id> construction_menu( const bool blueprint )
 
         ui_manager::redraw();
 
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        const bool mouse_select = modern && action == "SELECT";
+        if( mouse_select ) {
+            // get_coordinates() is relative to the window centre.
+            const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
+                const auto mouse = ctxt.get_coordinates( win );
+                if( !mouse )
+                {
+                    return std::nullopt;
+                }
+                const auto cell = mouse->xy().raw() + point( getmaxx( win ), getmaxy( win ) ) / 2;
+                if( cell.x < 0 || cell.y < 0 ||
+                    cell.x >= getmaxx( win ) || cell.y >= getmaxy( win ) )
+                {
+                    return std::nullopt;
+                }
+                return cell;
+            };
+            action.clear();
+            bool on_scrollbar = false;
+            if( const auto cell = cell_in( w_con ) ) {
+                const auto hit = scrollbar_input::click(
+                scrollbar_input::geometry{
+                    .offset = point( 0, 3 ),
+                    .viewport_size = w_list_height,
+                    .content_size = static_cast<int>( constructs.size() ),
+                    .viewport_pos = select,
+                    .scroll_to_last = true,
+                }, *cell );
+                if( hit ) {
+                    select = std::clamp( hit->viewport_pos, 0,
+                                         std::max( 0, static_cast<int>( constructs.size() ) - 1 ) );
+                    update_info = true;
+                    on_scrollbar = true;
+                }
+            }
+            if( on_scrollbar ) {
+                // A scrollbar click never builds or selects the row underneath.
+                last_clicked_row = -1;
+            } else {
+                bool on_tab = false;
+                if( const auto cell = cell_in( w_tabs ) ) {
+                    for( const click_span &span : visible_tab_hits ) {
+                        if( cell->y >= span.origin.y && cell->y <= span.origin.y + 1 &&
+                            cell->x >= span.origin.x && cell->x < span.origin.x + span.width ) {
+                            tabindex = span.index;
+                            favorite_fallback = false;
+                            update_info = true;
+                            update_cat = true;
+                            on_tab = true;
+                            break;
+                        }
+                    }
+                }
+                if( on_tab ) {
+                    last_clicked_row = -1;
+                } else if( const auto cell = cell_in( w_list ) ) {
+                    const int row = offset + cell->y;
+                    if( row >= 0 && row < static_cast<int>( constructs.size() ) ) {
+                        if( row == select && last_clicked_row == row ) {
+                            // Second click on the same row performs the keyboard action.
+                            action = "CONFIRM";
+                            last_clicked_row = -1;
+                        } else {
+                            select = row;
+                            update_info = true;
+                            last_clicked_row = row;
+                        }
+                    } else {
+                        last_clicked_row = -1;
+                    }
+                } else {
+                    last_clicked_row = -1;
+                }
+            }
+        } else {
+            // Keyboard navigation, filters and tab changes invalidate the click pair.
+            last_clicked_row = -1;
+        }
         if( action == "FILTER" ) {
             struct filter_example {
                 char key;

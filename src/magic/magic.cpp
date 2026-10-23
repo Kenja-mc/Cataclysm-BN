@@ -37,6 +37,7 @@
 #include "point.h"
 #include "requirements.h"
 #include "rng.h"
+#include "scrollbar_input.h"
 #include "sounds.h"
 #include "string_formatter.h"
 #include "string_id.h"
@@ -1814,6 +1815,8 @@ private:
     const std::string assign_hotkey_hint;
     const int assign_hotkey_hint_width;
     int info_scroll;
+    int info_scroll_total_lines = 0;
+    int info_scroll_viewport = 0;
     auto draw_spell_info(const spell& sp, const uilist* menu) -> void;
     auto update_categories(
         uilist* menu, const spell_selector_category_id& requested_category, bool rebuild_topology)
@@ -1917,6 +1920,32 @@ public:
         }
         if (action == "DESC_DOWN") {
             info_scroll += 1;
+            return true;
+        }
+        return false;
+    }
+
+    /// Clicks on the custom spell-description scrollbar drawn by draw_spell_info().
+    auto mouse(uilist* menu, const input_context&, const input_event&, point cell)
+        -> bool override {
+        if (menu->pad_right < 8 || menu->pad_right >= menu->w_width) { return false; }
+        const int h_offset = menu->w_width - menu->pad_right + 1;
+        const int info_width = menu->pad_right - 4;
+        const int h_col1 = h_offset + 1;
+        if (const auto hit = scrollbar_input::click(
+                scrollbar_input::geometry{
+                    .offset = point(h_col1 + info_width, 0),
+                    .viewport_size = menu->w_height,
+                    .content_size = info_scroll_total_lines,
+                    .viewport_pos = info_scroll_viewport,
+                    .scroll_to_last = false,
+                },
+                cell)) {
+            const int max_start = std::max(0, info_scroll_total_lines - menu->w_height);
+            const int target = std::clamp(hit->viewport_pos, 0, max_start);
+            // calcStartPos() centres the viewport when MENU_SCROLL is on; undo that here
+            // so the redrawn bar stays where the click landed.
+            info_scroll = target + (get_option<bool>("MENU_SCROLL") ? (menu->w_height - 1) / 2 : 0);
             return true;
         }
         return false;
@@ -2224,9 +2253,11 @@ auto spellcasting_callback::draw_spell_info(const spell& sp, const uilist* menu)
     } else if (info_scroll < 0) {
         info_scroll = total_lines;
     }
-    int start;
+    int start = 0;
     int end;
     calcStartPos(start, info_scroll, win_height, total_lines);
+    info_scroll_total_lines = total_lines;
+    info_scroll_viewport = start;
     end = std::min(total_lines, start + win_height - 3);
     for (int i = start; i < end; ++i) {
         auto dummy = c_white;
