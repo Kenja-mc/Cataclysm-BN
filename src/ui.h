@@ -179,6 +179,10 @@ class uilist_callback
                           uilist * ) {
             return false;
         }
+        /// Mouse click at a window-relative cell, after list rows and the list scrollbar.
+        virtual auto mouse( uilist *, const input_context &, const input_event &, point /*cell*/ ) -> bool {
+            return false;
+        }
         virtual void refresh( uilist * ) {}
         virtual ~uilist_callback() = default;
 };
