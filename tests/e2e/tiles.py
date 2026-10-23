@@ -15,6 +15,7 @@ Usage:
   python3 tests/e2e/tiles.py minimap [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py mouse [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py sound_menu [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
+  python3 tests/e2e/tiles.py zoom [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
 
 --root is the game tree (data and the curses build); --binary is the tiles executable.
 Artifacts (window captures, marker crops, logs, fixture asserts, result.json) stay in --out.
@@ -47,7 +48,7 @@ from tmux_game import Game, start_new_game  # noqa: E402
 DEFAULT_LAVAPIPE_ICD = Path.home() / ".local/lavapipe/usr/share/vulkan/icd.d/lvp_icd.json"
 MEMORY_CAP = "MemoryMax=12G"
 SWAP_CAP = "MemorySwapMax=0"
-WINDOW_TITLE_PREFIX = "Cataclysm"
+WINDOW_TITLE_PREFIX = "Bright Nights Overhaul"
 GOLD = (255, 215, 0)
 GOLD_TOLERANCE = 12
 ZOOMS = ("1x", "2x", "4x")
@@ -401,9 +402,11 @@ def fit_marker_grid(blobs, expected):
 
 FIXTURE_LUA = (
     # An outdoor courtyard with an opaque ring; remove the shelter roof so daylight survives reload.
-    # The internal column hides (8,0).
+    # The internal column hides (8,0). Alternating tile columns make the rendered tile width
+    # measurable from a frame, while both floors stay transparent for the sight checks.
     "function minimap_fixture() "
-    "for dx=-11,11 do for dy=-11,11 do local p=here(dx,dy) M:set_ter_at(p, TerId.new('t_pavement'):int_id()) "
+    "for dx=-11,11 do for dy=-11,11 do local p=here(dx,dy) local t=(dx%2==0) and 't_pavement' or 't_floor' "
+    "M:set_ter_at(p, TerId.new(t):int_id()) "
     "local above=TripointBubMs.new(p.x,p.y,p.z+1) "
     "M:set_furn_at(above, FurnId.new('f_null'):int_id()) M:clear_items_at(above) "
     "M:set_ter_at(above, TerId.new('t_open_air'):int_id()) "
@@ -794,6 +797,126 @@ def case_mouse(session):
     return [], observations
 
 
+ZOOM_SIDEBAR_CELLS = 44
+ZOOM_FONT_WIDTH = 8
+
+
+def saved_turn(path):
+    return json.loads(path.read_text().split("\n", 1)[1])["turn"]
+
+
+def column_levels(rgb, width, x0, x1, y0, y1):
+    levels = []
+    for x in range(x0, x1):
+        samples = []
+        for y in range(y0, y1):
+            offset = 3 * (y * width + x)
+            samples.append((rgb[offset] * 299 + rgb[offset + 1] * 587 + rgb[offset + 2] * 114) // 1000)
+        samples.sort()
+        levels.append(samples[len(samples) // 2])
+    return levels
+
+
+def tile_pitch(png, terrain_width, center_y):
+    """Median rendered width of the fixture's alternating floor columns, in pixels."""
+    width, height, rgb = frame_rgb(png)
+    left, right = max(0, terrain_width // 2 - 360), terrain_width // 2 - 60
+    top, bottom = max(0, center_y - 360), center_y - 140
+    require(right - left >= 160 and bottom - top >= 80, f"{png}: map crop is too small")
+    levels = column_levels(rgb, width, left, right, top, bottom)
+    dark, light = min(levels), max(levels)
+    require(light - dark >= 25, f"{png}: alternating floor columns are not contrasty ({dark}..{light})")
+    split = (dark + light) / 2
+    runs, start = [], 0
+    for index in range(1, len(levels) + 1):
+        if index == len(levels) or (levels[index] >= split) != (levels[start] >= split):
+            runs.append((start, index - start))
+            start = index
+    widths = [length for offset, length in runs if offset > 0 and offset + length < len(levels)]
+    require(len(widths) >= 2, f"{png}: not enough whole tiles in view: runs {runs}")
+    return sorted(widths)[len(widths) // 2]
+
+
+def case_zoom(session):
+    """Default keyboard and wheel zoom change the rendered tile pitch and spend no turn."""
+    bindings = session.curses_userdir / "config" / "keybindings.json"
+    rows = json.loads(bindings.read_text()) if bindings.exists() else []
+    rows = [row for row in rows if not (row.get("category") == "DEFAULTMODE"
+                                      and row.get("id") == "quicksave")]
+    rows.append({"type": "keybinding", "id": "quicksave", "category": "DEFAULTMODE",
+                 "bindings": [{"input_method": "keyboard", "key": "F6"}]})
+    bindings.write_text(json.dumps(rows))
+    source = session.curses_userdir / "save" / session.world
+    starts = list(source.glob("*.sav"))
+    require(len(starts) == 1, f"zoom: expected one character save in {source}, got {starts}")
+    initial_turn = saved_turn(starts[0])
+    options = {
+        "CONTROL_SCHEME": "modern", "ZOOM_STEP_COUNT": "1",
+        "SCALING_FACTOR": "1", "FONT_WIDTH": str(ZOOM_FONT_WIDTH), "FONT_HEIGHT": "16",
+        "FONT_SIZE": "16", "TILES": "UNDEAD_PEOPLE_BASE",
+        "TERMINAL_X": "160", "TERMINAL_Y": "60", "SIDEBAR_POSITION": "right",
+        "MOUSE_MOVE": "false",
+    }
+    checks, pitches, frames = [], {}, {}
+    final_turn = None
+    with session.running_game("zoom", options) as live:
+        x11 = X11(session.display)
+        try:
+            win = x11.find_window(WINDOW_TITLE_PREFIX)
+            require(win is not None, "zoom: game window disappeared")
+            width, height, _ = frame_rgb(live.frame)
+            terrain_width = width - ZOOM_SIDEBAR_CELLS * ZOOM_FONT_WIDTH
+            require(terrain_width >= 640, f"zoom: terrain too narrow ({terrain_width}px)")
+            x11.focus_local(win, terrain_width // 2, height // 2)
+
+            def observe(label):
+                wait_for_frame(session, live.proc, live.run, session.timeout)
+                png = capture(session.display, win, session.artifacts / f"zoom-{label}.png")
+                frames[label] = str(png)
+                w, h, _ = frame_rgb(png)
+                require((w, h) == (width, height), f"zoom: {label} changed the window size")
+                pitches[label] = tile_pitch(png, terrain_width, height // 2)
+                return pitches[label]
+
+            initial = observe("initial")
+            x11.key("equal")
+            zoomed = observe("keyboard-in")
+            x11.key("minus")
+            restored = observe("keyboard-out")
+            x11.click(4)
+            wheel_zoomed = observe("wheel-in")
+            x11.click(5)
+            wheel_restored = observe("wheel-out")
+
+            save = next((live.run / "userdir" / "save" / session.world).glob("*.sav"), None)
+            require(save is not None, "zoom: running copy has no character save")
+            stamp = save.stat().st_mtime_ns
+            x11.key("F6", delay=0.5)
+            deadline = time.time() + 30
+            while save.stat().st_mtime_ns == stamp and time.time() < deadline:
+                time.sleep(0.2)
+            require(save.stat().st_mtime_ns != stamp, "zoom: quicksave did not write the save")
+            final_turn = saved_turn(save)
+            checks.extend([
+                Check("keyboard zoom in doubles the tile pitch", abs(zoomed / initial - 2) <= 0.2,
+                      f"{initial}px -> {zoomed}px"),
+                Check("keyboard zoom out restores the tile pitch", abs(restored / initial - 1) <= 0.05,
+                      f"{initial}px -> {restored}px"),
+                Check("mouse wheel zoom in doubles the tile pitch", abs(wheel_zoomed / initial - 2) <= 0.2,
+                      f"{initial}px -> {wheel_zoomed}px"),
+                Check("mouse wheel zoom out restores the tile pitch",
+                      abs(wheel_restored / initial - 1) <= 0.05,
+                      f"{initial}px -> {wheel_restored}px"),
+                Check("zoom spends no turn", final_turn == initial_turn,
+                      f"turn {initial_turn} -> {final_turn}"),
+            ])
+        finally:
+            x11.close()
+    failures = [f"{check.name}: {check.detail}" for check in checks if not check.ok]
+    return failures, {"checks": [check.__dict__ for check in checks], "pitches": pitches,
+                      "initial_turn": initial_turn, "final_turn": final_turn, "frames": frames}
+
+
 def case_sound_menu(session):
     """Drive the tiles menu; check saved settings, not audible output or OCR."""
     bindings = session.curses_userdir / "config" / "keybindings.json"
@@ -870,7 +993,8 @@ def case_sound_menu(session):
     return [], observations
 
 
-CASES = {"minimap": case_minimap, "mouse": case_mouse, "sound_menu": case_sound_menu}
+CASES = {"minimap": case_minimap, "mouse": case_mouse, "sound_menu": case_sound_menu,
+         "zoom": case_zoom}
 
 
 def main(argv=None):
