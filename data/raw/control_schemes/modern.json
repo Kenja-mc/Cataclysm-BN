@@ -527,14 +527,21 @@
     "id": "zoom_in",
     "category": "DEFAULTMODE",
     "name": "Zoom in",
-    "bindings": [ { "input_method": "mouse", "key": "SCROLL_UP" } ]
+    "bindings": [
+      { "input_method": "keyboard", "key": "=" },
+      { "input_method": "keyboard", "key": "+" },
+      { "input_method": "mouse", "key": "SCROLL_UP" }
+    ]
   },
   {
     "type": "keybinding",
     "id": "zoom_out",
     "category": "DEFAULTMODE",
     "name": "Zoom out",
-    "bindings": [ { "input_method": "mouse", "key": "SCROLL_DOWN" } ]
+    "bindings": [
+      { "input_method": "keyboard", "key": "-" },
+      { "input_method": "mouse", "key": "SCROLL_DOWN" }
+    ]
   },
   {
     "type": "keybinding",
