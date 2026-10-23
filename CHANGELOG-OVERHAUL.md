@@ -22,7 +22,8 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - The fork installs beside an upstream Cataclysm-BN: `bin/install-bno.sh` provides `bno` and
   `bno-tiles`, its own menu entry and icon, and `~/.local/share/bright-nights-overhaul` with
   `~/.config/bright-nights-overhaul`. It copies old fork saves and settings once and leaves the
-  old directories for an upstream install.
+  old directories for an upstream install. The window titles itself **Bright Nights Overhaul -
+  version**, so it does not read as upstream.
 
 ### Changed
 
@@ -58,6 +59,8 @@ Upstream's own changes are in `docs/en/game/changelog`.
 ### Maintenance
 
 - `README.md`, `README.ja.md` and `README.ko.md` link the fork's own releases and screenshots.
+- `--dump-stats FOLDED` takes its request file directly, and the comparison tool is invoked with
+  named arguments, as `tools/fold_equivalence/README.md` shows.
 - The test-quality skill records the harness traps found in these runs, including the vehicle-cache
   reload bug and the borrowed-game lifetime bug.
 
