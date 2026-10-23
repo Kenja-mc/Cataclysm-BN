@@ -450,7 +450,7 @@ const std::string &string_input_popup::query_string( const bool loop, const bool
         if( desc_view_ptr && ev.type == input_event_t::mouse && action == "SELECT" &&
             get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
             const auto cell = ev.mouse_pos - point( getbegx( w_description ), getbegy( w_description ) );
-            if( const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+            if( const auto hit = scrollbar_input::click( {
                 .offset = point_zero,
                 .viewport_size = getmaxy( w_description ),
                 .content_size = desc_view_ptr->num_lines(),

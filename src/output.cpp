@@ -429,7 +429,7 @@ void scrollable_text( const std::function<catacurses::window()> &init_window,
         if( modern && action == "SELECT" ) {
             if( const auto mouse = ctxt.get_coordinates( w ) ) {
                 const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
-                if( const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                if( const auto hit = scrollbar_input::click( {
                     .offset = point( width - 1, text2.y ),
                     .viewport_size = text_h,
                     .content_size = static_cast<int>( lines.size() ),
@@ -1131,7 +1131,7 @@ input_event draw_item_info( const std::function<catacurses::window()> &init_wind
                 const auto cell = mouse->xy().raw() + point( getmaxx( win ), getmaxy( win ) ) / 2;
                 const auto bar = point( data.scrollbar_left ? 0 : getmaxx( win ) - 1,
                                         data.without_border && data.use_full_win ? 0 : 1 );
-                if( const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                if( const auto hit = scrollbar_input::click( {
                     .offset = bar,
                     .viewport_size = height,
                     .content_size = static_cast<int>( folded.size() ),
@@ -1547,7 +1547,7 @@ void scrollbar::apply( const catacurses::window &window )
         mvwputch( window, point( offset_x_v, offset_y_v ), arrow_color_v, '^' );
         mvwputch( window, point( offset_x_v, offset_y_v + viewport_size_v - 1 ), arrow_color_v, 'v' );
 
-        const auto lay = scrollbar_input::layout_for( scrollbar_input::geometry{
+        const auto lay = scrollbar_input::layout_for( {
             .offset = point( offset_x_v, offset_y_v ),
             .viewport_size = viewport_size_v,
             .content_size = content_size_v,
