@@ -63,20 +63,6 @@ class invlet_wrapper : private std::string
 
 const extern invlet_wrapper inv_chars;
 
-/// Digits 0-9 are valid invlets only when assigned manually (Modern controls).
-/// They are never picked by automatic assignment, so they stay free for the
-/// player while letters keep their Classic behavior.
-inline auto invlet_is_manual_digit( int invlet ) -> bool
-{
-    return invlet >= '0' && invlet <= '9';
-}
-
-/// True for every character an item invlet may keep: inv_chars plus manual digits.
-inline auto invlet_is_kept( int invlet ) -> bool
-{
-    return inv_chars.valid( invlet ) || invlet_is_manual_digit( invlet );
-}
-
 class location_inventory;
 
 // For each item id, store a set of "favorite" inventory letters.

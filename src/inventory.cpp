@@ -13,6 +13,7 @@
 #include "flat_set.h"
 #include "game.h"
 #include "iexamine.h"
+#include "inventory_shortcuts.h"
 #include "inventory_ui.h" // auto inventory blocking
 #include "locations.h"
 #include "map/map.h"

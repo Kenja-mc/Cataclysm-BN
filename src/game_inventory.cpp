@@ -21,6 +21,7 @@
 #include "game.h"
 #include "input.h"
 #include "inventory.h"
+#include "inventory_shortcuts.h"
 #include "inventory_ui.h"
 #include "item.h"
 #include "item_category.h"
