@@ -130,6 +130,9 @@ jobs:
 
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
+    env:
+      # Only repository-controlled events may publish reusable caches.
+      CACHE_WRITE_ALLOWED: ${{ contains(fromJSON('["push", "workflow_dispatch", "release", "schedule", "repository_dispatch"]'), github.event_name) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -226,23 +229,58 @@ jobs:
         if: runner.os == 'Windows'
         uses: lukka/get-cmake@v3.31.6
 
-      - name: Export GitHub Actions cache environment variables
+      - name: Configure dependency caches (windows msvc)
         if: runner.os == 'Windows'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            core.exportVariable("ACTIONS_CACHE_URL", process.env.ACTIONS_CACHE_URL || "")
-            core.exportVariable("ACTIONS_RESULTS_URL", process.env.ACTIONS_RESULTS_URL || "")
-            core.exportVariable("ACTIONS_RUNTIME_TOKEN", process.env.ACTIONS_RUNTIME_TOKEN || "")
-
-      - name: Configure vcpkg binary cache (windows msvc)
-        if: runner.os == 'Windows'
+        id: windows-cache-config
+        shell: pwsh
         run: |
-          $mode = "readwrite"
-          if ("${{ github.event_name }}" -eq "pull_request") {
-            $mode = "read"
-          }
-          "VCPKG_BINARY_SOURCES=clear;x-gha,$mode" >> $env:GITHUB_ENV
+          $cmakeVersion = (cmake --version) -join "`n"
+          $toolchain = @(
+            $env:VCToolsVersion
+            $env:WindowsSDKVersion
+            (Get-FileHash (Get-Command cl.exe).Source -Algorithm SHA256).Hash
+            (Get-FileHash (Get-Command link.exe).Source -Algorithm SHA256).Hash
+            $cmakeVersion
+          ) -join "`n"
+          $fingerprint = [Convert]::ToHexString(
+            [System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($toolchain))
+          ).ToLowerInvariant()
+          "toolchain=$fingerprint" >> $env:GITHUB_OUTPUT
+          "ccache-key=windows-v2-${{ runner.arch }}-${{ matrix.os }}-$fingerprint-${{ matrix.artifact }}-${{ inputs.mode }}" >> $env:GITHUB_OUTPUT
+          $cacheDir = Join-Path $env:RUNNER_TEMP "vcpkg-binary-cache"
+          New-Item -ItemType Directory -Force $cacheDir | Out-Null
+          "VCPKG_BINARY_CACHE=$cacheDir" >> $env:GITHUB_ENV
+          $mode = if ($env:CACHE_WRITE_ALLOWED -eq "true") { "readwrite" } else { "read" }
+          "VCPKG_BINARY_SOURCES=clear;files,$cacheDir,$mode" >> $env:GITHUB_ENV
+          Write-Output "MSVC $env:VCToolsVersion; Windows SDK $env:WindowsSDKVersion; toolchain $fingerprint"
+
+      - name: Restore vcpkg binary archives (windows msvc)
+        if: runner.os == 'Windows'
+        id: vcpkg-binary-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.VCPKG_BINARY_CACHE }}
+          key: vcpkg-binary-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.os }}-x64-windows-static-${{ steps.windows-cache-config.outputs.toolchain }}-${{ hashFiles('msvc-full-features/vcpkg*.json', '.github/vcpkg_triplets/**', '.github/vcpkg_ports/**', 'build-scripts/MSVC.cmake', 'build-scripts/windows-tiles-sounds-x64-msvc.cmake', 'CMakePresets.json', '.github/workflows/build.yml') }}
+          # Native vcpkg ABI hashes reject incompatible archives from older manifests.
+          restore-keys: |
+            vcpkg-binary-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.os }}-x64-windows-static-${{ steps.windows-cache-config.outputs.toolchain }}-
+
+      - name: Report vcpkg binary cache restore
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          CACHE_HIT: ${{ steps.vcpkg-binary-cache.outputs.cache-hit || 'false' }}
+          CACHE_MATCHED_KEY: ${{ steps.vcpkg-binary-cache.outputs.cache-matched-key || '(none)' }}
+          CACHE_PRIMARY_KEY: ${{ steps.vcpkg-binary-cache.outputs.cache-primary-key }}
+        run: |
+          Write-Output "vcpkg binary cache exact hit: $env:CACHE_HIT"
+          Write-Output "vcpkg binary cache matched key: $env:CACHE_MATCHED_KEY"
+          @(
+            "### Windows vcpkg binary cache"
+            "- Exact hit: $env:CACHE_HIT"
+            "- Matched key: $env:CACHE_MATCHED_KEY"
+            "- Requested key: $env:CACHE_PRIMARY_KEY"
+          ) >> $env:GITHUB_STEP_SUMMARY
 
       - name: Install vcpkg
         if: runner.os == 'Windows'
@@ -250,6 +288,7 @@ jobs:
         id: runvcpkg
         with:
           vcpkgDirectory: "${{ github.workspace }}/../b/vcpkg"
+          vcpkgJsonGlob: msvc-full-features/vcpkg.json
 
       - name: Integrate vcpkg
         if: runner.os == 'Windows'
@@ -259,15 +298,12 @@ jobs:
         if: runner.os == 'Windows'
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          # Build mode changes MSVC compiler inputs.
-          key: windows-${{ matrix.artifact }}-${{ inputs.mode }}-${{ github.ref_name }}
-          restore-keys: |
-            windows-${{ matrix.artifact }}-${{ inputs.mode }}-${{ github.ref_name }}
-            windows-${{ matrix.artifact }}-${{ inputs.mode }}-main
-            windows-${{ matrix.artifact }}-${{ inputs.mode }}-
+          # Ref-independent buckets; ccache still checks compiler and source inputs.
+          key: ${{ steps.windows-cache-config.outputs.ccache-key }}
           max-size: 3G
           verbose: 2
-          save: ${{ github.event_name != 'pull_request' }}
+          # Native ccache validates each compilation unit, even if a later step fails.
+          save: ${{ env.CACHE_WRITE_ALLOWED == 'true' }}
 
       - name: Configure ccache for MSVC
         if: runner.os == 'Windows'
@@ -295,9 +331,16 @@ jobs:
           ninja: true
           setup-cpp: false
 
-      - name: Show Clang version (Linux)
+      - name: Configure compiler cache key (Linux)
         if: runner.os == 'Linux' && (matrix.android == '' || matrix.android == 'none')
-        run: clang++ --version
+        id: linux-cache-config
+        shell: bash
+        run: |
+          set -euo pipefail
+          compiler_version="$(clang++ --version)"
+          printf '%s\n' "$compiler_version"
+          fingerprint="$(printf '%s\n' "$compiler_version" "$(sha256sum "$(command -v clang++)")" "$(cmake --version)" | sha256sum | cut -d ' ' -f 1)"
+          echo "ccache-key=linux-v2-${{ runner.arch }}-${{ matrix.os }}-$fingerprint-${{ matrix.artifact }}-${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
 
       #- name: Install SDL3 (Linux)
       #  if: runner.os == 'Linux' && (matrix.android == '' || matrix.android == 'none')
@@ -319,14 +362,10 @@ jobs:
         if: runner.os == 'Linux' && (matrix.android == '' || matrix.android == 'none')
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ matrix.artifact }}-${{ github.ref_name }}
-          restore-keys: |
-            ${{ matrix.artifact }}-${{ github.ref_name }}
-            ${{ matrix.artifact }}-main
-            ${{ matrix.artifact }}-
+          key: ${{ steps.linux-cache-config.outputs.ccache-key }}
           max-size: 500M
           verbose: 2
-          save: ${{ github.event_name != 'pull_request' }}
+          save: ${{ env.CACHE_WRITE_ALLOWED == 'true' }}
 
       # macOS setup
       - name: Install build dependencies (mac)
@@ -891,3 +930,10 @@ jobs:
             $testBin `
             -- `
             @testOpts
+
+      - name: Save vcpkg binary archives (windows msvc)
+        if: success() && runner.os == 'Windows' && env.CACHE_WRITE_ALLOWED == 'true' && steps.vcpkg-binary-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.VCPKG_BINARY_CACHE }}
+          key: ${{ steps.vcpkg-binary-cache.outputs.cache-primary-key }}

@@ -4,9 +4,77 @@ description: Build the host shader compiler without vcpkg
 runs:
   using: composite
   steps:
-    - shell: bash
+    - name: Identify host shadercross cache
+      id: identity
+      shell: bash
+      env:
+        RECIPE_HASH: ${{ hashFiles('.github/actions/build-shadercross/action.yml', 'build-scripts/shadercross/CMakeLists.txt', 'build-scripts/Shadercross.cmake') }}
       run: |
+        set -euo pipefail
+        # CMake caches absolute paths, and SDL probes installed native libraries.
+        # Keep build trees within the same image, toolchain and package environment.
+        identity="$(
+          set -e
+          {
+            printf '%s\n' "${ImageOS:-}" "${ImageVersion:-}" "$GITHUB_WORKSPACE" "$RUNNER_TEMP"
+            printf '%s\n' "${CC:-cc}" "${CXX:-c++}" "${CFLAGS:-}" "${CXXFLAGS:-}" "${CPPFLAGS:-}" "${LDFLAGS:-}"
+            printf '%s\n' "${CMAKE_GENERATOR:-}" "${CMAKE_PREFIX_PATH:-}" "${CMAKE_TOOLCHAIN_FILE:-}" "${PKG_CONFIG_PATH:-}"
+            python3 - <<'PY'
+        import os
+        import shlex
+        import shutil
+        import subprocess
+        for value in (os.environ.get("CC") or "cc", os.environ.get("CXX") or "c++", "cmake", "make"):
+            command = shlex.split(value)
+            print(os.path.realpath(shutil.which(command[0])), flush=True)
+            subprocess.run([*command, "--version"], check=True)
+        PY
+            if command -v ninja >/dev/null; then
+              command -v ninja
+              ninja --version
+            fi
+            if [[ -n "${CMAKE_TOOLCHAIN_FILE:-}" ]]; then
+              sha256sum "$CMAKE_TOOLCHAIN_FILE"
+            fi
+            dpkg-query -W -f='${binary:Package}=${Version}\n'
+          } | sha256sum | cut -d ' ' -f 1
+        )"
+        prefix="shadercross-v1-${{ runner.os }}-${{ runner.arch }}-$identity-$RECIPE_HASH"
+        # This is only a lookup hint: FetchContent still updates main below.
+        revision="$(git ls-remote https://github.com/libsdl-org/SDL_shadercross.git refs/heads/main | cut -f 1)"
+        test -n "$revision"
+        echo "prefix=$prefix" >> "$GITHUB_OUTPUT"
+        echo "key=$prefix-$revision" >> "$GITHUB_OUTPUT"
+
+    - name: Restore host shadercross
+      id: cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ runner.temp }}/shadercross
+        key: ${{ steps.identity.outputs.key }}
+        restore-keys: |
+          ${{ steps.identity.outputs.prefix }}-
+
+    - name: Build host shadercross
+      id: build
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Never skip configure/build on a hit: main and its submodules are mutable.
         cmake -S build-scripts/shadercross -B "$RUNNER_TEMP/shadercross" -DCMAKE_BUILD_TYPE=Release
         cmake --build "$RUNNER_TEMP/shadercross" --target shadercross --parallel 2
+        revision="$(git -C "$RUNNER_TEMP/shadercross/_deps/sdl3_shadercross-src" rev-parse HEAD)"
+        echo "key=${{ steps.identity.outputs.prefix }}-$revision" >> "$GITHUB_OUTPUT"
         echo "SHADERCROSS=$RUNNER_TEMP/shadercross/bin/shadercross" >> "$GITHUB_ENV"
         echo "$RUNNER_TEMP/shadercross/bin" >> "$GITHUB_PATH"
+
+    - name: Save host shadercross
+      if: >-
+        success() &&
+        contains(fromJSON('["push", "workflow_dispatch", "schedule", "release"]'), github.event_name) &&
+        (steps.cache.outputs.cache-hit != 'true' || steps.identity.outputs.key != steps.build.outputs.key)
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ runner.temp }}/shadercross
+        # Save the revision actually built if main moved after the lookup.
+        key: ${{ steps.build.outputs.key }}
