@@ -883,6 +883,14 @@ bool main_menu::opening_screen()
                     get_help().display_help();
                     break;
                 case main_menu_opts::QUIT:
+                    // Modern confirms the highlighted entry, so quitting from Space or Enter
+                    // asks here; Classic still quits from Enter without a prompt.
+                    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+                        ui_manager::redraw();
+                        if( !query_yn( _( "Really quit?" ) ) ) {
+                            break;
+                        }
+                    }
                     return false;
                 case main_menu_opts::SETTINGS:
                     if( sel2 == 0 ) {        /// Options

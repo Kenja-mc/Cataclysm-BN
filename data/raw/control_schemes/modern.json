@@ -994,6 +994,16 @@
   },
   {
     "type": "keybinding",
+    "id": "CONFIRM",
+    "category": "UILIST",
+    "name": "Confirm Choice",
+    "bindings": [
+      { "input_method": "keyboard", "key": "SPACE" },
+      { "input_method": "keyboard", "key": "RETURN" }
+    ]
+  },
+  {
+    "type": "keybinding",
     "id": "UP",
     "category": "SPELL_SELECT",
     "name": "Select previous spell",
@@ -1262,6 +1272,26 @@
     "category": "MAIN_MENU",
     "name": "Delete template",
     "bindings": [ { "input_method": "keyboard", "key": "D" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "CONFIRM",
+    "category": "MAIN_MENU",
+    "name": "Confirm Choice",
+    "bindings": [
+      { "input_method": "keyboard", "key": "SPACE" },
+      { "input_method": "keyboard", "key": "RETURN" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "CONFIRM",
+    "category": "YESNO",
+    "name": "Confirm Choice",
+    "bindings": [
+      { "input_method": "keyboard", "key": "SPACE" },
+      { "input_method": "keyboard", "key": "RETURN" }
+    ]
   },
   {
     "type": "keybinding",
@@ -1697,7 +1727,7 @@
     "id": "CONFIRM",
     "category": "PICKUP",
     "name": "Confirm Choice",
-    "bindings": [ { "input_method": "keyboard", "key": "g" }, { "input_method": "keyboard", "key": "RETURN" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "g" }, { "input_method": "keyboard", "key": "RETURN" }, { "input_method": "keyboard", "key": "SPACE" } ]
   },
   {
     "type": "keybinding",
