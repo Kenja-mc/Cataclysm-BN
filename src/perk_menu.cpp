@@ -233,7 +233,7 @@ void draw_perk_menu( Character &player )
                     }
                 } else if( const auto mouse = ctxt.get_coordinates( w_list ) ) {
                     const auto cell = window_cell( mouse, w_list );
-                    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                    const auto hit = scrollbar_input::click( {
                         .offset = point( list_width - 1, 0 ),
                         .viewport_size = list_height,
                         .content_size = list_lines,
@@ -253,7 +253,7 @@ void draw_perk_menu( Character &player )
                     }
                 } else if( const auto mouse = ctxt.get_coordinates( w_info ) ) {
                     const auto cell = window_cell( mouse, w_info );
-                    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                    const auto hit = scrollbar_input::click( {
                         .offset = point( info_width - 1, 0 ),
                         .viewport_size = info_height,
                         .content_size = info_lines,

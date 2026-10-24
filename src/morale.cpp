@@ -852,7 +852,7 @@ void player_morale::display( int focus_eq, int pain_penalty, int fatigue_cap )
                 // The morale readout is informational: a click only scrolls.
                 if( const auto mouse = ctxt.get_coordinates( w ) ) {
                     const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
-                    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                    const auto hit = scrollbar_input::click( {
                         .offset = point( 0, static_cast<int>( top_lines.size() ) ),
                         .viewport_size = rows_visible,
                         .content_size = rows_total,

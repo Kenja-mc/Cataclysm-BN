@@ -1773,7 +1773,7 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
             bool consumed = false;
             if( const auto cell = cell_in( w_data ) ) {
                 if( const auto hit = scrollbar_input::click(
-                scrollbar_input::geometry{
+                {
                     .offset = point_zero,
                     .viewport_size = dataLines,
                     .content_size = static_cast<int>( current.size() ),
@@ -1785,7 +1785,7 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
                     consumed = true;
                 } else if( recipe_info_scrollbar_x >= 0 && recipe_info_total_lines > 0 ) {
                     if( const auto info_hit = scrollbar_input::click(
-                    scrollbar_input::geometry{
+                    {
                         .offset = point( recipe_info_scrollbar_x, 0 ),
                         .viewport_size = dataLines,
                         .content_size = recipe_info_total_lines,

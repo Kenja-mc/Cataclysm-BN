@@ -262,7 +262,7 @@ auto enchantment_selector_menu(std::vector<enchant_info> options, Character& use
             bool consumed = false;
             if (const auto cell = cell_in(w_ench)) {
                 if (const auto hit = scrollbar_input::click(
-                scrollbar_input::geometry{
+                {
                     .offset = point(width, 0),
                     .viewport_size = TERMY,
                     .content_size = num_options,
@@ -278,7 +278,7 @@ auto enchantment_selector_menu(std::vector<enchant_info> options, Character& use
                     if (num_options > 0 && info_lines > height) {
                         // Long info text is drawn last, on top of the list mirror.
                         if (const auto hit = scrollbar_input::click(
-                        scrollbar_input::geometry{
+                        {
                             .offset = point(width, 0),
                             .viewport_size = TERMY,
                             .content_size = info_lines,
@@ -289,7 +289,7 @@ auto enchantment_selector_menu(std::vector<enchant_info> options, Character& use
                             consumed = true;
                         }
                     } else if (const auto hit = scrollbar_input::click(
-                    scrollbar_input::geometry{
+                    {
                         .offset = point(width, 0),
                         .viewport_size = height,
                         .content_size = num_options,

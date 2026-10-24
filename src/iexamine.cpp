@@ -1094,7 +1094,7 @@ void iexamine::vending( player &p, const tripoint_bub_ms &examp )
                     const auto cell = mouse->xy().raw() + point( getmaxx( w ),
                                       getmaxy( w ) ) / 2;
                     const int page_size = std::min( num_items, list_lines );
-                    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                    const auto hit = scrollbar_input::click( {
                         .offset = point( 0, first_item_offset ),
                         .viewport_size = list_lines,
                         .content_size = num_items,

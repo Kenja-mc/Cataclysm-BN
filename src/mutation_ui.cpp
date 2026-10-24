@@ -442,7 +442,7 @@ detail::mutations_ui_result detail::show_mutations_ui_internal( Character &who )
                             mouse_row.reset();
                         }
                     } else {
-                        const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                        const auto hit = scrollbar_input::click( {
                             .offset = point( 0, list_start_y ),
                             .viewport_size = list_height,
                             .content_size = mutations_count,

@@ -802,7 +802,7 @@ auto trading_window::show_item_data( size_t index, bool target_is_theirs ) -> in
                 if( const auto mouse = ctxt.get_coordinates( w_popup ) ) {
                     const auto cell = mouse->xy().raw() + point( getmaxx( w_popup ),
                                       getmaxy( w_popup ) ) / 2;
-                    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                    const auto hit = scrollbar_input::click( {
                         .offset = point( getmaxx( w_popup ) - 1, 1 ),
                         .viewport_size = std::max( getmaxy( w_popup ) - 2, 0 ),
                         .content_size = static_cast<int>( foldstring( info_text,

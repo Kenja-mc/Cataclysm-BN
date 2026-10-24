@@ -927,7 +927,7 @@ void worldfactory::show_active_world_mods( const std::vector<mod_id> &world_mods
                     active_line = 0;
                 }
                 if( const auto hit = scrollbar_input::click(
-                scrollbar_input::geometry{
+                {
                     .offset = point_zero,
                     .viewport_size = getmaxy( w_mods ),
                     .content_size = mod_line_count( world_mods ),
@@ -1440,7 +1440,7 @@ int worldfactory::show_modselection_window( const catacurses::window &win,
                     active_line = 0;
                 }
                 if( const auto hit = scrollbar_input::click(
-                scrollbar_input::geometry{
+                {
                     .offset = point_zero,
                     .viewport_size = getmaxy( win ),
                     .content_size = mod_line_count( mods ),

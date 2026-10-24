@@ -138,7 +138,7 @@ auto handle_text_view_mouse( scrolling_text_view &view, const input_context &ctx
         return false;
     }
     const auto cell = mouse->xy().raw() + point( getmaxx( w_view ), getmaxy( w_view ) ) / 2;
-    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+    const auto hit = scrollbar_input::click( {
         .offset = point( 0, 0 ),
         .viewport_size = getmaxy( w_view ),
         .content_size = view.num_lines(),

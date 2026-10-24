@@ -840,7 +840,7 @@ void show_bionics_ui( Character &who )
                     const auto cell = mouse->xy().raw() + point( getmaxx( wBio ),
                                       getmaxy( wBio ) ) / 2;
                     const int list_size = static_cast<int>( current_bionic_list->size() );
-                    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                    const auto hit = scrollbar_input::click( {
                         .offset = point( 0, list_start_y ),
                         .viewport_size = LIST_HEIGHT,
                         .content_size = list_size,

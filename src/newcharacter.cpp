@@ -1710,7 +1710,7 @@ tab_direction set_traits( avatar &u, points_left &points )
             const int content_height = static_cast<int>( iContentHeight );
             for( int page = 0; cell && page < used_pages; ++page ) {
                 if( const auto hit = scrollbar_input::click(
-                scrollbar_input::geometry{
+                {
                     .offset = point( static_cast<int>( page_width ) * page, 5 ),
                     .viewport_size = content_height,
                     .content_size = static_cast<int>( click_sizes[page] ),
@@ -2220,7 +2220,7 @@ tab_direction set_bionics( avatar &u, points_left &points )
             const int content_height = static_cast<int>( iContentHeight );
             for( int page = 0; cell && page < used_pages; ++page ) {
                 if( const auto hit = scrollbar_input::click(
-                scrollbar_input::geometry{
+                {
                     .offset = point( static_cast<int>( page_width ) * page, 5 ),
                     .viewport_size = content_height,
                     .content_size = static_cast<int>( click_sizes[page] ),
@@ -2915,7 +2915,7 @@ tab_direction set_profession( avatar &u, points_left &points,
             bool consumed = false;
             if( cell ) {
                 if( const auto hit = scrollbar_input::click(
-                scrollbar_input::geometry{
+                {
                     .offset = point( 0, 5 ),
                     .viewport_size = iContentHeight,
                     .content_size = profs_length,
@@ -3270,7 +3270,7 @@ tab_direction set_skills( avatar &u, points_left &points )
             bool consumed = false;
             if( cell ) {
                 if( const auto hit = scrollbar_input::click(
-                scrollbar_input::geometry{
+                {
                     .offset = point( getmaxx( w ) - 1, 5 ),
                     .viewport_size = iContentHeight,
                     .content_size = description_line_count,
@@ -3280,7 +3280,7 @@ tab_direction set_skills( avatar &u, points_left &points )
                     selected = hit->viewport_pos;
                     consumed = true;
                 } else if( const auto list_hit = scrollbar_input::click(
-                scrollbar_input::geometry{
+                {
                     .offset = point( 0, 5 ),
                     .viewport_size = iContentHeight - 1,
                     .content_size = display_line - 1,
@@ -3528,7 +3528,7 @@ tab_direction set_magic( avatar &u, points_left &points )
             bool consumed = false;
             if( cell ) {
                 if( const auto hit = scrollbar_input::click(
-                scrollbar_input::geometry{
+                {
                     .offset = point( getmaxx( w ) - 1, 5 ),
                     .viewport_size = iContentHeight,
                     .content_size = description_line_count,
@@ -3538,7 +3538,7 @@ tab_direction set_magic( avatar &u, points_left &points )
                     selected = hit->viewport_pos;
                     consumed = true;
                 } else if( const auto list_hit = scrollbar_input::click(
-                scrollbar_input::geometry{
+                {
                     .offset = point( 0, 5 ),
                     .viewport_size = iContentHeight - 1,
                     .content_size = display_line - 1,
@@ -3974,7 +3974,7 @@ tab_direction set_scenario( avatar &u, points_left &points,
             bool consumed = false;
             if( cell ) {
                 if( const auto hit = scrollbar_input::click(
-                scrollbar_input::geometry{
+                {
                     .offset = point( 0, 5 ),
                     .viewport_size = iContentHeight,
                     .content_size = scens_length,

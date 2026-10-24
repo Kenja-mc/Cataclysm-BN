@@ -1418,7 +1418,7 @@ std::optional<construction_id> construction_menu( const bool blueprint )
             bool on_scrollbar = false;
             if( const auto cell = cell_in( w_con ) ) {
                 const auto hit = scrollbar_input::click(
-                scrollbar_input::geometry{
+                {
                     .offset = point( 0, 3 ),
                     .viewport_size = w_list_height,
                     .content_size = static_cast<int>( constructs.size() ),

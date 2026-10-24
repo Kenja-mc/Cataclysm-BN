@@ -1932,7 +1932,7 @@ public:
         const int info_width = menu->pad_right - 4;
         const int h_col1 = h_offset + 1;
         if (const auto hit = scrollbar_input::click(
-                scrollbar_input::geometry{
+                {
                     .offset = point(h_col1 + info_width, 0),
                     .viewport_size = menu->w_height,
                     .content_size = info_scroll_total_lines,

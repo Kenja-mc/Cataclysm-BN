@@ -1738,7 +1738,7 @@ bool ma_style_callback::key( const input_context &ctxt, const input_event &event
                     if( const auto mouse = ict.get_coordinates( w ) ) {
                         const auto cell = mouse->xy().raw() + point( getmaxx( w ),
                                           getmaxy( w ) ) / 2;
-                        const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                        const auto hit = scrollbar_input::click( {
                             .offset = point_south,
                             .viewport_size = height,
                             .content_size = iLines,

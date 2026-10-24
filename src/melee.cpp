@@ -867,7 +867,7 @@ auto show_technique_reference_popup( const std::string &text ) -> void
                 if( const auto mouse = ict.get_coordinates( window ) ) {
                     const auto cell = mouse->xy().raw() + point( getmaxx( window ),
                                       getmaxy( window ) ) / 2;
-                    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                    const auto hit = scrollbar_input::click( {
                         .offset = point_south,
                         .viewport_size = content_height,
                         .content_size = text_lines,

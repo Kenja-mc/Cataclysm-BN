@@ -224,7 +224,7 @@ void game::list_missions()
                                 mouse_row.reset();
                             }
                         }
-                    } else if( const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                    } else if( const auto hit = scrollbar_input::click( {
                     .offset = point( 0, 3 ),
                     .viewport_size = entries_per_page,
                     .content_size = static_cast<int>( umissions.size() ),

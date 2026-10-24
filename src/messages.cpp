@@ -730,7 +730,7 @@ void Messages::dialog::input( const ui_adaptor &ui )
                 // Messages are informational: a click only scrolls.
                 if( const auto mouse = ctxt.get_coordinates( w ) ) {
                     const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
-                    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                    const auto hit = scrollbar_input::click( {
                         .offset = point( 0, border_width ),
                         .viewport_size = static_cast<int>( max_lines ),
                         .content_size = static_cast<int>( folded_filtered.size() ),

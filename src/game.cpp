@@ -10433,7 +10433,7 @@ void game::zones_manager()
                 } else if( const auto mouse = ctxt.get_coordinates( w_zones_border ) ) {
                     const auto cell = mouse->xy().raw() + point( getmaxx( w_zones_border ),
                                       getmaxy( w_zones_border ) ) / 2;
-                    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                    const auto hit = scrollbar_input::click( {
                         .offset = point_south,
                         .viewport_size = max_rows,
                         .content_size = zone_cnt,
@@ -11583,7 +11583,7 @@ static auto list_vehicles( const vehicle_list_t &vehicle_list ) -> vehicle_menu_
                         action = "NEXT_TAB";
                     } else if( vehicle_list.empty() ) {
                         // No rows or bar to click.
-                    } else if( const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                    } else if( const auto hit = scrollbar_input::click( {
                         .offset = point_south,
                         .viewport_size = iMaxRows,
                         .content_size = static_cast<int>( vehicle_list.size() ),
@@ -12236,7 +12236,7 @@ game::vmenu_ret game::list_items( const std::vector<map_item_stack> &item_list )
                             x += width + gap_spaces;
                         }
                     } else if( !ground_items.empty() ) {
-                        if( const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                        if( const auto hit = scrollbar_input::click( {
                             .offset = point_south,
                             .viewport_size = iMaxRows,
                             .content_size = iItemNum,
@@ -12640,7 +12640,7 @@ game::vmenu_ret game::list_monsters( const std::vector<Creature *> &monster_list
                         action = get_safemode().has_rule( monName, Attitude::A_ANY ) ?
                                  "SAFEMODE_BLACKLIST_REMOVE" : "SAFEMODE_BLACKLIST_ADD";
                     } else if( !monster_list.empty() ) {
-                        if( const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                        if( const auto hit = scrollbar_input::click( {
                             .offset = point_south,
                             .viewport_size = iMaxRows,
                             .content_size = static_cast<int>( monster_list.size() ),
