@@ -51,6 +51,26 @@
   },
   {
     "type": "keybinding",
+    "id": "CONFIRM",
+    "category": "UILIST",
+    "name": "Confirm Choice",
+    "bindings": [
+      { "input_method": "keyboard", "key": "SPACE" },
+      { "input_method": "keyboard", "key": "RETURN" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "CONFIRM",
+    "category": "YESNO",
+    "name": "Confirm Choice",
+    "bindings": [
+      { "input_method": "keyboard", "key": "SPACE" },
+      { "input_method": "keyboard", "key": "RETURN" }
+    ]
+  },
+  {
+    "type": "keybinding",
     "id": "LEFT",
     "category": "OVERMAP",
     "name": "Move west",
@@ -1272,6 +1292,16 @@
   },
   {
     "type": "keybinding",
+    "id": "CONFIRM",
+    "category": "MAIN_MENU",
+    "name": "Confirm Choice",
+    "bindings": [
+      { "input_method": "keyboard", "key": "SPACE" },
+      { "input_method": "keyboard", "key": "RETURN" }
+    ]
+  },
+  {
+    "type": "keybinding",
     "id": "SORT",
     "category": "NEW_CHAR_PROFESSIONS",
     "name": "Toggle sorting order",
@@ -2215,27 +2245,5 @@
     "category": "INVENTORY",
     "name": "Toggle category selection mode",
     "bindings": [ { "input_method": "keyboard", "key": "BACKTAB" } ]
-  },
-  {
-    "type": "keybinding",
-    "id": "CONFIRM",
-    "name": "Confirm Choice",
-    "//": "No category, so every menu that registers CONFIRM gets Space as Enter; text fields never register CONFIRM and keep their spaces.",
-    "bindings": [
-      { "input_method": "keyboard", "key": "SPACE" },
-      { "input_method": "keyboard", "key": "RETURN" }
-    ]
-  },
-  {
-    "type": "keybinding",
-    "id": "QUIT",
-    "name": "Exit screen",
-    "//": "Space leaves QUIT: it would shadow CONFIRM in menus that register QUIT first, and Modern reserves it for confirming.",
-    "bindings": [
-      { "input_method": "keyboard", "key": "ESC" },
-      { "input_method": "keyboard", "key": "q" },
-      { "input_method": "keyboard", "key": "Q" },
-      { "input_method": "gamepad", "key": "JOY_3" }
-    ]
   }
 ]
