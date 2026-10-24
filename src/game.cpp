@@ -3601,8 +3601,8 @@ auto game::handle_mouseview( input_context &ctxt, std::string &action,
         }
     } while( action == "MOUSE_MOVE" ||
              ( action == "ANY_INPUT" && ctxt.get_raw_input().type == input_event_t::mouse ) );
-    // Cursor panning: continue panning when the cursor rests at the edge.
-    if( action == "TIMEOUT" && !selection_locked && cursor_pan_view( ctxt ) ) {
+        // Cursor panning: continue panning when the cursor rests at the edge.
+        if( action == "TIMEOUT" && !selection_locked && cursor_pan_view( ctxt ) ) {
             const std::optional<tripoint_bub_ms> panned_pos = ctxt.get_coordinates( w_terrain );
             tile_selection::hover( u, m, panned_pos );
             ui_manager::redraw();
@@ -9802,7 +9802,7 @@ static void zones_manager_shortcuts( const catacurses::window &w_info, const boo
     const auto record = [&]( int x, int width, int y, const std::string & action ) {
         if( buttons != nullptr ) {
             buttons->push_back( zones_shortcut_button{ .x_min = x, .x_max = x + width, .y = y,
-                                                       .action = action } );
+                .action = action } );
         }
     };
     // Split one "<+->" style label where the arrows end: the left part runs the
@@ -9811,59 +9811,59 @@ static void zones_manager_shortcuts( const catacurses::window &w_info, const boo
     const std::string & second ) {
         if( buttons != nullptr ) {
             buttons->push_back( zones_shortcut_button{ .x_min = x, .x_max = x + split, .y = y,
-                                                       .action = first } );
+                .action = first } );
             buttons->push_back( zones_shortcut_button{ .x_min = x + split, .x_max = x + width,
-                                                       .y = y, .action = second } );
+                    .y = y, .action = second } );
         }
     };
 
     int tmpx = 1;
     tmpx += static_cast<int>( shortcut_print( w_info, point( tmpx, 0 ), c_white, c_light_green,
-                              _( "<A>dd" ) ) ) + 2;
+        _( "<A>dd" ) ) ) + 2;
     record( 1, tmpx - 3, 0, "ADD_ZONE" );
     const int remove_x = tmpx;
     tmpx += static_cast<int>( shortcut_print( w_info, point( tmpx, 0 ), c_white, c_light_green,
-                              _( "<R>emove" ) ) ) + 2;
+        _( "<R>emove" ) ) ) + 2;
     record( remove_x, tmpx - remove_x - 2, 0, "REMOVE_ZONE" );
     const int enable_x = tmpx;
     tmpx += static_cast<int>( shortcut_print( w_info, point( tmpx, 0 ), c_white, c_light_green,
-                              _( "<E>nable" ) ) ) + 2;
+        _( "<E>nable" ) ) ) + 2;
     record( enable_x, tmpx - enable_x - 2, 0, "ENABLE_ZONE" );
     const int disable_x = tmpx;
     const int disable_w = static_cast<int>( shortcut_print( w_info, point( tmpx, 0 ), c_white,
-                                            c_light_green, _( "<D>isable" ) ) );
+        c_light_green, _( "<D>isable" ) ) );
     record( disable_x, disable_w, 0, "DISABLE_ZONE" );
 
     tmpx = 1;
     const int move_w = static_cast<int>( shortcut_print( w_info, point( tmpx, 1 ), c_white,
-                                       c_light_green, _( "<+-> Move up/down" ) ) ) + 2;
+        c_light_green, _( "<+-> Move up/down" ) ) ) + 2;
     record_split( 1, move_w - 2, utf8_width( "<+->" ), 1, "MOVE_ZONE_UP", "MOVE_ZONE_DOWN" );
     const int edit_x = tmpx + move_w;
     const int edit_w = static_cast<int>( shortcut_print( w_info, point( edit_x, 1 ), c_white,
-                                         c_light_green, _( "<Enter>-Edit" ) ) );
+        c_light_green, _( "<Enter>-Edit" ) ) );
     record( edit_x, edit_w, 1, "CONFIRM" );
 
     tmpx = 1;
     const int show_w = static_cast<int>( shortcut_print( w_info, point( tmpx, 2 ), c_white,
-                                        c_light_green, _( "<S>how all / hide distant" ) ) ) + 2;
+        c_light_green, _( "<S>how all / hide distant" ) ) ) + 2;
     record( 1, show_w - 2, 2, "SHOW_ALL_ZONES" );
     const int map_x = tmpx + show_w;
     const int map_w = static_cast<int>( shortcut_print( w_info, point( map_x, 2 ), c_white,
-                                        c_light_green, _( "<M>ap" ) ) );
+        c_light_green, _( "<M>ap" ) ) );
     record( map_x, map_w, 2, "SHOW_ZONE_ON_MAP" );
 
     tmpx = 1;
     const nc_color overlay_color = overlay_enabled ? c_light_green : c_white;
     const int overlay_w = static_cast<int>( shortcut_print( w_info, point( tmpx, 3 ), c_white,
-                                            overlay_color,
-                                            _( "<O> - Toggle Overlays" ) ) );
+        overlay_color,
+        _( "<O> - Toggle Overlays" ) ) );
     record( 1, overlay_w, 3, "TOGGLE_ZONE_OVERLAY" );
     tmpx += overlay_w;
     tmpx += static_cast<int>( shortcut_print( w_info, point( tmpx, 3 ), c_white, c_light_green,
-                              "  " ) ) + 1;
+        "  " ) ) + 1;
     const nc_color submap_color = submap_grid_enabled ? c_light_green : c_white;
     const int grid_w = static_cast<int>( shortcut_print( w_info, point( tmpx, 3 ), c_white,
-                                         submap_color, _( "<G> - Submap grid" ) ) );
+        submap_color, _( "<G> - Submap grid" ) ) );
     record( tmpx, grid_w, 3, "debug_submap_grid" );
 
     wnoutrefresh( w_info );
@@ -10404,7 +10404,7 @@ void game::zones_manager()
                 action.clear();
                 if( const auto mouse = ctxt.get_coordinates( w_zones_info ) ) {
                     const auto cell = mouse->xy().raw() + point( getmaxx( w_zones_info ),
-                                      getmaxy( w_zones_info ) ) / 2;
+                        getmaxy( w_zones_info ) ) / 2;
                     for( const zones_shortcut_button &button : zone_buttons ) {
                         if( button.y == cell.y && cell.x >= button.x_min &&
                             cell.x < button.x_max ) {
@@ -10415,7 +10415,7 @@ void game::zones_manager()
                     }
                 } else if( const auto mouse = ctxt.get_coordinates( w_zones ) ) {
                     const auto cell = mouse->xy().raw() + point( getmaxx( w_zones ),
-                                      getmaxy( w_zones ) ) / 2;
+                        getmaxy( w_zones ) ) / 2;
                     if( cell.y >= 0 && cell.y < max_rows && start_index + cell.y < zone_cnt ) {
                         const int idx = start_index + cell.y;
                         if( mouse_row && *mouse_row == idx ) {
@@ -10432,7 +10432,7 @@ void game::zones_manager()
                     }
                 } else if( const auto mouse = ctxt.get_coordinates( w_zones_border ) ) {
                     const auto cell = mouse->xy().raw() + point( getmaxx( w_zones_border ),
-                                      getmaxy( w_zones_border ) ) / 2;
+                        getmaxy( w_zones_border ) ) / 2;
                     const auto hit = scrollbar_input::click( {
                         .offset = point_south,
                         .viewport_size = max_rows,
@@ -11577,19 +11577,19 @@ static auto list_vehicles( const vehicle_list_t &vehicle_list ) -> vehicle_menu_
                 action.clear();
                 if( const auto mouse = ctxt.get_coordinates( w_vehicles_border ) ) {
                     const auto cell = mouse->xy().raw() + point( getmaxx( w_vehicles_border ),
-                                      getmaxy( w_vehicles_border ) ) / 2;
+                        getmaxy( w_vehicles_border ) ) / 2;
                     if( cell.y == 0 && cell.x >= 2 &&
                         cell.x < 2 + utf8_width( "<Tab> " ) + utf8_width( _( "Vehicles" ) ) ) {
                         action = "NEXT_TAB";
                     } else if( vehicle_list.empty() ) {
                         // No rows or bar to click.
                     } else if( const auto hit = scrollbar_input::click( {
-                        .offset = point_south,
-                        .viewport_size = iMaxRows,
-                        .content_size = static_cast<int>( vehicle_list.size() ),
+                    .offset = point_south,
+                    .viewport_size = iMaxRows,
+                    .content_size = static_cast<int>( vehicle_list.size() ),
                         .viewport_pos = iActive,
                         .scroll_to_last = true,
-                               }, cell ) ) {
+                    }, cell ) ) {
                         iActive = hit->viewport_pos;
                     } else if( cell.y >= 1 && cell.y < iMaxRows ) {
                         int iStartPos = 0;
@@ -12187,7 +12187,7 @@ game::vmenu_ret game::list_items( const std::vector<map_item_stack> &item_list )
                 action.clear();
                 if( const auto mouse = ctxt.get_coordinates( w_items_border ) ) {
                     const auto cell = mouse->xy().raw() + point( getmaxx( w_items_border ),
-                                      getmaxy( w_items_border ) ) / 2;
+                        getmaxy( w_items_border ) ) / 2;
                     const auto sort_label = sort_radius ? _( "<s>ort: dist" ) : _( "<s>ort: cat" );
                     if( cell.y == 0 && cell.x >= 2 && cell.x < 2 + utf8_width( "<Tab> " ) +
                         utf8_width( _( "Items" ) ) ) {
@@ -12237,12 +12237,12 @@ game::vmenu_ret game::list_items( const std::vector<map_item_stack> &item_list )
                         }
                     } else if( !ground_items.empty() ) {
                         if( const auto hit = scrollbar_input::click( {
-                            .offset = point_south,
-                            .viewport_size = iMaxRows,
-                            .content_size = iItemNum,
-                            .viewport_pos = iActive,
-                            .scroll_to_last = true,
-                                   }, cell ) ) {
+                        .offset = point_south,
+                        .viewport_size = iMaxRows,
+                        .content_size = iItemNum,
+                        .viewport_pos = iActive,
+                        .scroll_to_last = true,
+                    }, cell ) ) {
                             iActive = hit->viewport_pos;
                             page_num = 0;
                             iScrollPos = 0;
@@ -12628,7 +12628,7 @@ game::vmenu_ret game::list_monsters( const std::vector<Creature *> &monster_list
                 action.clear();
                 if( const auto mouse = ctxt.get_coordinates( w_monsters_border ) ) {
                     const auto cell = mouse->xy().raw() + point( getmaxx( w_monsters_border ),
-                                      getmaxy( w_monsters_border ) ) / 2;
+                        getmaxy( w_monsters_border ) ) / 2;
                     if( cell.y == 0 && cell.x >= 2 && cell.x < 2 + utf8_width( "<Tab> " ) +
                         utf8_width( _( "Monsters" ) ) ) {
                         action = "NEXT_TAB";
@@ -12641,12 +12641,12 @@ game::vmenu_ret game::list_monsters( const std::vector<Creature *> &monster_list
                                  "SAFEMODE_BLACKLIST_REMOVE" : "SAFEMODE_BLACKLIST_ADD";
                     } else if( !monster_list.empty() ) {
                         if( const auto hit = scrollbar_input::click( {
-                            .offset = point_south,
-                            .viewport_size = iMaxRows,
-                            .content_size = static_cast<int>( monster_list.size() ),
+                        .offset = point_south,
+                        .viewport_size = iMaxRows,
+                        .content_size = static_cast<int>( monster_list.size() ),
                             .viewport_pos = iActive,
                             .scroll_to_last = true,
-                                   }, cell ) ) {
+                        }, cell ) ) {
                             iActive = hit->viewport_pos;
                         } else if( cell.y >= 1 && cell.y < iMaxRows ) {
                             const int iMenuSize = static_cast<int>( monster_list.size() ) +
