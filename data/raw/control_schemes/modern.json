@@ -480,6 +480,13 @@
   },
   {
     "type": "keybinding",
+    "name": "Toggle Vehicle Curtain",
+    "category": "DEFAULTMODE",
+    "id": "toggle_curtain",
+    "bindings": [ { "input_method": "keyboard", "key": "SHIFT_SPACE" } ]
+  },
+  {
+    "type": "keybinding",
     "name": "Jump across an adjacent tile",
     "category": "DEFAULTMODE",
     "id": "jump",

@@ -3852,6 +3852,7 @@ input_context get_default_mode_input_context()
     ctxt.register_action( "pickup_all" );
     if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
         ctxt.register_action( "quick_pickup" );
+        ctxt.register_action( "toggle_curtain" );
     }
     ctxt.register_action( "pickup_feet" );
     ctxt.register_action( "grab" );

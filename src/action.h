@@ -104,6 +104,8 @@ enum action_id : int {
     ACTION_EXAMINE,
     /** Jump across a single adjacent tile */
     ACTION_JUMP,
+    /** Toggle a vehicle curtain (Shift+Space in the modern scheme) */
+    ACTION_TOGGLE_CURTAIN,
     /** Pick up items from one current/adjacent square */
     ACTION_PICKUP,
     /** Pick up items from all current/adjacent squares */

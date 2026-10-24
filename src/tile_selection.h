@@ -20,6 +20,8 @@ struct choice {
     std::string label;
     /// Travel instead of running act.
     bool travel = false;
+    /// Loot a vehicle cargo part instead of the ground.
+    bool vehicle_cargo = false;
 };
 
 auto enabled() -> bool;
@@ -48,6 +50,10 @@ struct tile_actions {
 };
 /// A picked tile: one safe action runs at once, several open a menu.
 auto interact_at( avatar &you, const tripoint_bub_ms &p, const tile_actions &actions ) -> void;
+/// Shift+Space: state-aware toggle of the curtain on a tile in reach.
+auto toggle_curtain_at( avatar &you, const tripoint_bub_ms &p ) -> void;
+/// Shift+Space with no tile picked: toggles the lone curtain in reach, asks between many.
+auto toggle_curtain_nearby( avatar &you ) -> bool;
 /// Right click: always lists the tile's actions and never runs one. A tile out of reach lists
 /// what it offers, disabled, with the reason. True when the player picked and ran an action.
 auto interact_menu_at( avatar &you, const tripoint_bub_ms &p, const tile_actions &actions ) -> bool;

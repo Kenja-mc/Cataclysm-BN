@@ -28,6 +28,9 @@
 #include "trap.h"
 #include "travel/travel_destination.h"
 #include "ui.h"
+#include "vehicle/vehicle.h"
+#include "vehicle/vehicle_part.h"
+#include "vehicle/vpart_position.h"
 
 namespace
 {
@@ -195,6 +198,19 @@ auto choices_at( const avatar &you, const tripoint_bub_ms &p ) -> std::vector<ch
     }
     if( dist <= 1 && m.has_items( p ) && m.sees_some_items( p, you ) ) {
         out.push_back( { .act = ACTION_PICKUP, .label = _( "pick up items" ) } );
+    } else if( dist <= 1 ) {
+        // Like the door rules above, a cargo part with items is offered by its own presence; the
+        // first part on the tile is the one pickup loots.
+        if( const auto vp = m.veh_at( p ) ) {
+            auto *const veh = veh_pointer_or_null( vp );
+            const int cargo = veh ? veh->part_with_feature( vp->part_index(), "CARGO", false ) : -1;
+            if( cargo >= 0 && !veh->get_items( cargo ).empty() ) {
+                out.push_back( { .act = ACTION_PICKUP,
+                                 .label = string_format( _( "get items from the %s" ),
+                                     veh->part( cargo ).name() ),
+                                 .vehicle_cargo = true } );
+            }
+        }
     }
     if( adjacent && target == nullptr && can_examine_at( p ) ) {
         out.push_back( { .act = ACTION_EXAMINE, .label = string_format( _( "examine the %s" ), m.name( p ) ) } );
@@ -341,7 +357,8 @@ auto clicked_choices_at( const avatar &you, const tripoint_bub_ms &p ) -> std::v
     } );
     if( solid && !smashable ) {
         add_choice( out, { .act = ACTION_SMASH,
-                           .label = string_format( _( "smash the %s" ), m.name( p ) ) } );
+                           .label = string_format( _( "smash the %s" ), m.name( p ) )
+                         } );
     }
     return out;
 }
@@ -365,7 +382,8 @@ auto distant_choices_at( const avatar &you, const tripoint_bub_ms &p ) -> std::v
     }
     if( can_examine_at( p ) ) {
         add_choice( out, { .act = ACTION_EXAMINE,
-                           .label = string_format( _( "examine the %s" ), m.name( p ) ) } );
+                           .label = string_format( _( "examine the %s" ), m.name( p ) )
+                         } );
     }
     return out;
 }
@@ -406,11 +424,130 @@ auto interact_at( avatar &you, const tripoint_bub_ms &p, const tile_actions &act
     const auto lone_vertical = ( choices.front().act == ACTION_MOVE_DOWN ||
                                  choices.front().act == ACTION_MOVE_UP ) &&
                                std::ranges::count_if( choices, runs_unasked ) == 1;
-    if( ( choices.size() == 1 || lone_vertical ) && runs_unasked( choices.front() ) ) {
+    // A lootable cargo part is the obvious action on its tile, the way a lone closed door is.
+    const auto lone_trunk = choices.front().act == ACTION_PICKUP && choices.front().vehicle_cargo;
+    if( ( choices.size() == 1 || lone_vertical || lone_trunk ) && runs_unasked( choices.front() ) ) {
         run_interaction( you, { .c = choices.front(), .pos = p, .actions = actions } );
         return;
     }
     show_interaction_menu( you, p, actions, choices, true );
+}
+
+namespace
+{
+
+/// The first curtain part on a tile, with the vehicle it belongs to.
+struct curtain_spot {
+    vehicle *veh = nullptr;
+    int part = -1;
+};
+
+auto curtain_at( map &m, const tripoint_bub_ms &p ) -> curtain_spot
+{
+    auto spot = curtain_spot();
+    const auto vp = m.veh_at( p );
+    spot.veh = veh_pointer_or_null( vp );
+    if( spot.veh != nullptr ) {
+        spot.part = spot.veh->part_with_feature( vp->part_index(), "CURTAIN", true );
+    }
+    return spot;
+}
+
+/// The state-aware toggle one chord press runs, with the same checks, wording and move costs as
+/// walking into a vehicle door and closing it.
+auto toggle_curtain( avatar &you, const curtain_spot &spot ) -> void
+{
+    const auto part_name = spot.veh->part( spot.part ).name();
+    if( !spot.veh->is_open( spot.part ) ) {
+        auto &m = get_map();
+        if( veh_pointer_or_null( m.veh_at( you.bub_pos() ) ) != spot.veh &&
+            spot.veh->part_flag( spot.part, "OPENCLOSE_INSIDE" ) ) {
+            add_msg( m_info, _( "The %1$s's %2$s can only be opened from inside." ), spot.veh->name,
+                     part_name );
+            return;
+        }
+        if( !spot.veh->handle_potential_theft( you ) ) {
+            return;
+        }
+        spot.veh->open( spot.part );
+        add_msg( _( "You open the %1$s's %2$s." ), spot.veh->name, part_name );
+        you.moves -= 100;
+        return;
+    }
+    if( !spot.veh->handle_potential_theft( you ) ) {
+        return;
+    }
+    if( !spot.veh->can_close( spot.part, you ) ) {
+        return;
+    }
+    spot.veh->close( spot.part );
+    add_msg( _( "You close the %1$s's %2$s." ), spot.veh->name, part_name );
+    you.moves -= 90;
+}
+
+} // namespace
+
+auto toggle_curtain_at( avatar &you, const tripoint_bub_ms &p ) -> void
+{
+    if( !reachable( you, p ) ) {
+    add_msg( _( "You can't reach that tile." ) );
+        return;
+    }
+    const auto spot = curtain_at( get_map(), p );
+    if( spot.part < 0 ) {
+    add_msg( m_info, _( "There is no curtain there." ) );
+        return;
+    }
+    toggle_curtain( you, spot );
+}
+
+auto toggle_curtain_nearby( avatar &you ) -> bool
+{
+    struct curtain_option {
+        tripoint_bub_ms pos;
+        curtain_spot spot;
+    };
+    auto &m = get_map();
+    auto spots = std::vector<curtain_option>();
+    for( const auto &p : m.points_in_radius( you.bub_pos(), 1 ) ) {
+        if( !reachable( you, p ) ) {
+            continue;
+        }
+        auto spot = curtain_at( m, p );
+        if( spot.part >= 0 ) {
+            spots.push_back( { .pos = p, .spot = spot } );
+        }
+    }
+    if( spots.empty() ) {
+        return false;
+    }
+    if( spots.size() == 1 ) {
+        toggle_curtain( you, spots.front().spot );
+        return true;
+    }
+    auto tiles = spots | std::views::transform( &curtain_option::pos )
+                 | std::ranges::to<std::vector>();
+    auto highlight = tile_highlight( tiles );
+    auto menu = uilist();
+    menu.title = _( "Toggle which curtain?" );
+    // The menu sits at the top so the highlighted tile next to the avatar stays visible.
+    menu.w_y_setup = 0;
+    menu.callback = &highlight;
+    for( auto index = 0; const auto &option : spots ) {
+        const auto &spot = option.spot;
+        const auto where = option.pos == you.bub_pos() ? std::string( _( "here" ) ) :
+                           direction_name( direction_from( you.bub_pos().xy(), option.pos.xy() ) );
+        const auto doing = spot.veh->is_open( spot.part ) ? std::string( _( "close" ) ) :
+                           std::string( _( "open" ) );
+        menu.addentry( index++, true, MENU_AUTOASSIGN,
+                       string_format( _( "%1$s the %2$s's %3$s (%4$s)" ), doing, spot.veh->name,
+                                      spot.veh->part( spot.part ).name(), where ) );
+    }
+    menu.query();
+    if( menu.ret >= 0 && static_cast<size_t>( menu.ret ) < spots.size() ) {
+        toggle_curtain( you, spots[menu.ret].spot );
+    }
+    return true;
 }
 
 auto interact_menu_at( avatar &you, const tripoint_bub_ms &p, const tile_actions &actions ) -> bool

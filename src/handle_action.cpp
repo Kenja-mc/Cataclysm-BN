@@ -2748,6 +2748,16 @@ bool game::handle_action()
                 }
                 break;
 
+            case ACTION_TOGGLE_CURTAIN:
+                if( u.has_active_mutation( trait_SHELL2 ) ) {
+                    add_msg( m_info, _( "You can't open things while you're in your shell." ) );
+                } else if( const auto selected = aim_reticle::pos() ) {
+                    tile_selection::toggle_curtain_at( u, *selected );
+                } else if( !tile_selection::toggle_curtain_nearby( u ) ) {
+                    add_msg( m_info, _( "There is no curtain nearby." ) );
+                }
+                break;
+
             case ACTION_ADVANCEDINV:
                 if( u.has_active_mutation( trait_SHELL2 ) ) {
                     add_msg( m_info, _( "You can't move mass quantities while you're in your shell." ) );

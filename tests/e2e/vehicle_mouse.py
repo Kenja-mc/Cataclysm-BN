@@ -5,8 +5,12 @@ keyboard actions as the drawn labels. Classic keeps the keyboard-only screen
 because the mouse actions are only registered under the modern scheme.
 """
 import re
+import subprocess
+import time
 
-from helpers import HELPERS, action_menu, arena, choose_menu_entry, settle, start_new_game
+from helpers import HELPERS, action_menu, arena, choose_menu_entry, count_at, count_carried, \
+    empty_inventory, give, settle, start_new_game, wait_until
+from inventory_mouse import display_name, row_of as inventory_row_of
 from tmux_game import Game
 from vehicle_box import spawn_vehicle
 
@@ -246,6 +250,93 @@ def test_resize_rebuilds_the_click_map(_g):
         g.close()
 
 
+def shift_space(g, delay=0.8):
+    """Shift+Space, as the extended-key sequence the game's terminal input layer reads."""
+    subprocess.run(["tmux", "send-keys", "-t", g.name, "-l", "--", "\x1b[32;2u"], check=True)
+    time.sleep(delay)
+
+
+def cargo_curtain_tile(g):
+    """Offset from the avatar of the nearest tile with both a cargo part and a curtain part."""
+    reported = g.lua(
+        "local o=gapi.get_avatar():get_pos_ms() local r={} "
+        "for dx=-3,3 do for dy=-3,3 do "
+        "local p=TripointBubMs.new(o.x+dx,o.y+dy,o.z) "
+        "if M:has_vehicle_part_with_feature_at(p,'CARGO') and "
+        "M:has_vehicle_part_with_feature_at(p,'CURTAIN') then r[#r+1]=dx..','..dy end "
+        "end end out(table.concat(r,';'))")
+    offsets = [tuple(int(v) for v in entry.split(",")) for entry in reported[0].split(";")
+               if entry]
+    assert offsets, "the spawned camper van has no cargo-and-curtain tile:\n" + g.screen()
+    return min(offsets, key=lambda offset: abs(offset[0]) + abs(offset[1]))
+
+
+def select_own_tile(g):
+    """Right-click the avatar's tile and dismiss the action list, keeping the selection."""
+    x, y = g.find("@")
+    g.click(x, y, button=2)
+    if "Interact with the" in g.screen():
+        g.keys("Escape", delay=0.3)
+        g.wait_gone("Interact with the")
+
+
+def test_space_opens_trunk_and_shift_space_toggles_curtain(_g):
+    """Space loots a vehicle trunk directly; Shift+Space toggles its curtain both ways."""
+    game = vehicle_game("bn-e2e-vehicle-quick-actions")
+    try:
+        spawn_vehicle(game, "camper_van")
+        dx, dy = cargo_curtain_tile(game)
+        # Stand on the trunk tile: inside the van, so the curtain answers from inside too.
+        assert game.lua(
+            f"local o=gapi.get_avatar():get_pos_ms() "
+            f"gapi.get_avatar():set_pos_ms(TripointBubMs.new(o.x+{dx},o.y+{dy},o.z)) "
+            "out('ok')") == ["ok"]
+        settle(game)
+        empty_inventory(game)
+        give(game, "rock")
+        rock = display_name(game, "rock")
+        game.keys("i", delay=1)
+        assert rock in game.screen(), game.screen()
+        game.click(*inventory_row_of(game, rock), button=2)
+        game.wait_for("Drop")
+        choose_menu_entry(game, "Drop")
+        assert wait_until(lambda: rock not in game.screen(), 10), \
+            "the drop must finish and leave the inventory screen:\n" + game.screen()
+        assert wait_until(lambda: count_at(game, 0, 0, "rock") == 0, 10), \
+            "the dropped rock must sit in the trunk's cargo, not on the ground:\n" + game.screen()
+
+        # Space on the selected trunk tile: the contents come up ready to loot, with no
+        # vehicle interaction screen and no action menu in between.
+        select_own_tile(game)
+        game.keys("Space", delay=0.5)
+        game.wait_for("Pick up")
+        game.wait_for("Weight")
+        screen = game.screen()
+        assert rock in screen, screen
+        assert "Select an action" not in screen and "Examine vehicle" not in screen, \
+            "Space must open the trunk directly:\n" + screen
+        game.keys("g", delay=1.0)
+        game.wait_gone("Pick up")
+        assert wait_until(lambda: count_carried(game, "rock") == 1, 10), game.screen()
+
+        # Shift+Space on the same tile toggles the curtain: state-aware, both directions.
+        select_own_tile(game)
+        shift_space(game)
+        game.wait_for("You open the")
+        assert "curtain" in game.screen(), game.screen()
+        shift_space(game)
+        game.wait_for("You close the")
+        assert count_carried(game, "rock") == 1, "toggling must not disturb the looted rock"
+
+        # Without a selected tile the chord still names its target instead of acting blindly.
+        game.keys("Escape", delay=0.5)
+        shift_space(game)
+        game.wait_for("Toggle which curtain?")
+        game.keys("Escape", delay=0.3)
+    finally:
+        game.close()
+
+
 TESTS = [
     test_vehicle_grid_and_overview_clicks_select_parts,
     test_action_label_click_opens_the_rename_prompt,
@@ -255,4 +346,5 @@ TESTS = [
     test_parts_list_hint_and_wheel_scroll,
     test_overview_wheel_and_hint_scroll,
     test_resize_rebuilds_the_click_map,
+    test_space_opens_trunk_and_shift_space_toggles_curtain,
 ]
