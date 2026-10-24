@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -104,6 +105,14 @@ class main_menu
         void display_text( const std::string &text, const std::string &title, int &selected );
 
         void display_sub_menu( int sel, const point &bottom_left, int sel_line );
+
+        /// A title-menu button under a screen position: which tab, and which sub-menu
+        /// entry (-1 when the hit is on the tab strip itself).
+        struct button_hit {
+            int tab;
+            int entry;
+        };
+        auto hit_button( const point &pos ) const -> std::optional<button_hit>;
 
         void init_windows();
 

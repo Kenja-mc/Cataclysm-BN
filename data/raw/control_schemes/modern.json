@@ -994,16 +994,6 @@
   },
   {
     "type": "keybinding",
-    "id": "CONFIRM",
-    "category": "UILIST",
-    "name": "Confirm Choice",
-    "bindings": [
-      { "input_method": "keyboard", "key": "SPACE" },
-      { "input_method": "keyboard", "key": "RETURN" }
-    ]
-  },
-  {
-    "type": "keybinding",
     "id": "UP",
     "category": "SPELL_SELECT",
     "name": "Select previous spell",
@@ -1272,26 +1262,6 @@
     "category": "MAIN_MENU",
     "name": "Delete template",
     "bindings": [ { "input_method": "keyboard", "key": "D" } ]
-  },
-  {
-    "type": "keybinding",
-    "id": "CONFIRM",
-    "category": "MAIN_MENU",
-    "name": "Confirm Choice",
-    "bindings": [
-      { "input_method": "keyboard", "key": "SPACE" },
-      { "input_method": "keyboard", "key": "RETURN" }
-    ]
-  },
-  {
-    "type": "keybinding",
-    "id": "CONFIRM",
-    "category": "YESNO",
-    "name": "Confirm Choice",
-    "bindings": [
-      { "input_method": "keyboard", "key": "SPACE" },
-      { "input_method": "keyboard", "key": "RETURN" }
-    ]
   },
   {
     "type": "keybinding",
@@ -1835,13 +1805,6 @@
   },
   {
     "type": "keybinding",
-    "name": "Advanced Inventory management",
-    "category": "DEFAULTMODE",
-    "id": "advinv",
-    "bindings": [ { "input_method": "keyboard", "key": "/" } ]
-  },
-  {
-    "type": "keybinding",
     "name": "Grab something nearby",
     "category": "DEFAULTMODE",
     "id": "grab",
@@ -2224,5 +2187,27 @@
     "category": "INVENTORY",
     "name": "Craft",
     "bindings": [ { "input_method": "keyboard", "key": "F5" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "CONFIRM",
+    "name": "Confirm Choice",
+    "//": "No category, so every menu that registers CONFIRM gets Space as Enter; text fields never register CONFIRM and keep their spaces.",
+    "bindings": [
+      { "input_method": "keyboard", "key": "SPACE" },
+      { "input_method": "keyboard", "key": "RETURN" }
+    ]
+  },
+  {
+    "type": "keybinding",
+    "id": "QUIT",
+    "name": "Exit screen",
+    "//": "Space leaves QUIT: it would shadow CONFIRM in menus that register QUIT first, and Modern reserves it for confirming.",
+    "bindings": [
+      { "input_method": "keyboard", "key": "ESC" },
+      { "input_method": "keyboard", "key": "q" },
+      { "input_method": "keyboard", "key": "Q" },
+      { "input_method": "gamepad", "key": "JOY_3" }
+    ]
   }
 ]

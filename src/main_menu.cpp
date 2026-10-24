@@ -225,6 +225,21 @@ std::vector<int> main_menu::print_menu_items( const catacurses::window &w_in,
     return ret;
 }
 
+auto main_menu::hit_button( const point &pos ) const -> std::optional<button_hit>
+{
+    for( const auto &[rec, target] : main_menu_sub_button_map ) {
+        if( rec.contains( pos ) ) {
+            return button_hit{ .tab = target.first, .entry = target.second };
+        }
+    }
+    for( const auto &[rec, tab] : main_menu_button_map ) {
+        if( rec.contains( pos ) ) {
+            return button_hit{ .tab = tab, .entry = -1 };
+        }
+    }
+    return std::nullopt;
+}
+
 void main_menu::display_sub_menu( int sel, const point &bottom_left, int sel_line )
 {
     main_menu_sub_button_map.clear();
@@ -725,6 +740,13 @@ bool main_menu::opening_screen()
     ctxt.register_action( "PAGE_DOWN" );
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "QUIT" );
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        // The drawn button hitboxes react only in Modern; Classic keeps its keyboard-only title.
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+    }
 
     // for the menu shortcuts
     ctxt.register_action( "ANY_INPUT" );
@@ -797,6 +819,30 @@ bool main_menu::opening_screen()
                         }
                     }
                 }
+            }
+        }
+
+        // Hovering moves the same highlight the keyboard moves; a click selects and
+        // confirms, exactly like Space on the highlighted entry.
+        if( modern && sInput.type == input_event_t::mouse &&
+            ( action == "SELECT" || action == "MOUSE_MOVE" ) ) {
+            const auto hit = hit_button( sInput.mouse_pos );
+            if( hit ) {
+                if( sel1 != hit->tab ) {
+                    sel1 = hit->tab;
+                    sel2 = sel1 == getopt( main_menu_opts::LOADCHAR ) ? last_world_pos : 0;
+                    sel_line = 0;
+                    on_move();
+                }
+                if( hit->entry >= 0 && sel2 != hit->entry ) {
+                    sel2 = hit->entry;
+                    on_move();
+                }
+                if( action == "SELECT" ) {
+                    action = "CONFIRM";
+                }
+            } else {
+                action.clear();
             }
         }
 
