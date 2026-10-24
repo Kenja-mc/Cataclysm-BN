@@ -250,3 +250,8 @@ def test_classic_screens_ignore_clicks(g):
         assert game.screen() == first_tab, \
             "classic must ignore scores tab clicks\n" + game.screen()
         leave_screen(game)
+
+
+TESTS = [test_help_topic_opens_by_click, test_help_wheel_moves_cursor_and_confirm_opens,
+         test_help_click_after_resize_hits_right_columns, test_scores_tab_click_and_text_scroll,
+         test_examine_action_click_selects_then_runs, test_classic_screens_ignore_clicks]

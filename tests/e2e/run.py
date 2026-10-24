@@ -81,6 +81,15 @@ from wear_refresh import TESTS as WEAR_REFRESH_TESTS
 from creation_crafting_mouse import TESTS as CREATION_CRAFTING_MOUSE_TESTS
 from keybinding_search import TESTS as KEYBINDING_SEARCH_TESTS
 from pulp_key import TESTS as PULP_KEY_TESTS
+from known_locks import TESTS as KNOWN_LOCKS_TESTS
+from vehicle_mouse import TESTS as VEHICLE_MOUSE_TESTS
+from advanced_armor_mouse import TESTS as ADVANCED_ARMOR_MOUSE_TESTS
+from help_score_mouse import TESTS as HELP_SCORE_MOUSE_TESTS
+from menu_space import TESTS as MENU_SPACE_TESTS
+from status_mouse import TESTS as STATUS_MOUSE_TESTS
+from utility_mouse import TESTS as UTILITY_MOUSE_TESTS
+from info_mouse import TESTS as INFO_MOUSE_TESTS
+from trade_mouse import TESTS as TRADE_MOUSE_TESTS
 
 # The modules, in run order. A module's tests that take `g` run on the main game, so a
 # test that needs the state another left behind belongs after it in this order.
@@ -135,6 +144,15 @@ MODULES = [
     ("creation_crafting_mouse", CREATION_CRAFTING_MOUSE_TESTS),
     ("keybinding_search", KEYBINDING_SEARCH_TESTS),
     ("pulp_key", PULP_KEY_TESTS),
+    ("known_locks", KNOWN_LOCKS_TESTS),
+    ("vehicle_mouse", VEHICLE_MOUSE_TESTS),
+    ("advanced_armor_mouse", ADVANCED_ARMOR_MOUSE_TESTS),
+    ("help_score_mouse", HELP_SCORE_MOUSE_TESTS),
+    ("menu_space", MENU_SPACE_TESTS),
+    ("status_mouse", STATUS_MOUSE_TESTS),
+    ("utility_mouse", UTILITY_MOUSE_TESTS),
+    ("info_mouse", INFO_MOUSE_TESTS),
+    ("trade_mouse", TRADE_MOUSE_TESTS),
     # Applies and resets world options on the main world, so it runs last.
     ("world_presets", WORLD_PRESETS_TESTS),
 ]
