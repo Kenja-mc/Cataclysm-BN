@@ -14,8 +14,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def find_binary():
     for candidate in (
-        ROOT / "out/build/linux-curses/src/cataclysm-bn",
         ROOT / "cataclysm-bn",
+        ROOT / "out/build/linux-curses/src/cataclysm-bn",
         ROOT / "build/src/cataclysm-bn",
     ):
         if candidate.exists():
