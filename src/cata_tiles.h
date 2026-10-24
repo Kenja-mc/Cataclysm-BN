@@ -728,12 +728,12 @@ class cata_tiles
         void reset_minimap();
         auto item_thumbnail_sprite( const item &itm ) -> std::optional<int>;
         auto draw_item_thumbnail( int tile_idx, SDL_Rect dest ) -> void;
-
-    protected:
         /** How many rows and columns of tiles fit into given dimensions **/
         void get_window_tile_counts( int width, int height, int &columns, int &rows ) const;
 
+    protected:
         std::optional<tile_lookup_res> find_tile_with_season( const std::string &id ) const;
+
 
         // this templated method is used only from it's own cpp file, so it's ok to declare it here
         template<typename T>
