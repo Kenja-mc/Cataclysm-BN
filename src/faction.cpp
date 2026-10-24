@@ -13,14 +13,17 @@
 #include "line.h"
 #include "mtype.h"
 #include "npc.h"
+#include "options.h"
 #include "output.h"
 #include "overmap/overmapbuffer.h"
 #include "overmap/overmapbuffer_registry.h"
 #include "pimpl.h"
 #include "player.h"
 #include "point.h"
+#include "scrollbar_input.h"
 #include "skill.h"
 #include "string_formatter.h"
+#include "tab_input.h"
 #include "text_snippets.h"
 #include "translations.h"
 #include "type_id.h"
@@ -648,6 +651,15 @@ void faction_manager::display() const
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
 
     std::vector<npc *> followers;
     std::vector<const faction *> valfac; // Factions that we know of.
@@ -812,6 +824,8 @@ void faction_manager::display() const
     } );
 
 
+    std::optional<size_t> mouse_row;
+
     while( true ) {
         // create a list of NPCs, visible and the ones on overmapbuffer
         followers.clear();
@@ -869,7 +883,65 @@ void faction_manager::display() const
         }
 
         ui_manager::redraw();
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
+            if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
+                action = action == "SCROLL_UP" ? "UP" : "DOWN";
+                mouse_row.reset();
+            } else if( action == "SELECT" || action == "SEC_SELECT" ) {
+                action.clear();
+                if( const auto mouse = ctxt.get_coordinates( w_missions ) ) {
+                    const auto cell = mouse->xy().raw() + point( getmaxx( w_missions ),
+                                      getmaxy( w_missions ) ) / 2;
+                    const std::vector<std::string> tab_texts = {
+                        _( "YOUR FOLLOWERS" ), _( "OTHER FACTIONS" ), _( "LORE" ), _( "CREATURES" )
+                    };
+                    if( cell.y < 3 ) {
+                        if( const auto clicked = tab_input::index_at( {
+                                .texts = tab_texts,
+                                .current = static_cast<size_t>( tab ),
+                                .max_width = getmaxx( w_missions ),
+                                .x = cell.x,
+                            } ) ) {
+                            if( *clicked != static_cast<int>( tab ) ) {
+                                tab = static_cast<tab_mode>( *clicked );
+                                selection = 0;
+                                mouse_row.reset();
+                            }
+                        }
+                    } else if( const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                    .offset = point( 0, 3 ),
+                    .viewport_size = entries_per_page,
+                    .content_size = static_cast<int>( active_vec_size ),
+                    .viewport_pos = static_cast<int>( selection ),
+                    .scroll_to_last = true,
+                               }, cell ) ) {
+                        selection = static_cast<size_t>( hit->viewport_pos );
+                        mouse_row.reset();
+                    } else if( cell.x >= 1 && cell.x < 30 && cell.y >= 3 &&
+                               cell.y < 3 + entries_per_page ) {
+                        const size_t idx = entries_per_page * ( selection / entries_per_page ) +
+                                           cell.y - 3;
+                        if( idx < active_vec_size ) {
+                            if( mouse_row && *mouse_row == idx ) {
+                                // A second click on the same row runs the row's Enter
+                                // action; talking keeps its usual prompts.
+                                action = "CONFIRM";
+                                mouse_row.reset();
+                            } else {
+                                selection = idx;
+                                mouse_row = idx;
+                            }
+                        }
+                    }
+                }
+            } else {
+                action.clear();
+            }
+        } else {
+            // Keyboard navigation and content changes forget the pending row click.
+            mouse_row.reset();
+        }
         if( action == "NEXT_TAB" || action == "RIGHT" ) {
             tab = static_cast<tab_mode>( static_cast<int>( tab ) + 1 );
             if( tab >= tab_mode::NUM_TABS ) {

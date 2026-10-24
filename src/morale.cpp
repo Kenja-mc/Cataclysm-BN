@@ -28,6 +28,7 @@
 #include "options.h"
 #include "output.h"
 #include "point.h"
+#include "scrollbar_input.h"
 #include "string_formatter.h"
 #include "translations.h"
 #include "ui_manager.h"
@@ -828,11 +829,44 @@ void player_morale::display( int focus_eq, int pain_penalty, int fatigue_cap )
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
 
     std::string action;
     do {
         ui_manager::redraw();
         action = ctxt.handle_input();
+        if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
+            if( action == "SCROLL_UP" ) {
+                action = "UP";
+            } else if( action == "SCROLL_DOWN" ) {
+                action = "DOWN";
+            } else if( action == "SELECT" || action == "SEC_SELECT" ) {
+                // The morale readout is informational: a click only scrolls.
+                if( const auto mouse = ctxt.get_coordinates( w ) ) {
+                    const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
+                    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                        .offset = point( 0, static_cast<int>( top_lines.size() ) ),
+                        .viewport_size = rows_visible,
+                        .content_size = rows_total,
+                        .viewport_pos = offset,
+                    }, cell );
+                    if( hit ) {
+                        offset = hit->viewport_pos;
+                    }
+                }
+                action.clear();
+            } else {
+                action.clear();
+            }
+        }
         if( action == "DOWN" && offset < std::max( 0, rows_total - rows_visible ) ) {
             offset++;
         } else if( action == "UP" && offset > 0 ) {

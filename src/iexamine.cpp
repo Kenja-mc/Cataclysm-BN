@@ -104,6 +104,7 @@
 #include "relic.h"
 #include "requirements.h"
 #include "rng.h"
+#include "scrollbar_input.h"
 #include "sounds.h"
 #include "string_formatter.h"
 #include "string_id.h"
@@ -971,6 +972,15 @@ void iexamine::vending( player &p, const tripoint_bub_ms &examp )
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
 
     std::vector<std::vector<item *>> item_map;
     for( item *&it : vend_items ) {
@@ -991,6 +1001,13 @@ void iexamine::vending( player &p, const tripoint_bub_ms &examp )
     }
 
     int cur_pos = 0;
+    // First visible list row for the centered selector, shared by draw and clicks.
+    const auto page_begin = [&]( int num_items ) -> int {
+        if( cur_pos < num_items - cur_pos ) {
+            return std::max( 0, cur_pos - lines_above );
+        }
+        return std::max( 0, std::min( num_items, cur_pos + lines_below ) - list_lines );
+    };
     ui.on_redraw( [&]( const ui_adaptor & ) {
         const int num_items = item_map.size();
         const int page_size = std::min( num_items, list_lines );
@@ -1006,13 +1023,7 @@ void iexamine::vending( player &p, const tripoint_bub_ms &examp )
                         _( "Money left: %s" ), format_money( money ) );
 
         // Keep the item selector centered in the page.
-        int page_beg;
-        if( cur_pos < num_items - cur_pos ) {
-            page_beg = std::max( 0, cur_pos - lines_above );
-        } else {
-            int page_end = std::min( num_items, cur_pos + lines_below );
-            page_beg = std::max( 0, page_end - list_lines );
-        }
+        const int page_beg = page_begin( num_items );
 
         for( int line = 0; line < page_size; ++line ) {
             const int i = page_beg + line;
@@ -1072,7 +1083,39 @@ void iexamine::vending( player &p, const tripoint_bub_ms &examp )
         auto &cur_items = item_map[static_cast<size_t>( cur_pos )];
         auto &cur_item  = cur_items.back();
 
-        const std::string &action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
+            // Buying keeps its Enter confirmation: clicks only select rows.
+            if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
+                action = action == "SCROLL_UP" ? "UP" : "DOWN";
+            } else if( action == "SELECT" || action == "SEC_SELECT" ) {
+                action.clear();
+                if( const auto mouse = ctxt.get_coordinates( w ) ) {
+                    const auto cell = mouse->xy().raw() + point( getmaxx( w ),
+                                      getmaxy( w ) ) / 2;
+                    const int page_size = std::min( num_items, list_lines );
+                    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                        .offset = point( 0, first_item_offset ),
+                        .viewport_size = list_lines,
+                        .content_size = num_items,
+                        .viewport_pos = cur_pos,
+                        .scroll_to_last = true,
+                    }, cell );
+                    if( hit ) {
+                        cur_pos = hit->viewport_pos;
+                    } else if( cell.x >= 1 && cell.x < w_items_w - 1 &&
+                               cell.y >= first_item_offset &&
+                               cell.y < first_item_offset + page_size ) {
+                        const int idx = page_begin( num_items ) + cell.y - first_item_offset;
+                        if( idx >= 0 && idx < num_items ) {
+                            cur_pos = idx;
+                        }
+                    }
+                }
+            } else {
+                action.clear();
+            }
+        }
         if( action == "DOWN" ) {
             cur_pos = ( cur_pos + 1 ) % num_items;
         } else if( action == "UP" ) {

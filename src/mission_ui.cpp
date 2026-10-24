@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -12,9 +13,12 @@
 #include "input.h"
 #include "mission.h"
 #include "npc.h"
+#include "options.h"
 #include "output.h"
+#include "scrollbar_input.h"
 #include "string_formatter.h"
 #include "string_utils.h"
+#include "tab_input.h"
 #include "translations.h"
 #include "ui.h"
 #include "ui_manager.h"
@@ -39,6 +43,15 @@ void game::list_missions()
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
 
     ui_adaptor ui;
     ui.on_screen_resize( [&]( ui_adaptor & ui ) {
@@ -157,6 +170,8 @@ void game::list_missions()
         wnoutrefresh( w_missions );
     } );
 
+    std::optional<size_t> mouse_row;
+
     while( true ) {
         umissions.clear();
         if( tab < tab_mode::FIRST_TAB || tab >= tab_mode::NUM_TABS ) {
@@ -183,7 +198,65 @@ void game::list_missions()
             selection = 0;
         }
         ui_manager::redraw();
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
+            if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
+                action = action == "SCROLL_UP" ? "UP" : "DOWN";
+                mouse_row.reset();
+            } else if( action == "SELECT" || action == "SEC_SELECT" ) {
+                action.clear();
+                if( const auto mouse = ctxt.get_coordinates( w_missions ) ) {
+                    const auto cell = mouse->xy().raw() + point( getmaxx( w_missions ),
+                                      getmaxy( w_missions ) ) / 2;
+                    const std::vector<std::string> tab_texts = {
+                        _( "ACTIVE MISSIONS" ), _( "COMPLETED MISSIONS" ), _( "FAILED MISSIONS" )
+                    };
+                    if( cell.y < 3 ) {
+                        if( const auto clicked = tab_input::index_at( {
+                                .texts = tab_texts,
+                                .current = static_cast<size_t>( tab ),
+                                .max_width = getmaxx( w_missions ),
+                                .x = cell.x,
+                            } ) ) {
+                            if( *clicked != static_cast<int>( tab ) ) {
+                                tab = static_cast<tab_mode>( *clicked );
+                                selection = 0;
+                                mouse_row.reset();
+                            }
+                        }
+                    } else if( const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                    .offset = point( 0, 3 ),
+                    .viewport_size = entries_per_page,
+                    .content_size = static_cast<int>( umissions.size() ),
+                    .viewport_pos = static_cast<int>( selection ),
+                    .scroll_to_last = true,
+                               }, cell ) ) {
+                        selection = static_cast<size_t>( hit->viewport_pos );
+                        mouse_row.reset();
+                    } else if( cell.x >= 1 && cell.x < 30 && cell.y >= 3 &&
+                               cell.y < 3 + entries_per_page ) {
+                        const size_t idx = entries_per_page * ( selection / entries_per_page ) +
+                                           cell.y - 3;
+                        if( idx < umissions.size() ) {
+                            if( mouse_row && *mouse_row == idx ) {
+                                // A second click on the same row runs the row's Enter
+                                // action; confirming a mission keeps its usual flow.
+                                action = "CONFIRM";
+                                mouse_row.reset();
+                            } else {
+                                selection = idx;
+                                mouse_row = idx;
+                            }
+                        }
+                    }
+                }
+            } else {
+                action.clear();
+            }
+        } else {
+            // Keyboard navigation and content changes forget the pending row click.
+            mouse_row.reset();
+        }
         if( action == "RIGHT" ) {
             tab = static_cast<tab_mode>( static_cast<int>( tab ) + 1 );
             if( tab >= tab_mode::NUM_TABS ) {

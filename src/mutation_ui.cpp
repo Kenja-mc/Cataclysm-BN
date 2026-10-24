@@ -13,7 +13,9 @@
 #include "mutation.h"
 #include "options.h"
 #include "output.h"
+#include "point.h"
 #include "popup.h"
+#include "scrollbar_input.h"
 #include "string_formatter.h"
 #include "string_id.h"
 #include "translations.h"
@@ -149,6 +151,14 @@ detail::mutations_ui_result detail::show_mutations_ui_internal( Character &who )
     ctxt.register_action( "QUIT" );
 
     const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) != "classic";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
     auto available_chars = std::optional<invlet_wrapper> {};
     if( modern ) {
         available_chars.emplace(
@@ -222,6 +232,18 @@ detail::mutations_ui_result detail::show_mutations_ui_internal( Character &who )
     int max_scroll_position = 0;
     int list_height = 0;
     int half_list_view_location = 0;
+
+    // Column row the mouse most recently clicked, as tab and list index; a second
+    // click on it runs the row's Enter action. Reset by any keyboard or scroll event.
+    std::optional<std::pair<mutation_tab_mode, int>> mouse_row;
+    // Keep the cursor row inside the visible list after a click jump.
+    const auto scroll_to_cursor = [&]() {
+        if( cursor < scroll_position ) {
+            scroll_position = cursor;
+        } else if( cursor - scroll_position >= list_height ) {
+            scroll_position = std::max( 0, cursor - list_height + 1 );
+        }
+    };
     mutation_menu_mode menu_mode = mutation_menu_mode::activating;
     mutation_tab_mode tab_mode;
     if( !passive.empty() ) {
@@ -388,8 +410,81 @@ detail::mutations_ui_result detail::show_mutations_ui_internal( Character &who )
         recalc_max_scroll_position();
         ui_manager::redraw();
         bool handled = false;
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
         const input_event evt = ctxt.get_raw_input();
+        if( modern && evt.type == input_event_t::mouse ) {
+            if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
+                action = action == "SCROLL_UP" ? "UP" : "DOWN";
+                mouse_row.reset();
+            } else if( action == "SELECT" || action == "SEC_SELECT" ) {
+                action.clear();
+                if( const auto mouse = ctxt.get_coordinates( wBio ) ) {
+                    const auto cell = mouse->xy().raw() + point( getmaxx( wBio ),
+                                      getmaxy( wBio ) ) / 2;
+                    // Column captions switch the active column like the tab keys.
+                    const int caption_y = HEADER_LINE_Y + 1;
+                    if( cell.y == caption_y && cell.x >= 2 &&
+                        cell.x < 2 + utf8_width( _( "Passive:" ) ) && !passive.empty() ) {
+                        if( tab_mode != mutation_tab_mode::passive ) {
+                            tab_mode = mutation_tab_mode::passive;
+                            examine_id = GetTrait( active, passive, cursor, tab_mode );
+                            scroll_position = 0;
+                            cursor = 0;
+                            mouse_row.reset();
+                        }
+                    } else if( cell.y == caption_y && cell.x >= second_column &&
+                               cell.x < second_column + utf8_width( _( "Active:" ) ) && !active.empty() ) {
+                        if( tab_mode != mutation_tab_mode::active ) {
+                            tab_mode = mutation_tab_mode::active;
+                            examine_id = GetTrait( active, passive, cursor, tab_mode );
+                            scroll_position = 0;
+                            cursor = 0;
+                            mouse_row.reset();
+                        }
+                    } else {
+                        const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                            .offset = point( 0, list_start_y ),
+                            .viewport_size = list_height,
+                            .content_size = mutations_count,
+                            .viewport_pos = scroll_position,
+                        }, cell );
+                        if( hit ) {
+                            scroll_position = hit->viewport_pos;
+                            mouse_row.reset();
+                        } else if( cell.y >= list_start_y && cell.y < list_start_y + list_height ) {
+                            const bool passive_column = cell.x >= 2 && cell.x < second_column;
+                            const bool active_column = cell.x >= second_column && cell.x < WIDTH - 1;
+                            const std::vector<trait_id> &column = passive_column ? passive : active;
+                            if( ( passive_column || active_column ) && !column.empty() ) {
+                                const mutation_tab_mode clicked = passive_column ?
+                                                                  mutation_tab_mode::passive :
+                                                                  mutation_tab_mode::active;
+                                const int idx = scroll_position + cell.y - list_start_y;
+                                if( idx >= 0 && idx < static_cast<int>( column.size() ) ) {
+                                    if( mouse_row &&
+                                        *mouse_row == std::make_pair( clicked, idx ) ) {
+                                        // A second click on the same row runs its Enter
+                                        // action; activation keeps its usual prompts.
+                                        action = "CONFIRM";
+                                        mouse_row.reset();
+                                    } else {
+                                        tab_mode = clicked;
+                                        cursor = idx;
+                                        scroll_to_cursor();
+                                        examine_id = GetTrait( active, passive, cursor, tab_mode );
+                                        mouse_row = std::make_pair( clicked, idx );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                action.clear();
+            }
+        } else {
+            mouse_row.reset();
+        }
         if( ( !modern || action == "ANY_INPUT" ) &&
             evt.type == input_event_t::keyboard && !evt.sequence.empty() ) {
             const int ch = evt.get_first_input();

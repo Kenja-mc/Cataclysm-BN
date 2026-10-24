@@ -14,6 +14,7 @@
 #include "options.h"
 #include "output.h"
 #include "popup.h"
+#include "scrollbar_input.h"
 #include "string_editor_window.h"
 #include "string_formatter.h"
 #include "string_input_popup.h"
@@ -27,10 +28,19 @@ namespace
 // maximum limit of the UIs width. After that, we center them, with an even space left and right
 const int MAX_DAIRY_UI_WIDTH = 150;
 
-/**print a scrollable list, printed std::vector<std::string> as list with scrollbar*/
+/** Layout of one print_list_scrollable() call, for click hit testing. */
+struct scrollable_list_layout {
+    scrollbar_input::geometry bar{};
+    int entries_per_page = 0;
+    int top_of_page = 0;
+    int content_size = 0;
+};
+
+/**print a scrollable list; printed std::vector<std::string> as list with scrollbar*/
 void print_list_scrollable( catacurses::window *win, std::vector<std::string> list, int *selection,
                             int entries_per_page, int xoffset, int width, bool active, bool border,
-                            const report_color_error color_error )
+                            const report_color_error color_error,
+                            scrollable_list_layout *layout_out = nullptr )
 {
     if( *selection < 0 && !list.empty() ) {
         *selection = static_cast<int>( list.size() ) - 1;
@@ -63,6 +73,16 @@ void print_list_scrollable( catacurses::window *win, std::vector<std::string> li
     if( border ) {
         draw_border( *win );
     }
+    if( layout_out != nullptr ) {
+        layout_out->bar.offset = point( xoffset, borderspace );
+        layout_out->bar.viewport_size = entries_per_page;
+        layout_out->bar.content_size = static_cast<int>( list.size() );
+        layout_out->bar.viewport_pos = *selection;
+        layout_out->bar.scroll_to_last = true;
+        layout_out->entries_per_page = entries_per_page;
+        layout_out->top_of_page = top_of_page;
+        layout_out->content_size = static_cast<int>( list.size() );
+    }
     if( active && entries_per_page < static_cast<int>( list.size() ) ) {
         draw_scrollbar( *win, *selection, entries_per_page, list.size(), point( xoffset,
                         0 + borderspace ) );
@@ -71,30 +91,33 @@ void print_list_scrollable( catacurses::window *win, std::vector<std::string> li
 }
 
 void print_list_scrollable( catacurses::window *win, std::vector<std::string> list, int *selection,
-                            bool active, bool border, const report_color_error color_error )
+                            bool active, bool border, const report_color_error color_error,
+                            scrollable_list_layout *layout_out = nullptr )
 {
     print_list_scrollable( win, std::move( list ), selection, getmaxy( *win ), 0, getmaxx( *win ),
                            active, border,
-                           color_error );
+                           color_error, layout_out );
 }
 
 void print_list_scrollable( catacurses::window *win, const std::string &text, int *selection,
                             int entries_per_page, int xoffset, int width, bool active, bool border,
-                            const report_color_error color_error )
+                            const report_color_error color_error,
+                            scrollable_list_layout *layout_out = nullptr )
 {
     int border_space = border ? 1 : 0;
     // -1 on the left for scroll bar and another -1 on the right reserved for cursor
     std::vector<std::string> list = foldstring( text, width - 2 - border_space * 2 );
     print_list_scrollable( win, list, selection, entries_per_page, xoffset, width, active, border,
-                           color_error );
+                           color_error, layout_out );
 }
 
 void print_list_scrollable( catacurses::window *win, const std::string &text, int *selection,
                             bool active,
-                            bool border, const report_color_error color_error )
+                            bool border, const report_color_error color_error,
+                            scrollable_list_layout *layout_out = nullptr )
 {
     print_list_scrollable( win, text, selection, getmaxy( *win ), 0, getmaxx( *win ), active, border,
-                           color_error );
+                           color_error, layout_out );
 }
 
 void draw_diary_border( catacurses::window *win, const nc_color &color = c_white )
@@ -189,6 +212,17 @@ void diary::show_diary_ui( diary *c_diary )
     ctxt.register_action( "DELETE PAGE" );
     ctxt.register_action( "EXPORT_DIARY" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
+
+    std::map<window_mode, scrollable_list_layout> pane_layout;
 
     ui_adaptor ui_diary;
     ui_diary.on_screen_resize( [&]( ui_adaptor & ui ) {
@@ -219,9 +253,11 @@ void diary::show_diary_ui( diary *c_diary )
         left_diary_text.insert( left_diary_text.end(), change_list.begin(), change_list.end() );
 
         print_list_scrollable( &w_changes, left_diary_text, &selected[window_mode::CHANGE_WIN],
-                               currwin == window_mode::CHANGE_WIN, false, report_color_error::yes );
+                               currwin == window_mode::CHANGE_WIN, false, report_color_error::yes,
+                               &pane_layout[window_mode::CHANGE_WIN] );
         print_list_scrollable( &w_text, c_diary->get_page_text(), &selected[window_mode::TEXT_WIN],
-                               currwin == window_mode::TEXT_WIN, false, report_color_error::no );
+                               currwin == window_mode::TEXT_WIN, false, report_color_error::no,
+                               &pane_layout[window_mode::TEXT_WIN] );
 
         wnoutrefresh( w_border );
         wnoutrefresh( w_changes );
@@ -245,7 +281,8 @@ void diary::show_diary_ui( diary *c_diary )
         werase( w_pages );
 
         print_list_scrollable( &w_pages, c_diary->get_pages_list(), &selected[window_mode::PAGE_WIN],
-                               currwin == window_mode::PAGE_WIN, true, report_color_error::yes );
+                               currwin == window_mode::PAGE_WIN, true, report_color_error::yes,
+                               &pane_layout[window_mode::PAGE_WIN] );
         center_print( w_pages, 0, c_light_gray, string_format( _( "pages: %d" ),
                       c_diary->get_pages_list().size() ) );
 
@@ -316,7 +353,49 @@ void diary::show_diary_ui( diary *c_diary )
         ui_desc.invalidate_ui();
         ui_info.invalidate_ui();
         ui_manager::redraw_invalidated();
-        const std::string action = ctxt.handle_input();
+        std::string action = ctxt.handle_input();
+        if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
+            // Editing keeps its Enter flow: a click only focuses a pane and selects a row.
+            if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
+                const int step = action == "SCROLL_UP" ? -1 : 1;
+                if( currwin == window_mode::TEXT_WIN ) {
+                    // The page text scrolls three lines per notch.
+                    selected[currwin] += step * 3;
+                    action.clear();
+                } else {
+                    action = action == "SCROLL_UP" ? "UP" : "DOWN";
+                }
+            } else if( action == "SELECT" || action == "SEC_SELECT" ) {
+                action.clear();
+                const auto click_list = [&]( const catacurses::window & w, window_mode mode,
+                int borderspace ) -> bool {
+                    const auto mouse = ctxt.get_coordinates( w );
+                    if( !mouse ) {
+                        return false;
+                    }
+                    const auto cell = mouse->xy().raw() + point( getmaxx( w ),
+                                      getmaxy( w ) ) / 2;
+                    const scrollable_list_layout &lay = pane_layout[mode];
+                    if( const auto hit = scrollbar_input::click( lay.bar, cell ) ) {
+                        selected[mode] = hit->viewport_pos;
+                    } else {
+                        const int row = cell.y - borderspace;
+                        const int idx = lay.top_of_page + row;
+                        if( row >= 0 && row < lay.entries_per_page && idx >= 0 &&
+                            idx < lay.content_size ) {
+                            selected[mode] = idx;
+                        }
+                    }
+                    currwin = mode;
+                    return true;
+                };
+                click_list( w_pages, window_mode::PAGE_WIN, 1 ) ||
+                click_list( w_changes, window_mode::CHANGE_WIN, 0 ) ||
+                click_list( w_text, window_mode::TEXT_WIN, 0 );
+            } else {
+                action.clear();
+            }
+        }
         if( action == "RIGHT" ) {
             currwin = static_cast<window_mode>( static_cast<int>( currwin ) + 1 );
             if( currwin >= window_mode::NUM_WIN ) {

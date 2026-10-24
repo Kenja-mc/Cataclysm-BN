@@ -49,6 +49,7 @@
 #include "projectile.h"
 #include "ranged.h"
 #include "rng.h"
+#include "scrollbar_input.h"
 #include "skill.h"
 #include "sounds.h"
 #include "string_formatter.h"
@@ -831,6 +832,15 @@ auto show_technique_reference_popup( const std::string &text ) -> void
     ict.register_action( "PAGE_DOWN" );
     ict.register_action( "QUIT" );
     ict.register_action( "HELP_KEYBINDINGS" );
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ict.register_action( "COORDINATE" );
+        ict.register_action( "MOUSE_MOVE" );
+        ict.register_action( "SELECT" );
+        ict.register_action( "SEC_SELECT" );
+        ict.register_action( "SCROLL_UP" );
+        ict.register_action( "SCROLL_DOWN" );
+    }
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
         werase( window );
@@ -843,7 +853,35 @@ auto show_technique_reference_popup( const std::string &text ) -> void
 
     while( true ) {
         ui_manager::redraw();
-        const auto action = ict.handle_input();
+        auto action = ict.handle_input();
+
+        if( modern && ict.get_raw_input().type == input_event_t::mouse ) {
+            // Text scrolls three lines per notch.
+            if( action == "SCROLL_UP" ) {
+                selected -= 3;
+                action.clear();
+            } else if( action == "SCROLL_DOWN" ) {
+                selected += 3;
+                action.clear();
+            } else if( action == "SELECT" || action == "SEC_SELECT" ) {
+                if( const auto mouse = ict.get_coordinates( window ) ) {
+                    const auto cell = mouse->xy().raw() + point( getmaxx( window ),
+                                      getmaxy( window ) ) / 2;
+                    const auto hit = scrollbar_input::click( scrollbar_input::geometry{
+                        .offset = point_south,
+                        .viewport_size = content_height,
+                        .content_size = text_lines,
+                        .viewport_pos = selected,
+                    }, cell );
+                    if( hit ) {
+                        selected = hit->viewport_pos;
+                    }
+                }
+                action.clear();
+            } else {
+                action.clear();
+            }
+        }
 
         if( action == "QUIT" ) {
             break;
