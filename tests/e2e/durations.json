@@ -65,7 +65,7 @@
  "test_grouped_fire_from_empty_inspection_aims_at_hostile": 35.9,
  "test_grouped_live_classic_switch_clears_inspection_before_fire": 35.4,
  "test_grouped_look_selects_the_space_interaction_tile": 19.8,
- "test_grouped_shift_direction_looks_without_walking": 44.8,
+ "test_grouped_shift_direction_keys_do_not_select_by_default": 44.8,
  "test_grouped_shift_x_cycles_all_movement_modes": 8.2,
  "test_grouped_tab_cycles_visible_hostiles_and_wraps": 16.3,
  "test_gun_loudness_in_item_info": 7.7,
