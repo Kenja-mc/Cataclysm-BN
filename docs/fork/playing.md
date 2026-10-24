@@ -196,7 +196,8 @@ Long-form write-ups should follow
   `v` opens Wield directly. F5 Craft remains available even when inventory is empty.
   `g` takes everything underfoot without a menu; Ctrl+G opens area pickup, where `g` or Enter
   confirms. Quick stack and sort pile remain in Enter.
-- **Select and interact:** Shift+WASD/QEZC selects a tile without spending time.
+- **Select and interact:** right click selects a tile without spending time; the eight Select tile
+  keys ship unbound and stay rebindable in the options menu.
   Space acts on that selection. Without a selection, it lists nearby actions with directions
   and highlights the tile of the current row. Jump and Smash need explicit choices (`S` for Smash).
   Space offers Butcher for a corpse underfoot. `B` also opens Butcher.

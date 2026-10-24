@@ -28,7 +28,10 @@ def pulp_selected_direction(game, key, direction):
 
 def test_modern_p_pulps_the_chosen_corpse(_g):
     with contextual_game("bn-e2e-modern-pulp-key") as game:
-        game.keys("A", "Escape", delay=0.2)
+        # Select and clear, so pulping starts without a live selection.
+        x, y = game.find("@")
+        game.click(x - 1, y, button=2)
+        game.keys("Escape", delay=0.2)
         pulp_selected_direction(game, "p", "d")
 
 

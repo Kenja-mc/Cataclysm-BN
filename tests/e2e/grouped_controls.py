@@ -22,14 +22,16 @@ def mark_direction(game, dx, dy):
     ) == ["ok"]
 
 
-def test_grouped_shift_direction_looks_without_walking(_game):
+def test_grouped_shift_direction_keys_do_not_select_by_default(_game):
     with no_mouse_movement_game("bn-e2e-grouped-look", ARROW_KEY_AIM="false") as game:
-        for key, dx, dy in DIRECTIONS:
-            mark_direction(game, dx, dy)
+        for key, _dx, _dy in DIRECTIONS:
+            # The fixture has no hostiles, so Tab clears any leftover selection first.
+            game.keys("Tab", delay=0.5)
             before = bub_pos(game), action_clock(game)
             game.keys(key, delay=0.8)
-            assert "pavement" in mouse_view(game), f"Shift+{key} must inspect direction {(dx, dy)}"
-            assert (bub_pos(game), action_clock(game)) == before, "looking must be free and stationary"
+            assert "Mouse View" not in game.screen(), \
+                f"Shift+{key} must not select a tile: the default binds were removed"
+            assert (bub_pos(game), action_clock(game)) == before, "an unbound key must be free"
 
 
 def test_grouped_look_selects_the_space_interaction_tile(_game):
@@ -37,11 +39,17 @@ def test_grouped_look_selects_the_space_interaction_tile(_game):
         assert game.lua("for _,dx in ipairs({-1,1}) do "
                         "M:set_ter_at(here(dx,0),TerId.new('t_door_c'):int_id()) end out('ok')") == ["ok"]
         before = bub_pos(game)
-        game.keys("D", "space", delay=0.8)
+        x, y = game.find("@")
+        game.click(x + 1, y, button=2)
+        game.wait_for("Interact with the")
+        game.keys("Escape", delay=0.3)
+        game.wait_gone("Interact with the")
+        game.keys("space", delay=0.8)
+        game.wait_for("Interact with the")
         game.keys("o", delay=1)
         assert game.lua("out(M:get_ter_at(here(1,0)):str_id():str(),"
                         "M:get_ter_at(here(-1,0)):str_id():str())") == ["t_door_o,t_door_c"]
-        assert bub_pos(game) == before, "Space must open the looked-at door without walking"
+        assert bub_pos(game) == before, "Space must open the selected door without walking"
 
 
 def test_grouped_ctrl_direction_peeks_and_restores_position(_game):
@@ -110,10 +118,8 @@ def test_grouped_fire_from_empty_inspection_aims_at_hostile(_game):
     with no_mouse_movement_game("bn-e2e-grouped-empty-gun-aim") as game:
         loaded_gun_and_east_hostile(game)
         before = grouped_gun_state(game)
-        for selection in ("shift", "mouse", "arrows"):
-            if selection == "shift":
-                game.keys("W", delay=0.8)
-            elif selection == "mouse":
+        for selection in ("mouse", "arrows"):
+            if selection == "mouse":
                 x, y = game.find("@")
                 game.click(x, y - 1, button=2)
             else:
@@ -135,7 +141,8 @@ def test_grouped_distant_melee_selection_never_redirects_or_walks(_game):
                         "local selected=gapi.place_monster_at(MonsterTypeId.new('mon_zombie_rot'),here(0,-3)) "
                         "MAP_MOUSE_TARGETS={near,selected} out(near ~= nil and selected ~= nil)") == ["true"]
         before = mouse_state(game)
-        game.keys("W", "W", "W", delay=0.5)
+        x, y = game.find("@")
+        game.click(x, y - 3, button=2)
         assert "decayed zombie" in mouse_view(game), "the distant hostile must be selected"
         game.keys("f", delay=0.8)
         assert "reach" in game.screen(), "a distant melee target needs an informative rejection"
@@ -206,14 +213,16 @@ def test_grouped_live_classic_switch_clears_inspection_before_fire(_game):
             see_everything(game, True)
             loaded_gun_and_east_hostile(game)
             before = grouped_gun_state(game)
-            game.keys("W", delay=0.8)
+            x, y = game.find("@")
+            game.click(x, y - 1, button=2)
             assert "zombie" not in mouse_view(game)
             change_grouped_control_scheme(game, save=False)
             # Esc proves the canceled switch kept inspection.
             game.keys("Escape", delay=0.7)
             assert "MAIN MENU" not in game.screen(), "canceling options must preserve inspection"
             assert grouped_gun_state(game) == before
-            game.keys("W", delay=0.8)
+            x, y = game.find("@")
+            game.click(x, y - 1, button=2)
             assert "zombie" not in mouse_view(game)
             screen = change_grouped_control_scheme(game, save=True)
             assert "Mouse View" not in screen, "a saved scheme switch must clear the live inspector"
@@ -226,7 +235,7 @@ def test_grouped_live_classic_switch_clears_inspection_before_fire(_game):
             game.close()
 
 
-TESTS = [test_grouped_shift_direction_looks_without_walking,
+TESTS = [test_grouped_shift_direction_keys_do_not_select_by_default,
          test_grouped_look_selects_the_space_interaction_tile,
          test_grouped_ctrl_direction_peeks_and_restores_position,
          test_grouped_shift_x_cycles_all_movement_modes,

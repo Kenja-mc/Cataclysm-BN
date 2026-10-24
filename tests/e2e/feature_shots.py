@@ -55,9 +55,11 @@ SHOTS = [
          body="The crafting menu opens on a tab with recipes to make. The parts chain shows what a "
               "recipe needs, which of those parts the player can produce, and one honest time estimate."),
     dict(id="look", title="Look around and tile selection",
-         keys=[("Shift_L", "d")], options={"CONTROL_SCHEME": "modern"},
-         body="Shift and a direction inspects the adjacent tile without spending a turn. The tile "
-              "inspector shows what it holds, and Space interacts with the selected tile."),
+         # RMB selects the tile east of the avatar: 11x24 cells, an 88-cell map with the avatar
+         # centered on cell (44, 24), so the tile's center pixel is (45*11+5, 24*24+12).
+         keys=[], click=(500, 588, 3), options={"CONTROL_SCHEME": "modern"},
+         body="A right click selects and inspects the adjacent tile without spending a turn. The "
+              "tile inspector shows what it holds, and Space interacts with the selected tile."),
     dict(id="map", title="Map and minimap",
          keys=[("m",)], options={"CONTROL_SCHEME": "modern"},
          body="The map opens on the local area with the pixel minimap the fork keeps on by default."),
@@ -203,8 +205,13 @@ def main():
             try:
                 proc, x11, window, run = launch(session, shot["id"], shot["options"], work,
                                                 fixtures[(scheme, setup)])
-                for keys in shot["keys"]:
+                for keys in shot.get("keys", ()):
                     x11.key(*keys, delay=0.6)
+                if shot.get("click"):
+                    px, py, button = shot["click"]
+                    x11.focus_local(window, px, py)
+                    time.sleep(0.6)
+                    x11.click(button, delay=0.6)
                 time.sleep(1.5)
                 capture(session.display, window, png)
                 digest = hashlib.sha256(png.read_bytes()).hexdigest()

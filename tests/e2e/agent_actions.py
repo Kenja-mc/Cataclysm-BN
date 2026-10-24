@@ -326,6 +326,7 @@ _GAME_ACTIONS: tuple[tuple[str, str, str, tuple[str, ...]], ...] = (
     ("pickup", "pick up items", "DEFAULTMODE", ("quick_pickup", "pickup", "pickup_all")),
     ("pickup_all", "pick up from all nearby tiles", "DEFAULTMODE", ("pickup_all",)),
     ("look", "look around", "DEFAULTMODE", ("look",)),
+    # Select-tile keys: unbound in modern (mouse selects there); classic keeps the vi-keys.
     ("look_north", "look north", "DEFAULTMODE", ("shift_n",)),
     ("look_east", "look east", "DEFAULTMODE", ("shift_e",)),
     ("look_south", "look south", "DEFAULTMODE", ("shift_s",)),

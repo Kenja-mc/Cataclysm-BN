@@ -26,7 +26,8 @@ to triage; reference the session commit SHA (shown by `--version` in the game's 
 - [ ] Enter groups every action category; Info opens character/status screens; Ctrl+X opens wait/rest
 - [ ] `i` selects items for Wield/Wear/Eat/Use/Read; Wield is equipment, not a primary map key
 - [ ] Inventory shows F5 Craft and opens crafting even when empty
-- [ ] Shift+direction moves a free reticle from the player, accumulating one tile per press
+- [ ] Select tile keys are unbound by default; binding them (e.g. Shift+WASD/QEZC) moves a free
+      reticle from the player, accumulating one tile per press
 - [ ] Ctrl+direction physically peeks for 200 moves and returns to the starting position on cancel
 - [ ] Modern curses Ctrl+C/Z are game chords; Classic still quits/suspends through normal signals
 - [ ] Tab/Shift+Tab cycle visible hostiles freely by distance/position, wrapping in both directions
@@ -34,7 +35,7 @@ to triage; reference the session commit SHA (shown by `--version` in the game's 
 - [ ] Map right click selects freely; left click attacks; no Modern single/double/near/far click walks
 - [ ] Modern aiming RMB selects without firing; LMB fires; Classic keeps upstream mouse buttons
 - [ ] `n` auto-explore avoids walls/closed doors/traps and refuses to start near hostiles
-- [ ] Space uses the RMB/Shift-look tile and offers applicable Open/Close/Examine/Pickup/Jump/Smash
+- [ ] Space uses the RMB-selected tile and offers applicable Open/Close/Examine/Pickup/Jump/Smash
 - [ ] Jump and Smash require an explicit choice, not automatic action dispatch
 - [ ] Shift+X cycles walk/run/crouch/prone; Status / Movement row agree; F2/F3/F4 are unbound
 - [ ] Enter's Quick stack sends items to nearby matching storage; worn/wielded/favorite items stay

@@ -84,11 +84,14 @@
 <g><rect x="660" y="176" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="667" y="197" font-size="15.0" font-weight="700">0</text>
 </g>
-<g><rect x="724" y="176" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
+<g><rect x="724" y="176" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="731" y="197" font-size="15.0" font-weight="700">-</text>
+<text x="730" y="216" font-size="12.0" fill="currentColor">Zoom out</text>
 </g>
-<g><rect x="788" y="176" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
+<g><rect x="788" y="176" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="795" y="197" font-size="15.0" font-weight="700">=</text>
+<text x="794" y="216" font-size="12.0" fill="currentColor">Zoom in</text>
+<text x="794" y="231" font-size="10" fill="var(--muted,currentColor)">⇧ Zoom in</text>
 </g>
 <g><rect x="852" y="176" width="124" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="859" y="197" font-size="15.0" font-weight="700">Backspace</text>
@@ -133,6 +136,7 @@
 </g>
 <g><rect x="692.0" y="252" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="699.0" y="273" font-size="15.0" font-weight="700">P</text>
+<text x="698.0" y="292" font-size="9.0" fill="currentColor">Smash Nearby Terrain</text>
 <text x="698.0" y="307" font-size="10" fill="var(--muted,currentColor)">⇧</text>
 <text x="698.0" y="319" font-size="10" fill="var(--muted,currentColor)">messages</text>
 </g>
@@ -168,12 +172,11 @@
 </g>
 <g><rect x="388.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="395.0" y="349" font-size="15.0" font-weight="700">G</text>
-<text x="394.0" y="368" font-size="9.1" fill="currentColor">take here</text>
-<text x="394.0" y="383" font-size="9" fill="var(--muted,currentColor)">Ctrl area</text>
+<text x="394.0" y="368" font-size="9.0" fill="currentColor">Take everything underfoot</text>
 </g>
 <g><rect x="452.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="459.0" y="349" font-size="15.0" font-weight="700">H</text>
-<text x="458.0" y="368" font-size="12.0" fill="currentColor">health</text>
+<text x="458.0" y="368" font-size="9.1" fill="currentColor">Body status</text>
 </g>
 <g><rect x="516.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="523.0" y="349" font-size="15.0" font-weight="700">J</text>
@@ -287,8 +290,9 @@
 <g><rect x="84" y="686" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="91" y="707" font-size="15.0" font-weight="700">Home</text>
 </g>
-<g><rect x="148" y="686" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
+<g><rect x="148" y="686" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="155" y="707" font-size="15.0" font-weight="700">PgUp</text>
+<text x="154" y="726" font-size="11.1" fill="currentColor">stairs up</text>
 </g>
 <g><rect x="20" y="762" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="27" y="783" font-size="12.8" font-weight="700">Delete</text>
@@ -296,8 +300,9 @@
 <g><rect x="84" y="762" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="91" y="783" font-size="15.0" font-weight="700">End</text>
 </g>
-<g><rect x="148" y="762" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
+<g><rect x="148" y="762" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="155" y="783" font-size="15.0" font-weight="700">PgDn</text>
+<text x="154" y="802" font-size="9.1" fill="currentColor">stairs down</text>
 </g>
 <g><rect x="354" y="686" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="361" y="707" font-size="15.0" font-weight="700">↑</text>
@@ -376,7 +381,7 @@
 <g><rect x="788" y="914" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="795" y="935" font-size="15.0" font-weight="700">.</text>
 </g>
-<text x="20" y="850" font-size="13">Shift + W A S D Q E Z C: free tile selection; starts at you, accumulates.</text>
+<text x="20" y="850" font-size="13">Shift + (unbound) (unbound) (unbound) (unbound) (unbound) (unbound) (unbound) (unbound): free tile selection; starts at you, accumulates.</text>
 <text x="20" y="876" font-size="13">Ctrl + W A S D Q E Z C: physical peek (200 moves); cancel returns.</text>
 <text x="20" y="902" font-size="13">Arrows: free aim reticle. Tab / Shift+Tab: next / previous hostile.</text>
 <text x="20" y="928" font-size="13">f attacks selection; guns use normal aim. Bump attacks still work.</text>
@@ -387,9 +392,9 @@
 <text x="20" y="1077" font-size="14">v: wield. i: inventory → item actions; inventory F5: Craft, even when empty.</text>
 <text x="20" y="1102" font-size="14">@: character; P: messages; B: butcher; F: fire mode; /: advanced inventory.</text>
 <text x="20" y="1127" font-size="14">Space: selected tile actions, or a flat nearby list with directions and a target highlight.</text>
-<text x="20" y="1152" font-size="14">RMB or Shift+direction selects; Jump and Smash require an explicit choice.</text>
+<text x="20" y="1152" font-size="14">RMB selects; Select tile keys are unbound by default; Jump and Smash require an explicit choice.</text>
 <text x="20" y="1177" font-size="14">Map RMB selects freely; LMB uses adjacent doors/items/furniture or attacks; never walks.</text>
-<text x="20" y="1202" font-size="14">g takes everything here; Ctrl+G opens area pickup; g/Enter confirms. h: health. PageUp/Down: stairs.</text>
+<text x="20" y="1202" font-size="14">g opens pickup; g confirms. Inventory/pickup: wheel scrolls; RMB opens item actions.</text>
 <text x="20" y="1227" font-size="14">Blank keycaps have no default map action. Local menu keys and Classic controls are unchanged.</text>
 <text x="20" y="1252" font-size="14">Classic terminal Ctrl+C/Z retain normal quit/suspend signal behavior.</text>
 </svg>

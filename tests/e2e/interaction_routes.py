@@ -2,7 +2,7 @@
 import re
 
 from aim_reticle import action_clock
-from contextual_hub import contextual_game, doors, door_state, interact_menu
+from contextual_hub import contextual_game, doors, door_state, interact_menu, select_tile
 from fixtures import retire
 from helpers import bub_pos, count_at, count_carried, give, spawn, wait_until
 from map_mouse import assert_no_map_context, mouse_view
@@ -55,16 +55,16 @@ def test_contextual_empty_and_distant_clicks_only_select(_g):
                     "empty/distant clicks must only inspect, never act elsewhere or walk"
 
 
-def test_ctrl_peek_keeps_shift_selected_interaction(_g):
+def test_ctrl_peek_keeps_selected_interaction(_g):
     with contextual_game("bn-e2e-peek-selection") as game:
         doors(game)
         # Keep enough moves to measure the physical peek's exact cost without turn rollover.
         assert game.lua("gapi.get_avatar():set_moves(100000) out('ok')") == ["ok"]
         position, clock = bub_pos(game), action_clock(game)
-        game.keys("A", delay=0.2)
+        select_tile(game, -1, 0)
         game.wait_for("Mouse View")
         assert "closed wood door" in mouse_view(game)
-        assert (bub_pos(game), action_clock(game)) == (position, clock), "Shift selection must be free"
+        assert (bub_pos(game), action_clock(game)) == (position, clock), "selection must be free"
         game.keys("C-w", delay=0.2)
         game.wait_for("Look Around")
         game.keys("Escape", delay=0.2)
@@ -163,7 +163,7 @@ def test_modern_f_changes_fire_mode_without_firing(_g):
 TESTS = [test_contextual_left_click_opens_and_closes_without_walking,
          test_contextual_left_click_pickup_without_walking,
          test_contextual_empty_and_distant_clicks_only_select,
-         test_ctrl_peek_keeps_shift_selected_interaction,
+         test_ctrl_peek_keeps_selected_interaction,
          test_space_and_b_reach_butchery_for_own_corpse,
          test_modern_v_at_and_p_reach_their_screens,
          test_modern_f_changes_fire_mode_without_firing]

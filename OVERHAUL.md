@@ -28,15 +28,16 @@ direction prompts. Top-row numbers do not move you on the map.
 - **Space — tile actions.** With nothing selected, Space lists every action on the tiles around you
   in one menu at the top of the screen, each named with its direction ("open the door (east)"), and
   lights up the tile of the highlighted row. A single safe action runs at once. With a tile selected
-  (right click or Shift+direction), Space offers that tile's **Open**, **Close**, **Examine**,
+  (right click, or a Select tile key you bound), Space offers that tile's **Open**, **Close**, **Examine**,
   **Pickup**, **Jump** and **Smash**. Your own tile also offers **Ascend** or **Descend** when a
   vertical transition is available; clicking your own stairs uses them. Standing on a corpse adds
   **Butcher**. Jumping and destructive
   actions are explicit choices, never an automatic substitute; smashing ordinary floors and walls
   is only offered for a tile you picked.
-- **Shift+direction — select.** Shift+WASD/QEZC moves the selection marker one tile in that
-  direction, starting at your position and accumulating with each press. The Mouse View box
-  describes the selected tile. Selecting spends no time.
+- **Select keys — unbound by default.** Tile selection is a mouse action. The eight **Select tile**
+  actions stay in the keybindings menu: binding them (for example to Shift+WASD/QEZC) moves the
+  selection marker one tile per press, starting at your position and accumulating. The Mouse View
+  box describes the selected tile. Selecting spends no time.
 - **Ctrl+direction — peek.** Ctrl+WASD/QEZC physically peeks from the neighboring tile through
   the normal peek action. It costs the usual **200 moves**, unlike selecting; canceling returns you
   to your starting position, and the current selection is kept.
@@ -114,7 +115,6 @@ food and a weapon, because houses usually have all three.
 | -------------------- | ------------------------------------------------------------------ |
 | `w a s d`, `q e z c` | move; bump an enemy to melee attack                                |
 | Numpad               | move; numpad 5 waits one turn                                      |
-| Shift+direction      | move the selection marker                                          |
 | Ctrl+direction       | physical peek (normal 200-move cost)                               |
 | Tab / Shift+Tab      | next / previous visible hostile                                    |
 | `f`, `F`, `r`, `t`   | attack selected target / fire mode / reload / throw                |
@@ -140,7 +140,7 @@ The old separate map shortcuts for Craft, Open, Smash and Jump are unbound, not 
 use inventory, Space or Enter. Walking into a closed door still opens it. Text that names a key,
 such as tutorial pop-ups and help pages, names the way to reach an unbound action instead, for
 example "i → item → Activate". In Modern, the tutorial's lessons describe Modern's own way of
-doing each thing (clicking, Space, selecting with Shift), and the door lessons now appear for
+doing each thing (clicking, Space, selecting with the mouse), and the door lessons now appear for
 the right door: the opening lesson next to a closed door, the closing lesson next to an open one.
 
 The wait menu (**Ctrl+X** in Modern; `|` in Classic) lists 5, 30 minutes, 1, 2, 3 and 6 hours, a custom duration,
@@ -229,8 +229,9 @@ are kept in both schemes, because the game now saves only the keys you changed. 
 lives in `data/raw/control_schemes/modern.json` on top of the untouched upstream keybindings, so
 other schemes can be added the same way. Quick stack, sort pile,
 directional attack, auto-explore and body status have no key in classic; bind them or use the Enter action
-menu. Modern groups actions under Enter, inventory and Space; Shift+direction selects,
-Ctrl+direction peeks, Ctrl+X waits/rests and Shift+X cycles movement modes.
+menu. Modern groups actions under Enter, inventory and Space; right clicks select,
+Ctrl+direction peeks, Ctrl+X waits/rests and Shift+X cycles movement modes. The Select tile keys
+ship unbound; bind them in the keybindings menu if you want them.
 
 `keybindings.json` starts with a format marker and holds only the keys you changed, including a
 key set back to its upstream default. A file saved by an older version, without the marker, held
@@ -238,7 +239,7 @@ every key: entries in it that only repeat upstream's default are ignored, so it 
 scheme.
 
 **Contextual interact** (Options → Interface → Contextual interact, on by default in Modern):
-Space acts on the tile selected by right click or Shift+direction and lists its applicable
+Space acts on the tile selected by right click (or a bound Select tile key) and lists its applicable
 actions, including Open, Close, Examine, Pickup, Butcher, Jump and Smash. On your own tile it also
 offers Ascend and Descend, using the same mount, vehicle and rope checks as the stair keys. Without a selected tile,
 Space gathers the actions of every tile around you into one list, named by direction, and

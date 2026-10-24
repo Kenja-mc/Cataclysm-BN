@@ -73,7 +73,7 @@ SCENARIOS = [
                  "M:add_item(p, it) local u=gapi.get_avatar() for _,v in ipairs({'ruby_gold_ring','copper_ring'}) do "
                  "local r=gapi.create_item(ItypeId.new('jewelry_ring'), -1) r:set_var_str('variant',v) u:add_item(r) end ",
         "check": [
-            "Look at the tile east of you (Shift+D): one stack of 30 9mm rounds, '10 black powder' in its name.",
+            "Look at the tile east of you (right-click it): one stack of 30 9mm rounds, '10 black powder' in its name.",
             "Open the inventory (i): both rings share one line, each keeps its own name and price.",
         ],
     },
@@ -271,7 +271,7 @@ SCENARIOS = [
             "Enter > Interact > Quick stack folds the carried USB drives into the rack two tiles east.",
             "Enter > Interact > Sort the pile sends the two USB drives and the character sheet from under "
             "you to the matching racks; the rags and the dice have no shelf and stay.",
-            "Look east (Shift+D): the 9mm stack reads '30' with '10 black powder'; the inventory (i) shows both rings.",
+            "Look east (right-click the tile): the 9mm stack reads '30' with '10 black powder'; the inventory (i) shows both rings.",
             "The sidebar Body panel lists the bleeding left arm; Enter > Info > Body status opens the details.",
             "The weather box and the thermometer both show the rain override; wait (x) and watch them track the weather.",
             "Enter is one keypress into the hub menu; the two zombies placed around you are the combat lesson.",

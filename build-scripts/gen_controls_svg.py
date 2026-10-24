@@ -248,7 +248,7 @@ def render_svg(keymap, entries):
         f'{first_binding("butcher")}: butcher; {first_binding("select_fire_mode")}: fire mode; '
         f'{first_binding("advinv")}: advanced inventory.',
         'Space: selected tile actions, or a flat nearby list with directions and a target highlight.',
-        'RMB or Shift+direction selects; Jump and Smash require an explicit choice.',
+        'RMB selects; Select tile keys are unbound by default; Jump and Smash require an explicit choice.',
         'Map RMB selects freely; LMB uses adjacent doors/items/furniture or attacks; never walks.',
         'g opens pickup; g confirms. Inventory/pickup: wheel scrolls; RMB opens item actions.',
         'Blank keycaps have no default map action. Local menu keys and Classic controls are unchanged.',

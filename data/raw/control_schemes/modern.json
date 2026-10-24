@@ -434,28 +434,28 @@
     "name": "Select tile north",
     "category": "DEFAULTMODE",
     "id": "shift_n",
-    "bindings": [ { "input_method": "keyboard", "key": "W" } ]
+    "bindings": [  ]
   },
   {
     "type": "keybinding",
     "name": "Select tile east",
     "category": "DEFAULTMODE",
     "id": "shift_e",
-    "bindings": [ { "input_method": "keyboard", "key": "D" } ]
+    "bindings": [  ]
   },
   {
     "type": "keybinding",
     "name": "Select tile south",
     "category": "DEFAULTMODE",
     "id": "shift_s",
-    "bindings": [ { "input_method": "keyboard", "key": "S" } ]
+    "bindings": [  ]
   },
   {
     "type": "keybinding",
     "name": "Select tile west",
     "category": "DEFAULTMODE",
     "id": "shift_w",
-    "bindings": [ { "input_method": "keyboard", "key": "A" } ]
+    "bindings": [  ]
   },
   {
     "type": "keybinding",
@@ -2046,28 +2046,28 @@
     "name": "Select tile northeast",
     "category": "DEFAULTMODE",
     "id": "shift_ne",
-    "bindings": [ { "input_method": "keyboard", "key": "E" } ]
+    "bindings": [  ]
   },
   {
     "type": "keybinding",
     "name": "Select tile southeast",
     "category": "DEFAULTMODE",
     "id": "shift_se",
-    "bindings": [ { "input_method": "keyboard", "key": "C" } ]
+    "bindings": [  ]
   },
   {
     "type": "keybinding",
     "name": "Select tile southwest",
     "category": "DEFAULTMODE",
     "id": "shift_sw",
-    "bindings": [ { "input_method": "keyboard", "key": "Z" } ]
+    "bindings": [  ]
   },
   {
     "type": "keybinding",
     "name": "Select tile northwest",
     "category": "DEFAULTMODE",
     "id": "shift_nw",
-    "bindings": [ { "input_method": "keyboard", "key": "Q" } ]
+    "bindings": [  ]
   },
   {
     "type": "keybinding",

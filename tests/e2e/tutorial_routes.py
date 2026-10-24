@@ -57,7 +57,7 @@ def initial_lessons(game, scheme):
     close_lesson(game, "LESSON_MOVE", scheme)
     looking = lesson(game, "LESSON_LOOK", scheme)
     if scheme == "modern":
-        assert "Shift" in looking and "right-click" in looking, looking
+        assert "Shift" not in looking and "right-click" in looking, looking
     else:
         assert ";" in looking and "right-click" not in looking, looking
     close_lesson(game, "LESSON_LOOK", scheme)
@@ -115,7 +115,12 @@ def exercise_initial_and_door_lessons(scheme):
         clock = action_clock(game)
         if scheme == "modern":
             # Follow the alternative taught route: select, Space, then the close choice.
-            game.keys("D", "space", delay=0.2)
+            x, y = game.find("@")
+            game.click(x + 1, y, button=2)
+            game.wait_for("Interact with the")
+            game.keys("Escape", delay=0.2)
+            game.wait_gone("Interact with the")
+            game.keys("space", delay=0.2)
             game.wait_for("Interact with the")
             game.keys("c", delay=0.2)
             # Space is Examine even when its contextual choice closes a door.
