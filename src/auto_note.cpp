@@ -13,12 +13,16 @@
 #include "options.h"
 #include "output.h"
 #include "point.h"
+#include "scrollbar_input.h"
 #include "translations.h"
 #include "ui_manager.h"
 #include "world.h"
 
 #include <iostream>
 #include <memory>
+#include <optional>
+#include <string>
+#include <vector>
 
 namespace auto_notes
 {
@@ -213,6 +217,15 @@ void auto_note_manager_gui::show()
     ctx.register_action( "SWITCH_AUTO_NOTE_OPTION" );
     ctx.register_action( "HELP_KEYBINDINGS" );
 
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctx.register_action( "COORDINATE" );
+        ctx.register_action( "MOUSE_MOVE" );
+        ctx.register_action( "SELECT" );
+        ctx.register_action( "SCROLL_UP" );
+        ctx.register_action( "SCROLL_DOWN" );
+    }
+
     if( !emptyMode ) {
         ctx.register_cardinal();
         ctx.register_action( "CONFIRM" );
@@ -221,6 +234,28 @@ void auto_note_manager_gui::show()
         ctx.register_action( "DISABLE_MAPEXTRA_NOTE" );
         ctx.register_action( "CHANGE_MAPEXTRA_CHARACTER" );
     }
+
+    // Matches the draw_scrollbar() call in on_redraw below.
+    const auto scrollbar_geometry = [&]() {
+        return scrollbar_input::geometry{
+            .offset = point( 0, 4 ),
+            .viewport_size = iContentHeight,
+            .content_size = cacheSize,
+            .viewport_pos = currentLine,
+            .scroll_to_last = true,
+        };
+    };
+    // Header rectangles of the drawn shortcut labels.
+    struct click_label {
+        int x0 = 0;
+        int x1 = 0;
+        std::string action;
+    };
+    auto header_labels = std::vector<click_label>{};
+    // Row of the last plain click, -1 when the next click starts a new pair.
+    auto last_click_row = -1;
+    // A row click leaves the view where it is, so a second click hits the same row.
+    auto preserve_view = false;
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
         // == Draw border
@@ -231,10 +266,18 @@ void auto_note_manager_gui::show()
         wnoutrefresh( w_border );
 
         // == Draw header
+        header_labels.clear();
         int tmpx = 0;
-        tmpx += shortcut_print( w_header, point( tmpx, 0 ), c_white, c_light_green, _( "<E>nable" ) ) + 2;
-        tmpx += shortcut_print( w_header, point( tmpx, 0 ), c_white, c_light_green, _( "<D>isable" ) ) + 2;
-        shortcut_print( w_header, point( tmpx, 0 ), c_white, c_light_green, _( "<Enter> - Toggle" ) );
+        const auto draw_label = [&]( const std::string & text, const std::string & action ) {
+            const auto x0 = tmpx;
+            tmpx += static_cast<int>( shortcut_print( w_header, point( x0, 0 ), c_white, c_light_green,
+                                     text ) );
+            header_labels.push_back( { .x0 = x0, .x1 = tmpx, .action = action } );
+            tmpx += 2;
+        };
+        draw_label( _( "<E>nable" ), "ENABLE_MAPEXTRA_NOTE" );
+        draw_label( _( "<D>isable" ), "DISABLE_MAPEXTRA_NOTE" );
+        draw_label( _( "<Enter> - Toggle" ), "CONFIRM" );
 
         // Draw horizontal line and corner pieces of the table
         for( int x = 0; x < 78; x++ ) {
@@ -260,7 +303,11 @@ void auto_note_manager_gui::show()
                                     get_option<bool>( "AUTO_NOTES" ) ? _( "True" ) : _( "False" ) );
 
         currentX += shortcut_print( w_header, point( currentX, 0 ), c_white, c_light_green, "  " );
-        shortcut_print( w_header, point( currentX, 0 ), c_white, c_light_green, _( "<S>witch " ) );
+        const auto switch_x0 = currentX;
+        const auto switch_len = static_cast<int>( shortcut_print( w_header, point( currentX, 0 ), c_white,
+                                  c_light_green, _( "<S>witch " ) ) );
+        header_labels.push_back( { .x0 = switch_x0, .x1 = switch_x0 + switch_len,
+                                   .action = "SWITCH_AUTO_NOTE_OPTION" } );
 
         // Clear table
         for( int y = 0; y < iContentHeight; y++ ) {
@@ -274,14 +321,24 @@ void auto_note_manager_gui::show()
             }
         }
 
-        draw_scrollbar( w_border, currentLine, iContentHeight, cacheSize, point( 0, 4 ) );
+        const auto sb = scrollbar_geometry();
+        draw_scrollbar( w_border, sb.viewport_pos, sb.viewport_size, sb.content_size, sb.offset );
 
         if( emptyMode ) {
             // NOLINTNEXTLINE(cata-use-named-point-constants)
             mvwprintz( w, point( 1, 0 ), c_light_gray,
                        _( "Discover more special encounters to populate this list" ) );
         } else {
-            calcStartPos( startPosition, currentLine, iContentHeight, displayCache.size() );
+            if( preserve_view ) {
+                if( startPosition > currentLine ) {
+                    startPosition = currentLine;
+                }
+                if( currentLine >= startPosition + iContentHeight ) {
+                    startPosition = currentLine - iContentHeight + 1;
+                }
+            } else {
+                calcStartPos( startPosition, currentLine, iContentHeight, displayCache.size() );
+            }
             endPosition = startPosition + ( iContentHeight > cacheSize ? cacheSize : iContentHeight );
 
             for( int i = startPosition; i < endPosition; ++i ) {
@@ -323,7 +380,82 @@ void auto_note_manager_gui::show()
     while( true ) {
         ui_manager::redraw();
 
-        const std::string currentAction = ctx.handle_input();
+        auto currentAction = ctx.handle_input();
+
+        // get_coordinates() is relative to the window centre.
+        const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
+            const auto mouse = ctx.get_coordinates( win );
+            if( !mouse ) {
+                return std::nullopt;
+            }
+            const auto cell = mouse->xy().raw() + point( getmaxx( win ), getmaxy( win ) ) / 2;
+            if( cell.x < 0 || cell.y < 0 || cell.x >= getmaxx( win ) || cell.y >= getmaxy( win ) ) {
+                return std::nullopt;
+            }
+            return cell;
+        };
+
+        auto mouse_hover = false;
+        auto mouse_handled = false;
+        if( modern && currentAction == "MOUSE_MOVE" ) {
+            // Hover never changes the selection.
+            currentAction.clear();
+            mouse_hover = true;
+        } else if( modern && currentAction == "SELECT" ) {
+            mouse_handled = true;
+            auto consumed = false;
+            if( const auto border_cell = cell_in( w_border ) ) {
+                if( const auto hit = scrollbar_input::click( scrollbar_geometry(), *border_cell ) ) {
+                    currentLine = hit->viewport_pos;
+                    last_click_row = -1;
+                    preserve_view = false;
+                    consumed = true;
+                }
+            }
+            if( !consumed ) {
+                if( const auto header_cell = cell_in( w_header ) ) {
+                    if( header_cell->y == 0 ) {
+                        for( const auto &label : header_labels ) {
+                            if( header_cell->x >= label.x0 && header_cell->x < label.x1 ) {
+                                currentAction = label.action;
+                                last_click_row = -1;
+                                preserve_view = false;
+                                consumed = true;
+                                break;
+                            }
+                        }
+                    }
+                } else if( !emptyMode ) {
+                    if( const auto cell = cell_in( w ) ) {
+                        const auto row = startPosition + cell->y;
+                        if( cell->y < iContentHeight && row < cacheSize ) {
+                            if( row == last_click_row ) {
+                                // The second click on the same row runs Enter.
+                                currentAction = "CONFIRM";
+                                last_click_row = -1;
+                                preserve_view = false;
+                            } else {
+                                currentLine = row;
+                                last_click_row = row;
+                                preserve_view = true;
+                            }
+                        }
+                    }
+                    consumed = true;
+                }
+            }
+            if( !consumed ) {
+                // A click outside the drawn controls does nothing.
+                currentAction.clear();
+                last_click_row = -1;
+                preserve_view = false;
+            }
+        }
+        if( !mouse_handled && !mouse_hover ) {
+            // Keyboard and wheel input end a click pair.
+            last_click_row = -1;
+            preserve_view = false;
+        }
 
         // Actions that also work with no items to display
         if( currentAction == "SWITCH_AUTO_NOTE_OPTION" ) {
@@ -345,13 +477,13 @@ void auto_note_manager_gui::show()
         const string_id<map_extra> &currentItem = displayCache[currentLine];
         std::pair<const map_extra, bool> &entry = mapExtraCache[currentItem];
 
-        if( currentAction == "UP" ) {
+        if( currentAction == "UP" || currentAction == "SCROLL_UP" ) {
             if( currentLine > 0 ) {
                 --currentLine;
             } else {
                 currentLine = cacheSize - 1;
             }
-        } else if( currentAction == "DOWN" ) {
+        } else if( currentAction == "DOWN" || currentAction == "SCROLL_DOWN" ) {
             if( currentLine == cacheSize - 1 ) {
                 currentLine = 0;
             } else {

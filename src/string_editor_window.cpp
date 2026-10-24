@@ -8,10 +8,12 @@
 #include <array>
 #include <cctype>
 
+#include "options.h"
+#include "scrollbar_input.h"
+
 #if defined(__ANDROID__)
 #include <SDL3/SDL.h>
 #include "cata_utility.h"
-#include "options.h"
 #include "sdltiles.h"
 #endif
 
@@ -380,27 +382,15 @@ point string_editor_window::get_line_and_position( const int position, const boo
 void string_editor_window::print_editor( ui_adaptor &ui )
 {
     const point focus = _ime_preview_range ? _ime_preview_range->display_last : _cursor_display;
-    const int ftsize = _folded->get_lines().size();
-    const int middleofpage = _max.y / 2;
+    const auto ftsize = static_cast<int>( _folded->get_lines().size() );
     const auto line_number_width = _show_line_numbers ? _line_number_width : 0;
     const auto line_number_padding = _show_line_numbers ? 1 : 0;
     const auto content_x = 1 + line_number_width + line_number_padding;
     const auto line_number_map = _show_line_numbers ? build_line_number_map( _folded->get_lines() )
                                  : std::vector<int>();
 
-    int topoflist = 0;
-    int bottomoflist = std::min( topoflist + _max.y, ftsize );
-
-    if( _max.y <= ftsize ) {
-        if( focus.y > middleofpage ) {
-            topoflist = focus.y - middleofpage;
-            bottomoflist = topoflist + _max.y;
-        }
-        if( focus.y + middleofpage >= ftsize ) {
-            bottomoflist = ftsize;
-            topoflist = bottomoflist - _max.y;
-        }
-    }
+    auto topoflist = view_top_line( focus.y );
+    auto bottomoflist = std::min( topoflist + _max.y, ftsize );
 
     std::optional<point> cursor_pos;
     for( int i = topoflist; i < bottomoflist; i++ ) {
@@ -461,10 +451,14 @@ void string_editor_window::print_editor( ui_adaptor &ui )
     }
 
     if( ftsize > _max.y ) {
+        const auto sb = scrollbar_geometry( focus.y );
         scrollbar()
-        .content_size( ftsize )
-        .viewport_pos( topoflist )
-        .viewport_size( _max.y )
+        .offset_x( sb.offset.x )
+        .offset_y( sb.offset.y )
+        .content_size( sb.content_size )
+        .viewport_pos( sb.viewport_pos )
+        .viewport_size( sb.viewport_size )
+        .scroll_to_last( sb.scroll_to_last )
         .apply( _win );
     }
 
@@ -477,6 +471,15 @@ void string_editor_window::print_editor( ui_adaptor &ui )
 void string_editor_window::create_context()
 {
     ctxt = std::make_unique<input_context>( "STRING_EDITOR" );
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt->register_action( "COORDINATE" );
+        ctxt->register_action( "MOUSE_MOVE" );
+        ctxt->register_action( "SELECT" );
+        ctxt->register_action( "SEC_SELECT" );
+        ctxt->register_action( "SCROLL_UP" );
+        ctxt->register_action( "SCROLL_DOWN" );
+    }
     ctxt->register_action( "TEXT.QUIT" );
     ctxt->register_action( "TEXT.CONFIRM" );
     ctxt->register_action( "TEXT.LEFT" );
@@ -516,7 +519,7 @@ void string_editor_window::cursor_leftright( const int diff )
 void string_editor_window::cursor_updown( const int diff )
 {
     if( diff != 0 && !_folded->get_lines().empty() ) {
-        const int size = _folded->get_lines().size();
+        const int size = static_cast<int>( _folded->get_lines().size() );
         int new_y = 0;
         if( diff < 0 && _cursor_display.y <= 0 ) {
             // warp to last line
@@ -528,16 +531,53 @@ void string_editor_window::cursor_updown( const int diff )
             // move at most 'diff' lines without warping
             new_y = clamp( _cursor_display.y + diff, 0, size - 1 );
         }
-        const folded_line &new_line = _folded->get_lines()[new_y];
-        utf8_wrapper ustr( new_line.str );
-        if( !ustr.empty() && is_linebreak( ustr.at( ustr.size() - 1 ) ) ) {
-            ustr = ustr.substr( 0, ustr.size() - 1 );
-        }
-        // put cursor at the largest x coordinate in the line less or equal to
-        // the desired position.
-        const int offset = ustr.substr_display( 0, _cursor_desired_x ).size();
-        _position = new_line.cpts_start + offset;
+        cursor_to_line( new_y );
     }
+}
+
+void string_editor_window::cursor_to_line( const int line )
+{
+    if( _folded->get_lines().empty() ) {
+        return;
+    }
+    const auto size = static_cast<int>( _folded->get_lines().size() );
+    const auto new_y = clamp( line, 0, size - 1 );
+    const folded_line &new_line = _folded->get_lines()[new_y];
+    utf8_wrapper ustr( new_line.str );
+    if( !ustr.empty() && is_linebreak( ustr.at( ustr.size() - 1 ) ) ) {
+        ustr = ustr.substr( 0, ustr.size() - 1 );
+    }
+    // put cursor at the largest x coordinate in the line less or equal to
+    // the desired position.
+    const int offset = ustr.substr_display( 0, _cursor_desired_x ).size();
+    _position = new_line.cpts_start + offset;
+}
+
+auto string_editor_window::view_top_line( const int focus_y ) const -> int
+{
+    auto topoflist = 0;
+    const auto ftsize = static_cast<int>( _folded->get_lines().size() );
+    if( _max.y <= ftsize ) {
+        if( focus_y > _max.y / 2 ) {
+            topoflist = focus_y - _max.y / 2;
+        }
+        if( focus_y + _max.y / 2 >= ftsize ) {
+            topoflist = ftsize - _max.y;
+        }
+    }
+    return topoflist;
+}
+
+auto string_editor_window::scrollbar_geometry( const int focus_y ) const -> scrollbar_input::geometry
+{
+    return scrollbar_input::geometry{
+        // The scrollbar uses the scrollbar() default offset, point_zero.
+        .offset = point_zero,
+        .viewport_size = _max.y,
+        .content_size = static_cast<int>( _folded->get_lines().size() ),
+        .viewport_pos = view_top_line( focus_y ),
+        .scroll_to_last = false,
+    };
 }
 
 std::pair<bool, std::string> string_editor_window::query_string()
@@ -612,6 +652,7 @@ std::pair<bool, std::string> string_editor_window::query_string()
 #endif
 
     int ch = 0;
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
     do {
         ui_manager::redraw();
 
@@ -625,6 +666,46 @@ std::pair<bool, std::string> string_editor_window::query_string()
         } else if( action == "TEXT.CONFIRM" ) {
             // ctrl-s: confirm
             return { true, _utext.str() };
+        } else if( modern && action == "MOUSE_MOVE" ) {
+            // Hovering never scrolls or edits.
+        } else if( modern && action == "SEC_SELECT" ) {
+            // The secondary click is inert, so it never reaches text entry.
+        } else if( modern && action == "SELECT" ) {
+            // A click only scrolls the view; it never injects characters or runs commands.
+            if( edit.empty() ) {
+                const auto mouse = ctxt->get_coordinates( _win );
+                if( mouse ) {
+                    const auto cell = mouse->xy().raw() + point( _max.x, _max.y ) / 2;
+                    if( const auto hit = scrollbar_input::click(
+                    scrollbar_geometry( _cursor_display.y ), cell ) ) {
+                        switch( hit->part ) {
+                            case scrollbar_input::click_part::up_arrow:
+                                cursor_updown( -1 );
+                                reposition = true;
+                                break;
+                            case scrollbar_input::click_part::down_arrow:
+                                cursor_updown( 1 );
+                                reposition = true;
+                                break;
+                            case scrollbar_input::click_part::track:
+                                // The view keeps the cursor near the middle of the window.
+                                cursor_to_line( hit->viewport_pos + _max.y / 2 );
+                                reposition = true;
+                                break;
+                        }
+                    }
+                }
+            }
+        } else if( action == "SCROLL_UP" ) {
+            if( edit.empty() ) {
+                cursor_updown( -3 );
+                reposition = true;
+            }
+        } else if( action == "SCROLL_DOWN" ) {
+            if( edit.empty() ) {
+                cursor_updown( 3 );
+                reposition = true;
+            }
         } else if( action == "TEXT.UP" ) {
             if( edit.empty() ) {
                 cursor_updown( -1 );

@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <iterator>
 #include <map>
+#include <optional>
+#include <string>
 #include <vector>
 
 #include "cata_utility.h"
@@ -15,8 +17,10 @@
 #include "json.h"
 #include "output.h"
 #include "path_info.h"
+#include "options.h"
 #include "point.h"
 #include "rng.h"
+#include "scrollbar_input.h"
 #include "string_formatter.h"
 #include "translations.h"
 #include "ui.h"
@@ -718,15 +722,28 @@ void color_manager::clear()
     }
 }
 
-static void draw_header( const catacurses::window &w )
+struct color_header_label {
+    int x0 = 0;
+    int x1 = 0;
+    std::string action;
+};
+
+static void draw_header( const catacurses::window &w, std::vector<color_header_label> &labels )
 {
+    labels.clear();
     int tmpx = 0;
-    tmpx += shortcut_print( w, point( tmpx, 0 ), c_white, c_light_green,
-                            _( "<R>emove custom color" ) ) + 2;
-    tmpx += shortcut_print( w, point( tmpx, 0 ), c_white, c_light_green,
-                            _( "<Arrow Keys> To navigate" ) ) + 2;
-    tmpx += shortcut_print( w, point( tmpx, 0 ), c_white, c_light_green, _( "<Enter>-Edit" ) ) + 2;
-    shortcut_print( w, point( tmpx, 0 ), c_white, c_light_green, _( "Load <T>emplate" ) );
+    const auto draw_label = [&]( const std::string & text, const std::string & action ) {
+        const auto x0 = tmpx;
+        tmpx += static_cast<int>( shortcut_print( w, point( x0, 0 ), c_white, c_light_green, text ) );
+        if( !action.empty() ) {
+            labels.push_back( { .x0 = x0, .x1 = tmpx, .action = action } );
+        }
+        tmpx += 2;
+    };
+    draw_label( _( "<R>emove custom color" ), "REMOVE_CUSTOM" );
+    draw_label( _( "<Arrow Keys> To navigate" ), std::string() );
+    draw_label( _( "<Enter>-Edit" ), "CONFIRM" );
+    draw_label( _( "Load <T>emplate" ), "LOAD_TEMPLATE" );
 
     // NOLINTNEXTLINE(cata-use-named-point-constants)
     mvwprintz( w, point( 0, 1 ), c_white, _( "Some color changes may require a restart." ) );
@@ -793,6 +810,32 @@ void color_manager::show_gui()
     ctxt.register_action( "REMOVE_CUSTOM" );
     ctxt.register_action( "LOAD_TEMPLATE" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
+
+    // Matches the draw_scrollbar() call in on_redraw below.
+    const auto scrollbar_geometry = [&]() {
+        return scrollbar_input::geometry{
+            .offset = point( 0, 5 ),
+            .viewport_size = iContentHeight,
+            .content_size = iMaxColors,
+            .viewport_pos = iCurrentLine,
+            .scroll_to_last = true,
+        };
+    };
+
+    // Header rectangles of the drawn shortcut labels.
+    auto header_labels = std::vector<color_header_label>{};
+    // Row of the last plain click, -1 when the next click starts a new pair.
+    auto last_click_row = -1;
+    // A row click leaves the view where it is, so a second click hits the same row.
+    auto preserve_view = false;
 
     std::map<std::string, color_struct> name_color_map;
 
@@ -815,7 +858,7 @@ void color_manager::show_gui()
         }
         wnoutrefresh( w_colors_border );
 
-        draw_header( w_colors_header );
+        draw_header( w_colors_header, header_labels );
 
         // Clear all lines
         for( int i = 0; i < iContentHeight; i++ ) {
@@ -830,9 +873,19 @@ void color_manager::show_gui()
             }
         }
 
-        calcStartPos( iStartPos, iCurrentLine, iContentHeight, iMaxColors );
+        if( preserve_view ) {
+            if( iStartPos > iCurrentLine ) {
+                iStartPos = iCurrentLine;
+            }
+            if( iCurrentLine >= iStartPos + iContentHeight ) {
+                iStartPos = iCurrentLine - iContentHeight + 1;
+            }
+        } else {
+            calcStartPos( iStartPos, iCurrentLine, iContentHeight, iMaxColors );
+        }
 
-        draw_scrollbar( w_colors_border, iCurrentLine, iContentHeight, iMaxColors, point( 0, 5 ) );
+        const auto sb = scrollbar_geometry();
+        draw_scrollbar( w_colors_border, sb.viewport_pos, sb.viewport_size, sb.content_size, sb.offset );
         wnoutrefresh( w_colors_border );
 
         auto iter = name_color_map.begin();
@@ -872,16 +925,93 @@ void color_manager::show_gui()
     while( true ) {
         ui_manager::redraw();
 
-        const std::string action = ctxt.handle_input();
+        auto action = ctxt.handle_input();
+
+        // get_coordinates() is relative to the window centre.
+        const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
+            const auto mouse = ctxt.get_coordinates( win );
+            if( !mouse ) {
+                return std::nullopt;
+            }
+            const auto cell = mouse->xy().raw() + point( getmaxx( win ), getmaxy( win ) ) / 2;
+            if( cell.x < 0 || cell.y < 0 || cell.x >= getmaxx( win ) || cell.y >= getmaxy( win ) ) {
+                return std::nullopt;
+            }
+            return cell;
+        };
+
+        auto mouse_hover = false;
+        auto mouse_handled = false;
+        if( modern && action == "MOUSE_MOVE" ) {
+            // Hover never changes the selection.
+            action.clear();
+            mouse_hover = true;
+        } else if( modern && action == "SELECT" ) {
+            mouse_handled = true;
+            auto consumed = false;
+            if( const auto border_cell = cell_in( w_colors_border ) ) {
+                if( const auto hit = scrollbar_input::click( scrollbar_geometry(), *border_cell ) ) {
+                    iCurrentLine = hit->viewport_pos;
+                    last_click_row = -1;
+                    preserve_view = false;
+                    consumed = true;
+                }
+            }
+            if( !consumed ) {
+                if( const auto header_cell = cell_in( w_colors_header ) ) {
+                    if( header_cell->y == 0 ) {
+                        for( const auto &label : header_labels ) {
+                            if( header_cell->x >= label.x0 && header_cell->x < label.x1 ) {
+                                action = label.action;
+                                last_click_row = -1;
+                                preserve_view = false;
+                                consumed = true;
+                                break;
+                            }
+                        }
+                    }
+                } else if( const auto cell = cell_in( w_colors ) ) {
+                    const auto row = iStartPos + cell->y;
+                    if( cell->y < iContentHeight && row < iMaxColors ) {
+                        // The Normal/Invert split is the w column separator at x = 48.
+                        const auto clicked_col = cell->x > 48 ? 2 : 1;
+                        if( row == last_click_row ) {
+                            // The second click on the same row runs Enter.
+                            iCurrentCol = clicked_col;
+                            action = "CONFIRM";
+                            last_click_row = -1;
+                            preserve_view = false;
+                        } else {
+                            iCurrentLine = row;
+                            iCurrentCol = clicked_col;
+                            last_click_row = row;
+                            preserve_view = true;
+                        }
+                    }
+                    consumed = true;
+                }
+            }
+            if( !consumed ) {
+                // A click outside the drawn controls does nothing.
+                action.clear();
+                last_click_row = -1;
+                preserve_view = false;
+            }
+        }
+        if( !mouse_handled && !mouse_hover ) {
+            // Keyboard and wheel input end a click pair.
+            last_click_row = -1;
+            preserve_view = false;
+        }
 
         if( action == "QUIT" ) {
             break;
-        } else if( action == "UP" ) {
+        } else if( action == "UP" || action == "SCROLL_UP" ) {
             iCurrentLine--;
             if( iCurrentLine < 0 ) {
                 iCurrentLine = iMaxColors - 1;
             }
-        } else if( action == "DOWN" ) {
+        } else if( action == "DOWN" || action == "SCROLL_DOWN" ) {
             iCurrentLine++;
             if( iCurrentLine >= static_cast<int>( iMaxColors ) ) {
                 iCurrentLine = 0;

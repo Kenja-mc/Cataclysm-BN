@@ -6,6 +6,7 @@
 #include "cursesdef.h"
 #include "input.h"
 #include "output.h"
+#include "scrollbar_input.h"
 #include "ui.h"
 
 class folded_text;
@@ -77,6 +78,13 @@ class string_editor_window
         /*move the cursor*/
         void cursor_leftright( const int diff );
         void cursor_updown( const int diff );
+        /// Moves the cursor to a display line, keeping its desired x coordinate.
+        void cursor_to_line( const int line );
+
+        /// First display line of the view for a cursor or IME focus row.
+        auto view_top_line( int focus_y ) const -> int;
+        /// Geometry of the scrollbar print_editor draws.
+        auto scrollbar_geometry( int focus_y ) const -> scrollbar_input::geometry;
 
         /*returns line and position in folded text for position in text*/
         point get_line_and_position( const int position, const bool zero_x );

@@ -6,7 +6,9 @@
 #include "game.h"
 #include "init.h"
 #include "input.h"
+#include "options.h"
 #include "output.h"
+#include "scrollbar_input.h"
 #include "string_editor_window.h"
 #include "string_utils.h"
 #include "ui_manager.h"
@@ -162,6 +164,13 @@ void show_lua_console_impl()
     ctxt.register_action( "SCROLL_DOWN" );
     ctxt.register_action( "SCROLL_TOP" );
     ctxt.register_action( "SCROLL_BOTTOM" );
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SEC_SELECT" );
+    }
 
     ui_adaptor ui;
 
@@ -206,6 +215,17 @@ void show_lua_console_impl()
     int history_cursor = CURRENT_INPUT;
 
     auto is_editing = false;
+
+    // Matches the scrollbar draw in on_redraw below; viewport_pos counts from the oldest line.
+    const auto log_geometry = [&]() {
+        return scrollbar_input::geometry{
+            .offset = point( 0, 1 ),
+            .viewport_size = log_size.y,
+            .content_size = static_cast<int>( log_folded.size() ),
+            .viewport_pos = static_cast<int>( log_folded.size() ) - log_scroll_pos - log_size.y,
+            .scroll_to_last = false,
+        };
+    };
 
     ui.on_screen_resize( [&]( ui_adaptor & ui ) {
         win_size = point( TERMX, TERMY );
@@ -257,13 +277,14 @@ void show_lua_console_impl()
                      );
         }
 
+        const auto sb = log_geometry();
         scrollbar()
-        .offset_x( 0 )
-        .offset_y( 1 )
-        .content_size( log_folded.size() )
-        .viewport_size( log_size.y )
-        .viewport_pos( static_cast<int>( log_folded.size() ) - log_scroll_pos - log_size.y )
-        .scroll_to_last( false )
+        .offset_x( sb.offset.x )
+        .offset_y( sb.offset.y )
+        .content_size( sb.content_size )
+        .viewport_size( sb.viewport_size )
+        .viewport_pos( sb.viewport_pos )
+        .scroll_to_last( sb.scroll_to_last )
         .apply( w_console );
 
         wnoutrefresh( w_console );
@@ -337,7 +358,23 @@ void show_lua_console_impl()
         }
         ui_manager::redraw_invalidated();
 
-        const std::string act = ctxt.handle_input();
+        auto act = ctxt.handle_input();
+
+        if( modern && ( act == "MOUSE_MOVE" || act == "SEC_SELECT" ) ) {
+            // Hovering and the secondary click never scroll or edit.
+            act.clear();
+        } else if( modern && act == "SELECT" ) {
+            // A click only scrolls the log view; it never injects characters or runs commands.
+            if( const auto mouse = ctxt.get_coordinates( w_console ) ) {
+                const auto cell = mouse->xy().raw() + point( getmaxx( w_console ),
+                                   getmaxy( w_console ) ) / 2;
+                if( const auto hit = scrollbar_input::click( log_geometry(), cell ) ) {
+                    log_scroll_pos = static_cast<int>( log_folded.size() ) - hit->viewport_pos - log_size.y;
+                    ui.invalidate_ui();
+                }
+            }
+            act.clear();
+        }
 
         if( act == "QUIT" ) {
             // Close

@@ -5,8 +5,10 @@
 #include <fstream>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "avatar.h"
 #include "cata_utility.h"
@@ -24,6 +26,7 @@
 #include "output.h"
 #include "path_info.h"
 #include "point.h"
+#include "scrollbar_input.h"
 #include "string_formatter.h"
 #include "string_input_popup.h"
 #include "string_utils.h"
@@ -123,6 +126,44 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
         ctxt.register_action( "SWAP_RULE_GLOBAL_CHAR" );
     }
 
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "MOUSE_MOVE" );
+        ctxt.register_action( "SELECT" );
+        ctxt.register_action( "SCROLL_UP" );
+        ctxt.register_action( "SCROLL_DOWN" );
+    }
+
+    // Matches the draw_scrollbar() call in on_redraw below.
+    const auto scrollbar_geometry = [&]() {
+        return scrollbar_input::geometry{
+            .offset = point( 0, 5 ),
+            .viewport_size = content_height,
+            .content_size = static_cast<int>( ( tab == GLOBAL_TAB ? global_rules : character_rules ).size() ),
+            .viewport_pos = line,
+            .scroll_to_last = true,
+        };
+    };
+    // Header rectangles of the tab titles and the shortcut labels.
+    struct tab_box {
+        int x0 = 0;
+        int x1 = 0;
+        int index = 0;
+    };
+    struct click_label {
+        int x0 = 0;
+        int y = 0;
+        int x1 = 0;
+        std::string action;
+    };
+    auto tab_labels = std::vector<tab_box>{};
+    auto header_labels = std::vector<click_label>{};
+    // Row of the last plain click, -1 when the next click starts a new pair.
+    auto last_click_row = -1;
+    // A row click leaves the view where it is, so a second click hits the same row.
+    auto preserve_view = false;
+
     ui.on_redraw( [&]( const ui_adaptor & ) {
         draw_border( w_border, BORDER_COLOR, custom_name_in );
 
@@ -136,25 +177,36 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
 
         wnoutrefresh( w_border );
 
-        static const std::vector<std::string> hotkeys = {{
-                translate_marker( "<A>dd" ), translate_marker( "<R>emove" ),
-                translate_marker( "<C>opy" ), translate_marker( "<M>ove" ),
-                translate_marker( "<E>nable" ), translate_marker( "<D>isable" ),
-                translate_marker( "<T>est" )
+        static const std::vector<std::pair<std::string, std::string>> hotkeys = {{
+                { translate_marker( "<A>dd" ), "ADD_RULE" },
+                { translate_marker( "<R>emove" ), "REMOVE_RULE" },
+                { translate_marker( "<C>opy" ), "COPY_RULE" },
+                // "<M>ove" depends on a direction key, so it is not a click target.
+                { translate_marker( "<M>ove" ), "" },
+                { translate_marker( "<E>nable" ), "ENABLE_RULE" },
+                { translate_marker( "<D>isable" ), "DISABLE_RULE" },
+                { translate_marker( "<T>est" ), "TEST_RULE" },
             }
         };
 
+        header_labels.clear();
         int tmpx = 0;
-        for( auto &hotkey : hotkeys ) {
-            tmpx += shortcut_print( w_header, point( tmpx, 0 ), c_white, c_light_green, _( hotkey ) ) + 2;
+        const auto draw_label = [&]( int y, const std::string & text, const std::string & action ) {
+            const auto x0 = tmpx;
+            tmpx += static_cast<int>( shortcut_print( w_header, point( x0, y ), c_white, c_light_green,
+                                     text ) );
+            if( !action.empty() ) {
+                header_labels.push_back( { .x0 = x0, .y = y, .x1 = tmpx, .action = action } );
+            }
+            tmpx += 2;
+        };
+        for( const auto &hotkey : hotkeys ) {
+            draw_label( 0, _( hotkey.first ), hotkey.second );
         }
-
         tmpx = 0;
-        tmpx += shortcut_print( w_header, point( tmpx, 1 ), c_white, c_light_green,
-                                _( "<+-> Move up/down" ) ) + 2;
-        tmpx += shortcut_print( w_header, point( tmpx, 1 ), c_white, c_light_green,
-                                _( "<Enter>-Edit" ) ) + 2;
-        shortcut_print( w_header, point( tmpx, 1 ), c_white, c_light_green, _( "<Tab>-Switch Page" ) );
+        draw_label( 1, _( "<+-> Move up/down" ), std::string() );
+        draw_label( 1, _( "<Enter>-Edit" ), "CONFIRM" );
+        draw_label( 1, _( "<Tab>-Switch Page" ), "NEXT_TAB" );
 
         for( int i = 0; i < 78; i++ ) {
             mvwputch( w_header, point( i, 2 ), c_light_gray, LINE_OXOX ); // Draw line under header
@@ -174,10 +226,17 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
                    "Cat" ) );
 
         int locx = 17;
-        locx += shortcut_print( w_header, point( locx, 2 ), c_white,
-                                ( tab == GLOBAL_TAB ) ? hilite( c_white ) : c_white, _( "[<Global>]" ) ) + 1;
-        shortcut_print( w_header, point( locx, 2 ), c_white,
-                        ( tab == CHARACTER_TAB ) ? hilite( c_white ) : c_white, _( "[<Character>]" ) );
+        tab_labels.clear();
+        const auto global_x0 = locx;
+        locx += static_cast<int>( shortcut_print( w_header, point( locx, 2 ), c_white,
+                                  ( tab == GLOBAL_TAB ) ? hilite( c_white ) : c_white,
+                                  _( "[<Global>]" ) ) ) + 1;
+        tab_labels.push_back( { .x0 = global_x0, .x1 = locx - 1, .index = GLOBAL_TAB } );
+        const auto char_x0 = locx;
+        const auto char_len = static_cast<int>( shortcut_print( w_header, point( locx, 2 ), c_white,
+                               ( tab == CHARACTER_TAB ) ? hilite( c_white ) : c_white,
+                               _( "[<Character>]" ) ) );
+        tab_labels.push_back( { .x0 = char_x0, .x1 = char_x0 + char_len, .index = CHARACTER_TAB } );
 
         locx = 55;
         mvwprintz( w_header, point( locx, 0 ), c_white, _( "Safe Mode enabled:" ) );
@@ -185,7 +244,13 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
                                 ( ( get_option<bool>( "SAFEMODE" ) ) ? c_light_green : c_light_red ), c_white,
                                 ( ( get_option<bool>( "SAFEMODE" ) ) ? _( "True" ) : _( "False" ) ) );
         locx += shortcut_print( w_header, point( locx, 1 ), c_white, c_light_green, "  " );
-        locx += shortcut_print( w_header, point( locx, 1 ), c_white, c_light_green, _( "<S>witch" ) );
+        if( is_safemode_in ) {
+            const auto switch_x0 = locx;
+            const auto switch_len = static_cast<int>( shortcut_print( w_header, point( locx, 1 ), c_white,
+                                      c_light_green, _( "<S>witch" ) ) );
+            header_labels.push_back( { .x0 = switch_x0, .y = 1, .x1 = switch_x0 + switch_len,
+                                       .action = "SWITCH_SAFEMODE_OPTION" } );
+        }
         shortcut_print( w_header, point( locx, 1 ), c_white, c_light_green, "  " );
 
         wnoutrefresh( w_header );
@@ -212,10 +277,20 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
             mvwprintz( w, point( 15, 10 ), c_white, _( "Press ~ to add a default ruleset to get started." ) );
         }
 
-        draw_scrollbar( w_border, line, content_height, current_tab.size(), point( 0, 5 ) );
+        const auto sb = scrollbar_geometry();
+        draw_scrollbar( w_border, sb.viewport_pos, sb.viewport_size, sb.content_size, sb.offset );
         wnoutrefresh( w_border );
 
-        calcStartPos( start_pos, line, content_height, current_tab.size() );
+        if( preserve_view ) {
+            if( start_pos > line ) {
+                start_pos = line;
+            }
+            if( line >= start_pos + content_height ) {
+                start_pos = line - content_height + 1;
+            }
+        } else {
+            calcStartPos( start_pos, line, content_height, current_tab.size() );
+        }
 
         // display safe mode
         for( int i = start_pos; i < static_cast<int>( current_tab.size() ); i++ ) {
@@ -255,7 +330,102 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
 
         ui_manager::redraw();
 
-        const std::string action = ctxt.handle_input();
+        auto action = ctxt.handle_input();
+
+        // get_coordinates() is relative to the window centre.
+        const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
+            const auto mouse = ctxt.get_coordinates( win );
+            if( !mouse ) {
+                return std::nullopt;
+            }
+            const auto cell = mouse->xy().raw() + point( getmaxx( win ), getmaxy( win ) ) / 2;
+            if( cell.x < 0 || cell.y < 0 || cell.x >= getmaxx( win ) || cell.y >= getmaxy( win ) ) {
+                return std::nullopt;
+            }
+            return cell;
+        };
+
+        auto mouse_hover = false;
+        auto mouse_handled = false;
+        if( modern && action == "MOUSE_MOVE" ) {
+            // Hover never changes the selection.
+            action.clear();
+            mouse_hover = true;
+        } else if( modern && action == "SELECT" ) {
+            mouse_handled = true;
+            auto consumed = false;
+            if( const auto border_cell = cell_in( w_border ) ) {
+                if( const auto hit = scrollbar_input::click( scrollbar_geometry(), *border_cell ) ) {
+                    line = hit->viewport_pos;
+                    last_click_row = -1;
+                    preserve_view = false;
+                    consumed = true;
+                }
+            }
+            if( !consumed ) {
+                if( const auto header_cell = cell_in( w_header ) ) {
+                    for( const auto &label : header_labels ) {
+                        if( header_cell->y == label.y && header_cell->x >= label.x0 &&
+                            header_cell->x < label.x1 ) {
+                            action = label.action;
+                            last_click_row = -1;
+                            preserve_view = false;
+                            consumed = true;
+                            break;
+                        }
+                    }
+                    if( !consumed ) {
+                        for( const auto &tab_label : tab_labels ) {
+                            if( header_cell->y == 2 && header_cell->x >= tab_label.x0 &&
+                                header_cell->x < tab_label.x1 && tab != tab_label.index ) {
+                                tab = tab_label.index;
+                                line = 0;
+                                last_click_row = -1;
+                                preserve_view = false;
+                                consumed = true;
+                                break;
+                            }
+                        }
+                    }
+                } else if( const auto cell = cell_in( w ) ) {
+                    const auto row = start_pos + cell->y;
+                    if( !( tab == CHARACTER_TAB && g->u.name.empty() ) && cell->y < content_height &&
+                        row < static_cast<int>( current_tab.size() ) ) {
+                        // Cells of a column start two past its separator position.
+                        int clicked_column = COLUMN_RULE;
+                        for( const auto &pos : column_pos ) {
+                            if( cell->x >= pos.second + 2 ) {
+                                clicked_column = std::max( clicked_column, pos.first );
+                            }
+                        }
+                        if( row == last_click_row ) {
+                            // The second click on the same row runs Enter.
+                            column = clicked_column;
+                            action = "CONFIRM";
+                            last_click_row = -1;
+                            preserve_view = false;
+                        } else {
+                            line = row;
+                            column = clicked_column;
+                            last_click_row = row;
+                            preserve_view = true;
+                        }
+                    }
+                    consumed = true;
+                }
+            }
+            if( !consumed ) {
+                // A click outside the drawn controls does nothing.
+                action.clear();
+                last_click_row = -1;
+                preserve_view = false;
+            }
+        }
+        if( !mouse_handled && !mouse_hover ) {
+            // Keyboard and wheel input end a click pair.
+            last_click_row = -1;
+            preserve_view = false;
+        }
 
         if( action == "NEXT_TAB" ) {
             tab++;
@@ -273,12 +443,12 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
             break;
         } else if( tab == CHARACTER_TAB && g->u.name.empty() ) {
             //Only allow loaded games to use the char sheet
-        } else if( action == "DOWN" ) {
+        } else if( action == "DOWN" || action == "SCROLL_DOWN" ) {
             line++;
             if( line >= static_cast<int>( current_tab.size() ) ) {
                 line = 0;
             }
-        } else if( action == "UP" ) {
+        } else if( action == "UP" || action == "SCROLL_UP" ) {
             line--;
             if( line < 0 ) {
                 line = current_tab.size() - 1;
