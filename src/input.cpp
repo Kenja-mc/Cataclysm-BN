@@ -1615,7 +1615,7 @@ bool gamepad_available()
 }
 
 std::optional<tripoint_bub_ms> input_context::get_coordinates( const catacurses::window
-        &capture_win )
+        &capture_win ) const
 {
     if( !coordinate_input_received ) {
         return std::nullopt;
