@@ -18,11 +18,11 @@
     "variant": "walk_dirt",
     "volume": 75,
     "files": [
-      "footsteps/carpet_000.ogg",
-      "footsteps/carpet_001.ogg",
-      "footsteps/carpet_002.ogg",
-      "footsteps/carpet_003.ogg",
-      "footsteps/carpet_004.ogg"
+      "footsteps/dirt_000.ogg",
+      "footsteps/dirt_001.ogg",
+      "footsteps/dirt_002.ogg",
+      "footsteps/dirt_003.ogg",
+      "footsteps/dirt_004.ogg"
     ]
   },
   {
@@ -69,7 +69,7 @@
     "id": "plmove",
     "variant": "clear_obstacle",
     "volume": 70,
-    "files": [ "ui/scratch_001.ogg", "ui/scratch_002.ogg", "ui/scratch_003.ogg", "ui/scratch_004.ogg", "ui/scratch_005.ogg" ]
+    "files": [ "footsteps/obstacle_000.ogg", "footsteps/obstacle_001.ogg" ]
   },
   {
     "type": "sound_effect",
