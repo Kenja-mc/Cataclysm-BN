@@ -599,7 +599,7 @@ void inventory_column::expand_to_fit( const inventory_entry &entry )
 
     if( !denial.empty() ) {
         reserved_width = std::max( get_entry_cell_width( entry, 0 ) + min_denial_gap + utf8_width( denial,
-                                   true ),
+            true ),
                                    reserved_width );
     }
 }
@@ -625,7 +625,7 @@ size_t inventory_column::page_of( size_t index ) const
 size_t inventory_column::page_of( const inventory_entry &entry ) const
 {
     return page_of( std::distance( entries.begin(), std::find( entries.begin(), entries.end(),
-                                   entry ) ) );
+            entry ) ) );
 }
 bool inventory_column::has_available_choices() const
 {
@@ -736,7 +736,7 @@ void inventory_column::set_stack_favorite( const item *location, bool favorite )
         }
     } else if( location->where() == item_location_type::vehicle ) {
         const std::optional<vpart_reference> vp = g->m.veh_at(
-                    location->abs_pos() ).part_with_feature( "CARGO", true );
+                location->abs_pos() ).part_with_feature( "CARGO", true );
         assert( vp );
 
         auto items = vp->vehicle().get_items( vp->part_index() );
@@ -1003,9 +1003,9 @@ void inventory_column::draw( const catacurses::window &win, point pos ) const
 
         if( !denial.empty() ) {
             const size_t max_denial_width = std::max( static_cast<int>( get_width() - ( min_denial_gap +
-                                            get_entry_cell_width( index, 0 ) ) ), 0 );
+                get_entry_cell_width( index, 0 ) ) ), 0 );
             const size_t denial_width = std::min( max_denial_width, static_cast<size_t>( utf8_width( denial,
-                                                  true ) ) );
+                true ) ) );
 
             trim_and_print( win, point( pos.x + get_width() - denial_width, yy ), denial_width, c_red, denial );
         }
@@ -1195,7 +1195,7 @@ void selection_column::on_change( const inventory_entry &entry )
 
 // TODO: Move it into some 'item_stack' class.
 static std::vector<std::list<item *>> restack_items( const item_stack::const_iterator &from,
-                                   const item_stack::const_iterator &to, bool check_components = false )
+        const item_stack::const_iterator &to, bool check_components = false )
 {
     std::vector<std::list<item *>> res;
 
@@ -1216,8 +1216,8 @@ static std::vector<std::list<item *>> restack_items( const item_stack::const_ite
 }
 
 static std::vector<std::list<item *>> restack_items( const std::vector<item *>::const_iterator
-                                   &from,
-                                   const std::vector<item *>::const_iterator &to, bool check_components = false )
+        &from,
+        const std::vector<item *>::const_iterator &to, bool check_components = false )
 {
     std::vector<std::list<item *>> res;
 
@@ -1253,7 +1253,7 @@ const item_category *inventory_selector::naturalize_category( const item_categor
     if( dist != 0 ) {
         const std::string suffix = direction_suffix( u.bub_pos().raw(), pos.raw() );
         const item_category_id id = item_category_id( string_format( "%s_%s", category.get_id().c_str(),
-                                    suffix.c_str() ) );
+            suffix.c_str() ) );
 
         const auto existing = find_cat_by_id( id );
         if( existing != nullptr ) {
@@ -1520,7 +1520,7 @@ auto inventory_selector::select_position_if_item_type( const std::pair<size_t, s
 
     auto *column = columns[position.first];
     if( !column->visible() || !column->activatable() ||
-        !column->select_position_if_item_type( position.second, type ) ) {
+            !column->select_position_if_item_type( position.second, type ) ) {
         return false;
     }
 
@@ -1953,7 +1953,7 @@ void inventory_selector::draw_columns( const catacurses::window &w ) const
 
     const int free_space = screen_width - get_columns_width( columns );
     const int max_gap = ( columns.size() > 1 ) ? free_space / ( static_cast<int>
-                        ( columns.size() ) - 1 ) :
+        ( columns.size() ) - 1 ) :
                         free_space;
     const int gap = centered ? max_gap : std::min<int>( max_gap, normal_column_gap );
     const int gap_rounding_error = centered && columns.size() > 1
@@ -2045,10 +2045,10 @@ inventory_selector::inventory_selector( player &u, const inventory_selector_pres
     , preset( preset )
     , ctxt( "INVENTORY" )
     , own_gear_column( preset )
-    , active_column_index( 0 )
-    , mode( navigation_mode::ITEM )
     , own_inv_column( preset )
     , map_column( preset )
+    , active_column_index( 0 )
+    , mode( navigation_mode::ITEM )
 {
     ctxt.register_action( "DOWN", to_translation( "Next item" ) );
     ctxt.register_action( "UP", to_translation( "Previous item" ) );
@@ -2096,6 +2096,21 @@ bool inventory_selector::has_available_choices() const
     } );
 }
 
+auto inventory_selector::hint_hotspot_at( point cell ) const -> bool
+{
+    if( clickable_hint_suffix.empty() || cell.y != border + 1 ) {
+        return false;
+    }
+    const auto hint_width = utf8_width( hint, true );
+    // draw_header folds the hint; once folded the suffix is no longer on this row.
+    if( hint_width > getmaxx( w_inv ) - 2 * ( border + 1 ) ) {
+        return false;
+    }
+    const auto suffix_width = utf8_width( clickable_hint_suffix, true );
+    const auto start = border + 1 + hint_width - suffix_width;
+    return cell.x >= start && cell.x < start + suffix_width;
+}
+
 auto inventory_selector::mouse_input( inventory_input res ) -> inventory_input
 {
     res.entry = nullptr;
@@ -2110,6 +2125,10 @@ auto inventory_selector::mouse_input( inventory_input res ) -> inventory_input
     }
     // get_coordinates() is relative to the window centre.
     const auto cell = mouse->xy().raw() + point( getmaxx( w_inv ), getmaxy( w_inv ) ) / 2;
+    if( res.action == "SELECT" && hint_hotspot_at( cell ) ) {
+        res.action = clickable_hint_action;
+        return res;
+    }
     const auto visible_columns = get_visible_columns();
     for( size_t i = 0; i < visible_columns.size() && i < column_origins.size(); ++i ) {
         const auto index = visible_columns[i]->entry_index_at( column_origins[i], cell );
@@ -2771,10 +2790,10 @@ drop_locations inventory_drop_selector::execute()
 auto inventory_drop_selector::update_drop_preview() -> void
 {
     if( !preview_dirty ) {
-        return;
-    }
-    auto selected = drop_locations{};
-    for( const auto &[target, count] : dropping ) {
+    return;
+}
+auto selected = drop_locations{};
+for( const auto &[target, count] : dropping ) {
         selected.emplace_back( *target, count );
     }
     auto preview = make_drop_preview( u, selected );
@@ -2783,15 +2802,15 @@ auto inventory_drop_selector::update_drop_preview() -> void
     preview_dirty = false;
 
     auto drop_order = std::unordered_map<const item *, size_t> {};
-    for( const auto &drop : predicted_drops ) {
-        auto *target = &*drop.loc;
-        if( !u.is_worn( *target ) && !u.is_wielding( *target ) ) {
+for( const auto &drop : predicted_drops ) {
+    auto *target = &*drop.loc;
+    if( !u.is_worn( *target ) && !u.is_wielding( *target ) ) {
             target = u.inv_const_stack( u.get_item_position( target ) ).front();
         }
         drop_order.try_emplace( target, drop_order.size() );
     }
 
-    for( auto *column : get_all_columns() ) {
+for( auto *column : get_all_columns() ) {
         if( column == selection_col.get() ) {
             continue;
         }

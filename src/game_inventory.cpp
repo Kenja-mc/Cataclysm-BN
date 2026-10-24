@@ -118,6 +118,7 @@ class common_inventory_selector : public inventory_pick_selector
                                   to_translation( "Unload every carried item that can be unloaded" ) );
             if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
                 ctxt.register_action( "CRAFT", to_translation( "Craft" ) );
+                ctxt.register_action( "advinv", to_translation( "Advanced inventory" ) );
             }
         }
 
@@ -143,10 +144,28 @@ class common_inventory_selector : public inventory_pick_selector
             return string_format( _( "[%s] Craft" ), ctxt.get_desc( "CRAFT" ) );
         }
 
+        /// Empty unless Modern is active. Also makes the label open the advanced inventory on a click.
+        [[nodiscard]] auto advinv_hint() -> std::string {
+            if( get_option<std::string>( "CONTROL_SCHEME" ) != "modern" ) {
+                return std::string();
+            }
+            std::string label;
+            if( ctxt.key_bound_to( "advinv", 0, false ).empty() ) {
+                label = _( "Advanced inventory" );
+            } else {
+                label = string_format( _( "[%s] Advanced inventory" ), ctxt.get_desc( "advinv" ) );
+            }
+            set_clickable_hint( label, "advinv" );
+            return label;
+        }
+
     protected:
         auto handle_action( const std::string &action ) -> bool override {
             if( action == "CRAFT" ) {
                 requested_action = ACTION_CRAFT;
+                return true;
+            } else if( action == "advinv" ) {
+                requested_action = ACTION_ADVANCEDINV;
                 return true;
             } else if( action == "unload_all" ) {
                 unload_all_selected = true;
@@ -299,13 +318,16 @@ auto game_menus::inv::common( avatar &you ) -> std::optional<action_id>
                     _( "Item hotkeys assigned: <color_light_gray>%d</color>/<color_light_gray>%d</color>" ),
                     you.allocated_invlets().count(), inv_chars.size() );
     if( const auto craft = inv_s.craft_hint(); !craft.empty() ) {
-        hint += " | " + craft;
-    }
-    inv_s.set_hint( hint );
+    hint += " | " + craft;
+}
+if( const auto advinv = inv_s.advinv_hint(); !advinv.empty() ) {
+    hint += " | " + advinv;
+}
+inv_s.set_hint( hint );
 
-    bool started_action = false;
-    do {
-        you.inv_restack( );
+bool started_action = false;
+do {
+    you.inv_restack( );
         inv_s.clear_items();
         inv_s.add_character_items( you );
 
@@ -338,7 +360,7 @@ auto game_menus::inv::common( avatar &you ) -> std::optional<action_id>
             return 50;
         };
         started_action = examine_item_menu::run( *location, func_pos_x, func_width,
-                         examine_item_menu::menu_pos_t::right );
+            examine_item_menu::menu_pos_t::right );
     } while( !started_action );
     return std::nullopt;
 }
@@ -604,7 +626,7 @@ class comestible_inventory_preset : public inventory_selector_preset
                 int converted_volume_scale = 0;
                 const int charges = std::max( it.charges, 1 );
                 const double converted_volume = round_up( convert_volume( it.volume().value() / charges,
-                                                &converted_volume_scale ), 2 );
+                    &converted_volume_scale ), 2 );
 
                 //~ Eat menu Volume: <num><unit>
                 return string_format( _( "%.2f%s" ), converted_volume, volume_units_abbr() );
@@ -1042,19 +1064,19 @@ class read_inventory_preset final: public inventory_selector_preset
 
             append_cell( [ this, &p ]( const item * loc ) -> std::string {
                 if( loc->type->can_use( "MA_MANUAL" ) ) {
-                    return _( "martial arts" );
+                return _( "martial arts" );
                 }
                 const islot_book &book = get_book( loc );
                 if( !book.skill ) {
-                    return std::string();
+                return std::string();
                 }
 
                 const SkillLevel &skill = p.get_skill_level_object( book.skill );
                 if( skill.level() < book.req ) {
-                    //~ %1$s: book skill name, %3$d: book required skill level, %3$d: book skill level, %4$d: player skill level
-                    return string_format( pgettext( "skill", "%1$s from %2$d to %3$d (%4$d)" ), book.skill->name(),
-                                          book.req, book.level,
-                                          skill.level() );
+                //~ %1$s: book skill name, %3$d: book required skill level, %3$d: book skill level, %4$d: player skill level
+                return string_format( pgettext( "skill", "%1$s from %2$d to %3$d (%4$d)" ), book.skill->name(),
+                                      book.req, book.level,
+                                      skill.level() );
                 }
 
                 //~ %1$s: book skill name, %2$d: book skill level, %3$d: player skill level
@@ -1515,7 +1537,7 @@ class salvage_inventory_preset : public pickup_inventory_preset
 
             append_cell( []( const item * loc ) {
                 return to_string_clipped( time_duration::from_turns( salvage::moves_to_salvage(
-                                              *loc ) / 100 ) );
+                            *loc ) / 100 ) );
             }, _( "TIME" ) );
         }
 
@@ -1558,7 +1580,7 @@ class repair_inventory_preset: public inventory_selector_preset
                 auto listed_components = std::set<itype_id> {};
                 auto material_list = std::vector<std::string> {};
                 std::ranges::for_each( valid_entries, [ this, &listed_components, &material_list, &crafting_inv,
-                      comp_needed ]( const auto & entry ) {
+                comp_needed ]( const auto & entry ) {
                     const auto &component_id = entry.obj().repaired_with();
                     if( listed_components.contains( component_id ) ) {
                         return;
@@ -1567,7 +1589,7 @@ class repair_inventory_preset: public inventory_selector_preset
                     const auto num_comp = get_cached_component_count( crafting_inv, component_id );
                     if( num_comp > 0 ) {
                         material_list.emplace_back( colorize( string_format( _( "%s (%d)" ), item::nname( component_id ),
-                                                              num_comp ), num_comp < comp_needed ? c_red : c_unset ) );
+                                num_comp ), num_comp < comp_needed ? c_red : c_unset ) );
                     }
                 } );
 
@@ -2129,9 +2151,9 @@ class bionic_install_preset: public inventory_selector_preset
             const bool has_install_program = !install_programs.empty();
 
             const int adjusted_skill = installer.bionics_adjusted_skill( skill_firstaid,
-                                       skill_computer,
-                                       skill_electronics,
-                                       -1 );
+                skill_computer,
+                skill_electronics,
+                -1 );
 
             if( g->u.has_trait( trait_DEBUG_BIONICS ) ) {
                 chance_of_failure = 0;
@@ -2222,9 +2244,9 @@ class bionic_install_surgeon_preset : public inventory_selector_preset
 
             // Override player's skills with surgeon skill
             const int adjusted_skill = installer.bionics_adjusted_skill( skill_firstaid,
-                                       skill_computer,
-                                       skill_electronics,
-                                       20 );
+                skill_computer,
+                skill_electronics,
+                20 );
 
             if( g->u.has_trait( trait_DEBUG_BIONICS ) ) {
                 chance_of_failure = 0;
@@ -2306,9 +2328,9 @@ class bionic_uninstall_preset : public inventory_selector_preset
             player &installer = p;
 
             const int adjusted_skill = installer.bionics_adjusted_skill( skill_firstaid,
-                                       skill_computer,
-                                       skill_electronics,
-                                       -1 );
+                skill_computer,
+                skill_electronics,
+                -1 );
 
             if( g->u.has_trait( trait_DEBUG_BIONICS ) ) {
                 chance_of_failure = 0;

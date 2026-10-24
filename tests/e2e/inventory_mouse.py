@@ -1,7 +1,9 @@
 """Modern scheme mouse support in inventory menus: click a row to pick it, right click for item actions."""
 import re
 
+from aim_reticle import action_clock
 from helpers import action_menu, arena, empty_inventory, give, spawn
+from tmux_game import in_game
 
 
 def display_name(g, item):
@@ -116,6 +118,38 @@ def test_right_click_outside_inventory_cancels(g):
     arena(g)
 
 
+def test_tab_hint_and_shift_tab_in_inventory(g):
+    fresh_inventory(g)
+    before = action_clock(g)
+    # Tab opens the advanced inventory from the inventory screen.
+    g.keys("i", delay=1)
+    g.wait_for("[TAB] Advanced inventory", timeout=10)
+    g.keys("Tab", delay=1)
+    g.wait_for("Surrounding area", timeout=10)
+    g.keys("Escape", delay=0.8)
+    g.wait_gone("Surrounding area", timeout=10)
+    assert in_game(g.screen()), "Escape must return from the advanced inventory to the game"
+    # Shift+Tab still toggles the category selection the Tab key used to open.
+    g.keys("i", delay=1)
+    g.wait_for("[TAB] Advanced inventory", timeout=10)
+    g.keys("BTab", delay=0.8)
+    g.wait_for("Category selection mode", timeout=10)
+    g.keys("BTab", delay=0.8)
+    g.wait_gone("Category selection mode", timeout=10)
+    g.keys("Escape", delay=0.6)
+    # A click on the hint label opens it too.
+    g.keys("i", delay=1)
+    g.wait_for("[TAB] Advanced inventory", timeout=10)
+    x, y = row_of(g, "[TAB] Advanced inventory")
+    g.click(x, y)
+    g.wait_for("Surrounding area", timeout=10)
+    g.keys("Escape", delay=0.8)
+    g.wait_gone("Surrounding area", timeout=10)
+    assert in_game(g.screen()), "Escape must return from the advanced inventory to the game"
+    assert action_clock(g) == before, "opening and closing the advanced inventory must be free"
+
+
 TESTS = [test_click_picks_an_inventory_row, test_right_click_opens_item_actions,
          test_click_picks_nearby_item_without_inventory, test_wheel_moves_inventory_selection,
-         test_inventory_context_wields_and_wears_selected_items, test_right_click_outside_inventory_cancels]
+         test_inventory_context_wields_and_wears_selected_items, test_right_click_outside_inventory_cancels,
+         test_tab_hint_and_shift_tab_in_inventory]

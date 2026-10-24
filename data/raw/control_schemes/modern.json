@@ -1805,6 +1805,13 @@
   },
   {
     "type": "keybinding",
+    "name": "Advanced Inventory management",
+    "category": "DEFAULTMODE",
+    "id": "advinv",
+    "bindings": [ { "input_method": "keyboard", "key": "/" } ]
+  },
+  {
+    "type": "keybinding",
     "name": "Grab something nearby",
     "category": "DEFAULTMODE",
     "id": "grab",
@@ -2187,6 +2194,20 @@
     "category": "INVENTORY",
     "name": "Craft",
     "bindings": [ { "input_method": "keyboard", "key": "F5" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "advinv",
+    "category": "INVENTORY",
+    "name": "Advanced inventory",
+    "bindings": [ { "input_method": "keyboard", "key": "TAB" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "CATEGORY_SELECTION",
+    "category": "INVENTORY",
+    "name": "Toggle category selection mode",
+    "bindings": [ { "input_method": "keyboard", "key": "BACKTAB" } ]
   },
   {
     "type": "keybinding",

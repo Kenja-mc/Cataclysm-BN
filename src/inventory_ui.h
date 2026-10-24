@@ -488,6 +488,11 @@ class inventory_selector
         void set_hint( const std::string &hint ) {
             this->hint = hint;
         }
+        /** Marks a trailing segment of the hint as a label a left click activates as `action`. */
+        auto set_clickable_hint( std::string suffix, std::string action ) -> void {
+            clickable_hint_suffix = std::move( suffix );
+            clickable_hint_action = std::move( action );
+        }
         /** Specify whether the header should show stats (weight and volume). */
         void set_display_stats( bool display_stats ) {
             this->display_stats = display_stats;
@@ -678,11 +683,16 @@ class inventory_selector
         /// Modern scheme: turns hover, clicks and the wheel into selection and actions.
         auto mouse_input( inventory_input res ) -> inventory_input;
 
+        /// True when cell lies on the clickable hint suffix drawn in the header.
+        auto hint_hotspot_at( point cell ) const -> bool;
+
 
         std::vector<inventory_column *> columns;
 
         std::string title;
         std::string hint;
+        std::string clickable_hint_suffix;
+        std::string clickable_hint_action;
         size_t active_column_index;
         std::list<item_category> categories;
         navigation_mode mode;
