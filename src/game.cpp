@@ -15880,6 +15880,13 @@ auto game::travel_to_dimension( const dimension_id &dim_id,
     // Prevent temperature/weather code from accessing the grid while it's
     // being cleared and rebuilt.  Must be set BEFORE activate_dimension_state().
     swapping_dimensions = true;
+    // The flag guards the grid only while it is cleared and rebuilt below; by the
+    // time this function returns, the destination map, NPCs and caches are fully
+    // loaded, so every exit path clears it. Turn processing used to be the only
+    // reset, which stranded the guard for synchronous Lua-driven travels.
+    auto clear_swap_guard = on_out_of_scope( [this]() {
+        swapping_dimensions = false;
+    } );
 
     // Sequenced critical section: drain → release handles → flush → update ID → clear tracker.
     // load_map() detects dimension changes by comparing get_dimension_prefix() vs
