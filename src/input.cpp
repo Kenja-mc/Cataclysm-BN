@@ -430,6 +430,7 @@ void input_manager::init_keycode_mapping()
     add_keycode_pair( '\t',          translate_marker_context( "key name", "TAB" ) );
     add_keycode_pair( KEY_BTAB,      translate_marker_context( "key name", "BACKTAB" ) );
     add_keycode_pair( ' ',           translate_marker_context( "key name", "SPACE" ) );
+    add_keycode_pair( KEY_SHIFT_SPACE, translate_marker_context( "key name", "SHIFT_SPACE" ) );
     add_keycode_pair( KEY_UP,        translate_marker_context( "key name", "UP" ) );
     add_keycode_pair( KEY_DOWN,      translate_marker_context( "key name", "DOWN" ) );
     add_keycode_pair( KEY_LEFT,      translate_marker_context( "key name", "LEFT" ) );
@@ -1398,7 +1399,7 @@ action_id input_context::display_menu( const bool permit_execute_action )
             const auto mouse = ctxt.get_raw_input().mouse_pos -
                                point( getbegx( w_help ), getbegy( w_help ) );
             if( const auto hit = scrollbar_input::click( {
-                .offset = point( 0, 10 ),
+            .offset = point( 0, 10 ),
                 .viewport_size = static_cast<int>( display_height ),
                 .content_size = static_cast<int>( filtered_registered_actions.size() ),
                 .viewport_pos = static_cast<int>( scroll_offset ),

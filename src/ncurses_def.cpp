@@ -19,10 +19,12 @@
 #include <cstdio>
 #include <cstring>
 #include <langinfo.h>
+#include <ranges>
 #include <termios.h>
 #include <unistd.h>
 #include <stdexcept>
 #include <optional>
+#include <vector>
 
 #include "cursesdef.h"
 #include "catacharset.h"
@@ -95,7 +97,8 @@ auto translate_attrs( const int attrs ) -> int
         return attrs;
     }
     const auto pair = static_cast<int>( PAIR_NUMBER( attrs ) );
-    return ( attrs & ~( A_BOLD | A_COLOR ) ) | static_cast<int>( COLOR_PAIR( pair + bright_pair_offset ) );
+    return ( attrs & ~( A_BOLD | A_COLOR ) ) | static_cast<int>( COLOR_PAIR(
+                pair + bright_pair_offset ) );
 }
 
 /// Box drawing as real Unicode in UTF-8 terminals; many of them mangle the DEC line-drawing charset.
@@ -258,12 +261,14 @@ int catacurses::getcury( const window &win )
 
 void catacurses::wattroff( const window &win, const int attrs )
 {
-    return curses_check_result( ::wattroff( win.get<::WINDOW>(), translate_attrs( attrs ) ), OK, "wattroff" );
+    return curses_check_result( ::wattroff( win.get<::WINDOW>(), translate_attrs( attrs ) ), OK,
+                                "wattroff" );
 }
 
 void catacurses::wattron( const window &win, const nc_color &attrs )
 {
-    return curses_check_result( ::wattron( win.get<::WINDOW>(), translate_attrs( attrs ) ), OK, "wattron" );
+    return curses_check_result( ::wattron( win.get<::WINDOW>(), translate_attrs( attrs ) ), OK,
+                                "wattron" );
 }
 
 void catacurses::wmove( const window &win, point p )
@@ -454,7 +459,8 @@ void catacurses::init_pair( const short pair, const base_color f, const base_col
     colorpairs[pair].FG = f;
     colorpairs[pair].BG = b;
     if( bright_pair_offset > 0 ) {
-        ::init_pair( static_cast<short>( pair + bright_pair_offset ), static_cast<short>( f + 8 ), background_for( b ) );
+        ::init_pair( static_cast<short>( pair + bright_pair_offset ), static_cast<short>( f + 8 ),
+                     background_for( b ) );
     }
     return curses_check_result( ::init_pair( pair, static_cast<short>( f ), background_for( b ) ),
                                 OK, "init_pair" );
@@ -519,6 +525,16 @@ void catacurses::init_interface()
     init_colors();
 }
 
+namespace
+{
+
+/// Terminals with the kitty/xterm extended-key protocol report Shift+Space as this sequence.
+/// The game never asks for the protocol, so it only arrives from terminals configured to always
+/// send it (and from tests); bytes that do not match are pushed back and handled as before.
+constexpr char shift_space_tail[] = { '[', '3', '2', ';', '2', 'u' };
+
+} // namespace
+
 void input_manager::pump_events()
 {
     if( test_mode ) {
@@ -554,6 +570,33 @@ input_event input_manager::get_input_event()
         // flush any output
         catacurses::doupdate();
         key = getch();
+        if( key == KEY_ESCAPE ) {
+            // Peek for the Shift+Space sequence after Escape; anything else goes back untouched.
+            auto peeked = std::vector<int>();
+            auto matched = true;
+            const int prev_timeout = input_timeout;
+            set_timeout( 0 );
+            for( const char expected : shift_space_tail ) {
+                const int ch = getch();
+                if( ch == ERR ) {
+                    matched = false;
+                    break;
+                }
+                peeked.push_back( ch );
+                if( ch != expected ) {
+                    matched = false;
+                    break;
+                }
+            }
+            set_timeout( prev_timeout );
+            for( const int ch : peeked | std::views::reverse ) {
+                ungetch( ch );
+            }
+            if( matched ) {
+                previously_pressed_key = KEY_SHIFT_SPACE;
+                return input_event( KEY_SHIFT_SPACE, input_event_t::keyboard );
+            }
+        }
         if( key != ERR ) {
             int newch;
             // Clear the buffer of characters that match the one we're going to act on.
@@ -739,7 +782,7 @@ void check_encoding()
         do {
             const char *unicode_error_msg =
                 _( "You don't seem to have a valid Unicode locale.  You may see some weird "
-                   "characters (e.g. empty boxes or question marks). You have been warned." );
+               "characters (e.g. empty boxes or question marks). You have been warned." );
             catacurses::erase();
             const int maxx = getmaxx( catacurses::stdscr );
             fold_and_print( catacurses::stdscr, point_zero, maxx, c_white, unicode_error_msg );

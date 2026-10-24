@@ -3441,7 +3441,11 @@ static void CheckMessages()
                 if( !add_alt_code( *ev.text.text ) ) {
                     if( strlen( ev.text.text ) > 0 ) {
                         const unsigned lc = UTF8_getch( ev.text.text );
-                        last_input = input_event( lc, input_event_t::keyboard );
+                        // Shift+Space is its own chord. The literal text is kept below, so text
+                        // entry still receives the space.
+                        const int code = lc == ' ' && ( SDL_GetModState() & SDL_KMOD_SHIFT )
+                                         ? KEY_SHIFT_SPACE : lc;
+                        last_input = input_event( code, input_event_t::keyboard );
 #if defined(SDL_PLATFORM_ANDROID)
                         if( !android_is_hardware_keyboard_available() ) {
                             if( !is_string_input( touch_input_context ) && !touch_input_context.allow_text_entry ) {

@@ -72,6 +72,9 @@ static constexpr int KEY_PPAGE      = 0x153;    /* page up */
 static constexpr int KEY_ENTER      = 0x157;    /* enter */
 static constexpr int KEY_BTAB       = 0x161;    /* back-tab = shift + tab */
 static constexpr int KEY_END        = 0x168;    /* End */
+/// Shift+Space from terminals and window systems that report it. Above every Unicode scalar
+/// value, so no text input can produce this code by accident.
+static constexpr int KEY_SHIFT_SPACE = 0x110000;
 
 static constexpr int LEGEND_HEIGHT = 11;
 static constexpr int BORDER_SPACE = 2;
