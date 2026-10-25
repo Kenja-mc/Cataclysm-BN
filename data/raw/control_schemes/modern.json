@@ -52,22 +52,9 @@
   {
     "type": "keybinding",
     "id": "CONFIRM",
-    "category": "UILIST",
+    "category": "default",
     "name": "Confirm Choice",
-    "bindings": [
-      { "input_method": "keyboard", "key": "SPACE" },
-      { "input_method": "keyboard", "key": "RETURN" }
-    ]
-  },
-  {
-    "type": "keybinding",
-    "id": "CONFIRM",
-    "category": "YESNO",
-    "name": "Confirm Choice",
-    "bindings": [
-      { "input_method": "keyboard", "key": "SPACE" },
-      { "input_method": "keyboard", "key": "RETURN" }
-    ]
+    "bindings": [ { "input_method": "keyboard", "key": "SPACE" }, { "input_method": "keyboard", "key": "RETURN" } ]
   },
   {
     "type": "keybinding",
@@ -577,10 +564,7 @@
     "id": "zoom_out",
     "category": "DEFAULTMODE",
     "name": "Zoom out",
-    "bindings": [
-      { "input_method": "keyboard", "key": "-" },
-      { "input_method": "mouse", "key": "SCROLL_DOWN" }
-    ]
+    "bindings": [ { "input_method": "keyboard", "key": "-" }, { "input_method": "mouse", "key": "SCROLL_DOWN" } ]
   },
   {
     "type": "keybinding",
@@ -1292,16 +1276,6 @@
   },
   {
     "type": "keybinding",
-    "id": "CONFIRM",
-    "category": "MAIN_MENU",
-    "name": "Confirm Choice",
-    "bindings": [
-      { "input_method": "keyboard", "key": "SPACE" },
-      { "input_method": "keyboard", "key": "RETURN" }
-    ]
-  },
-  {
-    "type": "keybinding",
     "id": "SORT",
     "category": "NEW_CHAR_PROFESSIONS",
     "name": "Toggle sorting order",
@@ -1418,20 +1392,14 @@
     "id": "UP",
     "category": "HELP_KEYBINDINGS",
     "name": "Pan up",
-    "bindings": [
-      { "input_method": "keyboard", "key": "UP" },
-      { "input_method": "keyboard", "key": "NUMPAD_8" }
-    ]
+    "bindings": [ { "input_method": "keyboard", "key": "UP" }, { "input_method": "keyboard", "key": "NUMPAD_8" } ]
   },
   {
     "type": "keybinding",
     "id": "DOWN",
     "category": "HELP_KEYBINDINGS",
     "name": "Pan down",
-    "bindings": [
-      { "input_method": "keyboard", "key": "DOWN" },
-      { "input_method": "keyboard", "key": "NUMPAD_2" }
-    ]
+    "bindings": [ { "input_method": "keyboard", "key": "DOWN" }, { "input_method": "keyboard", "key": "NUMPAD_2" } ]
   },
   {
     "type": "keybinding",
@@ -1734,7 +1702,11 @@
     "id": "CONFIRM",
     "category": "PICKUP",
     "name": "Confirm Choice",
-    "bindings": [ { "input_method": "keyboard", "key": "g" }, { "input_method": "keyboard", "key": "RETURN" }, { "input_method": "keyboard", "key": "SPACE" } ]
+    "bindings": [
+      { "input_method": "keyboard", "key": "g" },
+      { "input_method": "keyboard", "key": "RETURN" },
+      { "input_method": "keyboard", "key": "SPACE" }
+    ]
   },
   {
     "type": "keybinding",
@@ -2245,5 +2217,17 @@
     "category": "INVENTORY",
     "name": "Toggle category selection mode",
     "bindings": [ { "input_method": "keyboard", "key": "BACKTAB" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "QUIT",
+    "category": "default",
+    "name": "Cancel menu",
+    "bindings": [
+      { "input_method": "keyboard", "key": "ESC" },
+      { "input_method": "keyboard", "key": "q" },
+      { "input_method": "keyboard", "key": "Q" },
+      { "input_method": "gamepad", "key": "JOY_3" }
+    ]
   }
 ]

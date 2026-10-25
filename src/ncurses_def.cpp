@@ -16,6 +16,7 @@
 #include <curses.h>
 #endif
 
+#include <array>
 #include <cstdio>
 #include <cstring>
 #include <langinfo.h>
@@ -24,7 +25,6 @@
 #include <unistd.h>
 #include <stdexcept>
 #include <optional>
-#include <vector>
 
 #include "cursesdef.h"
 #include "catacharset.h"
@@ -572,7 +572,8 @@ input_event input_manager::get_input_event()
         key = getch();
         if( key == KEY_ESCAPE ) {
             // Peek for the Shift+Space sequence after Escape; anything else goes back untouched.
-            auto peeked = std::vector<int>();
+            auto peeked = std::array<int, std::size( shift_space_tail )> {};
+            auto peeked_count = 0;
             auto matched = true;
             const int prev_timeout = input_timeout;
             set_timeout( 0 );
@@ -582,19 +583,19 @@ input_event input_manager::get_input_event()
                     matched = false;
                     break;
                 }
-                peeked.push_back( ch );
+                peeked[peeked_count++] = ch;
                 if( ch != expected ) {
                     matched = false;
                     break;
                 }
             }
             set_timeout( prev_timeout );
-            for( const int ch : peeked | std::views::reverse ) {
-                ungetch( ch );
-            }
             if( matched ) {
                 previously_pressed_key = KEY_SHIFT_SPACE;
                 return input_event( KEY_SHIFT_SPACE, input_event_t::keyboard );
+            }
+            for( const auto ch : peeked | std::views::take( peeked_count ) | std::views::reverse ) {
+                ungetch( ch );
             }
         }
         if( key != ERR ) {

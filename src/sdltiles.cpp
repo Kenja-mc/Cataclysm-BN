@@ -72,6 +72,7 @@
 #    include <stdexcept>
 #    include <type_traits>
 #    include <unordered_map>
+#    include <utility>
 #    include <vector>
 
 #if defined(__linux__)
@@ -2998,6 +2999,8 @@ void android_vibrate()
 //Check for any window messages (keypress, paint, mousemove, etc)
 static void CheckMessages()
 {
+    // Text events have no modifiers; global state may already reflect key-up.
+    static auto pending_shifted_space = false;
     SDL_Event ev;
     bool quit = false;
     bool text_refresh = false;
@@ -3373,6 +3376,7 @@ static void CheckMessages()
                 }
 #endif
                 is_repeat = ev.key.repeat;
+                pending_shifted_space = ev.key.key == SDLK_SPACE && ( ev.key.mod & SDL_KMOD_SHIFT );
                 //hide mouse cursor on keyboard input
                 if( get_option<std::string>( "HIDE_CURSOR" ) != "show" && SDL_CursorVisible() ) {
                     SDL_HideCursor();
@@ -3437,14 +3441,13 @@ static void CheckMessages()
                 }
             }
             break;
-            case SDL_EVENT_TEXT_INPUT:
+            case SDL_EVENT_TEXT_INPUT: {
+                const auto shifted_space = std::exchange( pending_shifted_space, false );
                 if( !add_alt_code( *ev.text.text ) ) {
                     if( strlen( ev.text.text ) > 0 ) {
                         const unsigned lc = UTF8_getch( ev.text.text );
-                        // Shift+Space is its own chord. The literal text is kept below, so text
-                        // entry still receives the space.
-                        const int code = lc == ' ' && ( SDL_GetModState() & SDL_KMOD_SHIFT )
-                                         ? KEY_SHIFT_SPACE : lc;
+                        // Keep literal text below for editors.
+                        const auto code = lc == ' ' && shifted_space ? KEY_SHIFT_SPACE : static_cast<int>( lc );
                         last_input = input_event( code, input_event_t::keyboard );
 #if defined(SDL_PLATFORM_ANDROID)
                         if( !android_is_hardware_keyboard_available() ) {
@@ -3474,6 +3477,7 @@ static void CheckMessages()
                     text_refresh = true;
                 }
                 break;
+            }
             case SDL_EVENT_TEXT_EDITING: {
                 if( strlen( ev.edit.text ) > 0 ) {
                     const unsigned lc = UTF8_getch( ev.edit.text );
