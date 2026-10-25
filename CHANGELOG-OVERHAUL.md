@@ -4,6 +4,15 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-25
+
+### Added
+
+- The title screen displays a text-only OVERHAUL wordmark beneath Bright Nights in terminal
+  and graphical builds.
+- The release runbook includes preflight checks and a notes-only correction procedure that
+  preserves published tags, binaries and the download table.
+
 ## 2026-10-24
 
 ### Added

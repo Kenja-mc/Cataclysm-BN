@@ -18,6 +18,15 @@ sections. Compare the notes' download table with the workflow assets: Windows zi
 tarball, each with its `.sha256` file, under the stable names listed below. Do not announce a
 link or asset the publish job will not produce.
 
+Before tagging, exercise the candidate artifacts and documented entrypoints:
+
+- Compare the selected source SHA with each package's `VERSION.txt` and executable's `--version`.
+- Launch the actual title screen and check the window title identifies Bright Nights Overhaul.
+- Run commands affected by the release in `tools/*/README.md` and developer documentation as written,
+  using private user directories; do not substitute a different invocation for a broken example.
+- Complete the repository's data, upstream-test and fork end-to-end checks. Record failures and
+  any explicitly approved exception rather than describing a partial run as fully green.
+
 Run the local note generator to inspect the first-release notes, or pass the previous release's
 publication date to inspect an update:
 
@@ -38,14 +47,14 @@ Only the publishing commands in [Cut a release](#cut-a-release) create a release
 2. Pick the next version (see below) and push a tag for it:
 
    ```sh
-   git tag -a v0.2.0 -m "Bright Nights Overhaul v0.2.0"
-   git push origin v0.2.0
+   git tag -a v0.3.0 -m "Bright Nights Overhaul v0.3.0"
+   git push origin v0.3.0
    ```
 
    Or run the workflow from `main` and type the version:
 
    ```sh
-   gh-fork workflow run fork-release.yml --repo Kenja-mc/Cataclysm-BN --ref main -f version=v0.2.0
+   gh-fork workflow run fork-release.yml --repo Kenja-mc/Cataclysm-BN --ref main -f version=v0.3.0
    ```
 
 3. Watch it with `gh-fork run list --workflow fork-release.yml --repo Kenja-mc/Cataclysm-BN`.
@@ -85,26 +94,25 @@ a successful first run alone does not prove that the cache is reused.
 ## Correct notes without rebuilding
 
 For an authorized notes-only correction, preserve the published tag and every binary asset:
-do not dispatch `fork-release.yml`, push or move a tag, or rebuild/re-upload files. Regenerate
-the notes from the tagged changelog and the previous release's publication date (for the first
-release, omit the date):
+do not dispatch `fork-release.yml`, push or move a tag, or rebuild/re-upload files. From the
+reviewed checkout containing the changelog correction, generate the dated sections using the
+previous release's publication date (omit the date for a first release):
 
 ```sh
-git checkout v0.2.0
-build-scripts/fork-release-notes.sh CHANGELOG-OVERHAUL.md 2026-10-20
+build-scripts/fork-release-notes.sh CHANGELOG-OVERHAUL.md 2026-10-20 > /tmp/bno-changelog-notes.md
+gh-fork release view v0.2.0 --repo Kenja-mc/Cataclysm-BN --json body --jq .body > /tmp/bno-release-notes.md
 ```
 
-Review the generated notes and edit only the release description on the fork. Use the guarded
-fork command, specifying the release tag and repository:
+Review both files. In `/tmp/bno-release-notes.md`, retain the existing download table and replace
+only the authorized changelog text with the generated correction. The generator prints dated
+sections, not the download table. Then apply the reviewed description:
 
 ```sh
-gh-fork release edit v0.2.0 --repo Kenja-mc/Cataclysm-BN --notes-file /path/to/release-notes.txt
+gh-fork release edit v0.2.0 --repo Kenja-mc/Cataclysm-BN --notes-file /tmp/bno-release-notes.md
 ```
 
-The notes file should contain the reviewed generated text, with only the authorized correction.
-For a correction to the changelog itself, make and review a fork-only commit, but do not move
-the existing release tag or replace its binaries. Notes-only edits do not change the immutable
-build or tag.
+This changes only the description, not the immutable build or tag. Commit the changelog correction
+separately; do not check out the old tag and thereby discard the post-tag correction.
 
 ## Versions
 
@@ -114,7 +122,7 @@ build or tag.
 | `v0.X.0` | new features, new content, changed controls                                           | `v0.2.0` |
 | `v0.0.X` | fixes only                                                                            | `v0.1.1` |
 
-The first release is `v0.2.0`. Versions only go up: the updater installs a release when its
+The first release is `v0.1.0`. Versions only go up: the updater installs a release when its
 version is higher than the player's `VERSION.txt`, and only the highest version becomes the
 "latest" release. A published version is immutable: a rerun refuses to replace it, because
 players already on that version would not receive the rebuilt files. Choose a new patch version.
