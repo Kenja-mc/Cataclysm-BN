@@ -1333,9 +1333,9 @@ action_id input_context::display_menu( const bool permit_execute_action )
                 invlet = ' ';
             }
 
-            if( status == s_add_global && overwrite_default ) {
-                // We're trying to add a global, but this action has a local
-                // defined, so gray out the invlet.
+            if( status == s_add_global && overwrite_default && !attributes.input_events.empty() ) {
+                // Only local bindings prevent adding a global binding. An empty local override
+                // can be replaced by a global binding.
                 mvwprintz( w_help, point( 2, i + 10 ), c_dark_gray, "%c ", invlet );
             } else if( status == s_add || status == s_add_global ) {
                 mvwprintz( w_help, point( 2, i + 10 ), c_light_blue, "%c ", invlet );
@@ -1514,8 +1514,8 @@ action_id input_context::display_menu( const bool permit_execute_action )
                     inp_mngr.remove_input_for_action( action_id, category_to_access );
                     changed = true;
                 }
-            } else if( status == s_add_global && is_local ) {
-                // Disallow adding global actions to an action that already has a local defined.
+            } else if( status == s_add_global && is_local && !is_empty ) {
+                // A global binding cannot override local keys; remove them first.
                 popup( _( "There are already local keybindings defined for this action, please remove them first." ) );
             } else if( status == s_add || status == s_add_global ) {
                 const input_event new_event = query_popup()
@@ -1549,6 +1549,10 @@ action_id input_context::display_menu( const bool permit_execute_action )
                     std::string category_to_access = category;
                     if( status == s_add_global ) {
                         category_to_access = default_context_id;
+                        if( is_local ) {
+                            // An empty local override still masks the global bindings.
+                            inp_mngr.remove_input_for_action( action_id, category );
+                        }
                     }
 
                     inp_mngr.add_input_for_action( action_id, category_to_access, new_event );
