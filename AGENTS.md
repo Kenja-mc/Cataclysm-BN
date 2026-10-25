@@ -71,8 +71,14 @@ so editing it can correctly reuse the same object. For a suspected stale hit, bu
 that includes the changed block and inspect the object with `strings` or compare its checksum
 before and after; do not disable ccache based on elapsed time alone.
 Measured with both tools on this 8-core/16-thread machine: a clean curses build of the game and tests
-took 4 minutes 41 seconds, returning to a previously built state took 0.7 seconds, and editing
-`src/game.cpp`, the largest file, took 17.8 seconds.
+took 3 minutes 30 seconds on a fresh tree at a new repository path (438 of 758 objects came from
+ccache), returning to a previously built state took 0.7 seconds, and editing `src/game.cpp`, the
+largest file, took 17.8 seconds.
+
+Moving or renaming the repository invalidates every build tree, because `CMakeCache.txt` and the
+`_deps/*-subbuild` caches record absolute source paths, and a configure then fails with "the
+current CMakeCache.txt directory is different". Trash `out/build/<preset>` and configure again;
+patching the caches is slower and leaves mixed paths behind.
 
 Use absolute paths for file tools in another worktree. A shell command's `cwd` does not change
 the root used by subsequent read/edit/write calls.
