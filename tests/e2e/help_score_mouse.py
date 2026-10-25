@@ -7,7 +7,7 @@ catch hit testing that drifted from the rendering. Keyboard paths stay open thro
 import re
 
 from fixtures import shared_game
-from helpers import HELPERS, arena, empty_inventory, give, wait_until
+from helpers import HELPERS, action_menu, arena, empty_inventory, give, option_value, wait_until
 
 
 def find_scrollbar(screen):
@@ -53,12 +53,15 @@ def pane_rows(screen, top, bottom):
 
 
 def open_help(g):
-    g.keys("0", delay=1.0)
+    g.keys("0" if option_value(g, "CONTROL_SCHEME") == "classic" else "F1", delay=1.0)
     assert g.wait_for("Please press one of the following", timeout=15), g.screen()
 
 
 def open_scores(g):
-    g.keys(")", delay=1.0)
+    if option_value(g, "CONTROL_SCHEME") == "classic":
+        g.keys(")", delay=1.0)
+    else:
+        action_menu(g, "Info", "View Achievements, Scores, and Kills")
     assert g.wait_for("ACHIEVEMENTS", timeout=15), g.screen()
 
 
@@ -68,7 +71,9 @@ def leave_screen(g):
 
 
 def display_name(g, item):
-    out = g.lua(f"local it=gapi.create_item(ItypeId.new('{item}'),-1) out(it:display_name(1))")
+    out = g.lua(
+        "for _,it in ipairs(gapi.get_avatar():all_items(false)) do "
+        f"if it:get_type():str() == '{item}' then out(it:display_name(1)) end end")
     assert len(out) == 1, out
     return re.sub(r"</?color[^>]*>", "", out[0])
 
@@ -89,7 +94,13 @@ def test_help_topic_opens_by_click(g):
         screen = game.screen()
         assert "survival roguelike" in screen, "the clicked topic should open\n" + screen
 
-        # The long topic scrolls with the shared scrollbar: the lower track jumps ahead.
+        # Introduction fits the fixed-height help viewer. Open a genuinely long topic
+        # before exercising the shared scrollbar.
+        game.keys("Escape", delay=0.8)
+        x, y = row_of(game.screen(), "Items overview")
+        game.click(x, y)
+        screen = game.screen()
+        assert "wide variety of items" in screen, screen
         bar = find_scrollbar(screen)
         assert bar, "the long topic should draw a scrollbar\n" + screen
         top, bottom, bx = bar
@@ -200,6 +211,7 @@ def test_examine_action_click_selects_then_runs(g):
 
         # The toggle really happened through the clicked row.
         game.keys("Escape", delay=0.8)
+        rock = display_name(game, "rock")
         game.keys("i", delay=1.2)
         x, y = row_of(game.screen(), rock)
         game.click(x, y, button=2)
@@ -221,6 +233,7 @@ def test_examine_action_click_selects_then_runs(g):
         assert wait_until(lambda: "Drop" not in game.screen(), timeout=10), \
             "Enter must run the row the click selected\n" + game.screen()
         game.keys("Escape", delay=0.8)
+        pipe = display_name(game, "pipe")
         game.keys("i", delay=1.2)
         x, y = row_of(game.screen(), pipe)
         game.click(x, y, button=2)

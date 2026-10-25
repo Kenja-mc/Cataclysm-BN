@@ -8,7 +8,8 @@ import re
 import time
 
 from fixtures import shared_game
-from helpers import HELPERS, action_menu, arena, count_at, count_carried, give, open_crafting, spawn, wait_until
+from helpers import HELPERS, action_menu, arena, count_at, count_carried, give, open_crafting, wait_until
+from menu_scrollbars import find_scrollbar
 from tmux_game import Game
 
 
@@ -44,7 +45,10 @@ def _click_creation_tab(g, name):
 
 
 def _points_line(screen):
-    return next((line for line in screen.splitlines() if "Points left:" in line), "")
+    # The same row also describes the highlighted trait's cost; selection changes that
+    # description without spending points.
+    match = re.search(r"Points left:\s*([-+\d=]+)", screen)
+    return match.group(1) if match else ""
 
 
 def _open_filtered_recipe(g, name):
@@ -92,15 +96,15 @@ def _window_left(screen):
 def test_modern_crafting_row_click_selects_then_crafts(_g):
     with _modern_crafting() as g:
         _fresh(g)
-        spawn(g, 3, 0, "glass_shard", 3)
+        # Lua opens the console and dismisses menus, so count only outside the recipe UI.
+        before = _crafted(g)
         _open_filtered_recipe(g, "glass shard trap")
         x, y = _row_of(g, "glass shard trap")
-        before = _crafted(g)
         g.click(x, y)
         assert "Searched" in g.screen(), (
             "the first row click must only select and keep the menu\n" + g.screen())
-        assert _crafted(g) == before, "the first row click must not craft"
         g.click(x, y)
+        g.wait_gone("Searched", timeout=15)
         assert wait_until(lambda: _crafted(g) == before + 1, timeout=45), g.screen()
         assert not g.dismiss_error_popup(), "crafting by click must not raise an error"
 
@@ -108,7 +112,7 @@ def test_modern_crafting_row_click_selects_then_crafts(_g):
 def test_modern_crafting_scrollbar_moves_selection_without_crafting(_g):
     with _modern_crafting() as g:
         _fresh(g)
-        spawn(g, 3, 0, "glass_shard", 3)
+        before_crafted = _crafted(g)
         open_crafting(g)
         g.wait_for("[f]ilter", timeout=15)
         g.keys("f", delay=0.8)
@@ -117,17 +121,19 @@ def test_modern_crafting_scrollbar_moves_selection_without_crafting(_g):
         g.keys("Enter", delay=1.5)
         g.wait_for("Searched", timeout=15)
         before_screen = g.screen()
-        before_crafted = _crafted(g)
-        # Left list scrollbar sits in window column 0; the window starts at screen row 5.
-        g.click(0, 10)
+        bar = find_scrollbar(before_screen)
+        assert bar, "the recipe list must draw a scrollbar\n" + before_screen
+        top, bottom, x = bar
+        g.click(x, bottom - 1)
         after_track = g.screen()
+        assert "Searched" in after_track, "a scrollbar track must not craft\n" + after_track
         assert before_screen != after_track, "a scrollbar track click must move the list"
-        assert _crafted(g) == before_crafted, "scrollbar clicks must never craft"
-        g.click(0, 5)
+        g.click(x, top)
         after_arrow = g.screen()
+        assert "Searched" in after_arrow, "a scrollbar arrow must not craft\n" + after_arrow
         assert after_arrow != after_track, "the up arrow must step the selection"
-        assert _crafted(g) == before_crafted, "scrollbar clicks must never craft"
         g.keys("Escape", delay=0.8)
+        assert _crafted(g) == before_crafted, "scrollbar clicks must never craft"
 
 
 def test_modern_construction_scrollbar_and_tab_click(_g):
@@ -150,8 +156,9 @@ def test_modern_construction_scrollbar_and_tab_click(_g):
         assert g.screen() != after_row, "a wheel notch must move the construction cursor"
 
         # Click a category tab that is not the selected one (it may be empty).
-        row = moved.splitlines()[1]
-        tabs = [(m.start(), m.group(1)) for m in re.finditer(r"│([^│]+)│", row)]
+        row = g.screen().splitlines()[1]
+        tabs = [(m.start() + left, m.group(1))
+                for m in re.finditer(r"│([^│]+)│", row[left:])]
         selected = re.search(r"<│([^│]+)│>", row)
         assert selected, row
         target = next(((x, name) for x, name in tabs
@@ -189,7 +196,13 @@ def _reach_custom_character(g):
         s = g.screen()
         if "Select your language" in s:
             g.keys("1", delay=0.5)
-        elif "[New Game]" in s or "Play Now" in s:
+        elif "Are you SURE you're finished" in s:
+            g.keys("Left", "Enter", delay=1)
+        elif "Finalize World" in s and "World Name" in s:
+            g.keys("Tab", delay=1)
+        elif "SCENARIO" in s and "POINTS" in s and "Points left:" in s:
+            return
+        elif ("[New Game]" in s or "Play Now" in s) and "World Mods" not in s:
             line = next((l for l in s.splitlines() if "Custom Character" in l), "")
             if "Custom Character" in line and "»" in line:
                 g.keys("Enter", delay=1)
@@ -214,8 +227,6 @@ def _reach_custom_character(g):
             g.keys("Tab", "Tab", delay=1)
         elif "World Options" in s:
             g.keys("Tab", delay=1)
-        elif "SCENARIO" in s and "POINTS" in s and "World" not in s:
-            return
         else:
             time.sleep(0.5)
     raise AssertionError("could not reach character creation\n" + g.screen())

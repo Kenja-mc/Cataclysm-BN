@@ -12,12 +12,22 @@ from options_menu import close_options
 from tmux_game import Game, start_new_game
 
 
-def find_scrollbar(screen):
-    """Locate a drawn vertical scrollbar as (top_y, bottom_y, x)."""
+def find_scrollbar(screen, title=None):
+    """Locate a vertical scrollbar, optionally on a titled menu's left border."""
     lines = screen.splitlines()
+    menu_left = None
+    if title is not None:
+        title_row = next((line for line in lines if title in line), None)
+        if title_row is None:
+            return None
+        menu_left = title_row.rfind("╭", 0, title_row.index(title))
+        if menu_left < 0:
+            return None
     best = None
     for y, line in enumerate(lines):
         for x, char in enumerate(line):
+            if menu_left is not None and x != menu_left:
+                continue
             if char != "^" or y + 1 >= len(lines):
                 continue
             below = lines[y + 1]
@@ -34,7 +44,7 @@ def find_scrollbar(screen):
 
 def menu_scrollbar(g, title):
     assert g.wait_for(title, timeout=20), g.screen()
-    bar = find_scrollbar(g.screen())
+    bar = find_scrollbar(g.screen(), title)
     assert bar, "no drawn scrollbar in the open menu\n" + g.screen()
     return bar
 
@@ -104,9 +114,9 @@ def test_uilist_scrollbar_after_resize(g):
             old = menu_scrollbar(g, "< Resize probe >")
             g.resize(100, 30)
             assert wait_until(
-                lambda: (bar := find_scrollbar(g.screen())) and bar[1] != old[1],
+                lambda: (bar := find_scrollbar(g.screen(), "< Resize probe >")) and bar[1] != old[1],
                 timeout=10), "the scrollbar must follow the resized window\n" + g.screen()
-            top, bottom, x = find_scrollbar(g.screen())
+            top, bottom, x = find_scrollbar(g.screen(), "< Resize probe >")
 
             g.click(x, bottom - 1)
             assert "Row 199" in g.screen(), "the resized bar must map to the resized list\n" + g.screen()
@@ -126,7 +136,7 @@ def test_options_and_keybindings_scrollbars(_g):
     try:
         start_new_game(g)
         open_main_menu(g)
-        g.keys("t", "o", delay=0.8)
+        g.keys("5", delay=0.8)
         g.wait_for(" OPTIONS ", timeout=10)
         for _ in range(8):
             bar = find_scrollbar(g.screen())
@@ -146,8 +156,8 @@ def test_options_and_keybindings_scrollbars(_g):
         close_options(g)
 
         open_main_menu(g)
-        g.keys("t", "y", delay=0.8)
-        g.wait_for("Keybindings", timeout=15)
+        g.keys("4", delay=0.8)
+        g.wait_for("Unbound keys", timeout=15)
         bar = find_scrollbar(g.screen())
         assert bar, "the keybindings screen should draw a list scrollbar\n" + g.screen()
         top, bottom, x = bar

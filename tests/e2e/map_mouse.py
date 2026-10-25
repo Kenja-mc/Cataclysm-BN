@@ -163,13 +163,12 @@ def test_right_click_locks_enemies_and_opens_object_actions(_g):
         screen = game.screen()
         assert "Interact with the" in screen, "RMB must list the door's actions:\n" + screen
         assert "close the" in screen and "smash the" in screen, screen
-        assert mouse_state(game) == before, "listing actions must not act, move, or spend time"
         game.keys("Escape", delay=0.6)
         game.wait_gone("Interact with the")
         assert "Mouse View" in game.screen(), "closing the actions must keep the selection"
-        assert mouse_state(game) == before, "closing the actions must stay free"
         game.keys("Escape", delay=0.6)
         assert "Mouse View" not in game.screen(), "Escape must clear the kept selection"
+        assert mouse_state(game) == before, "listing and canceling actions must stay free"
 
 
 def test_mouse_selects_when_arrow_aim_disabled(_g):

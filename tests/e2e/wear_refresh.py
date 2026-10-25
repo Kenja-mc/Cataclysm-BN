@@ -77,7 +77,8 @@ def test_wield_moves_pipe_into_weapon_list_and_keeps_menu_open(g):
     assert "WEAPON HELD" in s, "the held weapon must appear at once\n" + s
     lines = s.splitlines()
     weapon_y = next(y for y, line in enumerate(lines) if "WEAPON HELD" in line)
-    pipe_x, pipe_y = row_of(g, "pipe")
+    # The world sidebar also says "pipe"; match the inventory's quantity-bearing row.
+    pipe_y = next((y for y, line in enumerate(lines) if "pipe (1)" in line), -1)
     assert pipe_y > weapon_y, "the pipe must sit under the held weapon list\n" + s
     assert "rock" in s, "other carried items must stay listed\n" + s
 

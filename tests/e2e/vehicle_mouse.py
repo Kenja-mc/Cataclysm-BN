@@ -8,11 +8,12 @@ import re
 import subprocess
 import time
 
-from helpers import HELPERS, action_menu, arena, choose_menu_entry, count_at, count_carried, \
+from helpers import HELPERS, action_menu, arena, bub_pos, choose_menu_entry, count_at, count_carried, \
     empty_inventory, give, settle, start_new_game, wait_until
 from inventory_mouse import display_name, row_of as inventory_row_of
+from safe_click import see_everything
 from tmux_game import Game
-from vehicle_box import spawn_vehicle
+from vehicle_box import spawn_vehicle, vehicle_game as empty_vehicle_game
 
 # The work screen's first row of actions stays visible at every supported width.
 SCREEN_MARKER = "refill"
@@ -34,12 +35,17 @@ def parts_pane(screen):
 
 def open_vehicle_work_screen(g):
     """Walk the real examine route instead of calling the screen directly."""
-    x, y = g.find("@")
-    g.click(x, y, button=2)
     action_menu(g, "Interact", "Examine Nearby Terrain")
     if "Examine where?" in g.screen():
         g.keys("x", delay=0.2)
-    if "Interact with what?" in g.screen() or "Interact with the" in g.screen():
+    screen = g.screen()
+    if "Interact with what?" in screen:
+        # Nearby terrain offers one examine action per adjacent tile. Pick the
+        # spawned vehicle's own tile, not the first neighboring floor.
+        match = re.search(r"│\s+\S\s+(examine the [^│\n]* \(here\))\s+│", screen)
+        assert match, "the current vehicle tile must be examinable\n" + screen
+        choose_menu_entry(g, match.group(1))
+    elif "Interact with the" in screen:
         choose_menu_entry(g, "examine the")
     g.wait_for("Examine vehicle")
     choose_menu_entry(g, "Examine vehicle")
@@ -271,10 +277,9 @@ def cargo_curtain_tile(g):
     return min(offsets, key=lambda offset: abs(offset[0]) + abs(offset[1]))
 
 
-def select_own_tile(g):
-    """Right-click the avatar's tile and dismiss the action list, keeping the selection."""
-    x, y = g.find("@")
-    g.click(x, y, button=2)
+def select_vehicle_tile(g, cell):
+    """Right-click a vehicle tile and dismiss the action list, keeping the selection."""
+    g.click(*cell, button=2)
     if "Interact with the" in g.screen():
         g.keys("Escape", delay=0.3)
         g.wait_gone("Interact with the")
@@ -282,32 +287,36 @@ def select_own_tile(g):
 
 def test_space_opens_trunk_and_shift_space_toggles_curtain(_g):
     """Space loots a vehicle trunk directly; Shift+Space toggles its curtain both ways."""
-    game = vehicle_game("bn-e2e-vehicle-quick-actions")
+    game = empty_vehicle_game("bn-e2e-vehicle-quick-actions", CONTROL_SCHEME="modern")
     try:
         spawn_vehicle(game, "camper_van")
         dx, dy = cargo_curtain_tile(game)
-        # Stand on the trunk tile: inside the van, so the curtain answers from inside too.
+        # Stand on the cargo tile to drop into its trunk.
         assert game.lua(
             f"local o=gapi.get_avatar():get_pos_ms() "
             f"gapi.get_avatar():set_pos_ms(TripointBubMs.new(o.x+{dx},o.y+{dy},o.z)) "
             "out('ok')") == ["ok"]
         settle(game)
         empty_inventory(game)
+        see_everything(game, True)
+        assert game.lua("M:clear_items_at(here(0,0)) out('ok')") == ["ok"]
+        cell = game.find("@")
+        position = bub_pos(game)
         give(game, "rock")
         rock = display_name(game, "rock")
         game.keys("i", delay=1)
         assert rock in game.screen(), game.screen()
         game.click(*inventory_row_of(game, rock), button=2)
         game.wait_for("Drop")
-        choose_menu_entry(game, "Drop")
-        assert wait_until(lambda: rock not in game.screen(), 10), \
-            "the drop must finish and leave the inventory screen:\n" + game.screen()
+        game.keys("D", delay=0.5)
+        assert wait_until(lambda: "Exit screen" not in game.screen(), 10), game.screen()
+        assert count_carried(game, "rock") == 0, "the drop must remove the carried rock"
         assert wait_until(lambda: count_at(game, 0, 0, "rock") == 0, 10), \
             "the dropped rock must sit in the trunk's cargo, not on the ground:\n" + game.screen()
 
         # Space on the selected trunk tile: the contents come up ready to loot, with no
         # vehicle interaction screen and no action menu in between.
-        select_own_tile(game)
+        select_vehicle_tile(game, cell)
         game.keys("Space", delay=0.5)
         game.wait_for("Pick up")
         game.wait_for("Weight")
@@ -319,17 +328,28 @@ def test_space_opens_trunk_and_shift_space_toggles_curtain(_g):
         game.wait_gone("Pick up")
         assert wait_until(lambda: count_carried(game, "rock") == 1, 10), game.screen()
 
-        # Shift+Space on the same tile toggles the curtain: state-aware, both directions.
-        select_own_tile(game)
+        assert bub_pos(game) == position, "opening a trunk must not move the avatar"
+        # A curtain cannot close through an occupant; stand at the neighboring controls.
+        assert game.lua(
+            f"local o=gapi.get_avatar():get_pos_ms() "
+            f"gapi.get_avatar():set_pos_ms(TripointBubMs.new(o.x-({dx}),o.y-({dy}),o.z)) "
+            "out('ok')") == ["ok"]
+        settle(game)
+        x, y = game.find("@")
+        cell = (x + dx, y + dy)
+        position = bub_pos(game)
+        select_vehicle_tile(game, cell)
         shift_space(game)
-        game.wait_for("You open the")
+        assert wait_until(lambda: "You open the" in game.screen() or "You close the" in game.screen(), 10), game.screen()
+        opened = "You open the" in game.screen()
         assert "curtain" in game.screen(), game.screen()
+        select_vehicle_tile(game, cell)
         shift_space(game)
-        game.wait_for("You close the")
+        game.wait_for("You close the" if opened else "You open the")
         assert count_carried(game, "rock") == 1, "toggling must not disturb the looted rock"
+        assert bub_pos(game) == position, "toggling a curtain must not move the avatar"
 
         # Without a selected tile the chord still names its target instead of acting blindly.
-        game.keys("Escape", delay=0.5)
         shift_space(game)
         game.wait_for("Toggle which curtain?")
         game.keys("Escape", delay=0.3)

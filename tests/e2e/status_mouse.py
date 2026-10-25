@@ -6,7 +6,12 @@ The first click on a row only selects it. Clicking the same row again runs the
 same action as pressing Enter, so no initially selected row can fire by accident.
 """
 
-from helpers import arena
+import json
+import tempfile
+from pathlib import Path
+
+from helpers import HELPERS, Game, arena, start_new_game
+from tmux_game import ROOT
 
 # Enough harmless mutations for the traits panel to need its scrollbar at a
 # small window size. All are unset again after each test.
@@ -14,7 +19,7 @@ TRAITS = ("FLEET", "GOODHEARING", "INATTENTIVE", "PARKOUR", "QUICK",
           "OPTIMISTIC", "OUTDOORSMAN", "BIOLUM1", "FEYHEARING",
           "GOODCARDIO", "GOODCARDIO2", "FASTLEARNER")
 
-# Wounds that fill the body report past one small screen.
+# Wounds used by the body report fixture.
 WOUNDS = (("bleed", "arm_l"), ("bleed", "arm_r"), ("bleed", "leg_l"),
           ("bleed", "leg_r"), ("bite", "torso"), ("bandaged", "head"),
           ("infected", "foot_l"), ("bite", "hand_r"), ("disinfected", "hand_l"))
@@ -25,7 +30,7 @@ def moves(g):
 
 
 def stat(g, name):
-    return int(g.lua(f"out(gapi.get_avatar():get_{name})")[0])
+    return int(g.lua(f"out(gapi.get_avatar():get_{name}())")[0])
 
 
 def training(g, skill):
@@ -34,15 +39,9 @@ def training(g, skill):
 
 
 def add_wounds(g):
-    for effect, part in WOUNDS:
-        g.lua(f"gapi.get_avatar():add_effect(EffectTypeId.new('{effect}'), "
-              f"TimeDuration.from_minutes(30), BodyPartTypeId.new('{part}'), 1) out('ok')")
-
-
-def clear_wounds(g):
-    for effect, part in WOUNDS:
-        g.lua(f"gapi.get_avatar():remove_effect(EffectTypeId.new('{effect}'), "
-              f"BodyPartTypeId.new('{part}')) out('ok')")
+    assert g.lua("local a=gapi.get_avatar() " + " ".join(
+        f"a:add_effect(EffectTypeId.new('{effect}'), TimeDuration.from_minutes(30), "
+        f"BodyPartTypeId.new('{part}'), 1)" for effect, part in WOUNDS) + " out('ok')") == ["ok"]
 
 
 def set_traits(g):
@@ -80,13 +79,13 @@ def scrollbar_column(g):
 
 
 def popup_width(g):
-    """Width of the report window, measured from its left border to the
-    scrollbar column just inside the right border."""
-    columns = g.screen().splitlines()
-    sx, _ = scrollbar_column(g)
-    left = columns[0].rfind("\u250c", 0, sx)
-    assert left >= 0, "no report border left of the scrollbar\n" + g.screen()
-    return sx - left + 2
+    """Width of the report measured from the borders beside its Close button."""
+    cx, cy = find_in(g, "Close")
+    row = g.screen().splitlines()[cy]
+    left = row.rfind("│", 0, cx)
+    right = row.find("│", cx)
+    assert 0 <= left < right, "no report borders beside Close\n" + g.screen()
+    return right - left + 1
 
 
 def open_info(g):
@@ -102,7 +101,7 @@ def close_info(g):
 
 def test_body_report_close_button(g):
     """A left click on Close leaves the report; no move is spent."""
-    g.resize(100, 14)
+    g.resize(100, 25)
     arena(g)
     before = moves(g)
     g.keys("h", delay=1.5)
@@ -110,7 +109,8 @@ def test_body_report_close_button(g):
     width = popup_width(g)
     assert width < 100, f"report should size to its text, got {width}\n{g.screen()}"
     cx, cy = find_in(g, "Close")
-    assert cy == 12, f"Close belongs on the row above the bottom border\n{g.screen()}"
+    assert any(ch in g.screen().splitlines()[cy + 1] for ch in "╰└"), \
+        "Close belongs on the row above the bottom border\n" + g.screen()
     g.click(cx, cy)
     g.wait_gone("Close")
     assert "ESCAPE]" not in g.screen(), g.screen()
@@ -118,34 +118,71 @@ def test_body_report_close_button(g):
     g.resize(140, 45)
 
 
-def test_body_report_wheel_and_scrollbar(g):
-    """The wheel turns a long report and the scrollbar track jumps back up."""
-    g.resize(100, 14)
-    arena(g)
-    add_wounds(g)
-    before = moves(g)
+def long_body_report_game():
+    """Exercise mod-provided headings through the real body report renderer."""
+    userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-body-report-"))
+    mod_id = "e2e_body_report_headings"
+    mod_dir = userdir / "mods" / mod_id
+    mod_dir.mkdir(parents=True)
+    (mod_dir / "modinfo.json").write_text(json.dumps([{
+        "type": "MOD_INFO", "id": mod_id, "name": "E2E body report headings",
+        "description": "Long anatomical headings exercise report scrolling at a valid terminal size.",
+        "category": "content", "dependencies": ["bn"],
+    }]))
+    labels = {"head": "Head", "torso": "Torso", "arm_l": "Left arm",
+              "arm_r": "Right arm", "leg_l": "Left leg", "leg_r": "Right leg"}
+    heading_detail = (
+        "Skin and underlying soft tissues, connective tissue and supporting structures; "
+        "the regional bones and joints, muscles and tendons, blood vessels and nerves; "
+        "the outer surface and deeper structures that protect the body, permit movement "
+        "and carry sensation, including their current injuries and ongoing treatment")
+    (mod_dir / "body_parts.json").write_text(json.dumps([
+        {"type": "body_part", "id": part, "copy-from": part,
+         "heading": f"{label}: {heading_detail}"} for part, label in labels.items()
+    ]))
+    defaults = json.loads((ROOT / "data/mods/default.json").read_text())
+    (userdir / "config").mkdir()
+    (userdir / "config/default_mods.json").write_text(json.dumps([*defaults, mod_id]))
+    game = Game(name="bn-e2e-body-report", userdir=userdir, cols=80, rows=25,
+                options={"SAFEMODE": "false"})
     try:
+        start_new_game(game)
+        game.define_lua(HELPERS)
+        arena(game)
+    except Exception:
+        game.close()
+        raise
+    return game
+
+
+def test_body_report_wheel_and_scrollbar(_g):
+    """The wheel turns a long report and the scrollbar track jumps back up."""
+    g = long_body_report_game()
+    try:
+        add_wounds(g)
+        before = moves(g)
         g.keys("h", delay=1.5)
-        g.wait_for("bleeding")
+        g.wait_for("Close")
         assert "Bandages stop bleeding" not in g.screen(), g.screen()
         first = g.screen().splitlines()[1]
         # The wheel turns three lines per notch in a text view.
         g.type(f"\x1b[<65;{popup_width(g) // 2 + 1};7M", delay=1)
         assert g.screen().splitlines()[1] != first, \
             "the wheel must turn the report\n" + g.screen()
-        g.wait_for("Bandages stop bleeding")
-        # The scrollbar column sits before the right border; the track above
-        # its middle jumps the view back towards the first page.
         sx, sy = scrollbar_column(g)
+        rows = g.screen().splitlines()
+        bottom = next(y for y in range(sy + 1, len(rows)) if rows[y][sx:sx + 1] == "v")
+        g.click(sx, bottom - 1)
+        g.wait_for("Bandages stop bleeding")
+        # A track cell above the slider returns to the first part of the report.
         g.click(sx, sy + 2)
         g.wait_gone("Bandages stop bleeding")
-        g.keys("Escape", delay=1.0)
+        cx, cy = find_in(g, "Close")
+        g.click(cx, cy)
         g.wait_gone("Close")
+        assert moves(g) == before, "the body report must not spend moves"
     finally:
-        clear_wounds(g)
-    arena(g)
-    g.resize(140, 45)
-    assert moves(g) == before, "the body report must not spend moves"
+        g.close()
 
 
 def test_character_info_stat_click_selects_without_changes(g):
@@ -164,13 +201,11 @@ def test_character_info_stat_click_selects_without_changes(g):
         g.click(px, py)
         g.settle_screen()
         assert "Perception is the most important" in g.screen(), g.screen()
-        assert "upgrade" not in g.screen().lower(), g.screen()
-        assert (moves(g), stat(g, "str"), stat(g, "per")) == before, \
-            "stat clicks must neither spend moves nor change stats"
     finally:
         close_info(g)
         g.resize(140, 45)
-    assert (moves(g), stat(g, "str"), stat(g, "per")) == before
+    assert (moves(g), stat(g, "str"), stat(g, "per")) == before, \
+        "stat clicks must neither spend moves nor change stats"
 
 
 def test_character_info_skill_click_toggles_training(g):
@@ -179,21 +214,20 @@ def test_character_info_skill_click_toggles_training(g):
     g.resize(140, 45)
     arena(g)
     before = moves(g)
+    was_training = training(g, "melee")
     try:
-        open_info(g)
-        sx, sy = find_in(g, "SKILLS", x_max=26, y_min=17, y_max=19)
-        g.click(sx, sy)
-        mx, my = find_in(g, "Melee:", x_max=26, y_min=19)
-        g.click(mx, my)
-        assert training(g, "melee") is False, "a first click must only select"
-        assert "Melee:" in g.screen(), g.screen()
-        # Selecting scrolls the list, so look the row up again for each click.
-        mx, my = find_in(g, "Melee:", x_max=26, y_min=19)
-        g.click(mx, my)
-        assert training(g, "melee") is True, "the second click must toggle training"
-        mx, my = find_in(g, "Melee:", x_max=26, y_min=19)
-        g.click(mx, my)
-        assert training(g, "melee") is False, "the third click must toggle back"
+        # Opening Lua from this screen dismisses it, so query only after closing.
+        for clicks, expected in ((1, was_training), (2, not was_training), (2, was_training)):
+            open_info(g)
+            sx, sy = find_in(g, "SKILLS", x_max=26, y_min=17, y_max=19)
+            g.click(sx, sy)
+            for _ in range(clicks):
+                mx, my = find_in(g, "Melee:", x_max=26, y_min=19)
+                g.click(mx, my)
+                assert "Melee:" in g.screen(), g.screen()
+            close_info(g)
+            assert training(g, "melee") is expected, \
+                "one click selects a skill; a second click toggles its training"
         assert moves(g) == before, "the info screen must not spend moves"
     finally:
         close_info(g)

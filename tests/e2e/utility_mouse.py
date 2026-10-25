@@ -30,13 +30,16 @@ import time
 from tmux_game import Game, start_new_game
 
 
-def open_manager(g, hotkey, title):
-    """Esc opens the in-game menu that lists the manager entries with hotkeys."""
+def open_manager(g, label, title):
+    """Open the named manager using the menu's displayed keyboard hotkey."""
     deadline = time.time() + 15
     while "MAIN MENU" not in g.screen():
         assert time.time() < deadline, "Esc should open the in-game menu\n" + g.screen()
         g.keys("Escape", delay=0.3)
-    g.keys(hotkey, delay=1)
+    screen = g.screen()
+    match = re.search(r"│\s+(\S)\s+" + re.escape(label) + r"\s+│", screen)
+    assert match, f"no menu entry for {label!r}\n{screen}"
+    g.keys(match.group(1), delay=1)
     g.wait_for(title, timeout=10)
 
 
@@ -81,7 +84,7 @@ def test_autopickup_clicks_select_rows_columns_tabs_and_switch(_g):
     try:
         seed_rules(g, 30)
         start_new_game(g)
-        open_manager(g, "7", "AUTO PICKUP MANAGER")
+        open_manager(g, "Autopickup manager", "AUTO PICKUP MANAGER")
         screen = g.screen()
         assert "AUTO PICKUP MANAGER" in screen, screen
         # 30 rules in 19 visible rows: the scrollbar is drawn with its arrows
@@ -270,7 +273,7 @@ def test_classic_scheme_keeps_the_rules_menu_keyboard_only(_g):
     try:
         seed_rules(g, 5)
         start_new_game(g)
-        open_manager(g, "7", "AUTO PICKUP MANAGER")
+        open_manager(g, "Autopickup manager", "AUTO PICKUP MANAGER")
         assert marker_rule(g) == 1, g.screen()
         g.click(10, 8)
         assert marker_rule(g) == 1, "a classic scheme click must not move the selection\n" + g.screen()

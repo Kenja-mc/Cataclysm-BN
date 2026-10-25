@@ -4,7 +4,7 @@ from fixtures import shared_game
 from helpers import HELPERS, arena, bub_pos
 
 
-def test_m_toggles_overmap_without_travel():
+def test_m_toggles_overmap_without_travel(_g):
     with shared_game("bn-e2e-overmap-toggle", options={
         "CONTROL_SCHEME": "modern", "SAFEMODE": "false", "EDGE_SCROLL": "-1",
     }, define=HELPERS, setup=arena) as game:

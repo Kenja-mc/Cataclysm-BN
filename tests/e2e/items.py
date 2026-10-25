@@ -4,7 +4,7 @@ Tests that take `g` run on the runner's main game; each sets up the items it nee
 """
 import re
 
-from helpers import action_menu, arena, count_carried, empty_inventory, give, spawn, wait_until
+from helpers import action_menu, arena, count_carried, empty_inventory, give, settle, spawn, wait_until
 
 
 def test_unified_batteries(g):
@@ -47,9 +47,10 @@ def test_jewelry_is_one_item_per_form(g):
     """Rings, bracelets and the like are one item each; metal and gem are a variant the item remembers."""
     empty_inventory(g)
     arena(g)
-    # Wounds from a preceding test can interrupt the disassembly with a modal pain query.
+    # Prior wounds and returning hostiles must not interrupt this disassembly fixture.
     assert g.lua("local u=gapi.get_avatar() u:clear_effects() u:set_all_parts_hp_to_max() "
-                 "u:set_pain(0) out('ok')") == ["ok"]
+                 "u:set_pain(0) for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end out('ok')") == ["ok"]
+    settle(g)
     assert g.lua("out(ItypeId.new('ruby_gold_ring'):is_valid(), ItypeId.new('copper_ring'):is_valid())") == ["false,false"]
     out = g.lua("local r=gapi.create_item(ItypeId.new('jewelry_ring'), -1) r:set_var_str('variant','ruby_gold_ring') "
                 "gapi.get_avatar():add_item(r) out(r:display_name(1))")
@@ -74,8 +75,8 @@ def test_jewelry_is_one_item_per_form(g):
     assert "gold (2) and 1 ruby" in g.screen(), "the yield lists the ring's gold and ruby\n" + g.screen()
     # A second Enter straight after the first is swallowed, so move the cursor in between.
     g.keys("Down", "Up", "Enter", delay=0.5)
-    assert wait_until(lambda: re.search(r"You disassemble the [^\n]*ruby and gold ring", g.screen()), 60), g.screen()
-    assert wait_until(lambda: g.lua("count_at(0,0,'ruby')") == ["1"], 60), g.screen()
+    g.wait_gone("disassembly:", timeout=60)
+    assert g.lua("count_at(0,0,'ruby')") == ["1"]
     assert g.lua("count_at(0,0,'gold_small')") == ["2"]
     assert count_carried(g, "jewelry_ring") == 0
 

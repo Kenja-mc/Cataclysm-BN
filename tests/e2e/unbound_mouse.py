@@ -8,7 +8,7 @@ def recent_messages(game):
     return game.lua("for _,message in ipairs(gapi.get_messages(30)) do out(message.text) end")
 
 
-def test_unbound_mouse_wheel_is_silent():
+def test_unbound_mouse_wheel_is_silent(_g):
     with shared_game("bn-e2e-unbound-wheel", options={
         "CONTROL_SCHEME": "modern", "NO_UNKNOWN_COMMAND_MSG": "false",
         "SAFEMODE": "false", "CURSOR_PANNING": "false",

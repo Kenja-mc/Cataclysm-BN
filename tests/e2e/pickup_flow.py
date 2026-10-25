@@ -104,7 +104,7 @@ def test_space_picks_marked_row_with_quantity(g):
     arena(g)
     spawn(g, 0, 0, "rock", 5)
     spawn(g, 0, 0, "stick")
-    rock = display_name(g, "rock")
+    rock = g.lua("local it=gapi.create_item(ItypeId.new('rock'),5) out(it:display_name(1))")[0]
     g.keys("C-g", delay=0.2)
     g.wait_for("Pick up")
     g.wait_for("Weight")

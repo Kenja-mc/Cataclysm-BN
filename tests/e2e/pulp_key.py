@@ -6,9 +6,10 @@ from helpers import HELPERS, bub_pos
 
 
 def pulp_selected_direction(game, key, direction):
+    # The default no-revival mod makes zombie corpses ineligible; bears still zombify.
     assert game.lua(
-        "M:create_corpse_at(here(1,0),MonsterTypeId.new('mon_zombie')) "
-        "M:create_corpse_at(here(-1,0),MonsterTypeId.new('mon_zombie')) out('ok')") == ["ok"]
+        "M:create_corpse_at(here(1,0),MonsterTypeId.new('mon_bear')) "
+        "M:create_corpse_at(here(-1,0),MonsterTypeId.new('mon_bear')) out('ok')") == ["ok"]
     position, clock = bub_pos(game), action_clock(game)
     floor = game.lua("out(M:get_ter_at(here(1,0)):str_id():str())")
     game.keys(key, delay=0.2)
@@ -28,10 +29,7 @@ def pulp_selected_direction(game, key, direction):
 
 def test_modern_p_pulps_the_chosen_corpse(_g):
     with contextual_game("bn-e2e-modern-pulp-key") as game:
-        # Select and clear, so pulping starts without a live selection.
-        x, y = game.find("@")
-        game.click(x - 1, y, button=2)
-        game.keys("Escape", delay=0.2)
+        # No live selection, so pulping asks for a direction.
         pulp_selected_direction(game, "p", "d")
 
 

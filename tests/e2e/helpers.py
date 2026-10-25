@@ -17,13 +17,18 @@ def wait_until(check, timeout=30, poll=0.3):
 
 HELPERS = (
     "M=gapi.get_map() function here(dx,dy) local c=gapi.get_avatar():get_pos_ms() return TripointBubMs.new(c.x+dx,c.y+dy,c.z) end "
-    # Far enough that a parked zombie does not wander back, but the ring must stay inside the
-    # loaded map: an unbounded offset eventually parks a creature out of bounds, and its idle
-    # sounds then trip a game assertion.
-    "PARKED=0 function park(cr) local p for k=1,180 do PARKED=PARKED+1 "
-    "p=here(45+PARKED%15,45+(PARKED//15)%12) "
-    "if not gapi.get_creature_at(p) then cr:set_pos_ms(p) return end end "
-    "cr:set_pos_ms(p) end "
+    # Bubble coordinates do not load a destination; park on a free tile in the loaded map.
+    "---@param cr Creature\n"
+    "function park(cr) local map=gapi.get_map() local c=gapi.get_avatar():get_pos_ms() "
+    "local size=map:get_map_size() local x0=c.x<size/2 and size-16 or 1 "
+    "local y0=c.y<size/2 and size-13 or 1 "
+    "for k=0,179 do local p=TripointBubMs.new(x0+k%15,y0+k//15,c.z) "
+    "if p.x>=0 and p.x<size and p.y>=0 and p.y<size "
+    "and math.max(math.abs(p.x-c.x),math.abs(p.y-c.y))>30 "
+    "and not map:is_out_of_bounds(p) and not gapi.get_creature_at(p) then "
+    "cr:set_pos_ms(p) "
+    "assert(not cr:is_npc() or cr:as_npc():is_simulated(),'parking destination is not simulated') "
+    "return end end error('no unoccupied in-bounds parking destination') end "
     "function arena() local k=0 for dx=-13,13 do for dy=-13,13 do local p=here(dx,dy) "
     "if math.abs(dx)<=4 and math.abs(dy)<=4 then M:set_ter_at(p, TerId.new('t_floor'):int_id()) end "
     "M:set_furn_at(p, FurnId.new('f_null'):int_id()) M:clear_items_at(p) "
@@ -105,7 +110,7 @@ def settle(g):
 
 
 def choose_menu_entry(g, label):
-    """Click one menu row.
+    """Select a menu row using Modern mouse controls or its Classic hotkey.
 
     The message log and the sidebar repeat menu wording ("open the…", "Wield", "Debug…"), so
     only text inside a bordered row counts: the characters between the nearest `│` left of the
@@ -120,9 +125,14 @@ def choose_menu_entry(g, label):
             right = line.find("│", match.end())
             if left < 0 or right < 0 or len(line[left + 1:match.start()]) > 6:
                 continue
-            rows.append((match.start(), y))
+            rows.append((match.start(), y, line[left + 1:match.start()].strip()))
     assert len(rows) == 1, f"expected one menu row for {label!r}:\n{screen}"
-    g.click(*rows[0])
+    x, y, hotkey = rows[0]
+    if option_value(g, "CONTROL_SCHEME", "modern") == "classic":
+        assert len(hotkey) == 1 and hotkey != "-", f"expected a Classic menu hotkey: {label!r} {hotkey!r}"
+        g.keys(hotkey, delay=0.8)
+    else:
+        g.click(x, y)
 
 
 def save_and_quit(g):
@@ -146,5 +156,8 @@ def action_menu(g, category, action):
 
 
 def open_crafting(g):
-    g.keys("i", delay=0.8)
-    g.keys("F5", delay=1.5)
+    if option_value(g, "CONTROL_SCHEME", "modern") == "classic":
+        action_menu(g, "Craft", "Craft Items")
+    else:
+        g.keys("i", delay=0.8)
+        g.keys("F5", delay=1.5)

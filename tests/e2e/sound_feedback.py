@@ -1,17 +1,15 @@
-"""Sound markers: a heard but unseen source fades after the configured turns.
+"""A heard but unseen source fades after the configured turns in an isolated game."""
+from helpers import HELPERS, Game, arena, settle, start_new_game, wait_until
 
-Uses the runner's main game profile and puts the avatar back above ground.
-"""
-from fixtures import shared_game
-from helpers import HELPERS, arena, settle, wait_until
-
-# The main game's profile: one game for the whole suite, so the avatar goes back above ground.
 PROFILE = {"SAFEMODE": "false", "SOUND_MARKER_TURNS": "3"}
 
 
 def test_sound_marker_fading(_g):
     """A genuinely heard but unseen sound persists, then fades without a new source."""
-    with shared_game("bn-e2e-sound", options=PROFILE, define=HELPERS) as g:
+    g = Game(name="bn-e2e-sound", options=PROFILE)
+    try:
+        start_new_game(g)
+        g.define_lua(HELPERS)
         arena(g)
         # Underground ambient noise is fixed; surface wind can mask the shout.
         assert g.lua("local a=gapi.get_avatar() local p=a:get_pos_ms() "
@@ -21,7 +19,8 @@ def test_sound_marker_fading(_g):
                      "for dx=2,3 do M:set_ter_at(here(dx,dy), TerId.new('t_floor'):int_id()) "
                      "M:set_furn_at(here(dx,dy), FurnId.new('f_null'):int_id()) end end "
                      "SOUND_NPC=M:place_npc(here(2,0),'farmer') "
-                     "SOUND_NPC:drop_all_items() "
+                     "SOUND_NPC:clear_bionics() SOUND_NPC:clear_mutations() "
+                     "SOUND_NPC:clear_morale() SOUND_NPC:drop_all_items() SOUND_NPC:clear_morale() "
                      "SOUND_NPC:set_attitude(NpcAttitude.NPCATT_WAIT) out('ok')") == ["ok", "ok"]
         # Apply terrain and equipment changes before generating the sound.
         settle(g)
@@ -38,12 +37,8 @@ def test_sound_marker_fading(_g):
         for _ in range(4):
             g.keys("x", delay=0.6)
         assert "?" not in map_area(), "sound markers should have faded:\n" + g.screen()
-        # Later tests expect the surface arena and the inventory storage the suite set up.
-        assert g.lua("local a=gapi.get_avatar() local p=a:get_pos_ms() p.z=0 "
-                     "a:set_pos_ms(p) out(a:get_pos_ms().z)") == ["0"]
-        arena(g)
-        assert g.lua("gapi.get_avatar():set_mutation(MutationBranchId.new('DEBUG_STORAGE')) "
-                     "out('ok')") == ["ok"]
+    finally:
+        g.close()
 
 
 TESTS = [

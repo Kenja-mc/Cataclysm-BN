@@ -8,8 +8,8 @@ def test_letters_search_keybindings_after_scrolling(_g):
     with shared_game("bn-e2e-keybinding-search", options={
             "CONTROL_SCHEME": "modern"}, define=HELPERS) as game:
         open_main_menu(game)
-        game.keys("t", "y", delay=0.4)
-        game.wait_for("Keybindings")
+        game.keys("4", delay=0.4)
+        game.wait_for("Unbound keys")
         bar = find_scrollbar(game.screen())
         assert bar, "the full keybinding list must be scrollable\n" + game.screen()
         top, _, x = bar
@@ -34,7 +34,7 @@ def test_letters_search_keybindings_after_scrolling(_g):
                 "an action that no longer matches must disappear\n" + game.screen())
         finally:
             game.keys("Escape", delay=0.3)
-            game.wait_gone("Keybindings")
+            game.wait_gone("Unbound keys")
 
 
 TESTS = [test_letters_search_keybindings_after_scrolling]

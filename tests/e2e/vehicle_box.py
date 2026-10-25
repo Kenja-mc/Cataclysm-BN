@@ -2,7 +2,7 @@
 import re
 import subprocess
 
-from helpers import HELPERS, Game, action_menu, arena, settle, start_new_game
+from helpers import HELPERS, Game, action_menu, arena, option_value, settle, start_new_game
 
 
 def vehicle_game(name, **options):
@@ -19,7 +19,11 @@ def vehicle_game(name, **options):
 
 
 def spawn_vehicle(game, prototype="car"):
-    game.keys("F12", "S", "v", delay=0.6)
+    game.keys("F12", delay=0.6)
+    game.wait_for("Debug Functions")
+    game.keys("s" if option_value(game, "CONTROL_SCHEME", "modern") == "classic" else "S", delay=0.3)
+    game.wait_for("Spawn a vehicle")
+    game.keys("v", delay=0.3)
     game.wait_for("Choose vehicle to spawn")
     game.keys("/", delay=0.4)
     game.type(f"({prototype})")

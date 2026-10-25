@@ -13,6 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from helpers import wait_until
 from menu_scrollbars import find_scrollbar, open_main_menu
+from options_menu import bool_rows, value_at
 from tmux_game import Game
 
 
@@ -108,8 +109,8 @@ def test_lua_console_keeps_spaces(g):
 def test_keybinding_search_keeps_spaces(g):
     """The keybindings search shares its context with QUIT; spaces must still type."""
     open_main_menu(g)
-    g.keys("t", "y", delay=0.4)
-    g.wait_for("Unbound keys", timeout=15)
+    g.keys("4", delay=0.6)
+    g.wait_for("Keybindings", timeout=15)
     bar = find_scrollbar(g.screen())
     assert bar, "the full keybinding list must be scrollable\n" + g.screen()
     top, _, x = bar
@@ -125,7 +126,7 @@ def test_keybinding_search_keeps_spaces(g):
             "a filter with a space must still match its action\n" + g.screen())
     finally:
         g.keys("Escape", delay=0.3)
-        g.wait_gone("Unbound keys")
+        g.wait_gone("Keybindings")
 
 
 def test_space_opens_selected_title_entries(_g):
@@ -133,16 +134,24 @@ def test_space_opens_selected_title_entries(_g):
     try:
         boot_to_title(g)
         # Settings tab: the entry list must be open before Space picks Options.
-        g.keys("t", delay=0.6)
+        g.keys("T", delay=0.6)
         g.wait_for("Autopickup")
         g.keys("Space", delay=1.0)
         assert "Really quit?" not in g.screen(), "Space must not quit from Settings\n" + g.screen()
         g.wait_for("Interface")
+        x, y = bool_rows(g)[0]
+        g.hover(x, y)
+        before = value_at(g, y)
+        g.keys("Space", delay=0.3)
+        assert value_at(g, y) != before, "Space must change the highlighted option"
+        g.keys("Space", delay=0.3)
+        assert value_at(g, y) == before, "a second Space must restore the boolean option"
         g.keys("Escape", delay=0.8)
         g.wait_gone("Interface")
         # New Game tab: Space enters character creation on the highlighted entry.
-        g.keys("n", delay=0.6)
+        g.keys("N", delay=0.6)
         g.wait_for("Custom Character")
+        g.keys("Up", delay=0.6)  # boot highlights Preset; move to Custom Character first
         g.keys("Space", delay=1.0)
         g.wait_for("Points left:")
     finally:
@@ -211,7 +220,7 @@ def test_worldgen_name_keeps_spaces(_g):
     g = Game(name="bn-e2e-worldname-space", options={"SAFEMODE": "false"})
     try:
         boot_to_title(g)
-        g.keys("w", delay=0.6)
+        g.keys("W", delay=0.6)
         g.wait_for("Create World")
         g.keys("Space", delay=1.0)
         g.wait_for("World Mods", timeout=30)

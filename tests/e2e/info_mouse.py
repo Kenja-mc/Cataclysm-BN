@@ -76,20 +76,29 @@ def test_message_wheel_scrolls(g):
 
 def open_item_list(g):
     arena(g)
+    had_nightvision = g.lua("out(gapi.get_avatar():has_trait("
+                           "MutationBranchId.new('DEBUG_NIGHTVISION')))") == ["true"]
+    assert g.lua("gapi.get_avatar():set_mutation(MutationBranchId.new('DEBUG_NIGHTVISION')) "
+                 "local p=here(0,0) local size=M:get_map_size() "
+                 "for x=0,size-1 do for y=0,size-1 do "
+                 "M:clear_items_at(TripointBubMs.new(x,y,p.z)) end end out('ok')") == ["ok"]
     for i, item in enumerate(SPAWN_ITEMS):
         spawn_x = i % 4 - 1
         spawn_y = i // 4 - 2
+        if i == len(SPAWN_ITEMS) - 1:
+            spawn_x, spawn_y = 4, 0
         assert g.lua(f"local p=here({spawn_x},{spawn_y}) "
                      f"M:create_item_at(p, ItypeId.new('{item}'), -1) out('ok')") == ["ok"], item
     action_menu(g, "Look", "List all items around the player")
     assert "Items" in g.screen(), g.screen()
+    return had_nightvision
 
 
 def item_list_info_row(g):
     """Row index of the item info pane title on the 45 row test terminal."""
     rows = lines(g)
     info_y = len(rows) - 22
-    assert rows[info_y].strip().startswith("< "), g.screen()
+    assert "< " in rows[info_y] and " >" in rows[info_y], g.screen()
     return info_y
 
 
@@ -98,28 +107,32 @@ def item_list_bar_x(g):
     return rows[0].index("<Tab> ") - 2  # the list window's left border column
 
 
+def close_item_list(g, had_nightvision):
+    g.keys("Escape", delay=1)
+    if not had_nightvision:
+        assert g.lua("gapi.get_avatar():unset_mutation("
+                     "MutationBranchId.new('DEBUG_NIGHTVISION')) out('ok')") == ["ok"]
+    arena(g)
+
+
 def test_item_list_row_click_selects(g):
-    open_item_list(g)
+    had_nightvision = open_item_list(g)
     target = next((y, l) for y, l in enumerate(lines(g)) if "hammer" in l and y < 20)
     g.click(target[1].index("hammer"), target[0])
     title = lines(g)[item_list_info_row(g)]
     assert "hammer" in title, "clicking a row must select it in the info pane\n" + g.screen()
-    g.keys("Escape", delay=1)
-    arena(g)
+    close_item_list(g, had_nightvision)
 
 
 def test_item_list_scrollbar_track_jumps_to_last_row(g):
-    open_item_list(g)
+    had_nightvision = open_item_list(g)
     info_y = item_list_info_row(g)
     g.click(item_list_bar_x(g), 20)
     title = lines(g)[info_y]
-    name = title.split("< ", 1)[1].split(" >", 1)[0].strip()
-    assert name, g.screen()
-    # After a bottom track click the selected item is the bottom visible row.
-    bottom_row = next(l for l in reversed(lines(g)[:22]) if l.strip())
-    assert name in bottom_row, f"track click must select the last visible row\n{g.screen()}"
-    g.keys("Escape", delay=1)
-    arena(g)
+    assert "hacksaw" in title, f"track click must select the last item\n{g.screen()}"
+    bottom_row = lines(g)[info_y - 2]
+    assert "hacksaw" in bottom_row, f"the selected item must be the last visible row\n{g.screen()}"
+    close_item_list(g, had_nightvision)
 
 
 def set_debug_mutations(g):

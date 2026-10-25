@@ -35,10 +35,11 @@ def fresh_items(g, *items):
 
 
 def row_invlet(g, needle):
-    """The shortcut cell two columns left of the item name on its inventory row."""
+    """Read the shortcut before the item's optional clothing/status markers."""
     x, y = row_of(g, needle)
     line = g.screen().splitlines()[y]
-    return line[x - 2].strip()
+    prefix = line[line.rfind("│", 0, x) + 1:x].lstrip()
+    return prefix[:1]
 
 
 def reassign(g, needle, key):
@@ -68,7 +69,7 @@ def reopen_and_drop(g, key, item):
     assert count_at(g, 0, 0, item) == 1, f"the dropped {item} should lie at the feet\n" + g.screen()
 
 
-def test_modern_reassign_accepts_digit_and_digit_selects_item():
+def test_modern_reassign_accepts_digit_and_digit_selects_item(_g):
     with shared_game("bn-e2e-numeric-invkeys", options=MODERN, define=HELPERS) as g:
         fresh_items(g, "pipe", "rock")
         reassign(g, "rock", "1")
@@ -76,7 +77,7 @@ def test_modern_reassign_accepts_digit_and_digit_selects_item():
         reopen_and_drop(g, "1", "rock")
 
 
-def test_modern_letter_invlet_still_selects():
+def test_modern_letter_invlet_still_selects(_g):
     with shared_game("bn-e2e-numeric-invkeys", options=MODERN, define=HELPERS) as g:
         fresh_items(g, "pipe", "rock")
         reassign(g, "pipe", "p")
@@ -84,7 +85,7 @@ def test_modern_letter_invlet_still_selects():
         reopen_and_drop(g, "p", "pipe")
 
 
-def test_modern_digit_survives_restack_and_digits_stay_manual():
+def test_modern_digit_survives_restack_and_digits_stay_manual(_g):
     with shared_game("bn-e2e-numeric-invkeys", options=MODERN, define=HELPERS) as g:
         fresh_items(g, "pipe", "rock")
         reassign(g, "rock", "0")
@@ -100,7 +101,7 @@ def test_modern_digit_survives_restack_and_digits_stay_manual():
         to_game(g)
 
 
-def test_modern_digit_invlet_survives_save_reload():
+def test_modern_digit_invlet_survives_save_reload(_g):
     with shared_game("bn-e2e-numeric-invkeys", options=MODERN, define=HELPERS) as g:
         fresh_items(g, "pipe", "rock")
         reassign(g, "rock", "0")
@@ -122,7 +123,7 @@ def test_modern_digit_invlet_survives_save_reload():
         assert count_at(g, 0, 0, "rock") == 1, "the dropped rock should lie at the feet\n" + g.screen()
 
 
-def test_classic_rejects_digits_but_letters_still_work():
+def test_classic_rejects_digits_but_letters_still_work(_g):
     g = Game(name="bn-e2e-invkeys-classic", options={"CONTROL_SCHEME": "classic", "SAFEMODE": "false"})
     try:
         start_new_game(g)
