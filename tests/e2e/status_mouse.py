@@ -13,8 +13,7 @@ from pathlib import Path
 from helpers import HELPERS, Game, arena, start_new_game
 from tmux_game import ROOT
 
-# Enough harmless mutations for the traits panel to need its scrollbar at a
-# small window size. All are unset again after each test.
+# Enough mutations to overflow the traits panel; preserve any the character already has.
 TRAITS = ("FLEET", "GOODHEARING", "INATTENTIVE", "PARKOUR", "QUICK",
           "OPTIMISTIC", "OUTDOORSMAN", "BIOLUM1", "FEYHEARING",
           "GOODCARDIO", "GOODCARDIO2", "FASTLEARNER")
@@ -45,13 +44,20 @@ def add_wounds(g):
 
 
 def set_traits(g):
-    for trait in TRAITS:
-        g.lua(f"gapi.get_avatar():set_mutation(MutationBranchId.new('{trait}')) out('ok')")
+    ids = ", ".join(f"'{trait}'" for trait in TRAITS)
+    assert g.lua(
+        f"local a=gapi.get_avatar() STATUS_MOUSE_ADDED_TRAITS={{}} for _,id in ipairs({{{ids}}}) do "
+        "local trait=MutationBranchId.new(id) if not a:has_trait(trait) then "
+        "a:set_mutation(trait) STATUS_MOUSE_ADDED_TRAITS[#STATUS_MOUSE_ADDED_TRAITS+1]=id "
+        "end end out('ok')"
+    ) == ["ok"]
 
 
 def clear_traits(g):
-    for trait in TRAITS:
-        g.lua(f"gapi.get_avatar():unset_mutation(MutationBranchId.new('{trait}')) out('ok')")
+    assert g.lua(
+        "local a=gapi.get_avatar() for _,id in ipairs(STATUS_MOUSE_ADDED_TRAITS) do "
+        "a:unset_mutation(MutationBranchId.new(id)) end STATUS_MOUSE_ADDED_TRAITS={} out('ok')"
+    ) == ["ok"]
 
 
 def find_in(g, text, x_max=None, y_min=0, y_max=None):

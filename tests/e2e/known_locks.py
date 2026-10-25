@@ -108,8 +108,12 @@ def start_lock_game(name, scheme):
         "SHOW_WELCOME": "false", "SHOW_TIPS": "false",
         "AUTOSELECT_SINGLE_VALID_TARGET": "false",
     })
-    start_new_game(game)
-    game.define_lua(HELPERS)
+    try:
+        start_new_game(game)
+        game.define_lua(HELPERS)
+    except Exception:
+        game.close()
+        raise
     return game
 
 
@@ -222,8 +226,49 @@ def _nearest_locked_vehicle_door(game, origin):
     return min(offsets, key=lambda offset: abs(offset[0]) + abs(offset[1]))
 
 
+def load_locked_vehicle_fixture(game, origin):
+    # Spawn can unlock random doors; prepare only this private saved vehicle, then load it.
+    save_and_quit(game)
+    game.wait_for("[Load]", timeout=60)
+    connection = sqlite3.connect(_world_dir(game) / "map.sqlite3")
+    matched = False
+    try:
+        rows = connection.execute(
+            "SELECT path, data, compression FROM files WHERE path LIKE 'maps/%.map'").fetchall()
+        for path, data, compression in rows:
+            raw = zlib.decompress(data) if compression == "zlib" else bytes(data)
+            submaps = json.loads(raw)
+            changed = False
+            for submap in submaps:
+                sx, sy, sz = submap["coordinates"]
+                for vehicle in submap.get("vehicles", []):
+                    position = (sx * SEEX + vehicle["posx"], sy * SEEY + vehicle["posy"], sz)
+                    if position != origin:
+                        continue
+                    assert vehicle["type"] == "car"
+                    assert any(part["id"] == "door_lock" for part in vehicle["parts"])
+                    vehicle["is_locked"] = True
+                    for part in vehicle["parts"]:
+                        part["open"] = False
+                        if part["id"] == "door_lock":
+                            part["enabled"] = True
+                    matched = changed = True
+            if changed:
+                raw = json.dumps(submaps).encode()
+                encoded = zlib.compress(raw) if compression == "zlib" else raw
+                connection.execute("UPDATE files SET data=? WHERE path=?", (encoded, path))
+        assert matched, "the saved fixture car was not found"
+        connection.commit()
+    finally:
+        connection.close()
+    game.keys("Enter", delay=0)
+    game.wait_for("Load character from", timeout=30)
+    game.keys("Enter", delay=0)
+    assert wait_until(lambda: in_game(game.screen()), 60), "fixture reload did not reach the game"
+    game.define_lua(HELPERS)
+
+
 def test_vehicle_locked_door_knowledge_follows_attempts(_g):
-    # Undamaged debug spawn: locked doors and a vehicle that still needs hotwiring.
     game = vehicle_game("bn-e2e-known-locks-vehicle", CONTROL_SCHEME="classic",
                         AUTOSELECT_SINGLE_VALID_TARGET="false", VEHICLE_LOCKS="true")
     try:
@@ -236,6 +281,7 @@ def test_vehicle_locked_door_knowledge_follows_attempts(_g):
             f"local p=M:abs_to_bub(TripointAbsMs.new({origin[0]},{origin[1]},{origin[2]})) "
             "out(M:replace_vehicle(p,'car',{locks=true,status=0}))") == ["true"]
         settle(game)
+        load_locked_vehicle_fixture(game, origin)
         assert save_and_read_locks(game) == [], "an untried locked vehicle door must not be marked"
 
         dx, dy, ax, ay = _nearest_locked_vehicle_door(game, origin)
@@ -245,13 +291,6 @@ def test_vehicle_locked_door_knowledge_follows_attempts(_g):
             f"{origin[0] + dx + ax},{origin[1] + dy + ay},{origin[2]})) "
             "gapi.get_avatar():set_pos_ms(p) out('ok')") == ["ok"]
         settle(game)
-        # Even a locked mint-condition car can spawn with this door open.
-        game.keys("c", delay=0)
-        assert wait_until(lambda: "Close where?" in game.screen() or
-                          "nothing that can be closed nearby" in game.screen(), 10), game.screen()
-        if "Close where?" in game.screen():
-            game.keys(direction, delay=0.3)
-            game.wait_gone("Close where?")
         game.keys(direction, delay=0.3)
         assert wait_until(lambda: "is locked" in game.screen(), 10), game.screen()
 

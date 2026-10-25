@@ -204,8 +204,6 @@ class Game:
             if done_marker in lines and prompt in last_screen:
                 completed = True
                 break
-            if prompt in last_screen:
-                break
             time.sleep(0.05)
 
         def close_console():

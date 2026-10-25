@@ -141,9 +141,14 @@ def test_help_click_after_resize_hits_right_columns(g):
         open_help(game)
         try:
             game.resize(100, 30)
-            assert wait_until(lambda: has_row(game.screen(), "Items overview"), timeout=10), \
-                "the resized help menu should redraw both columns\n" + game.screen()
-            x, y = row_of(game.screen(), "Items overview")
+            screen = ""
+            def resized_menu():
+                nonlocal screen
+                screen = game.screen()
+                return len(screen.splitlines()) == 30 and has_row(screen, "Items overview")
+            assert wait_until(resized_menu, timeout=10), \
+                "the resized help menu should redraw both columns\n" + screen
+            x, y = row_of(screen, "Items overview")
             game.click(x, y)
             screen = game.screen()
             assert "wide variety of items" in screen, \

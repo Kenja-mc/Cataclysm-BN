@@ -25,12 +25,14 @@ Upstream's own changes are in `docs/en/game/changelog`.
   object without mistaking compiled-out code for a cache failure.
 - The test-quality gates require running documented CLI commands exactly as written and fixing
   parser/documentation mismatches together.
-- The vehicle-lock playtest closes randomly open spawned doors before testing a failed
-  opening attempt, without changing vehicle locks or the game's door behavior.
+- The vehicle-lock playtest loads a private fixture with closed doors, enabled locks and no
+  ignition keys instead of relying on randomized spawn state.
 - Lua-console playtests wait for the command editor and a unique execution-completion marker;
   failures report returned values and visible Lua errors instead of silently accepting missing output.
 - Target-cycling and tutorial fixtures pin sight and clear unrelated creatures. Door-marker fixtures
   derive roof coordinates after avatar placement, which can shift the loaded map immediately.
+- Trait-list playtests preserve the character's original mutations, and the resized help-menu
+  check waits for content at the new dimensions before calculating click coordinates.
 
 ## 2026-10-24
 

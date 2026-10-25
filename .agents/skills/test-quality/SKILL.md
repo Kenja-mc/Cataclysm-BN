@@ -123,11 +123,13 @@ Use when adding or changing automated tests.
   volume: wield the book or supply storage before a real turn can drop it.
 - Native vehicle previews use tiles, not the curses text grid. Derive click targets from the
   rendered tile pitch; text-cell coordinates do not carry over. Keep raw captures when OCR fails.
-- Undamaged cars still randomize door openness, including locked replacements. Establish a closed
-  target through the real close UI after every spawn or replacement, before testing an opening or
-  a failed locked-door attempt. Wait for the direction prompt before sending its key.
+- Undamaged cars still randomize door openness, including locked replacements. Opening a door
+  during spawn also disables its lock; closing it does not relock it. Pin closed doors, enabled
+  door locks and missing ignition keys in the private saved fixture, then reload before testing.
+  A keyed owner can open locked doors, so testing only the door-lock toggle is insufficient.
 - Lua console calls must wait for the editor prompt before typing and a per-call completion
-  marker before parsing values. Include actual returned values and visible Lua errors in failures.
+  marker before parsing values. The console prompt can remain visible behind a Lua-opened modal;
+  it is not evidence that the command has returned. Include returned values and Lua errors in failures.
 - For native footsteps, pin both current and destination terrain and verify worn foot coverage.
   Use `body_part_foot_l.id()`, not a legacy enum cast to a dynamic body-part index. Quiet pry-break
   noise can be masked by a storm; use quiet acoustics without changing the game's sound volume.
@@ -136,6 +138,8 @@ Use when adding or changing automated tests.
   that can trigger safe mode. Inspect interruption dialogs instead of lengthening the timeout.
 - NPC responses depend on prices and opinions. Trade click tests must prove unchanged ownership
   after cancellation, not assume a particular empty-offer rejection sentence.
+- Trait-list fixtures must remove only mutations they added. Unsetting a rolled base trait
+  leaves its base-trait membership behind and makes later `clear_mutations()` fail its sync check.
 - Run an isolated suite with `bin/playtest-container.sh e2e [test-name ...]`.
 
 ## Cleanup
