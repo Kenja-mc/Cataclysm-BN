@@ -105,6 +105,7 @@ The notes file should contain the reviewed generated text, with only the authori
 For a correction to the changelog itself, make and review a fork-only commit, but do not move
 the existing release tag or replace its binaries. Notes-only edits do not change the immutable
 build or tag.
+
 ## Versions
 
 | Part     | Raise it when                                                                         | Example  |
@@ -113,7 +114,7 @@ build or tag.
 | `v0.X.0` | new features, new content, changed controls                                           | `v0.2.0` |
 | `v0.0.X` | fixes only                                                                            | `v0.1.1` |
 
-The first release is `v0.1.0`. Versions only go up: the updater installs a release when its
+The first release is `v0.2.0`. Versions only go up: the updater installs a release when its
 version is higher than the player's `VERSION.txt`, and only the highest version becomes the
 "latest" release. A published version is immutable: a rerun refuses to replace it, because
 players already on that version would not receive the rebuilt files. Choose a new patch version.
