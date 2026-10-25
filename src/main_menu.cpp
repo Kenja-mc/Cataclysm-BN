@@ -826,7 +826,10 @@ bool main_menu::opening_screen()
         // confirms, exactly like Space on the highlighted entry.
         if( modern && sInput.type == input_event_t::mouse &&
             ( action == "SELECT" || action == "MOUSE_MOVE" ) ) {
-            const auto hit = hit_button( sInput.mouse_pos );
+            const auto mouse = ctxt.get_coordinates( w_open );
+            const auto hit = mouse ? hit_button( mouse->xy().raw() +
+                                                 point( getmaxx( w_open ), getmaxy( w_open ) ) / 2 +
+                                                 point( getbegx( w_open ), getbegy( w_open ) ) ) : std::nullopt;
             if( hit ) {
                 if( sel1 != hit->tab ) {
                     sel1 = hit->tab;
