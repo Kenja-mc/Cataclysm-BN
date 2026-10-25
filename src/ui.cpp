@@ -1146,17 +1146,17 @@ void uilist::query( bool loop, int timeout )
                    ( ret_act == "SELECT" || ret_act == "MOUSE_MOVE" ) ) {
             const auto mouse = ctxt.get_coordinates( window );
             if( mouse ) {
+                const auto cell = mouse->xy().raw() + point( getmaxx( window ), getmaxy( window ) ) / 2;
                 bool on_scrollbar = false;
                 if( ret_act == "SELECT" ) {
                     if( const auto hit = scrollbar_input::click( scrollbar_geometry(),
-                            mouse->xy().raw() ) ) {
+                        cell ) ) {
                         vshift = hit->viewport_pos;
                         viewport_held = true;
                         on_scrollbar = true;
                     }
                 }
                 if( !on_scrollbar ) {
-                    const auto cell = mouse->xy().raw() + point( getmaxx( window ), getmaxy( window ) ) / 2;
                     auto handled_click = false;
                     if( ret_act == "SELECT" && categories.size() > 1 ) {
                         const auto category_row = scrollbar_geometry().offset.y - 1;
