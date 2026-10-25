@@ -538,9 +538,6 @@ input_context game::get_player_input( std::string &action )
                 //       (update only part of the screen? draw static parts into a texture?)
                 invalidate_main_ui_adaptor();
             }
-            const auto needs_timed_poll = realtime_turns || animate_weather || animate_sct ||
-                                          needs_map_animation || uquit == QUIT_WATCH;
-            TracyPlot( "Input Timed Polling", static_cast<int64_t>( needs_timed_poll ? 1 : 0 ) );
 
             std::unique_ptr<static_popup> deathcam_msg_popup;
             if( uquit == QUIT_WATCH ) {
@@ -554,6 +551,13 @@ input_context game::get_player_input( std::string &action )
                 ZoneScopedN( "get_player_input_redraw_invalidated" );
                 ui_manager::redraw_invalidated();
             }
+#if defined(TILES)
+            // The first redraw can discover animated tiles or status overlays.
+            needs_map_animation = minimap_requires_animation() || terrain_requires_animation();
+#endif
+            const auto needs_timed_poll = realtime_turns || animate_weather || animate_sct ||
+                                          needs_map_animation || uquit == QUIT_WATCH;
+            TracyPlot( "Input Timed Polling", static_cast<int64_t>( needs_timed_poll ? 1 : 0 ) );
             auto keep_waiting = false;
             {
                 ZoneScopedN( "get_player_input_handle_mouseview" );
