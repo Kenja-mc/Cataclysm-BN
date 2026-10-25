@@ -6,7 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from aim_reticle import action_clock
-from helpers import HELPERS, arena, bub_pos, count_at, count_carried, empty_inventory, spawn, wait_until
+from helpers import HELPERS, arena, bub_pos, count_at, count_carried, empty_inventory, settle, spawn, wait_until
 from inventory_mouse import row_of
 from playtest import start_tutorial
 from tmux_game import Game
@@ -87,6 +87,11 @@ def exercise_initial_and_door_lessons(scheme):
         game.define_lua(HELPERS)
         empty_inventory(game)
         arena(game)
+        # The tutorial starts over water with live fish outside the lesson area.
+        assert game.lua(
+            "for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end out('ok')"
+        ) == ["ok"]
+        settle(game)
         game.settle_screen(minimum=0.4, timeout=3)
         position = bub_pos(game)
         game.keys("d" if scheme == "modern" else "l", delay=0.2)

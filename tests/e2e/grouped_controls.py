@@ -76,9 +76,17 @@ def test_grouped_shift_x_cycles_all_movement_modes(_game):
 
 def test_grouped_tab_cycles_visible_hostiles_and_wraps(_game):
     with no_mouse_movement_game("bn-e2e-grouped-targets") as game:
+        see_everything(game, True)
+        assert game.lua(
+            "for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end out('ok')"
+        ) == ["ok"]
+        settle(game)
         assert game.lua("local a=gapi.place_monster_at(MonsterTypeId.new('mon_zombie'),here(1,0)) "
                         "local b=gapi.place_monster_at(MonsterTypeId.new('mon_zombie_rot'),here(-3,0)) "
-                        "MAP_MOUSE_TARGETS={a,b} out(a ~= nil and b ~= nil)") == ["true"]
+                        "MAP_MOUSE_TARGETS={a,b} "
+                        "out(a ~= nil and b ~= nil and gapi.get_avatar():sees(a:get_pos_ms()) "
+                        "and gapi.get_avatar():sees(b:get_pos_ms()))") == ["true"], \
+            "both target fixtures must be visible before cycling:\n" + game.screen()
         before = bub_pos(game), action_clock(game)
         for key, decayed in (("Tab", False), ("Tab", True), ("Tab", False),
                              ("BTab", True), ("BTab", False)):

@@ -27,6 +27,10 @@ Upstream's own changes are in `docs/en/game/changelog`.
   parser/documentation mismatches together.
 - The vehicle-lock playtest closes randomly open spawned doors before testing a failed
   opening attempt, without changing vehicle locks or the game's door behavior.
+- Lua-console playtests wait for the command editor and a unique execution-completion marker;
+  failures report returned values and visible Lua errors instead of silently accepting missing output.
+- Target-cycling and tutorial fixtures pin sight and clear unrelated creatures. Door-marker fixtures
+  derive roof coordinates after avatar placement, which can shift the loaded map immediately.
 
 ## 2026-10-24
 

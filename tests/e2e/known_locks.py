@@ -180,19 +180,19 @@ def test_opening_the_attempted_door_clears_the_marker(_g):
         east = LockTile(avatar[0] + EAST_DOOR[0], avatar[1] + EAST_DOOR[1], avatar[2], "terrain")
         assert save_and_read_locks(game) == [east]
 
-        # Step through the wall into the room and give it a roof, so the locked door's
-        # OPENCLOSE_INSIDE rule lets the avatar open it from inside; this is the real
-        # successful open path in map::open_door_ter.
+        # Placement can shift the map; derive the roof coordinates afterward.
         assert game.lua(
             "local a=gapi.get_avatar() local p=here(2,0) "
-            "a:set_pos_ms(p) "
+            "a:set_pos_ms(p) p=here(0,0) "
             "for dx=-1,1 do for dy=-1,1 do "
             "M:set_ter_at(TripointBubMs.new(p.x+dx,p.y+dy,p.z+1),"
             "TerId.new('t_flat_roof'):int_id()) end end "
             "out('ok')") == ["ok"]
         settle(game)
-        assert game.lua("out(not M:is_outside(here(0,0)))") == ["true"], \
-            "the avatar must stand inside before the inside-open rule applies"
+        inside = game.lua("out(not M:is_outside(here(0,0)))")
+        assert inside == ["true"], \
+            f"the avatar must stand inside before the inside-open rule applies; got {inside!r}:\n" \
+            + game.screen()
 
         game.keys("o", "h", delay=0.3)
         # The avatar now stands east of the door, so the door is one tile west.

@@ -163,46 +163,82 @@ class Game:
         return True
 
     def lua(self, code):
-        """Runs one line in the in-game Lua console; `out(...)` inside it reports values back."""
+        """Runs one line in the in-game Lua console; `out(...)` reports values back."""
         self.calls = getattr(self, "calls", 0) + 1
         marker = f"#{os.getpid()}.{self.calls}#"
-        # The console can take a moment to open, and a loaded two-core runner needs much
-        # longer than an idle machine: type before it opens and the code goes to the map.
+        data_prefix = marker + "V:"
+        done_marker = marker + "END"
+        prompt = "Press Enter to enter/edit command"
+        editing = "Press Ctrl+S to run script"
+
         for _ in range(3):
             self.dismiss_error_popup()
             self.keys("`", delay=0)
             try:
-                self.wait_for("to enter/edit command", timeout=15)
+                self.wait_for(prompt, timeout=15)
                 break
             except AssertionError:
                 self.keys("Escape", delay=0)
         else:
             raise AssertionError("could not open the Lua console; refusing to type code into the game\n" + self.screen())
+
         self.keys("Enter", delay=0)
-        # Keep the echoed command short so its output is still on screen afterwards.
-        self.type(f"OUT='{marker}' " + code)
+        # Wait for editor ownership before sending source.
+        self.wait_for(editing, timeout=15)
+        self.type(f"OUT='{marker}' " + code + f" print('{done_marker}')")
         self.keys("C-s", delay=0)
-        # Slow machines take a while to run big snippets; wait for the output to stop moving.
+
+        def capture(screen):
+            lines = [line.strip("│^v ").strip() for line in screen.splitlines()]
+            values = [line[len(data_prefix):] for line in lines if line.startswith(data_prefix)]
+            errors = [line.strip() for line in screen.splitlines()
+                      if "Runtime error:" in line or "Failed to load:" in line]
+            return lines, values, errors
+
         deadline = time.time() + 20
-        found = []
+        last_screen = ""
+        completed = False
         while time.time() < deadline:
-            lines = [l.strip("│^v ").strip() for l in self.screen().splitlines()]
-            found = [l[len(marker):] for l in lines if l.startswith(marker)]
-            if found:
-                self.settle_screen(minimum=0.05, timeout=2)
-                lines = [l.strip("│^v ").strip() for l in self.screen().splitlines()]
-                found = [l[len(marker):] for l in lines if l.startswith(marker)]
+            last_screen = self.screen()
+            lines, found, errors = capture(last_screen)
+            if done_marker in lines and prompt in last_screen:
+                completed = True
+                break
+            if prompt in last_screen:
                 break
             time.sleep(0.05)
-        self.keys("Escape", delay=0)
-        self.wait_gone("to enter/edit command", timeout=15)
+
+        def close_console():
+            screen = self.screen()
+            if editing in screen:
+                self.keys("Escape", delay=0)
+                self.wait_for(prompt, timeout=15)
+            elif prompt not in screen:
+                return False
+            self.keys("Escape", delay=0)
+            self.wait_gone(prompt, timeout=15)
+            return True
+
+        if not completed:
+            lines, found, errors = capture(last_screen or self.screen())
+            details = "\n".join(errors) if errors else "No Lua runtime or load error was visible."
+            close_console()
+            reason = "Lua console returned to its prompt without the completion marker."
+            if prompt not in last_screen:
+                reason = "Lua console did not finish within 20 seconds."
+            raise AssertionError(
+                f"{reason} Outputs received: {found!r}. {details}"
+            )
+
+        close_console()
         return found
 
     def define_lua(self, code):
         """Defines globals once; later `lua` calls can stay short."""
         prelude = ("function out(...) local t = {} for i, v in ipairs({...}) do t[i] = tostring(v) end "
-                   "print(OUT .. table.concat(t, ',')) end ")
-        assert self.lua(prelude + code + " out('defined')") == ["defined"], self.screen()
+                   "print(OUT .. 'V:' .. table.concat(t, ',')) end ")
+        result = self.lua(prelude + code + " out('defined')")
+        assert result == ["defined"], f"Lua helper definition returned {result!r}\n{self.screen()}"
 
     def pos(self):
         line = next(l for l in self.screen().splitlines() if "X,Y,Z:" in l)

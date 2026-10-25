@@ -69,6 +69,9 @@ Use when adding or changing automated tests.
   frames; weather or an unrelated animation changing the whole image is not proof.
 - After an upstream merge, grep the whole item family, not only the conflicted files; a re-added line
   merges cleanly and silently.
+- Avatar placement can shift the reality bubble immediately. Recompute `here(...)` coordinates
+  after `set_pos_ms`; a saved bubble coordinate can target another tile after the shift.
+  The locked-door fixture placed its roof at the old coordinate and then found the avatar outside.
 - Keep parking inside the loaded map. `park()` moved creatures to `here(45 + k % 15, 45 + k // 15)`, so the
   y offset grew every fifteen parks; after a few hundred parks a creature sat out of bounds and
   `Sound with description [ hmm ] attempted to propagate from out of bounds location` opened a modal that
@@ -123,12 +126,14 @@ Use when adding or changing automated tests.
 - Undamaged cars still randomize door openness, including locked replacements. Establish a closed
   target through the real close UI after every spawn or replacement, before testing an opening or
   a failed locked-door attempt. Wait for the direction prompt before sending its key.
+- Lua console calls must wait for the editor prompt before typing and a per-call completion
+  marker before parsing values. Include actual returned values and visible Lua errors in failures.
 - For native footsteps, pin both current and destination terrain and verify worn foot coverage.
   Use `body_part_foot_l.id()`, not a legacy enum cast to a dynamic body-part index. Quiet pry-break
   noise can be masked by a storm; use quiet acoustics without changing the game's sound volume.
 - Parking leaves creatures active; they can return during a long activity. If hostiles are not part
-  of that contract, clear loaded monsters and settle before starting it. Inspect the whole failure
-  screen for interruption dialogs instead of lengthening the timeout or dismissing the warning.
+  of that contract, clear loaded monsters and settle before starting it, including tutorial fish
+  that can trigger safe mode. Inspect interruption dialogs instead of lengthening the timeout.
 - NPC responses depend on prices and opinions. Trade click tests must prove unchanged ownership
   after cancellation, not assume a particular empty-offer rejection sentence.
 - Run an isolated suite with `bin/playtest-container.sh e2e [test-name ...]`.
