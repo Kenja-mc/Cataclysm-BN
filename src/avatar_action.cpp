@@ -412,6 +412,12 @@ bool avatar_action::move( avatar &you, map &m, const tripoint_rel_ms &d )
         // Well that sure was easy
         return true;
     }
+    // Remembered even when the step is blocked: pressing into a door and then Space opens it.
+    if( std::abs( dest_loc.x() - you.bub_pos().x() ) <= 1 &&
+        std::abs( dest_loc.y() - you.bub_pos().y() ) <= 1 &&
+        dest_loc.z() == you.bub_pos().z() ) {
+        you.last_move_dir = tripoint_rel_ms( dest_loc - you.bub_pos() );
+    }
 
     const bool auto_features = get_option<bool>( "AUTO_FEATURES" );
     const bool auto_mine = auto_features && get_option<bool>( "AUTO_MINING" );

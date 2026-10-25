@@ -8992,6 +8992,13 @@ auto game::examine() -> action_id
             tile_selection::interact_at( u, *selected, actions );
             return deferred;
         }
+        // Nothing aimed: act on the tile the player last pressed toward, else list the vicinity.
+        if( const auto faced = tile_selection::facing_tile( u );
+            faced && tile_selection::reachable( u, *faced ) &&
+            !tile_selection::interact_choices( u, *faced, true ).empty() ) {
+            tile_selection::interact_at( u, *faced, actions );
+            return deferred;
+        }
         if( tile_selection::interact_nearby( u, actions ) ) {
             return deferred;
         }

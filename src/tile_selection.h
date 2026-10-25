@@ -63,6 +63,8 @@ auto interact_nearby( avatar &you, const tile_actions &actions ) -> bool;
 auto primary_choice( const avatar &you, const tripoint_bub_ms &p ) -> std::optional<choice>;
 /// A visible hostile stands on the tile.
 auto has_hostile( const avatar &you, const tripoint_bub_ms &p ) -> bool;
+/// The tile of the last attempted step, when there is one.
+auto facing_tile( const avatar &you ) -> std::optional<tripoint_bub_ms>;
 
 auto hover( avatar &you, map &m, const std::optional<tripoint_bub_ms> &p ) -> void;
 auto clear_hover() -> void;

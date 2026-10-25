@@ -352,6 +352,8 @@ class avatar : public player
     public:
         // ---------------VALUES-----------------
         tripoint_rel_ms view_offset;
+        /// The direction of the last attempted step; Space acts on that tile when nothing is aimed.
+        tripoint_rel_ms last_move_dir;
 
         // Snippets the player has seen
         std::set<snippet_id> snippets_read;

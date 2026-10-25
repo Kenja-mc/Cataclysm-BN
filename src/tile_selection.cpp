@@ -331,6 +331,36 @@ auto runs_unasked( const choice &c ) -> bool
     return c.act != ACTION_SMASH && c.act != ACTION_JUMP;
 }
 
+/// How obviously a tile offers an action. Space runs the best rank and lists the rest, so the
+/// order is the design: door, pickup, stairs, vehicle cargo, butcher, vault, examine, smash.
+/// A vault only outranks an examine when there is an obstacle to vault over; bare floor is not one.
+auto choice_rank( const choice &c, const bool obstacle ) -> int
+{
+    if( c.travel ) {
+        return 90;
+    }
+    switch( c.act ) {
+        case ACTION_OPEN:
+        case ACTION_CLOSE:
+            return 10;
+        case ACTION_PICKUP:
+            return c.vehicle_cargo ? 40 : 20;
+        case ACTION_MOVE_DOWN:
+        case ACTION_MOVE_UP:
+            return 30;
+        case ACTION_BUTCHER:
+            return 50;
+        case ACTION_JUMP:
+            return obstacle ? 55 : 65;
+        case ACTION_EXAMINE:
+            return 60;
+        case ACTION_SMASH:
+            return 80;
+        default:
+            return 85;
+    }
+}
+
 auto add_choice( std::vector<choice> &out, choice c ) -> void
 {
     const auto already = [&c]( const choice & other ) {
@@ -416,18 +446,29 @@ auto interact_at( avatar &you, const tripoint_bub_ms &p, const tile_actions &act
     add_msg( _( "You can't reach that tile." ) );
         return;
     }
-    const auto choices = interact_choices( you, p, true );
+    auto choices = interact_choices( you, p, true );
     if( choices.empty() ) {
     add_msg( _( "There is nothing to interact with on that tile." ) );
         return;
     }
-    const auto lone_vertical = ( choices.front().act == ACTION_MOVE_DOWN ||
-                                 choices.front().act == ACTION_MOVE_UP ) &&
-                               std::ranges::count_if( choices, runs_unasked ) == 1;
-    // A lootable cargo part is the obvious action on its tile, the way a lone closed door is.
-    const auto lone_trunk = choices.front().act == ACTION_PICKUP && choices.front().vehicle_cargo;
-    if( ( choices.size() == 1 || lone_vertical || lone_trunk ) && runs_unasked( choices.front() ) ) {
-        run_interaction( you, { .c = choices.front(), .pos = p, .actions = actions } );
+    const auto obstacle = get_map().impassable( p ) || get_map().has_furn( p ) ||
+                          get_map().move_cost( p ) > 2;
+    std::ranges::stable_sort( choices, [obstacle]( const choice & lhs, const choice & rhs ) {
+        return choice_rank( lhs, obstacle ) < choice_rank( rhs, obstacle );
+    } );
+    const auto best = choices.front();
+    const auto tied = std::ranges::count_if( choices, [&best, obstacle]( const choice & c ) {
+        return choice_rank( c, obstacle ) == choice_rank( best, obstacle );
+    } );
+    // One obvious action runs. Everything else, a tie included, stays in the list.
+    if( tied == 1 && runs_unasked( best ) ) {
+        run_interaction( you, { .c = best, .pos = p, .actions = actions } );
+        return;
+    }
+    // A lone vault over a real obstacle runs at once: the aim names the target, and the confirm
+    // popup this replaced defaulted to No and answered to an uppercase Y only.
+    if( tied == 1 && best.act == ACTION_JUMP && obstacle ) {
+        run_interaction( you, { .c = best, .pos = p, .actions = actions } );
         return;
     }
     show_interaction_menu( you, p, actions, choices, true );
@@ -623,6 +664,14 @@ return found == choices.end() ? std::nullopt : std::optional<choice>( *found );
 auto has_hostile( const avatar &you, const tripoint_bub_ms &p ) -> bool
 {
     return hostile_at( you, p ) != nullptr;
+}
+
+auto facing_tile( const avatar &you ) -> std::optional<tripoint_bub_ms>
+{
+    if( you.last_move_dir == tripoint_rel_ms::zero() ) {
+        return std::nullopt;
+    }
+    return you.bub_pos() + you.last_move_dir;
 }
 
 auto resolve( avatar &you, map &m, const choice &c, const tripoint_bub_ms &p ) -> action_id

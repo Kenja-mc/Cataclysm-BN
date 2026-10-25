@@ -55,55 +55,37 @@ def door_state(game, selected_dx=1):
     )
 
 
-def test_contextual_selected_door_over_nearby(_game):
+def test_contextual_selected_door_opens_without_a_menu(_game):
     with contextual_game("bn-e2e-context-door") as game:
         doors(game)
         before = bub_pos(game)
         clock = action_clock(game)
         select_tile(game, 1, 0)
         game.keys("space", delay=0.8)
-        screen = game.screen()
-        assert "open the" in screen and "smash the" in screen, screen
-        game.keys("o", delay=1)
-        assert bub_pos(game) == before, "opening the selected door must not walk"
+        assert "Interact with" not in game.screen(), \
+            "a door is the obvious action and must not open a menu:\n" + game.screen()
         assert door_state(game) == ["t_door_o,t_door_c"], "only the selected door opens"
         assert action_clock(game) > clock, "normal door opening still spends moves"
         select_tile(game, 1, 0)
         game.keys("space", delay=0.8)
-        assert "close the" in game.screen(), game.screen()
-        game.keys("c", delay=1)
-        assert door_state(game) == ["t_door_c,t_door_c"]
-        assert bub_pos(game) == before, "closing the selected door must not walk"
+        assert door_state(game) == ["t_door_c,t_door_c"], "the same tile closes again"
+        assert bub_pos(game) == before, "neither opening nor closing walks"
 
 
-def test_contextual_menu_cancel_is_free(_game):
-    with contextual_game("bn-e2e-context-cancel") as game:
-        doors(game)
-        before = bub_pos(game)
-        clock = action_clock(game)
-        select_tile(game, 1, 0)
-        game.keys("space", delay=0.8)
-        assert "smash the" in game.screen(), game.screen()
-        game.keys("Escape", delay=0.8)
-        assert door_state(game) == ["t_door_c,t_door_c"], "Space must not auto-smash or open"
-        assert bub_pos(game) == before
-        assert action_clock(game) == clock, "canceling the action menu must be free"
-
-
-def test_contextual_selected_jump(_game):
+def test_contextual_selected_vault_over_obstacle(_game):
     with contextual_game("bn-e2e-context-jump") as game:
-        # Bare floor avoids jump RNG.
+        assert game.lua("M:set_furn_at(here(1,0), FurnId.new('f_sandbag_half'):int_id()) "
+                        "out('ok')") == ["ok"]
         before = bub_pos(game)
         clock = action_clock(game)
         select_tile(game, 1, 0)
-        game.keys("space", delay=0.8)
-        assert "jump over the" in game.screen(), game.screen()
-        game.keys("j", delay=1)
-        assert bub_pos(game) == (before[0] + 2, before[1], before[2]), "jump crosses the selected tile"
+        game.keys("space", delay=1.2)
+        assert bub_pos(game) == (before[0] + 2, before[1], before[2]), \
+            f"a lone climbable obstacle vaults: {before} -> {bub_pos(game)}\n" + game.screen()
         assert action_clock(game) > clock, "jump keeps its existing move cost"
 
 
-def test_contextual_smash_only_selected_tile(_game):
+def test_contextual_attack_key_smashes_aimed_terrain(_game):
     with contextual_game("bn-e2e-context-smash") as game:
         # Webs bash deterministically at this strength.
         assert game.lua(
@@ -114,15 +96,13 @@ def test_contextual_smash_only_selected_tile(_game):
         before = bub_pos(game)
         clock = action_clock(game)
         select_tile(game, 1, 0)
-        game.keys("space", delay=0.8)
-        assert "smash the" in game.screen(), game.screen()
-        game.keys("S", delay=1)
+        game.keys("f", delay=1)
         assert game.lua(
             "out(M:has_field_at(here(1,0),FieldTypeId.new('fd_web'):int_id()),"
             "M:has_field_at(here(-1,0),FieldTypeId.new('fd_web'):int_id()))"
-        ) == ["false,true"], "explicit smash must touch only the selected tile"
+        ) == ["false,true"], "the attack key must smash only the aimed tile"
         assert bub_pos(game) == before
-        assert action_clock(game) > clock
+        assert action_clock(game) > clock, "smashing spends the same moves it always did"
 
 
 def test_contextual_distant_selection_does_not_fall_back(_game):
@@ -237,6 +217,18 @@ def test_contextual_nearby_row_highlights_its_tile(_game):
         assert (bub_pos(game), action_clock(game)) == (position, clock), \
             "previewing rows must not act, walk or spend time"
 
+def test_contextual_space_uses_the_last_moved_direction(_game):
+    with contextual_game("bn-e2e-context-faced") as game:
+        # A step east leaves that tile as the one Space acts on when nothing is aimed.
+        game.keys("d", delay=0.9)
+        spawn(game, 1, 0, "rock")
+        settle(game)
+        game.keys("space", delay=0.8)
+        game.wait_for("Pick up")
+        assert "Interact with what?" not in game.screen(), \
+            "the faced tile is chosen without the nearby list:\n" + game.screen()
+
+
 def test_contextual_disabled_and_classic_keep_legacy_examine(_game):
     for scheme, contextual, key in (("modern", "false", "space"), ("classic", "true", "e")):
         with contextual_game(f"bn-e2e-context-legacy-{scheme}", CONTROL_SCHEME=scheme,
@@ -253,18 +245,17 @@ def test_contextual_disabled_and_classic_keep_legacy_examine(_game):
             assert action_clock(game) == clock
 
 
-def test_contextual_selected_pickup_uses_action_menu(_game):
+def test_contextual_selected_pickup_opens_the_list(_game):
     with contextual_game("bn-e2e-context-pickup") as game:
         spawn(game, 1, 0, "rock")
         spawn(game, -1, 0, "stick")
         before = bub_pos(game)
         select_tile(game, 1, 0)
         game.keys("space", delay=0.8)
-        screen = game.screen()
-        assert "pick up items" in screen and "examine the" in screen, screen
-        game.keys("g", delay=1)
-        assert "Pick up" in game.screen(), game.screen()
-        game.keys("g", delay=1)
+        game.wait_for("Pick up")
+        assert "examine the" not in game.screen(), \
+            "a pile is the obvious action and must open the pickup list, not the tile menu"
+        game.keys("enter", delay=1)
         assert count_carried(game, "rock") == 1
         assert count_at(game, 1, 0, "rock") == 0
         assert count_at(game, -1, 0, "stick") == 1
@@ -300,14 +291,14 @@ def test_contextual_nearby_list_skips_unseen_tiles(_game):
 
 
 TESTS = [
-    test_contextual_selected_door_over_nearby,
-    test_contextual_menu_cancel_is_free,
-    test_contextual_selected_jump,
-    test_contextual_smash_only_selected_tile,
+    test_contextual_selected_door_opens_without_a_menu,
+    test_contextual_selected_vault_over_obstacle,
+    test_contextual_attack_key_smashes_aimed_terrain,
     test_contextual_distant_selection_does_not_fall_back,
     test_contextual_no_selection_lists_nearby_actions,
     test_contextual_nearby_row_highlights_its_tile,
+    test_contextual_space_uses_the_last_moved_direction,
     test_contextual_disabled_and_classic_keep_legacy_examine,
-    test_contextual_selected_pickup_uses_action_menu,
+    test_contextual_selected_pickup_opens_the_list,
     test_contextual_nearby_list_skips_unseen_tiles,
 ]
