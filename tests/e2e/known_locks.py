@@ -245,6 +245,13 @@ def test_vehicle_locked_door_knowledge_follows_attempts(_g):
             f"{origin[0] + dx + ax},{origin[1] + dy + ay},{origin[2]})) "
             "gapi.get_avatar():set_pos_ms(p) out('ok')") == ["ok"]
         settle(game)
+        # Even a locked mint-condition car can spawn with this door open.
+        game.keys("c", delay=0)
+        assert wait_until(lambda: "Close where?" in game.screen() or
+                          "nothing that can be closed nearby" in game.screen(), 10), game.screen()
+        if "Close where?" in game.screen():
+            game.keys(direction, delay=0.3)
+            game.wait_gone("Close where?")
         game.keys(direction, delay=0.3)
         assert wait_until(lambda: "is locked" in game.screen(), 10), game.screen()
 

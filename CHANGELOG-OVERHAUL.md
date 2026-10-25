@@ -25,6 +25,8 @@ Upstream's own changes are in `docs/en/game/changelog`.
   object without mistaking compiled-out code for a cache failure.
 - The test-quality gates require running documented CLI commands exactly as written and fixing
   parser/documentation mismatches together.
+- The vehicle-lock playtest closes randomly open spawned doors before testing a failed
+  opening attempt, without changing vehicle locks or the game's door behavior.
 
 ## 2026-10-24
 

@@ -120,8 +120,9 @@ Use when adding or changing automated tests.
   volume: wield the book or supply storage before a real turn can drop it.
 - Native vehicle previews use tiles, not the curses text grid. Derive click targets from the
   rendered tile pitch; text-cell coordinates do not carry over. Keep raw captures when OCR fails.
-- Undamaged cars still randomize door openness. Establish a closed target through the real close
-  UI before testing an opening, and wait for the direction prompt before sending its key.
+- Undamaged cars still randomize door openness, including locked replacements. Establish a closed
+  target through the real close UI after every spawn or replacement, before testing an opening or
+  a failed locked-door attempt. Wait for the direction prompt before sending its key.
 - For native footsteps, pin both current and destination terrain and verify worn foot coverage.
   Use `body_part_foot_l.id()`, not a legacy enum cast to a dynamic body-part index. Quiet pry-break
   noise can be masked by a storm; use quiet acoustics without changing the game's sound volume.
