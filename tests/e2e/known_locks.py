@@ -257,9 +257,18 @@ def test_vehicle_locked_door_knowledge_follows_attempts(_g):
             f"local p=M:abs_to_bub(TripointAbsMs.new({origin[0]},{origin[1]},{origin[2]})) "
             "out(M:replace_vehicle(p,'car',{locks=false,status=0}))") == ["true"]
         settle(game)
-        game.keys("o", direction, delay=0.3)
+        # Mint spawns still randomize open doors.
+        game.keys("c", delay=0)
+        assert wait_until(lambda: "Close where?" in game.screen() or
+                          "nothing that can be closed nearby" in game.screen(), 10), game.screen()
+        if "Close where?" in game.screen():
+            game.keys(direction, delay=0.3)
+        game.keys("o", delay=0)
+        game.wait_for("Open where?")
+        game.keys(direction, delay=0.3)
+        game.wait_gone("Open where?")
         assert save_and_read_locks(game) == [], \
-            "successfully opening the unlocked vehicle door must clear the marker"
+            "successfully opening the unlocked vehicle door must clear the marker\n" + game.screen()
     finally:
         game.close()
 
