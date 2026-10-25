@@ -27,16 +27,20 @@ direction prompts. Top-row numbers do not move you on the map.
   craft, even when the inventory is empty.
   **Tab** opens advanced inventory from this screen; **Shift+Tab** switches category selection.
   The footer's advanced-inventory hint is clickable in both schemes; Classic keeps its keys.
-- **Space — tile actions.** With nothing selected, Space lists every action on the tiles around you
-  in one menu at the top of the screen, each named with its direction ("open the door (east)"), and
-  lights up the tile of the highlighted row. A single safe action runs at once. With a tile selected
-  (right click, or a Select tile key you bound), Space offers that tile's **Open**, **Close**, **Examine**,
-  **Pickup**, **Jump** and **Smash**. Your own tile also offers **Ascend** or **Descend** when a
-  vertical transition is available; clicking your own stairs uses them. Standing on a corpse adds
-  **Butcher**. A loaded vehicle trunk opens pickup directly. **Shift+Space** toggles the selected
-  vehicle curtain, or names nearby curtains when nothing is selected. Jumping and destructive
-  actions are explicit choices, never an automatic substitute; smashing ordinary floors and walls
-  is only offered for a tile you picked.
+- **Space — the obvious action.** With a tile selected (mouse hover or click, arrow aim, or a
+  Select tile key), Space runs that tile's most obvious action without asking, in this order:
+  **open or close a door**, **pick up a pile**, **use stairs**, **loot a vehicle cargo part**,
+  **butcher a corpse**, **vault a climbable obstacle**, **examine**, then **smash**. The rest of the
+  tile's actions stay in one menu, which appears only for a genuine tie or a destructive choice, so
+  Space never auto-smashes. Vaulting a lone climbable obstacle such as a half-height sandbag runs at
+  once; the aim names the target. With no tile selected, Space acts on the tile you last pressed
+  toward, and falls back to the nearby list ("Interact with what?") only before you have moved.
+  **Shift+Space** toggles the selected vehicle curtain, or names nearby curtains when nothing is
+  selected. Clicking your own stairs uses them, and a loaded vehicle trunk opens pickup directly.
+- **`f` — attack anything.** `f` fires at a creature as before; on an aimed tile with no creature it
+  smashes what is bashable there instead (a web, a corpse, a door that will not open), so one key
+  attacks creatures and breaks obstacles. Smashing still spends its normal moves and can ruin a
+  brittle weapon.
 - **Select keys — unbound by default.** Tile selection is a mouse action. The eight **Select tile**
   actions stay in the keybindings menu: binding them (for example to Shift+WASD/QEZC) moves the
   selection marker one tile per press, starting at your position and accumulating. The Mouse View
