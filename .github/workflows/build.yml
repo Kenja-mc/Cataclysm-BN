@@ -622,6 +622,14 @@ jobs:
             throw "Missing Windows release PDB archive: $archive"
           }
 
+      - name: Retain Windows debug symbols
+        if: runner.os == 'Windows' && inputs.package-artifacts && inputs.upload-artifacts && matrix.upload-artifact == true
+        uses: actions/upload-artifact@v4.6.0
+        with:
+          name: ${{ inputs.artifact-label != '' && format('{0}-{1}', matrix.artifact, inputs.artifact-label) || matrix.artifact }}-pdb
+          path: cbn-${{ matrix.artifact }}-${{ inputs.version-label }}-pdb.zip
+          if-no-files-found: error
+
       - name: Configure and Build with CMake (macOS)
         if: runner.os == 'macOS'
         uses: lukka/run-cmake@v10

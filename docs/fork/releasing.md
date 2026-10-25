@@ -79,6 +79,9 @@ the failed jobs or dispatch from that tag, not from a newer `main`.
 | `build`        | Builds the Windows MSVC tiles x64 and Linux tiles x64 packages through `build.yml`, the same reusable build upstream's releases use. No translations, no extra tilesets, no registry mods.                                                                                                                                                                                                           |
 | `publish`      | Downloads the Windows installed directory and Linux tarball from `build.yml`; adds the launcher, `README-FIRST.txt` and `bno-files.txt` to Windows; writes version headers and stable archives plus `.sha256` files. Requires the version tag to still match the built SHA. Creates/reuses only a draft, uploads all assets, then publishes. Only the highest version becomes latest.                |
 
+The Windows build also retains a `windows-tiles-x64-msvc-pdb` workflow artifact. Download it
+with the matching release when investigating a crash; symbols from another build do not match.
+
 Release files keep the same names every time, so these links always point at the newest release:
 
 | File          | Link                                                                                                      |
