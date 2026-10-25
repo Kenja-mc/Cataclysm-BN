@@ -3825,7 +3825,7 @@ void sfx::do_footstep()
             play_plmove_sound_variant( "walk_water" );
             return;
         }
-        if( !g->u.wearing_something_on( bodypart_id( bp_foot_l ) ) ) {
+        if( !g->u.wearing_something_on( body_part_foot_l.id() ) ) {
             play_plmove_sound_variant( "walk_barefoot" );
             return;
         }
