@@ -3793,31 +3793,17 @@ static void init_term_size_and_scaling_factor()
         const SDL_DisplayMode *current_display = SDL_GetDesktopDisplayMode( current_display_id );
 
         if( current_display ) {
+            const auto [dpi_scale_w, dpi_scale_h] = get_display_scale( current_display_id );
+            max_width = static_cast<int>( dpi_scale_w * current_display->w );
+            max_height = static_cast<int>( dpi_scale_h * current_display->h );
             if( get_option<std::string>( "FULLSCREEN" ) == "no" ) {
-
-                // Make a maximized test window to determine maximum windowed size
-                SDL_Window_Ptr test_window;
-                test_window.reset( SDL_CreateWindow( "test_window",
-                                                     FULL_SCREEN_WIDTH * fontwidth,
-                                                     FULL_SCREEN_HEIGHT * fontheight,
-                                                     SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_MAXIMIZED
-                                                   ) );
-                SDL_SetWindowPosition( test_window.get(),
-                                       SDL_WINDOWPOS_CENTERED_DISPLAY( current_display_idx ),
-                                       SDL_WINDOWPOS_CENTERED_DISPLAY( current_display_idx ) );
-
-                SDL_GetWindowSizeInPixels( test_window.get(), &max_width, &max_height );
-
-                // If the video subsystem isn't reset the test window messes things up later
-                test_window.reset();
-                SDL_QuitSubSystem( SDL_INIT_VIDEO );
-                SDL_InitSubSystem( SDL_INIT_VIDEO );
-
-            } else {
-                // For fullscreen or window borderless maximum size is the display size
-                auto [ dpi_scale_w, dpi_scale_h ] = get_display_scale( current_display_idx );
-                max_width = static_cast<int>( dpi_scale_w * current_display->w );
-                max_height = static_cast<int>( dpi_scale_h * current_display->h );
+                auto usable = SDL_Rect{};
+                if( SDL_GetDisplayUsableBounds( current_display_id, &usable ) ) {
+                    max_width = static_cast<int>( dpi_scale_w * usable.w );
+                    max_height = static_cast<int>( dpi_scale_h * usable.h );
+                } else {
+                    dbg( DL::Warn ) << "Failed to get usable display bounds: " << SDL_GetError();
+                }
             }
         } else {
             dbg( DL::Warn ) << "Failed to get current Display Mode, assuming infinite display size.";

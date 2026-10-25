@@ -106,6 +106,7 @@ def start_lock_game(name, scheme):
     game = Game(name=name, options={
         "CONTROL_SCHEME": scheme, "SAFEMODE": "false",
         "SHOW_WELCOME": "false", "SHOW_TIPS": "false",
+        "AUTOSELECT_SINGLE_VALID_TARGET": "false",
     })
     start_new_game(game)
     game.define_lua(HELPERS)
@@ -115,23 +116,29 @@ def start_lock_game(name, scheme):
 def two_locked_doors(game):
     arena(game)
     assert game.lua(
+        # A locked wood door opens normally from inside; remove the rolled shelter roof.
+        "for dx=-2,2 do for dy=-2,2 do local p=here(dx,dy) "
+        "M:set_ter_at(TripointBubMs.new(p.x,p.y,p.z+1),TerId.new('t_open_air'):int_id()) "
+        "end end "
         "M:set_ter_at(here(1,0),TerId.new('t_door_locked'):int_id()) "
         "M:set_ter_at(here(0,-1),TerId.new('t_door_locked'):int_id()) out('ok')") == ["ok"]
     settle(game)
+    assert game.lua("out(M:is_outside(here(0,0)))") == ["true"], \
+        "the first door attempt must be from outside"
     for dx, dy in (EAST_DOOR, NORTH_DOOR):
-        assert game.lua(f"M:get_ter_at(here({dx},{dy})):str_id():str()") == ["t_door_locked"]
+        assert game.lua(f"out(M:get_ter_at(here({dx},{dy})):str_id():str())") == ["t_door_locked"]
 
 
 def attempt_open_east(game):
     position, clock = abs_pos(game), game.lua(
         "out(gapi.current_turn():to_turn(), -gapi.get_avatar():get_moves())")[0]
-    game.keys("o", "l", delay=0.3)
+    game.keys("l", delay=0.3)  # Bumping a closed door is the native open attempt.
     assert wait_until(lambda: "door is locked" in game.screen(), 5), game.screen()
     assert abs_pos(game) == position, "a failed open attempt must not move the avatar"
     assert game.lua(
         "out(gapi.current_turn():to_turn(), -gapi.get_avatar():get_moves())")[0] == clock, \
         "a failed open attempt must not cost moves"
-    assert game.lua("M:get_ter_at(here(1,0)):str_id():str()") == ["t_door_locked"]
+    assert game.lua("out(M:get_ter_at(here(1,0)):str_id():str())") == ["t_door_locked"]
 
 
 def test_only_attempted_locked_door_is_remembered(_g):
@@ -149,14 +156,14 @@ def test_only_attempted_locked_door_is_remembered(_g):
 
         # Real quit, resume and load; then a fresh save must still carry the marker.
         save_and_quit(game)
-        assert game.wait_for("MAIN MENU", timeout=60), game.screen()
+        game.wait_for("[Load]", timeout=60)
         game.keys("Enter", delay=1)  # the cursor defaults to Load when saves exist
         assert game.wait_for("Load character from", timeout=30), game.screen()
         game.keys("Enter", delay=1)  # the only character
         assert wait_until(lambda: in_game(game.screen()), 60), "resume did not reach the game"
         game.define_lua(HELPERS)
         assert abs_pos(game) == avatar, "resume loaded the wrong character position"
-        assert game.lua("M:get_ter_at(here(1,0)):str_id():str()") == ["t_door_locked"], \
+        assert game.lua("out(M:get_ter_at(here(1,0)):str_id():str())") == ["t_door_locked"], \
             "the resumed world must keep the door locked"
         assert save_and_read_locks(game) == [east], \
             "lock knowledge did not survive quit, resume and save"
@@ -179,11 +186,13 @@ def test_opening_the_attempted_door_clears_the_marker(_g):
         assert game.lua(
             "local a=gapi.get_avatar() local p=here(2,0) "
             "a:set_pos_ms(p) "
-            "M:set_ter_at(TripointBubMs.new(p.x,p.y,p.z+1),"
-            "TerId.new('t_flat_roof'):int_id()) "
-            "out(not M:is_outside(p))") == ["true"], \
-            "the avatar must stand inside before the inside-open rule applies"
+            "for dx=-1,1 do for dy=-1,1 do "
+            "M:set_ter_at(TripointBubMs.new(p.x+dx,p.y+dy,p.z+1),"
+            "TerId.new('t_flat_roof'):int_id()) end end "
+            "out('ok')") == ["ok"]
         settle(game)
+        assert game.lua("out(not M:is_outside(here(0,0)))") == ["true"], \
+            "the avatar must stand inside before the inside-open rule applies"
 
         game.keys("o", "h", delay=0.3)
         # The avatar now stands east of the door, so the door is one tile west.
@@ -194,14 +203,18 @@ def test_opening_the_attempted_door_clears_the_marker(_g):
         game.close()
 
 
-def _nearest_locked_vehicle_door(game):
-    """Find an OPENABLE+DOOR_LOCKING vehicle tile and return its offset from the vehicle origin."""
+def _nearest_locked_vehicle_door(game, origin):
+    """Find a locking door and a neighboring tile outside the vehicle."""
     reported = game.lua(
-        "local o=gapi.get_avatar():get_pos_ms() local r={} "
+        f"local o=M:abs_to_bub(TripointAbsMs.new({origin[0]},{origin[1]},{origin[2]})) local r={{}} "
         "for dx=-3,3 do for dy=-3,3 do "
         "local p=TripointBubMs.new(o.x+dx,o.y+dy,o.z) "
         "if M:has_vehicle_part_with_feature_at(p,'DOOR_LOCKING') and "
-        "M:has_vehicle_part_with_feature_at(p,'OPENABLE') then r[#r+1]=dx..','..dy end "
+        "M:has_vehicle_part_with_feature_at(p,'OPENABLE') then "
+        "for _,d in ipairs({{-1,0},{1,0},{0,-1},{0,1}}) do "
+        "local q=TripointBubMs.new(p.x+d[1],p.y+d[2],p.z) "
+        "if not M:has_vehicle_part_with_feature_at(q,'MOUNTABLE') then "
+        "r[#r+1]=dx..','..dy..','..d[1]..','..d[2] end end end "
         "end end out(table.concat(r,';'))")
     offsets = [tuple(int(value) for value in entry.split(",")) for entry in reported[0].split(";")
                if entry]
@@ -211,20 +224,28 @@ def _nearest_locked_vehicle_door(game):
 
 def test_vehicle_locked_door_knowledge_follows_attempts(_g):
     # Undamaged debug spawn: locked doors and a vehicle that still needs hotwiring.
-    game = vehicle_game("bn-e2e-known-locks-vehicle", CONTROL_SCHEME="classic")
+    game = vehicle_game("bn-e2e-known-locks-vehicle", CONTROL_SCHEME="classic",
+                        AUTOSELECT_SINGLE_VALID_TARGET="false", VEHICLE_LOCKS="true")
     try:
         spawn_vehicle(game)
         origin = abs_pos(game)
+        # Leave through normal movement so the avatar's boarded state is cleared.
+        game.keys("h", "h", "h", "h", delay=0.6)
+        assert game.lua("out(M:has_vehicle_part_with_feature_at(here(0,0),'MOUNTABLE'))") == ["false"]
+        assert game.lua(
+            f"local p=M:abs_to_bub(TripointAbsMs.new({origin[0]},{origin[1]},{origin[2]})) "
+            "out(M:replace_vehicle(p,'car',{locks=true,status=0}))") == ["true"]
+        settle(game)
         assert save_and_read_locks(game) == [], "an untried locked vehicle door must not be marked"
 
-        dx, dy = _nearest_locked_vehicle_door(game)
-        # Stand one tile west of the door and try to open it eastwards.
+        dx, dy, ax, ay = _nearest_locked_vehicle_door(game, origin)
+        direction = {(-1, 0): "l", (1, 0): "h", (0, -1): "j", (0, 1): "k"}[(ax, ay)]
         assert game.lua(
-            f"local o=gapi.get_avatar():get_pos_ms() "
-            f"local p=TripointBubMs.new(o.x+{dx - 1},o.y+{dy},o.z) "
-            f"gapi.get_avatar():set_pos_ms(p) out('ok')") == ["ok"]
+            f"local p=M:abs_to_bub(TripointAbsMs.new("
+            f"{origin[0] + dx + ax},{origin[1] + dy + ay},{origin[2]})) "
+            "gapi.get_avatar():set_pos_ms(p) out('ok')") == ["ok"]
         settle(game)
-        game.keys("o", "l", delay=0.3)
+        game.keys(direction, delay=0.3)
         assert wait_until(lambda: "is locked" in game.screen(), 10), game.screen()
 
         door = LockTile(origin[0] + dx, origin[1] + dy, origin[2], "vehicle")
@@ -233,45 +254,91 @@ def test_vehicle_locked_door_knowledge_follows_attempts(_g):
 
         # Real bound fixture: replace with the same car without lock parts, then open for real.
         assert game.lua(
-            "local v=M:get_vehicles()[1] local p=v:pos() "
-            "out(M:replace_vehicle(p,'car',{locks=false}))") == ["true"]
+            f"local p=M:abs_to_bub(TripointAbsMs.new({origin[0]},{origin[1]},{origin[2]})) "
+            "out(M:replace_vehicle(p,'car',{locks=false,status=0}))") == ["true"]
         settle(game)
-        game.keys("o", "l", delay=0.3)
+        game.keys("o", direction, delay=0.3)
         assert save_and_read_locks(game) == [], \
             "successfully opening the unlocked vehicle door must clear the marker"
     finally:
         game.close()
 
 
-def _change_one_option_and_save(game):
-    """Open the options menu, flip any visible boolean, save, and return the written options."""
-    from options_menu import open_options
+def test_lock_icon_option_follows_the_control_scheme(session, options, attempted_tile, off, on):
+    """Observe the tiles-only option's real default, rendered marker, and native save."""
+    import shutil
+    import time
+    import tiles
 
-    open_options(game)
-    rows = [y for y, line in enumerate(game.screen().splitlines())
-            if "│ True " in line or "│ False " in line]
-    assert rows, "a boolean option must be on the first page\n" + game.screen()
-    y = rows[0]
-    line = game.screen().splitlines()[y]
-    value_x = line.index("│ True") + 2 if "│ True" in line else line.index("│ False") + 2
-    game.click(value_x, y)
-    game.keys("Escape", delay=0.6)
-    assert wait_until(lambda: "Save changes?" in game.screen(), 10), game.screen()
-    game.keys("y", delay=1)
-    path = game.userdir / "config" / "options.json"
-    assert wait_until(lambda: path.exists(), 5)
-    return {entry["name"]: entry["value"] for entry in json.loads(path.read_text())}
+    option_path = session.curses_userdir / "config" / "options.json"
+    option_rows = json.loads(option_path.read_text())
+    option_path.write_text(json.dumps(
+        [row for row in option_rows if row["name"] != "KNOWN_LOCKED_DOOR_ICONS"]))
 
+    bindings = session.curses_userdir / "config" / "keybindings.json"
+    rows = json.loads(bindings.read_text()) if bindings.exists() else []
+    rows = [row for row in rows if not (row.get("category") == "DEFAULTMODE"
+                                      and row.get("id") == "sound_menu")]
+    rows.append({"type": "keybinding", "id": "sound_menu", "category": "DEFAULTMODE",
+                 "bindings": [{"input_method": "keyboard", "key": "F7"}]})
+    bindings.write_text(json.dumps(rows))
+    observations = {}
+    checks = []
+    for scheme, expected, reference in (("modern", "true", on), ("classic", "false", off)):
+        label = f"known-locks-default-{scheme}"
+        launch_options = {**options, "CONTROL_SCHEME": scheme, "SOUND_ENABLED": "true"}
+        assert "KNOWN_LOCKED_DOOR_ICONS" not in launch_options
+        with session.running_game(label, launch_options) as live:
+            capture = session.artifacts / f"{label}.png"
+            shutil.copy(live.frame, capture)
+            width, height, pixels = tiles.frame_rgb(capture)
+            ref_width, ref_height, ref_pixels = tiles.frame_rgb(reference)
+            tiles.require((width, height) == (ref_width, ref_height),
+                          f"{label}: default and explicit captures differ in size")
+            x0, y0, x1, y1 = attempted_tile
+            changed = sum(
+                pixels[(y * width + x) * 3:(y * width + x + 1) * 3] !=
+                ref_pixels[(y * width + x) * 3:(y * width + x + 1) * 3]
+                for y in range(y0, y1) for x in range(x0, x1))
+            checks.append(LockCheck(f"{scheme} default renders icons {expected}", changed == 0,
+                                   f"{changed} attempted-door pixels differ from explicit {expected}"))
 
-def test_lock_icon_option_follows_the_control_scheme(_g):
-    for scheme, expected in (("modern", "true"), ("classic", "false")):
-        game = start_lock_game(f"bn-e2e-known-locks-option-{scheme}", scheme)
-        try:
-            options = _change_one_option_and_save(game)
-            assert options.get("KNOWN_LOCKED_DOOR_ICONS") == expected, \
-                f"{scheme}: expected {expected}, got {options.get('KNOWN_LOCKED_DOOR_ICONS')}"
-        finally:
-            game.close()
+            x11 = tiles.X11(session.display)
+            try:
+                window = x11.find_window(tiles.WINDOW_TITLE_PREFIX)
+                tiles.require(window is not None, f"{label}: game window disappeared")
+                x11.focus_local(window, 0, 0)
+                # The native sound menu saves all options without changing the icon option.
+                x11.key("F7")
+                tiles.wait_for_frame(session, live.proc, live.run, session.timeout)
+                x11.key("Left")
+                x11.key("Escape")
+                paths = (live.run / "userdir" / "config" / "options.json",
+                         live.run / "xdg" / "cataclysm-bn" / "options.json")
+                deadline = time.monotonic() + 15
+                saved = None
+                while time.monotonic() < deadline:
+                    for path in paths:
+                        try:
+                            values = {row["name"]: row["value"]
+                                      for row in json.loads(path.read_text())}
+                        except (FileNotFoundError, json.JSONDecodeError):
+                            continue
+                        if values.get("SOUND_ENABLED") == "false":
+                            saved = values
+                            break
+                    if saved is not None:
+                        break
+                    time.sleep(0.1)
+                tiles.require(saved is not None, f"{label}: native options save did not finish")
+                actual = saved.get("KNOWN_LOCKED_DOOR_ICONS")
+                checks.append(LockCheck(f"{scheme} default saves icons {expected}", actual == expected,
+                                       f"saved KNOWN_LOCKED_DOOR_ICONS={actual!r}"))
+                observations[scheme] = {"expected": expected, "saved": actual,
+                                        "changed_pixels": changed, "frame": str(capture)}
+            finally:
+                x11.close()
+    return checks, observations
 
 
 def build_known_lock_fixture(game):
@@ -361,5 +428,4 @@ def analyse_known_lock_icons(off_png, on_png, attempted_tile, untried_tile, arti
 
 TESTS = [test_only_attempted_locked_door_is_remembered,
          test_opening_the_attempted_door_clears_the_marker,
-         test_vehicle_locked_door_knowledge_follows_attempts,
-         test_lock_icon_option_follows_the_control_scheme]
+         test_vehicle_locked_door_knowledge_follows_attempts]

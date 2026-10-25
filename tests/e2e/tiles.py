@@ -857,7 +857,7 @@ def case_overmap(session):
         options = {
             "CONTROL_SCHEME": "modern", "SCALING_FACTOR": str(scale),
             "FONT_WIDTH": "8", "FONT_HEIGHT": "16", "FONT_SIZE": "16",
-            "TERMINAL_X": str(columns), "TERMINAL_Y": str(rows),
+            "TERMINAL_X": str(columns * scale), "TERMINAL_Y": str(rows * scale),
             "USE_TILES_OVERMAP": "true", "OVERMAP_TILES": "UNDEAD_PEOPLE_BASE",
             "EDGE_SCROLL": "-1", "CURSOR_PANNING": "false",
         }
@@ -1006,7 +1006,8 @@ def case_zoom(session):
 
 def case_known_locks(session):
     """Only a door found locked gets a marker, at either display scale."""
-    from known_locks import analyse_known_lock_icons
+    from known_locks import (analyse_known_lock_icons,
+                             test_lock_icon_option_follows_the_control_scheme)
 
     failures, observations = [], {}
     for scale, columns, rows in ((1, 160, 60), (2, 96, 30)):
@@ -1014,7 +1015,7 @@ def case_known_locks(session):
         options = {
             "CONTROL_SCHEME": "modern", "SCALING_FACTOR": str(scale),
             "FONT_WIDTH": "8", "FONT_HEIGHT": "16", "FONT_SIZE": "16",
-            "TERMINAL_X": str(columns), "TERMINAL_Y": str(rows),
+            "TERMINAL_X": str(columns * scale), "TERMINAL_Y": str(rows * scale),
             "TILES": "UNDEAD_PEOPLE_BASE", "SIDEBAR_POSITION": "right",
             "MOUSE_MOVE": "false", "CURSOR_PANNING": "false",
         }
@@ -1041,6 +1042,13 @@ def case_known_locks(session):
             "attempted_tile": attempted, "untried_tile": untried,
             "checks": [check.__dict__ for check in checks],
         }
+        if scale == 1:
+            defaults, report = test_lock_icon_option_follows_the_control_scheme(
+                session, options, attempted, off, on)
+            failures.extend(f"scheme defaults: {check.name}: {check.detail}"
+                            for check in defaults if not check.ok)
+            observations["scheme_defaults"] = {
+                "checks": [check.__dict__ for check in defaults], "schemes": report}
     return failures, observations
 
 
