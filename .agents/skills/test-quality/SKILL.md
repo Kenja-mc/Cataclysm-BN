@@ -15,6 +15,11 @@ Use when adding or changing automated tests.
   Check that documented flags are accepted and missing or invalid arguments name the problem.
   A parser failure such as `Failed parsing parameter …` means the documented entrypoint is broken;
   fix the parser or documentation in the same change, not just the invocation used for testing.
+- Drive modal transitions one key at a time and wait for the next prompt. In the keybinding
+  editor, a second Escape can dismiss the save confirmation and silently discard the new binding.
+- Reject capture fixtures that raised debug assertions or used invalid item IDs. Repeated item
+  names do not prove duplicate rendering: verify instance counts and worn/carried membership
+  before attributing the rows to a UI bug.
 - Use deterministic fixtures from `data/mods/TEST_DATA` for data with random, balance, or evolving behavior.
 - E2E fixtures run against a freshly rolled world, so pin or strip rolled state before asserting on sound,
   volume, or morale. Three observed `tests/e2e/run.py` failures were fixture-side, not game bugs: a surface

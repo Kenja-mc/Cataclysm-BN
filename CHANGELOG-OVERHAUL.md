@@ -13,6 +13,12 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - The release runbook includes preflight checks and a notes-only correction procedure that
   preserves published tags, binaries and the download table.
 
+### Fixed
+
+- Clearing the last local key no longer prevents using Add global for the same action.
+  The new global key takes effect immediately and survives restarting the game; remaining
+  local bindings still require removal before a global binding can be added.
+
 ### Maintenance
 
 - Build guidance explains preset-specific ccache hits and how to investigate a suspected stale

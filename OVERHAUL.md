@@ -255,6 +255,10 @@ key set back to its upstream default. A file saved by an older version, without 
 every key: entries in it that only repeat upstream's default are ignored, so it cannot undo the
 scheme.
 
+Clearing the last local key leaves an action unbound in that context. Choosing **Add global**
+afterward removes that empty override so the new global key works immediately and after restart.
+An action with remaining local keys still requires removing them before adding a global binding.
+
 **Contextual interact** (Options → Interface → Contextual interact, on by default in Modern):
 Space acts on the tile selected by right click (or a bound Select tile key) and lists its applicable
 actions, including Open, Close, Examine, Pickup, Butcher, Jump and Smash. On your own tile it also

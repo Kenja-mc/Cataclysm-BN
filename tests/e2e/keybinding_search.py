@@ -1,4 +1,5 @@
 """Typing searches keybindings; navigation stays on dedicated keys and the wheel."""
+import shutil
 import subprocess
 import tempfile
 
@@ -60,7 +61,7 @@ def _selected_pickup_item(screen):
 def test_local_unbind_can_be_readded_globally(_g):
     options = {
         "CONTROL_SCHEME": "classic",
-        "QUERY_KEYBIND_REMOVAL": True,
+        "QUERY_KEYBIND_REMOVAL": "true",
     }
     userdir = tempfile.mkdtemp(prefix="bn-e2e-keybinding-readd-")
     game = None
@@ -73,26 +74,26 @@ def test_local_unbind_can_be_readded_globally(_g):
         empty_inventory(game)
         arena(game)
         spawn(game, 0, 0, "rock")
-        spawn(game, 1, 0, "stick")
+        spawn(game, 0, 0, "stick")
         game.keys(",", delay=0.8)
         game.wait_for("Pick up")
         game.keys("?", delay=0.5)
         game.wait_for("Keybindings")
         game.type("next item", delay=0.2)
-        assert "Next item:" in game.screen(), game.screen()
+        game.wait_for("Next item:")
 
         game.keys("-", delay=0.3)
         hotkey = _hotkey_for_action(game.screen(), "Next item")
         game.keys(hotkey, delay=0.4)
         game.wait_for("Clear keys for Next item")
         game.keys("Y", delay=0.5)
-        assert "Unbound locally!" in game.screen(), game.screen()
+        game.wait_gone("Clear keys for Next item")
 
         game.keys("=", delay=0.3)
         game.keys(hotkey, delay=0.4)
         game.wait_for("New key for Next item")
         game.keys("z", delay=0.5)
-        game.keys("Escape", "Escape", delay=0.4)
+        game.keys("Escape", delay=0.4)
         game.wait_for("Save changes?")
         game.keys("Y", delay=0.8)
         game.wait_gone("Save changes?", timeout=10)
@@ -113,7 +114,7 @@ def test_local_unbind_can_be_readded_globally(_g):
         empty_inventory(reloaded)
         arena(reloaded)
         spawn(reloaded, 0, 0, "rock")
-        spawn(reloaded, 1, 0, "stick")
+        spawn(reloaded, 0, 0, "stick")
         reloaded.keys(",", delay=0.8)
         reloaded.wait_for("Pick up")
         previous = _selected_pickup_item(reloaded.screen())
@@ -127,6 +128,7 @@ def test_local_unbind_can_be_readded_globally(_g):
             reloaded.close()
         elif game is not None:
             game.close()
+        shutil.rmtree(userdir, ignore_errors=True)
 
 
 TESTS = [

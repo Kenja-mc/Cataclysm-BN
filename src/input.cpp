@@ -1334,8 +1334,6 @@ action_id input_context::display_menu( const bool permit_execute_action )
             }
 
             if( status == s_add_global && overwrite_default && !attributes.input_events.empty() ) {
-                // Only local bindings prevent adding a global binding. An empty local override
-                // can be replaced by a global binding.
                 mvwprintz( w_help, point( 2, i + 10 ), c_dark_gray, "%c ", invlet );
             } else if( status == s_add || status == s_add_global ) {
                 mvwprintz( w_help, point( 2, i + 10 ), c_light_blue, "%c ", invlet );
@@ -1515,7 +1513,6 @@ action_id input_context::display_menu( const bool permit_execute_action )
                     changed = true;
                 }
             } else if( status == s_add_global && is_local && !is_empty ) {
-                // A global binding cannot override local keys; remove them first.
                 popup( _( "There are already local keybindings defined for this action, please remove them first." ) );
             } else if( status == s_add || status == s_add_global ) {
                 const input_event new_event = query_popup()
