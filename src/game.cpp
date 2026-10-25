@@ -3849,6 +3849,7 @@ input_context get_default_mode_input_context()
     ctxt.register_action( "jump" );
     ctxt.register_action( "advinv" );
     ctxt.register_action( "pickup" );
+    ctxt.register_action( "pickup_list" );
     ctxt.register_action( "pickup_all" );
     if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
         ctxt.register_action( "quick_pickup" );
@@ -3867,6 +3868,7 @@ input_context get_default_mode_input_context()
     ctxt.register_action( "compare" );
     ctxt.register_action( "organize" );
     ctxt.register_action( "apply" );
+    ctxt.register_action( "use_contextual" );
     ctxt.register_action( "apply_wielded" );
     ctxt.register_action( "wear" );
     ctxt.register_action( "take_off" );
@@ -9278,6 +9280,17 @@ void game::pickup( const tripoint_bub_ms &p )
     } );
     add_draw_callback( hilite_cb );
 
+    // A tile holding one item needs no picker: take it the way pickup-at-feet does.
+    if( std::ranges::distance( m.i_at( p ) ) == 1 ) {
+        pickup::pick_up( p, 1 );
+        return;
+    }
+
+    pickup_list( p );
+}
+
+void game::pickup_list( const tripoint_bub_ms &p )
+{
     if( get_option<bool>( "NEW_PICKUP_MENU" ) ) {
         std::vector<pickup::pick_drop_selection> pickup_list = game_menus::inv::pickup_from_tile( g->u, p );
         g->u.assign_activity( std::make_unique<player_activity>( std::make_unique<pickup_activity_actor>

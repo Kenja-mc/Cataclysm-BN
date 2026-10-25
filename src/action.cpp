@@ -100,6 +100,7 @@ std::string io::enum_to_string<action_id>( action_id data )
             PAIR( ACTION_JUMP )
             PAIR( ACTION_TOGGLE_CURTAIN )
             PAIR( ACTION_PICKUP )
+            PAIR( ACTION_PICKUP_LIST )
             PAIR( ACTION_PICKUP_ALL )
             PAIR( ACTION_QUICK_PICKUP )
             PAIR( ACTION_PICKUP_FEET )
@@ -122,6 +123,7 @@ std::string io::enum_to_string<action_id>( action_id data )
             PAIR( ACTION_COMPARE )
             PAIR( ACTION_ORGANIZE )
             PAIR( ACTION_USE )
+            PAIR( ACTION_USE_CONTEXTUAL )
             PAIR( ACTION_USE_WIELDED )
             PAIR( ACTION_WEAR )
             PAIR( ACTION_TAKE_OFF )
@@ -330,6 +332,8 @@ std::string action_ident( action_id act )
             return "advinv";
         case ACTION_PICKUP:
             return "pickup";
+        case ACTION_PICKUP_LIST:
+            return "pickup_list";
         case ACTION_PICKUP_ALL:
             return "pickup_all";
         case ACTION_QUICK_PICKUP:
@@ -370,6 +374,8 @@ std::string action_ident( action_id act )
             return "organize";
         case ACTION_USE:
             return "apply";
+        case ACTION_USE_CONTEXTUAL:
+            return "use_contextual";
         case ACTION_USE_WIELDED:
             return "apply_wielded";
         case ACTION_WEAR:
@@ -1154,7 +1160,8 @@ action_id handle_action_menu()
             // the inventory screen, so it's sorted to the
             // end of the list.
             register_actions( {
-                ACTION_DROP, ACTION_COMPARE, ACTION_ORGANIZE, ACTION_USE, ACTION_USE_WIELDED,
+                ACTION_DROP, ACTION_COMPARE, ACTION_ORGANIZE, ACTION_USE, ACTION_USE_CONTEXTUAL,
+                ACTION_USE_WIELDED,
                 ACTION_WEAR, ACTION_TAKE_OFF, ACTION_EAT, ACTION_OPEN_CONSUME,
                 ACTION_READ, ACTION_WIELD, ACTION_UNLOAD, ACTION_UNLOAD_ALL
             } );

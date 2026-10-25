@@ -1683,6 +1683,20 @@ static void wear()
     }
 }
 
+/// The tile a modern pickup acts on: the reticle tile, else the one last pressed toward.
+static auto modern_pickup_target( avatar &u ) -> std::optional<tripoint_bub_ms>
+{
+    if( get_option<std::string>( "CONTROL_SCHEME" ) != "modern" ) {
+        return std::nullopt;
+    }
+    const auto reticle = aim_reticle::pos();
+    const auto tile = reticle ? reticle : tile_selection::facing_tile( u );
+    if( tile && tile_selection::reachable( u, *tile ) ) {
+        return tile;
+    }
+    return std::nullopt;
+}
+
 static void takeoff()
 {
     avatar &u = g->u;
@@ -2772,6 +2786,20 @@ bool game::handle_action()
                 }
                 break;
 
+            case ACTION_PICKUP_LIST:
+                if( u.has_active_mutation( trait_SHELL2 ) ) {
+                    add_msg( m_info, _( "You can't pick anything up while you're in your shell." ) );
+                } else if( u.is_mounted() ) {
+                    add_msg( m_info, _( "You can't pick anything up while you're riding." ) );
+                } else if( mouse_target ) {
+                    pickup_list( *mouse_target );
+                } else if( const auto tile = modern_pickup_target( u ) ) {
+                    pickup_list( *tile );
+                } else {
+                    pickup();
+                }
+                break;
+
             case ACTION_PICKUP:
                 if( u.has_active_mutation( trait_SHELL2 ) ) {
                     add_msg( m_info, _( "You can't pick anything up while you're in your shell." ) );
@@ -2779,6 +2807,8 @@ bool game::handle_action()
                     add_msg( m_info, _( "You can't pick anything up while you're riding." ) );
                 } else if( mouse_target ) {
                     pickup( *mouse_target );
+                } else if( const auto tile = modern_pickup_target( u ) ) {
+                    pickup( *tile );
                 } else {
                     pickup();
                 }
@@ -2930,6 +2960,31 @@ bool game::handle_action()
                 // while in the shell.  Eating, gear-changing, and item use are OK.
                 avatar_action::use_item( u );
                 break;
+
+            case ACTION_USE_CONTEXTUAL: {
+                // One key for the verbs that used to need their own: read, eat, wield, wear,
+                // unload the gun in your hands, or activate a tool.
+                item *const loc = game_menus::inv::titled_menu( u, _( "Use which item?" ) );
+                if( loc == nullptr ) {
+                    add_msg( _( "Never mind." ) );
+                    break;
+                }
+                if( loc->is_book() ) {
+                    u.read( loc );
+                } else if( loc->is_comestible() ) {
+                    avatar_action::eat( u, loc );
+                } else if( loc->is_gun() && u.is_wielding( *loc ) && loc->ammo_remaining() > 0 ) {
+                    avatar_action::unload( u );
+                } else if( loc->is_gun() || loc->is_melee() ) {
+                    avatar_action::wield( *loc );
+                } else if( loc->is_armor() ) {
+                    loc->obtain( u );
+                    u.wear_possessed( *loc );
+                } else {
+                    avatar_funcs::use_item( u, *loc );
+                }
+                break;
+            }
 
             case ACTION_USE_WIELDED:
                 avatar_funcs::use_item( u, u.primary_weapon() );

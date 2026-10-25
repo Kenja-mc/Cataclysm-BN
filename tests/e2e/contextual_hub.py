@@ -224,9 +224,8 @@ def test_contextual_space_uses_the_last_moved_direction(_game):
         spawn(game, 1, 0, "rock")
         settle(game)
         game.keys("space", delay=0.8)
-        game.wait_for("Pick up")
-        assert "Interact with what?" not in game.screen(), \
-            "the faced tile is chosen without the nearby list:\n" + game.screen()
+        assert wait_until(lambda: count_carried(game, "rock") == 1), \
+            "the faced tile is acted on without the nearby list:\n" + game.screen()
 
 
 def test_contextual_disabled_and_classic_keep_legacy_examine(_game):
@@ -245,21 +244,35 @@ def test_contextual_disabled_and_classic_keep_legacy_examine(_game):
             assert action_clock(game) == clock
 
 
-def test_contextual_selected_pickup_opens_the_list(_game):
+def test_contextual_selected_pickup_takes_or_lists(_game):
     with contextual_game("bn-e2e-context-pickup") as game:
         spawn(game, 1, 0, "rock")
-        spawn(game, -1, 0, "stick")
         before = bub_pos(game)
         select_tile(game, 1, 0)
         game.keys("space", delay=0.8)
-        game.wait_for("Pick up")
-        assert "examine the" not in game.screen(), \
-            "a pile is the obvious action and must open the pickup list, not the tile menu"
-        game.keys("enter", delay=1)
-        assert count_carried(game, "rock") == 1
-        assert count_at(game, 1, 0, "rock") == 0
-        assert count_at(game, -1, 0, "stick") == 1
+        assert wait_until(lambda: count_carried(game, "rock") == 1), game.screen()
+        assert "Pick up" not in game.screen(), "a lone item needs no picker"
         assert bub_pos(game) == before
+        spawn(game, 1, 0, "rock")
+        spawn(game, 1, 0, "stick")
+        select_tile(game, 1, 0)
+        game.keys("space", delay=0.8)
+        game.wait_for("Pick up")
+        game.keys("Escape", delay=0.6)
+
+
+def test_pickup_keys_take_a_lone_item_and_list_a_pile(_game):
+    with contextual_game("bn-e2e-context-pickup-keys") as game:
+        spawn(game, 1, 0, "rock")
+        select_tile(game, 1, 0)
+        game.keys("g", delay=1.0)
+        assert wait_until(lambda: count_carried(game, "rock") == 1), game.screen()
+        spawn(game, 1, 0, "rock")
+        spawn(game, 1, 0, "stick")
+        select_tile(game, 1, 0)
+        game.keys("G", delay=0.8)
+        game.wait_for("Pick up")
+        game.keys("Escape", delay=0.6)
 
 
 def test_contextual_nearby_list_skips_unseen_tiles(_game):
@@ -299,6 +312,7 @@ TESTS = [
     test_contextual_nearby_row_highlights_its_tile,
     test_contextual_space_uses_the_last_moved_direction,
     test_contextual_disabled_and_classic_keep_legacy_examine,
-    test_contextual_selected_pickup_opens_the_list,
+    test_contextual_selected_pickup_takes_or_lists,
+    test_pickup_keys_take_a_lone_item_and_list_a_pile,
     test_contextual_nearby_list_skips_unseen_tiles,
 ]

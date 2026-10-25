@@ -29,10 +29,8 @@ def test_contextual_left_click_pickup_without_walking(_g):
         position, clock = bub_pos(game), action_clock(game)
         x, y = game.find("@")
         game.click(x + 1, y)
-        game.wait_for("Pick up")
-        game.keys("g", delay=0.2)
-        game.wait_gone("Pick up")
         assert wait_until(lambda: count_carried(game, "rock") == 1), game.screen()
+        assert "Pick up" not in game.screen(), "a lone item needs no picker"
         assert count_at(game, 1, 0, "rock") == 0
         assert count_at(game, -1, 0, "stick") == 1, "click must not pick up another tile"
         assert bub_pos(game) == position
@@ -105,16 +103,16 @@ def test_space_and_b_reach_butchery_for_own_corpse(_g):
                             "if it:is_corpse() then n=n+1 end end out(n)") == ["1"]
 
 
-def test_modern_v_at_and_p_reach_their_screens(_g):
+def test_modern_use_at_p_reach_their_screens(_g):
     with contextual_game("bn-e2e-direct-info") as game:
         give(game, "pipe")
         position, clock = bub_pos(game), action_clock(game)
         game.keys("v", delay=0.2)
-        game.wait_for("Wield item")
+        game.wait_for("Use which item?")
         name = game.screen()
         assert "pipe" in name, name
         game.keys("Escape", delay=0.2)
-        game.wait_gone("Wield item")
+        game.wait_gone("Use which item?")
         game.keys("@", delay=0.2)
         game.wait_for("Strength:")
         assert all(label in game.screen() for label in ("Dexterity:", "Intelligence:", "Perception:"))
@@ -132,10 +130,10 @@ def test_modern_v_at_and_p_reach_their_screens(_g):
         assert (bub_pos(game), action_clock(game)) == (position, clock), "browsing these screens must be free"
         # Actually wield through the advertised direct route, not just open its picker.
         game.keys("v", delay=0.2)
-        game.wait_for("Wield item")
+        game.wait_for("Use which item?")
         game.wait_for("pipe (1)")
         game.keys("Enter", delay=0.2)
-        game.wait_gone("Wield item")
+        game.wait_gone("Use which item?")
         assert wait_until(lambda: game.lua(
             "local a=gapi.get_avatar() for _,it in ipairs(a:all_items(false)) do "
             "if a:is_wielding(it) then out(it:get_type():str()) end end") == ["pipe"]), game.screen()
@@ -165,5 +163,5 @@ TESTS = [test_contextual_left_click_opens_and_closes_without_walking,
          test_contextual_empty_and_distant_clicks_only_select,
          test_ctrl_peek_keeps_selected_interaction,
          test_space_and_b_reach_butchery_for_own_corpse,
-         test_modern_v_at_and_p_reach_their_screens,
+         test_modern_use_at_p_reach_their_screens,
          test_modern_f_changes_fire_mode_without_firing]

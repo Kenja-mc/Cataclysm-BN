@@ -958,6 +958,8 @@ class game : public submap_load_listener
         void pickup(); // Pick up items from one nearby tile 'g', min 0
         void pickup_all(); // Pick up items from all nearby tiles ',', min 0
         void pickup( const tripoint_bub_ms &p );
+        /// Always opens the picker, even for a lone item.
+        void pickup_list( const tripoint_bub_ms &p );
         void pickup_feet(); // Pick items at player position, min 1
 
         void drop(); // Drop an item  'd'

@@ -4,7 +4,32 @@ Tests that take `g` run on the runner's main game; each sets up the items it nee
 """
 import re
 
+from agent_actions import menu_rows
 from helpers import action_menu, arena, count_carried, empty_inventory, give, settle, spawn, wait_until
+
+
+def test_use_key_resolves_by_item_kind(g):
+    """`v` uses whatever you pick: a melee weapon is wielded, an armor piece is worn."""
+    def use_picked(name):
+        g.keys("v", delay=0.5)
+        g.wait_for("Use which item?")
+        g.keys("/", delay=0.3)
+        g.type(name)
+        g.keys("Enter", delay=0.4)
+        g.keys("space", delay=1.0)
+
+    arena(g)
+    empty_inventory(g)
+    give(g, "pipe", 1)
+    use_picked("pipe")
+    assert wait_until(lambda: g.lua(
+        "local a=gapi.get_avatar() for _,it in ipairs(a:all_items(false)) do "
+        "if a:is_wielding(it) then out(it:get_type():str()) end end") == ["pipe"]), g.screen()
+    give(g, "tshirt", 1)
+    use_picked("t-shirt")
+    assert wait_until(lambda: g.lua(
+        "local a=gapi.get_avatar() local n=0 for _,it in ipairs(a:all_items(false)) do "
+        "if a:is_worn(it) and it:get_type():str()=='tshirt' then n=n+1 end end out(n)") == ["1"]), g.screen()
 
 
 def test_unified_batteries(g):
@@ -237,6 +262,7 @@ def item_picker_rows(screen, names):
 
 
 TESTS = [
+    test_use_key_resolves_by_item_kind,
     test_unified_batteries,
     test_black_powder_rounds_stack,
     test_black_powder_loot_keeps_its_modifier,

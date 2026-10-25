@@ -108,6 +108,7 @@ enum action_id : int {
     ACTION_TOGGLE_CURTAIN,
     /** Pick up items from one current/adjacent square */
     ACTION_PICKUP,
+    ACTION_PICKUP_LIST,
     /** Pick up items from all current/adjacent squares */
     ACTION_PICKUP_ALL,
     /// Take everything underfoot without a selection menu.
@@ -154,6 +155,7 @@ enum action_id : int {
     ACTION_ORGANIZE,
     /** Open the use menu */
     ACTION_USE,
+    ACTION_USE_CONTEXTUAL,
     /** Use currently wielded item */
     ACTION_USE_WIELDED,
     /** Open the wear clothing selection menu */

@@ -77,6 +77,7 @@ auto menu_category( const action_id act ) -> std::optional<std::string>
         case ACTION_DIR_DROP:
         case ACTION_COMPARE:
         case ACTION_ORGANIZE:
+        case ACTION_USE_CONTEXTUAL:
         case ACTION_USE_WIELDED:
         case ACTION_OPEN_CONSUME:
         case ACTION_UNLOAD_ALL:
