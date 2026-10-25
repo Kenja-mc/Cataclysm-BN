@@ -4,6 +4,33 @@ Releases go to [Kenja-mc/Cataclysm-BN releases](https://github.com/Kenja-mc/Cata
 Players download them there, and the Windows launcher updates itself from the newest one. The
 workflow is `.github/workflows/fork-release.yml`; it never touches upstream.
 
+## Release preflight
+
+Before publication, check the exact source commit and version together. Confirm the commit is
+the intended fork commit on `main` (and includes the dated `CHANGELOG-OVERHAUL.md` entry), and
+that the canonical `vMAJOR.MINOR.PATCH` is unused and is the next version. The metadata job
+pins a publishing dispatch to the selected commit, but it does not replace this human review.
+
+Review the fork identity in the release content: title/notes must say Bright Nights Overhaul,
+and links must target `Kenja-mc/Cataclysm-BN`, not upstream. Check the changelog entry describes
+the changes in this source and that the generated release notes include the expected dated
+sections. Compare the notes' download table with the workflow assets: Windows zip and Linux
+tarball, each with its `.sha256` file, under the stable names listed below. Do not announce a
+link or asset the publish job will not produce.
+
+Run the local note generator to inspect the first-release notes, or pass the previous release's
+publication date to inspect an update:
+
+```sh
+build-scripts/fork-release-notes.sh CHANGELOG-OVERHAUL.md
+build-scripts/fork-release-notes.sh CHANGELOG-OVERHAUL.md 2026-10-20
+```
+
+For a harmless end-to-end rehearsal, use the build-only command below with a fresh, unpublished
+version label. It runs both builds and the updater gate, but skips publication and creates neither
+a tag nor a release. This is not a release and does not validate the final uploaded release notes.
+Only the publishing commands in [Cut a release](#cut-a-release) create a release.
+
 ## Cut a release
 
 1. Add the changes to `CHANGELOG-OVERHAUL.md` under today's date and push to `main`. The
@@ -11,14 +38,14 @@ workflow is `.github/workflows/fork-release.yml`; it never touches upstream.
 2. Pick the next version (see below) and push a tag for it:
 
    ```sh
-   git tag -a v0.1.0 -m "Bright Nights Overhaul v0.1.0"
-   git push origin v0.1.0
+   git tag -a v0.2.0 -m "Bright Nights Overhaul v0.2.0"
+   git push origin v0.2.0
    ```
 
    Or run the workflow from `main` and type the version:
 
    ```sh
-   gh-fork workflow run fork-release.yml --repo Kenja-mc/Cataclysm-BN --ref main -f version=v0.1.0
+   gh-fork workflow run fork-release.yml --repo Kenja-mc/Cataclysm-BN --ref main -f version=v0.2.0
    ```
 
 3. Watch it with `gh-fork run list --workflow fork-release.yml --repo Kenja-mc/Cataclysm-BN`.
@@ -46,7 +73,7 @@ warming dependency caches:
 
 ```sh
 gh-fork workflow run fork-release.yml --repo Kenja-mc/Cataclysm-BN --ref main \
-  -f version=v0.1.1 -F publish=false
+  -f version=v0.2.1 -F publish=false
 ```
 
 This runs both platform builds and the Windows updater gate and retains their CI artifacts.
@@ -55,6 +82,29 @@ The publish job is skipped: no version tag or GitHub release is created. Repeat 
 commit and label to check warm-cache reuse. Check cache-hit messages and actual build timings;
 a successful first run alone does not prove that the cache is reused.
 
+## Correct notes without rebuilding
+
+For an authorized notes-only correction, preserve the published tag and every binary asset:
+do not dispatch `fork-release.yml`, push or move a tag, or rebuild/re-upload files. Regenerate
+the notes from the tagged changelog and the previous release's publication date (for the first
+release, omit the date):
+
+```sh
+git checkout v0.2.0
+build-scripts/fork-release-notes.sh CHANGELOG-OVERHAUL.md 2026-10-20
+```
+
+Review the generated notes and edit only the release description on the fork. Use the guarded
+fork command, specifying the release tag and repository:
+
+```sh
+gh-fork release edit v0.2.0 --repo Kenja-mc/Cataclysm-BN --notes-file /path/to/release-notes.txt
+```
+
+The notes file should contain the reviewed generated text, with only the authorized correction.
+For a correction to the changelog itself, make and review a fork-only commit, but do not move
+the existing release tag or replace its binaries. Notes-only edits do not change the immutable
+build or tag.
 ## Versions
 
 | Part     | Raise it when                                                                         | Example  |
