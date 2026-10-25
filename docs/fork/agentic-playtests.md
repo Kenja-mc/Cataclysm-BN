@@ -193,7 +193,35 @@ python3 tests/e2e/playtest.py main_menu --no-attach   # print the screen and clo
 ```
 
 Caps are kill switches, not budgets to spend: `--budget-usd`, `--max-wall-s` and `--max-tokens`
-stop the run and it then cannot report success.
+stop the run and it then cannot report success. `--defect-policy` decides what a named defect
+does: `stop` (the default, and what the full-suite and CI legs use) ends the run at once, `note`
+records the claim with the state behind it and plays on to the turn budget.
+
+## Quick loop with Jev
+
+`bin/playtest-jev` is the fast local loop: curses, the modern scheme, `jev-latest` on
+api.experientiallabs.ai, six turns, a fifteen minute wall clock, and a fresh report under
+`out/playtests/`. The key comes from `XPL_SK_AGENT`, from the file `OPENROUTER_ENV_FILE` names, or
+from `~/.omp/agent/provider-keys/experiential-labs` (point `BNO_XPL_KEY_FILE` elsewhere to
+override), and is exported only into the child process: it never reaches a command line, the
+transcript or the report.
+
+```sh
+bin/playtest-jev tutorial                  # six turns of the tutorial
+bin/playtest-jev natural_gameplay --turns 12
+bin/playtest-jev hud --models clef-flash   # any other model or pool
+```
+
+Jev is small and names `report_defect` early: measured on 2026-10-25, it did so on turn 2 of the
+tutorial with the normal "Welcome to the Cataclysm tutorial!" popup on screen, at confidence 0.34.
+That is why the wrapper passes `--defect-policy note`; the claim stays in the report with its
+screen, the run keeps playing, and the exit code stays 1 when any claim was made. The same run
+then moved, picked an item up and wielded twice over five turns. Its 32,000-token shared context
+caps a run near fifteen turns, because each state costs about 1,800 tokens.
+
+Timings on this machine: the scenario start costs about 55 to 60 s, then a Jev decision takes
+1 to 15 s (5 turns in 136 s), against roughly 12 s for `clef-flash` (5 turns in 122 s).
+
 
 ## What the run leaves behind
 

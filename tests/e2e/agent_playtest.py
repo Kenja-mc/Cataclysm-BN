@@ -404,7 +404,13 @@ class Driver:
                                    "confidence": decision.confidence, "state": state.text,
                                    "menu": state.menu})
             self.record(line)
-            raise Stop(f"the model named a defect on turn {turn}", EXIT_DEFECT)
+            if args.defect_policy == "stop":
+                raise Stop(f"the model named a defect on turn {turn}", EXIT_DEFECT)
+            # A small model names the escape hatch early and often; keep playing so the run still
+            # covers the scenario, and let the report carry every claim and the state behind it.
+            report.notes.append(f"turn {turn}: defect noted, run continues (--defect-policy note)")
+            self.check_caps(turn)
+            return
         if decision.action_id == RESERVED_DONE:
             self.record(line)
             raise Stop(f"the model reported the scenario checked on turn {turn}", EXIT_CLEAN)
@@ -432,6 +438,11 @@ class Driver:
             self.check_caps(turn)
             self.turn(turn)
         self.report.reason = f"turn budget of {self.args.turns} reached"
+        if self.report.defects:
+            # The run played out, but the model still saw something: keep the exit code a caller
+            # can gate on, and say how many claims the report holds.
+            self.report.code = EXIT_DEFECT
+            self.report.reason += f"; {len(self.report.defects)} defect claim(s) in the report"
 
 
 # ------------------------------------------------------------------ main
@@ -451,6 +462,8 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--budget-usd", type=float, default=None, help="kill switch on spent dollars")
     parser.add_argument("--max-wall-s", type=float, default=None, help="kill switch on wall clock")
     parser.add_argument("--max-tokens", type=int, default=None, help="kill switch on tokens in plus out")
+    parser.add_argument("--defect-policy", choices=["stop", "note"], default="stop",
+                        help="stop: a named defect ends the run (default); note: record it and play on")
     parser.add_argument("--dry-run", action="store_true", help="no key, no network: a wiring check only")
     args = parser.parse_args(argv)
     if args.turns < 1:

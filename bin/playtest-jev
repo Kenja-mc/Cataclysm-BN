@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# A Jev-only curses playtest: the fast local loop for judging a change by playing it.
+#
+# The key never reaches argv or the transcript. It comes from $XPL_SK_AGENT, from the file named
+# by $OPENROUTER_ENV_FILE, or from the omp provider key file, which is exported only into this
+# process tree.
+#
+#   bin/playtest-jev <scenario> [agent_playtest.py arguments]
+#   bin/playtest-jev --list
+#
+# Defaults suit a quick look: curses, the modern scheme, `jev-latest`, 6 turns, a 15 minute wall
+# clock, and a fresh report under out/playtests/. Any of them can be overridden.
+set -euo pipefail
+
+root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+
+has_arg() {
+  local want=$1 arg
+  shift
+  for arg in "$@"; do
+    [[ $arg == "$want" || $arg == "$want="* ]] && return 0
+  done
+  return 1
+}
+
+if [[ ${1:-} == --list || ${1:-} == -h || ${1:-} == --help || $# -eq 0 ]]; then
+  python3 "$root/tests/e2e/playtest.py" --list
+  if [[ $# -eq 0 ]]; then
+    printf '\nusage: bin/playtest-jev <scenario> [agent_playtest.py arguments]\n' >&2
+    exit 2
+  fi
+  exit 0
+fi
+
+scenario=$1
+shift
+args=()
+
+if ! has_arg --mode "$@"; then args+=(--mode curses); fi
+if ! has_arg --models "$@"; then args+=(--models jev-latest); fi
+if ! has_arg --turns "$@"; then args+=(--turns 6); fi
+if ! has_arg --defect-policy "$@"; then args+=(--defect-policy note); fi
+if ! has_arg --max-wall-s "$@"; then args+=(--max-wall-s 900); fi
+if ! has_arg --report-dir "$@"; then
+  args+=(--report-dir "$root/out/playtests/${scenario}-$(date -u +%Y%m%dT%H%M%SZ)")
+fi
+
+if [[ -z ${XPL_SK_AGENT:-} && -z ${OPENROUTER_ENV_FILE:-} ]]; then
+  key_file=${BNO_XPL_KEY_FILE:-$HOME/.omp/agent/provider-keys/experiential-labs}
+  if [[ ! -r $key_file ]]; then
+    printf 'playtest-jev: no Jev key: set XPL_SK_AGENT, name a key file with OPENROUTER_ENV_FILE, or write %s\n' \
+      "$key_file" >&2
+    exit 2
+  fi
+  XPL_SK_AGENT=$(<"$key_file")
+  XPL_SK_AGENT=${XPL_SK_AGENT//[$'\r\n']/}
+  export XPL_SK_AGENT
+fi
+
+printf 'playtest-jev: scenario=%s\n' "$scenario" >&2
+exec python3 "$root/tests/e2e/agent_playtest.py" --scenario "$scenario" "${args[@]}" "$@"
