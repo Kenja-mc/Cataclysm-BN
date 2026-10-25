@@ -65,9 +65,17 @@ repository-wide formatter. Regenerate documentation explicitly when changing the
 ccache uses its normal shared cache directory (or an explicit `CCACHE_DIR`); do not copy a cache
 into each worktree. Check `ccache -s` after a rebuild to confirm hits. A real source/header change
 still needs compilation; a no-op Ninja build does not invoke ccache.
-With both tools present on a 16-core machine, a clean curses build of the game and tests takes
-about 4 minutes 40 seconds, going back to a state that was built before takes under a second, and
-editing `src/game.cpp`, the largest file, still costs about 18 seconds.
+A `preprocessed_cache_hit` means identical preprocessed input for the selected preset, not
+identical text in the editor. Code inside `#if defined(SDL_SOUND)` is absent from `linux-curses`,
+so editing it can correctly reuse the same object. For a suspected stale hit, build the preset
+that includes the changed block and inspect the object with `strings` or compare its checksum
+before and after; do not disable ccache based on elapsed time alone.
+Measured with both tools on this 8-core/16-thread machine: a clean curses build of the game and tests
+took 4 minutes 41 seconds, returning to a previously built state took 0.7 seconds, and editing
+`src/game.cpp`, the largest file, took 17.8 seconds.
+
+Use absolute paths for file tools in another worktree. A shell command's `cwd` does not change
+the root used by subsequent read/edit/write calls.
 
 Each worktree needs its own `out` directory: never symlink another worktree's build tree, because
 Ninja records absolute source paths. Serialize configure/build operations on the same tree, for

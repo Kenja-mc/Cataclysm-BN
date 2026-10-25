@@ -13,6 +13,13 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - The release runbook includes preflight checks and a notes-only correction procedure that
   preserves published tags, binaries and the download table.
 
+### Maintenance
+
+- Build guidance explains preset-specific ccache hits and how to investigate a suspected stale
+  object without mistaking compiled-out code for a cache failure.
+- The test-quality gates require running documented CLI commands exactly as written and fixing
+  parser/documentation mismatches together.
+
 ## 2026-10-24
 
 ### Added
