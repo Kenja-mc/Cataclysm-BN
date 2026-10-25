@@ -25,13 +25,16 @@ direction prompts. Top-row numbers do not move you on the map.
   **Wear**, **Eat**, **Use**, **Read** and other item actions. The menu shows its local shortcuts.
   **`v`** wields from the map: it lists what you can wield. Press **F5 Craft** inside inventory to
   craft, even when the inventory is empty.
+  **Tab** opens advanced inventory from this screen; **Shift+Tab** switches category selection.
+  The footer's advanced-inventory hint is clickable in both schemes; Classic keeps its keys.
 - **Space — tile actions.** With nothing selected, Space lists every action on the tiles around you
   in one menu at the top of the screen, each named with its direction ("open the door (east)"), and
   lights up the tile of the highlighted row. A single safe action runs at once. With a tile selected
   (right click, or a Select tile key you bound), Space offers that tile's **Open**, **Close**, **Examine**,
   **Pickup**, **Jump** and **Smash**. Your own tile also offers **Ascend** or **Descend** when a
   vertical transition is available; clicking your own stairs uses them. Standing on a corpse adds
-  **Butcher**. Jumping and destructive
+  **Butcher**. A loaded vehicle trunk opens pickup directly. **Shift+Space** toggles the selected
+  vehicle curtain, or names nearby curtains when nothing is selected. Jumping and destructive
   actions are explicit choices, never an automatic substitute; smashing ordinary floors and walls
   is only offered for a tile you picked.
 - **Select keys — unbound by default.** Tile selection is a mouse action. The eight **Select tile**
@@ -66,6 +69,10 @@ Shift+WASD, including sorting, adding rules and dropping. Context-local shortcut
 for example, inventory and pickup offer Wield and Wear alongside the map's `v` wield key.
 Generated shortcuts and inventory, mutation and bionic letters leave navigation keys
 free. Text fields still accept normal typing; **Classic** retains the upstream controls.
+
+In ordinary Modern menus, **Space** confirms the highlighted choice just like Enter; it never
+means an unconditional Yes. Spaces stay literal in filters, world names and the Lua console.
+The title menu supports mouse hover and clicking; Quit asks for confirmation.
 
 Where a Shift shortcut was already occupied, the other menu action moves:
 
@@ -118,7 +125,9 @@ food and a weapon, because houses usually have all three.
 | Ctrl+direction       | physical peek (normal 200-move cost)                               |
 | Tab / Shift+Tab      | next / previous visible hostile                                    |
 | `f`, `F`, `r`, `t`   | attack selected target / fire mode / reload / throw                |
+| `p`                  | smash or pulp in a chosen direction                                |
 | Space                | nearby or selected-tile actions, including explicit Jump and Smash |
+| Shift+Space          | toggle a selected vehicle curtain, or choose one nearby            |
 | `g` / Ctrl+G         | take everything underfoot / choose items nearby            |
 | `i`, `v`, `/`        | inventory / wield / advanced inventory                             |
 | `i`, then F5         | craft (also works with empty inventory)                            |
@@ -136,8 +145,9 @@ food and a weapon, because houses usually have all three.
 
 Walking into an enemy attacks it in both control schemes. Options → Interface → Attack by walking
 into enemies can disable this; in Modern, select a target and press `f` for a deliberate attack.
-The old separate map shortcuts for Craft, Open, Smash and Jump are unbound, not removed actions:
-use inventory, Space or Enter. Walking into a closed door still opens it. Text that names a key,
+The separate map shortcuts for Craft, Open and Jump are unbound, not removed actions:
+use inventory, Space or Enter. Modern **`p`** smashes terrain or pulps a corpse in a chosen
+direction; Classic keeps **`s`**. Walking into a closed door still opens it. Text that names a key,
 such as tutorial pop-ups and help pages, names the way to reach an unbound action instead, for
 example "i → item → Activate". In Modern, the tutorial's lessons describe Modern's own way of
 doing each thing (clicking, Space, selecting with the mouse), and the door lessons now appear for
@@ -149,9 +159,9 @@ same sleep confirmation and alarm prompts as the sleep action. Classic keeps its
 
 **Mouse tile selection**, inspired by Sword of the Stars: The Pit, works in the terminal too.
 
-- **Hover:** highlights the tile and opens the Mouse View box with its terrain, items and creatures.
-- **Right click:** selects/inspects a visible tile or target without moving, attacking or taking a turn.
-  Press `f` to attack the selected hostile, as with the arrow-key reticle.
+- **Hover:** previews a tile in the Mouse View box without changing a locked target or its marker.
+- **Right click:** locks a hostile without attacking. On an object or door it opens the action list
+  without running an action; closing the list keeps the tile selected.
 - **Left click:** does the main action of the clicked tile next to you: opens or closes a door,
   picks up items, or examines furniture, without walking. On a hostile it attacks: an adjacent
   melee swing, or the normal ranged aiming flow with a gun. Anywhere else it only selects the tile;
@@ -165,14 +175,19 @@ same sleep confirmation and alarm prompts as the sleep action. Classic keeps its
   Safe click-to-walk on, long travel needs a second click, visible threats limit a distant click
   to one step, and a known trap/dangerous field asks for confirmation.
 
-In Modern list menus, hover highlights a row, left click selects it, and right click cancels.
-Inventory menus follow the usual list controls: hover highlights an item, left click picks it (or toggles it in menus where you choose
-several, such as drop), the mouse wheel scrolls, and right click on an item in the inventory (`i`)
-opens its actions, as in Sword of the Stars: The Pit. Right click outside the list cancels.
+Modern custom action lists use two clicks: the first focuses/selects a row, the second performs
+its existing keyboard action. Tabs, filters and content changes reset that pairing. Trade's second
+click only marks an item; Enter or Accept still confirms the deal. Advanced-inventory clicks do
+not transfer items. Armor rows stay read-only; body-part names and header arrows switch tabs.
+The health report stays a scrollable text report with Close.
+
+Inventory hover highlights an item, left click picks it (or marks it in multi-item menus), and the
+wheel scrolls. Right click on an inventory item opens its actions; right click outside cancels.
 
 **Quick pickup and area pickup.** In Modern, `g` takes all ground and vehicle-cargo items on your
 own tile without a menu, using the normal pickup activity and its capacity handling. Ctrl+G opens
-the area pickup menu; `g` or Enter picks up marked items, or the highlighted item if none are marked.
+the area pickup menu; `g`, Enter or Space picks up marked items, or the highlighted item if none
+are marked. Escape cancels.
 Inside pickup, local shortcuts act on the highlighted item: `h` wields it and `W` wears it.
 With the mouse, hover highlights a row, left click marks or unmarks it, and the wheel moves through
 the list. Right click lists Pick up, Wield and Wear; each acts on that item alone. The footer shows
@@ -198,6 +213,8 @@ than a separate primary map key.
 In the vehicle screen, WASD and Q E Z C move the cursor like everywhere else. The actions those
 letters used to start moved to Shift: `W` crew, `A` label, `S` siphon, `D` unload, `E` rename,
 `C` change tire, and `Z`/`X` zoom in and out.
+Clicks select vehicle parts and overview rows or use the displayed action and tab labels. The
+existing hints and mouse wheel scroll the descriptions and parts list.
 
 A **Controls** strip at the bottom of the sidebar shows the most used keys. `? all keys` stays
 near the movement hints, and five rows keep the other hints visible. It reads live keybindings,
@@ -294,7 +311,7 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   bleeds, flames while it burns, a poison icon while it is poisoned or sick, the dizzy stars and
   spiral while it is stunned or dazed, a bobbing "zz" while it sleeps, and a snowflake while it
   is cold. Monsters never got these; the overlays are the ones the tileset already draws on
-  characters, with the loops taken from the wall clock, so they move even while you stand still.
+  characters. They loop in real time even while you stand still, starting without another keypress.
   Options → Graphics → Status effect animations turns them off.
 - **Fading sound markers**: the `?` for a sound you heard but cannot see stays for a few turns and
   dims as it ages, so you can see where noises came from (Options → Interface → Sound marker turns;
@@ -334,6 +351,8 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 - **More item pictures in the terminal**: 132 ASCII pictures from CDDA (CC-BY-SA 3.0) for 134
   items such as ammo, jars, bags and batteries, at the end of the item description like upstream's
   own (Options → Graphics → Enable ASCII art in item descriptions).
+- **Window scaling** uses the selected monitor's usable desktop bounds. A supported 2× window
+  no longer shrinks to the minimum size during startup.
 - **Overhaul soundpack**, the default when the Otopack is not installed: footsteps, melee swings
   and hits, bullet impacts, reloads, bites, bionic zaps, menus and vehicle doors from Kenney's CC0
   packs. It has no music: gunshots, deaths and ambience stay silent rather than use a sound that
@@ -341,6 +360,7 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   Otopack, which upstream release builds include. A source checkout downloads it separately:
   `bin/install-bno.sh` uses `build-scripts/bundle-registry-mods.ts` and keeps the pack's
   credits with its files. Pick it under Options → General → Choose soundpack.
+  With shoes on, footsteps follow the ground type; moving through obstacles has its own clearing sound.
 
 - **Grouped right sidebar**, based on the Opus HUD proposal, keeps the map free of HUD boxes.
   Weather, Character and Needs form titled groups. The sidebar also keeps limb health, wounds,

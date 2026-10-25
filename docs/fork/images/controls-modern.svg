@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1270" viewBox="0 0 1000 1270" font-family="sans-serif" fill="currentColor">
 <title>Modern control families on a 104-key ANSI keyboard</title>
-<desc>Standard 15-unit ANSI main keyboard, including unbound keys and modifiers. Navigation, arrow and numpad clusters are shown below, not in their physical position to the right of the main keyboard. Enter opens all actions, inventory groups equipment and crafting, Space groups tile actions. Shift-direction selects freely; Ctrl-direction physically peeks with the normal cost. Classic controls are unchanged.</desc>
+<desc>Standard 15-unit ANSI main keyboard, including unbound keys and modifiers. Navigation, arrow and numpad clusters are shown below, not in their physical position to the right of the main keyboard. Enter opens all actions, inventory groups equipment and crafting, Space groups tile actions. Right-click selects; Ctrl-direction physically peeks with the normal cost. Classic controls are unchanged.</desc>
 <text x="20" y="32" font-size="25" font-weight="700">Modern controls</text>
 <text x="20" y="57" font-size="14">ANSI layout · action below each key · ⇧ means Shift · direction modifiers are grouped in the legend</text>
 <g><rect x="20" y="84" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -136,7 +136,7 @@
 </g>
 <g><rect x="692.0" y="252" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="699.0" y="273" font-size="15.0" font-weight="700">P</text>
-<text x="698.0" y="292" font-size="9.0" fill="currentColor">Smash Nearby Terrain</text>
+<text x="698.0" y="292" font-size="10.0" fill="currentColor">smash/pulp</text>
 <text x="698.0" y="307" font-size="10" fill="var(--muted,currentColor)">⇧</text>
 <text x="698.0" y="319" font-size="10" fill="var(--muted,currentColor)">messages</text>
 </g>
@@ -172,11 +172,11 @@
 </g>
 <g><rect x="388.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="395.0" y="349" font-size="15.0" font-weight="700">G</text>
-<text x="394.0" y="368" font-size="9.0" fill="currentColor">Take everything underfoot</text>
+<text x="394.0" y="368" font-size="12.0" fill="currentColor">take all</text>
 </g>
 <g><rect x="452.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="459.0" y="349" font-size="15.0" font-weight="700">H</text>
-<text x="458.0" y="368" font-size="9.1" fill="currentColor">Body status</text>
+<text x="458.0" y="368" font-size="12.0" fill="currentColor">body</text>
 </g>
 <g><rect x="516.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="523.0" y="349" font-size="15.0" font-weight="700">J</text>
@@ -261,6 +261,7 @@
 <g><rect x="260.0" y="480" width="396.0" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="267.0" y="501" font-size="15.0" font-weight="700">Space</text>
 <text x="266.0" y="520" font-size="12.0" fill="currentColor">tile actions</text>
+<text x="266.0" y="535" font-size="10" fill="var(--muted,currentColor)">⇧ curtain</text>
 </g>
 <g><rect x="660.0" y="480" width="76.0" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="667.0" y="501" font-size="15.0" font-weight="700">Alt</text>
@@ -381,7 +382,7 @@
 <g><rect x="788" y="914" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="795" y="935" font-size="15.0" font-weight="700">.</text>
 </g>
-<text x="20" y="850" font-size="13">Shift + (unbound) (unbound) (unbound) (unbound) (unbound) (unbound) (unbound) (unbound): free tile selection; starts at you, accumulates.</text>
+<text x="20" y="850" font-size="13">Select tile keys are unbound; right-click selects without spending time.</text>
 <text x="20" y="876" font-size="13">Ctrl + W A S D Q E Z C: physical peek (200 moves); cancel returns.</text>
 <text x="20" y="902" font-size="13">Arrows: free aim reticle. Tab / Shift+Tab: next / previous hostile.</text>
 <text x="20" y="928" font-size="13">f attacks selection; guns use normal aim. Bump attacks still work.</text>
@@ -389,12 +390,12 @@
 <text x="20" y="980" font-size="13">Modern curses: Ctrl+C/Z are game chords, not quit/suspend signals.</text>
 <text x="20" y="1024" font-size="16" font-weight="700">Compact action families</text>
 <text x="20" y="1052" font-size="14">Enter: all action groups; Info → character sheet and body/status screens.</text>
-<text x="20" y="1077" font-size="14">v: wield. i: inventory → item actions; inventory F5: Craft, even when empty.</text>
+<text x="20" y="1077" font-size="14">v: wield. Inventory: F5 crafts; Tab opens advanced inventory; Shift+Tab selects categories.</text>
 <text x="20" y="1102" font-size="14">@: character; P: messages; B: butcher; F: fire mode; /: advanced inventory.</text>
-<text x="20" y="1127" font-size="14">Space: selected tile actions, or a flat nearby list with directions and a target highlight.</text>
+<text x="20" y="1127" font-size="14">Space: nearby or selected-tile actions; a loaded trunk opens pickup. Shift+Space toggles curtains.</text>
 <text x="20" y="1152" font-size="14">RMB selects; Select tile keys are unbound by default; Jump and Smash require an explicit choice.</text>
-<text x="20" y="1177" font-size="14">Map RMB selects freely; LMB uses adjacent doors/items/furniture or attacks; never walks.</text>
-<text x="20" y="1202" font-size="14">g opens pickup; g confirms. Inventory/pickup: wheel scrolls; RMB opens item actions.</text>
-<text x="20" y="1227" font-size="14">Blank keycaps have no default map action. Local menu keys and Classic controls are unchanged.</text>
+<text x="20" y="1177" font-size="14">Map RMB opens object actions without running one; closing keeps selection. Hostiles are only locked.</text>
+<text x="20" y="1202" font-size="14">g takes all underfoot; Ctrl+G chooses nearby items. Pickup Space equals g; Escape cancels.</text>
+<text x="20" y="1227" font-size="14">Menus: Space confirms the highlight; text spaces stay literal. Classic controls are unchanged.</text>
 <text x="20" y="1252" font-size="14">Classic terminal Ctrl+C/Z retain normal quit/suspend signal behavior.</text>
 </svg>

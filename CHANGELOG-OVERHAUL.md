@@ -4,6 +4,52 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-24
+
+### Added
+
+- Modern menus accept Space like Enter on the highlighted choice, including No in a confirmation.
+  Filters, world names and the Lua console keep literal spaces. The title menu supports mouse
+  hover/clicks in terminal and graphical builds and asks before quitting.
+- Inventory Tab opens advanced inventory in Modern; Shift+Tab selects categories. A clickable
+  advanced-inventory footer hint works in both schemes without changing Classic's keys.
+- Space on a loaded vehicle trunk opens pickup directly. Shift+Space toggles a selected vehicle
+  curtain or lists nearby curtains.
+- Modern status, utility, information and vehicle menus support their existing actions with mouse
+  selection, tabs, header labels, hints and scrolling. Custom action lists select on the first click
+  and act on the second. Trade marks items without accepting the deal; armor rows remain read-only.
+- Known-lock markers appear only after a failed opening attempt, persist in map memory and clear
+  when a known door opens, unlocks or is destroyed. Untried locks remain hidden.
+
+### Changed
+
+- The eight Modern Select tile keys are unbound by default; the actions remain rebindable.
+  Right-click selects objects or locks hostiles without attacking. Closing an object's action list
+  keeps the selection, and hover cannot replace a locked target.
+- Modern `p` smashes or pulps in a chosen direction; Classic keeps `s`. Keybinding search accepts
+  ordinary letters, including W/S, and resets scrolling after a changed filter.
+- The bundled Overhaul soundpack uses dirt footsteps and obstacle-clearing clips instead of
+  squeaky carpet clips. Scratch clips remain assigned to missed monster bites.
+
+### Fixed
+
+- Status-effect animation ticks are bounded before narrowing and floor-normalized before frame
+  selection, preventing the reproduced negative-index tiles crash.
+  Idle polling starts when the first redraw discovers animated overlays, without waiting for another keypress.
+- Glass weapon, pry, terrain, furniture, item and bullet-hit events use the shipped glass clips.
+- Terrain footsteps recognize worn shoes instead of using a legacy leg index to choose barefoot audio.
+- Overmap mouse coordinates follow the displayed map; `m` closes it without starting travel.
+- Manually reassigned item digits survive restacking and saving without automatic digit assignment.
+  Wearing and wielding refresh the open inventory without losing its selection.
+- Synchronous dimension travel releases its swap guard before a subsequent Lua-driven trip.
+- Shift+Space consumes its terminal escape sequence once. SDL retains the key-down modifiers
+  even when Shift is released before its text event arrives.
+- UiList scrollbar clicks use window-relative coordinates instead of the center-relative input point.
+- Windowed graphical scaling uses usable monitor bounds, keeping supported 2× windows at their configured size.
+- End-to-end tests now launch the current root terminal binary before looking for older build paths.
+  Pulping fixtures use eligible corpses, and trunk fixtures spawn one vehicle and clear ground clutter.
+- Matching Windows debug-symbol ZIPs are retained as workflow artifacts for crash reports.
+
 ## 2026-10-23
 
 ### Added

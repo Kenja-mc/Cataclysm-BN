@@ -193,19 +193,27 @@ Long-form write-ups should follow
   normal gun aiming. Enter groups all actions (Info for character/status screens). Ctrl+X opens
   wait/rest; Shift+X cycles walk/run/crouch/prone, with F2/F3/F4 unbound.
 - **Inventory:** `i`, then select an item for Wield/Wear/Eat/Use/Read and other context actions.
-  `v` opens Wield directly. F5 Craft remains available even when inventory is empty.
-  `g` takes everything underfoot without a menu; Ctrl+G opens area pickup, where `g` or Enter
-  confirms. Quick stack and sort pile remain in Enter.
+  `v` opens Wield directly. F5 crafts even when inventory is empty; Tab opens advanced inventory,
+  and Shift+Tab switches category selection. The advanced-inventory footer hint is clickable.
+  `g` takes everything underfoot without a menu; Ctrl+G opens area pickup, where `g`, Enter or
+  Space confirms and Escape cancels. Quick stack and sort pile remain in Enter.
 - **Select and interact:** right click selects a tile without spending time; the eight Select tile
   keys ship unbound and stay rebindable in the options menu.
   Space acts on that selection. Without a selection, it lists nearby actions with directions
   and highlights the tile of the current row. Jump and Smash need explicit choices (`S` for Smash).
-  Space offers Butcher for a corpse underfoot. `B` also opens Butcher.
+  Space offers Butcher for a corpse underfoot and opens loaded vehicle trunks directly.
+  Shift+Space toggles a selected vehicle curtain or lists nearby curtains. `p` smashes or pulps
+  in a chosen direction; `B` opens Butcher.
   Ctrl+WASD/QEZC physically peeks for the normal 200 moves, then returns without clearing selection.
   In Modern curses, Ctrl+C/Z are game chords. Classic keeps normal terminal signals.
-- **Mouse:** right click selects a map tile. Left click uses an adjacent door, item or furniture,
-  attacks a hostile, or selects other tiles. Default Modern clicks do not walk.
-  Classic keeps upstream mouse behavior.
+- **Mouse:** right click locks a hostile or opens an object's actions without running one;
+  closing that list keeps the selection. Hover does not replace a locked target.
+  Left click uses an adjacent door, item or furniture, attacks a hostile, or selects other tiles.
+  Default Modern clicks do not walk. Classic keeps upstream mouse behavior.
+- **Menus:** Space acts like Enter on the highlighted choice, including No in a confirmation.
+  Spaces stay literal in text fields. The title supports hover and clicking and asks before quitting.
+  In custom action lists, click once to select and again to act; in trade, the second click marks
+  an item and Enter or Accept confirms the deal. Scrollbar clicks never activate a row behind them.
 - **HUD:** select **grouped** in Enter → Misc → Sidebar Options for the new right-sidebar layout.
   Weather, Character and Needs move off the map. Existing layouts remain selectable.
   Try Text only, Unicode and Icon font. Make sure that urgent needs, limb health and controls

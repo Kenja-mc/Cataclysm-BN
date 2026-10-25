@@ -45,6 +45,9 @@ ABBREV = {
     "Ascend stairs": "stairs up",
     "Descend stairs": "stairs down",
     "Keybindings": "all keys",
+    "Take everything underfoot": "take all",
+    "Body status": "body",
+    "Smash Nearby Terrain": "smash/pulp",
 }
 ACTION_LABELS = {
     "cycle_move": "mode",
@@ -56,6 +59,7 @@ ACTION_LABELS = {
     "butcher": "butcher",
     "select_fire_mode": "fire mode",
     "advinv": "adv. inv.",
+    "toggle_curtain": "curtain",
 }
 DIRECTIONS = ("n", "w", "s", "e", "nw", "ne", "sw", "se")
 LOOK_ACTIONS = tuple(f"shift_{direction}" for direction in DIRECTIONS)
@@ -88,7 +92,7 @@ ROWS = (
     + (Key(",", primary=",", shift="<"), Key(".", primary=".", shift=">"),
        Key("/", primary="/", shift="?"), Key("Shift", 2.75)),
     (Key("Ctrl", 1.25), Key("Super", 1.25), Key("Alt", 1.25),
-     Key("Space", 6.25, "SPACE"), Key("Alt", 1.25), Key("Super", 1.25),
+     Key("Space", 6.25, "SPACE", "SHIFT_SPACE"), Key("Alt", 1.25), Key("Super", 1.25),
      Key("Menu", 1.25), Key("Ctrl", 1.25)),
 )
 PITCH_X = 64
@@ -146,7 +150,7 @@ def render_svg(keymap, entries):
         'modifiers. Navigation, arrow and numpad clusters are shown below, not '
         'in their physical position to the right of the main keyboard. '
         'Enter opens all actions, inventory groups equipment and crafting, '
-        'Space groups tile actions. Shift-direction selects freely; Ctrl-direction '
+        'Space groups tile actions. Right-click selects; Ctrl-direction '
         'physically peeks with the normal cost. Classic controls are unchanged.</desc>',
         '<text x="20" y="32" font-size="25" font-weight="700">Modern controls</text>',
         '<text x="20" y="57" font-size="14">ANSI layout · action below each key · '
@@ -228,10 +232,9 @@ def render_svg(keymap, entries):
                     if binding.get("input_method") == "keyboard"]
         return bindings[0].replace("CTRL+", "Ctrl+").replace("RETURN", "Enter") if bindings else "(unbound)"
 
-    look_keys = " ".join(first_binding(action) for action in LOOK_ACTIONS)
     peek_keys = " ".join(first_binding(action).removeprefix("Ctrl+") for action in PEEK_ACTIONS)
     legend = (
-        f'Shift + {look_keys}: free tile selection; starts at you, accumulates.',
+        'Select tile keys are unbound; right-click selects without spending time.',
         f'Ctrl + {peek_keys}: physical peek (200 moves); cancel returns.',
         'Arrows: free aim reticle. Tab / Shift+Tab: next / previous hostile.',
         'f attacks selection; guns use normal aim. Bump attacks still work.',
@@ -243,15 +246,15 @@ def render_svg(keymap, entries):
 
     notes = (
         f'{first_binding("action_menu")}: all action groups; Info → character sheet and body/status screens.',
-        f'{first_binding("wield")}: wield. i: inventory → item actions; inventory F5: Craft, even when empty.',
+        f'{first_binding("wield")}: wield. Inventory: F5 crafts; Tab opens advanced inventory; Shift+Tab selects categories.',
         f'{first_binding("player_data")}: character; {first_binding("messages")}: messages; '
         f'{first_binding("butcher")}: butcher; {first_binding("select_fire_mode")}: fire mode; '
         f'{first_binding("advinv")}: advanced inventory.',
-        'Space: selected tile actions, or a flat nearby list with directions and a target highlight.',
+        'Space: nearby or selected-tile actions; a loaded trunk opens pickup. Shift+Space toggles curtains.',
         'RMB selects; Select tile keys are unbound by default; Jump and Smash require an explicit choice.',
-        'Map RMB selects freely; LMB uses adjacent doors/items/furniture or attacks; never walks.',
-        'g opens pickup; g confirms. Inventory/pickup: wheel scrolls; RMB opens item actions.',
-        'Blank keycaps have no default map action. Local menu keys and Classic controls are unchanged.',
+        'Map RMB opens object actions without running one; closing keeps selection. Hostiles are only locked.',
+        'g takes all underfoot; Ctrl+G chooses nearby items. Pickup Space equals g; Escape cancels.',
+        'Menus: Space confirms the highlight; text spaces stay literal. Classic controls are unchanged.',
         'Classic terminal Ctrl+C/Z retain normal quit/suspend signal behavior.',
     )
     add('<text x="20" y="1024" font-size="16" font-weight="700">Compact action families</text>')

@@ -86,6 +86,11 @@ flock out/build/linux-curses.lock sh -c \
 | Tiles game     | `out/build/linux-full/src/cataclysm-bn-tiles` |
 | Tiles tests    | `out/build/linux-full/tests/cata_test-tiles`  |
 
+A development-mode configure can instead link `cataclysm-bn` and `cata_test` into the repository
+root. Trust the final linker output, not an older executable left in another directory. Check the
+configure message and `CMAKE_RUNTIME_OUTPUT_DIRECTORY` before choosing a binary; the end-to-end
+harness checks the root executable first.
+
 ### Test
 
 Do all three tests before you push. All results must be good.
