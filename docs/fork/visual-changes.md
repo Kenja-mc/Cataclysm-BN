@@ -5,6 +5,11 @@ Screens captured from the terminal build (132×42, Tokyo Night palette) by
 the grouped right sidebar and can show obsolete controls. Use `OVERHAUL.md` for current behavior
 and `CHANGELOG-OVERHAUL.md` for changes by date.
 
+## Title screen
+
+The main-menu wordmark keeps the Bright Nights logo and adds a text-only **OVERHAUL** mark
+beneath it. The title art fits an 80-column terminal and uses the same asset in curses and tiles.
+
 ## In game
 
 New configurations use the **grouped** sidebar, based on the Opus HUD proposal. Weather,

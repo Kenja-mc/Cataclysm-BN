@@ -91,9 +91,11 @@ from utility_mouse import TESTS as UTILITY_MOUSE_TESTS
 from info_mouse import TESTS as INFO_MOUSE_TESTS
 from trade_mouse import TESTS as TRADE_MOUSE_TESTS
 
+from title_wordmark import TESTS as TITLE_WORDMARK_TESTS
 # The modules, in run order. A module's tests that take `g` run on the main game, so a
 # test that needs the state another left behind belongs after it in this order.
 MODULES = [
+    ("title_wordmark", TITLE_WORDMARK_TESTS),
     ("onboarding", ONBOARDING_TESTS),
     ("movement", MOVEMENT_TESTS),
     ("menus", MENUS_TESTS),
@@ -166,6 +168,7 @@ SMOKE = [
     # One representative test per module, the cheapest one that still exercises its main
     # path. A module whose tests are not green yet stays out of the gate.
     "test_death_mode_choice",
+    "test_title_wordmark_visible_on_80x25",
     "test_wait_keeps_position",
     "test_rounded_frames",
     "test_folded_families",
