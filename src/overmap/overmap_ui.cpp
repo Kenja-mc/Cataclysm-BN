@@ -2074,6 +2074,11 @@ static auto display(const tripoint_abs_omt& orig, const draw_data_t& data = draw
     bool fast_scroll = false; /* fast scroll state should reset every time overmap UI is opened */
     int fast_scroll_offset = get_option<int>("FAST_SCROLL_OFFSET");
     std::optional<tripoint_bub_ms> mouse_pos;
+#if defined(TILES)
+    // Right-drag pans: the map follows the pointer, one overmap tile per tile of travel.
+    std::optional<point> drag_anchor;
+    point drag_remainder{};
+#endif
     std::chrono::time_point<std::chrono::steady_clock> last_blink =
         std::chrono::steady_clock::now();
     grids_draw_data grids_data;
@@ -2105,6 +2110,29 @@ static auto display(const tripoint_abs_omt& orig, const draw_data_t& data = draw
                 if (action == "MOUSE_MOVE") { edge_scroll += edge_scroll; }
                 curs += edge_scroll;
             }
+#if defined(TILES)
+            if (action == "MOUSE_MOVE" && use_tiles_overmap && overmap_tilecontext) {
+                const auto raw = ictxt.get_raw_input();
+                const bool right_held = raw.type == input_event_t::mouse &&
+                                        (SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON_RMASK) != 0;
+                if (right_held) {
+                    if (drag_anchor) {
+                        drag_remainder += raw.mouse_pos - *drag_anchor;
+                        const int tile_w = std::max(1, overmap_tilecontext->get_tile_width());
+                        const int tile_h = std::max(1, overmap_tilecontext->get_tile_height());
+                        const point steps(drag_remainder.x / tile_w, drag_remainder.y / tile_h);
+                        if (steps != point_zero) {
+                            curs -= steps;
+                            drag_remainder -= point(steps.x * tile_w, steps.y * tile_h);
+                        }
+                    }
+                    drag_anchor = raw.mouse_pos;
+                } else {
+                    drag_anchor.reset();
+                    drag_remainder = point_zero;
+                }
+            }
+#endif
         } else if (action == "SELECT" && (mouse_pos = ictxt.get_coordinates(g->w_overmap))) {
             curs += mouse_pos->xy().raw();
         } else if (action == "CENTER") {

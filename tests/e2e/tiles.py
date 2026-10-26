@@ -226,6 +226,27 @@ class X11:
         self.xlib.XSync(self.dpy, 0)
         time.sleep(delay)
 
+    def press(self, button, delay=0.1):
+        self.xtst.XTestFakeButtonEvent(self.dpy, button, 1, 0)
+        self.xlib.XSync(self.dpy, 0)
+        time.sleep(delay)
+
+    def release(self, button, delay=0.1):
+        self.xtst.XTestFakeButtonEvent(self.dpy, button, 0, 0)
+        self.xlib.XSync(self.dpy, 0)
+        time.sleep(delay)
+
+    def drag(self, win, start, end, button=3, steps=6, delay=0.05):
+        """Presses a button on a window-local point, moves in steps, releases."""
+        self.focus_local(win, *start)
+        self.press(button)
+        for step in range(1, steps + 1):
+            x = start[0] + (end[0] - start[0]) * step // steps
+            y = start[1] + (end[1] - start[1]) * step // steps
+            self.focus_local(win, x, y)
+            time.sleep(delay)
+        self.release(button)
+
 
 # ---------------------------------------------------------------- private display
 
@@ -911,6 +932,13 @@ def case_overmap(session):
                               for i in range(0, len(before[2]), 3))
                 checks.append(Check(f"{scale}x cursor click does not pan",
                                     changed == 0, f"{changed} pixels changed"))
+                # Right-drag pans the map with the pointer.
+                x11.drag(window, (center_x, center_y), (center_x + 2 * tile, center_y + tile))
+                dragged = settled("dragged", reference=after)
+                panned = sum(before[2][i:i + 3] != dragged[2][i:i + 3]
+                             for i in range(0, len(before[2]), 3))
+                checks.append(Check(f"{scale}x right-drag pans the overmap",
+                                    panned > 0, f"{panned} pixels changed"))
                 x11.key("m")
                 returned = wait_for_frame(session, live.proc, live.run, session.timeout)
                 checks.append(Check(f"{scale}x m closes the overmap",
