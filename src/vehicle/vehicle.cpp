@@ -5451,7 +5451,6 @@ void traverse(StartPoint& start, VehFunc veh_action, GridFunc grid_action) {
         if (was_already_visited(veh)) { return tvr::continue_further; }
 
         const tvr result = veh_action(*veh);
-        g->u.add_msg_if_player(m_debug, "After remote veh %p", static_cast<void*>(veh));
 
         // We do not need to check neighbours if we stop.
         if (result == tvr::continue_further) { enqueue(veh); }
@@ -5462,14 +5461,13 @@ void traverse(StartPoint& start, VehFunc veh_action, GridFunc grid_action) {
     auto process_grid = [&](const tripoint_abs_ms& target_pos) {
         auto& grid = grid_tracker.grid_at(target_pos);
         if (!grid) {
-            debugmsg("lost grid at %s", target_pos.to_string());
+            // The neighbour's submap unloaded after it was queued, taking its grid with it.
             return tvr::continue_further;
         }
 
         if (was_already_visited(&grid)) { return tvr::continue_further; }
 
         const tvr result = grid_action(grid);
-        g->u.add_msg_if_player(m_debug, "After remote grid %p", static_cast<void*>(&grid));
 
         // We do not need to check neighbours if we stop.
         if (result == tvr::continue_further) { enqueue(&grid); }
