@@ -50,7 +50,7 @@ def retire(game):
 
 @contextmanager
 def shared_game(name, options=None, cols=140, rows=45, keybindings=None, userdir=None,
-                define="", setup=None, layout="labels", retries=0):
+                define="", setup=None, layout="labels", retries=1):
     """Borrows a profile. `retries` re-creates a game whose setup failed (a bad game state)."""
     for attempt in range(retries + 1):
         cm = _shared_game_once(name, options, cols, rows, keybindings, userdir,
