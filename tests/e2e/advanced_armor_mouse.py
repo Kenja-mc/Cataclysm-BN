@@ -94,7 +94,7 @@ def test_click_focuses_inactive_pane_and_selects_row(_game):
     with advanced_game("focus") as game:
         spawn(game, 0, 0, "pipe")
         give(game, "rock", 2)
-        game.keys("/", delay=1.5)
+        game.keys("I", delay=1.5)
         game.wait_for("Name (charges)")
         screen = game.screen()
         assert "rock (2)" in screen and "pipe (1)" in screen, (
@@ -131,7 +131,7 @@ def test_wheel_scrolls_the_pane_under_cursor(_game):
     with advanced_game("wheel") as game:
         spawn(game, 0, 0, "pipe")
         spawn(game, 0, 0, "rock")
-        game.keys("/", delay=1.5)
+        game.keys("I", delay=1.5)
         game.wait_for("Name (charges)")
         named = [("pipe", row_of(game, "pipe")), ("rock", row_of(game, "rock"))]
         named.sort(key=lambda row: row[1][1])

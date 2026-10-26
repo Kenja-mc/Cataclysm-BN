@@ -1,6 +1,6 @@
 """Default Smash keys pulp the chosen corpse without moving or damaging the floor."""
 from aim_reticle import action_clock
-from contextual_hub import contextual_game, contextual_setup
+from contextual_hub import contextual_game, contextual_setup, select_tile
 from fixtures import shared_game
 from helpers import HELPERS, bub_pos
 
@@ -27,10 +27,25 @@ def pulp_selected_direction(game, key, direction):
     assert action_clock(game) > clock, "the shortcut must retain the normal pulping cost"
 
 
-def test_modern_p_pulps_the_chosen_corpse(_g):
+def test_modern_attack_pulps_the_chosen_corpse(_g):
     with contextual_game("bn-e2e-modern-pulp-key") as game:
-        # No live selection, so pulping asks for a direction.
-        pulp_selected_direction(game, "p", "d")
+        assert game.lua(
+            "M:create_corpse_at(here(1,0),MonsterTypeId.new('mon_bear')) "
+            "M:create_corpse_at(here(-1,0),MonsterTypeId.new('mon_bear')) out('ok')") == ["ok"]
+        position, clock = bub_pos(game), action_clock(game)
+        floor = game.lua("out(M:get_ter_at(here(1,0)):str_id():str())")
+        select_tile(game, 1, 0)
+        game.keys("f", delay=0.4)
+        game.wait_for("thoroughly pulped", timeout=30)
+        assert game.lua(
+            "local east=M:get_items_at(here(1,0))[1] "
+            "local west=M:get_items_at(here(-1,0))[1] "
+            "out(east:is_corpse(),east:get_damage()==east:get_max_damage(),west:get_damage()==0)") == [
+                "true,true,true"], "only the aimed corpse must be pulped"
+        assert game.lua("out(M:get_ter_at(here(1,0)):str_id():str())") == floor, (
+            "pulping a corpse must not also smash its floor")
+        assert bub_pos(game) == position, "pulping must not walk the avatar"
+        assert action_clock(game) > clock, "the attack key must retain the normal pulping cost"
 
 
 def test_classic_s_still_pulps_the_chosen_corpse(_g):
@@ -40,5 +55,5 @@ def test_classic_s_still_pulps_the_chosen_corpse(_g):
         pulp_selected_direction(game, "s", "l")
 
 
-TESTS = [test_modern_p_pulps_the_chosen_corpse,
+TESTS = [test_modern_attack_pulps_the_chosen_corpse,
          test_classic_s_still_pulps_the_chosen_corpse]
