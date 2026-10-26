@@ -114,6 +114,12 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
     push( first_key( ACTION_KEYBINDINGS ), _( "all keys" ) );
     push( first_key( ACTION_TOGGLE_SAFEMODE ), _( "safe mode" ) );
     push( first_key( ACTION_TOGGLE_AUTO_TRAVEL_MODE ), _( "auto travel" ) );
+    // The everyday keys come before the modern extras, so a short strip keeps what a new player needs.
+    for( const auto &[act, label] : singles ) {
+        if( auto keys = first_key( act ); !keys.empty() ) {
+            push( std::move( keys ), label );
+        }
+    }
     if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
         const auto ctxt = input_context( "DEFAULTMODE" );
         const auto push_desc = [&]( const std::string & action, std::string label ) {
@@ -122,18 +128,12 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
             }
         };
         push_desc( "action_menu", _( "menus" ) );
-        push_desc( "quick_pickup", _( "pick up" ) );
         push_desc( "NEXT_TARGET", _( "target" ) );
         push( first_key( ACTION_CYCLE_MOVE ), _( "stance" ) );
         // Shift+direction moves the selection marker; calling it "look" made it read like peeking.
         push( joined_keys( { ACTION_SHIFT_N, ACTION_SHIFT_W, ACTION_SHIFT_S, ACTION_SHIFT_E } ),
               _( "select" ) );
         push( peek_keys( ctxt ), _( "peek" ) );
-    }
-    for( const auto &[act, label] : singles ) {
-        if( auto keys = first_key( act ); !keys.empty() ) {
-            push( std::move( keys ), label );
-        }
     }
     return hints;
 }
