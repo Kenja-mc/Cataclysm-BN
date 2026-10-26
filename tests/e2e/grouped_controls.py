@@ -44,9 +44,8 @@ def test_grouped_look_selects_the_space_interaction_tile(_game):
         game.wait_for("Interact with the")
         game.keys("Escape", delay=0.3)
         game.wait_gone("Interact with the")
+        # Space runs the selected door's obvious action, so no menu stands in the way.
         game.keys("space", delay=0.8)
-        game.wait_for("Interact with the")
-        game.keys("o", delay=1)
         assert game.lua("out(M:get_ter_at(here(1,0)):str_id():str(),"
                         "M:get_ter_at(here(-1,0)):str_id():str())") == ["t_door_o,t_door_c"]
         assert bub_pos(game) == before, "Space must open the selected door without walking"
