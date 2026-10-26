@@ -9032,11 +9032,17 @@ auto game::examine() -> action_id
             return deferred;
         }
         // Nothing aimed: act on the tile the player last pressed toward, else list the vicinity.
+        // A bare floor ahead only offers jump and smash, which would hide the useful list.
         if( const auto faced = tile_selection::facing_tile( u );
-            faced && tile_selection::reachable( u, *faced ) &&
-            !tile_selection::interact_choices( u, *faced, true ).empty() ) {
-            tile_selection::interact_at( u, *faced, actions );
-            return deferred;
+            faced && tile_selection::reachable( u, *faced ) ) {
+            const auto choices = tile_selection::interact_choices( u, *faced, true );
+            const auto terrain_only = std::ranges::all_of( choices, []( const auto & c ) {
+                return c.act == ACTION_JUMP || c.act == ACTION_SMASH;
+            } );
+            if( !choices.empty() && !terrain_only ) {
+                tile_selection::interact_at( u, *faced, actions );
+                return deferred;
+            }
         }
         if( tile_selection::interact_nearby( u, actions ) ) {
             return deferred;
