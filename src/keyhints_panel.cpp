@@ -110,7 +110,8 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
         push( joined_keys( { ACTION_MOVE_FORTH_LEFT, ACTION_MOVE_FORTH_RIGHT, ACTION_MOVE_BACK_LEFT, ACTION_MOVE_BACK_RIGHT } ),
               _( "diag" ) );
     }
-    // Safe mode and auto travel sit early so their keys survive a truncated strip.
+    // The key list fits one row beside move and diag, so it survives the tightest strip.
+    push( first_key( ACTION_KEYBINDINGS ), _( "all keys" ) );
     push( first_key( ACTION_TOGGLE_SAFEMODE ), _( "safe mode" ) );
     push( first_key( ACTION_TOGGLE_AUTO_TRAVEL_MODE ), _( "auto travel" ) );
     if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
@@ -122,15 +123,12 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
         };
         push_desc( "action_menu", _( "menus" ) );
         push_desc( "quick_pickup", _( "pick up" ) );
-        push( "?", _( "all keys" ) );
         push_desc( "NEXT_TARGET", _( "target" ) );
         push( first_key( ACTION_CYCLE_MOVE ), _( "stance" ) );
         // Shift+direction moves the selection marker; calling it "look" made it read like peeking.
         push( joined_keys( { ACTION_SHIFT_N, ACTION_SHIFT_W, ACTION_SHIFT_S, ACTION_SHIFT_E } ),
               _( "select" ) );
         push( peek_keys( ctxt ), _( "peek" ) );
-    } else {
-        push( "?", _( "all keys" ) );
     }
     for( const auto &[act, label] : singles ) {
         if( auto keys = first_key( act ); !keys.empty() ) {
