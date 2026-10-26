@@ -199,7 +199,10 @@ class Game:
         self.keys("Enter", delay=0)
         # Wait for editor ownership before sending source.
         self.wait_for(editing, timeout=15)
-        self.type(f"OUT='{marker}' " + code + f" print('{done_marker}')")
+        # `out` is defined per call: a pooled game that reloaded its Lua state may have lost it.
+        self.type(f"OUT='{marker}' function out(...) local t={{}} for i,v in ipairs({{...}}) do "
+                  f"t[i]=tostring(v) end print(OUT..'V:'..table.concat(t,',')) end "
+                  + code + f" print('{done_marker}')")
         self.keys("C-s", delay=0)
 
         def capture(screen):
