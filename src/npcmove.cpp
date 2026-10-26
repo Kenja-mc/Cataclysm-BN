@@ -1098,7 +1098,9 @@ void npc::move()
     }
 
     // check if in vehicle before doing any other follow activities
-    if( action == npc_undecided && is_walking_with() && player_character.in_vehicle && !in_vehicle ) {
+    // Remote control counts as being in a vehicle, but there is no vehicle under the player.
+    if( action == npc_undecided && is_walking_with() && player_character.in_vehicle && !in_vehicle &&
+        here.veh_at( player_character.bub_pos() ) ) {
         action = npc_follow_embarked;
     }
 
@@ -1490,8 +1492,7 @@ void npc::execute_action( npc_action action )
             const optional_vpart_position vp = here.veh_at( player_character.bub_pos() );
 
             if( !vp ) {
-                debugmsg( "Following an embarked player with no vehicle at their location?" );
-                // TODO: change to wait? - for now pause
+                // The player left the vehicle between the decision and this step.
                 move_pause();
                 break;
             }
