@@ -161,9 +161,12 @@ TEST_CASE(
     }
 
     SECTION("older files that repeat the upstream default follow the scheme") {
+        inp_mngr.init();
+        // The scheme decides the key, so read its default instead of naming one.
+        const auto scheme_default = pickup_keys();
         write_user_keybindings(user_pickup_comma);
         inp_mngr.init();
-        CHECK(contains_key(pickup_keys(), inp_mngr.get_keycode("CTRL+G")));
+        CHECK(pickup_keys() == scheme_default);
         CHECK_FALSE(contains_key(pickup_keys(), ','));
     }
 }

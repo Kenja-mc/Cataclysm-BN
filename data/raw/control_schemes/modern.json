@@ -518,7 +518,7 @@
     "id": "quick_pickup",
     "category": "DEFAULTMODE",
     "name": "Take everything underfoot",
-    "bindings": [ { "input_method": "keyboard", "key": "g" } ]
+    "bindings": [  ]
   },
   {
     "type": "keybinding",
