@@ -716,6 +716,13 @@
     "files": [ "ui/close_001.ogg", "ui/close_002.ogg", "ui/close_003.ogg", "ui/close_004.ogg" ]
   },
   {
+    "type": "sound_effect",
+    "id": "unpack",
+    "variant": "default",
+    "volume": 80,
+    "files": [ "ui/open_001.ogg", "ui/open_002.ogg", "ui/open_003.ogg", "ui/open_004.ogg" ]
+  },
+  {
     "type": "sound_effect_preload",
     "preload": [
       { "id": "bionics", "variant": "all" },
@@ -733,6 +740,7 @@
       { "id": "plmove", "variant": "all" },
       { "id": "reload", "variant": "all" },
       { "id": "smash_success", "variant": "all" },
+      { "id": "unpack", "variant": "all" },
       { "id": "vehicle", "variant": "all" },
       { "id": "vehicle_close", "variant": "all" },
       { "id": "vehicle_open", "variant": "all" }

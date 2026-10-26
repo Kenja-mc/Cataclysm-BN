@@ -36,6 +36,7 @@ from menus import TESTS as MENUS_TESTS
 from world_hub import TESTS as WORLD_HUB_TESTS
 from action_search import TESTS as ACTION_SEARCH_TESTS
 from items import TESTS as ITEMS_TESTS
+from unpack_flow import TESTS as UNPACK_FLOW_TESTS
 from storage import TESTS as STORAGE_TESTS
 from crafting import TESTS as CRAFTING_TESTS
 from hud_boxes import TESTS as HUD_BOXES_TESTS
@@ -104,6 +105,7 @@ MODULES = [
     ("world_hub", WORLD_HUB_TESTS),
     ("action_search", ACTION_SEARCH_TESTS),
     ("items", ITEMS_TESTS),
+    ("unpack_flow", UNPACK_FLOW_TESTS),
     ("storage", STORAGE_TESTS),
     ("crafting", CRAFTING_TESTS),
     ("hud_boxes", HUD_BOXES_TESTS),

@@ -5,9 +5,11 @@
 #include <string>
 #include <utility>
 #include <optional>
+#include <vector>
 
 #include "action.h"
 #include "coordinates.h"
+#include "detached_ptr.h"
 #include "item_handling_util.h"
 #include "pickup_token.h"
 
@@ -95,6 +97,11 @@ item *saw_stock( player &p, item &tool );
 item *wear( player &p );
 /** Choose item to take off. */
 item *take_off( avatar &you );
+/**
+ * Offer unpacked contents for taking or wearing. Items left in @p contents belong on the floor.
+ * @return Names of the items taken into the inventory.
+ */
+std::vector<std::string> unpack( player &p, std::vector<detached_ptr<item>> &contents );
 /** Item cut up menu. */
 item *salvage( player &p );
 /** Repair menu. */

@@ -8,6 +8,7 @@
 #include "calendar.h"
 #include "cata_utility.h"
 #include "character.h"
+#include "character_encumbrance.h"
 #include "character_functions.h"
 #include "character_martial_arts.h"
 #include "color.h"
@@ -48,6 +49,7 @@
 #include "string_utils.h"
 #include "translations.h"
 #include "type_id.h"
+#include "ui.h"
 #include "ui_manager.h"
 #include "units.h"
 #include "units_utility.h"
@@ -2409,4 +2411,241 @@ static item *autoclave_internal( player &u,
 item *game_menus::inv::sterilize_cbm( player &p )
 {
     return autoclave_internal( p, bionic_sterilize_preset( p ), 6 );
+}
+
+namespace
+{
+
+class unpack_inventory_selector : public inventory_multiselector
+{
+    public:
+        unpack_inventory_selector( player &p, std::vector<detached_ptr<item>> &contents ) :
+            inventory_multiselector( p, default_preset, _( "ITEMS TO TAKE" ) ),
+            contents( contents ) {
+            set_title( _( "Unpack" ) );
+            set_hint( string_format( _( "Press %s to wear the selected item." ),
+                                     ctxt.get_desc( "WEAR" ) ) );
+            for( const detached_ptr<item> &content : contents ) {
+                add_item( own_inv_column, content.get() );
+            }
+            for( inventory_entry &entry : own_inv_column.entries ) {
+                set_chosen_count( entry, 1 );
+            }
+        }
+
+        auto execute() -> std::vector<std::string>;
+
+    private:
+        auto take_content( item *target ) -> detached_ptr<item>;
+        auto wear_now( item *target ) -> bool;
+        auto wear_entry( item *target ) -> bool;
+        auto wear_prompt( item *target, item &blocker ) -> bool;
+        auto encumbrance_text( const item &new_item ) const -> std::string;
+
+        std::vector<detached_ptr<item>> &contents;
+};
+
+auto unpack_inventory_selector::take_content( item *target ) -> detached_ptr<item>
+{
+    const auto iter = std::ranges::find_if( contents, [target]( const detached_ptr<item> &ptr ) {
+        return ptr.get() == target;
+    } );
+    if( iter == contents.end() ) {
+        return detached_ptr<item>();
+    }
+    detached_ptr<item> result = std::move( *iter );
+    contents.erase( iter );
+    return result;
+}
+
+auto unpack_inventory_selector::encumbrance_text( const item &new_item ) const -> std::string
+{
+    const char_encumbrance_data current = u.get_encumbrance();
+    const char_encumbrance_data layered = u.get_encumbrance( new_item );
+    std::vector<std::string> parts;
+    for( const bodypart_id &bp : u.get_all_body_parts() ) {
+        if( !new_item.covers( bp ) ) {
+            continue;
+        }
+        const auto current_it = current.elems.find( bp.id() );
+        const auto layered_it = layered.elems.find( bp.id() );
+        if( current_it == current.elems.end() || layered_it == layered.elems.end() ) {
+            continue;
+        }
+        const int added = layered_it->second.encumbrance - current_it->second.encumbrance;
+        if( added > 0 ) {
+            parts.push_back( string_format( "%s +%d", body_part_name( bp ), added ) );
+        }
+    }
+    return parts.empty() ? _( "no extra encumbrance" ) : enumerate_as_string( parts );
+}
+
+auto unpack_inventory_selector::wear_now( item *target ) -> bool
+{
+    detached_ptr<item> to_wear = take_content( target );
+    if( !to_wear ) {
+        return false;
+    }
+    detached_ptr<item> failed = u.wear_item( std::move( to_wear ) );
+    if( failed ) {
+        contents.push_back( std::move( failed ) );
+        return false;
+    }
+    remove_item( target );
+    return true;
+}
+
+auto unpack_inventory_selector::wear_prompt( item *target, item &blocker ) -> bool
+{
+    const std::string weight = string_format( "%.1f %s", convert_weight( target->weight() ),
+        weight_units() );
+    const std::string net_weight = string_format( "%.1f %s",
+        convert_weight( target->weight() - blocker.weight() ), weight_units() );
+
+    uilist menu;
+    menu.text = string_format(
+                    _( "You are already wearing %s.\n"
+                       "Layering the %s adds %s and %s encumbrance.\n"
+                       "Replacing it changes carried weight by %s." ),
+                    colorize( blocker.tname(), blocker.color_in_inventory() ), target->tname(),
+                    weight, encumbrance_text( *target ), net_weight );
+    menu.addentry( 0, true, 'r', _( "Replace it" ) );
+    menu.addentry( 1, true, 'l', _( "Layer it" ) );
+    menu.addentry( 2, true, 'c', _( "Cancel" ) );
+    menu.query();
+
+    if( menu.ret == 1 ) {
+        return wear_now( target );
+    } else if( menu.ret == 0 ) {
+        const auto can_take = u.can_takeoff( blocker );
+        if( !can_take.success() ) {
+            popup_getkey( "%s", can_take.str() );
+            return false;
+        }
+        std::vector<detached_ptr<item>> removed;
+        if( !u.takeoff( blocker, &removed ) ) {
+            return false;
+        }
+        for( detached_ptr<item> &old : removed ) {
+            if( u.can_pick_weight( *old, true ) && u.can_pick_volume( *old ) ) {
+                u.i_add( std::move( old ) );
+            } else {
+                contents.push_back( std::move( old ) );
+            }
+        }
+        return wear_now( target );
+    }
+    return false;
+}
+
+auto unpack_inventory_selector::wear_entry( item *target ) -> bool
+{
+    const auto can_wear = u.can_wear( *target );
+    if( !can_wear.success() && !u.can_wear( *target, true ).success() ) {
+        popup_getkey( "%s", can_wear.str() );
+        return false;
+    }
+
+    item *blocker = nullptr;
+    for( auto &worn_item : u.worn ) {
+        if( !worn_item->get_covered_body_parts().make_intersection(
+                target->get_covered_body_parts() ).any() ) {
+            continue;
+        }
+        // Different layers always stack without asking; the same layer fills a slot.
+        if( worn_item->get_layer() == target->get_layer() || !can_wear.success() ) {
+            blocker = &*worn_item;
+            break;
+        }
+    }
+
+    if( blocker == nullptr ) {
+        if( can_wear.success() ) {
+            return wear_now( target );
+        }
+        popup_getkey( "%s", can_wear.str() );
+        return false;
+    }
+    return wear_prompt( target, *blocker );
+}
+
+auto unpack_inventory_selector::execute() -> std::vector<std::string>
+{
+    shared_ptr_fast<ui_adaptor> ui = create_or_get_ui_adaptor();
+    bool cancelled = false;
+    while( true ) {
+        ui_manager::redraw();
+
+        const inventory_input input = get_input();
+
+        if( input.action == "WEAR" ) {
+            const inventory_entry &selected = get_selected();
+            if( selected.is_item() ) {
+                wear_entry( selected.any_item() );
+            }
+        } else if( input.action == "WIELD" ) {
+            // The contents are only offered for taking or wearing.
+        } else if( input.action == "RIGHT" ) {
+            const auto entries = own_inv_column.get_entries( []( const inventory_entry &entry ) {
+                return entry.is_item();
+            } );
+            const bool all_selected = std::ranges::all_of( entries,
+            []( const inventory_entry * entry ) {
+                return entry->chosen_count > 0;
+            } );
+            for( inventory_entry *entry : entries ) {
+                set_chosen_count( *entry, all_selected ? 0 : 1 );
+            }
+        } else if( input.entry != nullptr ) {
+            select( input.entry->any_item() );
+            set_chosen_count( *input.entry, input.entry->chosen_count > 0 ? 0 : 1 );
+        } else if( input.action == "CONFIRM" ) {
+            break;
+        } else if( input.action == "QUIT" ) {
+            // Cancel leaves every content on the floor; nothing is carried.
+            cancelled = true;
+            break;
+        } else {
+            on_input( input );
+        }
+    }
+
+    if( cancelled ) {
+        return {};
+    }
+
+    const auto is_selected = [this]( const item * target ) {
+        const auto matches = [target]( const inventory_entry & candidate ) {
+            return candidate.is_item() && candidate.any_item() == target && candidate.chosen_count > 0;
+        };
+        // A filter parks still-selected items in entries_hidden.
+        return std::ranges::any_of( own_inv_column.entries, matches ) ||
+               std::ranges::any_of( own_inv_column.entries_hidden, matches );
+    };
+
+    std::vector<std::string> taken;
+    std::vector<detached_ptr<item>> remaining;
+    for( detached_ptr<item> &content : contents ) {
+        const bool selected = is_selected( content.get() );
+        if( selected && u.can_pick_weight( *content, true ) && u.can_pick_volume( *content ) ) {
+            taken.push_back( content->tname() );
+            u.i_add( std::move( content ) );
+        } else {
+            remaining.push_back( std::move( content ) );
+        }
+    }
+    contents = std::move( remaining );
+    return taken;
+}
+
+} // namespace
+
+auto game_menus::inv::unpack( player &p, std::vector<detached_ptr<item>> &contents )
+-> std::vector<std::string>
+{
+    if( contents.empty() ) {
+        return {};
+    }
+    unpack_inventory_selector inv_s( p, contents );
+    return inv_s.execute();
 }
