@@ -68,8 +68,6 @@
     "iv_sound": true,
     "iv_sound_message": "eep!",
     "iv_sound_id": "shout",
-    "iv_sound_variant": "squeak",
-    "//": "Sound of ratlike squeaking",
     "iv_noise": 1,
     "memorial_message": "Found that survival *is* everything."
   },

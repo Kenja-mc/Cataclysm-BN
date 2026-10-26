@@ -2355,7 +2355,12 @@ bool game::do_turn()
                     break;
                 }
                 if( u.activity ) {
+                    const auto activity_moves_before = u.moves;
                     process_activity();
+                    // A multi-turn activity spends turns too: let old sound markers age out.
+                    if( !soundperf && u.moves != activity_moves_before ) {
+                        sounds::reset_markers();
+                    }
                 }
             }
         }
