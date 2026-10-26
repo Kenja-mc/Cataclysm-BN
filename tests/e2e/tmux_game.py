@@ -175,14 +175,16 @@ class Game:
                 raise
             helpers = getattr(self, "_helper_src", "")
             helper_names = set(re.findall(r"function (\w+)", helpers))
-            lost_helper = any(f"{name}(" in code for name in helper_names)
+            # A definition call carries "function out("; restoring from inside it would recurse.
+            lost_helper = "function out(" not in code and any(
+                f"{name}(" in code for name in helper_names)
             if "gapi.get_avatar()" not in code and not lost_helper:
                 raise
             time.sleep(0.5)
             self.settle_screen()
             if lost_helper:
                 # A pooled game can reload its Lua state and lose the helpers; restore them.
-                self._lua(self._helper_prelude + helpers + " out('defined')")
+                self.define_lua(helpers)
             return self.lua(code, _retried=True)
 
     def _lua(self, code):
@@ -261,8 +263,20 @@ class Game:
         prelude = ("function out(...) local t = {} for i, v in ipairs({...}) do t[i] = tostring(v) end "
                    "print(OUT .. 'V:' .. table.concat(t, ',')) end ")
         self._helper_prelude, self._helper_src = prelude, code
-        result = self.lua(prelude + code + " out('defined')")
-        assert result == ["defined"], f"Lua helper definition returned {result!r}\n{self.screen()}"
+        # Long lines can lose characters under load; prove every helper exists before trusting them.
+        names = re.findall(r"function (\w+)", code)
+        probe = " ".join(f"assert(type({name}) == 'function', '{name}')" for name in names)
+        last = ""
+        for _ in range(3):
+            try:
+                result = self.lua(prelude + code + " " + probe + " out('defined')")
+            except AssertionError as err:
+                last = str(err)
+                continue
+            if result == ["defined"]:
+                return
+            last = f"Lua helper definition returned {result!r}"
+        raise AssertionError(f"{last}\n{self.screen()}")
 
     def pos(self):
         line = next(l for l in self.screen().splitlines() if "X,Y,Z:" in l)
