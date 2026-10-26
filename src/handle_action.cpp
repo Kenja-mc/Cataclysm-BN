@@ -2249,7 +2249,7 @@ bool game::handle_action()
                 const auto actions = tile_selection::tile_actions{
                     .examine = []( const tripoint_bub_ms & p ) { g->examine( p ); },
                     .pickup = []( const tripoint_bub_ms & p ) { g->pickup( p ); },
-                    .butcher = [] { g->butcher(); },
+                    .butcher = []( const tripoint_bub_ms & p ) { g->butcher( p ); },
                     .vertical = [&act]( const action_id vertical ) { act = vertical; }
                 };
                 interaction_ran = tile_selection::interact_menu_at( u, *mouse_target, actions );
@@ -3360,10 +3360,10 @@ bool game::handle_action()
                 // One key for the screens a run reads: missions, factions, zones and scores.
                 auto hub = uilist();
                 hub.title = _( "World" );
-                hub.addentry( 0, true, 'm', _( "Missions" ) );
-                hub.addentry( 1, true, 'f', _( "Factions" ) );
-                hub.addentry( 2, true, 'z', _( "Zones" ) );
-                hub.addentry( 3, true, 's', _( "Scores" ) );
+                hub.addentry( 0, true, 'z', _( "Missions" ) );
+                hub.addentry( 1, true, 'x', _( "Factions" ) );
+                hub.addentry( 2, true, 'c', _( "Zones" ) );
+                hub.addentry( 3, true, 'v', _( "Scores" ) );
                 hub.query();
                 switch( hub.ret ) {
                     case 0:
