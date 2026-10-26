@@ -3,6 +3,11 @@
 #include "output.h"
 #include "translations.h"
 
+#if !defined(SDL_SOUND)
+#include "game.h"
+#include "messages.h"
+#endif
+
 #if defined(SDL_SOUND)
 #include <algorithm>
 #include <array>
@@ -87,6 +92,11 @@ auto show_sound_menu() -> void
     }
     get_options().save();
 #else
-    popup( _( "Sound is unavailable in this build." ) );
+    // A modal here steals input from a player whose build has no sound device.
+    if( g && g->w_terrain ) {
+        add_msg( m_info, _( "Sound is unavailable in this build." ) );
+    } else {
+        popup( _( "Sound is unavailable in this build." ) );
+    }
 #endif
 }
