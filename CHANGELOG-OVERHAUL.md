@@ -8,6 +8,20 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Added
 
+- `Ctrl+F` searches every action by name, shows how each one is reached, and runs the pick.
+- `T` toggles auto travel, and the control strip names both it and safe mode.
+- The tile inspector sits in the top-left corner.
+- Right-drag pans the overmap; the cursor click that used to jump the view still does not pan.
+- The tiles build remembers the zoom you left and restores it at launch.
+- A CC0 sound audition page (`docs/fork/sound-audition/index.html`) to choose the next pack.
+- CC0 interface research from five games in `docs/fork/qol-research/`.
+
+### Changed
+
+- The log reserves eight rows instead of three, and the control strip is at most three rows.
+- Zoom stops at its closest and farthest step instead of wrapping to the other end.
+- Sound markers on the map age out during multi-turn activities, not only after a player action.
+
 - Space runs the obvious action on the aimed tile — door, pile, stairs, cargo, corpse, vault,
   examine — and lists the rest only for a tie or a destructive choice; with nothing aimed it acts
   on the tile you last pressed toward.
