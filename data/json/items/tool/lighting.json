@@ -140,8 +140,7 @@
       { "type": "firestarter", "moves": 100 },
       { "target": "candle", "msg": "The candle winks out.", "menu_text": "Extinguish", "type": "transform" }
     ],
-    "flags": [ "LIGHT_8", "WATER_EXTINGUISH", "TRADER_AVOID", "WIND_EXTINGUISH", "FIRESTARTER" ],
-    "light_color": "#ffb05f"
+    "flags": [ "LIGHT_8", "WATER_EXTINGUISH", "TRADER_AVOID", "WIND_EXTINGUISH", "FIRESTARTER" ]
   },
   {
     "id": "electric_lantern",
@@ -261,8 +260,7 @@
     "revert_to": "gasoline_lantern",
     "light_color": "#ffb05f",
     "use_action": { "target": "gasoline_lantern", "msg": "The lantern is extinguished.", "menu_text": "Turn off", "type": "transform" },
-    "flags": [ "LIGHT_20", "TRADER_AVOID", "ALLOWS_REMOTE_USE" ],
-    "light_color": "#ffb05f"
+    "flags": [ "LIGHT_20", "TRADER_AVOID", "ALLOWS_REMOTE_USE" ]
   },
   {
     "id": "glowstick",
@@ -323,8 +321,7 @@
     "turns_per_charge": 30,
     "revert_to": "glowstick_dead",
     "revert_msg": "The glowstick fades out.",
-    "flags": [ "LIGHT_8", "TRADER_AVOID", "SLEEP_IGNORE" ],
-    "light_color": "#66ccff"
+    "flags": [ "LIGHT_8", "TRADER_AVOID", "SLEEP_IGNORE" ]
   },
   {
     "id": "handflare",
@@ -363,8 +360,7 @@
     "use_action": { "type": "firestarter", "moves": 50 },
     "thrown_damage": [ { "damage_type": "heat", "amount": 8 } ],
     "attacks": [ { "id": "BASH", "to_hit": 0, "damage": { "values": [ { "damage_type": "heat", "amount": 4 } ] } } ],
-    "flags": [ "FIRE", "LIGHT_240", "CHARGEDIM", "TRADER_AVOID", "FIRESTARTER" ],
-    "light_color": "#ffffff"
+    "flags": [ "FIRE", "LIGHT_240", "CHARGEDIM", "TRADER_AVOID", "FIRESTARTER" ]
   },
   {
     "id": "heavy_flashlight",
@@ -496,8 +492,7 @@
     "revert_to": "oil_lamp",
     "light_color": "#ffb05f",
     "use_action": { "target": "oil_lamp", "msg": "The lantern is extinguished.", "menu_text": "Turn off", "type": "transform" },
-    "flags": [ "LIGHT_20", "TRADER_AVOID", "FIRE", "ALLOWS_REMOTE_USE", "WATER_EXTINGUISH" ],
-    "light_color": "#ffb05f"
+    "flags": [ "LIGHT_20", "TRADER_AVOID", "FIRE", "ALLOWS_REMOTE_USE", "WATER_EXTINGUISH" ]
   },
   {
     "id": "oxylamp",
@@ -533,8 +528,7 @@
     "revert_to": "oxylamp",
     "light_color": "#ffb05f",
     "use_action": { "menu_text": "Turn off", "type": "transform", "msg": "The %s is extinguished", "target": "oxylamp" },
-    "flags": [ "LIGHT_30" ],
-    "light_color": "#ffe0b3"
+    "flags": [ "LIGHT_30" ]
   },
   {
     "id": "reading_light",

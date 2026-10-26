@@ -199,7 +199,6 @@
         "type": "transform"
       }
     ],
-    "light_color": "#ffb05f",
     "flags": [ "FIRE", "FIRESTARTER", "LIGHT_8", "TRADER_AVOID", "WATER_EXTINGUISH" ]
   },
   {
@@ -246,7 +245,6 @@
         "type": "transform"
       }
     ],
-    "light_color": "#ffb05f",
     "flags": [ "FIRESTARTER", "SLEEP_IGNORE", "WATER_EXTINGUISH", "LIGHT_2" ]
   },
   {
