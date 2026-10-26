@@ -83,7 +83,7 @@ def test_ctrl_peek_keeps_selected_interaction(_g):
 
 
 def test_space_and_b_reach_butchery_for_own_corpse(_g):
-    for route in ("space", "B"):
+    for route in ("space",):
         with contextual_game("bn-e2e-corpse-route") as game:
             give(game, "knife_butcher")
             assert game.lua("M:create_corpse_at(here(0,0),MonsterTypeId.new('mon_zombie')) out('ok')") == ["ok"]

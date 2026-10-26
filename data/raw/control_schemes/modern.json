@@ -1835,13 +1835,6 @@
   },
   {
     "type": "keybinding",
-    "name": "Butcher",
-    "category": "DEFAULTMODE",
-    "id": "butcher",
-    "bindings": [ { "input_method": "keyboard", "key": "B" } ]
-  },
-  {
-    "type": "keybinding",
     "name": "List all items around the player",
     "category": "DEFAULTMODE",
     "id": "listitems",
