@@ -8,6 +8,16 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Added
 
+- Space runs the obvious action on the aimed tile — door, pile, stairs, cargo, corpse, vault,
+  examine — and lists the rest only for a tie or a destructive choice; with nothing aimed it acts
+  on the tile you last pressed toward.
+- `v` uses the item you pick by its kind (wield, wear, eat, read, unload, activate) instead of one
+  key per verb.
+- `g` takes a lone item and opens the picker for a pile; `G` always opens the picker.
+- `H` honks the horn while driving, and the attack key `f` smashes a bashable aimed tile when no
+  creature stands there.
+- Modern reaches mutations `[`, the diary `J` and options `O` directly again.
+
 - The title screen displays a text-only OVERHAUL wordmark beneath Bright Nights in terminal
   and graphical builds.
 - The release runbook includes preflight checks and a notes-only correction procedure that
