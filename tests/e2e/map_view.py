@@ -42,12 +42,12 @@ def test_enemy_edge_arrows(g):
     try:
         # The arrow is drawn once the zombie is spotted and the map redraws, which lands
         # later on a loaded runner than a single read allows for.
-        screen = map_only(edge)
+        screen = edge.screen()
         for _ in range(40):
             if any(a in screen for a in EDGE_ARROWS):
                 break
             time.sleep(0.5)
-            screen = map_only(edge)
+            screen = edge.screen()
         assert any(a in screen for a in EDGE_ARROWS), "no east arrow for the off-screen zombie:\n" + screen
         # Yellow, not red: it can walk to the player but not within twice the safe-mode distance.
         # Only the east arrow: arena() parks stray monsters to the south-east, which may be close.

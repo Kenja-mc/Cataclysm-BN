@@ -163,8 +163,21 @@ class Game:
             print("the error popup title did not clear", file=sys.stderr)
         return True
 
-    def lua(self, code):
+    def lua(self, code, _retried=False):
         """Runs one line in the in-game Lua console; `out(...)` reports values back."""
+        try:
+            return self._lua(code)
+        except AssertionError as err:
+            # A fresh game can still be handing over the avatar when the fixture runs, which
+            # makes `gapi.get_avatar()` nil. Only that case is retried, after a settle.
+            if _retried or "attempt to call a nil value" not in str(err) or \
+                    "gapi.get_avatar()" not in code:
+                raise
+            time.sleep(0.5)
+            self.settle_screen()
+            return self.lua(code, _retried=True)
+
+    def _lua(self, code):
         self.calls = getattr(self, "calls", 0) + 1
         marker = f"#{os.getpid()}.{self.calls}#"
         data_prefix = marker + "V:"
