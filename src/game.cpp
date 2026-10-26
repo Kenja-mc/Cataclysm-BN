@@ -11056,15 +11056,11 @@ static float calc_next_zoom( float cur_zoom, int direction )
     // Round to closest integer
     const size_t zoom_level = std::round( expected_cur_ndx ) + direction;
 
-    // calculate next zoom value, and wrap if needed
-    double next_zoom = std::pow( nth_root_2, zoom_level );
-    if( next_zoom < MAXIMUM_ZOOM_LEVEL - 0.0001f ) {
-        next_zoom = MINIMUM_ZOOM_LEVEL;
-    } else if( next_zoom > MINIMUM_ZOOM_LEVEL + 0.0001f ) {
-        next_zoom = MAXIMUM_ZOOM_LEVEL;
-    }
-
-    return next_zoom;
+    // Clamp at the ends: winding the wheel past the last step must not jump to the other end.
+    const auto next_zoom = std::clamp( std::pow( nth_root_2, zoom_level ),
+                                       static_cast<double>( MAXIMUM_ZOOM_LEVEL ),
+                                       static_cast<double>( MINIMUM_ZOOM_LEVEL ) );
+    return static_cast<float>( next_zoom );
 }
 
 #endif

@@ -964,8 +964,15 @@ def case_zoom(session):
                 frames[label] = str(png)
                 w, h, _ = frame_rgb(png)
                 require((w, h) == (width, height), f"zoom: {label} changed the window size")
-                pitches[label] = tile_pitch(png, terrain_width, height // 2)
+                pitches[label] = tile_pitch(png, terrain_width, height * 3 // 4)
                 return pitches[label]
+
+            def snapshot(label):
+                """Captures a frame without measuring pitch; the far zoom is too dense to measure."""
+                wait_for_frame(session, live.proc, live.run, session.timeout)
+                png = capture(session.display, win, session.artifacts / f"zoom-{label}.png")
+                frames[label] = str(png)
+                return png
 
             initial = observe("initial")
             x11.key("equal")
@@ -1012,8 +1019,27 @@ def case_zoom(session):
                 time.sleep(0.2)
             require(save.stat().st_mtime_ns != stamp, "zoom: quicksave did not write the save")
             final_turn = saved_turn(save)
-            # Leave the session at 2x so the next launch has something to restore.
-            x11.key("equal", delay=0.5)
+            # Zoom stops at its ends: winding past the last step must not jump to the other end.
+            for _ in range(8):
+                x11.key("equal", delay=0.05)
+            at_max = snapshot("zoom-max")
+            x11.key("equal", delay=0.1)
+            still_max = snapshot("zoom-max-plus")
+            same_max = at_max.read_bytes() == still_max.read_bytes()
+            for _ in range(8):
+                x11.key("minus", delay=0.05)
+            at_min = snapshot("zoom-min")
+            x11.key("minus", delay=0.1)
+            still_min = snapshot("zoom-min-minus")
+            same_min = at_min.read_bytes() == still_min.read_bytes()
+
+            # Clamp at the far end, walk back to 1x deterministically, then one step to 2x.
+            for _ in range(8):
+                x11.key("minus", delay=0.05)
+            for _ in range(2):
+                x11.key("equal", delay=0.1)
+            observe("persist-1x")
+            x11.key("equal", delay=0.2)
             observe("persist-2x")
             zoom_file = live.run / "xdg" / "cataclysm-bn" / "tileset_zoom"
             require(zoom_file.exists(), f"zoom: preference file was not written at {zoom_file}")
@@ -1037,6 +1063,12 @@ def case_zoom(session):
                       f"{look}px -> {look_in}px"),
                 Check("the look screen zooms back out", abs(look_out / look - 1) <= 0.1,
                       f"{look}px -> {look_out}px"),
+                Check("zoom stops at the closest level", same_max,
+                      "the frame changed after the last zoom step"),
+                Check("zoom stops at the farthest level", same_min,
+                      "the frame changed after the last zoom step"),
+                Check("the two ends differ", at_min.read_bytes() != at_max.read_bytes(),
+                      "the closest and farthest frames are identical"),
                 Check("zoom spends no turn", final_turn == initial_turn,
                       f"turn {initial_turn} -> {final_turn}"),
             ])
@@ -1051,7 +1083,7 @@ def case_zoom(session):
             wait_for_frame(session, live.proc, live.run, session.timeout)
             png = capture(session.display, win, session.artifacts / "zoom-relaunch.png")
             frames["relaunch"] = str(png)
-            relaunch = tile_pitch(png, terrain_width, height // 2)
+            relaunch = tile_pitch(png, terrain_width, height * 3 // 4)
             checks.append(Check("the zoom chosen last session is restored",
                                 abs(relaunch / initial - 2) <= 0.2,
                                 f"{initial}px default -> {relaunch}px relaunch"))
