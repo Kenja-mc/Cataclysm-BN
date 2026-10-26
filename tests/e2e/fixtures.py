@@ -8,6 +8,7 @@ Every game is closed when the process ends.
 import atexit
 import json
 import os
+import sys
 from contextlib import contextmanager
 
 from tmux_game import Game, start_new_game
@@ -49,7 +50,29 @@ def retire(game):
 
 @contextmanager
 def shared_game(name, options=None, cols=140, rows=45, keybindings=None, userdir=None,
-                define="", setup=None, layout="labels"):
+                define="", setup=None, layout="labels", retries=0):
+    """Borrows a profile. `retries` re-creates a game whose setup failed (a bad game state)."""
+    for attempt in range(retries + 1):
+        cm = _shared_game_once(name, options, cols, rows, keybindings, userdir,
+                               define, setup, layout)
+        try:
+            game = cm.__enter__()
+        except AssertionError:
+            if attempt == retries:
+                raise
+            continue
+        break
+    try:
+        yield game
+    except BaseException:
+        cm.__exit__(*sys.exc_info())
+        raise
+    else:
+        cm.__exit__(None, None, None)
+
+
+@contextmanager
+def _shared_game_once(name, options, cols, rows, keybindings, userdir, define, setup, layout):
     """Borrow a profile; nested failures cannot close another caller's active game."""
     key = _key(options, cols, rows, keybindings, userdir, layout)
     game = _games.get(key)

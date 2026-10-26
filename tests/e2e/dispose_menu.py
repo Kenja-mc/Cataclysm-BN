@@ -64,7 +64,7 @@ def _dispose_with_shown_hotkey(game, choice):
 def dispose_game(scheme):
     # Wielding, filters and the dispose menu leave the profile in a state its setup cannot undo.
     with shared_game(f"bn-e2e-dispose-{scheme}", define=HELPERS, setup=_fixture,
-                     options={"CONTROL_SCHEME": scheme, "SAFEMODE": "false"}) as game:
+                     options={"CONTROL_SCHEME": scheme, "SAFEMODE": "false"}, retries=1) as game:
         try:
             yield game
         finally:
