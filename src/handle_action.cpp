@@ -2737,7 +2737,7 @@ bool game::handle_action()
                 break;
 
             case ACTION_SMASH:
-                if( veh_ctrl ) {
+                if( u.controlling_vehicle ) {
                     handbrake();
                 } else if( u.has_active_mutation( trait_SHELL2 ) ) {
                     add_msg( m_info, _( "You can't smash things while you're in your shell." ) );
@@ -2959,6 +2959,15 @@ bool game::handle_action()
                 // Shell-users are presumed to be able to mess with their inventories, etc
                 // while in the shell.  Eating, gear-changing, and item use are OK.
                 avatar_action::use_item( u );
+                break;
+
+            case ACTION_HORN:
+                if( const auto vp = m.veh_at( u.bub_pos() );
+                    vp && vp->vehicle().player_in_control( u ) ) {
+                    vp->vehicle().honk_horn();
+                } else {
+                    add_msg( m_info, _( "You are not driving." ) );
+                }
                 break;
 
             case ACTION_USE_CONTEXTUAL: {

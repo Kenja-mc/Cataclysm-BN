@@ -3850,6 +3850,7 @@ input_context get_default_mode_input_context()
     ctxt.register_action( "advinv" );
     ctxt.register_action( "pickup" );
     ctxt.register_action( "pickup_list" );
+    ctxt.register_action( "horn" );
     ctxt.register_action( "pickup_all" );
     if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
         ctxt.register_action( "quick_pickup" );

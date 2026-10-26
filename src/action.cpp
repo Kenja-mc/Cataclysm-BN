@@ -101,6 +101,7 @@ std::string io::enum_to_string<action_id>( action_id data )
             PAIR( ACTION_TOGGLE_CURTAIN )
             PAIR( ACTION_PICKUP )
             PAIR( ACTION_PICKUP_LIST )
+            PAIR( ACTION_HORN )
             PAIR( ACTION_PICKUP_ALL )
             PAIR( ACTION_QUICK_PICKUP )
             PAIR( ACTION_PICKUP_FEET )
@@ -334,6 +335,8 @@ std::string action_ident( action_id act )
             return "pickup";
         case ACTION_PICKUP_LIST:
             return "pickup_list";
+        case ACTION_HORN:
+            return "horn";
         case ACTION_PICKUP_ALL:
             return "pickup_all";
         case ACTION_QUICK_PICKUP:

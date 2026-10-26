@@ -109,6 +109,7 @@ enum action_id : int {
     /** Pick up items from one current/adjacent square */
     ACTION_PICKUP,
     ACTION_PICKUP_LIST,
+    ACTION_HORN,
     /** Pick up items from all current/adjacent squares */
     ACTION_PICKUP_ALL,
     /// Take everything underfoot without a selection menu.

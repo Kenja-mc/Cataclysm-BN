@@ -476,7 +476,7 @@
     "name": "Smash Nearby Terrain",
     "category": "DEFAULTMODE",
     "id": "smash",
-    "bindings": []
+    "bindings": [  ]
   },
   {
     "type": "keybinding",
@@ -511,7 +511,7 @@
     "name": "Pick up items from all nearby tiles",
     "category": "DEFAULTMODE",
     "id": "pickup_all",
-    "bindings": []
+    "bindings": [  ]
   },
   {
     "type": "keybinding",
@@ -599,7 +599,7 @@
     "name": "Wield",
     "category": "DEFAULTMODE",
     "id": "wield",
-    "bindings": []
+    "bindings": [  ]
   },
   {
     "type": "keybinding",
@@ -775,7 +775,7 @@
     "name": "Autoattack",
     "category": "DEFAULTMODE",
     "id": "autoattack",
-    "bindings": []
+    "bindings": [  ]
   },
   {
     "type": "keybinding",
@@ -1936,7 +1936,7 @@
     "name": "View/Activate Mutations",
     "category": "DEFAULTMODE",
     "id": "mutations",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "[" } ]
   },
   {
     "type": "keybinding",
@@ -2104,7 +2104,7 @@
     "id": "diary",
     "name": "Open Diary",
     "category": "DEFAULTMODE",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "J" } ]
   },
   {
     "type": "keybinding",
@@ -2243,5 +2243,19 @@
     "category": "DEFAULTMODE",
     "id": "pickup_list",
     "bindings": [ { "input_method": "keyboard", "key": "G" } ]
+  },
+  {
+    "type": "keybinding",
+    "name": "Options",
+    "category": "DEFAULTMODE",
+    "id": "open_options",
+    "bindings": [ { "input_method": "keyboard", "key": "O" } ]
+  },
+  {
+    "type": "keybinding",
+    "name": "Honk the horn",
+    "category": "DEFAULTMODE",
+    "id": "horn",
+    "bindings": [ { "input_method": "keyboard", "key": "H" } ]
   }
 ]
