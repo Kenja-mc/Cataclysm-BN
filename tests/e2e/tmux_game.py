@@ -2,6 +2,7 @@
 import curses
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -170,11 +171,18 @@ class Game:
         except AssertionError as err:
             # A fresh game can still be handing over the avatar when the fixture runs, which
             # makes `gapi.get_avatar()` nil. Only that case is retried, after a settle.
-            if _retried or "attempt to call a nil value" not in str(err) or \
-                    "gapi.get_avatar()" not in code:
+            if _retried or "attempt to call a nil value" not in str(err):
+                raise
+            helpers = getattr(self, "_helper_src", "")
+            helper_names = set(re.findall(r"function (\w+)", helpers))
+            lost_helper = any(f"{name}(" in code for name in helper_names)
+            if "gapi.get_avatar()" not in code and not lost_helper:
                 raise
             time.sleep(0.5)
             self.settle_screen()
+            if lost_helper:
+                # A pooled game can reload its Lua state and lose the helpers; restore them.
+                self._lua(self._helper_prelude + helpers + " out('defined')")
             return self.lua(code, _retried=True)
 
     def _lua(self, code):
@@ -252,6 +260,7 @@ class Game:
         """Defines globals once; later `lua` calls can stay short."""
         prelude = ("function out(...) local t = {} for i, v in ipairs({...}) do t[i] = tostring(v) end "
                    "print(OUT .. 'V:' .. table.concat(t, ',')) end ")
+        self._helper_prelude, self._helper_src = prelude, code
         result = self.lua(prelude + code + " out('defined')")
         assert result == ["defined"], f"Lua helper definition returned {result!r}\n{self.screen()}"
 

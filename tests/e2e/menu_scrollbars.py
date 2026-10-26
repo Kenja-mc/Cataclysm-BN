@@ -141,8 +141,14 @@ def test_options_and_keybindings_scrollbars(_g):
         start_new_game(g)
         open_main_menu(g)
         # Pick the row by label: the menu's auto-assigned hotkeys shift with the scheme.
-        rows = {row.label: row.hotkey for row in menu_rows(g.screen())}
-        options = next(hotkey for label, hotkey in rows.items() if "Options" in label)
+        options = None
+        for _ in range(3):
+            rows = {row.label: row.hotkey for row in menu_rows(g.screen())}
+            options = next((hotkey for label, hotkey in rows.items() if "Options" in label), None)
+            if options:
+                break
+            g.settle_screen()
+        assert options, "no Options row in the main menu:\n" + g.screen()
         g.keys(options, delay=0.8)
         g.wait_for(" OPTIONS ", timeout=10)
         for _ in range(8):
