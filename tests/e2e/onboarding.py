@@ -63,9 +63,30 @@ def test_first_time_tips_stairs_and_save(g):
     assert g.lua("M:set_ter_at(here(0,0), TerId.new('t_floor'):int_id()) out('ok')") == ["ok"]
 
 
+def test_help_opens_with_a_quickstart(_g):
+    """The in-game manual must start with the commands a first hour needs, in the player's keys."""
+    from fixtures import shared_game
+    from helpers import HELPERS
+
+    with shared_game("bn-e2e-quickstart", define=HELPERS, setup=arena,
+                     options={"CONTROL_SCHEME": "modern", "SAFEMODE": "false"}) as game:
+        settle(game)
+        game.keys("F1", delay=0.8)
+        game.wait_for("Please press one of the following")
+        game.keys("a", delay=0.8)
+        game.wait_for("FIRST TEN MINUTES")
+        screen = game.screen()
+        assert "press_" not in screen, "key tags must expand to the bound keys:\n" + screen
+        assert "F1 brings this page back" in screen, "the help key must name itself:\n" + screen
+        assert "? shows every key" in screen, "the keybindings key must name itself:\n" + screen
+        game.keys("Escape", delay=0.6)
+        game.wait_gone("FIRST TEN MINUTES")
+
+
 TESTS = [
     test_welcome_card,
     test_death_mode_choice,
     test_first_time_tip,
     test_first_time_tips_stairs_and_save,
+    test_help_opens_with_a_quickstart,
 ]

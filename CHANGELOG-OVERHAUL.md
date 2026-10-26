@@ -8,6 +8,7 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Added
 
+- The help page opens with a first-ten-minutes list of commands in the player's own keys.
 - `Ctrl+F` searches every action by name, shows how each one is reached, and runs the pick.
 - `T` toggles auto travel, and the control strip names both it and safe mode.
 - The tile inspector sits in the top-left corner.

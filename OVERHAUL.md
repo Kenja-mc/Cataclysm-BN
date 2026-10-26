@@ -143,7 +143,7 @@ food and a weapon, because houses usually have all three.
 | PageUp / PageDown    | stairs up / down (also `<` / `>`)                           |
 | `h`                  | health and wounds                                          |
 | `!` / `'`            | safe mode / ignore enemy                                           |
-| F1 / `?`             | help / full keybinding list                                        |
+| F1 / `?`             | help (opens on a first-ten-minutes page) / full keybinding list   |
 | Esc                  | cancel selection, or main menu when no selection is active         |
 | F12 / backtick       | developer debug menu / Lua console                                 |
 
