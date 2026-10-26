@@ -52,6 +52,20 @@ The Windows version keeps everything in its own folder, so the whole folder is y
 To back up your games, copy `save\` and `config\`. To move the game, move the whole folder. Do
 not edit files in `data\json\` or other game folders: an update replaces them.
 
+### The game log
+
+When something goes wrong, the game writes `debug.log` into its config folder. Send that file
+with the report.
+
+| System | Log file |
+| --- | --- |
+| Windows | `config\debug.log` inside the folder that holds `cataclysm-bn-tiles.exe` |
+| Linux, release | `~/.cataclysm-bn/config/debug.log` |
+| Linux, XDG build | `~/.local/share/cataclysm-bn/config/debug.log` |
+
+The game folder wins on Windows because that build is portable: saves, options and the log all
+live beside the executable.
+
 Use unique folder names for your own mods, tilesets and soundpacks: an entry with the same name
 as shipped content belongs to the release and is replaced. The updater refuses links/junctions
 in an install being updated; use ordinary folders. A second updater or a running game blocks
