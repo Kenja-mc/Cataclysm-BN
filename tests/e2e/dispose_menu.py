@@ -2,7 +2,7 @@
 import re
 from contextlib import contextmanager
 
-from fixtures import shared_game
+from fixtures import retire, shared_game
 from helpers import HELPERS, action_menu, arena, count_at, count_carried
 
 
@@ -62,9 +62,13 @@ def _dispose_with_shown_hotkey(game, choice):
 
 @contextmanager
 def dispose_game(scheme):
+    # Wielding, filters and the dispose menu leave the profile in a state its setup cannot undo.
     with shared_game(f"bn-e2e-dispose-{scheme}", define=HELPERS, setup=_fixture,
                      options={"CONTROL_SCHEME": scheme, "SAFEMODE": "false"}) as game:
-        yield game
+        try:
+            yield game
+        finally:
+            retire(game)
 
 
 def test_modern_dispose_holstered_weapon_hotkeys(_g):
