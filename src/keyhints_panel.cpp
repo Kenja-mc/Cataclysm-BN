@@ -110,6 +110,9 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
         push( joined_keys( { ACTION_MOVE_FORTH_LEFT, ACTION_MOVE_FORTH_RIGHT, ACTION_MOVE_BACK_LEFT, ACTION_MOVE_BACK_RIGHT } ),
               _( "diag" ) );
     }
+    // Safe mode and auto travel sit early so their keys survive a truncated strip.
+    push( first_key( ACTION_TOGGLE_SAFEMODE ), _( "safe mode" ) );
+    push( first_key( ACTION_TOGGLE_AUTO_TRAVEL_MODE ), _( "auto travel" ) );
     if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
         const auto ctxt = input_context( "DEFAULTMODE" );
         const auto push_desc = [&]( const std::string & action, std::string label ) {

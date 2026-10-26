@@ -2395,8 +2395,8 @@ namespace
 
 constexpr auto compass_full_rows = 8;
 constexpr auto compass_dial_rows = 3;
-constexpr auto controls_full_rows = 5;
-constexpr auto controls_short_rows = 2;
+constexpr auto controls_full_rows = 3;
+constexpr auto controls_short_rows = 1;
 
 auto panel_drawn( const std::string &name ) -> bool
 {

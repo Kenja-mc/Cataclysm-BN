@@ -37,7 +37,7 @@ bool default_render();
 
 namespace sidebar
 {
-constexpr auto log_min_rows = 3;
+constexpr auto log_min_rows = 8;
 } // namespace sidebar
 
 class window_panel

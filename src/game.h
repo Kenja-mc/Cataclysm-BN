@@ -756,6 +756,8 @@ class game : public submap_load_listener
         void zoom_out();
         void reset_zoom();
         void set_zoom( float level );
+        /// Remembers the current zoom for the next launch.
+        void save_zoom_preference() const;
         /// Applies the stored main-view zoom to the tile context even when the value is unchanged.
         auto reapply_zoom() -> void;
         float get_zoom() const;

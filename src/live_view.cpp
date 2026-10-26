@@ -55,8 +55,8 @@ void live_view::show( const tripoint_bub_ms &p )
             g->pre_print_all_tile_info( mouse_position, win, line_out, line_limit, cache );
             const int live_view_box_height = std::min( max_height, std::max( line_out + 2, MIN_BOX_HEIGHT ) );
 
-            win = catacurses::newwin( live_view_box_height, width,
-                                      point( sidebar_right ? TERMX - width : 0, 0 ) );
+            // The box sits in the top-left corner whatever side the sidebar takes.
+            win = catacurses::newwin( live_view_box_height, width, point_zero );
             ui.position_from_window( win );
         } );
         ui->on_redraw( [this]( const ui_adaptor & ) {

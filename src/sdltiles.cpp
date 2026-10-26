@@ -3998,6 +3998,10 @@ void load_tileset()
             } );
         }
     }
+    if( g != nullptr && tilecontext ) {
+        // The tileset loads at its own scale; put back the zoom the player left last session.
+        rescale_tileset( g->get_zoom() );
+    }
 }
 
 //Ends the terminal, destroy everything

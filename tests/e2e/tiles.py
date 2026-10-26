@@ -583,15 +583,22 @@ class Session:
         self.world = saves[0].name
 
     @contextmanager
-    def running_game(self, label, tiles_options):
-        """Keeps a fixture copy running for real input and captures; owns process cleanup."""
+    def running_game(self, label, tiles_options, fresh=True):
+        """Keeps a fixture copy running for real input and captures; owns process cleanup.
+
+        ``fresh=False`` reuses the label's own directories, so a relaunch sees the config a
+        previous process wrote (zoom persistence, for instance).
+        """
         run = self.work / "runs" / label
         userdir = run / "userdir"
         xdg = run / "xdg"
-        shutil.copytree(self.curses_userdir / "config", userdir / "config")
-        shutil.copytree(self.curses_userdir / "save", userdir / "save")
-        shutil.copytree(self.curses_userdir / "config", xdg / "cataclysm-bn")
-        patch_launch_options(userdir, xdg, {**DETERMINISTIC_OPTIONS, **tiles_options})
+        if fresh:
+            if run.exists():
+                shutil.rmtree(run)
+            shutil.copytree(self.curses_userdir / "config", userdir / "config")
+            shutil.copytree(self.curses_userdir / "save", userdir / "save")
+            shutil.copytree(self.curses_userdir / "config", xdg / "cataclysm-bn")
+            patch_launch_options(userdir, xdg, {**DETERMINISTIC_OPTIONS, **tiles_options})
         for sub in ("home", "cache", "data", "state"):
             (run / sub).mkdir(parents=True, exist_ok=True)
         env = {
@@ -924,6 +931,9 @@ def case_zoom(session):
                                       and row.get("id") == "quicksave")]
     rows.append({"type": "keybinding", "id": "quicksave", "category": "DEFAULTMODE",
                  "bindings": [{"input_method": "keyboard", "key": "F6"}]})
+    # Modern leaves the full look screen unbound; bind it so the case can open it by key.
+    rows.append({"type": "keybinding", "id": "look", "category": "DEFAULTMODE",
+                 "bindings": [{"input_method": "keyboard", "key": ";"}]})
     bindings.write_text(json.dumps(rows))
     source = session.curses_userdir / "save" / session.world
     starts = list(source.glob("*.sav"))
@@ -971,6 +981,28 @@ def case_zoom(session):
             x11.click(5)
             wheel_restored = observe("wheel-out")
 
+            # Zoom must work while looking: first the modern reticle, then the full look screen.
+            x11.key("Shift_L", "d")
+            reticle = observe("reticle")
+            x11.key("equal")
+            reticle_in = observe("reticle-zoom-in")
+            x11.key("minus")
+            observe("reticle-zoom-out")
+            # Escape opens the main menu in the tiles build, so close it before opening look.
+            x11.key("Escape")
+            x11.key("Escape")
+            map_frame_label = "map-after-reticle"
+            map_frame = observe(map_frame_label)
+            x11.key("semicolon", delay=0.5)
+            look = observe("look")
+            require(Path(frames["look"]).read_bytes() != Path(frames[map_frame_label]).read_bytes(),
+                    "look: the look screen never opened")
+            x11.key("equal")
+            look_in = observe("look-zoom-in")
+            x11.key("minus")
+            look_out = observe("look-zoom-out")
+            x11.key("Escape", delay=0.5)
+
             save = next((live.run / "userdir" / "save" / session.world).glob("*.sav"), None)
             require(save is not None, "zoom: running copy has no character save")
             stamp = save.stat().st_mtime_ns
@@ -980,6 +1012,11 @@ def case_zoom(session):
                 time.sleep(0.2)
             require(save.stat().st_mtime_ns != stamp, "zoom: quicksave did not write the save")
             final_turn = saved_turn(save)
+            # Leave the session at 2x so the next launch has something to restore.
+            x11.key("equal", delay=0.5)
+            observe("persist-2x")
+            zoom_file = live.run / "xdg" / "cataclysm-bn" / "tileset_zoom"
+            require(zoom_file.exists(), f"zoom: preference file was not written at {zoom_file}")
             checks.extend([
                 Check("keyboard zoom in doubles the tile pitch", abs(zoomed / initial - 2) <= 0.2,
                       f"{initial}px -> {zoomed}px"),
@@ -994,11 +1031,33 @@ def case_zoom(session):
                 Check("mouse wheel zoom out restores the tile pitch",
                       abs(wheel_restored / initial - 1) <= 0.05,
                       f"{initial}px -> {wheel_restored}px"),
+                Check("the reticle view zooms in", abs(reticle_in / reticle - 2) <= 0.3,
+                      f"{reticle}px -> {reticle_in}px"),
+                Check("the look screen zooms in", abs(look_in / look - 2) <= 0.3,
+                      f"{look}px -> {look_in}px"),
+                Check("the look screen zooms back out", abs(look_out / look - 1) <= 0.1,
+                      f"{look}px -> {look_out}px"),
                 Check("zoom spends no turn", final_turn == initial_turn,
                       f"turn {initial_turn} -> {final_turn}"),
             ])
         finally:
             x11.close()
+    # A relaunch over the same config directory must come back at the zoom it left.
+    with session.running_game("zoom", options, fresh=False) as live:
+        x11 = X11(session.display)
+        try:
+            win = x11.find_window(WINDOW_TITLE_PREFIX)
+            require(win is not None, "zoom: relaunch window disappeared")
+            wait_for_frame(session, live.proc, live.run, session.timeout)
+            png = capture(session.display, win, session.artifacts / "zoom-relaunch.png")
+            frames["relaunch"] = str(png)
+            relaunch = tile_pitch(png, terrain_width, height // 2)
+            checks.append(Check("the zoom chosen last session is restored",
+                                abs(relaunch / initial - 2) <= 0.2,
+                                f"{initial}px default -> {relaunch}px relaunch"))
+        finally:
+            x11.close()
+
     failures = [f"{check.name}: {check.detail}" for check in checks if not check.ok]
     return failures, {"checks": [check.__dict__ for check in checks], "pitches": pitches,
                       "initial_turn": initial_turn, "final_turn": final_turn, "frames": frames}

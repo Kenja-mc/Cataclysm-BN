@@ -62,6 +62,11 @@ def test_ctrl_peek_keeps_selected_interaction(_g):
         select_tile(game, -1, 0)
         game.wait_for("Mouse View")
         assert "closed wood door" in mouse_view(game)
+        lines = game.screen().splitlines()
+        top = next(y for y, line in enumerate(lines) if "Mouse View" in line)
+        assert top <= 1, "the tile inspector must sit in the top-left corner:\n" + game.screen()
+        assert lines[top].lstrip()[:1] in ("╭", "┌", "+"), \
+            "the inspector's left edge must be the screen's left edge:\n" + game.screen()
         assert (bub_pos(game), action_clock(game)) == (position, clock), "selection must be free"
         game.keys("C-w", delay=0.2)
         game.wait_for("Look Around")

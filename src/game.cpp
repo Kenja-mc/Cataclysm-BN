@@ -203,6 +203,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <fstream>
 #include <cstdlib>
 #include <ctime>
 #include <cwctype>
@@ -484,6 +485,30 @@ static void achievement_attained( const achievement *a )
 }
 
 // This is the main game set-up process.
+namespace
+{
+// Zoom values wrap inside these bounds; the numbering is historical.
+constexpr int MAXIMUM_ZOOM_LEVEL = 4;
+constexpr int MINIMUM_ZOOM_LEVEL = 64;
+
+auto zoom_preference_path() -> std::string
+{
+    return PATH_INFO::config_dir() + "tileset_zoom";
+}
+
+/// The zoom the player left the game at, read before the tileset is built.
+auto stored_tileset_zoom() -> float
+{
+    std::ifstream in( zoom_preference_path() );
+    float stored = 0.0f;
+    if( in >> stored && stored >= MAXIMUM_ZOOM_LEVEL - 0.0001f &&
+        stored <= MINIMUM_ZOOM_LEVEL + 0.0001f ) {
+        return stored;
+    }
+    return DEFAULT_TILESET_ZOOM;
+}
+} // namespace
+
 game::game() :
     map_ptr( 1 ),
     liveview( *liveview_ptr ),
@@ -503,7 +528,7 @@ game::game() :
     next_mission_id( 1 ),
     remoteveh_cache_time( calendar::before_time_starts ),
     user_action_counter( 0 ),
-    tileset_zoom( DEFAULT_TILESET_ZOOM ),
+    tileset_zoom( stored_tileset_zoom() ),
     seed( 0 ),
     last_mouse_edge_scroll( std::chrono::steady_clock::now() ),
     fake_items( new temp_item_location( ) )
@@ -11013,9 +11038,6 @@ static void centerlistview( const tripoint_rel_ms &active_item_position, int ui_
 }
 
 #if defined(TILES)
-static constexpr int MAXIMUM_ZOOM_LEVEL = 4;
-static constexpr int MINIMUM_ZOOM_LEVEL = 64;
-
 static float calc_next_zoom( float cur_zoom, int direction )
 {
     const int step_count = get_option<int>( "ZOOM_STEP_COUNT" );
@@ -11041,11 +11063,20 @@ static float calc_next_zoom( float cur_zoom, int direction )
 }
 
 #endif
+void game::save_zoom_preference() const
+{
+#if defined(TILES)
+    std::ofstream out( zoom_preference_path(), std::ios::trunc );
+    out << tileset_zoom;
+#endif
+}
+
 void game::zoom_out()
 {
 #if defined(TILES)
     tileset_zoom = calc_next_zoom( tileset_zoom, -1 );
     rescale_tileset( tileset_zoom );
+    save_zoom_preference();
 #endif
 }
 
@@ -11066,6 +11097,7 @@ void game::zoom_in()
 #if defined(TILES)
     tileset_zoom = calc_next_zoom( tileset_zoom, 1 );
     rescale_tileset( tileset_zoom );
+    save_zoom_preference();
 #endif
 }
 
@@ -11114,6 +11146,7 @@ void game::set_zoom( const float level )
     if( tileset_zoom != level ) {
         tileset_zoom = level;
         rescale_tileset( tileset_zoom );
+        save_zoom_preference();
     }
 #else
     static_cast<void>( level );
