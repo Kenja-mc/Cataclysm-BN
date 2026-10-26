@@ -2512,6 +2512,13 @@
   },
   {
     "type": "keybinding",
+    "name": "Find an Action",
+    "category": "DEFAULTMODE",
+    "id": "search_action",
+    "bindings": [  ]
+  },
+  {
+    "type": "keybinding",
     "name": "Item Action Menu",
     "category": "DEFAULTMODE",
     "id": "item_action_menu",

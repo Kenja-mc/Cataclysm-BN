@@ -2165,6 +2165,18 @@ bool game::handle_action()
             }
         }
 
+        if( act == ACTION_SEARCH_ACTION ) {
+            if( uquit == QUIT_WATCH ) {
+                return false;
+            }
+            u.clear_destination();
+            destination_preview.clear();
+            act = handle_action_search();
+            if( act == ACTION_NULL ) {
+                return false;
+            }
+        }
+
         if( act == ACTION_ACTIONMENU ) {
             if( uquit == QUIT_WATCH ) {
                 return false;

@@ -3973,6 +3973,7 @@ input_context get_default_mode_input_context()
     ctxt.register_action( "toggle_thief_mode" );
     ctxt.register_action( "diary" );
     ctxt.register_action( "action_menu" );
+    ctxt.register_action( "search_action" );
     ctxt.register_action( "main_menu" );
     ctxt.register_action( "item_action_menu" );
     ctxt.register_action( "ANY_INPUT" );

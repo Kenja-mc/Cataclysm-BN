@@ -30,6 +30,8 @@
 #include "trap.h"
 #include "type_id.h"
 #include "ui.h"
+#include "string_input_popup.h"
+#include "action_route.h"
 #include "ui_manager.h"
 #include "vehicle/veh_type.h"
 #include "vehicle/vehicle.h"
@@ -211,6 +213,7 @@ std::string io::enum_to_string<action_id>( action_id data )
             PAIR( ACTION_ZOOM_OUT )
             PAIR( ACTION_ZOOM_IN )
             PAIR( ACTION_ACTIONMENU )
+            PAIR( ACTION_SEARCH_ACTION )
             PAIR( ACTION_ITEMACTION )
             PAIR( ACTION_TOGGLE_PIXEL_MINIMAP )
             PAIR( ACTION_TOGGLE_PANEL_ADM )
@@ -557,6 +560,8 @@ std::string action_ident( action_id act )
             return "toggle_auto_pickup";
         case ACTION_ACTIONMENU:
             return "action_menu";
+        case ACTION_SEARCH_ACTION:
+            return "search_action";
         case ACTION_ITEMACTION:
             return "item_action_menu";
         case ACTION_SELECT:
@@ -997,6 +1002,58 @@ auto make_register_categories( std::vector<uilist_entry> &entries,
 }
 
 } // namespace
+
+
+auto handle_action_search() -> action_id
+{
+    string_input_popup popup;
+    popup.title( _( "Find an action" ) ).width( 40 );
+    const auto query = popup.query_string();
+    if( query.empty() ) {
+        return ACTION_NULL;
+    }
+    const auto lower = []( std::string_view text ) {
+        auto out = std::string( text );
+        for( auto &ch : out ) {
+            ch = static_cast<char>( std::tolower( static_cast<unsigned char>( ch ) ) );
+        }
+        return out;
+    };
+    const auto needle = lower( query );
+    const auto ctxt = input_context( "DEFAULTMODE" );
+    uilist menu;
+    menu.title = string_format( _( "Actions matching \"%s\"" ), query );
+    auto found = std::vector<action_id>();
+    for( auto i = 0; i < static_cast<int>( NUM_ACTIONS ); ++i ) {
+        const auto id = static_cast<action_id>( i );
+        if( id == ACTION_NULL || id == ACTION_SEARCH_ACTION ) {
+            continue;
+        }
+        const auto ident = action_ident( id );
+        if( ident.empty() ) {
+            continue;
+        }
+        const auto name = ctxt.get_action_name( ident );
+        if( name.empty() ||
+            ( lower( name ).find( needle ) == std::string::npos &&
+              lower( ident ).find( needle ) == std::string::npos ) ) {
+            continue;
+        }
+        const auto route = action_route( id );
+        found.push_back( id );
+        menu.addentry( static_cast<int>( found.size() ) - 1, true, MENU_AUTOASSIGN,
+                       "%s  %s", name, route.empty() ? _( "(in the action menu)" ) : route );
+    }
+    if( found.empty() ) {
+        add_msg( _( "No action matches \"%s\"." ), query );
+        return ACTION_NULL;
+    }
+    menu.query();
+    if( menu.ret >= 0 && menu.ret < static_cast<int>( found.size() ) ) {
+        return found[menu.ret];
+    }
+    return ACTION_NULL;
+}
 
 action_id handle_action_menu()
 {

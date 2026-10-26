@@ -336,6 +336,7 @@ enum action_id : int {
     ACTION_ZOOM_IN,
     /** Open the action menu */
     ACTION_ACTIONMENU,
+    ACTION_SEARCH_ACTION,
     /** Open the item uses menu */
     ACTION_ITEMACTION,
     /** Turn pixel minimap on/off */
@@ -589,6 +590,8 @@ point_rel_ms get_delta_from_movement_action( action_id act, iso_rotate rot );
  * @returns action_id ID of action requested by user at menu.
  */
 action_id handle_action_menu();
+/// Free-text search over every action, showing how each one is reached.
+action_id handle_action_search();
 
 /**
  * Show in-game main menu

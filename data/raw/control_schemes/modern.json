@@ -1978,7 +1978,7 @@
     "name": "Toggle Auto Travel Mode",
     "category": "DEFAULTMODE",
     "id": "auto_travel_mode",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "T" }, { "input_method": "keyboard", "key": "CTRL+M" } ]
   },
   {
     "type": "keybinding",
@@ -2257,5 +2257,12 @@
     "category": "DEFAULTMODE",
     "id": "horn",
     "bindings": [ { "input_method": "keyboard", "key": "H" } ]
+  },
+  {
+    "type": "keybinding",
+    "name": "Find an Action",
+    "category": "DEFAULTMODE",
+    "id": "search_action",
+    "bindings": [ { "input_method": "keyboard", "key": "CTRL+F" } ]
   }
 ]
