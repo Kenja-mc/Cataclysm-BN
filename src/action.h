@@ -275,6 +275,8 @@ enum action_id : int {
     ACTION_SCORES,
     /** Display factions screen */
     ACTION_FACTIONS,
+    /** One screen for missions, factions, zones and scores */
+    ACTION_WORLD_HUB,
     /** Display morale effects screen */
     ACTION_MORALE,
     /** Display messages screen */

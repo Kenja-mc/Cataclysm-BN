@@ -128,6 +128,7 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
             }
         };
         push_desc( "action_menu", _( "menus" ) );
+        push_desc( "world_hub", _( "world" ) );
         push_desc( "NEXT_TARGET", _( "target" ) );
         push( first_key( ACTION_CYCLE_MOVE ), _( "stance" ) );
         // Shift+direction moves the selection marker; calling it "look" made it read like peeking.

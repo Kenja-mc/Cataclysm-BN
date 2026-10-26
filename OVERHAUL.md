@@ -140,6 +140,7 @@ food and a weapon, because houses usually have all three.
 | Shift+X              | cycle walk / run / crouch / prone                                  |
 | `x` / Ctrl+X         | wait one turn / wait or rest a while                               |
 | `m`, `n`             | map / auto-explore                                                 |
+| `M`                  | world: missions, factions, zones, scores                           |
 | PageUp / PageDown    | stairs up / down (also `<` / `>`)                           |
 | `h`                  | health and wounds                                          |
 | `!` / `'`            | safe mode / ignore enemy                                           |

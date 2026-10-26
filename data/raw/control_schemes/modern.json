@@ -2192,6 +2192,13 @@
   },
   {
     "type": "keybinding",
+    "id": "world_hub",
+    "category": "DEFAULTMODE",
+    "name": "World",
+    "bindings": [ { "input_method": "keyboard", "key": "M" } ]
+  },
+  {
+    "type": "keybinding",
     "id": "HELP_KEYBINDINGS",
     "category": "DEFAULTMODE",
     "name": "Keybindings",

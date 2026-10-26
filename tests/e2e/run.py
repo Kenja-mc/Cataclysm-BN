@@ -33,6 +33,7 @@ from tmux_game import Game, start_new_game
 from onboarding import TESTS as ONBOARDING_TESTS
 from movement import TESTS as MOVEMENT_TESTS
 from menus import TESTS as MENUS_TESTS
+from world_hub import TESTS as WORLD_HUB_TESTS
 from action_search import TESTS as ACTION_SEARCH_TESTS
 from items import TESTS as ITEMS_TESTS
 from storage import TESTS as STORAGE_TESTS
@@ -100,6 +101,7 @@ MODULES = [
     ("onboarding", ONBOARDING_TESTS),
     ("movement", MOVEMENT_TESTS),
     ("menus", MENUS_TESTS),
+    ("world_hub", WORLD_HUB_TESTS),
     ("action_search", ACTION_SEARCH_TESTS),
     ("items", ITEMS_TESTS),
     ("storage", STORAGE_TESTS),

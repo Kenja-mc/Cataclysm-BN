@@ -184,6 +184,7 @@ std::string io::enum_to_string<action_id>( action_id data )
             PAIR( ACTION_MISSIONS )
             PAIR( ACTION_SCORES )
             PAIR( ACTION_FACTIONS )
+            PAIR( ACTION_WORLD_HUB )
             PAIR( ACTION_MORALE )
             PAIR( ACTION_MESSAGES )
             PAIR( ACTION_OPEN_WIKI )
@@ -486,6 +487,8 @@ std::string action_ident( action_id act )
             return "missions";
         case ACTION_FACTIONS:
             return "factions";
+        case ACTION_WORLD_HUB:
+            return "world_hub";
         case ACTION_SCORES:
             return "scores";
         case ACTION_MORALE:
@@ -636,6 +639,7 @@ bool can_action_change_worldstate( const action_id act )
         case ACTION_MISSIONS:
         case ACTION_SCORES:
         case ACTION_FACTIONS:
+        case ACTION_WORLD_HUB:
         case ACTION_MORALE:
         case ACTION_MESSAGES:
         case ACTION_OPEN_WIKI:
@@ -1276,8 +1280,8 @@ action_id handle_action_menu()
             register_lua_action_entries( category_id );
         } else if( category_id == "info" ) {
             register_actions( {
-                ACTION_PL_INFO, ACTION_BODY_STATUS, ACTION_MISSIONS, ACTION_SCORES,
-                ACTION_FACTIONS, ACTION_MORALE, ACTION_MESSAGES, ACTION_DIARY
+                ACTION_WORLD_HUB, ACTION_PL_INFO, ACTION_BODY_STATUS, ACTION_MISSIONS,
+                ACTION_SCORES, ACTION_FACTIONS, ACTION_MORALE, ACTION_MESSAGES, ACTION_DIARY
             } );
             register_lua_action_entries( category_id );
         } else if( category_id == "misc" ) {

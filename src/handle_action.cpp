@@ -3356,6 +3356,34 @@ bool game::handle_action()
                 }
                 break;
 
+            case ACTION_WORLD_HUB: {
+                // One key for the screens a run reads: missions, factions, zones and scores.
+                auto hub = uilist();
+                hub.title = _( "World" );
+                hub.addentry( 0, true, 'm', _( "Missions" ) );
+                hub.addentry( 1, true, 'f', _( "Factions" ) );
+                hub.addentry( 2, true, 'z', _( "Zones" ) );
+                hub.addentry( 3, true, 's', _( "Scores" ) );
+                hub.query();
+                switch( hub.ret ) {
+                    case 0:
+                        list_missions();
+                        break;
+                    case 1:
+                        faction_manager_ptr->display();
+                        break;
+                    case 2:
+                        zones_manager();
+                        break;
+                    case 3:
+                        show_scores_ui( *achievements_tracker_ptr, stats(), get_kill_tracker() );
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            }
+
             case ACTION_MISSIONS:
                 list_missions();
                 break;
