@@ -17,7 +17,17 @@ def test_sound_menu_curses_unavailable(_game):
         choose_menu_entry(game, "Sound & volume")
         game.wait_for(UNAVAILABLE)
         screen = game.screen()
-        assert "Cancel popup" not in screen, "the notice must not open a modal:\n" + screen
+        assert "Cancel popup" in screen, "the first notice teaches the player:\n" + screen
+        game.keys("Escape", delay=0.6)
+        game.wait_for("X,Y,Z", timeout=15)
+        # The second visit must not block the game.
+        game.keys("Enter", delay=0.8)
+        choose_menu_entry(game, "Misc…")
+        game.wait_for("Sound & volume")
+        choose_menu_entry(game, "Sound & volume")
+        game.wait_for(UNAVAILABLE)
+        screen = game.screen()
+        assert "Cancel popup" not in screen, "the notice must not block twice:\n" + screen
         assert in_game(screen), "the notice must leave play usable:\n" + screen
 
 

@@ -139,6 +139,10 @@ def test_vehicle_horn_and_handbrake_route(_game):
     try:
         spawn_vehicle(game)
         take_control(game)
+        game.keys("space", delay=0.8)
+        settle(game)
+        assert "You pull a handbrake." not in game.screen(), \
+            "a standstill brake must stay silent:\n" + game.screen()
         game.keys("w", delay=1.2)
         settle(game)
         moving = re.search(r"Speed: (\d+) mph", game.screen())
