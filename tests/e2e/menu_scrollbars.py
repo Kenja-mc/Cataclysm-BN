@@ -55,6 +55,9 @@ def open_main_menu(g):
     while "MAIN MENU" not in g.screen():
         assert time.time() < deadline, "Escape should open the main menu\n" + g.screen()
         g.keys("Escape", delay=0.4)
+    # The frame title draws before the entries, so wait for the list itself.
+    g.wait_for("Keybindings", timeout=15)
+    g.settle_screen()
 
 def selection_row(screen):
     rows = [y for y, line in enumerate(screen.splitlines()) if ">>" in line]
