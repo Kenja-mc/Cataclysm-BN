@@ -250,7 +250,7 @@ auto interact_choices( const avatar &you, const tripoint_bub_ms &p,
         const auto obstacle = m.impassable( p ) || m.has_furn( p ) || m.move_cost( p ) > 2 ||
                               m.dangerous_field_at( p ) ||
                               ( you.knows_trap( p ) && !m.tr_at( p ).is_benign() );
-        if( ( explicit_tile || obstacle ) && iexamine::can_jump_over_tile( you, p ) ) {
+        if( obstacle && iexamine::can_jump_over_tile( you, p ) ) {
             out.push_back( { .act = ACTION_JUMP, .label = string_format( _( "jump over the %s" ), m.name( p ) ) } );
         }
     }
