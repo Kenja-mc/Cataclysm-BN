@@ -9015,7 +9015,11 @@ auto game::examine() -> action_id
     // While driving, Space is the handbrake: the vehicle menu has its own key.
     const optional_vpart_position vp = m.veh_at( u.bub_pos() );
     if( vp && vp->vehicle().player_in_control( u ) && !selected ) {
-        handbrake();
+        const vehicle &veh = vp->vehicle();
+        // A standstill brake would only cost a turn and print a message.
+        if( veh.velocity != 0 || veh.cruise_velocity != 0 ) {
+            handbrake();
+        }
         return ACTION_NULL;
     }
 
