@@ -4,7 +4,7 @@ import re
 from aim_reticle import action_clock
 from contextual_hub import contextual_game, doors, door_state, interact_menu, select_tile
 from fixtures import retire
-from helpers import bub_pos, count_at, count_carried, give, spawn, wait_until
+from helpers import bub_pos, count_at, count_carried, give, settle, spawn, wait_until
 from map_mouse import assert_no_map_context, mouse_view
 
 
@@ -87,6 +87,9 @@ def test_space_and_b_reach_butchery_for_own_corpse(_g):
         with contextual_game("bn-e2e-corpse-route") as game:
             give(game, "knife_butcher")
             assert game.lua("M:create_corpse_at(here(0,0),MonsterTypeId.new('mon_zombie')) out('ok')") == ["ok"]
+            # A shared game can carry an aim reticle from an earlier test; a turn clears it.
+            game.keys("x", delay=0.4)
+            settle(game)
             position, clock = bub_pos(game), action_clock(game)
             game.keys(route, delay=0.2)
             if route == "space":

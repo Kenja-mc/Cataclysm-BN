@@ -2,7 +2,13 @@
 from aim_reticle import action_clock
 from contextual_hub import contextual_game, contextual_setup, select_tile
 from fixtures import shared_game
-from helpers import HELPERS, bub_pos
+from helpers import HELPERS, bub_pos, wait_until
+
+
+def finish_smash(game):
+    """Answer the distraction prompt a wandering monster can raise mid-smash."""
+    if wait_until(lambda: "Stop smashing?" in game.screen(), 3):
+        game.keys("I", delay=0.5)
 
 
 def pulp_selected_direction(game, key, direction):
@@ -15,6 +21,7 @@ def pulp_selected_direction(game, key, direction):
     game.keys(key, delay=0.2)
     game.wait_for("Smash where?")
     game.keys(direction, delay=0.2)
+    finish_smash(game)
     game.wait_for("thoroughly pulped", timeout=30)
     assert game.lua(
         "local east=M:get_items_at(here(1,0))[1] "
@@ -36,6 +43,7 @@ def test_modern_attack_pulps_the_chosen_corpse(_g):
         floor = game.lua("out(M:get_ter_at(here(1,0)):str_id():str())")
         select_tile(game, 1, 0)
         game.keys("f", delay=0.4)
+        finish_smash(game)
         game.wait_for("thoroughly pulped", timeout=30)
         assert game.lua(
             "local east=M:get_items_at(here(1,0))[1] "
