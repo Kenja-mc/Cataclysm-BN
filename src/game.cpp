@@ -9011,11 +9011,10 @@ auto game::examine() -> action_id
     const auto contextual = get_option<bool>( "CONTEXTUAL_INTERACT" ) &&
                             get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
     const auto selected = contextual ? aim_reticle::pos() : std::nullopt;
-    // if we are driving a vehicle, examine the
-    // current tile without asking.
+    // While driving, Space is the handbrake: the vehicle menu has its own key.
     const optional_vpart_position vp = m.veh_at( u.bub_pos() );
     if( vp && vp->vehicle().player_in_control( u ) && !selected ) {
-        examine( u.bub_pos() );
+        handbrake();
         return ACTION_NULL;
     }
 

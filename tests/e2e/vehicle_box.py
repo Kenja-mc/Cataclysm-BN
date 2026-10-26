@@ -2,7 +2,7 @@
 import re
 import subprocess
 
-from helpers import HELPERS, Game, action_menu, arena, option_value, settle, start_new_game
+from helpers import HELPERS, Game, action_menu, arena, choose_menu_entry, option_value, settle, start_new_game
 
 
 def vehicle_game(name, **options):
@@ -134,7 +134,7 @@ def test_vehicle_box_off(_game):
 
 
 def test_vehicle_horn_and_handbrake_route(_game):
-    """H honks while driving; Space opens the vehicle menu whose h row pulls the handbrake."""
+    """H honks while driving; Space brakes directly, and the vehicle menu still offers it."""
     game = vehicle_game("bn-e2e-vehicle-brake")
     try:
         spawn_vehicle(game)
@@ -145,13 +145,17 @@ def test_vehicle_horn_and_handbrake_route(_game):
         assert moving and int(moving[1]) > 0, game.screen()
         game.keys("H", delay=0.8)
         game.wait_for("honk")
-        game.keys("space", delay=1.0)
-        game.wait_for("Pull handbrake")
-        game.keys("h", delay=1.0)
+        game.keys("space", "x", "x", delay=1.0)
         settle(game)
-        stopped = re.search(r"Speed: (\d+) mph", game.screen())
-        assert stopped and int(stopped[1]) < int(moving[1]), \
-            "the vehicle menu's handbrake must brake:\n" + game.screen()
+        braked = re.search(r"Speed: (\d+) mph", game.screen())
+        assert braked and int(braked[1]) < int(moving[1]), \
+            "Space must brake while driving:\n" + game.screen()
+        # The driving menu keeps its own entries; the handbrake no longer hides inside it.
+        game.keys("Enter", delay=1.0)
+        choose_menu_entry(game, "Control Vehicle")
+        game.wait_for("Vehicle controls")
+        assert "Stop driving" in game.screen(), game.screen()
+        game.keys("Escape", delay=0.6)
     finally:
         game.close()
 
@@ -262,4 +266,5 @@ def test_vehicle_handbrake_and_horn(_game):
         game.close()
 
 
-TESTS = [test_vehicle_horn_and_handbrake_route, test_vehicle_box, test_vehicle_box_electric, test_vehicle_box_aircraft, test_vehicle_box_off]
+TESTS = [test_vehicle_horn_and_handbrake_route, test_vehicle_handbrake_and_horn, test_vehicle_box,
+         test_vehicle_box_electric, test_vehicle_box_aircraft, test_vehicle_box_off]
