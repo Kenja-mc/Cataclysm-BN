@@ -78,11 +78,12 @@ class Game:
 
     def type(self, text, delay=0.05):
         # The game drops identical keys that arrive together, so split runs of repeated characters.
+        # Long lines also arrive in chunks: a busy frame can otherwise swallow their middle.
         chunk = ""
         for ch in text:
-            if chunk and chunk[-1] == ch:
+            if chunk and (chunk[-1] == ch or len(chunk) >= 24):
                 subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", chunk], check=True)
-                time.sleep(0.08)
+                time.sleep(0.08 if chunk[-1] == ch else 0.02)
                 chunk = ""
             chunk += ch
         subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", chunk], check=True)
