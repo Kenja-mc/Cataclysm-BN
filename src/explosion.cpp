@@ -1698,9 +1698,13 @@ void explosion_funcs::regular( const queued_explosion &qe )
             std::string cause_description = ( blasted && shredded ) ? _( "the explosion and shrapnel" ) :
                                             blasted ? _( "the explosion" ) :
                                             _( "the shrapnel" );
-            std::string damage_description = ( pr.second > 0 ) ?
-                                             string_format( _( "taking %d damage" ), pr.second ) :
-                                             _( "but takes no damage" );
+            const auto damage_description = [&]() -> std::string {
+                if( pr.second > 0 ) {
+                    return string_format( _( "taking %d damage" ), pr.second );
+                }
+                // "You are hit by the shrapnel, but take no damage."
+                return critter->is_player() ? _( "but take no damage" ) : _( "but takes no damage" );
+            }();
             if( critter->is_player() ) {
                 add_msg( _( "You are hit by %s, %s." ),
                          cause_description, damage_description );
