@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Rebuilds only the game binary with an unoptimized dev preset and launches it straight into a save.
 #
-#   bin/dev-iterate.sh [--tiles] [--world NAME] [--userdir DIR] [--no-build] [--no-run] [-- GAME-ARGS]
+#   bin/dev-iterate.sh [--tiles] [--hot] [--world NAME] [--userdir DIR] [--no-build] [--no-run] [-- GAME-ARGS]
 #
 #   --tiles       use linux-tiles-dev instead of linux-curses-dev
+#   --hot         use the *-hotreload preset; bin/hot-reload.sh then patches edits into the game
 #   --world NAME  world to load (default: $CATA_DEV_WORLD or "dev"); loads its first character
 #   --userdir DIR saves, config and logs (default: $CATA_DEV_USERDIR or out/dev-userdir/)
 #   --no-build    launch the last build
@@ -16,7 +17,8 @@ set -euo pipefail
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$repo"
 
-preset=linux-curses-dev
+frontend=curses
+variant=dev
 target=cataclysm-bn
 world=${CATA_DEV_WORLD:-dev}
 userdir=${CATA_DEV_USERDIR:-out/dev-userdir/}
@@ -25,20 +27,26 @@ run=1
 
 while (($#)); do
     case "$1" in
-        --tiles) preset=linux-tiles-dev target=cataclysm-bn-tiles ;;
+        --tiles) frontend=tiles target=cataclysm-bn-tiles ;;
+        --hot) variant=hotreload ;;
         --world) world=${2:?--world needs a name}; shift ;;
         --userdir) userdir=${2:?--userdir needs a path}; shift ;;
         --no-build) build=0 ;;
         --no-run) run=0 ;;
         --) shift; break ;;
-        -h | --help) sed -n '2,13p' "${BASH_SOURCE[0]}" | cut -c3-; exit 0 ;;
+        -h | --help) sed -n '2,14p' "${BASH_SOURCE[0]}" | cut -c3-; exit 0 ;;
         *) echo "unknown argument: $1 (see --help)" >&2; exit 2 ;;
     esac
     shift
 done
 
+preset=linux-$frontend-$variant
 tree=out/build/$preset
-binary=$tree/src/$target
+# Absolute, so bin/hot-reload.sh can find the process.
+binary=$repo/$tree/src/$target
+ninja_args=()
+# jet-live reads each object's depfile to learn which sources include an edited header.
+[[ $variant == hotreload ]] && ninja_args=(-d keepdepfile)
 
 if ((build)); then
     mkdir -p out/build
@@ -46,8 +54,10 @@ if ((build)); then
     # One lock per tree: a parallel configure or build of the same tree corrupts it.
     flock "out/build/$preset.lock" sh -c '
         [ -f "$1/build.ninja" ] || cmake --preset "$2"
-        cmake --build "$1" --target "$3"
-    ' sh "$tree" "$preset" "$target"
+        tree=$1 target=$3
+        shift 3
+        cmake --build "$tree" --target "$target" -- "$@"
+    ' sh "$tree" "$preset" "$target" "${ninja_args[@]}"
     echo "built $target in $((SECONDS - start))s"
 fi
 

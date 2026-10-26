@@ -184,6 +184,32 @@
         "TESTS": "OFF"
       }
     },
+    {
+      "name": "linux-curses-hotreload",
+      "inherits": ["linux-curses-dev"],
+      "displayName": "Linux Hot-Reload Build (Curses)",
+      "description": "Debug curses build that patches changed C++ into the running game with jet-live.",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_FLAGS_DEBUG": "-O0 -g1",
+        "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g1",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/out/build/${presetName}/src",
+        "CATA_HOT_RELOAD": "ON"
+      }
+    },
+    {
+      "name": "linux-tiles-hotreload",
+      "inherits": ["linux-tiles-dev"],
+      "displayName": "Linux Hot-Reload Build (Tiles, Sounds)",
+      "description": "Debug tiles build that patches changed C++ into the running game with jet-live.",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_FLAGS_DEBUG": "-O0 -g1",
+        "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g1",
+        "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/out/build/${presetName}/src",
+        "CATA_HOT_RELOAD": "ON"
+      }
+    },
     { "name": "linux-slim-cross-aarch64", "inherits": ["linux-slim", "linux-cross-aarch64"] },
     { "name": "linux-full-cross-aarch64", "inherits": ["linux-full", "linux-cross-aarch64"] },
     {
@@ -446,6 +472,18 @@
       "configurePreset": "linux-tiles-dev",
       "targets": ["cataclysm-bn-tiles"],
       "description": "Quick-iterate tiles game build; see bin/dev-iterate.sh."
+    },
+    {
+      "name": "linux-curses-hotreload",
+      "configurePreset": "linux-curses-hotreload",
+      "targets": ["cataclysm-bn"],
+      "description": "Hot-reload curses game build; see bin/dev-iterate.sh --hot."
+    },
+    {
+      "name": "linux-tiles-hotreload",
+      "configurePreset": "linux-tiles-hotreload",
+      "targets": ["cataclysm-bn-tiles"],
+      "description": "Hot-reload tiles game build; see bin/dev-iterate.sh --hot."
     },
     {
       "name": "linux-slim-cross-aarch64",

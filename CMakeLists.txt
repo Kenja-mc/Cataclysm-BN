@@ -812,7 +812,7 @@ if (USE_XDG_DIR)
     add_definitions(-DUSE_XDG_DIR)
 endif ()
 
-
+include(HotReload)
 add_subdirectory(src)
 add_subdirectory(data)
 

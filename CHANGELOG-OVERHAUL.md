@@ -10,6 +10,8 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 - `bin/dev-iterate.sh` (`just dev`) and the `linux-curses-dev` and `linux-tiles-dev` presets: an
   unoptimized game-only build that launches straight into a development save.
+- `CATA_HOT_RELOAD` and the `*-hotreload` presets (`bin/dev-iterate.sh --hot`, `bin/hot-reload.sh`):
+  a development build that patches edited functions into the running game with jet-live.
 
 ## 2026-10-25
 

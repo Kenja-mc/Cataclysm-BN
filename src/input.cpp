@@ -21,6 +21,7 @@
 #include "fstream_utils.h"
 #include "game.h"
 #include "help.h"
+#include "hot_reload.h"
 #include "ime.h"
 #include "init.h"
 #include "json.h"
@@ -1033,6 +1034,7 @@ const std::string &input_context::handle_input( const int timeout )
     next_action.type = input_event_t::error;
     const std::string *result = &CATA_ERROR;
     while( true ) {
+        hot_reload::update();
         {
             ZoneScopedN( "input_context_get_input_event" );
             next_action = inp_mngr.get_input_event();

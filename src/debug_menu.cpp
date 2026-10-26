@@ -29,6 +29,7 @@
 #include "game_constants.h"
 #include "game_info.h"
 #include "game_inventory.h"
+#include "hot_reload.h"
 #include "input.h"
 #include "inventory.h"
 #include "item.h"
@@ -210,7 +211,8 @@ enum debug_menu_index {
     DEBUG_RELOAD_TILES,
     DEBUG_SWAP_CHAR,
     DEBUG_DUMP_TILES,
-    DEBUG_DISPLAY_TILESET_NO_VFX
+    DEBUG_DISPLAY_TILESET_NO_VFX,
+    DEBUG_HOT_RELOAD
 };
 
 class mission_debug
@@ -280,6 +282,7 @@ static int info_uilist( bool display_all_entries = true )
             { uilist_entry( DEBUG_TEST_MAP_EXTRA_DISTRIBUTION, true, 'e', _( "Test map extra list" ) ) },
             { uilist_entry( DEBUG_RESET_IGNORED_MESSAGES, true, 'I', _( "Reset ignored debug messages" ) ) },
             { uilist_entry( DEBUG_SWAP_CHAR, true, 'x', _( "Control NPC follower" ) ) },
+            { uilist_entry( DEBUG_HOT_RELOAD, hot_reload::available(), 'K', _( "Hot-reload changed C++ code" ) ) },
 #if defined(TILES)
             { uilist_entry( DEBUG_RELOAD_TILES, true, 'D', _( "Reload tileset and show missing tiles" ) ) },
 #endif
@@ -2332,6 +2335,9 @@ void debug()
             g->display_toggle_overlay( ACTION_DISPLAY_TILES_NO_VFX );
             break;
         }
+        case DEBUG_HOT_RELOAD:
+            hot_reload::reload_now();
+            break;
 
     }
     m.invalidate_map_cache( g->get_levz() );

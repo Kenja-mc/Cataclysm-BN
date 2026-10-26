@@ -31,6 +31,7 @@
 #include "game.h"
 #include "game_ui.h"
 #include "init.h"
+#include "hot_reload.h"
 #include "input.h"
 #include "language.h"
 #include "loading_ui.h"
@@ -908,6 +909,7 @@ int main( int argc, char *argv[] )
     sigaction( SIGINT, &sigIntHandler, nullptr );
 #endif
 
+    hot_reload::init();
     prompt_select_lang_on_startup();
     replay_buffered_debugmsg_prompts();
 

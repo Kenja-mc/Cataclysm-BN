@@ -115,6 +115,16 @@ compiles in 28 seconds instead of 62 at `-O2` on a 4-core container, while small
 because parsing headers dominates. The game runs slower at `-O0`, so do not judge performance or run
 the test steps below with it. Editing a header that many files include still recompiles all of them.
 
+`bin/dev-iterate.sh --hot` uses a `*-hotreload` preset instead: a Debug build with `CATA_HOT_RELOAD`
+(`CMakeModules/HotReload.cmake`, `src/hot_reload.cpp`) that links
+[jet-live](https://github.com/ddovod/jet-live). Linux x86-64 only. While the game runs, edit and save a
+`.cpp`, then run `bin/hot-reload.sh` or choose "Hot-reload changed C++ code" in the debug menu's Info
+list. jet-live recompiles the changed files, links them into a shared library and redirects the old
+functions to the new ones, keeping the game state. It patches function bodies only: a change to a
+class layout, a virtual function or a lambda capture needs a restart, and so does a crash after a
+reload. The reload runs on the main thread while it waits for input; worker threads must be idle.
+Off by default, so the other presets build exactly as upstream does.
+
 ### Test
 
 Do all three tests before you push. All results must be good.
