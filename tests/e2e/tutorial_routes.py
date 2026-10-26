@@ -65,13 +65,13 @@ def initial_lessons(game, scheme):
     close_lesson(game, "LESSON_RECOIL", scheme)
     pickup = lesson(game, "LESSON_PICKUP", scheme)
     if scheme == "modern":
-        assert re.search(r"\bg\b", pickup) and "CTRL+G" in pickup and "without a menu" in pickup, pickup
+        assert re.search(r"\bg\b", pickup) and "G" in pickup and "without a menu" in pickup, pickup
     close_lesson(game, "LESSON_PICKUP", scheme)
     game.wait_gone("Cancel popup")
 
 
 def open_pickup_menu(game, scheme, item):
-    game.keys("C-g" if scheme == "modern" else ",", delay=0)
+    game.keys("G" if scheme == "modern" else ",", delay=0)
     game.wait_for(item)
     game.wait_for("Select all")
     game.wait_for("Confirm Choice")
@@ -125,10 +125,8 @@ def exercise_initial_and_door_lessons(scheme):
             game.wait_for("Interact with the")
             game.keys("Escape", delay=0.2)
             game.wait_gone("Interact with the")
+            # Space runs the door's obvious action, so the open door closes without a menu.
             game.keys("space", delay=0.2)
-            game.wait_for("Interact with the")
-            game.keys("c", delay=0.2)
-            # Space is Examine even when its contextual choice closes a door.
             # Its post-action lesson is distinct from a direct click's Close lesson.
             interaction = lesson(game, "LESSON_INTERACT", scheme)
             assert "Space" in interaction, interaction
@@ -258,13 +256,13 @@ def test_modern_tutorial_routes_are_reachable(_g):
     try:
         arena(game)
         # Ctrl+G must include adjacent tiles, not quick-pick up only the avatar's tile.
-        spawn(game, 1, 0, "flashlight")
-        assert game.lua("for _,it in pairs(M:get_items_at(here(1,0))) do "
+        spawn(game, 0, 0, "flashlight")
+        assert game.lua("for _,it in pairs(M:get_items_at(here(0,0))) do "
                         "it:ammo_set(ItypeId.new('battery'),100) end out('ok')") == ["ok"]
         open_pickup_menu(game, "modern", "flashlight")
         game.keys("Escape", delay=0)
         game.wait_gone("Select all")
-        assert count_carried(game, "flashlight") == 0 and count_at(game, 1, 0, "flashlight") == 1
+        assert count_carried(game, "flashlight") == 0 and count_at(game, 0, 0, "flashlight") == 1
         assert lesson_prefix("LESSON_GOT_TOOL", "modern") not in game.screen()
         open_pickup_menu(game, "modern", "flashlight")
         game.keys(",", "g", delay=0.2)
@@ -273,7 +271,7 @@ def test_modern_tutorial_routes_are_reachable(_g):
             "an unbound apply key must teach the existing item action route:\n" + tool
         close_lesson(game, "LESSON_GOT_TOOL", "modern")
         assert count_carried(game, "flashlight") == 1
-        assert count_at(game, 1, 0, "flashlight") == 0
+        assert count_at(game, 0, 0, "flashlight") == 0
         game.keys("i", delay=0.2)
         game.wait_for("Item hotkeys assigned")
         game.wait_for("flashlight")

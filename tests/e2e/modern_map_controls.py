@@ -49,30 +49,30 @@ def test_modern_click_on_other_stairs_only_selects(_game):
         assert action_clock(game) == clock
 
 
-def test_modern_g_takes_everything_underfoot_without_menu(_game):
+def test_modern_g_opens_the_picker_for_a_pile(_game):
     with contextual_game("bn-e2e-modern-quick-pickup", SHOW_TIPS="false") as game:
         spawn(game, 0, 0, "rock", n=3)
         spawn(game, 0, 0, "stick", n=2)
         spawn(game, 1, 0, "pipe")
         before, clock = bub_pos(game), action_clock(game)
         game.keys("g", delay=0.2)
-        assert wait_until(lambda: count_carried(game, "rock") == 3 and
-                          count_carried(game, "stick") == 2), game.screen()
-        assert "Weight" not in game.screen(), "quick pickup must not open a selection menu"
-        assert count_at(game, 0, 0, "rock") == count_at(game, 0, 0, "stick") == 0
-        assert count_at(game, 1, 0, "pipe") == 1, "quick pickup never includes adjacent tiles"
-        assert bub_pos(game) == before
-        assert action_clock(game) > clock, "quick pickup uses the normal timed activity"
-        game.keys("g", delay=0.2)
-        game.wait_for("There is nothing to pick up here.")
+        game.wait_for("Pick up")
+        game.wait_for("rock")
+        game.wait_for("stick")
+        game.keys("Escape", delay=0.2)
+        game.wait_gone("Pick up")
+        assert count_at(game, 1, 0, "pipe") == 1, "a pile never pulls in adjacent tiles"
+        assert count_carried(game, "rock") == 0 and count_carried(game, "stick") == 0
+        assert bub_pos(game) == before and action_clock(game) == clock, "canceling the picker is free"
 
 
-def test_modern_ctrl_g_opens_area_pickup(_game):
+def test_modern_pickup_list_opens_for_the_player_tile(_game):
     with contextual_game("bn-e2e-modern-area-pickup", SHOW_TIPS="false") as game:
         spawn(game, 0, 0, "rock")
-        spawn(game, 1, 0, "stick")
+        spawn(game, 0, 0, "stick")
+        spawn(game, 1, 0, "pipe")
         before, clock = bub_pos(game), action_clock(game)
-        game.keys("C-g", delay=0.2)
+        game.keys("G", delay=0.2)
         game.wait_for("Pick up")
         game.wait_for("Weight")
         game.wait_for("rock")
@@ -80,7 +80,7 @@ def test_modern_ctrl_g_opens_area_pickup(_game):
         game.keys("Escape", delay=0.2)
         game.wait_gone("Pick up")
         assert count_carried(game, "rock") == count_carried(game, "stick") == 0
-        assert count_at(game, 0, 0, "rock") == count_at(game, 1, 0, "stick") == 1
+        assert count_at(game, 0, 0, "rock") == count_at(game, 0, 0, "stick") == 1
         assert bub_pos(game) == before and action_clock(game) == clock, "canceling area pickup is free"
 
 
@@ -98,5 +98,5 @@ def test_modern_h_opens_health(_game):
 
 TESTS = [test_modern_space_pagedown_and_click_use_stairs,
          test_modern_click_on_other_stairs_only_selects,
-         test_modern_g_takes_everything_underfoot_without_menu,
-         test_modern_ctrl_g_opens_area_pickup, test_modern_h_opens_health]
+         test_modern_g_opens_the_picker_for_a_pile,
+         test_modern_pickup_list_opens_for_the_player_tile, test_modern_h_opens_health]

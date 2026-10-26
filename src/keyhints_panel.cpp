@@ -80,7 +80,7 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
 {
     const auto singles = std::vector<std::pair<action_id, std::string>> {
         { ACTION_PAUSE, _( "wait" ) }, { ACTION_EXAMINE, _( "interact" ) },
-        { ACTION_PICKUP_ALL, _( "nearby items" ) }, { ACTION_BODY_STATUS, _( "health" ) },
+        { ACTION_PICKUP, _( "pick up" ) }, { ACTION_PICKUP_LIST, _( "item list" ) }, { ACTION_BODY_STATUS, _( "health" ) },
         { ACTION_INVENTORY, _( "inventory" ) }, { ACTION_USE, _( "use" ) }, { ACTION_WIELD, _( "wield" ) },
         { ACTION_AUTOATTACK, _( "attack" ) }, { ACTION_FIRE, _( "fire" ) }, { ACTION_RELOAD_ITEM, _( "reload" ) }, { ACTION_CRAFT, _( "craft" ) },
         { ACTION_QUICK_STACK, _( "stash" ) }, { ACTION_SORT_PILE, _( "sort pile" ) }, { ACTION_MAP, _( "map" ) },

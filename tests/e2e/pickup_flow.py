@@ -9,9 +9,9 @@ def open_pickup(g, *items):
     empty_inventory(g)
     arena(g)
     names = {item: display_name(g, item) for item in items}
-    for dx, item in enumerate(items):
-        spawn(g, dx, 0, item)
-    g.keys("C-g", delay=0.2)
+    for item in items:
+        spawn(g, 0, 0, item)
+    g.keys("G", delay=0.2)
     g.wait_for("Pick up")
     g.wait_for("Weight")
     return names
@@ -105,7 +105,7 @@ def test_space_picks_marked_row_with_quantity(g):
     spawn(g, 0, 0, "rock", 5)
     spawn(g, 0, 0, "stick")
     rock = g.lua("local it=gapi.create_item(ItypeId.new('rock'),5) out(it:display_name(1))")[0]
-    g.keys("C-g", delay=0.2)
+    g.keys("G", delay=0.2)
     g.wait_for("Pick up")
     g.wait_for("Weight")
     g.keys("3", delay=0.3)

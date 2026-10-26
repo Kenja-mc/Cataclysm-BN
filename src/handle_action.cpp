@@ -1683,18 +1683,22 @@ static void wear()
     }
 }
 
-/// The tile a modern pickup acts on: the reticle tile, else the one last pressed toward.
+/// The tile a modern pickup acts on: the reticle, else the tile last pressed toward when it holds
+/// items, else the player's own tile.
 static auto modern_pickup_target( avatar &u ) -> std::optional<tripoint_bub_ms>
 {
     if( get_option<std::string>( "CONTROL_SCHEME" ) != "modern" ) {
         return std::nullopt;
     }
     const auto reticle = aim_reticle::pos();
-    const auto tile = reticle ? reticle : tile_selection::facing_tile( u );
-    if( tile && tile_selection::reachable( u, *tile ) ) {
-        return tile;
+    if( reticle && tile_selection::reachable( u, *reticle ) ) {
+        return reticle;
     }
-    return std::nullopt;
+    if( const auto faced = tile_selection::facing_tile( u );
+        faced && tile_selection::reachable( u, *faced ) && get_map().has_items( *faced ) ) {
+        return faced;
+    }
+    return u.bub_pos();
 }
 
 static void takeoff()
@@ -2795,6 +2799,8 @@ bool game::handle_action()
                     pickup_list( *mouse_target );
                 } else if( const auto tile = modern_pickup_target( u ) ) {
                     pickup_list( *tile );
+                } else if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+                    pickup_list( u.bub_pos() );
                 } else {
                     pickup();
                 }

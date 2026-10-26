@@ -36,7 +36,7 @@ def test_wasd_menu_navigation(g):
     spawn(g, 0, 0, "rock")
     spawn(g, 0, 0, "stick")
     before = {item: count_carried(g, item) for item in ("rock", "stick")}
-    g.keys("C-g", delay=0.8)
+    g.keys("G", delay=0.8)
     g.wait_for("rock")
     def selected(item):
         return re.search(r"< [^<>]*" + item + r"[^<>]* >", g.screen()) is not None

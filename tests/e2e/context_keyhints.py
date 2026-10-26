@@ -38,7 +38,7 @@ def test_context_keyhints_inventory_pickup_crafting_and_look(_game):
                               "CONTEXT_KEYHINTS": "true", "NEW_PICKUP_MENU": "false",
                               "HIGHLIGHT_UNREAD_RECIPES": "false"}) as game:
         assert_map(game)
-        game.wait_for("CTRL+G nearby items", timeout=15)
+        game.wait_for("g pick up", timeout=15)
         game.keys("i")
         game.wait_for("Inventory", timeout=15)
         assert_footer(game, "F5 Craft", "Confirm your selection")
@@ -47,7 +47,7 @@ def test_context_keyhints_inventory_pickup_crafting_and_look(_game):
 
         spawn(game, 0, 0, "rock")
         spawn(game, 0, 0, "stick")
-        game.keys("C-g")
+        game.keys("G")
         game.wait_for("Pick up", timeout=15)
         assert_footer(game, ", Select all", "g Confirm Choice")
         game.keys("Escape")

@@ -33,11 +33,11 @@
       },
       {
         "id": "LESSON_PICKUP",
-        "text": "You just stepped on a space with one or more items.  If you wish to pick it up, press <press_pickup> or <press_pickup_all>."
+        "text": "You just stepped on a space with one or more items.  If you wish to pick it up, press <press_pickup> or <press_pickup_list>."
       },
       {
         "id": "LESSON_EXAMINE",
-        "text": "The nearby { is a display rack, and the blue background indicates that there are items there.  If you press <press_pickup_all> while adjacent to the rack, you can pick up items without moving to the square."
+        "text": "The nearby { is a display rack, and the blue background indicates that there are items there.  If you press <press_pickup> while adjacent to the rack, you can take items without moving to the square."
       },
       {
         "id": "LESSON_INTERACT",
@@ -199,7 +199,7 @@
       },
       {
         "id": "LESSON_PICKUP_MODERN",
-        "text": "You just stepped on a space with one or more items.  Press <press_quick_pickup> to take everything on your tile without a menu.  Use <press_pickup_all> to choose items from the nearby tiles, or click your own tile to choose its items."
+        "text": "You just stepped on a space with one or more items.  Press <press_pickup> to take a lone item without a menu, or <press_pickup_list> to choose from the list.  Clicking your own tile opens the same list."
       },
       {
         "id": "LESSON_GOT_ARMOR_MODERN",
