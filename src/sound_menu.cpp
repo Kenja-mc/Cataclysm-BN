@@ -92,11 +92,13 @@ auto show_sound_menu() -> void
     }
     get_options().save();
 #else
-    // A modal here steals input from a player whose build has no sound device.
-    if( g && g->w_terrain ) {
-        add_msg( m_info, _( "Sound is unavailable in this build." ) );
-    } else {
+    // One modal teaches the player their build has no sound; repeating it steals input.
+    static auto announced = false;
+    if( !announced ) {
+        announced = true;
         popup( _( "Sound is unavailable in this build." ) );
+    } else if( g && g->w_terrain ) {
+        add_msg( m_info, _( "Sound is unavailable in this build." ) );
     }
 #endif
 }
