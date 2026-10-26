@@ -159,6 +159,31 @@
         "CMAKE_INCLUDE_PATH": "/usr/include/aarch64-linux-gnu"
       }
     },
+    {
+      "name": "linux-curses-dev",
+      "inherits": ["linux-curses"],
+      "displayName": "Linux Quick-Iterate Build (Curses)",
+      "description": "Unoptimized game-only curses build for edit-compile-run loops. Not for tests or play.",
+      "cacheVariables": {
+        "CMAKE_C_FLAGS_RELWITHDEBINFO": "-O0 -g1 -DNDEBUG",
+        "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O0 -g1 -DNDEBUG",
+        "TESTS": "OFF"
+      }
+    },
+    {
+      "name": "linux-tiles-dev",
+      "inherits": ["linux-full"],
+      "displayName": "Linux Quick-Iterate Build (Tiles, Sounds)",
+      "description": "Unoptimized game-only tiles build without clang-tidy or Tracy, for edit-compile-run loops.",
+      "cacheVariables": {
+        "CMAKE_C_FLAGS_RELWITHDEBINFO": "-O0 -g1 -DNDEBUG",
+        "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O0 -g1 -DNDEBUG",
+        "CATA_CLANG_TIDY_PLUGIN": "OFF",
+        "USE_TRACY": "OFF",
+        "JSON_FORMAT": "OFF",
+        "TESTS": "OFF"
+      }
+    },
     { "name": "linux-slim-cross-aarch64", "inherits": ["linux-slim", "linux-cross-aarch64"] },
     { "name": "linux-full-cross-aarch64", "inherits": ["linux-full", "linux-cross-aarch64"] },
     {
@@ -409,6 +434,18 @@
       "name": "linux-full",
       "configurePreset": "linux-full",
       "description": "The canonical build preset for Linux. This is the one used by the devteam."
+    },
+    {
+      "name": "linux-curses-dev",
+      "configurePreset": "linux-curses-dev",
+      "targets": ["cataclysm-bn"],
+      "description": "Quick-iterate curses game build; see bin/dev-iterate.sh."
+    },
+    {
+      "name": "linux-tiles-dev",
+      "configurePreset": "linux-tiles-dev",
+      "targets": ["cataclysm-bn-tiles"],
+      "description": "Quick-iterate tiles game build; see bin/dev-iterate.sh."
     },
     {
       "name": "linux-slim-cross-aarch64",

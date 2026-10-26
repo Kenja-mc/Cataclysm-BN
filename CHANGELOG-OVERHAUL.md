@@ -4,6 +4,13 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-26
+
+### Added
+
+- `bin/dev-iterate.sh` (`just dev`) and the `linux-curses-dev` and `linux-tiles-dev` presets: an
+  unoptimized game-only build that launches straight into a development save.
+
 ## 2026-10-25
 
 ### Added

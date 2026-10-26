@@ -105,6 +105,16 @@ root. Trust the final linker output, not an older executable left in another dir
 configure message and `CMAKE_RUNTIME_OUTPUT_DIRECTORY` before choosing a binary; the end-to-end
 harness checks the root executable first.
 
+### Quick iteration
+
+`bin/dev-iterate.sh` (or `just dev`) rebuilds only the game with the `linux-curses-dev` preset
+(`--tiles` for `linux-tiles-dev`) and launches it straight into the first character of world `dev`
+(`--world NAME`), with saves under `out/dev-userdir/`. The first run opens the main menu; create the
+world there once. The dev presets compile at `-O0` and skip tests, clang-tidy and Tracy: `game.cpp`
+compiles in 28 seconds instead of 62 at `-O2` on a 4-core container, while small files gain little
+because parsing headers dominates. The game runs slower at `-O0`, so do not judge performance or run
+the test steps below with it. Editing a header that many files include still recompiles all of them.
+
 ### Test
 
 Do all three tests before you push. All results must be good.

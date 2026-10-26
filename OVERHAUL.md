@@ -781,6 +781,10 @@ cmake --build --preset linux-curses --target cataclysm-bn
 out/build/linux-curses/src/cataclysm-bn --basepath .
 ```
 
+For an edit-compile-run loop, `bin/dev-iterate.sh` (`just dev`) builds only the game at `-O0` with
+the `linux-curses-dev` or `linux-tiles-dev` (`--tiles`) preset and loads world `dev` directly. See
+`--help` and the "Quick iteration" part of `AGENTS.md`.
+
 ## Upstream merges
 
 The fork follows upstream `main` with plain merges. When upstream adds black powder ammo
