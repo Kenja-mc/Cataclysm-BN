@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from fixtures import shared_game
 from helpers import HELPERS, wait_until
+from agent_actions import menu_rows
 from options_menu import close_options
 from tmux_game import Game, start_new_game
 
@@ -136,7 +137,10 @@ def test_options_and_keybindings_scrollbars(_g):
     try:
         start_new_game(g)
         open_main_menu(g)
-        g.keys("5", delay=0.8)
+        # Pick the row by label: the menu's auto-assigned hotkeys shift with the scheme.
+        rows = {row.label: row.hotkey for row in menu_rows(g.screen())}
+        options = next(hotkey for label, hotkey in rows.items() if "Options" in label)
+        g.keys(options, delay=0.8)
         g.wait_for(" OPTIONS ", timeout=10)
         for _ in range(8):
             bar = find_scrollbar(g.screen())

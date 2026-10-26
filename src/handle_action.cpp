@@ -3075,7 +3075,7 @@ bool game::handle_action()
                     const auto aimed = reticle ? reticle : tile_selection::facing_tile( u );
                     if( aimed && tile_selection::reachable( u, *aimed ) &&
                         !tile_selection::has_hostile( u, *aimed ) ) {
-                        const auto choices = tile_selection::interact_choices( u, *aimed, true );
+                        const auto choices = tile_selection::interact_choices( u, *aimed, false );
                         if( std::ranges::any_of( choices, []( const auto & c ) {
                                 return c.act == ACTION_SMASH;
                             } ) ) {

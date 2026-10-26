@@ -72,8 +72,6 @@ def test_ctrl_peek_keeps_selected_interaction(_g):
         assert after[0] == clock[0] and after[1] - clock[1] == 200, \
             f"physical peek must retain its 200-move cost: {clock} -> {after}"
         game.keys("space", delay=0.2)
-        game.wait_for("Interact with the")
-        game.keys("o", delay=0.2)
         assert wait_until(lambda: door_state(game) == ["t_door_c,t_door_o"]), game.screen()
         assert bub_pos(game) == position, "Space must still act on the selected west door"
         retire(game)

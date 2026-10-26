@@ -33,7 +33,7 @@
       },
       {
         "id": "LESSON_PICKUP",
-        "text": "You just stepped on a space with one or more items.  If you wish to pick it up, press <press_pickup> or <press_pickup_list>."
+        "text": "You just stepped on a space with one or more items.  If you wish to pick it up, press <press_pickup>."
       },
       {
         "id": "LESSON_EXAMINE",
@@ -199,7 +199,7 @@
       },
       {
         "id": "LESSON_PICKUP_MODERN",
-        "text": "You just stepped on a space with one or more items.  Press <press_pickup> to take a lone item without a menu, or <press_pickup_list> to choose from the list.  Clicking your own tile opens the same list."
+        "text": "You just stepped on a space with one or more items.  Press <press_pickup> to take a lone item without a menu; with several items it opens the list.  Clicking your own tile opens the same list."
       },
       {
         "id": "LESSON_GOT_ARMOR_MODERN",
