@@ -242,8 +242,13 @@ auto interact_choices( const avatar &you, const tripoint_bub_ms &p,
     if( p == you.bub_pos() && can_examine_at( p ) ) {
         out.push_back( { .act = ACTION_EXAMINE, .label = string_format( _( "examine the %s" ), m.name( p ) ) } );
     }
-    if( p == you.bub_pos() && !you.is_mounted() &&
-    std::ranges::any_of( m.i_at( p ), []( const item * it ) { return it->is_corpse(); } ) ) {
+    // Butchery follows the corpse, not a key: it appears wherever a body lies in reach.
+    const auto has_butcher_tool = [&you] {
+        return you.max_quality( quality_id( "BUTCHER" ) ) > INT_MIN ||
+               you.max_quality( quality_id( "CUT_FINE" ) ) > INT_MIN;
+    };
+    if( !you.is_mounted() && has_butcher_tool() &&
+        std::ranges::any_of( m.i_at( p ), []( const item * it ) { return it->is_corpse(); } ) ) {
         out.push_back( { .act = ACTION_BUTCHER, .label = _( "butcher a corpse" ) } );
     }
     if( p != you.bub_pos() ) {
@@ -317,7 +322,7 @@ auto run_interaction( avatar &you, const interaction &what ) -> void
             if( you.has_active_mutation( trait_SHELL2 ) ) {
                 add_msg( m_info, _( "You can't butcher while you're in your shell." ) );
             } else {
-                what.actions.butcher();
+                what.actions.butcher( p );
             }
             break;
         default:

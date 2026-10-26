@@ -9028,7 +9028,7 @@ auto game::examine() -> action_id
         const auto actions = tile_selection::tile_actions{
             .examine = [this]( const tripoint_bub_ms & p ) { examine( p ); },
             .pickup = [this]( const tripoint_bub_ms & p ) { pickup( p ); },
-            .butcher = [this] { butcher(); },
+            .butcher = [this]( const tripoint_bub_ms & p ) { butcher( p ); },
             .vertical = [&deferred]( const action_id act ) { deferred = act; }
         };
         if( selected ) {
@@ -13058,6 +13058,11 @@ static void butcher_submenu( const std::vector<item *> &corpses, int corpse = -1
 
 void game::butcher()
 {
+    butcher( u.bub_pos() );
+}
+
+void game::butcher( const tripoint_bub_ms &where )
+{
     if( u.controlling_vehicle ) {
         add_msg( m_info, _( "You can't butcher while driving!" ) );
         return;
@@ -13069,8 +13074,8 @@ void game::butcher()
     const std::string no_corpse_msg = _( "There are no corpses here to butcher." );
 
     //You can't butcher on sealed terrain- you have to smash/shovel/etc it open first
-    if( m.has_flag( "SEALED", u.bub_pos() ) ) {
-        if( m.sees_some_items( u.bub_pos(), u ) ) {
+    if( m.has_flag( "SEALED", where ) ) {
+        if( m.sees_some_items( where, u ) ) {
             add_msg( m_info, _( "You can't access the items here." ) );
         } else if( factor > INT_MIN || factorD > INT_MIN ) {
             add_msg( m_info, no_corpse_msg );
@@ -13086,7 +13091,7 @@ void game::butcher()
     std::vector<item *> disassembles;
     std::vector<item *> salvageables;
     std::vector<item *> unloadables;
-    map_stack items = m.i_at( u.bub_pos() );
+    map_stack items = m.i_at( where );
     const inventory &crafting_inv = u.crafting_inventory();
     auto q_cache = u.crafting_inventory().get_quality_cache();
 

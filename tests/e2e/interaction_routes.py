@@ -109,6 +109,30 @@ def test_space_and_b_reach_butchery_for_own_corpse(_g):
                             "if it:is_corpse() then n=n+1 end end out(n)") == ["1"]
 
 
+def test_butchery_follows_a_corpse_in_reach(_g):
+    with contextual_game("bn-e2e-adjacent-butcher") as game:
+        give(game, "knife_butcher")
+        assert game.lua("M:create_corpse_at(here(1,0),MonsterTypeId.new('mon_zombie')) out('ok')") == ["ok"]
+        game.keys("x", delay=0.4)
+        settle(game)
+        game.keys("space", delay=0.8)
+        rows, screen = interact_menu(game)
+        corpse = [label for label in rows if "butcher" in label]
+        assert corpse and corpse[0].endswith("(east)"), "a corpse in reach must be offered:\n" + screen
+        game.keys(rows[corpse[0]], delay=0.8)
+        game.wait_for("Choose corpse to butcher")
+        game.keys("Escape", delay=0.4)
+        # Without a tool the row must not appear at all.
+        game.keys("Escape", delay=0.3)
+        assert game.lua("local u=gapi.get_avatar() u:drop_all_items() out('ok')") == ["ok"]
+        settle(game)
+        game.keys("space", delay=0.8)
+        rows, screen = interact_menu(game)
+        assert not any("butcher" in label for label in rows), \
+            "no tool must mean no butcher row:\n" + screen
+        game.keys("Escape", delay=0.3)
+
+
 def test_modern_use_at_p_reach_their_screens(_g):
     with contextual_game("bn-e2e-direct-info") as game:
         give(game, "pipe")
@@ -169,5 +193,6 @@ TESTS = [test_contextual_left_click_opens_and_closes_without_walking,
          test_contextual_empty_and_distant_clicks_only_select,
          test_ctrl_peek_keeps_selected_interaction,
          test_space_and_b_reach_butchery_for_own_corpse,
+         test_butchery_follows_a_corpse_in_reach,
          test_modern_use_at_p_reach_their_screens,
          test_modern_f_changes_fire_mode_without_firing]

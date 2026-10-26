@@ -45,7 +45,7 @@ auto interact_choices( const avatar &you, const tripoint_bub_ms &p,
 struct tile_actions {
     std::function<void( const tripoint_bub_ms & )> examine;
     std::function<void( const tripoint_bub_ms & )> pickup;
-    std::function<void()> butcher;
+    std::function<void( const tripoint_bub_ms & )> butcher;
     std::function<void( action_id )> vertical;
 };
 /// A picked tile: one safe action runs at once, several open a menu.
