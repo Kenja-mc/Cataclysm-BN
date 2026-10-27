@@ -557,6 +557,11 @@ auto sfx::has_variant_sound( const std::string &id, const std::string &variant )
     return find_random_effect( id, variant ) != nullptr;
 }
 
+auto sounds::has_asset( const std::string &id, const std::string &variant ) -> bool
+{
+    return sfx::has_variant_sound( id, variant );
+}
+
 bool valid_last_time_played( MIX_Audio *audio, const int res_id, const std::string &variant )
 {
     double sound_duration;

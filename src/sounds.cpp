@@ -1880,7 +1880,43 @@ auto harmless_noise( const sound_event &noise, Character &who ) -> bool
                                !smart_safemode::can_reach_soon( *mon, *who.as_avatar() ) );
 }
 
+/// True when the player cannot hear at all, so no marker may be shown.
+auto hears_nothing( const Character &who ) -> bool
+{
+    // Full protection mirrors hearing_ability()'s zero point; that function rolls PER_SLIME rng.
+    return who.is_deaf() || who.get_char_hearing_protection() > 190;
+}
+
+// Four new creature ambience sounds per 250 ms keep a pack of idle monsters from
+// turning into a wall of overlapping clips. Excess events are dropped before propagation,
+// so they cost no floodfill and reach neither the player's markers nor NPC hearing.
+constexpr auto creature_ambience_window = std::chrono::milliseconds( 250 );
+constexpr auto creature_ambience_burst = 4;
+auto creature_ambience_window_start = std::chrono::steady_clock::now();
+auto creature_ambience_this_window = 0;
+
+auto creature_ambience_allowed() -> bool
+{
+    const auto now = std::chrono::steady_clock::now();
+    if( now - creature_ambience_window_start >= creature_ambience_window ) {
+        creature_ambience_window_start = now;
+        creature_ambience_this_window = 0;
+    }
+    if( creature_ambience_this_window >= creature_ambience_burst ) {
+        return false;
+    }
+    ++creature_ambience_this_window;
+    return true;
+}
+
 } // namespace
+
+auto sounds::monster_ambience_allowed( const std::string &id, const std::string &variant ) -> bool
+{
+    return get_option<bool>( "MONSTER_AMBIENCE" ) &&
+           get_option<int>( "MONSTER_AMBIENCE_VOLUME" ) > 0 &&
+           has_asset( id, variant );
+}
 
 void sounds::sound( const sound_event &soundevent )
 {
@@ -1893,6 +1929,9 @@ void sounds::sound( const sound_event &soundevent )
     }
     // Make a copy so that when our referenced sound event inevitably goes out of scope things dont explode.
     auto temp_se = soundevent;
+    if( temp_se.monster_ambience && !creature_ambience_allowed() ) {
+        return;
+    }
     // Make sure our sound came from a valid inbounds location.
     auto &map = get_map();
     // Make sure that we dont absolutely blast somebodies RAM/Processor during batch floodfill.
@@ -2596,8 +2635,14 @@ void sounds::process_sounds_npc()
 void sounds::process_sound_markers( Character *who )
 {
 
-    bool is_deaf = who->is_deaf();
+    // hears_nothing() is the same gate reset_markers() and get_footstep_markers() use, so
+    // "cannot hear" has one definition; hearing_ability() also zeroes at that boundary.
     const float volume_multiplier = who->hearing_ability();
+    bool is_deaf = hears_nothing( *who ) || volume_multiplier <= 0.0f;
+    if( is_deaf ) {
+        // Hearing loss invalidates cues the player already has on the map.
+        sound_markers.clear();
+    }
     const auto &loc = who->bub_pos();
     auto &map = get_map();
     const auto &level_cache = map.get_cache_ref( loc.z() );
@@ -2764,6 +2809,11 @@ void sounds::process_sound_markers( Character *who )
             // Noise past +40 dB should automatically wake up heavy sleepers.
             // Noise past +60 dB will cause pain and should automatically wake up heavy sleeper 2.
             if( who->has_effect( effect_sleep ) ) {
+                // Idle ambience never wakes a sleeper, and like any other sound too quiet to
+                // wake them it stays out of the log and off the map.
+                if( element.sound.monster_ambience ) {
+                    continue;
+                }
                 const int diff_db_vol = mdBspl_to_dBspl( tile_vol - passive_sound_dampening - tile_vol );
                 int wake_up_vol = 10;
                 wake_up_vol += who->bonus_from_enchantments( wake_up_vol, ench_val_SLEEP_DB_RESIST );
@@ -2783,7 +2833,9 @@ void sounds::process_sound_markers( Character *who )
                 if( ( element.sound.from_monster || element.sound.from_npc ) &&
                     ( element.sound.origin != who->bub_pos() ) &&
                     !get_map().pl_sees( element.sound.origin, distance_to_sound ) ) {
+                    // Idle ambience is scenery, not a threat: it must not cancel an activity.
                     if( !who->activity->is_distraction_ignored( distraction_type::noise ) &&
+                        !element.sound.monster_ambience &&
                         !get_safemode().is_sound_safe( element.sound.description, distance_to_sound ) &&
                         !harmless_noise( element.sound, *who ) ) {
                         const std::string final_description = ensure_punctuation( description, '!' );
@@ -2837,8 +2889,12 @@ void sounds::process_sound_markers( Character *who )
             const std::string &sfx_id = element.sound.id;
             const std::string &sfx_variant = element.sound.variant;
             if( !sfx_id.empty() ) {
-                sfx::play_variant_sound( sfx_id, sfx_variant, sfx::get_heard_volume( element.sound.origin,
-                                         element.sound.volume ), !NO_STACK_SOUND_TYPES.contains( element.sound.category ) );
+                auto heard = sfx::get_heard_volume( element.sound.origin, element.sound.volume );
+                if( element.sound.monster_ambience ) {
+                    heard = heard * get_option<int>( "MONSTER_AMBIENCE_VOLUME" ) / 100;
+                }
+                sfx::play_variant_sound( sfx_id, sfx_variant, heard,
+                                         !NO_STACK_SOUND_TYPES.contains( element.sound.category ) );
             }
 
             // Place footstep markers.
@@ -2874,6 +2930,13 @@ void sounds::process_sound_markers( Character *who )
                 auto marker = element.sound;
                 marker.created_at = calendar::turn;
                 sound_markers.insert_or_assign( random_entry( unseen_points ), std::move( marker ) );
+                if( get_option<bool>( "SHOW_TIPS" ) &&
+                    get_option<bool>( "SOUND_MARKER_GLYPH_AGING" ) &&
+                    who->get_value( "sound_marker_legend" ).empty() ) {
+                    who->set_value( "sound_marker_legend", "1" );
+                    add_msg( game_message_params{ m_info, gmf_bypass_cooldown },
+                             _( "? = a sound you heard, · = an older one." ) );
+                }
             }
         }
     }
@@ -2908,6 +2971,8 @@ void sounds::reset_sounds()
     sound_markers.clear();
     map.m_sound_cache.sound_list_filtered.clear();
     sound_batch_floodfill_que.clear();
+    creature_ambience_window_start = std::chrono::steady_clock::now();
+    creature_ambience_this_window = 0;
 }
 
 auto sounds::shift_sound_positions( const point_rel_ms &offset ) -> void
@@ -2997,6 +3062,10 @@ void sounds::clear_floodfill_que( const bool &soundperf )
 
 void sounds::reset_markers()
 {
+    if( hears_nothing( g->u ) ) {
+        sound_markers.clear();
+        return;
+    }
     // A setting of 1 keeps upstream's behaviour: markers last until the player's next action.
     const auto keep = get_option<int>( "SOUND_MARKER_TURNS" );
     std::erase_if( sound_markers, [&]( const auto & mark ) {
@@ -3006,6 +3075,9 @@ void sounds::reset_markers()
 
 auto sounds::get_footstep_markers() -> std::vector<footstep_marker>
 {
+    if( hears_nothing( g->u ) ) {
+        return {};
+    }
     using namespace std::views;
     return sound_markers
            | filter( []( const auto & mark ) { return !g->u.sees( mark.first ); } )
@@ -3920,6 +3992,8 @@ void sfx::end_activity_sounds()
 
 /** Dummy implementations for builds without sound */
 /*@{*/
+// Markers are the only sound cue in this build, so treat every id as available.
+auto sounds::has_asset( const std::string &, const std::string & ) -> bool { return true; }
 void sfx::load_sound_effects( const JsonObject & ) { }
 void sfx::load_sound_effect_preload( const JsonObject & ) { }
 void sfx::load_playlist( const JsonObject & ) { }

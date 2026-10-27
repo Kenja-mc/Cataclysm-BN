@@ -15,6 +15,18 @@ Upstream's own changes are in `docs/en/game/changelog`.
   a filled slot offers Replace it, Layer it when layering is legal, or Cancel; layering shows the
   added weight and encumbrance. Options → Interface → Unpack into a take list restores the old
   drop-everything flow.
+- Monster idle ambience from a new `idle_sound` data field, with an off-by-default
+  **Monster ambience** switch and its own volume. No shipped monster declares the field and no
+  shipped soundpack carries the audio, so a mod must supply both; a sound build sends no cue and
+  draws no marker for a clip the selected pack lacks.
+- The Message log shows one line for the running activity, its progress and the time left, using
+  that activity's own speed factors. Options → Interface → Activity line in the log turns it off.
+
+### Changed
+
+- Sound markers shrink to a dot as they age, so a fresh noise reads differently from a stale one;
+  the first marker in a game explains the glyphs once (with Show first-time tips on), and going
+  deaf clears any markers already on the map.
 
 ## 2026-10-25
 

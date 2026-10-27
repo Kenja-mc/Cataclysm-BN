@@ -1,6 +1,7 @@
 #include "panels.h"
 
 #include "action.h"
+#include "action_time_scale.h"
 #include "avatar.h"
 #include "behavior.h"
 #include "bodypart.h"
@@ -44,6 +45,7 @@
 #include "panels_utility.h"
 #include "path_info.h"
 #include "pldata.h"
+#include "player_activity.h"
 #include "point.h"
 #include "sounds.h"
 #include "string_formatter.h"
@@ -2013,21 +2015,66 @@ static void draw_armor_comp( const avatar &u, const catacurses::window &w )
     wnoutrefresh( w );
 }
 
-static void draw_messages( avatar &, const catacurses::window &w )
+namespace
+{
+/// One line for the log panel: the running activity and its progress, empty when off or idle.
+auto activity_progress_line( const avatar &u ) -> std::string
+{
+    if( !get_option<bool>( "ACTIVITY_LINE" ) || !u.activity || u.activity->is_null() ) {
+        return {};
+    }
+    const auto verb = u.activity->get_verb().translated();
+    if( verb.empty() ) {
+        return {};
+    }
+    const auto moves_left = u.activity->get_moves_left();
+    const auto moves_total = u.activity->get_moves_total();
+    if( moves_total > 0 ) {
+        const auto done = std::clamp( moves_total - moves_left, 0, moves_total );
+        const auto percent = done * 100 / moves_total;
+        if( moves_left > 0 ) {
+            const auto turns = action_time_scale::turns_for_progress(
+                                   moves_left, u.activity->progress_per_calendar_turn() );
+            return string_format( _( "Activity: %1$s %2$d%% (%3$s left)" ), verb, percent,
+                                  to_string( time_duration::from_turns( turns ) ) );
+        }
+        return string_format( _( "Activity: %1$s %2$d%%" ), verb, percent );
+    }
+    if( moves_left > 0 ) {
+        const auto turns = action_time_scale::turns_for_progress(
+                               moves_left, u.activity->progress_per_calendar_turn() );
+        return string_format( _( "Activity: %1$s (%2$s left)" ), verb,
+                              to_string( time_duration::from_turns( turns ) ) );
+    }
+    return string_format( _( "Activity: %s" ), verb );
+}
+} // namespace
+
+static void draw_messages( avatar &u, const catacurses::window &w )
 {
     werase( w );
-    int line = getmaxy( w ) - 2;
-    int maxlength = getmaxx( w );
-    Messages::display_messages( w, 1, 0 /*topline*/, maxlength - 1, line );
+    const auto activity = activity_progress_line( u );
+    const auto top = activity.empty() ? 0 : 1;
+    if( !activity.empty() ) {
+        trim_and_print( w, point( 1, 0 ), getmaxx( w ) - 2, c_light_green, activity );
+    }
+    const auto line = getmaxy( w ) - 2;
+    const auto maxlength = getmaxx( w );
+    Messages::display_messages( w, 1, top, maxlength - 1, line );
     wnoutrefresh( w );
 }
 
-static void draw_messages_classic( avatar &, const catacurses::window &w )
+static void draw_messages_classic( avatar &u, const catacurses::window &w )
 {
     werase( w );
-    int line = getmaxy( w ) - 2;
-    int maxlength = getmaxx( w );
-    Messages::display_messages( w, 0, 0 /*topline*/, maxlength, line );
+    const auto activity = activity_progress_line( u );
+    const auto top = activity.empty() ? 0 : 1;
+    if( !activity.empty() ) {
+        trim_and_print( w, point( 0, 0 ), getmaxx( w ), c_light_green, activity );
+    }
+    const auto line = getmaxy( w ) - 2;
+    const auto maxlength = getmaxx( w );
+    Messages::display_messages( w, 0, top, maxlength, line );
     wnoutrefresh( w );
 }
 

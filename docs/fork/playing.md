@@ -81,9 +81,14 @@ under **Options → General → Choose soundpack**, and restart. Updates keep it
 
 While playing the sound-enabled graphical version, open **Enter → Misc → Sound & volume**.
 **Sound** controls all audio; **Music** switches music independently and starts on by default.
-The three volume rows control music, sound effects and ambience from 0 to 100%. Select a row
-with Up/Down and change it with Left/Right; Enter toggles a switch or raises a volume.
-Changes take effect at once. Press **Escape** to close the menu and save them.
+The volume rows control music, sound effects, ambience and monster idle sounds from 0 to 100%.
+**Monster ambience** starts off: no shipped monster declares an `idle_sound` and no shipped
+soundpack has the audio, so a mod must add both before it can be heard. A monster without the
+field stays silent even when the switch is on, and the pack must contain the clip or the monster
+makes no cue and no marker; setting the volume to 0 turns the cue off completely. Idle sounds never
+wake a sleeper or stop an activity. Select a row with Up/Down and change it with Left/Right; Enter
+toggles a switch or raises a volume. Changes take effect at once. Press **Escape** to close the
+menu and save them.
 The terminal version has no audio and shows “Sound is unavailable in this build.” instead.
 
 ## Linux: download a release
@@ -233,14 +238,16 @@ Long-form write-ups should follow
   Try Text only, Unicode and Icon font. Make sure that urgent needs, limb health and controls
   survive resizing to 80×25. A watch reveals exact time and a thermometer reveals temperature.
   `h` opens body details (also Enter → Info → Body status). `@` opens the character sheet and `P` the log.
-  `F` opens fire-mode selection.
+  `F` opens fire-mode selection. While an activity runs, the log's top row names it, its progress
+  and the time left; Options → Interface → Activity line in the log turns that off.
   Check vehicle/readout fallbacks at 80×25, driving hints (`ws`/`ad`), and their return to
   `wasd` on release. The new bundled typeface should show readable labels and complete glyphs.
 - **Targeting:** gun aiming starts on the reachable hostile and warns about allies in the line of
   fire; check loudness. Map target cycling is selection, not an attack.
 - **Crafting:** `i`, then F5; opens on recent recipes, "Missing: …", part producer hints (`p`).
 - **Look:** ASCII art, colors, map glyphs, box behavior.
-- **Sound:** fade-in markers and music/ambience with the Otopack soundpack selected.
+- **Sound:** fade-in markers and music/ambience with the Otopack soundpack selected, plus the
+  Monster ambience switch and its volume row.
 
 Report bugs and suggestions via `bin/feedback`, and use the [feedback template](feedback-template.md)
 when filing anything on GitHub.

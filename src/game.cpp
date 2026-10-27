@@ -4881,17 +4881,28 @@ auto footstep_color( const sounds::footstep_marker &mark ) -> nc_color
     }
     return violent ? c_light_red : talk ? c_light_cyan : c_yellow;
 }
+
+/// Glyph of a heard-sound marker, smaller once it is stale.
+auto footstep_glyph( const sounds::footstep_marker &mark, const tripoint_rel_ms &offset,
+                     const bool age_glyphs ) -> std::string
+{
+    // Direction wins: a stale marker on another level still has to say which way it is.
+    if( mark.pos.z() != offset.z() ) { // Here z isn't an offset, but a coordinate
+        return mark.pos.z() > offset.z() ? "^" : "v";
+    }
+    if( age_glyphs && mark.age >= 2 ) {
+        return "·";
+    }
+    return "?";
+}
 } // namespace
 
 static void draw_footsteps( const catacurses::window &window, const tripoint_rel_ms &offset )
 {
+    const auto age_glyphs = get_option<bool>( "SOUND_MARKER_GLYPH_AGING" );
     for( const auto &mark : sounds::get_footstep_markers() ) {
-        auto glyph = '?';
-        if( mark.pos.z() != offset.z() ) { // Here z isn't an offset, but a coordinate
-            glyph = mark.pos.z() > offset.z() ? '^' : 'v';
-        }
-
-        mvwputch( window, mark.pos.xy().raw() + offset.xy().raw(), footstep_color( mark ), glyph );
+        mvwputch( window, mark.pos.xy().raw() + offset.xy().raw(), footstep_color( mark ),
+                  footstep_glyph( mark, offset, age_glyphs ) );
     }
 }
 
