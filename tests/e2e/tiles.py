@@ -1226,22 +1226,28 @@ def case_sound_menu(session):
             x11.key("Right")
             x11.key("Down")
             x11.key("Return")
+            x11.key("Down")
+            x11.key("Return")
             for _ in range(3):
                 x11.key("Down")
                 x11.key("Right")
             x11.key("Escape")
-            changed = {**options, "MUSIC_ENABLED": "false", "MUSIC_VOLUME": "72",
-                       "SOUND_EFFECT_VOLUME": "72", "AMBIENT_SOUND_VOLUME": "72"}
+            changed = {**options, "MUSIC_ENABLED": "false", "DYNAMIC_MUSIC": "false",
+                       "MUSIC_VOLUME": "72", "SOUND_EFFECT_VOLUME": "72",
+                       "AMBIENT_SOUND_VOLUME": "72"}
             observations["music_off_volumes_raised"] = saved_values(changed)
 
             open_menu("changed")
+            x11.key("Down")
+            x11.key("Return")
             x11.key("Down")
             x11.key("Return")
             for _ in range(3):
                 x11.key("Down")
                 x11.key("Left")
             x11.key("Escape")
-            observations["restored"] = saved_values({**options, "MUSIC_ENABLED": "true"})
+            observations["restored"] = saved_values({**options, "MUSIC_ENABLED": "true",
+                                                     "DYNAMIC_MUSIC": "true"})
         finally:
             x11.close()
     return [], observations
