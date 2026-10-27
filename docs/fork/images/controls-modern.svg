@@ -120,6 +120,10 @@
 <g><rect x="372.0" y="252" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="379.0" y="273" font-size="15.0" font-weight="700">T</text>
 <text x="378.0" y="292" font-size="12.0" fill="currentColor">throw</text>
+<text x="378.0" y="307" font-size="10" fill="var(--muted,currentColor)">⇧ Toggle</text>
+<text x="378.0" y="319" font-size="10" fill="var(--muted,currentColor)">Auto</text>
+<text x="378.0" y="331" font-size="10" fill="var(--muted,currentColor)">Travel</text>
+<text x="378.0" y="343" font-size="10" fill="var(--muted,currentColor)">Mode</text>
 </g>
 <g><rect x="436.0" y="252" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="443.0" y="273" font-size="15.0" font-weight="700">Y</text>
@@ -130,18 +134,22 @@
 <g><rect x="564.0" y="252" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="571.0" y="273" font-size="15.0" font-weight="700">I</text>
 <text x="570.0" y="292" font-size="11.1" fill="currentColor">inventory</text>
+<text x="570.0" y="307" font-size="10" fill="var(--muted,currentColor)">⇧ adv.</text>
+<text x="570.0" y="319" font-size="10" fill="var(--muted,currentColor)">inv.</text>
 </g>
-<g><rect x="628.0" y="252" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
+<g><rect x="628.0" y="252" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="635.0" y="273" font-size="15.0" font-weight="700">O</text>
+<text x="634.0" y="307" font-size="10" fill="var(--muted,currentColor)">⇧ Options</text>
 </g>
 <g><rect x="692.0" y="252" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="699.0" y="273" font-size="15.0" font-weight="700">P</text>
-<text x="698.0" y="292" font-size="10.0" fill="currentColor">smash/pulp</text>
+<text x="698.0" y="292" font-size="9.0" fill="currentColor">View/Activate Bionics</text>
 <text x="698.0" y="307" font-size="10" fill="var(--muted,currentColor)">⇧</text>
 <text x="698.0" y="319" font-size="10" fill="var(--muted,currentColor)">messages</text>
 </g>
-<g><rect x="756.0" y="252" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
+<g><rect x="756.0" y="252" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="763.0" y="273" font-size="15.0" font-weight="700">[</text>
+<text x="762.0" y="292" font-size="9.0" fill="currentColor">View/Activate Mutations</text>
 </g>
 <g><rect x="820.0" y="252" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="827.0" y="273" font-size="15.0" font-weight="700">]</text>
@@ -172,14 +180,21 @@
 </g>
 <g><rect x="388.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="395.0" y="349" font-size="15.0" font-weight="700">G</text>
-<text x="394.0" y="368" font-size="12.0" fill="currentColor">take all</text>
+<text x="394.0" y="368" font-size="9.0" fill="currentColor">Pick up items from one nearby tile</text>
+<text x="394.0" y="383" font-size="10" fill="var(--muted,currentColor)">⇧ Pick up</text>
+<text x="394.0" y="395" font-size="10" fill="var(--muted,currentColor)">(open the</text>
+<text x="394.0" y="407" font-size="10" fill="var(--muted,currentColor)">picker)</text>
 </g>
 <g><rect x="452.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="459.0" y="349" font-size="15.0" font-weight="700">H</text>
 <text x="458.0" y="368" font-size="12.0" fill="currentColor">body</text>
+<text x="458.0" y="383" font-size="10" fill="var(--muted,currentColor)">⇧ Honk</text>
+<text x="458.0" y="395" font-size="10" fill="var(--muted,currentColor)">the horn</text>
 </g>
-<g><rect x="516.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
+<g><rect x="516.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="523.0" y="349" font-size="15.0" font-weight="700">J</text>
+<text x="522.0" y="383" font-size="10" fill="var(--muted,currentColor)">⇧ Open</text>
+<text x="522.0" y="395" font-size="10" fill="var(--muted,currentColor)">Diary</text>
 </g>
 <g><rect x="580.0" y="328" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="0.7"/>
 <text x="587.0" y="349" font-size="15.0" font-weight="700">K</text>
@@ -216,7 +231,7 @@
 </g>
 <g><rect x="356.0" y="404" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="363.0" y="425" font-size="15.0" font-weight="700">V</text>
-<text x="362.0" y="444" font-size="12.0" fill="currentColor">wield</text>
+<text x="362.0" y="444" font-size="12.0" fill="currentColor">use</text>
 </g>
 <g><rect x="420.0" y="404" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="427.0" y="425" font-size="15.0" font-weight="700">B</text>
@@ -229,6 +244,7 @@
 <g><rect x="548.0" y="404" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="555.0" y="425" font-size="15.0" font-weight="700">M</text>
 <text x="554.0" y="444" font-size="12.0" fill="currentColor">map</text>
+<text x="554.0" y="459" font-size="10" fill="var(--muted,currentColor)">⇧ World</text>
 </g>
 <g><rect x="612.0" y="404" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="619.0" y="425" font-size="15.0" font-weight="700">,</text>
@@ -242,7 +258,6 @@
 </g>
 <g><rect x="740.0" y="404" width="60" height="72" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
 <text x="747.0" y="425" font-size="15.0" font-weight="700">/</text>
-<text x="746.0" y="444" font-size="11.1" fill="currentColor">adv. inv.</text>
 <text x="746.0" y="459" font-size="10" fill="var(--muted,currentColor)">⇧ all</text>
 <text x="746.0" y="471" font-size="10" fill="var(--muted,currentColor)">keys</text>
 </g>
@@ -390,12 +405,12 @@
 <text x="20" y="980" font-size="13">Modern curses: Ctrl+C/Z are game chords, not quit/suspend signals.</text>
 <text x="20" y="1024" font-size="16" font-weight="700">Compact action families</text>
 <text x="20" y="1052" font-size="14">Enter: all action groups; Info → character sheet and body/status screens.</text>
-<text x="20" y="1077" font-size="14">v: wield. Inventory: F5 crafts; Tab opens advanced inventory; Shift+Tab selects categories.</text>
-<text x="20" y="1102" font-size="14">@: character; P: messages; B: butcher; F: fire mode; /: advanced inventory.</text>
+<text x="20" y="1077" font-size="14">v: use item by kind. Inventory: F5 crafts; Tab opens advanced inventory; Shift+Tab selects categories.</text>
+<text x="20" y="1102" font-size="14">@: character; P: messages; B: butcher; F: fire mode; I: advanced inventory.</text>
 <text x="20" y="1127" font-size="14">Space: nearby or selected-tile actions; a loaded trunk opens pickup. Shift+Space toggles curtains.</text>
 <text x="20" y="1152" font-size="14">RMB selects; Select tile keys are unbound by default; Jump and Smash require an explicit choice.</text>
 <text x="20" y="1177" font-size="14">Map RMB opens object actions without running one; closing keeps selection. Hostiles are only locked.</text>
-<text x="20" y="1202" font-size="14">g takes all underfoot; Ctrl+G chooses nearby items. Pickup Space equals g; Escape cancels.</text>
+<text x="20" y="1202" font-size="14">g: pick up a lone item or open the picker; G: pickup list; Ctrl+G: drop.</text>
 <text x="20" y="1227" font-size="14">Menus: Space confirms the highlight; text spaces stay literal. Classic controls are unchanged.</text>
 <text x="20" y="1252" font-size="14">Classic terminal Ctrl+C/Z retain normal quit/suspend signal behavior.</text>
 </svg>

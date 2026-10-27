@@ -53,7 +53,7 @@ ACTION_LABELS = {
     "cycle_move": "mode",
     "NEXT_TARGET": "next target",
     "PREV_TARGET": "prev target",
-    "wield": "wield",
+    "use_contextual": "use",
     "player_data": "character",
     "messages": "messages",
     "butcher": "butcher",
@@ -246,14 +246,14 @@ def render_svg(keymap, entries):
 
     notes = (
         f'{first_binding("action_menu")}: all action groups; Info → character sheet and body/status screens.',
-        f'{first_binding("wield")}: wield. Inventory: F5 crafts; Tab opens advanced inventory; Shift+Tab selects categories.',
+        f'{first_binding("use_contextual")}: use item by kind. Inventory: F5 crafts; Tab opens advanced inventory; Shift+Tab selects categories.',
         f'{first_binding("player_data")}: character; {first_binding("messages")}: messages; '
         f'{first_binding("butcher")}: butcher; {first_binding("select_fire_mode")}: fire mode; '
         f'{first_binding("advinv")}: advanced inventory.',
         'Space: nearby or selected-tile actions; a loaded trunk opens pickup. Shift+Space toggles curtains.',
         'RMB selects; Select tile keys are unbound by default; Jump and Smash require an explicit choice.',
         'Map RMB opens object actions without running one; closing keeps selection. Hostiles are only locked.',
-        'g takes all underfoot; Ctrl+G chooses nearby items. Pickup Space equals g; Escape cancels.',
+        f'{first_binding("pickup")}: pick up a lone item or open the picker; {first_binding("pickup_list")}: pickup list; {first_binding("drop")}: drop.',
         'Menus: Space confirms the highlight; text spaces stay literal. Classic controls are unchanged.',
         'Classic terminal Ctrl+C/Z retain normal quit/suspend signal behavior.',
     )

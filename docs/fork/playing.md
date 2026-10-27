@@ -226,17 +226,19 @@ Long-form write-ups should follow
   normal gun aiming. Enter groups all actions (Info for character/status screens). Ctrl+X opens
   wait/rest; Shift+X cycles walk/run/crouch/prone, with F2/F3/F4 unbound.
 - **Inventory:** `i`, then select an item for Wield/Wear/Eat/Use/Read and other context actions.
-  `v` opens Wield directly. F5 crafts even when inventory is empty; Tab opens advanced inventory,
-  and Shift+Tab switches category selection. The advanced-inventory footer hint is clickable.
-  `g` takes everything underfoot without a menu; Ctrl+G opens area pickup, where `g`, Enter or
-  Space confirms and Escape cancels. Quick stack and sort pile remain in Enter.
+  `v` uses an item from the map by its kind. F5 crafts even when inventory is empty; Tab or `I`
+  opens advanced inventory, and Shift+Tab switches category selection. The advanced-inventory
+  footer hint is clickable. `g` picks up a lone item underfoot, or opens the picker for a pile;
+  `G` always opens the picker, and Ctrl+G drops. In the picker, `g`, Enter or Space confirms and
+  Escape cancels. Quick stack and sort pile remain in Enter.
 - **Select and interact:** right click selects a tile without spending time; the eight Select tile
   keys ship unbound and stay rebindable in the options menu.
   Space acts on that selection. Without a selection, it lists nearby actions with directions
   and highlights the tile of the current row. Jump and Smash need explicit choices (`S` for Smash).
   Space offers Butcher for a corpse underfoot and opens loaded vehicle trunks directly.
-  Shift+Space toggles a selected vehicle curtain or lists nearby curtains. `p` smashes or pulps
-  in a chosen direction; `B` opens Butcher.
+  Shift+Space toggles a selected vehicle curtain or lists nearby curtains. `p` opens bionics.
+  Smash a bashable tile by aiming at it and pressing `f`, or pick Smash from the Space list; `B`
+  opens Butcher.
   Ctrl+WASD/QEZC physically peeks for the normal 200 moves, then returns without clearing selection.
   In Modern curses, Ctrl+C/Z are game chords. Classic keeps normal terminal signals.
 - **Mouse:** right click locks a hostile or opens an object's actions without running one;

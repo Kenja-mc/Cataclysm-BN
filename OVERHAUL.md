@@ -32,9 +32,10 @@ direction prompts. Top-row numbers do not move you on the map.
   reordered and shown on the map from the Zones tab, with the zone screen's own keys.
 - **`i` — inventory and equipment.** Select an item to open its context menu for **Wield**,
   **Wear**, **Eat**, **Use**, **Read** and other item actions. The menu shows its local shortcuts.
-  **`v`** wields from the map: it lists what you can wield. Press **F5 Craft** inside inventory to
-  craft, even when the inventory is empty.
-  **Tab** opens advanced inventory from this screen; **Shift+Tab** switches category selection.
+  **`v`** uses an item from the map by its kind: wield, wear, eat, read, unload or activate.
+  Press **F5 Craft** inside inventory to craft, even when the inventory is empty.
+  **Tab** or **`I`** opens advanced inventory from this screen; **Shift+Tab** switches category
+  selection.
   The footer's advanced-inventory hint is clickable in both schemes; Classic keeps its keys.
 - **Space — the obvious action.** With a tile selected (mouse hover or click, arrow aim, or a
   Select tile key), Space runs that tile's most obvious action without asking, in this order:
@@ -79,7 +80,7 @@ Turn the option off to walk with the arrow keys again.
 
 In **Modern**, lowercase WASD also navigates menus. Menu actions that used those letters move to
 Shift+WASD, including sorting, adding rules and dropping. Context-local shortcuts remain local:
-for example, inventory and pickup offer Wield and Wear alongside the map's `v` wield key.
+for example, inventory and pickup offer Wield and Wear alongside the map's `v` use key.
 Generated shortcuts and inventory, mutation and bionic letters leave navigation keys
 free. Text fields still accept normal typing; **Classic** retains the upstream controls.
 
@@ -138,11 +139,11 @@ food and a weapon, because houses usually have all three.
 | Ctrl+direction       | physical peek (normal 200-move cost)                               |
 | Tab / Shift+Tab      | next / previous visible hostile                                    |
 | `f`, `F`, `r`, `t`   | attack selected target / fire mode / reload / throw                |
-| `p`                  | smash or pulp in a chosen direction                                |
+| `p`                  | bionics                                                            |
 | Space                | nearby or selected-tile actions, including explicit Jump and Smash |
 | Shift+Space          | toggle a selected vehicle curtain, or choose one nearby            |
-| `g` / Ctrl+G         | take everything underfoot / choose items nearby            |
-| `i`, `v`, `/`        | inventory / wield / advanced inventory                             |
+| `g` / `G` / Ctrl+G   | pick up underfoot / pickup list / drop                             |
+| `i`, `v`, `I`        | inventory / use item by kind / advanced inventory                  |
 | `i`, then F5         | craft (also works with empty inventory)                            |
 | `@`, `P`, `B`        | character sheet / message log / butcher                            |
 | Enter                | all action groups; Info contains character/status screens          |
@@ -153,15 +154,16 @@ food and a weapon, because houses usually have all three.
 | PageUp / PageDown    | stairs up / down (also `<` / `>`)                           |
 | `h`                  | health and wounds                                          |
 | `!` / `'`            | safe mode / ignore enemy                                           |
-| F1 / `?`             | help (opens on a first-ten-minutes page) / full keybinding list   |
+| F1 / `?`             | help topics, starting with the first ten minutes / every key      |
 | Esc                  | cancel selection, or main menu when no selection is active         |
 | F12 / backtick       | developer debug menu / Lua console                                 |
 
 Walking into an enemy attacks it in both control schemes. Options → Interface → Attack by walking
 into enemies can disable this; in Modern, select a target and press `f` for a deliberate attack.
 The separate map shortcuts for Craft, Open and Jump are unbound, not removed actions:
-use inventory, Space or Enter. Modern **`p`** smashes terrain or pulps a corpse in a chosen
-direction; Classic keeps **`s`**. Walking into a closed door still opens it. Text that names a key,
+use inventory, Space or Enter. Modern has no directional smash key: aim at a bashable tile and
+press **`f`**, or pick Smash from the Space list. Classic keeps **`s`**. Walking into a closed door
+still opens it. Text that names a key,
 such as tutorial pop-ups and help pages, names the way to reach an unbound action instead, for
 example "i → item → Activate". In Modern, the tutorial's lessons describe Modern's own way of
 doing each thing (clicking, Space, selecting with the mouse), and the door lessons now appear for
@@ -198,10 +200,11 @@ The health report stays a scrollable text report with Close.
 Inventory hover highlights an item, left click picks it (or marks it in multi-item menus), and the
 wheel scrolls. Right click on an inventory item opens its actions; right click outside cancels.
 
-**Quick pickup and area pickup.** In Modern, `g` takes all ground and vehicle-cargo items on your
-own tile without a menu, using the normal pickup activity and its capacity handling. Ctrl+G opens
-the area pickup menu; `g`, Enter or Space picks up marked items, or the highlighted item if none
-are marked. Escape cancels.
+**Quick pickup and pickup list.** In Modern, `g` picks up a lone item on your tile without a menu;
+when several items lie there it opens the pickup picker. `G` always opens the picker, and Ctrl+G
+drops items. Inside the picker, `g`, Enter or Space picks up marked items, or the highlighted item
+if none are marked.
+Escape cancels.
 Inside pickup, local shortcuts act on the highlighted item: `h` wields it and `W` wears it.
 With the mouse, hover highlights a row, left click marks or unmarks it, and the wheel moves through
 the list. Right click lists Pick up, Wield and Wear; each acts on that item alone. The footer shows
@@ -231,8 +234,8 @@ Clicks select vehicle parts and overview rows or use the displayed action and ta
 existing hints and mouse wheel scroll the descriptions and parts list.
 
 A **Controls** strip at the bottom of the sidebar shows the most used keys. `? all keys` stays
-near the movement hints, and five rows keep the other hints visible. It reads live keybindings,
-so action hints stay correct if you rebind them. On a terminal too short for five rows the strip
+near the movement hints, and up to three rows keep the other hints visible. It reads live keybindings,
+so action hints stay correct if you rebind them. On a terminal too short for three rows the strip
 keeps its first row or two instead of vanishing, so the core keys stay on screen.
 The compass gives up rows first. Hidden panels do not reserve space, and sidebar spacers count
 toward the available height.
@@ -833,7 +836,8 @@ stays the gate; a model run adds evidence, it never replaces a check.
 ## Building
 
 Same as upstream; see `docs/en/dev/guides/building`. The presets need `clang`, `mold` and `ccache`
-(`pacman -S --needed clang mold ccache`). The terminal version:
+(`pacman -S --needed clang mold ccache`, or `mise install` for the CMake, Ninja, mold and ccache
+versions pinned in `mise.toml`). The terminal version:
 
 ```sh
 cmake --preset linux-curses
