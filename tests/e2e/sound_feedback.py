@@ -2,9 +2,10 @@
 from contextual_hub import colored_cells
 from helpers import HELPERS, Game, arena, settle, start_new_game, wait_until
 
-PROFILE = {"SAFEMODE": "false", "SOUND_MARKER_TURNS": "3"}
+# map_area reads the map's screen region; floating HUD windows would draw ? and · there.
+PROFILE = {"SAFEMODE": "false", "SOUND_MARKER_TURNS": "3", "HUD_WINDOWS": "false"}
 # A longer ceiling leaves the stale dot on screen for more than one capture.
-AGING_PROFILE = {"SAFEMODE": "false", "SOUND_MARKER_TURNS": "5"}
+AGING_PROFILE = {"SAFEMODE": "false", "SOUND_MARKER_TURNS": "5", "HUD_WINDOWS": "false"}
 LEGEND = "? = a sound you heard, · = an older one."
 
 
