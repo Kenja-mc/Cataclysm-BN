@@ -4,6 +4,13 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-26
+
+### Changed
+
+- Sound markers shrink to a dot as they age, so a fresh noise reads differently from a stale one;
+  the first marker in a game explains the glyphs once.
+
 ## 2026-10-25
 
 ### Added

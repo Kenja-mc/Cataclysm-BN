@@ -322,9 +322,11 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   is cold. Monsters never got these; the overlays are the ones the tileset already draws on
   characters. They loop in real time even while you stand still, starting without another keypress.
   Options → Graphics → Status effect animations turns them off.
-- **Fading sound markers**: the `?` for a sound you heard but cannot see stays for a few turns and
-  dims as it ages, so you can see where noises came from (Options → Interface → Sound marker turns;
-  1 gives the upstream behaviour, where it vanishes after your next action).
+- **Fading sound markers**: the `?` for a sound you heard but cannot see stays for a few turns,
+  dims, and becomes a small `·` once it is two turns old, so a fresh cue looks different from a
+  stale one.  The first marker in a game explains the glyphs in the log once
+  (Options → Interface → Sound marker turns; Sound markers shrink keeps the single glyph;
+  1 turn gives the upstream behaviour, where it vanishes after your next action).
 - **Monster health bars** (tiles view): a small bar under every hurt monster in view, using the same
   coarse reading the look-around list gives rather than exact hit points. Options → Graphics →
   Monster health bars turns it off.

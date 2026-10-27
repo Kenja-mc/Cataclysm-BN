@@ -1880,6 +1880,13 @@ auto harmless_noise( const sound_event &noise, Character &who ) -> bool
                                !smart_safemode::can_reach_soon( *mon, *who.as_avatar() ) );
 }
 
+/// True when the player cannot hear at all, so no marker may be shown.
+auto hears_nothing( const Character &who ) -> bool
+{
+    // Full protection mirrors hearing_ability()'s zero point; that function rolls PER_SLIME rng.
+    return who.is_deaf() || who.get_char_hearing_protection() > 190;
+}
+
 } // namespace
 
 void sounds::sound( const sound_event &soundevent )
@@ -2598,6 +2605,11 @@ void sounds::process_sound_markers( Character *who )
 
     bool is_deaf = who->is_deaf();
     const float volume_multiplier = who->hearing_ability();
+    if( is_deaf || volume_multiplier <= 0.0f ) {
+        is_deaf = true;
+        // Hearing loss invalidates cues the player already has on the map.
+        sound_markers.clear();
+    }
     const auto &loc = who->bub_pos();
     auto &map = get_map();
     const auto &level_cache = map.get_cache_ref( loc.z() );
@@ -2874,6 +2886,13 @@ void sounds::process_sound_markers( Character *who )
                 auto marker = element.sound;
                 marker.created_at = calendar::turn;
                 sound_markers.insert_or_assign( random_entry( unseen_points ), std::move( marker ) );
+                if( get_option<bool>( "SHOW_TIPS" ) &&
+                    get_option<bool>( "SOUND_MARKER_GLYPH_AGING" ) &&
+                    who->get_value( "sound_marker_legend" ).empty() ) {
+                    who->set_value( "sound_marker_legend", "1" );
+                    add_msg( game_message_params{ m_info, gmf_bypass_cooldown },
+                             _( "? = a sound you heard, · = an older one." ) );
+                }
             }
         }
     }
@@ -2997,6 +3016,10 @@ void sounds::clear_floodfill_que( const bool &soundperf )
 
 void sounds::reset_markers()
 {
+    if( hears_nothing( g->u ) ) {
+        sound_markers.clear();
+        return;
+    }
     // A setting of 1 keeps upstream's behaviour: markers last until the player's next action.
     const auto keep = get_option<int>( "SOUND_MARKER_TURNS" );
     std::erase_if( sound_markers, [&]( const auto & mark ) {
@@ -3006,6 +3029,9 @@ void sounds::reset_markers()
 
 auto sounds::get_footstep_markers() -> std::vector<footstep_marker>
 {
+    if( hears_nothing( g->u ) ) {
+        return {};
+    }
     using namespace std::views;
     return sound_markers
            | filter( []( const auto & mark ) { return !g->u.sees( mark.first ); } )

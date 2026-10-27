@@ -2065,6 +2065,10 @@ void options_manager::add_options_interface()
     add( "SOUND_MARKER_TURNS", interface, translate_marker( "Sound marker turns" ),
          translate_marker( "How many turns a ? marker for a sound you heard but couldn't see stays on the map, fading as it ages.  1 clears it after your next action, as upstream does." ),
          1, 10, 3 );
+    add( "SOUND_MARKER_GLYPH_AGING", interface, translate_marker( "Sound markers shrink" ),
+         translate_marker( "In the terminal view, a sound marker becomes a small dot once it is two turns old.  If false, it keeps its ? or arrow for its whole lifetime; the colour still fades." ),
+         true
+       );
 
     add( "ENEMY_EDGE_ARROWS", interface, translate_marker( "Enemy edge arrows" ),
          translate_marker( "An arrow at the map edge for every hostile you can see that is off-screen, pointing at it: red when it can reach you soon, yellow when it cannot.  An arrow sits on the edge itself when the hostile is hunting you, one cell in when it is only trailing." ),
