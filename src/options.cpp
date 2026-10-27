@@ -1984,14 +1984,14 @@ void options_manager::add_options_general()
     get_option( "AMBIENT_SOUND_VOLUME" ).setPrerequisite( "SOUND_ENABLED" );
 
     add( "MONSTER_AMBIENCE", general, translate_marker( "Monster ambience" ),
-         translate_marker( "Play the idle sound of a monster whose data gives it one.  Off by default because the shipped sound packs have no monster ambience audio yet; turn it on after installing a pack that does.  A monster without an idle sound stays silent." ),
+         translate_marker( "Play the idle sound a monster's data names.  Off by default: no shipped monster declares an idle sound and no shipped soundpack has the audio, so a mod must add both.  A monster without an idle sound stays silent." ),
          false, COPT_NO_SOUND_HIDE
        );
 
     get_option( "MONSTER_AMBIENCE" ).setPrerequisite( "SOUND_ENABLED" );
 
     add( "MONSTER_AMBIENCE_VOLUME", general, translate_marker( "Monster ambience volume" ),
-         translate_marker( "Adjust the volume of monster idle sounds relative to the sound effect volume." ),
+         translate_marker( "Adjust the volume of monster idle sounds relative to the sound effect volume.  0 turns the cue off entirely, markers included." ),
          0, 128, 100, COPT_NO_SOUND_HIDE
        );
 
@@ -2080,7 +2080,7 @@ void options_manager::add_options_interface()
          translate_marker( "How many turns a ? marker for a sound you heard but couldn't see stays on the map, fading as it ages.  1 clears it after your next action, as upstream does." ),
          1, 10, 3 );
     add( "SOUND_MARKER_GLYPH_AGING", interface, translate_marker( "Sound markers shrink" ),
-         translate_marker( "In the terminal view, a sound marker becomes a small dot once it is two turns old.  If false, it keeps its ? or arrow for its whole lifetime; the colour still fades." ),
+         translate_marker( "In the terminal view, a sound marker becomes a small dot once it is two turns old.  If false, it keeps its ? or arrow for its whole lifetime; the colour still fades.  The one-time glyph legend appears with first-time tips." ),
          true
        );
 
@@ -2385,6 +2385,11 @@ void options_manager::add_options_interface()
     add( "MESSAGE_LIMIT", interface, translate_marker( "Limit message history" ),
          translate_marker( "Number of messages to preserve in the history, and when saving." ),
          1, 10000, 255
+       );
+
+    add( "ACTIVITY_LINE", interface, translate_marker( "Activity line in the log" ),
+         translate_marker( "Show the running activity, its progress and the time left on the first row of the Message log.  Off restores the upstream log, which uses that row for messages." ),
+         true
        );
 
     add( "NO_UNKNOWN_COMMAND_MSG", interface,

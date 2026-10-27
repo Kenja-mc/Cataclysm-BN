@@ -187,6 +187,8 @@ SMOKE = [
     "test_magnet_pull_through_monster",
     "test_sound_marker_fading",
     "test_sound_menu_curses_unavailable",
+    "test_idle_sound_needs_the_data_field_and_rerolls_its_cooldown",
+    "test_activity_line_names_progress_and_time_left",
     "test_smart_safe_mode_horde",
     "test_char_creation_overview_fits_small_terminal",
     "test_partial_grid_transfer_keeps_the_rest",

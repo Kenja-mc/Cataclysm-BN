@@ -324,9 +324,15 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   Options → Graphics → Status effect animations turns them off.
 - **Fading sound markers**: the `?` for a sound you heard but cannot see stays for a few turns,
   dims, and becomes a small `·` once it is two turns old, so a fresh cue looks different from a
-  stale one.  The first marker in a game explains the glyphs in the log once
-  (Options → Interface → Sound marker turns; Sound markers shrink keeps the single glyph;
-  1 turn gives the upstream behaviour, where it vanishes after your next action).
+  stale one.  The first marker in a game explains the glyphs in the log once, when
+  Options → Interface → Show first-time tips is on.  Losing your hearing clears the markers
+  already on the map.  Options → Interface → Sound marker turns sets how long a cue lasts (1
+  turn gives the upstream behaviour, where it vanishes after your next action); Sound markers
+  shrink keeps the single glyph.
+- **Activity line in the log**: while an activity runs, the top row of the Message log names it,
+  its progress and the time left, counted with that activity's own speed factors.  Further log
+  rows keep their messages.  Options → Interface → Activity line in the log turns the line off
+  and gives the row back to messages.
 - **Monster health bars** (tiles view): a small bar under every hurt monster in view, using the same
   coarse reading the look-around list gives rather than exact hit points. Options → Graphics →
   Monster health bars turns it off.
@@ -440,10 +446,17 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 ## Sound & volume
 
 Open **Enter → Misc → Sound & volume** to toggle **Sound** and **Music** separately, or adjust
-**Music volume**, **Sound effect volume** and **Ambient volume** from 0 to 100%. Music starts on;
-it needs a soundpack with music. Up/Down selects a row, Left/Right changes it, and Enter toggles a
-switch or raises a volume. Changes apply immediately; **Escape** closes the menu and saves them.
-The terminal build instead shows “Sound is unavailable in this build.”; Escape closes that notice.
+**Music volume**, **Sound effect volume**, **Ambient volume** and **Monster ambience volume** from
+0 to 100%. Music starts on; it needs a soundpack with music. **Monster ambience** is the one switch
+that starts off: it plays the idle sound a monster's data names, on its own 8–20 second pace per
+creature. No shipped monster declares one and no shipped soundpack has the audio, so it stays
+silent in the shipped game until a mod adds both; on a sound build a monster whose clip the chosen
+pack lacks makes no cue and leaves no marker, and setting the volume to 0 silences the cue
+entirely, markers included. Idle sounds never wake a sleeper, stay out of the log while you sleep
+and never interrupt an activity; a crowd is held to four new cue clips per quarter second. Up/Down
+selects a row, Left/Right changes it, and Enter toggles a switch or raises a volume. Changes apply
+immediately; **Escape** closes the menu and saves them. The terminal build instead shows
+“Sound is unavailable in this build.”; Escape closes that notice.
 
 ## Items and storage
 

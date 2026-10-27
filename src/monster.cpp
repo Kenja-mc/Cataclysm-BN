@@ -3584,8 +3584,11 @@ void monster::update_idle_sound()
         idle_sound_at.reset();
         return;
     }
-    // A chase, an attack or flight clears the deadline, so the wait restarts once it is idle.
-    if( !is_wandering() || is_fleeing( get_avatar() ) || attack_target() != nullptr ) {
+    // Any destination (chasing, attacking or walking to a wander point) or real flight clears the
+    // deadline. is_fleeing() also covers MATT_FOLLOW within 4 tiles, which is not flight and would
+    // silence exactly the wary creature standing next to the player.
+    if( !is_wandering() || effect_cache[FLEEING] ||
+        attitude( &get_avatar() ) == MATT_FLEE ) {
         idle_sound_at.reset();
         return;
     }
@@ -3597,15 +3600,17 @@ void monster::update_idle_sound()
         return;
     }
     idle_sound_at = calendar::turn + time_duration::from_seconds( rng( 8, 20 ) );
-    if( !get_option<bool>( "MONSTER_AMBIENCE" ) ||
-        !sounds::has_asset( type->idle_sound, "default" ) ) {
+    // No silent-but-visible cues: on a sound build the pack must provide the clip before the event
+    // exists at all. A build without audio reports every id as present, because markers are its
+    // only sound cue. A zero volume is the player asking for silence, so nothing is emitted.
+    if( !sounds::monster_ambience_allowed( type->idle_sound, "default" ) ) {
         return;
     }
     sound_event se;
     se.origin = bub_pos();
     se.volume = 50;
     se.category = sounds::sound_t::background;
-    se.description = string_format( _( "a %s" ), name() );
+    se.description = unique_name.empty() ? string_format( _( "a %s" ), name() ) : name();
     se.from_monster = true;
     se.id = type->idle_sound;
     se.variant = "default";

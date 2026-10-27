@@ -3,6 +3,7 @@
 #include "cata_utility.h"
 #include "catch/catch.hpp"
 #include "game.h"
+#include "options.h"
 #include "options_helpers.h"
 #include "sounds.h"
 #include "state_helpers.h"
@@ -193,4 +194,27 @@ TEST_CASE("sounds_keep_absolute_positions_when_reality_bubble_resizes", "[sound]
     CHECK(instances.front().origin == cached_source);
     CHECK(instances.front().vol_at_tri(cached_source) == cached_volume);
     CHECK(instances.back().origin == cached_source);
+}
+
+// monster::update_idle_sound() returns before sounds::sound() when this gate is false, so a false
+// result means the cue produces no event at all: no marker, no log line and no NPC hearing.
+TEST_CASE("monster_ambience_gate_defaults_off_and_needs_the_clip", "[sound][monster_ambience]") {
+    clear_all_state();
+    const auto cleanup = on_out_of_scope([]() { clear_all_state(); });
+
+    CHECK_FALSE(get_option<bool>("MONSTER_AMBIENCE"));
+    CHECK_FALSE(sounds::monster_ambience_allowed("plmove", "default"));
+
+    const auto enabled = override_option("MONSTER_AMBIENCE", "true");
+    {
+        const auto muted = override_option("MONSTER_AMBIENCE_VOLUME", "0");
+        CHECK_FALSE(sounds::monster_ambience_allowed("plmove", "default"));
+    }
+#if defined(SDL_SOUND)
+    // A sound build emits nothing at all for a clip its pack does not carry.
+    CHECK_FALSE(sounds::monster_ambience_allowed("e2e_no_such_sound_id", "default"));
+#else
+    // Without audio the marker is the cue, so every id counts as present.
+    CHECK(sounds::monster_ambience_allowed("e2e_no_such_sound_id", "default"));
+#endif
 }

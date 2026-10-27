@@ -1888,7 +1888,8 @@ auto hears_nothing( const Character &who ) -> bool
 }
 
 // Four new creature ambience sounds per 250 ms keep a pack of idle monsters from
-// turning into a wall of overlapping clips. Excess attempts are dropped, never queued.
+// turning into a wall of overlapping clips. Excess events are dropped before propagation,
+// so they cost no floodfill and reach neither the player's markers nor NPC hearing.
 constexpr auto creature_ambience_window = std::chrono::milliseconds( 250 );
 constexpr auto creature_ambience_burst = 4;
 auto creature_ambience_window_start = std::chrono::steady_clock::now();
@@ -1909,6 +1910,13 @@ auto creature_ambience_allowed() -> bool
 }
 
 } // namespace
+
+auto sounds::monster_ambience_allowed( const std::string &id, const std::string &variant ) -> bool
+{
+    return get_option<bool>( "MONSTER_AMBIENCE" ) &&
+           get_option<int>( "MONSTER_AMBIENCE_VOLUME" ) > 0 &&
+           has_asset( id, variant );
+}
 
 void sounds::sound( const sound_event &soundevent )
 {
@@ -2627,10 +2635,11 @@ void sounds::process_sounds_npc()
 void sounds::process_sound_markers( Character *who )
 {
 
-    bool is_deaf = who->is_deaf();
+    // hears_nothing() is the same gate reset_markers() and get_footstep_markers() use, so
+    // "cannot hear" has one definition; hearing_ability() also zeroes at that boundary.
     const float volume_multiplier = who->hearing_ability();
-    if( is_deaf || volume_multiplier <= 0.0f ) {
-        is_deaf = true;
+    bool is_deaf = hears_nothing( *who ) || volume_multiplier <= 0.0f;
+    if( is_deaf ) {
         // Hearing loss invalidates cues the player already has on the map.
         sound_markers.clear();
     }
@@ -2800,6 +2809,11 @@ void sounds::process_sound_markers( Character *who )
             // Noise past +40 dB should automatically wake up heavy sleepers.
             // Noise past +60 dB will cause pain and should automatically wake up heavy sleeper 2.
             if( who->has_effect( effect_sleep ) ) {
+                // Idle ambience never wakes a sleeper, and like any other sound too quiet to
+                // wake them it stays out of the log and off the map.
+                if( element.sound.monster_ambience ) {
+                    continue;
+                }
                 const int diff_db_vol = mdBspl_to_dBspl( tile_vol - passive_sound_dampening - tile_vol );
                 int wake_up_vol = 10;
                 wake_up_vol += who->bonus_from_enchantments( wake_up_vol, ench_val_SLEEP_DB_RESIST );
@@ -2819,7 +2833,9 @@ void sounds::process_sound_markers( Character *who )
                 if( ( element.sound.from_monster || element.sound.from_npc ) &&
                     ( element.sound.origin != who->bub_pos() ) &&
                     !get_map().pl_sees( element.sound.origin, distance_to_sound ) ) {
+                    // Idle ambience is scenery, not a threat: it must not cancel an activity.
                     if( !who->activity->is_distraction_ignored( distraction_type::noise ) &&
+                        !element.sound.monster_ambience &&
                         !get_safemode().is_sound_safe( element.sound.description, distance_to_sound ) &&
                         !harmless_noise( element.sound, *who ) ) {
                         const std::string final_description = ensure_punctuation( description, '!' );
@@ -3976,7 +3992,7 @@ void sfx::end_activity_sounds()
 
 /** Dummy implementations for builds without sound */
 /*@{*/
-// There is no audio device, so no asset can be missing.
+// Markers are the only sound cue in this build, so treat every id as available.
 auto sounds::has_asset( const std::string &, const std::string & ) -> bool { return true; }
 void sfx::load_sound_effects( const JsonObject & ) { }
 void sfx::load_sound_effect_preload( const JsonObject & ) { }

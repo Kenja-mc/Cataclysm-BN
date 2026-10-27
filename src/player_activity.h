@@ -118,6 +118,9 @@ class player_activity
             return moves_total;
         }
 
+        /// Progress this activity makes per calendar turn, with its own speed factors.
+        int progress_per_calendar_turn() const;
+
         bool complete() const {
             if( actor ) {
                 return actor->progress.complete();

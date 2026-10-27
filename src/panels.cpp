@@ -2017,28 +2017,36 @@ static void draw_armor_comp( const avatar &u, const catacurses::window &w )
 
 namespace
 {
-/// One line for the log panel: the running activity and its progress, empty when idle.
+/// One line for the log panel: the running activity and its progress, empty when off or idle.
 auto activity_progress_line( const avatar &u ) -> std::string
 {
-    if( !u.activity || u.activity->is_null() ) {
+    if( !get_option<bool>( "ACTIVITY_LINE" ) || !u.activity || u.activity->is_null() ) {
         return {};
     }
-    const auto &verb = u.activity->get_verb();
+    const auto verb = u.activity->get_verb().translated();
     if( verb.empty() ) {
         return {};
     }
-    auto line = string_format( _( "Activity: %s" ), verb.translated() );
     const auto moves_left = u.activity->get_moves_left();
     const auto moves_total = u.activity->get_moves_total();
     if( moves_total > 0 ) {
         const auto done = std::clamp( moves_total - moves_left, 0, moves_total );
-        line += string_format( " %d%%", done * 100 / moves_total );
+        const auto percent = done * 100 / moves_total;
+        if( moves_left > 0 ) {
+            const auto turns = action_time_scale::turns_for_progress(
+                                   moves_left, u.activity->progress_per_calendar_turn() );
+            return string_format( _( "Activity: %1$s %2$d%% (%3$s left)" ), verb, percent,
+                                  to_string( time_duration::from_turns( turns ) ) );
+        }
+        return string_format( _( "Activity: %1$s %2$d%%" ), verb, percent );
     }
     if( moves_left > 0 ) {
-        const auto turns = action_time_scale::activity_turns_for_progress( moves_left );
-        line += string_format( _( " (%s left)" ), to_string( time_duration::from_turns( turns ) ) );
+        const auto turns = action_time_scale::turns_for_progress(
+                               moves_left, u.activity->progress_per_calendar_turn() );
+        return string_format( _( "Activity: %1$s (%2$s left)" ), verb,
+                              to_string( time_duration::from_turns( turns ) ) );
     }
-    return line;
+    return string_format( _( "Activity: %s" ), verb );
 }
 } // namespace
 

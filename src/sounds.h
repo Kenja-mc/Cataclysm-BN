@@ -93,8 +93,12 @@ std::pair< std::vector<tripoint_bub_ms>, std::vector<tripoint_bub_ms>> get_monst
 std::string sound_at( const tripoint_bub_ms &location );
 /** Tells us if sound has been enabled in options */
 extern bool sound_enabled;
-/// True when the loaded soundpack provides the effect. Builds without audio report true.
+/// True when the loaded soundpack provides the effect under this variant. Builds without
+/// audio report true: a marker is their only sound cue, so no id is silent-but-visible.
 auto has_asset( const std::string &id, const std::string &variant ) -> bool;
+/// True when monster idle ambience may create an event at all: the option is on, its volume is
+/// above zero, and (on a build with audio) the loaded pack provides the clip.
+auto monster_ambience_allowed( const std::string &id, const std::string &variant ) -> bool;
 
 } // namespace sounds
 

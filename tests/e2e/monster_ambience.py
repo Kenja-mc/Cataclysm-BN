@@ -1,14 +1,19 @@
 """Monster idle ambience is data-driven, jittered per creature and crowd-capped.
 
-No sound asset is downloaded: these tests observe the sound markers the normal sound
-pipeline paints, not audio. A monster only makes noise when its JSON names an
-`idle_sound`, so the shipped data stays silent until the asset pack fills the field.
+These tests observe the sound markers the normal sound pipeline paints, not audio. They run the
+curses binary, whose `has_asset()` reports every id as present because a marker is that build's
+only sound cue. A sound build additionally requires the loaded pack to provide the clip: without it
+there is no cue and no marker, so nothing is silent-but-visible (issue #32). No shipped monster
+declares `idle_sound`, so the fixture installs a mod that does.
 """
 import json
+import math
+import time
 import tempfile
 from pathlib import Path
 
 from helpers import HELPERS, Game, settle, start_new_game
+from sound_feedback import glyph_cells
 from tmux_game import ROOT
 
 MOD_ID = "e2e_monster_ambience"
@@ -66,12 +71,13 @@ def ambience_game(name, **options):
 
 
 def ring_positions(count):
+    """Cells ordered by Chebyshev ring, inner rings first, so a crowd surrounds the player."""
     out = []
-    for dx in range(-7, 8):
-        for dy in range(-7, 8):
-            if max(abs(dx), abs(dy)) < 2:
-                continue
-            out.append((dx, dy))
+    for radius in range(2, 8):
+        for dx in range(-radius, radius + 1):
+            for dy in range(-radius, radius + 1):
+                if max(abs(dx), abs(dy)) == radius:
+                    out.append((dx, dy))
     return out[:count]
 
 
@@ -84,8 +90,8 @@ def spawn(game, type_id, positions):
 
 
 def marker_count(game):
-    """Sound markers on the map, excluding the sidebar's glyph legend."""
-    return sum(line[:90].count("?") for line in game.screen().splitlines()[4:])
+    """Sound markers in the map area, using the glyph bounds the marker tests already define."""
+    return len(glyph_cells(game, "?"))
 
 
 def wait_for_marker(game, turns=26):
@@ -123,17 +129,22 @@ def test_idle_sound_needs_the_data_field_and_rerolls_its_cooldown(_g):
 
 
 def test_crowd_cap_drops_the_excess(_g):
-    """Sixty idle creatures never add more than four ambience markers in one turn."""
+    """Sixty idle creatures stay within the code's own four-per-250 ms budget."""
     game = ambience_game("ambience-crowd", MONSTER_AMBIENCE="true")
     try:
         spawn(game, NOISY, ring_positions(60))
         peak = 0
         total = 0
         for _ in range(30):
+            # The cap is a wall-clock window, so derive the allowance from the turn's measured
+            # duration instead of assuming one turn fits in one window. A slow CI runner that
+            # spends longer than 250 ms in a turn legitimately opens another window.
+            started = time.monotonic()
             settle(game)
+            windows = max(1, math.ceil((time.monotonic() - started) / 0.25))
             count = marker_count(game)
-            assert count <= 4, \
-                "at most four new creature ambience sounds fit in 250 ms:\n" + game.screen()
+            assert count <= 4 * windows, \
+                f"at most four new creature ambience sounds fit in each 250 ms, not {count}:\n" + game.screen()
             peak = max(peak, count)
             total += count
         assert peak > 0 and total > 0, \
