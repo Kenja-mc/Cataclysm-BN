@@ -437,11 +437,25 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 
 ## Sound & volume
 
-Open **Enter → Misc → Sound & volume** to toggle **Sound** and **Music** separately, or adjust
-**Music volume**, **Sound effect volume** and **Ambient volume** from 0 to 100%. Music starts on;
-it needs a soundpack with music. Up/Down selects a row, Left/Right changes it, and Enter toggles a
-switch or raises a volume. Changes apply immediately; **Escape** closes the menu and saves them.
-The terminal build instead shows “Sound is unavailable in this build.”; Escape closes that notice.
+Open **Enter → Misc → Sound & volume** to toggle **Sound**, **Music** and **Music follows the
+game state** separately, or adjust **Music volume**, **Sound effect volume** and **Ambient volume**
+from 0 to 100%. Music starts on; it needs a soundpack with music. Up/Down selects a row, Left/Right
+changes it, and Enter toggles a switch or raises a volume. Changes apply immediately; **Escape**
+closes the menu and saves them. The terminal build instead shows “Sound is unavailable in this
+build.”; Escape closes that notice.
+
+**Music follows the game state** (the row under **Music**, on by default) changes the track with
+the world. A soundpack's `musicset.json` can supply `danger` (a hostile in the combat bubble),
+`vehicle` (riding or driving), `underground` (below ground), `night` (dusk to dawn), `shelter`
+(indoors by day) and `explore` (the fallback) playlists, in that priority. A missing or empty
+context playlist plays `title`, and so does one whose files cannot be played, so a pack with only
+the old single playlist sounds exactly as before; `title` remains required for the main menu and
+that mode. Danger starts at once, and sleeping releases it at once and cannot start it. Any other
+change waits until the new context has been the best choice for 4 seconds and the current context
+has been active for 20 seconds; danger clears only after 5 seconds without a hostile and at least
+20 seconds of play. Changes crossfade over 2 seconds instead of cutting. When the `danger` playlist
+is playing, the older `danger_low`-style ambience themes stay quiet instead of stacking under it.
+Turn the row off to play the `title` playlist everywhere.
 
 ## Items and storage
 
@@ -826,6 +840,24 @@ run `out/build/linux-curses/tests/cata_test` directly with `CATA_TEST_COMPUTE_AC
 a Catch2 filter. Running every test in one process is not supported upstream either: some tests
 leave the map shifted for the next one.
 
+Dynamic music transitions are smoked with real SDL audio instead of a committed C++ test, because
+the fork does not add C++ unit tests for fork features. The smoke uses a throwaway soundpack
+outside the repo:
+
+1. Create `soundpack.txt` and a `musicset.json` there with `title`, `explore` and `danger`
+   playlists. Point `title` and `explore` at two short synthetic tones of different pitch (for
+   example, three-second sine waves made with `ffmpeg`/`sox`) and point `danger` at a missing
+   file. Nothing from this pack is committed.
+2. Select it in a sound-enabled build with music enabled, then switch from `title` to an
+   `explore` context. Two tones must overlap for about two seconds rather than cutting.
+3. Spawn and remove a hostile: `danger` starts at once, holds through the release window, and
+   returns to the previous context after the minimum play time.
+4. Trigger the broken `danger` context and confirm the `title` tune plays instead.
+5. Delete the scratch pack.
+
+The deterministic e2e checks still cover the context ids and fallback through
+`tests/e2e/dynamic_music.py`; this smoke is only for the audible mixer behaviour.
+
 The hidden `[benchmark][smart_safemode]` cases measure 12 blocked route searches and the
 over-budget conservative stop separately. Monster-list timings are steady-state scans; they do
 not include the first-sighting safety check. Arrow timings include fresh-turn route work.
@@ -885,6 +917,10 @@ The checks also isolate reload inventories and use an unseen NPC call for sound-
 so earlier weapons, automatic over-capacity drops and wind-masked footsteps do not change the fixture.
 The targeting fixture starts with a real bound, loaded gun; the separate reload check drives
 the reload UI. Lua setup refuses to type into the game if its console did not open.
+The dynamic-music checks park every monster, record the baseline
+`gapi.music_context()`, and then observe `danger` as soon as a hostile is in the bubble and the
+baseline playlist again after the hysteresis delay; a second game with the option off stays on
+`title` even with a hostile present.
 
 ## Performance checks
 

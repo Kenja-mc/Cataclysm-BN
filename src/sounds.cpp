@@ -23,6 +23,7 @@
 #include "messages.h"
 #include "monfaction.h"
 #include "monster.h"
+#include "music.h"
 #include "mtype.h"
 #include "npc.h"
 #include "options.h"
@@ -3579,6 +3580,12 @@ void sfx::do_danger_music()
     }
     audio_muted = false;
     const int hostiles = player_character.get_mon_visible().combat_hostile_count;
+    // The dynamic danger playlist owns the danger bed when it is actually
+    // playing; the old danger_low/medium/high/extreme themes would stack.
+    if( music::danger_music_active() ) {
+        fade_audio_group( group::context_themes, 1000 );
+        return;
+    }
     if( hostiles == prev_hostiles ) {
         return;
     }

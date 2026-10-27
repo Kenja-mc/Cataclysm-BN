@@ -86,6 +86,15 @@ with Up/Down and change it with Left/Right; Enter toggles a switch or raises a v
 Changes take effect at once. Press **Escape** to close the menu and save them.
 The terminal version has no audio and shows “Sound is unavailable in this build.” instead.
 
+**Music follows the game state** is the row below **Music**, on by default. It plays the
+soundpack's own `danger`, `vehicle`, `underground`, `night`, `shelter` and `explore` playlists
+when the world matches, crossfading between them. Danger starts at once; other changes wait for
+the state to settle, danger clears slowly, and sleeping releases or blocks the danger track.
+When the `danger` playlist plays, the older danger ambience themes stay quiet. A soundpack
+without a context playlist keeps playing `title`, so nothing changes unless it ships one; a pack
+still needs `title` for the menu and for that fallback. Turn the row off to keep `title` playing
+everywhere.
+
 ## Linux: download a release
 
 Download `BrightNightsOverhaul-linux-x64.tar.gz` from the

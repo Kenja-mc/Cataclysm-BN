@@ -25,6 +25,7 @@
 #    include "map/mapbuffer.h"
 #    include "mission.h"
 #    include "mongroup.h"
+#    include "music.h"
 #    include "npc.h"
 #    include "options.h"
 #    include "output.h"
@@ -4070,6 +4071,9 @@ input_event input_manager::get_input_event()
             if( last_input.type != input_event_t::error ) {
                 break;
             }
+            // No turn or redraw happens while idle; service a finished track
+            // on this main thread instead of the mixer callback.
+            music::pump();
             SDL_Delay( 1 );
         } while( last_input.type == input_event_t::error );
     } else if( inputdelay > 0 ) {
@@ -4083,6 +4087,7 @@ input_event input_manager::get_input_event()
             if( last_input.type != input_event_t::error ) {
                 break;
             }
+            music::pump();
             SDL_Delay( 1 );
             timedout = endtime >= starttime + inputdelay;
             if( timedout ) {

@@ -21,8 +21,9 @@
 
 namespace
 {
-const auto sound_options = std::array<std::string, 5> {
-    "SOUND_ENABLED", "MUSIC_ENABLED", "MUSIC_VOLUME", "SOUND_EFFECT_VOLUME", "AMBIENT_SOUND_VOLUME"
+const auto sound_options = std::array<std::string, 6> {
+    "SOUND_ENABLED", "MUSIC_ENABLED", "DYNAMIC_MUSIC", "MUSIC_VOLUME",
+    "SOUND_EFFECT_VOLUME", "AMBIENT_SOUND_VOLUME"
 };
 constexpr auto volume_step = 8;
 constexpr auto volume_max = 128;
@@ -45,12 +46,14 @@ auto show_sound_menu() -> void
     };
     menu.addentry( 0, true, 0, _( "Sound" ) );
     menu.addentry( 1, true, 0, _( "Music" ) );
-    menu.addentry( 2, true, 0, _( "Music volume" ) );
-    menu.addentry( 3, true, 0, _( "Sound effect volume" ) );
-    menu.addentry( 4, true, 0, _( "Ambient volume" ) );
+    menu.addentry( 2, true, 0, _( "Music follows the game state" ) );
+    menu.addentry( 3, true, 0, _( "Music volume" ) );
+    menu.addentry( 4, true, 0, _( "Sound effect volume" ) );
+    menu.addentry( 5, true, 0, _( "Ambient volume" ) );
 
+    constexpr auto switch_rows = 3;
     const auto refresh_value = [&]( const int row ) {
-        if( row < 2 ) {
+        if( row < switch_rows ) {
             menu.entries[row].ctxt = get_option<bool>( sound_options[row] ) ? _( "On" ) : _( "Off" );
         } else {
             const auto volume = get_option<int>( sound_options[row] );
@@ -68,7 +71,7 @@ auto show_sound_menu() -> void
         }
         const auto row = menu.selected;
         auto &option = get_options().get_option( sound_options[row] );
-        if( row < 2 ) {
+        if( row < switch_rows ) {
             const auto before = get_option<bool>( sound_options[row] );
             const auto after = menu.ret == UILIST_ADDITIONAL ? menu.ret_act == "RIGHT" : !before;
             if( before == after ) {
@@ -85,7 +88,7 @@ auto show_sound_menu() -> void
             option.setValue( after );
         }
         update_volumes();
-        if( row == 3 ) {
+        if( row == 4 ) {
             sfx::play_variant_sound( "menu_move", "default", 100 );
         }
         refresh_value( row );

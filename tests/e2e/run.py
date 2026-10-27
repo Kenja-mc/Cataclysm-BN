@@ -43,6 +43,7 @@ from map_view import TESTS as MAP_VIEW_TESTS
 from combat import TESTS as COMBAT_TESTS
 from sound_feedback import TESTS as SOUND_FEEDBACK_TESTS
 from sound_menu import TESTS as SOUND_MENU_TESTS
+from dynamic_music import TESTS as DYNAMIC_MUSIC_TESTS
 from safemode import TESTS as SAFEMODE_TESTS
 from char_creation import TESTS as CHAR_CREATION_TESTS
 from fluid_grid import TESTS as FLUID_GRID_TESTS
@@ -111,6 +112,7 @@ MODULES = [
     ("combat", COMBAT_TESTS),
     ("sound_feedback", SOUND_FEEDBACK_TESTS),
     ("sound_menu", SOUND_MENU_TESTS),
+    ("dynamic_music", DYNAMIC_MUSIC_TESTS),
     ("safemode", SAFEMODE_TESTS),
     ("char_creation", CHAR_CREATION_TESTS),
     ("fluid_grid", FLUID_GRID_TESTS),

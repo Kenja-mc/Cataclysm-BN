@@ -1962,6 +1962,14 @@ void options_manager::add_options_general()
 
     get_option( "MUSIC_ENABLED" ).setPrerequisite( "SOUND_ENABLED" );
 
+    add( "DYNAMIC_MUSIC", general, translate_marker( "Music follows the game state" ),
+         translate_marker( "If true, background music changes with danger, vehicles, depth, night and shelter.  "
+                           "If false, the title playlist plays throughout." ),
+         true, COPT_NO_SOUND_HIDE
+       );
+
+    get_option( "DYNAMIC_MUSIC" ).setPrerequisite( "MUSIC_ENABLED" );
+
     add( "MUSIC_VOLUME", general, translate_marker( "Music volume" ),
          translate_marker( "Adjust the volume of the music being played in the background." ),
          0, 128, 100, COPT_NO_SOUND_HIDE
