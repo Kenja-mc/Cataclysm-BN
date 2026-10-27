@@ -788,12 +788,26 @@ The fork follows upstream `main` with plain merges. When upstream adds black pow
 (`bp_*`) or items the fork folded into variants, fold them the same way: the new items become
 migrations so old saves keep working, and loot entries keep the black powder `stack_modifier`.
 
-The **Upstream feature candidates** workflow runs daily or on manual dispatch and appends new
-upstream commits to [the review tracker](https://github.com/Kenja-mc/Cataclysm-BN/issues/3).
-Likely additions are grouped separately, but every new commit is retained for review. Checklists
-are not approvals: reject balance changes and choose useful UI, control or item-folding changes
-manually. CI preserves checklist edits, advances its checkpoint only after posting every report,
-and never ports code automatically. Close the tracker to stop reporting.
+The **Upstream feature issues** workflow runs daily or on manual dispatch. It reads upstream
+`main` only and files one issue per clear feature: a non-merge conventional `feat:` or
+`feature:` commit outside the `balance` scope. Issues are labelled `upstream-candidate` and
+grouped by the upstream PR reference — including PRs merged with a merge commit — so several
+commits of one feature share a ticket. Every other new commit, including `feat(balance)`, stays in
+[the review tracker](https://github.com/Kenja-mc/Cataclysm-BN/issues/3) as a checklist row.
+Commits at or below the fork's upstream merge base are already merged and are skipped.
+
+Feature issues and checklists are not approvals: reject balance changes and choose useful UI,
+control or item-folding changes manually. Closing a feature issue records rejection; later commits
+for it are listed in the tracker, and the watcher never reopens or refiles it. Every write carries
+a stable marker, so a failed run is safe to rerun; the tracker checkpoint advances a batch at a
+time, only after that batch's issues and rows exist. CI never writes to the upstream and never
+ports code automatically. Close the tracker to stop reporting; the workflow then exits without
+writing and the daily job stays green. The tracker's CI-owned description is refreshed in place
+when the workflow changes, leaving human notes alone. `--dry-run` prints the pending issues and
+rows without writing, and `--self-check` runs offline before any API call: it covers
+classification, PR grouping (including merge commits), deduplication, untrusted text, the merge
+gate, the closed-feature fallback, the stop switch, tracker description migration, truncated
+comparisons and partial-failure reruns.
 
 ## Future work
 
