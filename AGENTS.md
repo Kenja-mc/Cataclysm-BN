@@ -105,6 +105,31 @@ root. Trust the final linker output, not an older executable left in another dir
 configure message and `CMAKE_RUNTIME_OUTPUT_DIRECTORY` before choosing a binary; the end-to-end
 harness checks the root executable first.
 
+### Quick iteration
+
+`bin/dev-iterate.sh` (or `just dev`, which needs `just` installed) rebuilds only the game with the
+`linux-curses-dev` preset (`--tiles` for `linux-tiles-dev`) and launches it straight into the first
+character of world `dev` (`--world NAME`). Saves, config and logs go under `out/dev-userdir/`
+because both dev presets build with `USE_XDG_DIR` and `USE_HOME_DIR` off, so a dev run never touches
+your normal profile. The first run opens the main menu: create a world **and a character** there
+once. A world without a character would make the game quit immediately, so the launcher then falls
+back to the main menu instead of passing `--world`. `--no-run` builds and exits without opening
+anything and rejects game arguments, which is the noninteractive form for automation; `--no-build`
+reuses the last binary. Everything after `--` goes to the game, so pass game arguments through the
+script (`bin/dev-iterate.sh … -- ARGS`): `just` consumes the `--` separator itself. While the game
+runs it holds a shared lock on the build tree, so a rebuild waits for you to quit instead of
+relinking the binary underneath a running game.
+
+The dev presets are an iteration tool, not a validation tool. They compile `RelWithDebInfo` with the
+optimization flags replaced by `-O0 -g1 -DNDEBUG`, so `assert()` is compiled out and `RELEASE=1`:
+release-only code paths run and the game runs slower. Tests, clang-tidy and Tracy are not built, and
+`-g1` is too thin for gdb work — use `linux-curses` or `linux-full` for the test gate, for
+performance numbers, or when debugging. The gain is in the largest translation units: on a 4-core
+container `game.cpp` compiled in 28 seconds instead of 62 at `-O2`, while the `-O2` edit measured
+above takes 17.8 seconds on this 8-core/16-thread machine. Numbers are machine-specific, and small
+files gain little because parsing headers dominates. Editing a header that many files include still
+recompiles all of them.
+
 ### Test
 
 Do all three tests before you push. All results must be good.

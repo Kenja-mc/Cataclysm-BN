@@ -37,4 +37,10 @@ hooks-setup:
 playtest *args:
     deno run --allow-read --allow-write --allow-run --allow-env scripts/playtest.ts "$@"
 
+# Rebuild only the game (-O0 -g1, NDEBUG, no tests) and load the dev save: just dev [--tiles]
+# [--world NAME] [--no-run]. Game arguments go through the script: bin/dev-iterate.sh -- ARGS.
+[positional-arguments]
+dev *args:
+    bin/dev-iterate.sh "$@"
+
 check: lint
