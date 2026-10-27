@@ -26,6 +26,7 @@
 #include "item.h"
 #include "json.h"
 #include "body_panel.h"
+#include "driving_dashboard.h"
 #include "hud_boxes.h"
 #include "hud_sidebar.h"
 #include "keyhints_panel.h"
@@ -2754,6 +2755,9 @@ int panel_manager::get_width_left()
 
 void panel_manager::init()
 {
+    // The floating HUD's vehicle window takes the dashboard; the fixed layouts keep the
+    // compact readout because the provider is only consulted while that HUD is active.
+    driving_dashboard::install();
     load();
     update_offsets( get_current_layout().begin()->get_width() );
 }

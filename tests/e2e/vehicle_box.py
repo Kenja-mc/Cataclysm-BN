@@ -6,7 +6,9 @@ from helpers import HELPERS, Game, action_menu, arena, choose_menu_entry, option
 
 
 def vehicle_game(name, **options):
-    game = Game(name=name, options={"SAFEMODE": "false", "USE_METRIC_SPEEDS": "mph", **options})
+    # These tests read the fixed vehicle readout, so the floating HUD's dashboard is off.
+    game = Game(name=name, options={"SAFEMODE": "false", "USE_METRIC_SPEEDS": "mph",
+                                    "HUD_WINDOWS": "false", **options})
     try:
         start_new_game(game)
         game.define_lua(HELPERS)

@@ -49,6 +49,7 @@ from fluid_grid import TESTS as FLUID_GRID_TESTS
 from river_barges import TESTS as RIVER_BARGES_TESTS
 from vehicle_box import TESTS as VEHICLE_BOX_TESTS
 from remote_vehicle import TESTS as REMOTE_VEHICLE_TESTS
+from driving_dashboard import TESTS as DRIVING_DASHBOARD_TESTS
 from cursor_panning import TESTS as CURSOR_PANNING_TESTS
 from npc_palette import TESTS as NPC_PALETTE_TESTS
 from hud_sidebar import TESTS as HUD_SIDEBAR_TESTS
@@ -117,6 +118,7 @@ MODULES = [
     ("river_barges", RIVER_BARGES_TESTS),
     ("vehicle_box", VEHICLE_BOX_TESTS),
     ("remote_vehicle", REMOTE_VEHICLE_TESTS),
+    ("driving_dashboard", DRIVING_DASHBOARD_TESTS),
     ("cursor_panning", CURSOR_PANNING_TESTS),
     ("npc_palette", NPC_PALETTE_TESTS),
     ("hud_sidebar", HUD_SIDEBAR_TESTS),

@@ -34,6 +34,49 @@ sidebar options.
 
 ![Classic controls and colours: vi-keys in the Controls strip, trees drawn as 7, 4 and 1](images/classic_game.png)
 
+## Driving dashboard
+
+The floating HUD's **Vehicle** window is the one place the dashboard lives; the fixed layouts keep
+the compact vehicle readout. It is type-first, like the fork's text-only HUD option, and adds no
+new art:
+
+```
+Vehicle  24 mph N [-]
+Speed    ###---
+Cruise   On 40 mph
+Heading  0°
+Engine   On
+gasoline ##---- 42%
+battery  #----- 18% low
+```
+
+- The title row carries the speed, unit and compass letter; the body carries the speed bar,
+  azimuth, cruise state and target, engine state, both tanks and the aircraft row. No reading is
+  printed twice, which keeps the title-driven window narrow.
+- One label column, a six-cell bar and one short value give a 24-cell window with **Text only**,
+  26 with Unicode icons and 27 with the bundled icon font; at 80×25 that leaves 9–12 of the 36 map
+  columns. A `WING` vehicle adds a takeoff row and three cells. The heading, fuel and battery rows
+  use the existing compass, fuel and battery icons; **Text only** drops the icon column and leaves
+  the labels.
+- Palette: the speed row uses the compact readout's strain colours, the engine row uses green,
+  yellow and red for strain, fuel is grey/yellow/red, battery is cyan/yellow/red, cruise-on is
+  green, `lift` is green and `no lift` is red, and remote control is cyan.
+- Every colour has a text or shape cue: `On`/`Off`, `low`/`empty`, `!`/`!!`/`!!!` strain marks, a
+  bar of `#` and `-`, `lift`/`no lift`, and a signed speed for reverse. A monochrome terminal keeps
+  all of the information. The speed bar fills toward the safe speed; above it the row first turns
+  yellow and gains a marker.
+- `Remote control` appears only while a remote vehicle is under control. The aircraft row keeps
+  the takeoff speed in the configured unit and reports whether the current speed reaches it; a wing
+  that cannot lift reports `no lift`.
+- No new images, sprites or glyph art are added: the icons come from the fork's existing HUD set.
+  There is no copied Zomboid asset and no generated artwork. Project Zomboid is a layout
+  reference only.
+
+The terminal tests drive, drain a tank to `low` and `empty`, reach takeoff speed, take remote
+control, use km/h and Unicode icons, and check the window bounds at 80×25. `tests/e2e/hud_tiles.py`
+hides the other floating windows in its fixture, then clicks the vehicle window's collapse control
+at 80×25 at both 1x and 2x scaling and checks the dashboard's exact cell footprint on the map.
+
 ## Mouse tile selection
 
 ![Obsolete Modern click-to-walk hint: an earlier Mouse View capture](images/hover.png)

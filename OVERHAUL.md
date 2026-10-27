@@ -221,6 +221,45 @@ letters used to start moved to Shift: `W` crew, `A` label, `S` siphon, `D` unloa
 Clicks select vehicle parts and overview rows or use the displayed action and tab labels. The
 existing hints and mouse wheel scroll the descriptions and parts list.
 
+**Driving dashboard** (Options → Interface → Floating HUD windows; issue #21): while driving or
+remote-controlling a vehicle, the floating **Vehicle** window is an instrument cluster instead of
+the compact one-line readout. With speed units in mph and the text-only icon setting, a car shows:
+
+```
+Vehicle  24 mph N [-]
+Speed    ###---
+Cruise   On 40 mph
+Heading  0°
+Engine   On
+gasoline ##---- 42%
+battery  #----- 18% low
+```
+
+The title row owns the speed, its unit and the compass letter; the body owns the speed bar, the
+azimuth, the cruise state and target, the engine state, both tanks and the aircraft row, so no
+value is printed twice. A remote-controlled vehicle adds a **Remote control** row. Vehicles with
+a `WING` part add `Takeoff  55 mph no lift`; it becomes `lift` once the current speed reaches the
+number, using the speed unit from Options. A wing that cannot lift the vehicle reports `no lift`
+at any speed.
+
+Every state is a word or shape as well as a colour: the cruise line says `On`/`Off` and names its
+target, the engine line says `On`/`Off` and marks strain with `!`, `!!` or `!!!`, fuel and battery
+rows say `low` or `empty` beside a filled bar, and the takeoff row says `lift`/`no lift`. The speed
+bar fills toward the vehicle's safe speed; above it the row turns yellow and gains the `!`
+marker. A
+collapsed window keeps the one-line reading `<speed> <unit> <compass>`.
+
+This changes only the floating window: the fixed sidebar layouts keep the compact readout, and
+turning **Floating HUD windows** off brings the fixed readout back (the map corner box by default,
+or the sidebar when the vehicle box is off or the layout is fixed). The window is movable,
+minimizable and can be hidden in Sidebar Options. At 80×25 it is 24 cells wide with text only,
+26 with Unicode icons and 27 with the bundled icon font, leaving 9–12 of the 36 map columns; an
+aircraft adds three cells for the takeoff row. When no free rectangle fits the map it is skipped
+rather than covering another window. Bar glyphs and words carry the meaning, so it reads the same
+with colours off, in the terminal build and in the tiles build. The dashboard adds no artwork: it
+uses the fork's palette, type and existing compass, fuel and battery icons, so there are no copied
+or generated images.
+
 A **Controls** strip at the bottom of the sidebar shows the most used keys. `? all keys` stays
 near the movement hints, and five rows keep the other hints visible. It reads live keybindings,
 so action hints stay correct if you rebind them. On a terminal too short for five rows the strip

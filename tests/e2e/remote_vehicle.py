@@ -15,7 +15,8 @@ def open_action_menu(game, category, action):
 
 
 def remote_vehicle_game(name, **options):
-    game = Game(name=name, options={"SAFEMODE": "false", **options})
+    # The dashboard tests pass HUD_WINDOWS=true explicitly; the fixed-readout test keeps it off.
+    game = Game(name=name, options={"SAFEMODE": "false", "HUD_WINDOWS": "false", **options})
     try:
         start_new_game(game)
         game.define_lua(HELPERS)

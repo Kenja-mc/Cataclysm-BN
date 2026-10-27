@@ -235,7 +235,14 @@ Long-form write-ups should follow
   `h` opens body details (also Enter → Info → Body status). `@` opens the character sheet and `P` the log.
   `F` opens fire-mode selection.
   Check vehicle/readout fallbacks at 80×25, driving hints (`ws`/`ad`), and their return to
-  `wasd` on release. The new bundled typeface should show readable labels and complete glyphs.
+  `wasd` on release. While driving or remote-controlling, the floating **Vehicle** window shows
+  the dashboard: the title keeps speed and compass letter, the body has the speed bar, azimuth,
+  cruise state and target, engine state, fuel and battery bars with `low`/`empty` words, and
+  takeoff speed with `lift`/`no lift` for aircraft. All of it fits 80×25 (24 cells text-only, up
+  to 27 with icons). Collapse it to check the one-line `<speed> <unit> <compass>` readout, move
+  it, and turn **Floating HUD windows** off to confirm the fixed readout returns — the map corner
+  box by default, or the sidebar with the vehicle box off. The new bundled typeface should show
+  readable labels and complete glyphs.
 - **Targeting:** gun aiming starts on the reachable hostile and warns about allies in the line of
   fire; check loudness. Map target cycling is selection, not an attack.
 - **Crafting:** `i`, then F5; opens on recent recipes, "Missing: …", part producer hints (`p`).
