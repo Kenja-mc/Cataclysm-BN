@@ -13,7 +13,8 @@ from tmux_game import Game, start_new_game
 OPTIONS = {"CONTROL_SCHEME": "modern", "SAFEMODE": "false", "SHOW_WELCOME": "false",
            "SHOW_TIPS": "false", "SIDEBAR_POSITION": "right", "SIDEBAR_SPACERS": "false",
            "HUD_WEATHER_BOX": "top_left", "HUD_COMBAT_BOX": "top_left",
-           "HUD_VEHICLE_BOX": "top_left", "HUD_ICONS": "unicode", "ANIMATIONS": "false"}
+           "HUD_VEHICLE_BOX": "top_left", "HUD_ICONS": "unicode", "ANIMATIONS": "false",
+           "HUD_WINDOWS": "false"}
 NEED_LABELS = ("Pain", "Thirst", "Hunger", "Rest", "Body temp")
 
 

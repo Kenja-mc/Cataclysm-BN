@@ -4,6 +4,29 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-26
+
+### Added
+
+- Floating HUD windows in the labels, labels-narrow and grouped layouts: weather, combat, needs,
+  limbs, stats, movement, weight, compass, log and vehicle each have a title row, one line of live
+  state, a `[-]` collapse control, drag placement clamped to the map, and per-character saved
+  position, collapse and visibility.
+- Sidebar Options lists every window so the whole layout is reachable without a mouse; a disabled
+  or unfittable window hands its reading back to the sidebar. Both terminal and tiles build it.
+- The vehicle window is a replaceable provider (`hud_windows::set_vehicle_provider`) for the
+  driving-dashboard work.
+- Clicking or dragging a window, or pressing Enter on it in Sidebar Options, raises it to the
+  front; the stacking order is saved with the character.
+
+### Changed
+
+- Clicking a HUD window no longer acts on the map tile beneath it.
+- The sidebar is cleared before its panels are drawn, so a full-screen view's legend (for example
+  the overmap's) no longer lingers between panels after it closes.
+- The limb, stat, compass and log windows keep the sidebar's wound text, stat colours, direction
+  symbols and threat colours, and message colours.
+
 ## 2026-10-25
 
 ### Added
