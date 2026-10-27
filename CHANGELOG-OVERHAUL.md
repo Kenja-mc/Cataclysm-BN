@@ -27,6 +27,18 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Sound markers shrink to a dot as they age, so a fresh noise reads differently from a stale one;
   the first marker in a game explains the glyphs once (with Show first-time tips on), and going
   deaf clears any markers already on the map.
+- **Upstream feature issues**: the daily watcher now files one deduplicated, labelled
+  `upstream-candidate` issue per clear upstream feature — a conventional `feat:` commit outside
+  the `balance` scope — grouping commits by their upstream PR reference, including PRs merged
+  with merge commits. Commits it cannot classify, and `feat(balance)` changes, stay in the #3
+  tracker; commits already merged into the fork are skipped, and later commits for a closed
+  feature issue are listed in the tracker instead of reopening it. Every write carries a stable
+  marker and the checkpoint advances per batch, so a failed run is safe to rerun. Closing the
+  tracker stops reporting with a clean exit, and the tracker's CI-owned description is refreshed
+  without touching human notes. `--dry-run` previews the writes, and the offline self-check now
+  covers classification, PR grouping, deduplication, untrusted text, the merge gate, the
+  closed-feature fallback, the stop switch, tracker description migration, truncated comparisons
+  and partial failures.
 
 ## 2026-10-25
 
