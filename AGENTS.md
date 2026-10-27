@@ -34,17 +34,22 @@ learn and use. It keeps the BN game rules. `OVERHAUL.md` explains each change.
 ### Build
 
 Run these from the repository root. `linux-curses` is the fork's terminal build; `linux-full` adds
-tiles and sound. Every output path below is relative to `out/build/<preset>/`. Install the local
-build tools on Arch:
+tiles and sound. Every output path below is relative to `out/build/<preset>/`. `mise.toml` pins
+CMake, Ninja, mold and ccache for this checkout and its `bn-wt-*` worktrees; the compiler and the
+formatter come from the system:
 
 ```sh
-sudo pacman -S --needed clang ccache mold
-ccache --max-size=20G
+mise install
+sudo pacman -S --needed clang astyle
+mise exec -- ccache --max-size=20G
 ```
 
-`clang` is required. If `ccache` or `mold` is absent, configure warns and uses uncached compilation
-or the default linker. Formatting also needs `astyle` (`sudo pacman -S --needed astyle`).
-After installing the tools, refresh both trees so old cache overrides do not survive:
+Run the build commands below through `mise exec --` (or with mise shell activation), so the system
+CMake and Ninja are never picked up. `clang` is required. If `ccache` or `mold` is absent, configure
+warns and uses uncached compilation or the default linker. A build tree caches the Ninja path it
+was first configured with; reconfigure an older tree with the scoped CMake
+(`bin/dev-iterate.sh` does this itself). After installing the tools, refresh both trees so old
+cache overrides do not survive:
 
 ```sh
 cmake --preset linux-curses --fresh
@@ -165,9 +170,10 @@ Do all three tests before you push. All results must be good.
    | One feature                            | Its tests, then `python3 tests/e2e/run.py --tier=smoke` |
    | Harness, build, data or shared fixture | The whole suite                                         |
 
-   `python3 tests/e2e/run.py` is parallel by default and takes about 10 minutes. Do not run other
-   heavy work at the same time, because slow input makes these tests fail. Name filters run single
-   tests while iterating.
+   Run the whole suite as `python3 tests/e2e/run.py --parallel=2` with no command deadline: its 291
+   tests took 63 minutes here on 2026-10-27, so a one-hour cap cuts it off. Do not run other heavy
+   work at the same time, because slow input makes these tests fail. Name filters run single tests
+   while iterating.
 
    `bin/playtest-container.sh e2e [test-name ...]` runs the same suite inside an unprivileged
    bubblewrap container with a private HOME and `/tmp` and no network, and

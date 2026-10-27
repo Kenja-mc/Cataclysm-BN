@@ -1,0 +1,5 @@
+[tools]
+"aqua:Kitware/CMake" = "4.4.4"
+"aqua:ninja-build/ninja" = "1.13.2"
+"aqua:rui314/mold" = "3.0.0"
+"github:ccache/ccache" = "4.14.1"

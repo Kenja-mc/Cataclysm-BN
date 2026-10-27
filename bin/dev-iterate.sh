@@ -88,13 +88,22 @@ if ((build)); then
     start=$SECONDS
     # One lock per tree: a parallel configure or build of the same tree corrupts it.
     flock "$lock" sh -eu -c '
+        # mise.toml pins the build tools when mise is installed; otherwise use the PATH ones.
+        if command -v mise >/dev/null 2>&1; then
+            tools="mise exec --"
+            ninja=$(mise which ninja)
+        else
+            tools=""
+            ninja=$(command -v ninja)
+        fi
         if [ ! -f "$1/build.ninja" ] ||
             [ CMakeLists.txt -nt "$1/build.ninja" ] ||
             [ CMakePresets.json -nt "$1/build.ninja" ] ||
-            [ -n "$(find CMakeModules -newer "$1/build.ninja" -print -quit)" ]; then
-            cmake --preset "$2"
+            [ -n "$(find CMakeModules -newer "$1/build.ninja" -print -quit)" ] ||
+            ! grep -Fxq "CMAKE_MAKE_PROGRAM:FILEPATH=$ninja" "$1/CMakeCache.txt"; then
+            $tools cmake --preset "$2" -DCMAKE_MAKE_PROGRAM="$ninja"
         fi
-        cmake --build "$1" --target "$3"
+        $tools cmake --build "$1" --target "$3"
     ' sh "$tree" "$preset" "$target"
     echo "built $target in $((SECONDS - start))s"
     echo "binary: $binary"
