@@ -38,8 +38,8 @@ from agent_models import (  # noqa: E402
 from helpers import HELPERS, arena, bub_pos, empty_inventory, give  # noqa: E402
 from tmux_game import Game, start_new_game  # noqa: E402
 
-SIDEBAR_HINTS = ("wasd move", "qezc diag", "all keys", "RETURN menus", "CTRL+W peek",
-                 "WASD look", "spc interact")
+SIDEBAR_HINTS = ("wasd move", "qezc diag", "all keys", "Enter menus", "Ctrl+WASD peek",
+                 "spc interact", "v use", "f attack")
 
 PANELS = ("Needs", "Movement", "Location", "Weapon", "Controls", "Log", "Compass", "Moon",
           "Vehicle", "Environment", "Sound", "Stats", "Stamina", "Health")

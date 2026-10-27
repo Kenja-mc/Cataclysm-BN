@@ -12,6 +12,25 @@ Upstream's own changes are in `docs/en/game/changelog`.
   `explore` playlists, crossfades, minimum play time and hysteresis, with a switch that keeps
   the old single `title` playlist.
 
+### Changed
+
+- Keys read as people say them on every screen: Enter, Esc, Tab, Shift+Tab, PgUp, PgDn, Ctrl+X
+  and Numpad 8 instead of RETURN, ESC, BACKTAB, PPAGE, NPAGE, CTRL+X and NUMPAD_8. Saved
+  keybindings and existing translations are unchanged.
+- The Controls strip lists the keys a new player acts with first — interact, inventory, menus,
+  use, attack, pick up, wait, map — and moves safe mode and auto travel after them, so a short
+  strip no longer hides `i`, Enter and `v`.
+
+### Fixed
+
+- The welcome card no longer leaves a blank where the craft key should be, no longer says Shift
+  selects tiles (those keys ship unbound), and names `v`, `g`/`G`, Ctrl+F, `M` and the real place
+  of quick stack and sort pile. It fits an 80×25 terminal.
+- The first-ten-minutes help page names `x` for waiting one turn (Ctrl+X opens the wait menu), no
+  longer says the arrow keys walk in Modern, and says F1 opens the help topics.
+- `OVERHAUL.md`, `docs/fork/playing.md` and the controls diagram match the Modern bindings: `p`
+  bionics, `G` pickup list, Ctrl+G drop, `I` advanced inventory, `v` use by item kind.
+
 ## 2026-10-26
 
 ### Added
