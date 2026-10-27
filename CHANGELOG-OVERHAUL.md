@@ -42,6 +42,10 @@ Upstream's own changes are in `docs/en/game/changelog`.
   covers classification, PR grouping, deduplication, untrusted text, the merge gate, the
   closed-feature fallback, the stop switch, tracker description migration, truncated comparisons
   and partial failures.
+- `M` opens one World page with numbered tabs: missions, factions, zones and scores are drawn
+  inline on that page. `1`-`4` and Left/Right switch tabs, Tab switches a tab's inner pages, and
+  Escape returns to play (after the usual zone save prompt when zones were changed). The tabs use
+  no plain z/x/c/v.
 
 ## 2026-10-25
 

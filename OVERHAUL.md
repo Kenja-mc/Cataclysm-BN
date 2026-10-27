@@ -21,6 +21,15 @@ direction prompts. Top-row numbers do not move you on the map.
   construction, storage, talking and equipment. **Info** holds body status, missions, morale and
   the other status screens; **`@`** opens the character sheet and **`P`** the message log directly.
   **Misc → Sidebar Options** moves, hides and reorders the sidebar panels.
+- **`M` — World page (Modern).** Missions, factions, zones and scores are numbered tabs on one
+  page, and the active tab's own screen is drawn in place: switching tabs never closes the page.
+  **1**-**4** switch tabs; Left/Right (including the arrow keys) move between tabs; **Tab** and
+  **Shift+Tab** switch the tab's own inner pages; **Esc** returns to play, after the zone save
+  prompt when zones were edited; **?** lists the page's keys. The page's own keys win, so bind a
+  screen action to a different key if it lands on a number, a direction, Tab, Enter or Esc.
+  The four screens stay bindable actions for Classic and custom layouts; Modern binds none of
+  them, and plain **z/x/c/v** trigger nothing. Zones can still be added, edited, enabled,
+  reordered and shown on the map from the Zones tab, with the zone screen's own keys.
 - **`i` — inventory and equipment.** Select an item to open its context menu for **Wield**,
   **Wear**, **Eat**, **Use**, **Read** and other item actions. The menu shows its local shortcuts.
   **`v`** wields from the map: it lists what you can wield. Press **F5 Craft** inside inventory to
@@ -140,7 +149,7 @@ food and a weapon, because houses usually have all three.
 | Shift+X              | cycle walk / run / crouch / prone                                  |
 | `x` / Ctrl+X         | wait one turn / wait or rest a while                               |
 | `m`, `n`             | map / auto-explore                                                 |
-| `M`                  | world: missions, factions, zones, scores                           |
+| `M` (Modern)         | world page: inline tabs for missions, factions, zones, scores       |
 | PageUp / PageDown    | stairs up / down (also `<` / `>`)                           |
 | `h`                  | health and wounds                                          |
 | `!` / `'`            | safe mode / ignore enemy                                           |

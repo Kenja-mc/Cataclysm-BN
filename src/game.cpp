@@ -4657,6 +4657,11 @@ kill_tracker &game::get_kill_tracker()
     return *kill_tracker_ptr;
 }
 
+achievements_tracker &game::get_achievements_tracker()
+{
+    return *achievements_tracker_ptr;
+}
+
 memorial_logger &game::memorial()
 {
     return *memorial_logger_ptr;
@@ -9854,6 +9859,11 @@ bool game::check_near_zone( const zone_type_id &type, const tripoint_bub_ms &whe
 bool game::is_zones_manager_open() const
 {
     return zones_manager_open;
+}
+
+void game::set_zones_manager_open( bool open )
+{
+    zones_manager_open = open;
 }
 
 bool game::is_zone_submap_grid_overlay_enabled() const

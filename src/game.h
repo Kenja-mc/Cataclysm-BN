@@ -694,6 +694,8 @@ class game : public submap_load_listener
         /** Checks whether or not there is a zone of particular type nearby */
         bool check_near_zone( const zone_type_id &type, const tripoint_bub_ms &where ) const;
         bool is_zones_manager_open() const;
+        /// The World page's Zones tab is a second host for the zone UI; tile overlays follow this.
+        void set_zones_manager_open( bool open );
         bool is_zone_submap_grid_overlay_enabled() const;
         void zones_manager();
 
@@ -1165,6 +1167,7 @@ class game : public submap_load_listener
         event_bus &events();
         stats_tracker &stats();
         kill_tracker &get_kill_tracker();
+        achievements_tracker &get_achievements_tracker();
         memorial_logger &memorial();
         spell_events &spell_events_subscriber();
 
