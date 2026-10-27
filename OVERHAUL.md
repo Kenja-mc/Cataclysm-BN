@@ -807,6 +807,17 @@ cmake --build --preset linux-curses --target cataclysm-bn
 out/build/linux-curses/src/cataclysm-bn --basepath .
 ```
 
+For an edit-compile-run loop, `bin/dev-iterate.sh` (`just dev`, which also needs `just` installed)
+builds only the game with the `linux-curses-dev` or `linux-tiles-dev` (`--tiles`) preset, which is
+`-O0 -g1` with `NDEBUG` and no tests, and loads world `dev` and its first character from an isolated
+`out/dev-userdir/`. Both presets build with `USE_XDG_DIR` and `USE_HOME_DIR` off, so saves, config
+and logs stay there instead of your normal profile. Create the world and a character from the main
+menu once; without a character the game would quit immediately, so the launcher then opens the main
+menu instead. `--no-run` builds and exits and refuses game arguments, so it is safe for automation.
+It is an iteration build: asserts are off, the game is slower, and `-g1` is not enough for gdb, so
+run the test gate and performance checks with `linux-curses` or `linux-full`. See `--help` and the
+"Quick iteration" part of `AGENTS.md`.
+
 ## Upstream merges
 
 The fork follows upstream `main` with plain merges. When upstream adds black powder ammo

@@ -8,6 +8,9 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Added
 
+- `bin/dev-iterate.sh` and `just dev`, with the `linux-curses-dev` and `linux-tiles-dev` presets:
+  a game-only `-O0` build that launches into an isolated `out/dev-userdir/` for saves, config and
+  logs. It is for iteration only — asserts are off and tests are not built.
 - Unpacking a kit, go-bag, survival kit or alien pod opens one take list. Every content starts
   marked; Enter takes it, a click or Right unmarks a row, digits typed before a click take that
   many charges, `W` wears it, and Escape leaves it all on the floor. Taking costs the same 100
