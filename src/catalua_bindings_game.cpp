@@ -20,6 +20,7 @@
 #include "map/map.h"
 #include "messages.h"
 #include "monster.h"
+#include "music.h"
 #include "npc.h"
 #include "overmap/overmapbuffer.h"
 #include "sol/forward.hpp"
@@ -812,6 +813,14 @@ void cata::detail::reg_game_api( sol::state &lua )
                                         stacks );
     } ) );
     luna::set_fx( lib, "play_ambient_variant_sound", &sfx::play_ambient_variant_sound );
+
+    DOC( "The dynamic music context selected for the current turn: title, explore, danger, "
+         "night, underground, vehicle or shelter. The context id names the playlist the "
+         "soundpack should supply; a pack without that playlist plays title instead." );
+    DOC_PARAMS( "returns: string - The context id, which is also the requested playlist id." );
+    luna::set_fx( lib, "music_context", []() -> std::string {
+        return music::context_id( music::current_context() );
+    } );
 
     luna::set_fx( lib, "add_npc_follower", []( npc & p ) { g->add_npc_follower( p.getID() ); } );
     luna::set_fx( lib, "remove_npc_follower", []( npc & p ) { g->remove_npc_follower( p.getID() ); } );

@@ -473,18 +473,24 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 
 ## Sound & volume
 
-Open **Enter → Misc → Sound & volume** to toggle **Sound** and **Music** separately, or adjust
-**Music volume**, **Sound effect volume**, **Ambient volume** and **Monster ambience volume** from
-0 to 100%. Music starts on; it needs a soundpack with music. **Monster ambience** is the one switch
-that starts off: it plays the idle sound a monster's data names, on its own 8–20 second pace per
-creature. No shipped monster declares one and no shipped soundpack has the audio, so it stays
-silent in the shipped game until a mod adds both; on a sound build a monster whose clip the chosen
-pack lacks makes no cue and leaves no marker, and setting the volume to 0 silences the cue
-entirely, markers included. Idle sounds never wake a sleeper, stay out of the log while you sleep
-and never interrupt an activity; a crowd is held to four new cue clips per quarter second. Up/Down
-selects a row, Left/Right changes it, and Enter toggles a switch or raises a volume. Changes apply
-immediately; **Escape** closes the menu and saves them. The terminal build instead shows
-“Sound is unavailable in this build.”; Escape closes that notice.
+Open **Enter → Misc → Sound & volume** to toggle **Sound**, **Music**, **Music follows the game
+state** and **Monster ambience**, or adjust music, sound effect, ambient and monster ambience volumes.
+Music starts on; it needs a soundpack with music. **Monster ambience** starts off: it plays the idle
+sound a monster's data names, on its own 8–20 second pace per creature. No shipped monster declares
+one and no shipped soundpack has the audio, so a mod must add both. On sound builds, a missing clip
+or zero volume leaves no cue or marker. Idle sounds never wake a sleeper or interrupt an activity;
+a crowd is held to four new cue clips per quarter second. Up/Down selects a row, Left/Right changes
+it, and Enter toggles a switch or raises a volume. Changes apply immediately; **Escape** closes the
+menu and saves them. The terminal build instead shows “Sound is unavailable in this build.”
+
+**Music follows the game state** (on by default) selects a soundpack's `danger`, `vehicle`,
+`underground`, `night`, `shelter` or `explore` playlist, in that priority. A missing, empty or
+unplayable context playlist falls back to `title`, which remains required for the main menu and
+single-playlist mode. Danger starts at once; sleep releases it at once. Other changes wait for the
+new context to remain the best choice for 4 seconds and the current context to have been active for
+20 seconds. Danger clears after 5 seconds without a hostile and at least 20 seconds of play. Changes
+crossfade over 2 seconds; while the `danger` playlist plays, older danger ambience themes stay quiet.
+Turn the row off to play the `title` playlist everywhere.
 
 ## Items and storage
 
@@ -904,6 +910,24 @@ run `out/build/linux-curses/tests/cata_test` directly with `CATA_TEST_COMPUTE_AC
 a Catch2 filter. Running every test in one process is not supported upstream either: some tests
 leave the map shifted for the next one.
 
+Dynamic music transitions are smoked with real SDL audio instead of a committed C++ test, because
+the fork does not add C++ unit tests for fork features. The smoke uses a throwaway soundpack
+outside the repo:
+
+1. Create `soundpack.txt` and a `musicset.json` there with `title`, `explore` and `danger`
+   playlists. Point `title` and `explore` at two short synthetic tones of different pitch (for
+   example, three-second sine waves made with `ffmpeg`/`sox`) and point `danger` at a missing
+   file. Nothing from this pack is committed.
+2. Select it in a sound-enabled build with music enabled, then switch from `title` to an
+   `explore` context. Two tones must overlap for about two seconds rather than cutting.
+3. Spawn and remove a hostile: `danger` starts at once, holds through the release window, and
+   returns to the previous context after the minimum play time.
+4. Trigger the broken `danger` context and confirm the `title` tune plays instead.
+5. Delete the scratch pack.
+
+The deterministic e2e checks still cover the context ids and fallback through
+`tests/e2e/dynamic_music.py`; this smoke is only for the audible mixer behaviour.
+
 The hidden `[benchmark][smart_safemode]` cases measure 12 blocked route searches and the
 over-budget conservative stop separately. Monster-list timings are steady-state scans; they do
 not include the first-sighting safety check. Arrow timings include fresh-turn route work.
@@ -963,6 +987,10 @@ The checks also isolate reload inventories and use an unseen NPC call for sound-
 so earlier weapons, automatic over-capacity drops and wind-masked footsteps do not change the fixture.
 The targeting fixture starts with a real bound, loaded gun; the separate reload check drives
 the reload UI. Lua setup refuses to type into the game if its console did not open.
+The dynamic-music checks park every monster, record the baseline
+`gapi.music_context()`, and then observe `danger` as soon as a hostile is in the bubble and the
+baseline playlist again after the hysteresis delay; a second game with the option off stays on
+`title` even with a hostile present.
 
 ## Performance checks
 

@@ -127,6 +127,7 @@
 #include "monstergenerator.h"
 #include "morale_types.h"
 #include "mtype.h"
+#include "music.h"
 #include "mutation.h"
 #include "npc.h"
 #include "npc_class.h"
@@ -1071,6 +1072,7 @@ auto game::suggest_auto_walk_to_stairs( Character &u, map &m, const std::string 
 // Set up all default values for a new game
 bool game::start_game()
 {
+    music::reset();
     if( !gamemode ) {
         gamemode = std::make_unique<special_game>();
     }
@@ -2547,6 +2549,9 @@ bool game::do_turn()
     }
     {
         ZoneScopedN( "do_turn_sfx" );
+        // Select the context first: do_danger_music() yields the old danger
+        // ambience to the danger playlist when the latter is playing.
+        music::update();
         sfx::do_danger_music();
         sfx::do_vehicle_engine_sfx();
         sfx::do_vehicle_exterior_engine_sfx();
@@ -4421,6 +4426,7 @@ bool game::load( const std::string &world )
 
 bool game::load( const save_t &name )
 {
+    music::reset();
     auto background = std::unique_ptr<background_pane>();
     auto popup = std::unique_ptr<static_popup>();
     if( !test_mode ) {

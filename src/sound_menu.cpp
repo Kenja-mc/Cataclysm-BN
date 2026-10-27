@@ -26,9 +26,10 @@ struct sound_row {
     const char *label;
     bool toggle;
 };
-const auto sound_rows = std::array<sound_row, 7> { {
+const auto sound_rows = std::array<sound_row, 8> { {
         { "SOUND_ENABLED", translate_marker( "Sound" ), true },
         { "MUSIC_ENABLED", translate_marker( "Music" ), true },
+        { "DYNAMIC_MUSIC", translate_marker( "Music follows the game state" ), true },
         { "MUSIC_VOLUME", translate_marker( "Music volume" ), false },
         { "SOUND_EFFECT_VOLUME", translate_marker( "Sound effect volume" ), false },
         { "AMBIENT_SOUND_VOLUME", translate_marker( "Ambient volume" ), false },

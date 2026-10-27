@@ -4,6 +4,14 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-27
+
+### Added
+
+- Music follows the game state: `danger`, `vehicle`, `underground`, `night`, `shelter` and
+  `explore` playlists, crossfades, minimum play time and hysteresis, with a switch that keeps
+  the old single `title` playlist.
+
 ## 2026-10-26
 
 ### Added
