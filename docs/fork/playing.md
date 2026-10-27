@@ -81,7 +81,9 @@ under **Options → General → Choose soundpack**, and restart. Updates keep it
 
 While playing the sound-enabled graphical version, open **Enter → Misc → Sound & volume**.
 **Sound** controls all audio; **Music** switches music independently and starts on by default.
-The three volume rows control music, sound effects and ambience from 0 to 100%. Select a row
+The volume rows control music, sound effects, ambience and monster idle sounds from 0 to 100%.
+**Monster ambience** starts off because no shipped soundpack has monster idle audio yet; a
+monster without an `idle_sound` in its data stays silent even when it is on. Select a row
 with Up/Down and change it with Left/Right; Enter toggles a switch or raises a volume.
 Changes take effect at once. Press **Escape** to close the menu and save them.
 The terminal version has no audio and shows “Sound is unavailable in this build.” instead.

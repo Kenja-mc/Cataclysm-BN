@@ -489,6 +489,7 @@ monster::monster( const monster &source ) : Creature( source ),
     reproduces = source.reproduces;
     baby_timer = source.baby_timer;
     udder_timer = source.udder_timer;
+    idle_sound_at = source.idle_sound_at;
     horde_attraction = source.horde_attraction;
     path = source.path;
     effect_cache = source.effect_cache;
@@ -3573,7 +3574,44 @@ void monster::process_turn()
         // Only pets can upgrade in range of the player, monsters only upgrade on load.
         try_upgrade( false );
     }
+    update_idle_sound();
     Creature::process_turn();
+}
+
+void monster::update_idle_sound()
+{
+    if( type->idle_sound.empty() || is_hallucination() ) {
+        idle_sound_at.reset();
+        return;
+    }
+    // A chase, an attack or flight clears the deadline, so the wait restarts once it is idle.
+    if( !is_wandering() || is_fleeing( get_avatar() ) || attack_target() != nullptr ) {
+        idle_sound_at.reset();
+        return;
+    }
+    if( !idle_sound_at ) {
+        idle_sound_at = calendar::turn + time_duration::from_seconds( rng( 8, 20 ) );
+        return;
+    }
+    if( calendar::turn < *idle_sound_at ) {
+        return;
+    }
+    idle_sound_at = calendar::turn + time_duration::from_seconds( rng( 8, 20 ) );
+    if( !get_option<bool>( "MONSTER_AMBIENCE" ) ||
+        !sounds::has_asset( type->idle_sound, "default" ) ) {
+        return;
+    }
+    sound_event se;
+    se.origin = bub_pos();
+    se.volume = 50;
+    se.category = sounds::sound_t::background;
+    se.description = string_format( _( "a %s" ), name() );
+    se.from_monster = true;
+    se.id = type->idle_sound;
+    se.variant = "default";
+    se.monster_ambience = true;
+    se.monfaction = faction.id();
+    sounds::sound( se );
 }
 
 auto monster::action_move_factor() const -> int

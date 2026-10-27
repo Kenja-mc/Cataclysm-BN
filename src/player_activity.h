@@ -111,6 +111,13 @@ class player_activity
             return moves_left;
         }
 
+        int get_moves_total() const {
+            if( actor ) {
+                return actor->progress.get_moves_total();
+            }
+            return moves_total;
+        }
+
         bool complete() const {
             if( actor ) {
                 return actor->progress.complete();

@@ -1887,6 +1887,27 @@ auto hears_nothing( const Character &who ) -> bool
     return who.is_deaf() || who.get_char_hearing_protection() > 190;
 }
 
+// Four new creature ambience sounds per 250 ms keep a pack of idle monsters from
+// turning into a wall of overlapping clips. Excess attempts are dropped, never queued.
+constexpr auto creature_ambience_window = std::chrono::milliseconds( 250 );
+constexpr auto creature_ambience_burst = 4;
+auto creature_ambience_window_start = std::chrono::steady_clock::now();
+auto creature_ambience_this_window = 0;
+
+auto creature_ambience_allowed() -> bool
+{
+    const auto now = std::chrono::steady_clock::now();
+    if( now - creature_ambience_window_start >= creature_ambience_window ) {
+        creature_ambience_window_start = now;
+        creature_ambience_this_window = 0;
+    }
+    if( creature_ambience_this_window >= creature_ambience_burst ) {
+        return false;
+    }
+    ++creature_ambience_this_window;
+    return true;
+}
+
 } // namespace
 
 void sounds::sound( const sound_event &soundevent )
@@ -1900,6 +1921,9 @@ void sounds::sound( const sound_event &soundevent )
     }
     // Make a copy so that when our referenced sound event inevitably goes out of scope things dont explode.
     auto temp_se = soundevent;
+    if( temp_se.monster_ambience && !creature_ambience_allowed() ) {
+        return;
+    }
     // Make sure our sound came from a valid inbounds location.
     auto &map = get_map();
     // Make sure that we dont absolutely blast somebodies RAM/Processor during batch floodfill.
@@ -2849,8 +2873,12 @@ void sounds::process_sound_markers( Character *who )
             const std::string &sfx_id = element.sound.id;
             const std::string &sfx_variant = element.sound.variant;
             if( !sfx_id.empty() ) {
-                sfx::play_variant_sound( sfx_id, sfx_variant, sfx::get_heard_volume( element.sound.origin,
-                                         element.sound.volume ), !NO_STACK_SOUND_TYPES.contains( element.sound.category ) );
+                auto heard = sfx::get_heard_volume( element.sound.origin, element.sound.volume );
+                if( element.sound.monster_ambience ) {
+                    heard = heard * get_option<int>( "MONSTER_AMBIENCE_VOLUME" ) / 100;
+                }
+                sfx::play_variant_sound( sfx_id, sfx_variant, heard,
+                                         !NO_STACK_SOUND_TYPES.contains( element.sound.category ) );
             }
 
             // Place footstep markers.
@@ -2927,6 +2955,8 @@ void sounds::reset_sounds()
     sound_markers.clear();
     map.m_sound_cache.sound_list_filtered.clear();
     sound_batch_floodfill_que.clear();
+    creature_ambience_window_start = std::chrono::steady_clock::now();
+    creature_ambience_this_window = 0;
 }
 
 auto sounds::shift_sound_positions( const point_rel_ms &offset ) -> void
@@ -3946,6 +3976,8 @@ void sfx::end_activity_sounds()
 
 /** Dummy implementations for builds without sound */
 /*@{*/
+// There is no audio device, so no asset can be missing.
+auto sounds::has_asset( const std::string &, const std::string & ) -> bool { return true; }
 void sfx::load_sound_effects( const JsonObject & ) { }
 void sfx::load_sound_effect_preload( const JsonObject & ) { }
 void sfx::load_playlist( const JsonObject & ) { }

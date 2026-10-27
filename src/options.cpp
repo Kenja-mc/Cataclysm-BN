@@ -1982,6 +1982,20 @@ void options_manager::add_options_general()
        );
 
     get_option( "AMBIENT_SOUND_VOLUME" ).setPrerequisite( "SOUND_ENABLED" );
+
+    add( "MONSTER_AMBIENCE", general, translate_marker( "Monster ambience" ),
+         translate_marker( "Play the idle sound of a monster whose data gives it one.  Off by default because the shipped sound packs have no monster ambience audio yet; turn it on after installing a pack that does.  A monster without an idle sound stays silent." ),
+         false, COPT_NO_SOUND_HIDE
+       );
+
+    get_option( "MONSTER_AMBIENCE" ).setPrerequisite( "SOUND_ENABLED" );
+
+    add( "MONSTER_AMBIENCE_VOLUME", general, translate_marker( "Monster ambience volume" ),
+         translate_marker( "Adjust the volume of monster idle sounds relative to the sound effect volume." ),
+         0, 128, 100, COPT_NO_SOUND_HIDE
+       );
+
+    get_option( "MONSTER_AMBIENCE_VOLUME" ).setPrerequisite( "MONSTER_AMBIENCE" );
 }
 
 void options_manager::add_options_interface()

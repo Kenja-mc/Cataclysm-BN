@@ -42,6 +42,8 @@ from hud_boxes import TESTS as HUD_BOXES_TESTS
 from map_view import TESTS as MAP_VIEW_TESTS
 from combat import TESTS as COMBAT_TESTS
 from sound_feedback import TESTS as SOUND_FEEDBACK_TESTS
+from monster_ambience import TESTS as MONSTER_AMBIENCE_TESTS
+from activity_line import TESTS as ACTIVITY_LINE_TESTS
 from sound_menu import TESTS as SOUND_MENU_TESTS
 from safemode import TESTS as SAFEMODE_TESTS
 from char_creation import TESTS as CHAR_CREATION_TESTS
@@ -110,6 +112,8 @@ MODULES = [
     ("map_view", MAP_VIEW_TESTS),
     ("combat", COMBAT_TESTS),
     ("sound_feedback", SOUND_FEEDBACK_TESTS),
+    ("monster_ambience", MONSTER_AMBIENCE_TESTS),
+    ("activity_line", ACTIVITY_LINE_TESTS),
     ("sound_menu", SOUND_MENU_TESTS),
     ("safemode", SAFEMODE_TESTS),
     ("char_creation", CHAR_CREATION_TESTS),

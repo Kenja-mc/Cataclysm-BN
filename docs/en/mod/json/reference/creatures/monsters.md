@@ -389,6 +389,14 @@ Clairvoyance vision range
 
 Amount of light passively output by monster. Ranges from 0 to 10.
 
+## "idle_sound"
+
+(string, optional)
+
+A sound_effect id played while this monster is idle, on its own random 8-20 second cooldown. A
+monster without this field makes no idle noise. The sound uses the normal sound-event pipeline, so
+distance, terrain and the sound marker behave as they do for other monster noises.
+
 ## "hp"
 
 (integer)

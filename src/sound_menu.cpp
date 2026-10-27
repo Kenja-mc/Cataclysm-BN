@@ -21,11 +21,17 @@
 
 namespace
 {
-const auto sound_options = std::array<std::string, 5> {
-    "SOUND_ENABLED", "MUSIC_ENABLED", "MUSIC_VOLUME", "SOUND_EFFECT_VOLUME", "AMBIENT_SOUND_VOLUME"
+const auto sound_options = std::array<std::string, 7> {
+    "SOUND_ENABLED", "MUSIC_ENABLED", "MUSIC_VOLUME", "SOUND_EFFECT_VOLUME", "AMBIENT_SOUND_VOLUME",
+    "MONSTER_AMBIENCE", "MONSTER_AMBIENCE_VOLUME"
 };
 constexpr auto volume_step = 8;
 constexpr auto volume_max = 128;
+
+auto is_toggle( const int row ) -> bool
+{
+    return row < 2 || row == 5;
+}
 } // namespace
 #endif
 
@@ -48,9 +54,11 @@ auto show_sound_menu() -> void
     menu.addentry( 2, true, 0, _( "Music volume" ) );
     menu.addentry( 3, true, 0, _( "Sound effect volume" ) );
     menu.addentry( 4, true, 0, _( "Ambient volume" ) );
+    menu.addentry( 5, true, 0, _( "Monster ambience" ) );
+    menu.addentry( 6, true, 0, _( "Monster ambience volume" ) );
 
     const auto refresh_value = [&]( const int row ) {
-        if( row < 2 ) {
+        if( is_toggle( row ) ) {
             menu.entries[row].ctxt = get_option<bool>( sound_options[row] ) ? _( "On" ) : _( "Off" );
         } else {
             const auto volume = get_option<int>( sound_options[row] );
@@ -68,7 +76,7 @@ auto show_sound_menu() -> void
         }
         const auto row = menu.selected;
         auto &option = get_options().get_option( sound_options[row] );
-        if( row < 2 ) {
+        if( is_toggle( row ) ) {
             const auto before = get_option<bool>( sound_options[row] );
             const auto after = menu.ret == UILIST_ADDITIONAL ? menu.ret_act == "RIGHT" : !before;
             if( before == after ) {
