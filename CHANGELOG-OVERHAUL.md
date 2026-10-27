@@ -40,6 +40,10 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Sound markers shrink to a dot as they age, so a fresh noise reads differently from a stale one;
   the first marker in a game explains the glyphs once (with Show first-time tips on), and going
   deaf clears any markers already on the map.
+- The mixer plays at most 24 one-shot world sounds at once. When full, a new cue replaces the
+  lowest-priority sound, then the quietest, then the oldest. Music and looping ambience channels
+  are outside the count. Creature idle sounds give way first; on sound builds their map markers
+  appear only when the cue plays.
 - **Upstream feature issues**: the daily watcher now files one deduplicated, labelled
   `upstream-candidate` issue per clear upstream feature — a conventional `feat:` commit outside
   the `balance` scope — grouping commits by their upstream PR reference, including PRs merged

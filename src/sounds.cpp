@@ -2888,13 +2888,31 @@ void sounds::process_sound_markers( Character *who )
             // so that we avoid double calcing and properly account for walls.
             const std::string &sfx_id = element.sound.id;
             const std::string &sfx_variant = element.sound.variant;
+            bool cue_played = true;
             if( !sfx_id.empty() ) {
                 auto heard = sfx::get_heard_volume( element.sound.origin, element.sound.volume );
                 if( element.sound.monster_ambience ) {
                     heard = heard * get_option<int>( "MONSTER_AMBIENCE_VOLUME" ) / 100;
+                    // Creature chatter is the lowest voice priority, so it is
+                    // evicted first when the pool is full. It stacks (the
+                    // per-creature cooldown and the 4-per-250 ms burst cap
+                    // throttle it) and pans to its origin.
+                    cue_played = sfx::play_variant_sound(
+                                     sfx_id, sfx_variant, heard,
+                                     sfx::get_heard_angle( element.sound.origin ),
+                                     -1.0, -1.0, true, sfx::sound_priority::ambience );
+                } else {
+                    cue_played = sfx::play_variant_sound(
+                                     sfx_id, sfx_variant, heard,
+                                     !NO_STACK_SOUND_TYPES.contains( element.sound.category ) );
                 }
-                sfx::play_variant_sound( sfx_id, sfx_variant, heard,
-                                         !NO_STACK_SOUND_TYPES.contains( element.sound.category ) );
+            }
+            // A marker promises that creature chatter was actually voiced. A
+            // missing asset, muted volume or failed playback must not leave one.
+            // The voice pool always evicts rather than dropping a cue, and other
+            // categories keep their historical marker behaviour.
+            if( element.sound.monster_ambience && !cue_played ) {
+                continue;
             }
 
             // Place footstep markers.
@@ -3997,9 +4015,19 @@ auto sounds::has_asset( const std::string &, const std::string & ) -> bool { ret
 void sfx::load_sound_effects( const JsonObject & ) { }
 void sfx::load_sound_effect_preload( const JsonObject & ) { }
 void sfx::load_playlist( const JsonObject & ) { }
-void sfx::play_variant_sound( const std::string &, const std::string &, int, units::angle, double,
-                              double, const bool ) { }
-void sfx::play_variant_sound( const std::string &, const std::string &, int, bool ) { }
+// A build without an audio device cannot run out of voices: every audible
+// request reports success, because the sound marker is its only cue. A muted
+// zero-volume request still reports false so it leaves no marker.
+bool sfx::play_variant_sound( const std::string &, const std::string &, const int volume,
+                              units::angle, double, double, const bool, const sound_priority )
+{
+    return volume > 0;
+}
+bool sfx::play_variant_sound( const std::string &, const std::string &, const int volume, bool,
+                              const sound_priority )
+{
+    return volume > 0;
+}
 void sfx::play_ambient_variant_sound( const std::string &, const std::string &, int, channel, int,
                                       double, int ) { }
 void sfx::play_activity_sound( const std::string &, const std::string &, int ) { }

@@ -450,13 +450,29 @@ enum class group : int {
     fatigue         //SFX related to fatigue
 };
 
+// How a fire-and-forget cue competes for the 24-voice world pool. When the pool
+// is full, lower values are evicted first.
+enum class sound_priority : int {
+    ambience = 0, // Creature idle chatter.
+    effect = 10,  // Ordinary one-shot effect.
+};
+
 void load_sound_effects( const JsonObject &jsobj );
 void load_sound_effect_preload( const JsonObject &jsobj );
 void load_playlist( const JsonObject &jsobj );
-void play_variant_sound( const std::string &id, const std::string &variant, int volume,
-                         units::angle angle, double pitch_min = -1.0, double pitch_max = -1.0, const bool stacks = false );
-void play_variant_sound( const std::string &id, const std::string &variant, int volume,
-                         const bool stacks = true );
+/// Play a fire-and-forget cue. Main thread only.
+/// Returns true when the cue was started (or when the build/player has no
+/// audio, so the sound marker remains the only cue). Returns false when the cue
+/// was dropped: zero volume, missing asset, repeat suppression, or a failed
+/// mixer call. At 24 voices a new cue evicts the lowest-priority, then
+/// quietest, then oldest voice.
+bool play_variant_sound( const std::string &id, const std::string &variant, int volume,
+                         units::angle angle, double pitch_min = -1.0, double pitch_max = -1.0,
+                         const bool stacks = false,
+                         const sound_priority priority = sound_priority::effect );
+bool play_variant_sound( const std::string &id, const std::string &variant, int volume,
+                         const bool stacks = true,
+                         const sound_priority priority = sound_priority::effect );
 void play_ambient_variant_sound( const std::string &id, const std::string &variant, int volume,
                                  channel channel, int fade_in_duration, double pitch = -1.0, int loops = -1 );
 void play_activity_sound( const std::string &id, const std::string &variant, int volume );

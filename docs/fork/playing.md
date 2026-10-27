@@ -89,6 +89,11 @@ makes no cue and no marker; setting the volume to 0 turns the cue off completely
 wake a sleeper or stop an activity. Select a row with Up/Down and change it with Left/Right; Enter
 toggles a switch or raises a volume. Changes take effect at once. Press **Escape** to close the
 menu and save them.
+
+The mixer plays at most 24 one-shot world sounds at once. Music and looping ambience beds have
+separate channels. When the limit is full, a new cue replaces the lowest-priority sound, then the
+quietest, then the oldest. Creature idle sounds give way first; on sound builds their map markers
+appear only when the cue plays.
 The terminal version has no audio and shows “Sound is unavailable in this build.” instead.
 
 ## Linux: download a release

@@ -396,11 +396,11 @@ Amount of light passively output by monster. Ranges from 0 to 10.
 A sound_effect id played while this monster is idle, on its own random 8-20 second cooldown. A
 monster without this field makes no idle noise, and the cue stops while the monster has a
 destination or is fleeing; a destination covers chasing, attacking and walking to a wander point.
-The sound uses the normal sound-event pipeline, so distance, terrain and the sound marker behave as
-they do for other monster noises. On a build with audio the
-selected soundpack must also provide the id: without it the monster makes no cue and leaves no
-marker. A build without audio has no soundpack, so its marker is the cue. The `default` variant is
-always used, and the cue also requires the **Monster ambience** option (off by default).
+The sound uses the normal sound-event pipeline, so distance and terrain behave as they do for other
+monster noises. On a build with audio, a missing soundpack id, zero volume or failed mixer start
+leaves no marker. A build without audio has no soundpack, so its marker is the cue. The mixer's
+24-sound limit replaces another sound rather than dropping the cue. The `default` variant is always
+used, and the cue also requires the **Monster ambience** option (off by default).
 
 No shipped monster declares this field, and the shipped soundpacks contain no monster ambience
 audio. A mod that adds both is what makes the feature audible.
