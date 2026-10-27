@@ -221,6 +221,7 @@ SMOKE = [
     "test_modern_crafting_scrollbar_moves_selection_without_crafting",
     "test_letters_search_keybindings_after_scrolling",
     "test_modern_attack_pulps_the_chosen_corpse",
+    "test_world_page_draws_tab_content_inline",
     "test_world_defaults_unchanged_without_preset",
 ]
 SMOKE_TESTS = [test for test in TESTS if test.__name__ in SMOKE]

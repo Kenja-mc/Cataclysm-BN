@@ -20,6 +20,7 @@
 #include "pimpl.h"
 #include "player.h"
 #include "point.h"
+#include "popup.h"
 #include "scrollbar_input.h"
 #include "skill.h"
 #include "string_formatter.h"
@@ -28,6 +29,7 @@
 #include "translations.h"
 #include "type_id.h"
 #include "ui_manager.h"
+#include "world_hub.h"
 
 #include <bitset>
 #include <cstdlib>
@@ -38,6 +40,7 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace npc_factions
 {
@@ -610,37 +613,410 @@ int npc::faction_display( const catacurses::window &fac_w, const int width ) con
     return retval;
 }
 
+namespace
+{
+
+/// The factions screen's lists, details and input, shared by the standalone screen and the
+/// World page's Factions tab.
+class faction_view
+{
+    public:
+        faction_view() {
+            g->validate_npc_followers();
+            for( const auto &elem : get_avatar().get_snippets() ) {
+                std::optional<translation> name = SNIPPET.get_name_by_id( elem );
+                if( name && !name->empty() ) {
+                    lore.push_back( std::pair<snippet_id, std::string>( elem, name->translated() ) );
+                } else {
+                    lore.push_back( std::pair<snippet_id, std::string>( elem, elem.str() ) );
+                }
+            }
+
+            auto compare_second =
+                []( const std::pair<snippet_id, std::string> &a,
+            const std::pair<snippet_id, std::string> &b ) {
+                return localized_compare( a.second, b.second );
+            };
+            std::sort( lore.begin(), lore.end(), compare_second );
+
+            creatures.assign( get_avatar().get_known_monsters().begin(),
+                              get_avatar().get_known_monsters().end() );
+
+            std::sort( creatures.begin(), creatures.end(), []( const mtype_id & a, const mtype_id & b ) {
+                return localized_compare( a->nname(), b->nname() );
+            } );
+        }
+
+        void refresh();
+        void draw( const catacurses::window &w );
+        /// Returns true when the screen should close.
+        auto handle( std::string action, input_context &ctxt, const catacurses::window &w,
+                     bool modern ) -> bool;
+
+    private:
+        enum class tab_mode : int {
+            TAB_FOLLOWERS = 0,
+            TAB_OTHERFACTIONS,
+            TAB_LORE,
+            TAB_CREATURES,
+            NUM_TABS,
+            FIRST_TAB = 0,
+            LAST_TAB = NUM_TABS - 1
+        };
+
+        std::vector<npc *> followers;
+        std::vector<const faction *> valfac; // Factions that we know of.
+        npc *guy = nullptr;
+        const faction *cur_fac = nullptr;
+        bool interactable = false;
+        bool radio_interactable = false;
+        size_t active_vec_size = 0;
+
+        std::vector<std::pair<snippet_id, std::string>> lore; // Lore we have seen
+        std::pair<snippet_id, std::string> *snippet = nullptr;
+
+        std::vector<mtype_id> creatures; // Creatures we've recorded
+        mtype_id cur_creature = mtype_id::NULL_ID();
+
+        tab_mode tab = tab_mode::FIRST_TAB;
+        size_t selection = 0;
+        std::optional<size_t> mouse_row;
+};
+
+void faction_view::refresh()
+{
+    // create a list of NPCs, visible and the ones on overmapbuffer
+    followers.clear();
+    for( auto &elem : g->get_follower_list() ) {
+        shared_ptr_fast<npc> npc_to_get = nullptr;
+        for_each_overmapbuffer( [&]( const dimension_id &, overmapbuffer & omb ) {
+            if( !npc_to_get ) {
+                npc_to_get = omb.find_npc( elem );
+            }
+        } );
+        if( !npc_to_get ) {
+            continue;
+        }
+        npc *npc_to_add = npc_to_get.get();
+        followers.push_back( npc_to_add );
+    }
+    valfac.clear();
+    for( const auto &elem : g->faction_manager_ptr->all() ) {
+        if( elem.second.known_by_u && elem.second.id != faction_id( "your_followers" ) ) {
+            valfac.push_back( &elem.second );
+        }
+    }
+    guy = nullptr;
+    cur_fac = nullptr;
+    interactable = false;
+    snippet = nullptr;
+    radio_interactable = false;
+
+    if( tab < tab_mode::FIRST_TAB || tab >= tab_mode::NUM_TABS ) {
+        debugmsg( "The sanity check failed because tab=%d", static_cast<int>( tab ) );
+        tab = tab_mode::FIRST_TAB;
+    }
+    active_vec_size = 0;
+    if( tab == tab_mode::TAB_FOLLOWERS ) {
+        if( selection < followers.size() ) {
+            guy = followers[selection];
+        }
+        active_vec_size = followers.size();
+    } else if( tab == tab_mode::TAB_OTHERFACTIONS ) {
+        if( selection < valfac.size() ) {
+            cur_fac = valfac[selection];
+        }
+        active_vec_size = valfac.size();
+
+    } else if( tab == tab_mode::TAB_LORE ) {
+        if( selection < lore.size() ) {
+            snippet = &lore[selection];
+        }
+        active_vec_size = lore.size();
+    } else if( tab == tab_mode::TAB_CREATURES ) {
+        if( selection < creatures.size() ) {
+            cur_creature = creatures[selection];
+        }
+        active_vec_size = creatures.size();
+    }
+}
+
+void faction_view::draw( const catacurses::window &w_missions )
+{
+    const int entries_per_page = getmaxy( w_missions ) - 4;
+    werase( w_missions );
+
+    for( int i = 3; i < getmaxy( w_missions ) - 1; i++ ) {
+        mvwputch( w_missions, point( 30, i ), BORDER_COLOR, LINE_XOXO );
+    }
+
+    const std::vector<std::pair<tab_mode, std::string>> tabs = {
+        { tab_mode::TAB_FOLLOWERS, _( "YOUR FOLLOWERS" ) },
+        { tab_mode::TAB_OTHERFACTIONS, _( "OTHER FACTIONS" ) },
+        { tab_mode::TAB_LORE, _( "LORE" ) },
+        { tab_mode::TAB_CREATURES, _( "CREATURES" ) },
+    };
+    draw_tabs( w_missions, tabs, tab );
+    draw_border_below_tabs( w_missions );
+
+    mvwputch( w_missions, point( 30, 2 ), BORDER_COLOR,
+              tab == tab_mode::TAB_FOLLOWERS ? ' ' : LINE_OXXX ); // ^|^
+    mvwputch( w_missions, point( 30, getmaxy( w_missions ) - 1 ), BORDER_COLOR,
+              LINE_XXOX ); // _|_
+    const nc_color col = c_white;
+
+    // entries_per_page * page number
+    const size_t top_of_page = entries_per_page * ( selection / entries_per_page );
+
+    switch( tab ) {
+        case tab_mode::TAB_FOLLOWERS: {
+            const std::string no_ally = _( "You have no followers" );
+            if( !followers.empty() ) {
+                draw_scrollbar( w_missions, selection, entries_per_page, active_vec_size,
+                                point( 0, 3 ) );
+                for( size_t i = top_of_page; i < active_vec_size; i++ ) {
+                    const int y = i - top_of_page + 3;
+                    trim_and_print( w_missions, point( 1, y ), 28, selection == i ? hilite( col ) : col,
+                                    followers[i]->disp_name() );
+                }
+                if( guy ) {
+                    int retval = guy->faction_display( w_missions, 31 );
+                    if( retval == 2 ) {
+                        radio_interactable = true;
+                    } else if( retval == 1 ) {
+                        interactable = true;
+                    }
+                } else {
+                    mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_ally );
+                }
+                break;
+            } else {
+                mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_ally );
+            }
+        }
+        break;
+        case tab_mode::TAB_OTHERFACTIONS: {
+            const std::string no_fac = _( "You don't know of any factions." );
+            if( active_vec_size > 0 ) {
+                draw_scrollbar( w_missions, selection, entries_per_page, active_vec_size,
+                                point( 0, 3 ) );
+                for( size_t i = top_of_page; i < active_vec_size; i++ ) {
+                    const int y = i - top_of_page + 3;
+                    trim_and_print( w_missions, point( 1, y ), 28, selection == i ? hilite( col ) : col,
+                                    _( valfac[i]->name ) );
+                }
+                if( cur_fac ) {
+                    cur_fac->faction_display( w_missions, 31 );
+                } else {
+                    mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_fac );
+                }
+                break;
+            } else {
+                mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_fac );
+            }
+        }
+        break;
+        case tab_mode::TAB_LORE: {
+            const std::string no_lore = _( "You haven't learned anything about the world." );
+            if( active_vec_size > 0 ) {
+                draw_scrollbar( w_missions, selection, entries_per_page, active_vec_size,
+                                point( 0, 3 ) );
+                for( size_t i = top_of_page; i < active_vec_size && i < top_of_page + entries_per_page; i++ ) {
+                    const int y = i - top_of_page + 3;
+                    trim_and_print( w_missions, point( 1, y ), 28, selection == i ? hilite( col ) : col,
+                                    _( lore[i].second ) );
+                }
+                if( snippet != nullptr ) {
+                    int y = 2;
+                    fold_and_print( w_missions, point( 31, ++y ), getmaxx( w_missions ) - 31 - 2, c_light_gray,
+                                    SNIPPET.get_snippet_by_id( snippet->first ).value().translated() );
+                } else {
+                    mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_lore );
+                }
+                break;
+            } else {
+                mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_lore );
+            }
+        }
+        break;
+        case tab_mode::TAB_CREATURES: {
+            const std::string no_creatures =
+                _( "You haven't recorded sightings of any creatures.  Taking photos can be a good way to keep track of them." );
+            const int w = getmaxx( w_missions ) - 31 - 2;
+            if( active_vec_size > 0 ) {
+                draw_scrollbar( w_missions, selection, entries_per_page, active_vec_size,
+                                point( 0, 3 ) );
+                for( size_t i = top_of_page; i < active_vec_size && i < top_of_page + entries_per_page; i++ ) {
+                    const int y = i - top_of_page + 3;
+                    trim_and_print( w_missions, point( 1, y ), 28, selection == i ? hilite( col ) : col,
+                                    string_format( "%s  %s", colorize( creatures[i]->sym,
+                                                   selection == i ? hilite( creatures[i]->color ) : creatures[i]->color ),
+                                                   creatures[i]->nname() ) );
+                }
+                if( !cur_creature.is_null() ) {
+                    // mtype's display takes a mutable window; the copy points at the same window.
+                    catacurses::window w_creatures = w_missions;
+                    cur_creature->faction_display( w_creatures, point( 31, 3 ), w );
+                } else {
+                    fold_and_print( w_missions, point( 31, 4 ), w, c_light_red, no_creatures );
+                }
+                break;
+            } else {
+                fold_and_print( w_missions, point( 31, 4 ), w, c_light_red, no_creatures );
+            }
+        }
+        default:
+            break;
+    }
+    wnoutrefresh( w_missions );
+}
+
+auto faction_view::handle( std::string action, input_context &ctxt,
+                           const catacurses::window &w_missions, bool modern ) -> bool
+{
+    const int entries_per_page = getmaxy( w_missions ) - 4;
+    if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
+        if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
+            action = action == "SCROLL_UP" ? "UP" : "DOWN";
+            mouse_row.reset();
+        } else if( action == "SELECT" || action == "SEC_SELECT" ) {
+            action.clear();
+            if( const auto mouse = ctxt.get_coordinates( w_missions ) ) {
+                const auto cell = mouse->xy().raw() + point( getmaxx( w_missions ),
+                                  getmaxy( w_missions ) ) / 2;
+                const std::vector<std::string> tab_texts = {
+                    _( "YOUR FOLLOWERS" ), _( "OTHER FACTIONS" ), _( "LORE" ), _( "CREATURES" )
+                };
+                if( cell.y < 3 ) {
+                    if( const auto clicked = tab_input::index_at( {
+                            .texts = tab_texts,
+                            .current = static_cast<size_t>( tab ),
+                            .max_width = getmaxx( w_missions ),
+                            .x = cell.x,
+                        } ) ) {
+                        if( *clicked != static_cast<int>( tab ) ) {
+                            tab = static_cast<tab_mode>( *clicked );
+                            selection = 0;
+                            mouse_row.reset();
+                        }
+                    }
+                } else if( const auto hit = scrollbar_input::click( {
+                .offset = point( 0, 3 ),
+                .viewport_size = entries_per_page,
+                .content_size = static_cast<int>( active_vec_size ),
+                .viewport_pos = static_cast<int>( selection ),
+                .scroll_to_last = true,
+                           }, cell ) ) {
+                    selection = static_cast<size_t>( hit->viewport_pos );
+                    mouse_row.reset();
+                } else if( cell.x >= 1 && cell.x < 30 && cell.y >= 3 &&
+                           cell.y < 3 + entries_per_page ) {
+                    const size_t idx = entries_per_page * ( selection / entries_per_page ) +
+                                       cell.y - 3;
+                    if( idx < active_vec_size ) {
+                        if( mouse_row && *mouse_row == idx ) {
+                            // A second click on the same row runs the row's Enter
+                            // action; talking keeps its usual prompts.
+                            action = "CONFIRM";
+                            mouse_row.reset();
+                        } else {
+                            selection = idx;
+                            mouse_row = idx;
+                        }
+                    }
+                }
+            }
+        } else {
+            action.clear();
+        }
+    } else {
+        // Keyboard navigation and content changes forget the pending row click.
+        mouse_row.reset();
+    }
+    if( action == "NEXT_TAB" || action == "RIGHT" ) {
+        tab = static_cast<tab_mode>( static_cast<int>( tab ) + 1 );
+        if( tab >= tab_mode::NUM_TABS ) {
+            tab = tab_mode::FIRST_TAB;
+        }
+        selection = 0;
+    } else if( action == "PREV_TAB" || action == "LEFT" ) {
+        tab = static_cast<tab_mode>( static_cast<int>( tab ) - 1 );
+        if( tab < tab_mode::FIRST_TAB ) {
+            tab = tab_mode::LAST_TAB;
+        }
+        selection = 0;
+    } else if( action == "DOWN" ) {
+        selection++;
+        if( selection >= active_vec_size ) {
+            selection = 0;
+        }
+    } else if( action == "UP" ) {
+        if( selection == 0 ) {
+            selection = active_vec_size == 0 ? 0 : active_vec_size - 1;
+        } else {
+            selection--;
+        }
+    } else if( action == "CONFIRM" && guy ) {
+        if( guy->has_companion_mission() ) {
+            guy->reset_companion_mission();
+            popup( _( "%s returns from their mission" ), guy->disp_name() );
+        } else {
+            if( tab == tab_mode::TAB_FOLLOWERS && guy && ( interactable || radio_interactable ) ) {
+                guy->talk_to_u( radio_interactable );
+            }
+        }
+    } else if( action == "QUIT" ) {
+        return true;
+    } else if( action == "SWAPTONPC" && guy && interactable ) {
+        get_avatar().control_npc( *guy );
+    }
+    return false;
+}
+
+class factions_panel : public world_hub::panel
+{
+    public:
+        factions_panel() {
+            // The page does not bind this; resolve it with the screen's own context.
+            faction_ctxt.register_action( "SWAPTONPC" );
+        }
+
+        auto name() const -> std::string override {
+            return _( "Factions" );
+        }
+        void refresh() override {
+            view.refresh();
+        }
+        void draw( const catacurses::window &body, input_context & ) override {
+            view.draw( body );
+        }
+        void handle( const std::string &action, input_context &ctxt,
+                     const catacurses::window &body, world_hub::host & ) override {
+            std::string act = action;
+            if( act == "ANY_INPUT" ) {
+                act = faction_ctxt.input_to_action( ctxt.get_raw_input() );
+            }
+            view.handle( act, ctxt, body,
+                         get_option<std::string>( "CONTROL_SCHEME" ) == "modern" );
+        }
+
+    private:
+        input_context faction_ctxt{ "FACTION MANAGER" };
+        faction_view view;
+};
+
+} // namespace
+
+auto world_hub::factions_screen() -> panel_ptr
+{
+    return std::make_unique<factions_panel>();
+}
+
 void faction_manager::display() const
 {
+    faction_view view;
     catacurses::window w_missions;
-    int entries_per_page = 0;
 
-    ui_adaptor ui;
-    ui.on_screen_resize( [&]( ui_adaptor & ui ) {
-        const point term( TERMY > FULL_SCREEN_HEIGHT ? ( TERMY - FULL_SCREEN_HEIGHT ) / 2 : 0,
-                          TERMX > FULL_SCREEN_WIDTH ? ( TERMX - FULL_SCREEN_WIDTH ) / 2 : 0 );
-
-        w_missions = catacurses::newwin( FULL_SCREEN_HEIGHT, FULL_SCREEN_WIDTH,
-                                         point( term.y, term.x ) );
-
-        entries_per_page = FULL_SCREEN_HEIGHT - 4;
-
-        ui.position_from_window( w_missions );
-    } );
-    ui.mark_resize();
-
-    enum class tab_mode : int {
-        TAB_FOLLOWERS = 0,
-        TAB_OTHERFACTIONS,
-        TAB_LORE,
-        TAB_CREATURES,
-        NUM_TABS,
-        FIRST_TAB = 0,
-        LAST_TAB = NUM_TABS - 1
-    };
-    g->validate_npc_followers();
-    tab_mode tab = tab_mode::FIRST_TAB;
-    size_t selection = 0;
     input_context ctxt( "FACTION MANAGER" );
     ctxt.register_cardinal();
     ctxt.register_updown();
@@ -661,323 +1037,27 @@ void faction_manager::display() const
         ctxt.register_action( "SCROLL_DOWN" );
     }
 
-    std::vector<npc *> followers;
-    std::vector<const faction *> valfac; // Factions that we know of.
-    npc *guy = nullptr;
-    const faction *cur_fac = nullptr;
-    bool interactable = false;
-    bool radio_interactable = false;
-    size_t active_vec_size = 0;
+    ui_adaptor ui;
+    ui.on_screen_resize( [&]( ui_adaptor & ui ) {
+        const point term( TERMY > FULL_SCREEN_HEIGHT ? ( TERMY - FULL_SCREEN_HEIGHT ) / 2 : 0,
+                          TERMX > FULL_SCREEN_WIDTH ? ( TERMX - FULL_SCREEN_WIDTH ) / 2 : 0 );
 
-    std::vector<std::pair<snippet_id, std::string>> lore; // Lore we have seen
-    std::pair<snippet_id, std::string> *snippet = nullptr;
+        w_missions = catacurses::newwin( FULL_SCREEN_HEIGHT, FULL_SCREEN_WIDTH,
+                                         point( term.y, term.x ) );
 
-    std::vector<mtype_id> creatures; // Creatures we've recorded
-    mtype_id cur_creature = mtype_id::NULL_ID();
+        ui.position_from_window( w_missions );
+    } );
+    ui.mark_resize();
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
-        werase( w_missions );
-
-        for( int i = 3; i < FULL_SCREEN_HEIGHT - 1; i++ ) {
-            mvwputch( w_missions, point( 30, i ), BORDER_COLOR, LINE_XOXO );
-        }
-
-        const std::vector<std::pair<tab_mode, std::string>> tabs = {
-            { tab_mode::TAB_FOLLOWERS, _( "YOUR FOLLOWERS" ) },
-            { tab_mode::TAB_OTHERFACTIONS, _( "OTHER FACTIONS" ) },
-            { tab_mode::TAB_LORE, _( "LORE" ) },
-            { tab_mode::TAB_CREATURES, _( "CREATURES" ) },
-        };
-        draw_tabs( w_missions, tabs, tab );
-        draw_border_below_tabs( w_missions );
-
-        mvwputch( w_missions, point( 30, 2 ), BORDER_COLOR,
-                  tab == tab_mode::TAB_FOLLOWERS ? ' ' : LINE_OXXX ); // ^|^
-        mvwputch( w_missions, point( 30, FULL_SCREEN_HEIGHT - 1 ), BORDER_COLOR, LINE_XXOX ); // _|_
-        const nc_color col = c_white;
-
-        // entries_per_page * page number
-        const size_t top_of_page = entries_per_page * ( selection / entries_per_page );
-
-        switch( tab ) {
-            case tab_mode::TAB_FOLLOWERS: {
-                const std::string no_ally = _( "You have no followers" );
-                if( !followers.empty() ) {
-                    draw_scrollbar( w_missions, selection, entries_per_page, active_vec_size,
-                                    point( 0, 3 ) );
-                    for( size_t i = top_of_page; i < active_vec_size; i++ ) {
-                        const int y = i - top_of_page + 3;
-                        trim_and_print( w_missions, point( 1, y ), 28, selection == i ? hilite( col ) : col,
-                                        followers[i]->disp_name() );
-                    }
-                    if( guy ) {
-                        int retval = guy->faction_display( w_missions, 31 );
-                        if( retval == 2 ) {
-                            radio_interactable = true;
-                        } else if( retval == 1 ) {
-                            interactable = true;
-                        }
-                    } else {
-                        mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_ally );
-                    }
-                    break;
-                } else {
-                    mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_ally );
-                }
-            }
-            break;
-            case tab_mode::TAB_OTHERFACTIONS: {
-                const std::string no_fac = _( "You don't know of any factions." );
-                if( active_vec_size > 0 ) {
-                    draw_scrollbar( w_missions, selection, entries_per_page, active_vec_size,
-                                    point( 0, 3 ) );
-                    for( size_t i = top_of_page; i < active_vec_size; i++ ) {
-                        const int y = i - top_of_page + 3;
-                        trim_and_print( w_missions, point( 1, y ), 28, selection == i ? hilite( col ) : col,
-                                        _( valfac[i]->name ) );
-                    }
-                    if( cur_fac ) {
-                        cur_fac->faction_display( w_missions, 31 );
-                    } else {
-                        mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_fac );
-                    }
-                    break;
-                } else {
-                    mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_fac );
-                }
-            }
-            break;
-            case tab_mode::TAB_LORE: {
-                const std::string no_lore = _( "You haven't learned anything about the world." );
-                if( active_vec_size > 0 ) {
-                    draw_scrollbar( w_missions, selection, entries_per_page, active_vec_size,
-                                    point( 0, 3 ) );
-                    for( size_t i = top_of_page; i < active_vec_size && i < top_of_page + entries_per_page; i++ ) {
-                        const int y = i - top_of_page + 3;
-                        trim_and_print( w_missions, point( 1, y ), 28, selection == i ? hilite( col ) : col,
-                                        _( lore[i].second ) );
-                    }
-                    if( snippet != nullptr ) {
-                        int y = 2;
-                        fold_and_print( w_missions, point( 31, ++y ), getmaxx( w_missions ) - 31 - 2, c_light_gray,
-                                        SNIPPET.get_snippet_by_id( snippet->first ).value().translated() );
-                    } else {
-                        mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_lore );
-                    }
-                    break;
-                } else {
-                    mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_lore );
-                }
-            }
-            break;
-            case tab_mode::TAB_CREATURES: {
-                const std::string no_creatures =
-                    _( "You haven't recorded sightings of any creatures.  Taking photos can be a good way to keep track of them." );
-                const int w = getmaxx( w_missions ) - 31 - 2;
-                if( active_vec_size > 0 ) {
-                    draw_scrollbar( w_missions, selection, entries_per_page, active_vec_size,
-                                    point( 0, 3 ) );
-                    for( size_t i = top_of_page; i < active_vec_size && i < top_of_page + entries_per_page; i++ ) {
-                        const int y = i - top_of_page + 3;
-                        trim_and_print( w_missions, point( 1, y ), 28, selection == i ? hilite( col ) : col,
-                                        string_format( "%s  %s", colorize( creatures[i]->sym,
-                                                       selection == i ? hilite( creatures[i]->color ) : creatures[i]->color ),
-                                                       creatures[i]->nname() ) );
-                    }
-                    if( !cur_creature.is_null() ) {
-                        cur_creature->faction_display( w_missions, point( 31, 3 ), w );
-                    } else {
-                        fold_and_print( w_missions, point( 31, 4 ), w, c_light_red, no_creatures );
-                    }
-                    break;
-                } else {
-                    fold_and_print( w_missions, point( 31, 4 ), w, c_light_red, no_creatures );
-                }
-            }
-            default:
-                break;
-        }
-        wnoutrefresh( w_missions );
+        view.draw( w_missions );
     } );
 
-    for( const auto &elem : get_avatar().get_snippets() ) {
-        std::optional<translation> name = SNIPPET.get_name_by_id( elem );
-        if( name && !name->empty() ) {
-            lore.push_back( std::pair<snippet_id, std::string>( elem, name->translated() ) );
-        } else {
-            lore.push_back( std::pair<snippet_id, std::string>( elem, elem.str() ) );
-        }
-    }
-
-    auto compare_second =
-        []( const std::pair<snippet_id, std::string> &a,
-    const std::pair<snippet_id, std::string> &b ) {
-        return localized_compare( a.second, b.second );
-    };
-    std::sort( lore.begin(), lore.end(), compare_second );
-
-    creatures.assign( get_avatar().get_known_monsters().begin(),
-                      get_avatar().get_known_monsters().end() );
-
-    std::sort( creatures.begin(), creatures.end(), []( const mtype_id & a, const mtype_id & b ) {
-        return localized_compare( a->nname(), b->nname() );
-    } );
-
-
-    std::optional<size_t> mouse_row;
-
-    while( true ) {
-        // create a list of NPCs, visible and the ones on overmapbuffer
-        followers.clear();
-        for( auto &elem : g->get_follower_list() ) {
-            shared_ptr_fast<npc> npc_to_get = nullptr;
-            for_each_overmapbuffer( [&]( const dimension_id &, overmapbuffer & omb ) {
-                if( !npc_to_get ) {
-                    npc_to_get = omb.find_npc( elem );
-                }
-            } );
-            if( !npc_to_get ) {
-                continue;
-            }
-            npc *npc_to_add = npc_to_get.get();
-            followers.push_back( npc_to_add );
-        }
-        valfac.clear();
-        for( const auto &elem : g->faction_manager_ptr->all() ) {
-            if( elem.second.known_by_u && elem.second.id != faction_id( "your_followers" ) ) {
-                valfac.push_back( &elem.second );
-            }
-        }
-        guy = nullptr;
-        cur_fac = nullptr;
-        interactable = false;
-        snippet = nullptr;
-        radio_interactable = false;
-
-        if( tab < tab_mode::FIRST_TAB || tab >= tab_mode::NUM_TABS ) {
-            debugmsg( "The sanity check failed because tab=%d", static_cast<int>( tab ) );
-            tab = tab_mode::FIRST_TAB;
-        }
-        active_vec_size = 0;
-        if( tab == tab_mode::TAB_FOLLOWERS ) {
-            if( selection < followers.size() ) {
-                guy = followers[selection];
-            }
-            active_vec_size = followers.size();
-        } else if( tab == tab_mode::TAB_OTHERFACTIONS ) {
-            if( selection < valfac.size() ) {
-                cur_fac = valfac[selection];
-            }
-            active_vec_size = valfac.size();
-
-        } else if( tab == tab_mode::TAB_LORE ) {
-            if( selection < lore.size() ) {
-                snippet = &lore[selection];
-            }
-            active_vec_size = lore.size();
-        } else if( tab == tab_mode::TAB_CREATURES ) {
-            if( selection < creatures.size() ) {
-                cur_creature = creatures[selection];
-            }
-            active_vec_size = creatures.size();
-        }
-
+    bool done = false;
+    while( !done ) {
+        view.refresh();
         ui_manager::redraw();
-        std::string action = ctxt.handle_input();
-        if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
-            if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
-                action = action == "SCROLL_UP" ? "UP" : "DOWN";
-                mouse_row.reset();
-            } else if( action == "SELECT" || action == "SEC_SELECT" ) {
-                action.clear();
-                if( const auto mouse = ctxt.get_coordinates( w_missions ) ) {
-                    const auto cell = mouse->xy().raw() + point( getmaxx( w_missions ),
-                                      getmaxy( w_missions ) ) / 2;
-                    const std::vector<std::string> tab_texts = {
-                        _( "YOUR FOLLOWERS" ), _( "OTHER FACTIONS" ), _( "LORE" ), _( "CREATURES" )
-                    };
-                    if( cell.y < 3 ) {
-                        if( const auto clicked = tab_input::index_at( {
-                                .texts = tab_texts,
-                                .current = static_cast<size_t>( tab ),
-                                .max_width = getmaxx( w_missions ),
-                                .x = cell.x,
-                            } ) ) {
-                            if( *clicked != static_cast<int>( tab ) ) {
-                                tab = static_cast<tab_mode>( *clicked );
-                                selection = 0;
-                                mouse_row.reset();
-                            }
-                        }
-                    } else if( const auto hit = scrollbar_input::click( {
-                    .offset = point( 0, 3 ),
-                    .viewport_size = entries_per_page,
-                    .content_size = static_cast<int>( active_vec_size ),
-                    .viewport_pos = static_cast<int>( selection ),
-                    .scroll_to_last = true,
-                               }, cell ) ) {
-                        selection = static_cast<size_t>( hit->viewport_pos );
-                        mouse_row.reset();
-                    } else if( cell.x >= 1 && cell.x < 30 && cell.y >= 3 &&
-                               cell.y < 3 + entries_per_page ) {
-                        const size_t idx = entries_per_page * ( selection / entries_per_page ) +
-                                           cell.y - 3;
-                        if( idx < active_vec_size ) {
-                            if( mouse_row && *mouse_row == idx ) {
-                                // A second click on the same row runs the row's Enter
-                                // action; talking keeps its usual prompts.
-                                action = "CONFIRM";
-                                mouse_row.reset();
-                            } else {
-                                selection = idx;
-                                mouse_row = idx;
-                            }
-                        }
-                    }
-                }
-            } else {
-                action.clear();
-            }
-        } else {
-            // Keyboard navigation and content changes forget the pending row click.
-            mouse_row.reset();
-        }
-        if( action == "NEXT_TAB" || action == "RIGHT" ) {
-            tab = static_cast<tab_mode>( static_cast<int>( tab ) + 1 );
-            if( tab >= tab_mode::NUM_TABS ) {
-                tab = tab_mode::FIRST_TAB;
-            }
-            selection = 0;
-        } else if( action == "PREV_TAB" || action == "LEFT" ) {
-            tab = static_cast<tab_mode>( static_cast<int>( tab ) - 1 );
-            if( tab < tab_mode::FIRST_TAB ) {
-                tab = tab_mode::LAST_TAB;
-            }
-            selection = 0;
-        } else if( action == "DOWN" ) {
-            selection++;
-            if( selection >= active_vec_size ) {
-                selection = 0;
-            }
-        } else if( action == "UP" ) {
-            if( selection == 0 ) {
-                selection = active_vec_size == 0 ? 0 : active_vec_size - 1;
-            } else {
-                selection--;
-            }
-        } else if( action == "CONFIRM" && guy ) {
-            if( guy->has_companion_mission() ) {
-                guy->reset_companion_mission();
-                popup( _( "%s returns from their mission" ), guy->disp_name() );
-            } else {
-                if( tab == tab_mode::TAB_FOLLOWERS && guy && ( interactable || radio_interactable ) ) {
-                    guy->talk_to_u( radio_interactable );
-                }
-            }
-        } else if( action == "QUIT" ) {
-            break;
-        } else if( action == "SWAPTONPC" && guy && interactable ) {
-            get_avatar().control_npc( *guy );
-        }
+        const std::string action = ctxt.handle_input();
+        done = view.handle( action, ctxt, w_missions, modern );
     }
 }
