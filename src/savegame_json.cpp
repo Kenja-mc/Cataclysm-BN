@@ -1171,6 +1171,25 @@ void avatar::store( JsonOut &json ) const
         json.end_object();
     }
     json.end_array();
+
+    // Floating HUD window placement, collapse and visibility are per character.
+    if( !hud_layout().empty() ) {
+        json.member( "hud_windows" );
+        json.start_array();
+        for( const auto &[id, window] : hud_layout() ) {
+            json.start_object();
+            json.member( "id", id );
+            if( window.placed ) {
+                json.member( "x", window.pos.x );
+                json.member( "y", window.pos.y );
+            }
+            json.member( "collapsed", window.collapsed );
+            json.member( "visible", window.visible );
+            json.member( "order", window.order );
+            json.end_object();
+        }
+        json.end_array();
+    }
 }
 
 void avatar::deserialize( JsonIn &jsin )
@@ -1345,6 +1364,24 @@ void avatar::load( const JsonObject &data )
 
     // monsters recorded by the character
     data.read( "known_monsters", known_monsters );
+
+    for( JsonObject entry : data.get_array( "hud_windows" ) ) {
+        entry.allow_omitted_members();
+        const auto id = entry.get_string( "id", "" );
+        if( id.empty() ) {
+            continue;
+        }
+        auto window = hud_layout()[id];
+        window.placed = entry.has_member( "x" ) && entry.has_member( "y" );
+        if( window.placed ) {
+            entry.read( "x", window.pos.x );
+            entry.read( "y", window.pos.y );
+        }
+        entry.read( "collapsed", window.collapsed );
+        entry.read( "visible", window.visible );
+        entry.read( "order", window.order );
+        hud_layout()[id] = window;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

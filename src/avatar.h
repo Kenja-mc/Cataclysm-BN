@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <string>
 #include <unordered_set>
@@ -11,6 +12,7 @@
 #include "calendar.h"
 #include "character.h"
 #include "enums.h"
+#include "hud_windows.h"
 #include "item.h"
 #include "player.h"
 #include "pldata.h"
@@ -297,7 +299,17 @@ class avatar : public player
             return mon_visible;
         }
 
+        /// Placement, collapse and visibility of the floating HUD windows.
+        auto hud_layout() -> std::map<std::string, hud_windows::state> & {
+            return hud_window_layout;
+        }
+        auto hud_layout() const -> const std::map<std::string, hud_windows::state> & {
+            return hud_window_layout;
+        }
+
     private:
+        std::map<std::string, hud_windows::state> hud_window_layout;
+
         // The name used to generate save filenames for this avatar. Not serialized in json.
         std::string save_id;
 

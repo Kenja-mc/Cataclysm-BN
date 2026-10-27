@@ -9,7 +9,8 @@ from safe_click import see_everything
 from tmux_game import Game, start_new_game
 
 # Modern wait-menu choices differ from Classic.
-BASE_OPTIONS = {"SHOW_WELCOME": "false", "HUD_WEATHER_BOX": "off", "CONTROL_SCHEME": "modern"}
+BASE_OPTIONS = {"SHOW_WELCOME": "false", "HUD_WEATHER_BOX": "off", "CONTROL_SCHEME": "modern",
+                "HUD_WINDOWS": "false"}
 
 TIME_OF_DAY = re.compile(r"(\d{1,2}):(\d{2}):(\d{2})\s*([AP]M)")
 

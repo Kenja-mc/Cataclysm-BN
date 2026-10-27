@@ -22,7 +22,8 @@ def map_only(g, columns=EDGE_MAP_COLUMNS):
 
 def zombie_down_a_corridor(name, options):
     """An 80x24 game with a zombie 30 tiles east down a lit corridor: visible, but off the map window."""
-    edge = Game(name=name, cols=80, rows=24, options={"SAFEMODE": "false", **options})
+    edge = Game(name=name, cols=80, rows=24,
+                options={"SAFEMODE": "false", "HUD_WINDOWS": "false", **options})
     start_new_game(edge)
     edge.resize(80, 24)
     edge.define_lua(HELPERS + " function corridor() for dx=5,40 do for dy=-1,1 do local p=here(dx,dy) "
