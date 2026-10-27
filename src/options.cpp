@@ -2155,6 +2155,11 @@ void options_manager::add_options_interface()
          true
        );
 
+    add( "UNPACK_TAKE_LIST", interface, translate_marker( "Unpack into a take list" ),
+         translate_marker( "If true, unpacking a kit opens a list of its contents so you can take what you want; the rest drops on the floor and taking costs the same moves as picking it up by hand.  If false, every content drops on the floor at once, as upstream does." ),
+         true
+       );
+
     add( "SHOW_WELCOME", interface, translate_marker( "Show welcome card" ),
          translate_marker( "If true, the next new game starts with a short card explaining the controls." ),
          true

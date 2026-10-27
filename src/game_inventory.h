@@ -97,11 +97,16 @@ item *saw_stock( player &p, item &tool );
 item *wear( player &p );
 /** Choose item to take off. */
 item *take_off( avatar &you );
+/** Outcome of the unpack take list, already formatted for the caller's messages. */
+struct unpack_result {
+    std::vector<std::string> taken;
+    /// Selected contents the character could not carry.
+    std::vector<std::string> no_room;
+};
 /**
  * Offer unpacked contents for taking or wearing. Items left in @p contents belong on the floor.
- * @return Names of the items taken into the inventory.
  */
-std::vector<std::string> unpack( player &p, std::vector<detached_ptr<item>> &contents );
+unpack_result unpack( player &p, std::vector<detached_ptr<item>> &contents );
 /** Item cut up menu. */
 item *salvage( player &p );
 /** Repair menu. */

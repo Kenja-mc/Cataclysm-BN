@@ -4,6 +4,18 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-26
+
+### Added
+
+- Unpacking a kit, go-bag, survival kit or alien pod opens one take list. Every content starts
+  marked; Enter takes it, a click or Right unmarks a row, digits typed before a click take that
+  many charges, `W` wears it, and Escape leaves it all on the floor. Taking costs the same 100
+  moves as picking it up by hand, and what will not fit stays behind with a message. Wearing into
+  a filled slot offers Replace it, Layer it when layering is legal, or Cancel; layering shows the
+  added weight and encumbrance. Options → Interface → Unpack into a take list restores the old
+  drop-everything flow.
+
 ## 2026-10-25
 
 ### Added

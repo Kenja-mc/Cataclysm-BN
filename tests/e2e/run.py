@@ -178,6 +178,7 @@ SMOKE = [
     "test_wait_keeps_position",
     "test_rounded_frames",
     "test_folded_families",
+    "test_first_aid_kit_opens_one_take_list",
     "test_quick_stack_not_through_windows",
     "test_crafting_opens_on_content",
     "test_readable_map_glyphs",

@@ -467,6 +467,16 @@ that is optional:
   you can craft from, not an empty favorites list. **Construction (Enter action menu)** does the
   same: an empty Favorite tab opens on `All` instead.
 - **One pick-up list**: `g` shows everything within reach in one list.
+- **Unpacking is a take list.** Activating a first aid kit, go-bag, survival kit or alien pod opens
+  one list with every content marked. Enter takes them; a click or Right unmarks one row; digits
+  typed before a click take that many charges; `W` wears the highlighted item; Escape leaves
+  everything on the floor. The row shows how many charges of a stack it will take. Taking costs
+  the same 100 moves as picking the item up by hand, and a selected item that will not fit stays
+  behind with a message saying you cannot carry it. Wearing into a filled slot offers
+  **Replace it**, **Layer it** when layering is legal, or **Cancel**; layering shows the added
+  weight and encumbrance.
+  Options → Interface → Unpack into a take list turns the list off and drops every content at once,
+  as upstream does.
 - **Combine** (item menu, `C` in the modern scheme): partly used tools that hold their own charges
   and that nothing refills, such as matchbooks, pour into one, as in Project Zomboid. Every charge
   is kept and the emptied copies go away. Duct tape, thread and other counted items already stack.

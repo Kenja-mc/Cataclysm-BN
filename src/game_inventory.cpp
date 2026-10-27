@@ -60,6 +60,7 @@
 #include <cmath>
 #include <cstddef>
 #include <functional>
+#include <limits>
 #include <map>
 #include <memory>
 #include <numeric>
@@ -2416,6 +2417,11 @@ item *game_menus::inv::sterilize_cbm( player &p )
 namespace
 {
 
+using game_menus::inv::unpack_result;
+
+// What picking the item up by hand costs (src/pickup.cpp).
+constexpr int take_move_cost = 100;
+
 class unpack_inventory_selector : public inventory_multiselector
 {
     public:
@@ -2423,23 +2429,34 @@ class unpack_inventory_selector : public inventory_multiselector
             inventory_multiselector( p, default_preset, _( "ITEMS TO TAKE" ) ),
             contents( contents ) {
             set_title( _( "Unpack" ) );
-            set_hint( string_format( _( "Press %s to wear the selected item." ),
-                                     ctxt.get_desc( "WEAR" ) ) );
+            auto hint = string_format( _( "Press %s to wear the selected item.  " ),
+                                       ctxt.get_desc( "WEAR" ) );
+            hint += get_option<std::string>( "CONTROL_SCHEME" ) == "modern"
+                    ? string_format( _( "Click or press %s to mark one." ), ctxt.get_desc( "RIGHT" ) )
+                    : string_format( _( "Press %s to mark one." ), ctxt.get_desc( "RIGHT" ) );
+            set_hint( hint );
             for( const detached_ptr<item> &content : contents ) {
                 add_item( own_inv_column, content.get() );
             }
             for( inventory_entry &entry : own_inv_column.entries ) {
-                set_chosen_count( entry, 1 );
+                set_chosen_count( entry, entry.get_available_count() );
             }
         }
 
-        auto execute() -> std::vector<std::string>;
+        auto execute() -> unpack_result;
 
     private:
         auto take_content( item *target ) -> detached_ptr<item>;
+        auto chosen_count( const item *target ) const -> size_t;
+        auto add_content( detached_ptr<item> &&content ) -> void;
+        auto stow( detached_ptr<item> &&content ) -> void;
+        auto take_into_pack( detached_ptr<item> &take ) -> bool;
+        auto can_carry( const item &content ) const -> bool;
         auto wear_now( item *target ) -> bool;
         auto wear_entry( item *target ) -> bool;
-        auto wear_prompt( item *target, item &blocker ) -> bool;
+        auto wear_prompt( item *target, item &blocker, bool can_layer ) -> bool;
+        auto replace_worn( item *target, item &blocker ) -> bool;
+        auto restore_worn( std::vector<detached_ptr<item>> &removed ) -> void;
         auto encumbrance_text( const item &new_item ) const -> std::string;
 
         std::vector<detached_ptr<item>> &contents;
@@ -2453,89 +2470,201 @@ auto unpack_inventory_selector::take_content( item *target ) -> detached_ptr<ite
     if( iter == contents.end() ) {
         return detached_ptr<item>();
     }
-    detached_ptr<item> result = std::move( *iter );
+    auto result = std::move( *iter );
     contents.erase( iter );
     return result;
 }
 
+auto unpack_inventory_selector::chosen_count( const item *target ) const -> size_t
+{
+    const auto matches = [target]( const inventory_entry & entry ) {
+        return entry.is_item() && entry.any_item() == target;
+    };
+    for( const inventory_entry &entry : own_inv_column.entries ) {
+        if( matches( entry ) ) {
+            return entry.chosen_count;
+        }
+    }
+    // A filter parks still-selected items in entries_hidden.
+    for( const inventory_entry &entry : own_inv_column.entries_hidden ) {
+        if( matches( entry ) ) {
+            return entry.chosen_count;
+        }
+    }
+    return 0;
+}
+
+auto unpack_inventory_selector::add_content( detached_ptr<item> &&content ) -> void
+{
+    auto *raw = content.get();
+    contents.push_back( std::move( content ) );
+    add_item( own_inv_column, raw );
+    for( inventory_entry &entry : own_inv_column.entries ) {
+        if( entry.is_item() && entry.any_item() == raw ) {
+            set_chosen_count( entry, entry.get_available_count() );
+            return;
+        }
+    }
+}
+
+auto unpack_inventory_selector::can_carry( const item &content ) const -> bool
+{
+    // Hand pickup gate: loose liquids are spilled, weight may go to four times capacity.
+    return !content.made_of( LIQUID ) && u.can_pick_weight( content, false ) &&
+           u.can_pick_volume( content );
+}
+
+auto unpack_inventory_selector::take_into_pack( detached_ptr<item> &take ) -> bool
+{
+    // Hand pickup fills magazines before the pack and counts that as taken.
+    if( take->is_ammo() ) {
+    const auto original_charges = take->charges;
+    const auto ammo = safe_reference<item> { *take };
+    take = u.i_add_to_container( std::move( take ), false );
+        if( original_charges > 0 && ( !take || take->charges < original_charges ) && ammo ) {
+            g->on_pickup( *ammo );
+        }
+        if( !take || ( take->count_by_charges() && take->charges == 0 ) ) {
+            return true;
+        }
+    }
+    if( !can_carry( *take ) ) {
+    return false;
+}
+auto &added = u.i_add( std::move( take ) );
+g->on_pickup( added );
+return true;
+}
+
+auto unpack_inventory_selector::stow( detached_ptr<item> &&content ) -> void
+{
+    if( can_carry( *content ) ) {
+    u.i_add( std::move( content ) );
+    } else {
+        add_content( std::move( content ) );
+    }
+}
+
 auto unpack_inventory_selector::encumbrance_text( const item &new_item ) const -> std::string
 {
-    const char_encumbrance_data current = u.get_encumbrance();
-    const char_encumbrance_data layered = u.get_encumbrance( new_item );
-    std::vector<std::string> parts;
+    const auto current = u.get_encumbrance();
+    const auto layered = u.get_encumbrance( new_item );
+    auto parts = std::vector<std::string>();
     for( const bodypart_id &bp : u.get_all_body_parts() ) {
         if( !new_item.covers( bp ) ) {
             continue;
         }
         const auto current_it = current.elems.find( bp.id() );
         const auto layered_it = layered.elems.find( bp.id() );
-        if( current_it == current.elems.end() || layered_it == layered.elems.end() ) {
+        if( current_it == current.elems.end() || layered_it == current.elems.end() ) {
             continue;
         }
-        const int added = layered_it->second.encumbrance - current_it->second.encumbrance;
+        const auto added = layered_it->second.encumbrance - current_it->second.encumbrance;
         if( added > 0 ) {
             parts.push_back( string_format( "%s +%d", body_part_name( bp ), added ) );
         }
     }
-    return parts.empty() ? _( "no extra encumbrance" ) : enumerate_as_string( parts );
+    return parts.empty() ? std::string() : enumerate_as_string( parts );
 }
 
 auto unpack_inventory_selector::wear_now( item *target ) -> bool
 {
-    detached_ptr<item> to_wear = take_content( target );
+    auto to_wear = take_content( target );
     if( !to_wear ) {
         return false;
     }
-    detached_ptr<item> failed = u.wear_item( std::move( to_wear ) );
+    const auto worn_item = safe_reference<item> { *to_wear };
+    auto failed = u.wear_item( std::move( to_wear ) );
     if( failed ) {
         contents.push_back( std::move( failed ) );
         return false;
     }
+    if( worn_item ) {
+        g->on_pickup( *worn_item );
+    }
     remove_item( target );
+    u.mod_moves( -take_move_cost );
     return true;
 }
 
-auto unpack_inventory_selector::wear_prompt( item *target, item &blocker ) -> bool
+auto unpack_inventory_selector::wear_prompt( item *target, item &blocker, bool can_layer ) -> bool
 {
-    const std::string weight = string_format( "%.1f %s", convert_weight( target->weight() ),
-        weight_units() );
-    const std::string net_weight = string_format( "%.1f %s",
-        convert_weight( target->weight() - blocker.weight() ), weight_units() );
+    auto layering = std::string();
+    if( can_layer ) {
+        const auto weight = string_format( "%.2f %s", convert_weight( target->weight() ),
+                                           weight_units() );
+        const auto encumbrance = encumbrance_text( *target );
+        layering = encumbrance.empty()
+                   ? string_format( _( "Layering the %s adds %s of carried weight.\n" ),
+                                    target->tname(), weight )
+                   : string_format( _( "Layering the %s adds %s of carried weight and %s encumbrance.\n" ),
+                                    target->tname(), weight, encumbrance );
+    }
+    const auto blocker_name = colorize( blocker.tname(), blocker.color_in_inventory() );
 
     uilist menu;
-    menu.text = string_format(
-                    _( "You are already wearing %s.\n"
-                       "Layering the %s adds %s and %s encumbrance.\n"
-                       "Replacing it changes carried weight by %s." ),
-                    colorize( blocker.tname(), blocker.color_in_inventory() ), target->tname(),
-                    weight, encumbrance_text( *target ), net_weight );
+    menu.text = string_format( _( "You are already wearing %s.\n%sReplacing it takes off the %s." ),
+                               blocker_name, layering, blocker_name );
     menu.addentry( 0, true, 'r', _( "Replace it" ) );
-    menu.addentry( 1, true, 'l', _( "Layer it" ) );
+    if( can_layer ) {
+        menu.addentry( 1, true, 'l', _( "Layer it" ) );
+    }
     menu.addentry( 2, true, 'c', _( "Cancel" ) );
     menu.query();
 
-    if( menu.ret == 1 ) {
-        return wear_now( target );
-    } else if( menu.ret == 0 ) {
-        const auto can_take = u.can_takeoff( blocker );
-        if( !can_take.success() ) {
-            popup_getkey( "%s", can_take.str() );
-            return false;
-        }
-        std::vector<detached_ptr<item>> removed;
-        if( !u.takeoff( blocker, &removed ) ) {
-            return false;
-        }
-        for( detached_ptr<item> &old : removed ) {
-            if( u.can_pick_weight( *old, true ) && u.can_pick_volume( *old ) ) {
-                u.i_add( std::move( old ) );
-            } else {
-                contents.push_back( std::move( old ) );
-            }
-        }
+    if( menu.ret == 0 ) {
+        return replace_worn( target, blocker );
+    }
+    if( menu.ret == 1 && can_layer ) {
         return wear_now( target );
     }
     return false;
+}
+
+auto unpack_inventory_selector::restore_worn( std::vector<detached_ptr<item>> &removed ) -> void
+{
+for( detached_ptr<item> &old : removed ) {
+    auto failed = u.wear_item( std::move( old ), false );
+        if( failed ) {
+            stow( std::move( failed ) );
+        }
+    }
+}
+
+auto unpack_inventory_selector::replace_worn( item *target, item &blocker ) -> bool
+{
+    const auto can_take = u.can_takeoff( blocker, true );
+    if( !can_take.success() ) {
+        popup_getkey( "%s", can_take.str() );
+        return false;
+    }
+    auto removed = std::vector<detached_ptr<item>>();
+    if( !u.takeoff( blocker, &removed ) ) {
+        return false;
+    }
+
+    auto to_wear = take_content( target );
+    if( !to_wear ) {
+        restore_worn( removed );
+        return false;
+    }
+    const auto worn_item = safe_reference<item> { *to_wear };
+    auto failed = u.wear_item( std::move( to_wear ) );
+    if( failed ) {
+        // Keep the new item in the list and put the old one back on.
+        contents.push_back( std::move( failed ) );
+        restore_worn( removed );
+        return false;
+    }
+    if( worn_item ) {
+        g->on_pickup( *worn_item );
+    }
+    u.mod_moves( -take_move_cost );
+    remove_item( target );
+    for( detached_ptr<item> &old : removed ) {
+        stow( std::move( old ) );
+    }
+    return true;
 }
 
 auto unpack_inventory_selector::wear_entry( item *target ) -> bool
@@ -2546,17 +2675,18 @@ auto unpack_inventory_selector::wear_entry( item *target ) -> bool
         return false;
     }
 
-    item *blocker = nullptr;
+    auto *blocker = static_cast<item *>( nullptr );
     for( auto &worn_item : u.worn ) {
+        // Only an item on the same layer can be in the way.
+        if( worn_item->get_layer() != target->get_layer() ) {
+            continue;
+        }
         if( !worn_item->get_covered_body_parts().make_intersection(
                 target->get_covered_body_parts() ).any() ) {
             continue;
         }
-        // Different layers always stack without asking; the same layer fills a slot.
-        if( worn_item->get_layer() == target->get_layer() || !can_wear.success() ) {
-            blocker = &*worn_item;
-            break;
-        }
+        blocker = &*worn_item;
+        break;
     }
 
     if( blocker == nullptr ) {
@@ -2566,39 +2696,55 @@ auto unpack_inventory_selector::wear_entry( item *target ) -> bool
         popup_getkey( "%s", can_wear.str() );
         return false;
     }
-    return wear_prompt( target, *blocker );
+    return wear_prompt( target, *blocker, can_wear.success() );
 }
 
-auto unpack_inventory_selector::execute() -> std::vector<std::string>
+auto unpack_inventory_selector::execute() -> unpack_result
 {
     shared_ptr_fast<ui_adaptor> ui = create_or_get_ui_adaptor();
-    bool cancelled = false;
+    auto typed_count = size_t{ 0 };
+    auto cancelled = false;
     while( true ) {
         ui_manager::redraw();
 
         const inventory_input input = get_input();
 
-        if( input.action == "WEAR" ) {
-            const inventory_entry &selected = get_selected();
+        if( input.ch >= '0' && input.ch <= '9' ) {
+            const auto limit = static_cast<size_t>( std::numeric_limits<int>::max() / 10 - 10 );
+            typed_count = std::min( typed_count, limit ) * 10 +
+                          static_cast<size_t>( input.ch - '0' );
+        } else if( input.action == "WEAR" ) {
+            const auto &selected = get_selected();
             if( selected.is_item() ) {
                 wear_entry( selected.any_item() );
             }
+            typed_count = 0;
         } else if( input.action == "WIELD" ) {
             // The contents are only offered for taking or wearing.
+            typed_count = 0;
         } else if( input.action == "RIGHT" ) {
-            const auto entries = own_inv_column.get_entries( []( const inventory_entry &entry ) {
-                return entry.is_item();
-            } );
-            const bool all_selected = std::ranges::all_of( entries,
+            const auto selected = get_active_column().get_all_selected();
+            const auto all_selected = std::ranges::all_of( selected,
             []( const inventory_entry * entry ) {
                 return entry->chosen_count > 0;
             } );
-            for( inventory_entry *entry : entries ) {
-                set_chosen_count( *entry, all_selected ? 0 : 1 );
+            for( inventory_entry *entry : selected ) {
+                if( typed_count > 0 ) {
+                    set_chosen_count( *entry, typed_count );
+                } else {
+                    set_chosen_count( *entry, all_selected ? 0 : entry->get_available_count() );
+                }
             }
+            typed_count = 0;
         } else if( input.entry != nullptr ) {
             select( input.entry->any_item() );
-            set_chosen_count( *input.entry, input.entry->chosen_count > 0 ? 0 : 1 );
+            if( typed_count > 0 ) {
+                set_chosen_count( *input.entry, typed_count );
+            } else {
+                set_chosen_count( *input.entry, input.entry->chosen_count > 0
+                                  ? 0 : input.entry->get_available_count() );
+            }
+            typed_count = 0;
         } else if( input.action == "CONFIRM" ) {
             break;
         } else if( input.action == "QUIT" ) {
@@ -2607,44 +2753,64 @@ auto unpack_inventory_selector::execute() -> std::vector<std::string>
             break;
         } else {
             on_input( input );
+            typed_count = 0;
         }
     }
 
     if( cancelled ) {
-        return {};
+        return unpack_result();
     }
 
-    const auto is_selected = [this]( const item * target ) {
-        const auto matches = [target]( const inventory_entry & candidate ) {
-            return candidate.is_item() && candidate.any_item() == target && candidate.chosen_count > 0;
-        };
-        // A filter parks still-selected items in entries_hidden.
-        return std::ranges::any_of( own_inv_column.entries, matches ) ||
-               std::ranges::any_of( own_inv_column.entries_hidden, matches );
-    };
-
-    std::vector<std::string> taken;
-    std::vector<detached_ptr<item>> remaining;
+    auto result = unpack_result();
+    auto remaining = std::vector<detached_ptr<item>>();
     for( detached_ptr<item> &content : contents ) {
-        const bool selected = is_selected( content.get() );
-        if( selected && u.can_pick_weight( *content, true ) && u.can_pick_volume( *content ) ) {
-            taken.push_back( content->tname() );
-            u.i_add( std::move( content ) );
-        } else {
+        const auto chosen = chosen_count( content.get() );
+        if( chosen == 0 ) {
             remaining.push_back( std::move( content ) );
+            continue;
+        }
+        auto take = chosen >= static_cast<size_t>( content->count() )
+                    ? std::move( content )
+                    : content->split( static_cast<int>( chosen ) );
+        if( !take ) {
+            // No split was possible; keep the stack rather than lose it.
+            remaining.push_back( std::move( content ) );
+            continue;
+        }
+        const auto name = take->tname();
+        const auto colored = colorize( name, take->color_in_inventory() );
+        if( take_into_pack( take ) ) {
+            result.taken.push_back( name );
+            u.mod_moves( -take_move_cost );
+            if( content ) {
+                remaining.push_back( std::move( content ) );
+            }
+            continue;
+        }
+        result.no_room.push_back( colored );
+        // A refused split rejoins its stack, so the floor shows one stack, not two.
+        if( content && take && content->merge_charges( std::move( take ), true ) ) {
+            remaining.push_back( std::move( content ) );
+        } else {
+            if( take ) {
+                remaining.push_back( std::move( take ) );
+            }
+            if( content ) {
+                remaining.push_back( std::move( content ) );
+            }
         }
     }
     contents = std::move( remaining );
-    return taken;
+    return result;
 }
 
 } // namespace
 
 auto game_menus::inv::unpack( player &p, std::vector<detached_ptr<item>> &contents )
--> std::vector<std::string>
+-> game_menus::inv::unpack_result
 {
     if( contents.empty() ) {
-        return {};
+    return game_menus::inv::unpack_result();
     }
     unpack_inventory_selector inv_s( p, contents );
     return inv_s.execute();
