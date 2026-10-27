@@ -86,6 +86,10 @@ The volume rows control music, sound effects, ambience and monster idle sounds f
 monster without an `idle_sound` in its data stays silent even when it is on. Select a row
 with Up/Down and change it with Left/Right; Enter toggles a switch or raises a volume.
 Changes take effect at once. Press **Escape** to close the menu and save them.
+The mixer plays at most 24 one-shot world sounds at once. Music and the looping ambience beds
+keep their own channels, so they are never counted or evicted. When the budget is full, a new cue
+takes the place of the lowest-priority voice, then the quietest one, then the oldest. An idle
+creature's sound is the first to go, and its map marker is drawn only if the cue actually played.
 The terminal version has no audio and shows “Sound is unavailable in this build.” instead.
 
 ## Linux: download a release

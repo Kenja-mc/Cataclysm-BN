@@ -372,6 +372,12 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   `bin/install-bno.sh` uses `build-scripts/bundle-registry-mods.ts` and keeps the pack's
   credits with its files. Pick it under Options → General → Choose soundpack.
   With shoes on, footsteps follow the ground type; moving through obstacles has its own clearing sound.
+- **A 24-voice budget for one-shot world sounds.** The mixer never plays more than 24 one-shot
+  effects at once, so a large crowd cannot turn into a wall of overlapping clips. At the limit a
+  new cue takes the place of the lowest-priority voice, then the quietest one, then the oldest, so
+  no cue is refused while a track is free. Music and the looping ambience beds have their own
+  reserved channels and are neither counted nor evicted. A creature's idle sound is the first
+  voice to give way, and its map marker is drawn only when the cue actually played.
 
 - **Grouped right sidebar**, based on the Opus HUD proposal, keeps the map free of HUD boxes.
   Weather, Character and Needs form titled groups. The sidebar also keeps limb health, wounds,

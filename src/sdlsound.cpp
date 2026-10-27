@@ -4,7 +4,10 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <chrono>
+#include <cstddef>
+#include <cstdint>
 #include <map>
 #include <string>
 #include <unordered_map>
@@ -23,6 +26,7 @@
 #include "rng.h"
 #include "sdl_wrappers.h"
 #include "sounds.h"
+#include "thread_pool.h"
 #include "units_angle.h"
 
 #define dbg(x) DebugLogFL((x),DC::SDL)
@@ -123,9 +127,28 @@ static constexpr int MAX_CHANNEL_COUNT = static_cast<int>( sfx::channel::MAX_CHA
 static std::array<MIX_Track *, MAX_CHANNEL_COUNT> channel_tracks{};
 
 // Pre-allocated pool for fire-and-forget one-shot effects (channel::any).
-// Tracks are reused once they finish playing.
-static constexpr int TEMP_TRACK_POOL_SIZE = 64;
-static std::array<MIX_Track *, TEMP_TRACK_POOL_SIZE> temp_tracks{};
+// Tracks are reused once they finish playing. Only these tracks are world
+// voices: music has its own track and every named sfx::channel keeps a reserved
+// track, so neither music nor ambience beds ever count toward or lose a voice.
+// One track per possible voice: the pool never starts a 25th, it evicts.
+static constexpr int WORLD_VOICE_CEILING = 24;
+static std::array<MIX_Track *, WORLD_VOICE_CEILING> temp_tracks{};
+
+// Bookkeeping for one pool track. Main thread only.
+struct voice_slot {
+    bool playing = false;
+    int priority = 0;
+    float gain = 0.0f;        // Cue volume x SOUND_EFFECT_VOLUME, before bus gains.
+    std::uint64_t serial = 0; // Monotonic start order; lower is older.
+};
+static std::array<voice_slot, WORLD_VOICE_CEILING> voice_slots{};
+static std::uint64_t next_voice_serial = 1;
+
+// The slot handed to the mixer for a new cue.
+struct voice_reservation {
+    std::size_t slot = 0;
+    bool evicted = false; // a voice was playing there and must be stopped first
+};
 
 struct ambient_parameters {
     std::string id;
@@ -153,15 +176,77 @@ static inline auto check_sound( const int volume = 1 ) -> bool
     return sound_init_success && sounds::sound_enabled && volume > 0;
 }
 
-// Returns a free (idle) track from the temp pool, or nullptr if all are busy.
-static auto get_free_temp_track() -> MIX_Track *
+// Mirror the mixer's view of the pool. A track that finished since the last
+// request is free again.
+static auto refresh_voice_slots() -> void
 {
-    for( auto *t : temp_tracks ) {
-        if( t && !MIX_TrackPlaying( t ) ) {
-            return t;
+    for( int i = 0; i < WORLD_VOICE_CEILING; ++i ) {
+        voice_slots[i].playing = MIX_TrackPlaying( temp_tracks[i] );
+    }
+}
+
+// True when lhs should be evicted before rhs: lower priority, then quieter,
+// then older.
+static auto worse_voice( const voice_slot &lhs, const voice_slot &rhs ) -> bool
+{
+    if( lhs.priority != rhs.priority ) {
+        return lhs.priority < rhs.priority;
+    }
+    if( lhs.gain != rhs.gain ) {
+        return lhs.gain < rhs.gain;
+    }
+    return lhs.serial < rhs.serial;
+}
+
+// Pick the slot a new voice goes into: the first free slot, or at the ceiling
+// the eviction target. The fixed array has one track per possible voice, so a
+// slot always exists.
+static auto choose_voice_slot() -> std::size_t
+{
+    int free_slot = WORLD_VOICE_CEILING;
+    int victim = 0;
+    bool have_victim = false;
+
+    for( int i = 0; i < WORLD_VOICE_CEILING; ++i ) {
+        const voice_slot &slot = voice_slots[i];
+        if( !slot.playing ) {
+            if( free_slot == WORLD_VOICE_CEILING ) {
+                free_slot = i;
+            }
+            continue;
+        }
+        if( !have_victim || worse_voice( slot, voice_slots[victim] ) ) {
+            victim = i;
+            have_victim = true;
         }
     }
-    return nullptr;
+
+    return static_cast<std::size_t>( free_slot < WORLD_VOICE_CEILING ? free_slot : victim );
+}
+
+// Reserve a world voice for a cue, stopping the evicted track if the pool was
+// full. The caller owns releasing the slot if MIX_PlayTrack fails.
+static auto acquire_voice( const sfx::sound_priority priority, const float gain )
+    -> voice_reservation
+{
+    assert( !is_pool_worker_thread() );
+    refresh_voice_slots();
+    const std::size_t chosen = choose_voice_slot();
+    voice_slot &slot = voice_slots[chosen];
+    const voice_reservation reservation{ .slot = chosen, .evicted = slot.playing };
+    slot.playing = true;
+    slot.priority = static_cast<int>( priority );
+    slot.gain = gain;
+    slot.serial = next_voice_serial++;
+    if( reservation.evicted ) {
+        MIX_StopTrack( temp_tracks[reservation.slot], 0 );
+    }
+    return reservation;
+}
+
+static auto release_voice( const std::size_t slot ) -> void
+{
+    voice_slots[slot] = voice_slot{};
 }
 
 // ── Initialization / Shutdown ─────────────────────────────────────────────────
@@ -198,9 +283,27 @@ if( !MIX_Init() ) {
     }
 
     // Fire-and-forget pool
-    for( int i = 0; i < TEMP_TRACK_POOL_SIZE; ++i ) {
+    for( int i = 0; i < WORLD_VOICE_CEILING; ++i ) {
     temp_tracks[i] = MIX_CreateTrack( g_mixer );
     }
+
+    // Never run with a partial pool: fail initialization so callers treat audio
+    // as unavailable and markers remain the cue.
+    const bool tracks_ok =
+        std::all_of( channel_tracks.begin(), channel_tracks.end(),
+                     []( MIX_Track * track ) { return track != nullptr; } ) &&
+        std::all_of( temp_tracks.begin(), temp_tracks.end(),
+                     []( MIX_Track * track ) { return track != nullptr; } );
+    if( !tracks_ok ) {
+        dbg( DL::Error ) << "MIX_CreateTrack failed: " << SDL_GetError();
+        channel_tracks.fill( nullptr );
+        temp_tracks.fill( nullptr );
+        MIX_DestroyMixer( g_mixer );
+        g_mixer = nullptr;
+        MIX_Quit();
+        return false;
+    }
+    voice_slots.fill( voice_slot{} );
 
     music_track = MIX_CreateTrack( g_mixer );
 
@@ -283,6 +386,7 @@ if( g_mixer ) {
             }
         }
         temp_tracks.fill( nullptr );
+        voice_slots.fill( voice_slot{} );
 
         MIX_DestroyMixer( g_mixer );
         g_mixer = nullptr;
@@ -592,79 +696,100 @@ bool valid_last_time_played( MIX_Audio *audio, const int res_id, const std::stri
 // SDL_AudioStream sample-rate conversion if pitch variation is required.
 
 auto sfx::play_variant_sound( const std::string &id, const std::string &variant,
-                              const int volume, const bool stacks ) -> void
+                              const int volume, const bool stacks,
+                              const sound_priority priority ) -> bool
 {
     if( test_mode ) {
-    return;
-}
-add_msg( m_debug, "sound id: %s, variant: %s, volume: %d ", id, variant, volume );
-if( !check_sound( volume ) ) {
-        return;
+        // Tests never open an audio device; the sound marker is the only cue,
+        // and a muted cue stays silent.
+        return volume > 0;
+    }
+    add_msg( m_debug, "sound id: %s, variant: %s, volume: %d ", id, variant, volume );
+    if( volume <= 0 ) {
+        // A muted cue is not audible, so it must not leave a marker either.
+        return false;
+    }
+    if( !check_sound( volume ) ) {
+        // Audio is off or unavailable, so markers stay the player's cue.
+        return true;
     }
 
     const sound_effect *eff = find_random_effect( id, variant );
     if( eff == nullptr ) {
-    eff = find_random_effect( id, "default" );
-        if( eff == nullptr ) {
-            return;
-        }
+        return false;
     }
 
     const auto res_id = eff->resource_id;
-    auto *audio = get_sfx_resource( res_id );
-    if( !stacks && !valid_last_time_played( audio, res_id, id + "_" + variant ) ) {
-        return;
-    }
-
-    if( !audio ) {
-    return;
-}
-
-auto *track = get_free_temp_track();
-if( !track ) {
-    dbg( DL::Warn ) << "No free track for sound effect: " << id;
-        return;
-    }
-
     const int vol = eff->volume * get_option<int>( "SOUND_EFFECT_VOLUME" ) * volume / ( 100 * 100 );
+    if( vol <= 0 ) {
+        // Muted sound effects are not audible, so no cue and no marker.
+        return false;
+    }
+    auto *audio = get_sfx_resource( res_id );
+    if( !audio ) {
+        return false;
+    }
+    if( !stacks && !valid_last_time_played( audio, res_id, id + "_" + variant ) ) {
+        return false;
+    }
+    const voice_reservation reservation = acquire_voice( priority, volume_to_gain( vol ) );
+
+    auto *track = temp_tracks[reservation.slot];
+    // A reused track keeps the 3D position of its previous cue; clear it so a
+    // non-positional sound is not panned at the old angle.
+    MIX_SetTrack3DPosition( track, nullptr );
     MIX_SetTrackGain( track, volume_to_gain( vol ) );
     MIX_SetTrackAudio( track, audio );
     MIX_SetTrackLoops( track, 0 );
     if( !MIX_PlayTrack( track, 0 ) ) {
         dbg( DL::Warn ) << "Failed to play sound effect: " << SDL_GetError();
+        release_voice( reservation.slot );
+        return false;
     }
+    return true;
 }
 
 auto sfx::play_variant_sound( const std::string &id, const std::string &variant, const int volume,
                               const units::angle angle,
-                              double /*pitch_min*/, double /*pitch_max*/, const bool stacks ) -> void
+                              double /*pitch_min*/, double /*pitch_max*/, const bool stacks,
+                              const sound_priority priority ) -> bool
 {
     if( test_mode ) {
-    return;
-}
-add_msg( m_debug, "sound id: %s, variant: %s, volume: %d ", id, variant, volume );
-if( !check_sound( volume ) ) {
-        return;
+        // Tests never open an audio device; the sound marker is the only cue,
+        // and a muted cue stays silent.
+        return volume > 0;
+    }
+    add_msg( m_debug, "sound id: %s, variant: %s, volume: %d ", id, variant, volume );
+    if( volume <= 0 ) {
+        // A muted cue is not audible, so it must not leave a marker either.
+        return false;
+    }
+    if( !check_sound( volume ) ) {
+        // Audio is off or unavailable, so markers stay the player's cue.
+        return true;
     }
 
     const sound_effect *eff = find_random_effect( id, variant );
     if( eff == nullptr ) {
-    return;
-}
-
-const auto res_id = eff->resource_id;
-auto *audio = get_sfx_resource( res_id );
-if( !stacks && !valid_last_time_played( audio, res_id, id + "_" + variant ) ) {
-        return;
+        return false;
     }
 
-    auto *track = get_free_temp_track();
-    if( !track ) {
-    dbg( DL::Warn ) << "No free track for sound effect: " << id;
-        return;
-    }
-
+    const auto res_id = eff->resource_id;
     const int vol = eff->volume * get_option<int>( "SOUND_EFFECT_VOLUME" ) * volume / ( 100 * 100 );
+    if( vol <= 0 ) {
+        // Muted sound effects are not audible, so no cue and no marker.
+        return false;
+    }
+    auto *audio = get_sfx_resource( res_id );
+    if( !audio ) {
+        return false;
+    }
+    if( !stacks && !valid_last_time_played( audio, res_id, id + "_" + variant ) ) {
+        return false;
+    }
+    const voice_reservation reservation = acquire_voice( priority, volume_to_gain( vol ) );
+
+    auto *track = temp_tracks[reservation.slot];
     MIX_SetTrackGain( track, volume_to_gain( vol ) );
 
     const float angle_rad = static_cast<float>( to_degrees( angle ) ) * SDL_PI_F / 180.0f;
@@ -676,7 +801,10 @@ if( !stacks && !valid_last_time_played( audio, res_id, id + "_" + variant ) ) {
     if( !MIX_PlayTrack( track, 0 ) ) {
         dbg( DL::Debug ) << "Failed to play sound effect { id: " << id
                          << ", variant: " << variant << " }: " << SDL_GetError();
+        release_voice( reservation.slot );
+        return false;
     }
+    return true;
 }
 
 auto sfx::play_ambient_variant_sound( const std::string &id, const std::string &variant,

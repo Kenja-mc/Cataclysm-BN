@@ -797,13 +797,20 @@ void cata::detail::reg_game_api( sol::state &lua )
         return g->look_around();
     } );
 
+    DOC( "Plays a sound effect id and variant from the current soundpack.  " );
+    DOC( "The 4-argument form plays in the centre; the 7-argument form takes an angle. `stacks` false suppresses a repeat of the same cue while its clip is still playing.  " );
+    DOC( "Returns true when the cue started or when the build has no audio; false when it was not played (zero volume, missing asset, a suppressed repeat, or a failed mixer call)." );
     luna::set_fx( lib, "play_variant_sound",
                   sol::overload(
-                      sol::resolve<void( const std::string &, const std::string &, int, bool )>
-                      ( &sfx::play_variant_sound ),
-                      sol::resolve<void( const std::string &, const std::string &, int,
-                                         units::angle, double, double, bool )>( &sfx::play_variant_sound )
-                  ) );
+                      []( const std::string & id, const std::string & variant, int volume,
+    bool stacks ) -> bool {
+        return sfx::play_variant_sound( id, variant, volume, stacks );
+    },
+    []( const std::string & id, const std::string & variant, int volume,
+    units::angle angle, double pitch_min, double pitch_max, bool stacks ) -> bool {
+        return sfx::play_variant_sound( id, variant, volume, angle, pitch_min, pitch_max,
+                                        stacks );
+    } ) );
     luna::set_fx( lib, "play_ambient_variant_sound", &sfx::play_ambient_variant_sound );
 
     luna::set_fx( lib, "add_npc_follower", []( npc & p ) { g->add_npc_follower( p.getID() ); } );

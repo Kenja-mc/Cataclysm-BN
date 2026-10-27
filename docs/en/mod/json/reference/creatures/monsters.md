@@ -395,7 +395,10 @@ Amount of light passively output by monster. Ranges from 0 to 10.
 
 A sound_effect id played while this monster is idle, on its own random 8-20 second cooldown. A
 monster without this field makes no idle noise. The sound uses the normal sound-event pipeline, so
-distance, terrain and the sound marker behave as they do for other monster noises.
+distance and terrain behave as they do for other monster noises. A sound marker is drawn only when
+the cue actually played: a soundpack that lacks the id, a zero volume, or a failed mixer start
+leaves no marker behind. The mixer's 24-voice budget replaces another voice rather than dropping
+the cue.
 
 ## "hp"
 

@@ -10,6 +10,11 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 - Sound markers shrink to a dot as they age, so a fresh noise reads differently from a stale one;
   the first marker in a game explains the glyphs once.
+- The mixer plays at most 24 one-shot world sounds at once. When that budget is full, a new cue
+  takes the place of the lowest-priority voice, then the quietest one, then the oldest, so a
+  request is never refused while a track is free. Music and the looping ambience channels are
+  outside the count and are never evicted. A creature's idle sound is the first voice to give way,
+  and its map marker is drawn only when that cue actually played.
 
 ## 2026-10-25
 
