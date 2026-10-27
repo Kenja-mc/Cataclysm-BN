@@ -29,6 +29,7 @@
 #include "body_panel.h"
 #include "hud_boxes.h"
 #include "hud_sidebar.h"
+#include "hud_windows.h"
 #include "keyhints_panel.h"
 #include "lua_sidebar_widgets.h"
 #include "magic/magic.h"
@@ -2536,6 +2537,42 @@ static bool veh_panel()
 {
     return ( get_avatar().in_vehicle || g->remoteveh() ) && !hud_boxes::vehicle_box_shown();
 }
+
+/// True when a floating HUD window owns this reading, so its sidebar panel steps aside.
+static bool hud_window_owns( const char *id )
+{
+    return hud_windows::shown( id );
+}
+
+static bool limbs_panel()
+{
+    return !hud_window_owns( "limbs" );
+}
+
+static bool stats_panel()
+{
+    return !hud_window_owns( "stats" );
+}
+
+static bool movement_panel()
+{
+    return !hud_window_owns( "movement" );
+}
+
+static bool weight_panel()
+{
+    return !hud_window_owns( "weight" );
+}
+
+static bool compass_panel()
+{
+    return !hud_window_owns( "compass" );
+}
+
+static bool log_panel()
+{
+    return !hud_window_owns( "log" );
+}
 bool default_render()
 {
     return true;
@@ -2621,13 +2658,17 @@ static std::vector<window_panel> initialize_default_label_narrow_panels()
     std::vector<window_panel> ret;
 
     ret.emplace_back( draw_hint, translate_marker( "Hint" ), 1, 32, false );
-    ret.emplace_back( draw_limb_narrow, translate_marker( "Limbs" ), 3, 32, true );
-    ret.emplace_back( body_panel::draw, translate_marker( "Body" ), 3, 32, true );
+    ret.emplace_back( draw_limb_narrow, translate_marker( "Limbs" ), 3, 32, true,
+                      limbs_panel );
+    ret.emplace_back( body_panel::draw, translate_marker( "Body" ), 3, 32, true,
+                      limbs_panel );
     ret.emplace_back( draw_needs_narrow, translate_marker( "Needs" ), 5, 32, true, needs_panel );
-    ret.emplace_back( draw_char_narrow, translate_marker( "Movement" ), 3, 32, true );
+    ret.emplace_back( draw_char_narrow, translate_marker( "Movement" ), 3, 32, true,
+                      movement_panel );
     ret.emplace_back( draw_mana, translate_marker( "Mana" ), 1, 32, true,
                       spell_panel );
-    ret.emplace_back( draw_stat_narrow, translate_marker( "Stats" ), 3, 32, true );
+    ret.emplace_back( draw_stat_narrow, translate_marker( "Stats" ), 3, 32, true,
+                      stats_panel );
     ret.emplace_back( draw_veh_padding, translate_marker( "Vehicle" ), 2, 32, true, veh_panel );
     auto loc = window_panel( draw_loc_narrow, translate_marker( "Location" ), 6, 32, true );
     loc.set_height_override( []() { return location_height( false ); } );
@@ -2635,18 +2676,19 @@ static std::vector<window_panel> initialize_default_label_narrow_panels()
     ret.emplace_back( draw_wind, translate_marker( "Wind" ), 1, 32, false, environment_panel );
     ret.emplace_back( draw_weapon_labels, translate_marker( "Weapon" ), 2, 32, true, weapon_panel );
     ret.emplace_back( draw_weightvolume_narrow, translate_marker( "Wgt/Vol" ), 2, 32,
-                      true );
+                      true, weight_panel );
     // Movement already shows the sound level.
     ret.emplace_back( draw_sound_narrow, translate_marker( "Sound" ), 1, 32, false );
-    ret.emplace_back( draw_messages, translate_marker( "Log" ), -2, 32, true );
+    ret.emplace_back( draw_messages, translate_marker( "Log" ), -2, 32, true, log_panel );
     ret.emplace_back( draw_moon_narrow, translate_marker( "Moon" ), 2, 32, false );
     ret.emplace_back( draw_armor_padding, translate_marker( "Armor" ), 5, 32, false );
     ret.emplace_back( draw_armor_comp, translate_marker( "comp.Armor" ), 1, 32, false );
     ret.emplace_back( draw_compass_padding, translate_marker( "Compass" ), 8, 32,
-                      true ).set_height_override( compass_rows );
+                      true, compass_panel ).set_height_override( compass_rows );
     ret.emplace_back( draw_compass_padding, translate_marker( "Comp.Compass" ), 3, 32,
-                      false );
-    ret.emplace_back( draw_simple_compass, translate_marker( "Sim.Compass" ), 1, 32, false );
+                      false, compass_panel );
+    ret.emplace_back( draw_simple_compass, translate_marker( "Sim.Compass" ), 1, 32, false,
+                      compass_panel );
 #if defined(TILES)
     ret.emplace_back( draw_mminimap, translate_marker( "Map" ), -1, 32, true,
                       default_render, true );
@@ -2663,13 +2705,17 @@ static std::vector<window_panel> initialize_default_label_panels()
     std::vector<window_panel> ret;
 
     ret.emplace_back( draw_hint, translate_marker( "Hint" ), 1, 44, false );
-    ret.emplace_back( draw_limb_wide, translate_marker( "Limbs" ), 2, 44, true );
-    ret.emplace_back( body_panel::draw, translate_marker( "Body" ), 3, 44, true );
+    ret.emplace_back( draw_limb_wide, translate_marker( "Limbs" ), 2, 44, true,
+                      limbs_panel );
+    ret.emplace_back( body_panel::draw, translate_marker( "Body" ), 3, 44, true,
+                      limbs_panel );
     ret.emplace_back( draw_needs_labels, translate_marker( "Needs" ), 5, 44, true, needs_panel );
-    ret.emplace_back( draw_char_wide, translate_marker( "Movement" ), 2, 44, true );
+    ret.emplace_back( draw_char_wide, translate_marker( "Movement" ), 2, 44, true,
+                      movement_panel );
     ret.emplace_back( draw_mana, translate_marker( "Mana" ), 1, 44, true,
                       spell_panel );
-    ret.emplace_back( draw_stat_wide, translate_marker( "Stats" ), 2, 44, true );
+    ret.emplace_back( draw_stat_wide, translate_marker( "Stats" ), 2, 44, true,
+                      stats_panel );
     ret.emplace_back( draw_veh_padding, translate_marker( "Vehicle" ), 2, 44, true, veh_panel );
     auto loc = window_panel( draw_loc_wide_map, translate_marker( "Location" ), 6, 44, true );
     loc.set_height_override( []() { return location_height( true ); } );
@@ -2678,17 +2724,18 @@ static std::vector<window_panel> initialize_default_label_panels()
     ret.emplace_back( draw_loc_wide, translate_marker( "Location Alt" ), 6, 44, false );
     ret.emplace_back( draw_weapon_labels, translate_marker( "Weapon" ), 2, 44, true, weapon_panel );
     ret.emplace_back( draw_weightvolume_labels, translate_marker( "Wgt/Vol" ), 2, 44,
-                      true );
+                      true, weight_panel );
     ret.emplace_back( draw_sound_labels, translate_marker( "Sound" ), 1, 44, false );
-    ret.emplace_back( draw_messages, translate_marker( "Log" ), -2, 44, true );
+    ret.emplace_back( draw_messages, translate_marker( "Log" ), -2, 44, true, log_panel );
     ret.emplace_back( draw_moon_wide, translate_marker( "Moon" ), 1, 44, false );
     ret.emplace_back( draw_armor_padding, translate_marker( "Armor" ), 5, 44, false );
     ret.emplace_back( draw_armor_comp, translate_marker( "comp.Armor" ), 1, 32, false );
     ret.emplace_back( draw_compass_padding, translate_marker( "Compass" ), 8, 44,
-                      true ).set_height_override( compass_rows );
+                      true, compass_panel ).set_height_override( compass_rows );
     ret.emplace_back( draw_compass_padding, translate_marker( "Comp.Compass" ), 3, 44,
-                      false );
-    ret.emplace_back( draw_simple_compass, translate_marker( "Sim.Compass" ), 1, 44, false );
+                      false, compass_panel );
+    ret.emplace_back( draw_simple_compass, translate_marker( "Sim.Compass" ), 1, 44, false,
+                      compass_panel );
 #if defined(TILES)
     ret.emplace_back( draw_mminimap, translate_marker( "Map" ), -1, 44, true,
                       default_render, true );
@@ -2706,9 +2753,15 @@ namespace
 auto grouped_hud_panel( const hud_sidebar::section content,
                         const std::string &name ) -> window_panel
 {
+    const auto id = content == hud_sidebar::section::weather ? "weather" :
+                    content == hud_sidebar::section::character ? "combat" :
+                    content == hud_sidebar::section::needs ? "needs" : "vehicle";
     auto panel = window_panel( [content]( avatar & you, const catacurses::window & w ) {
         hud_sidebar::draw( you, w, content );
-    }, name, 1, 44, true );
+    }, name, 1, 44, true, [id]() {
+        // A disabled or unfittable window hands its readings back to the sidebar.
+        return !hud_windows::shown( id );
+    } );
     panel.set_height_override( [content]() { return hud_sidebar::height( content ); } );
     return panel;
 }
@@ -2720,24 +2773,30 @@ auto initialize_grouped_panels() -> std::vector<window_panel>
     ret.push_back( grouped_hud_panel( hud_sidebar::section::character,
                                       translate_marker( "Character" ) ) );
     ret.push_back( grouped_hud_panel( hud_sidebar::section::needs, translate_marker( "Needs" ) ) );
-    ret.emplace_back( draw_limb_wide, translate_marker( "Limbs" ), 2, 44, true );
-    ret.emplace_back( body_panel::draw, translate_marker( "Body" ), 3, 44, true );
+    ret.emplace_back( draw_limb_wide, translate_marker( "Limbs" ), 2, 44, true,
+                      limbs_panel );
+    ret.emplace_back( body_panel::draw, translate_marker( "Body" ), 3, 44, true,
+                      limbs_panel );
     ret.back().set_height_override( []() { return TERMY < 40 ? 2 : 3; } );
-    ret.emplace_back( draw_char_wide, translate_marker( "Movement" ), 2, 44, true );
-    ret.emplace_back( draw_stat_wide, translate_marker( "Stats" ), 2, 44, true );
+    ret.emplace_back( draw_char_wide, translate_marker( "Movement" ), 2, 44, true,
+                      movement_panel );
+    ret.emplace_back( draw_stat_wide, translate_marker( "Stats" ), 2, 44, true,
+                      stats_panel );
     auto vehicle = grouped_hud_panel( hud_sidebar::section::vehicle, translate_marker( "Vehicle" ) );
     vehicle.render = veh_panel;
     ret.push_back( std::move( vehicle ) );
-    ret.emplace_back( draw_weightvolume_labels, translate_marker( "Wgt/Vol" ), 2, 44, true );
+    ret.emplace_back( draw_weightvolume_labels, translate_marker( "Wgt/Vol" ), 2, 44, true,
+                      weight_panel );
     ret.emplace_back( []( avatar & you, const catacurses::window & w ) {
         draw_loc_labels( you, w, TERMY >= 40 );
     }, translate_marker( "Location" ), 4, 44, true );
     ret.back().set_height_override( []() { return TERMY < 40 ? 2 : 4; } );
-    ret.emplace_back( draw_compass_padding, translate_marker( "Compass" ), 8, 44, true );
+    ret.emplace_back( draw_compass_padding, translate_marker( "Compass" ), 8, 44, true,
+                      compass_panel );
     ret.back().set_height_override( compass_rows );
     ret.emplace_back( draw_keyhints, translate_marker( "Controls" ), 5, 44, true );
     ret.back().set_height_override( controls_rows );
-    ret.emplace_back( draw_messages, translate_marker( "Log" ), -2, 44, true );
+    ret.emplace_back( draw_messages, translate_marker( "Log" ), -2, 44, true, log_panel );
 #if defined(TILES)
     ret.emplace_back( draw_mminimap, translate_marker( "Map" ), -1, 44, false,
                       default_render, true );
@@ -3028,6 +3087,10 @@ void panel_manager::show_adm()
     ctxt.register_action( "TOGGLE_PANEL" );
 
     const std::vector<int> column_widths = { 17, 37, 17 };
+    // The HUD windows follow the layouts in the third column, under one header row.
+    const auto hud_entries = hud_windows::entries();
+    const auto layout_rows = static_cast<size_t>( layouts.size() );
+    const auto hud_header = hud_entries.empty() ? size_t{ 0 } : size_t{ 1 };
 
     size_t current_col = 0;
     size_t current_row = 0;
@@ -3041,6 +3104,28 @@ void panel_manager::show_adm()
     // panels not renderable due to game configuration will not be in this map
     std::map<size_t, size_t> row_indices;
 
+    /// Rows the HUD section adds to the third column; none where the floating HUD is inactive.
+    const auto hud_section_rows = [&]() -> size_t {
+        return hud_windows::active() && !hud_entries.empty() ? hud_header + hud_entries.size() :
+               size_t{ 0 };
+    };
+
+    /// Toggles the HUD window on a third-column row; false for layouts and the header.
+    const auto toggle_hud_at = [&]( const size_t row ) -> bool {
+        if( !hud_windows::active() || row < layout_rows + hud_header ) {
+            return false;
+        }
+        const auto index = row - layout_rows - hud_header;
+        if( index >= hud_entries.size() ) {
+            return false;
+        }
+        hud_windows::toggle( get_avatar(), hud_entries[index].first );
+        g->invalidate_main_ui_adaptor();
+        // The sidebar panel this window owns appears or disappears now.
+        recalc = true;
+        return true;
+    };
+
     g->show_panel_adm = true;
     g->invalidate_main_ui_adaptor();
 
@@ -3049,8 +3134,8 @@ void panel_manager::show_adm()
     ui_adaptor ui;
     ui.on_screen_resize( [&]( ui_adaptor & ui ) {
         const auto panel_rows = static_cast<int>( layouts[current_layout_id].size() );
-        const auto layout_rows = static_cast<int>( layouts.size() );
-        const auto desired_rows = std::max( panel_rows, layout_rows );
+        const auto desired_rows = std::max( panel_rows,
+                                            static_cast<int>( layout_rows + hud_section_rows() ) );
         const auto window_height = std::clamp( desired_rows + 1, 21, TERMY - 2 );
         w = catacurses::newwin( window_height, 75,
                                 point( ( TERMX / 2 ) - 38, ( TERMY / 2 ) - ( window_height / 2 ) ) );
@@ -3090,6 +3175,17 @@ void panel_manager::show_adm()
                        current_layout_id == layout.first ? c_light_blue : c_white, _( layout.first ) );
             i++;
         }
+        if( hud_windows::active() && !hud_entries.empty() ) {
+            mvwprintz( w, point( column_widths[0] + column_widths[1] + 4, i ),
+                       c_light_gray, _( "HUD WINDOWS" ) );
+            i++;
+            for( const auto &entry : hud_entries ) {
+                const auto shown = hud_windows::visible( get_avatar(), entry.first );
+                mvwprintz( w, point( column_widths[0] + column_widths[1] + 4, i ),
+                           shown ? c_white : c_dark_gray, entry.second );
+                i++;
+            }
+        }
         int col_offset = 0;
         for( i = 0; i < current_col; i++ ) {
             col_offset += column_widths[i];
@@ -3103,10 +3199,10 @@ void panel_manager::show_adm()
         int col_width = column_widths[1] - 4;
         mvwprintz( w, point( col_offset, 1 ), c_light_green, trunc_ellipse( ctxt.get_desc( "TOGGLE_PANEL" ),
                 col_width ) + ":" );
-        mvwprintz( w, point( col_offset, 2 ), c_white, _( "Toggle panels on/off" ) );
+        mvwprintz( w, point( col_offset, 2 ), c_white, _( "Toggle panels and HUD windows" ) );
         mvwprintz( w, point( col_offset, 3 ), c_light_green, trunc_ellipse( ctxt.get_desc( "MOVE_PANEL" ),
                 col_width ) + ":" );
-        mvwprintz( w, point( col_offset, 4 ), c_white, _( "Change display order" ) );
+        mvwprintz( w, point( col_offset, 4 ), c_white, _( "Change layout / raise window" ) );
         mvwprintz( w, point( col_offset, 5 ), c_light_green, trunc_ellipse( ctxt.get_desc( "QUIT" ),
                 col_width ) + ":" );
         mvwprintz( w, point( col_offset, 6 ), c_white, _( "Exit" ) );
@@ -3129,7 +3225,8 @@ void panel_manager::show_adm()
             }
         }
 
-        const size_t num_rows = current_col == 0 ? row_indices.size() : layouts.size();
+        const size_t num_rows = current_col == 0 ? row_indices.size() :
+                                layout_rows + hud_section_rows();
         current_row = clamp<size_t>( current_row, 0, num_rows - 1 );
 
         ui_manager::redraw();
@@ -3168,6 +3265,17 @@ void panel_manager::show_adm()
                 recalc = true;
             }
         } else if( !swapping && action == "MOVE_PANEL" && current_col == 2 ) {
+            if( current_row >= layout_rows ) {
+                // On a HUD row this is the keyboard way to bring that window to the front.
+                if( hud_windows::active() && current_row >= layout_rows + hud_header ) {
+                    const auto index = current_row - layout_rows - hud_header;
+                    if( index < hud_entries.size() ) {
+                        hud_windows::raise( get_avatar(), hud_entries[index].first );
+                        g->invalidate_main_ui_adaptor();
+                    }
+                }
+                continue;
+            }
             auto iter = std::next( layouts.begin(), current_row );
             current_layout_id = iter->first;
             int width = panel_manager::get_manager().get_current_layout().begin()->get_width();
@@ -3177,6 +3285,8 @@ void panel_manager::show_adm()
             // tell the game that the main screen might have a different size now.
             g->mark_main_ui_adaptor_resize();
             recalc = true;
+        } else if( !swapping && action == "TOGGLE_PANEL" && current_col == 2 ) {
+            toggle_hud_at( current_row );
         } else if( !swapping && ( action == "RIGHT" || action == "LEFT" ) ) {
             // there are only two columns
             if( current_col == 0 ) {

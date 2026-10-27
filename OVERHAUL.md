@@ -388,18 +388,29 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   credits with its files. Pick it under Options → General → Choose soundpack.
   With shoes on, footsteps follow the ground type; moving through obstacles has its own clearing sound.
 
-- **Grouped right sidebar**, based on the Opus HUD proposal, keeps the map free of HUD boxes.
-  Weather, Character and Needs form titled groups. The sidebar also keeps limb health, wounds,
-  movement, stats, load, location, messages, compass and controls. Vehicle readings join it when
-  needed. The Location group keeps its 5×5 overmap chunk. The larger pixel minimap remains an
-  optional **Map** panel in Sidebar Options. Below 40 rows, the groups lose their borders and
-  titles, and urgent needs wrap to save space.
-  New configurations use this layout. Existing saved layouts stay unchanged. Select **grouped**
-  in **Enter → Misc → Sidebar Options** to try it, or choose a previous layout to restore map boxes.
-  **Options → Interface → Sidebar position** keeps the sidebar on the right or moves it left.
-  Corner positions and Compact corner bars do not apply to grouped. **Box icons** still selects
-  the icon style of its Weather, Character, Needs and Vehicle groups.
-- **Optional Weather and Status map boxes** remain available in the other sidebar layouts.
+- **Floating HUD windows**, from the Opus HUD proposal's slide-2 mockup: in the labels,
+  labels-narrow and grouped layouts the readings are ten titled windows over the map — Weather,
+  Combat, Needs, Limbs, Stats, Movement, Weight, Compass, Log and Vehicle. A title row carries the
+  window name, one line of live state and `[-]`. Clicking the name or the control collapses and
+  restores the window; dragging the rest of the title moves it. Clicking, dragging or pressing
+  **Enter** on a window in Sidebar Options brings it to the front. Windows stay inside the map and
+  never cover the sidebar. A window that cannot fit, or that is turned off in Sidebar Options,
+  hands its reading back to the sidebar. Positions, stacking order, collapse and visibility save
+  per character. The Vehicle window appears only aboard or while remote-controlling.
+  Both the terminal and tiles builds draw the windows.
+- **Grouped right sidebar**, based on the Opus HUD proposal: its HUD groups are the windows above,
+  so the sidebar keeps Location, Controls and the optional Map. The Location group keeps its 5×5
+  overmap chunk; the larger pixel minimap remains an optional **Map** panel in Sidebar Options.
+  Below 40 rows, any remaining groups lose their borders and titles.
+  New configurations use grouped. Existing saved layouts stay unchanged. Select **grouped** (or
+  labels / labels-narrow) in **Enter → Misc → Sidebar Options**. **Options → Interface → Floating
+  HUD windows** turns the windows off; Classic and compact layouts always keep their combined
+  panels. **Options → Interface → Sidebar position** keeps the sidebar right or left, and the
+  windows clamp to the remaining map. The weather, status and vehicle box options seed each
+  window's first corner and visibility. **Compact corner bars** restores the old one-row bars and
+  does not apply while the floating windows are active. **Box icons** selects their icon style.
+- **Optional Weather and Status map boxes** remain available when the floating layout is off
+  (labels, labels-narrow, grouped) and in the Classic and compact layouts.
   Weather has four rows: an icon and description, season/day with time and a short sky track,
   Light, and Wind. The sky track shows the sun crossing the day, or at night the moon in its
   current phase crossing the night, so the night's moonlight can be judged at a glance; it is
@@ -424,7 +435,8 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   in Status. Weather, weapon and mana sidebar fields likewise return when their box cannot
   fit or is disabled, including immediately after changing options or resizing.
   **Compact corner bars** (Options → Interface) draws Weather and Status as one-row strips
-  instead of the larger boxes. The Weather strip holds the same readings on one line.
+  instead of the larger boxes when the floating windows are off. The Weather strip holds the same
+  readings on one line.
   The Status strip holds weapon, chosen style, stance and mana, with urgent needs when they fit.
   The sidebar keeps the panels that the full boxes hide, so a short strip loses no reading.
 - **Readable default typeface:** bundled JetBrains Mono NL Regular with Unifont fallback,
@@ -435,11 +447,12 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 - **Vehicle box** appears when you board a vehicle or control one remotely. It shows
   azimuth (degrees clockwise from north), current speed, cruise target, engine state, the selected
   engine's fuel percentage and battery charge. Aircraft keep their takeoff-speed readout. Low fuel
-  and battery readings change color; empty fuel still reads `0%`. In the grouped layout it stays
-  in the sidebar. In other layouts it starts at the bottom right and stacks with boxes in the same
-  corner. Options → Interface → Vehicle box moves the map box or turns it off. The Vehicle
-  sidebar panel steps aside only when the box fits; disabling it or losing room restores that
-  panel. Native tiles readouts are unchanged.
+  and battery readings change color; empty fuel still reads `0%`. With the floating layout on it
+  is the bottom-right window (the `HUD_VEHICLE_BOX` option seeds the corner and visibility); when
+  the layout is off or a fixed layout is selected it is the old map box or sidebar panel. The
+  Vehicle sidebar panel steps aside only when the window/box fits; disabling it or losing room
+  restores that panel. The window's reading is a replaceable provider so a future driving
+  dashboard can take it over. Native tiles readouts are unchanged.
   Speed, azimuth and fuel values stay readable at the minimum supported 80 × 25 terminal size.
 - **Body panel** (inspired by Project Zomboid's health screen): the sidebar lists every hurt limb
   and what is wrong with it (bleeding, infected, bitten, broken, bandaged, disinfected).

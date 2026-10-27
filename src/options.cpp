@@ -2213,6 +2213,10 @@ void options_manager::add_options_interface()
          translate_marker( "Shows the weather and status readings as one-row bars in the map corners instead of boxes.  The status bar carries the needs summary when the row has room for it.  The sidebar keeps the panels it would otherwise hide." ),
          false );
 
+    add( "HUD_WINDOWS", interface, translate_marker( "Floating HUD windows" ),
+         translate_marker( "Shows the HUD readings as titled windows over the map in the labels, labels-narrow and grouped layouts: weather, combat, needs, limbs, stats, movement, weight, compass, log and vehicle.  Click a title's [-] to collapse a window to its title row, which keeps one line of live state; click the title to restore it.  Click a title, move the pointer and click again to move a window, which stays inside the map and never covers the sidebar.  Positions, collapse and visibility are saved with the character, and the Sidebar Options menu toggles the same windows without a mouse.  The weather, status and vehicle box options still choose each window's first corner.  Turn this off to keep the fixed corner boxes and sidebar panels; the classic and compact layouts always keep their combined panels." ),
+         true );
+
     add( "HUD_ICONS", interface, translate_marker( "Box icons" ),
          translate_marker( "Icons in the weather, status and vehicle boxes.  Icon font draws Material Design Icons and human stance figures; the graphical version bundles it, and a terminal needs a Nerd Font.  Unicode uses common symbols.  Text only uses ASCII labels and works everywhere." ),
     { { "unicode", translate_marker( "Unicode" ) }, { "nerd", translate_marker( "Icon font" ) }, { "ascii", translate_marker( "Text only" ) } },

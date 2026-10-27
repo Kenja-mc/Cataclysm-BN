@@ -8,8 +8,10 @@ depending on TIMEOUT rate.  Panning **east** moves the view east (scrollbar
 rightward), which moves the player ``@`` left on screen — keeping it within
 ``find()``'s 95-column search range.
 
-The shared ``g`` fixture (from run.py) has CURSOR_PANNING off.  The games here keep
-the option on, one per option profile, and each test starts from a recentred view.
+Each game here keeps CURSOR_PANNING at the value under test, one per option profile,
+and starts from a recentred view.  The floating HUD is turned off: these tests read the
+avatar's ``@`` from the map, and a compass/log window over the map can contain another
+``@`` symbol.
 """
 from aim_reticle import action_clock
 from fixtures import shared_game
@@ -18,7 +20,7 @@ from helpers import HELPERS, arena, bub_pos, empty_inventory, settle
 _PAN_RATE = "100"  # EDGE_SCROLL=Slow: 100 ms between pan steps
 _PAN_OPTIONS = {
     "CURSOR_PANNING": "true", "EDGE_SCROLL": _PAN_RATE, "SAFEMODE": "false",
-    "ANIMATIONS": "false", "TURN_DURATION": "0",
+    "ANIMATIONS": "false", "TURN_DURATION": "0", "HUD_WINDOWS": "false",
 }
 
 
@@ -63,15 +65,16 @@ def test_cursor_panning_pans(g):
             f"view should have panned east: @ ({x_before}) -> ({x_after})"
 
 
-def test_cursor_panning_off(g):
+def test_cursor_panning_off(_g):
     """With CURSOR_PANNING off, holding at the edge does nothing."""
-    arena(g)
-    settle(g)
-    x_before, y_before = g.find("@")
-    g.hover(_right_edge(g), y_before)
-    x_after, _ = g.find("@")
-    assert x_after == x_before, \
-        f"view should not have panned: @ ({x_before}) -> ({x_after})"
+    with pan_game("bn-e2e-pan-off", CURSOR_PANNING="false") as pan:
+        arena(pan)
+        settle(pan)
+        x_before, y_before = pan.find("@")
+        pan.hover(_right_edge(pan), y_before)
+        x_after, _ = pan.find("@")
+        assert x_after == x_before, \
+            f"view should not have panned: @ ({x_before}) -> ({x_after})"
 
 
 def test_cursor_panning_noturn_hover(g):

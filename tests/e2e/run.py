@@ -40,6 +40,7 @@ from unpack_flow import TESTS as UNPACK_FLOW_TESTS
 from storage import TESTS as STORAGE_TESTS
 from crafting import TESTS as CRAFTING_TESTS
 from hud_boxes import TESTS as HUD_BOXES_TESTS
+from hud_windows import TESTS as HUD_WINDOWS_TESTS
 from map_view import TESTS as MAP_VIEW_TESTS
 from combat import TESTS as COMBAT_TESTS
 from sound_feedback import TESTS as SOUND_FEEDBACK_TESTS
@@ -111,6 +112,7 @@ MODULES = [
     ("storage", STORAGE_TESTS),
     ("crafting", CRAFTING_TESTS),
     ("hud_boxes", HUD_BOXES_TESTS),
+    ("hud_windows", HUD_WINDOWS_TESTS),
     ("map_view", MAP_VIEW_TESTS),
     ("combat", COMBAT_TESTS),
     ("sound_feedback", SOUND_FEEDBACK_TESTS),

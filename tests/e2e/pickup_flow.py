@@ -12,8 +12,8 @@ def open_pickup(g, *items):
     for item in items:
         spawn(g, 0, 0, item)
     g.keys("G", delay=0.2)
+    # "Pick up" is the menu's own label; Weight is now also a HUD window title.
     g.wait_for("Pick up")
-    g.wait_for("Weight")
     return names
 
 
@@ -27,7 +27,7 @@ def test_g_again_picks_up_the_highlighted_item(g):
     open_pickup(g, "rock", "stick")
     g.keys("g", delay=1.5)
     try:
-        assert "Weight" not in g.screen(), "g should confirm the area pickup menu\n" + g.screen()
+        assert "Pick up" not in g.screen(), "g should confirm the area pickup menu\n" + g.screen()
         assert count_carried(g, "rock") + count_carried(g, "stick") == 1, "exactly the highlighted item"
     finally:
         close_and_clean(g)
@@ -92,7 +92,7 @@ def test_space_confirms_like_g(g):
     open_pickup(g, "rock", "stick")
     g.keys("Space", delay=1.5)
     try:
-        assert "Weight" not in g.screen(), "Space should confirm the area pickup menu\n" + g.screen()
+        assert "Pick up" not in g.screen(), "Space should confirm the area pickup menu\n" + g.screen()
         assert count_carried(g, "rock") + count_carried(g, "stick") == 1, "exactly the highlighted item"
     finally:
         close_and_clean(g)
@@ -107,12 +107,11 @@ def test_space_picks_marked_row_with_quantity(g):
     rock = g.lua("local it=gapi.create_item(ItypeId.new('rock'),5) out(it:display_name(1))")[0]
     g.keys("G", delay=0.2)
     g.wait_for("Pick up")
-    g.wait_for("Weight")
     g.keys("3", delay=0.3)
     g.click(*row_of(g, rock))
     g.keys("Space", delay=1.5)
     try:
-        assert "Weight" not in g.screen(), "Space should confirm after marking a quantity\n" + g.screen()
+        assert "Pick up" not in g.screen(), "Space should confirm after marking a quantity\n" + g.screen()
         assert count_carried(g, "rock") == 3, "the typed quantity must survive Space"
         assert count_carried(g, "stick") == 0
     finally:
@@ -124,7 +123,7 @@ def test_escape_cancels_pickup_in_modern(g):
     g.keys("Right", delay=0.4)
     g.keys("Escape", delay=0.8)
     try:
-        assert "Weight" not in g.screen(), "Escape should cancel the area pickup menu\n" + g.screen()
+        assert "Pick up" not in g.screen(), "Escape should cancel the area pickup menu\n" + g.screen()
         assert count_carried(g, "rock") == 0
     finally:
         close_and_clean(g)
@@ -140,7 +139,7 @@ def test_classic_empty_pickup_confirmation_takes_nothing(_g):
         spawn(g, 0, 0, "rock")
         spawn(g, 0, 0, "stick")
         g.keys("g", delay=1)
-        assert "Pick up" in g.screen() and "Weight" in g.screen(), g.screen()
+        assert "Pick up" in g.screen(), g.screen()
         g.keys("Enter", delay=1)
         assert count_carried(g, "rock") == count_carried(g, "stick") == 0
     finally:
@@ -157,10 +156,10 @@ def test_classic_space_still_cancels_pickup(_g):
         spawn(g, 0, 0, "rock")
         spawn(g, 0, 0, "stick")
         g.keys("g", delay=1)
-        assert "Pick up" in g.screen() and "Weight" in g.screen(), g.screen()
+        assert "Pick up" in g.screen(), g.screen()
         g.keys("Right", delay=0.4)
         g.keys("Space", delay=1)
-        assert "Weight" not in g.screen(), "Classic Space must still cancel the pickup menu\n" + g.screen()
+        assert "Pick up" not in g.screen(), "Classic Space must still cancel the pickup menu\n" + g.screen()
         assert count_carried(g, "rock") == count_carried(g, "stick") == 0
     finally:
         g.close()

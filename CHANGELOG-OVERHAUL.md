@@ -24,6 +24,16 @@ Upstream's own changes are in `docs/en/game/changelog`.
   draws no marker for a clip the selected pack lacks.
 - The Message log shows one line for the running activity, its progress and the time left, using
   that activity's own speed factors. Options → Interface → Activity line in the log turns it off.
+- Floating HUD windows in the labels, labels-narrow and grouped layouts: weather, combat, needs,
+  limbs, stats, movement, weight, compass, log and vehicle each have a title row, one line of live
+  state, a `[-]` collapse control, drag placement clamped to the map, and per-character saved
+  position, collapse and visibility.
+- Sidebar Options lists every window so the whole layout is reachable without a mouse; a disabled
+  or unfittable window hands its reading back to the sidebar. Both terminal and tiles build it.
+- The vehicle window is a replaceable provider (`hud_windows::set_vehicle_provider`) for the
+  driving-dashboard work.
+- Clicking or dragging a window, or pressing Enter on it in Sidebar Options, raises it to the
+  front; the stacking order is saved with the character.
 
 ### Changed
 
@@ -46,6 +56,11 @@ Upstream's own changes are in `docs/en/game/changelog`.
   inline on that page. `1`-`4` and Left/Right switch tabs, Tab switches a tab's inner pages, and
   Escape returns to play (after the usual zone save prompt when zones were changed). The tabs use
   no plain z/x/c/v.
+- Clicking a HUD window no longer acts on the map tile beneath it.
+- The sidebar is cleared before its panels are drawn, so a full-screen view's legend (for example
+  the overmap's) no longer lingers between panels after it closes.
+- The limb, stat, compass and log windows keep the sidebar's wound text, stat colours, direction
+  symbols and threat colours, and message colours.
 
 ## 2026-10-25
 

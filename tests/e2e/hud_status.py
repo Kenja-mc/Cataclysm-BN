@@ -68,6 +68,7 @@ def hud_game(tag, moon=False, **options):
                               "SIDEBAR_POSITION": "right", "SIDEBAR_SPACERS": "false",
                               "HUD_WEATHER_BOX": "off", "HUD_COMBAT_BOX": "off",
                               "HUD_VEHICLE_BOX": "off", "HUD_ICONS": "ascii",
+                              "HUD_WINDOWS": "false",
                               "ANIMATIONS": "false",
                               "24_HOUR": "24h", "USE_CELSIUS": "celsius",
                               "YN_HOTKEYS": "false", "CHRONIC_PAIN": "false", **options}) as game:

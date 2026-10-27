@@ -15,6 +15,11 @@ def test_m_toggles_overmap_without_travel(_g):
         game.keys("d")
         game.keys("m")
         game.wait_gone("Center On Character")
+        screen = game.screen()
+        assert "Center On Character" not in screen, \
+            "the overmap legend must be cleared after closing the map:\n" + screen
+        assert "X,Y,Z" in screen or "Place" in screen, \
+            "the game sidebar must be redrawn after closing the map:\n" + screen
         assert bub_pos(game) == position, "closing the map must not start travel"
         assert action_clock(game) == clock, "browsing and closing the map must not spend time"
 

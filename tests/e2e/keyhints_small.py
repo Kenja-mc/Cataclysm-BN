@@ -25,7 +25,8 @@ def strip(cols, rows, layout="labels", spacers=False, panels=None):
     g = Game(name=f"bn-e2e-keyhints-{cols}x{rows}-{os.getpid()}", cols=cols, rows=rows,
              userdir=userdir,
              options={"SAFEMODE": "false", "SHOW_WELCOME": "false",
-                      "CONTROL_SCHEME": "modern", "SIDEBAR_SPACERS": str(spacers).lower()})
+                      "CONTROL_SCHEME": "modern", "SIDEBAR_SPACERS": str(spacers).lower(),
+                      "HUD_WINDOWS": "false"})
     try:
         start_new_game(g)
         g.resize(cols, rows)

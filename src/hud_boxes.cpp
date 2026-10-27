@@ -15,25 +15,33 @@
 #include <vector>
 
 #include "avatar.h"
+#include "bodypart.h"
 #include "calendar.h"
 #include "catacharset.h"
+#include "cata_utility.h"
 #include "character_functions.h"
 #include "character_martial_arts.h"
 #include "color.h"
 #include "cursesdef.h"
+#include "effect.h"
 #include "flag.h"
 #include "game.h"
+#include "hud_windows.h"
 #include "icon_font.h"
 #include "item.h"
 #include "magic/magic.h"
+#include "messages.h"
+#include "mtype.h"
 #include "needs_status.h"
 #include "options.h"
 #include "output.h"
 #include "overmap/overmapbuffer_registry.h"
 #include "panels.h"
 #include "panels_utility.h"
+#include "sounds.h"
 #include "string_formatter.h"
 #include "translations.h"
+#include "units.h"
 #include "weather/weather.h"
 #include "units_utility.h"
 #include "vehicle/vehicle.h"
@@ -841,6 +849,1021 @@ for( const auto *label : {
 
 } // namespace
 
+namespace hud_windows
+{
+
+namespace
+{
+
+/// Stable ids: the save file and the Sidebar Options menu use these, never translated names.
+constexpr auto weather_id = "weather";
+constexpr auto combat_id = "combat";
+constexpr auto needs_id = "needs";
+constexpr auto limbs_id = "limbs";
+constexpr auto stats_id = "stats";
+constexpr auto movement_id = "movement";
+constexpr auto weight_id = "weight";
+constexpr auto compass_id = "compass";
+constexpr auto log_id = "log";
+constexpr auto vehicle_id = "vehicle";
+
+/// Title plus body of one window, built fresh every draw.
+struct content {
+    std::string id;
+    std::string name;
+    /// One line of live state on the title row, so a collapsed window still reads.
+    std::string summary;
+    std::vector<line> body;
+    /// False while the window has nothing to report, e.g. the vehicle window on foot.
+    bool applicable = true;
+    int label_width = 0;
+    int icon_width = 0;
+    int inner = 0;
+};
+
+/// A drawn window's cells, kept for mouse hit testing until the next draw.
+struct hit_box {
+    std::string id;
+    point at = point_zero;
+    int inner = 0;
+    int rows = 0;
+    bool collapsed = false;
+    bool grabbed = false;
+    /// Relative column just past the window name on the title row.  A collapsed window
+    /// expands when this part is clicked; the rest of the row is its drag handle.
+    int title_name_end = 0;
+
+    auto width() const -> int {
+        return inner + 4;
+    }
+    auto height() const -> int {
+        return collapsed ? 3 : rows + 3;
+    }
+};
+
+std::vector<hit_box> geometry;
+std::vector<std::string> last_shown;
+std::vector<std::string> last_skipped;
+std::optional<std::string> grabbed_id;
+point grab_offset;
+vehicle_provider vehicle_body_provider;
+
+/// Whether the window starts on.  The four former map boxes inherit their corner option;
+/// the sidebar readings start floated so the new layout is the complete HUD.
+auto default_visible( const std::string &id ) -> bool
+{
+    if( id == weather_id ) {
+        return get_option<std::string>( "HUD_WEATHER_BOX" ) != "off";
+    }
+    if( id == combat_id || id == needs_id ) {
+        return get_option<std::string>( "HUD_COMBAT_BOX" ) != "off";
+    }
+    if( id == vehicle_id ) {
+        return get_option<std::string>( "HUD_VEHICLE_BOX" ) != "off";
+    }
+    return true;
+}
+
+/// The corner whose option seeds a window's first placement.
+auto corner_for( const std::string &id ) -> std::string
+{
+    if( id == weather_id ) {
+        return get_option<std::string>( "HUD_WEATHER_BOX" );
+    }
+    if( id == combat_id || id == needs_id ) {
+        return get_option<std::string>( "HUD_COMBAT_BOX" );
+    }
+    if( id == limbs_id || id == stats_id || id == movement_id ) {
+        return "top_right";
+    }
+    if( id == weight_id || id == compass_id ) {
+        return "bottom_left";
+    }
+    if( id == log_id ) {
+        return "bottom_right";
+    }
+    return get_option<std::string>( "HUD_VEHICLE_BOX" );
+}
+
+auto state_for( const avatar &you, const std::string &id ) -> state
+{
+    const auto found = you.hud_layout().find( id );
+    if( found != you.hud_layout().end() ) {
+        return found->second;
+    }
+    return state{
+        .visible = default_visible( id )
+    };
+}
+
+auto mutable_state( avatar &you, const std::string &id ) -> state &
+{
+    const auto found = you.hud_layout().find( id );
+    if( found != you.hud_layout().end() ) {
+        return found->second;
+    }
+    const auto defaults = state{
+        .visible = default_visible( id )
+    };
+    return you.hud_layout().emplace( id, defaults ).first->second;
+}
+
+/// Sets the window above every saved peer, so the next draw paints it last.
+auto raise_window( avatar &you, const std::string &id ) -> void
+{
+    auto &state = mutable_state( you, id );
+    auto highest = 0;
+    for( const auto &entry : you.hud_layout() ) {
+        highest = std::max( highest, entry.second.order );
+    }
+    state.order = highest + 1;
+}
+
+auto map_size( const catacurses::window &w ) -> point
+{
+    if( is_draw_tiles_mode() ) {
+        return point( TERRAIN_WINDOW_TERM_WIDTH, TERRAIN_WINDOW_TERM_HEIGHT );
+    }
+    return w ? point( getmaxx( w ), getmaxy( w ) ) : point_zero;
+}
+
+auto weather_content( const avatar &you, const std::string &icons ) -> content
+{
+    auto out = content{
+        .id = weather_id, .name = _( "Weather" )
+    };
+    const auto underground = you.bub_pos().z() < 0;
+    out.summary = time_text( you ) + "  " + weather_text( you, underground );
+    // The condition and clock are the title; the body keeps the remaining readings.
+    const auto clock = icons == "ascii" ? std::string() : glyph( icon::clock, icons );
+    auto date = season_day_text();
+    if( !underground ) {
+        date += "  " + sky_track( icons );
+    }
+    out.body.push_back( {
+        .icon = clock, .icon_w = utf8_width( clock ), .icon_color = c_light_gray,
+        .text = date, .text_color = c_light_gray
+    } );
+    const auto light = get_light_level( character_funcs::fine_detail_vision_mod( you ) );
+    const auto light_icon = icons == "ascii" ? std::string() : glyph( icon::light, icons );
+    out.body.push_back( {
+        .icon = light_icon, .icon_w = utf8_width( light_icon ), .icon_color = light.second,
+        .text = string_format( _( "Light: %s" ), light.first ), .text_color = light.second
+    } );
+    const auto wind = wind_text( you, icons == "ascii" );
+    const auto wind_icon = icons == "ascii" ? std::string() : glyph( icon::wind, icons );
+    out.body.push_back( {
+        .icon = wind_icon, .icon_w = utf8_width( wind_icon ), .icon_color = wind.color,
+        .text = string_format( _( "Wind: %s" ), wind.text ), .text_color = wind.color
+    } );
+    out.icon_width = icons == "ascii" ? 0 : 3;
+    return out;
+}
+
+auto combat_content( const avatar &you, const std::string &icons ) -> content
+{
+    auto out = content{
+        .id = combat_id, .name = _( "Combat" )
+    };
+    const auto name = you.is_armed() ? character_funcs::fmt_wielded_weapon( you ) :
+                      std::string( _( "fists" ) );
+    auto stance = _( "Walking" );
+    if( you.movement_mode_is( CMM_RUN ) ) {
+        stance = _( "Running" );
+    } else if( you.movement_mode_is( CMM_CROUCH ) ) {
+        stance = _( "Crouching" );
+    } else if( you.movement_mode_is( CMM_PRONE ) ) {
+        stance = _( "Prone" );
+    }
+    out.summary = name + "  " + stance;
+    // Weapon and stance name the title row; style and mana stay in the body.
+    const auto lines = combat_lines( you, icons, false );
+    for( size_t i = 2; i < lines.size(); ++i ) {
+        out.body.push_back( lines[i] );
+    }
+    const auto ascii = icons == "ascii";
+    out.icon_width = ascii ? 0 : 3;
+    if( ascii ) {
+        for( const auto &row : out.body ) {
+            out.label_width = std::max( out.label_width, utf8_width( row.label ) );
+        }
+    }
+    return out;
+}
+
+auto needs_content( const avatar &you, const std::string &icons ) -> content
+{
+    auto out = content{
+        .id = needs_id, .name = _( "Needs" )
+    };
+    out.icon_width = icons == "ascii" ? 0 : 3;
+    const auto needs = pressing_needs( you );
+    if( needs.empty() ) {
+        // The sidebar's needs panel shows a "Needs met" row; keep a body row so [-]
+        // also has something to hide.
+        out.summary = _( "Needs met" );
+        const auto symbol = icons == "ascii" ? std::string() : glyph( icon::needs_met, icons );
+        out.body.push_back( {
+            .icon = symbol, .icon_w = utf8_width( symbol ), .icon_color = c_green,
+            .text = _( "Needs met" ), .text_color = c_green
+        } );
+        return out;
+    }
+    for( const auto &need : needs ) {
+        if( !out.summary.empty() ) {
+            out.summary += "  ";
+        }
+        out.summary += need.label;
+    }
+    // Glyphs name each pressing need; the adjective would not fit a compact row.
+    for( const auto &need : needs ) {
+        const auto symbol = icons == "ascii" ? std::string() : glyph( need.symbol, icons );
+        out.body.push_back( {
+            .icon = symbol, .icon_w = utf8_width( symbol ), .icon_color = need.value.color,
+            .text = need.label, .text_color = need.value.color
+        } );
+    }
+    return out;
+}
+
+auto vehicle_content( const avatar &you, const std::string &icons ) -> content
+{
+    auto out = content{
+        .id = vehicle_id, .name = _( "Vehicle" )
+    };
+    if( vehicle_body_provider ) {
+        const auto reading = vehicle_body_provider( you );
+        out.applicable = reading.applicable;
+        if( !out.applicable ) {
+            return out;
+        }
+        out.summary = reading.summary;
+        out.icon_width = reading.icon_width;
+        for( const auto &row : reading.body ) {
+            out.body.push_back( {
+                .icon = row.icon, .icon_w = utf8_width( row.icon ),
+                .icon_color = row.icon_color, .text = row.text,
+                .text_color = row.text_color
+            } );
+        }
+        return out;
+    }
+    const auto state = current_vehicle( you );
+    out.applicable = state.veh != nullptr;
+    if( !out.applicable ) {
+        return out;
+    }
+    const auto *veh = state.veh;
+    out.summary = string_format( _( "Speed: %d %s" ),
+                                 static_cast<int>( convert_velocity( veh->velocity, VU_VEHICLE ) ),
+                                 velocity_units( VU_VEHICLE ) );
+    auto lines = vehicle_lines( state, icons );
+    // The speed is the title row already.
+    if( lines.size() > 1 ) {
+        lines.erase( lines.begin() + 1 );
+    }
+    out.body = std::move( lines );
+    out.icon_width = icons == "ascii" ? 0 : 3;
+    return out;
+}
+
+const efftype_id effect_bandaged( "bandaged" );
+const efftype_id effect_bite( "bite" );
+const efftype_id effect_bleed( "bleed" );
+const efftype_id effect_disinfected( "disinfected" );
+const efftype_id effect_infected( "infected" );
+const efftype_id effect_mending( "mending" );
+
+/// The worst problem with one limb, in the body panel's order; empty when healthy.
+auto wound_for( const avatar &you, const bodypart_id &bp )
+-> std::optional<std::pair<std::string, nc_color>>
+{
+    auto out = std::optional<std::pair<std::string, nc_color>>();
+    if( you.get_part_hp_cur( bp ) <= 0 ) {
+        out.emplace( you.has_effect( effect_mending, bp.id() ) ? std::string( _( "mending" ) ) :
+                     std::string( _( "broken" ) ), c_magenta );
+    } else if( you.has_effect( effect_bleed, bp.id() ) ) {
+        out.emplace( std::string( _( "bleeding" ) ), c_red );
+    } else if( you.has_effect( effect_infected, bp.id() ) ) {
+        out.emplace( std::string( _( "infected" ) ), c_light_red );
+    } else if( you.has_effect( effect_bite, bp.id() ) ) {
+        out.emplace( std::string( _( "bitten" ) ), c_yellow );
+    } else if( you.has_effect( effect_bandaged, bp.id() ) ) {
+        out.emplace( std::string( _( "bandaged" ) ), c_light_green );
+    } else if( you.has_effect( effect_disinfected, bp.id() ) ) {
+        out.emplace( std::string( _( "disinfected" ) ), c_light_cyan );
+    }
+    return out;
+}
+
+auto limb_bar( const avatar &you, const bodypart_id &bp ) -> std::pair<std::string, nc_color>
+{
+    const auto hp = get_hp_bar( you.get_part_hp_cur( bp ), you.get_part_hp_max( bp ) );
+    auto bar = hp.first;
+    bar.append( static_cast<size_t>( std::max( 0, 5 - utf8_width( hp.first ) ) ), '.' );
+    return { std::move( bar ), hp.second };
+}
+
+auto limbs_content( const avatar &you ) -> content
+{
+    auto out = content{
+        .id = limbs_id, .name = _( "Limbs" )
+    };
+    auto wounded = 0;
+    for( const auto &bp : you.get_all_body_parts( true ) ) {
+        const auto bar = limb_bar( you, bp );
+        auto text = body_part_hp_bar_ui_text( bp ) + " " + bar.first;
+        auto color = bar.second;
+        if( const auto wound = wound_for( you, bp ) ) {
+            text += " " + wound->first;
+            color = wound->second;
+            wounded++;
+        }
+        out.body.push_back( {
+            .text = std::move( text ), .text_color = color
+        } );
+    }
+    out.summary = wounded > 0 ? string_format( _( "%d wounded" ), wounded ) :
+                  std::string( _( "No wounds" ) );
+    return out;
+}
+
+auto power_reading( const avatar &you ) -> std::pair<nc_color, std::string>
+{
+    auto color = c_red;
+    auto text = std::string();
+    if( !you.has_max_power() ) {
+        return std::make_pair( c_light_gray, std::string( "--" ) );
+    }
+    if( you.get_power_level() >= you.get_max_power_level() / 2 ) {
+        color = c_light_blue;
+    } else if( you.get_power_level() >= you.get_max_power_level() / 3 ) {
+        color = c_yellow;
+    } else if( you.get_power_level() >= you.get_max_power_level() / 4 ) {
+        color = c_red;
+    }
+    if( you.get_power_level() < 1_kJ ) {
+        text = std::to_string( units::to_joule( you.get_power_level() ) ) +
+               pgettext( "energy unit: joule", "J" );
+    } else {
+        text = std::to_string( units::to_kilojoule( you.get_power_level() ) ) +
+               pgettext( "energy unit: kilojoule", "kJ" );
+    }
+    return { color, text };
+}
+
+/// Safe-mode readout colour, matching the sidebar Stats panel.
+auto safe_color() -> nc_color
+{
+    auto color = g->safe_mode == SAFE_MODE_STOP ? c_yellow :
+                 g->safe_mode == SAFE_MODE_ON ? c_green : c_red;
+    if( g->safe_mode == SAFE_MODE_OFF && get_option<bool>( "AUTOSAFEMODE" ) ) {
+        const auto returns = get_option<int>( "AUTOSAFEMODETURNS" );
+        const auto percent = returns > 0 ? g->turnssincelastmon * 100 / returns : 100;
+        if( percent >= 100 ) {
+            color = c_green;
+        } else if( percent >= 75 ) {
+            color = c_yellow;
+        } else if( percent >= 50 ) {
+            color = c_light_red;
+        } else if( percent >= 25 ) {
+            color = c_red;
+        }
+    }
+    return color;
+}
+
+auto stats_content( const avatar &you ) -> content
+{
+    auto out = content{
+        .id = stats_id, .name = _( "Stats" )
+    };
+    const auto stat_row = [&]( const char *label, const int base, const int value ) {
+        out.body.push_back( {
+            .text = string_format( "%s %s", _( label ), value_trimmed( value ) ),
+            .text_color = color_compare_base( base, value )
+        } );
+    };
+    stat_row( "Str", you.get_str_base(), you.get_str() );
+    stat_row( "Dex", you.get_dex_base(), you.get_dex() );
+    stat_row( "Int", you.get_int_base(), you.get_int() );
+    stat_row( "Per", you.get_per_base(), you.get_per() );
+    const auto power = power_reading( you );
+    out.body.push_back( {
+        .text = string_format( _( "Power %s" ), power.second ), .text_color = power.first
+    } );
+    out.body.push_back( {
+        .text = string_format( _( "Safe: %s" ), g->safe_mode ? _( "On" ) : _( "Off" ) ),
+        .text_color = safe_color()
+    } );
+    out.summary = string_format( _( "Str %d Dex %d Int %d Per %d" ),
+                                 you.get_str(), you.get_dex(), you.get_int(), you.get_per() );
+    return out;
+}
+
+auto move_mode_letter( const avatar &you ) -> std::string
+{
+    if( you.movement_mode_is( CMM_RUN ) ) {
+        return pgettext( "movement-type", "R" );
+    }
+    if( you.movement_mode_is( CMM_CROUCH ) ) {
+        return pgettext( "movement-type", "C" );
+    }
+    if( you.movement_mode_is( CMM_PRONE ) ) {
+        return pgettext( "movement-type", "P" );
+    }
+    return pgettext( "movement-type", "W" );
+}
+
+/// The Movement panel's sound reading, including the ambient subtraction its option asks for.
+auto sound_text( const avatar &you ) -> std::string
+{
+    const auto option = get_option<std::string>( "SOUND_DISPLAY_TYPE" );
+    if( option == "decibels" ) {
+        return std::to_string( you.volume );
+    }
+    const auto &weather = get_weather();
+    const short weather_vol = weather.weather_id->sound_attn;
+    const short wind_volume = std::min( 150, weather.windspeed );
+    const auto indoor = ( AMBIENT_VOLUME_ABOVEGROUND + dBspl_to_mdBspl( 2 * weather_vol ) ) / 100;
+    const auto outdoor = ( AMBIENT_VOLUME_ABOVEGROUND +
+                           dBspl_to_mdBspl( wind_volume + weather_vol ) ) / 100;
+    const auto ambient = get_map().is_outside( you.bub_pos() ) ? outdoor : indoor;
+    if( option == "relative_decibels" ) {
+        return std::to_string( you.volume - ambient );
+    }
+    return std::to_string( average_minvol_distance( 0, ( you.volume - ambient ) * 100, 0, 0 ) );
+}
+
+auto movement_content( const avatar &you ) -> content
+{
+    auto out = content{
+        .id = movement_id, .name = _( "Movement" )
+    };
+    const auto mode = move_mode_letter( you );
+    out.summary = string_format( _( "Move %d(%s)" ), you.movecounter, mode );
+    const auto stamina = get_hp_bar( you.get_stamina(), you.get_stamina_max() );
+    auto bar = stamina.first;
+    bar.append( static_cast<size_t>( std::max( 0, 5 - utf8_width( stamina.first ) ) ), '.' );
+    out.body.push_back( {
+        .text = string_format( _( "Speed %d" ), you.get_speed() ), .text_color = c_light_gray
+    } );
+    out.body.push_back( {
+        .text = string_format( _( "Sound %s  Stam %s" ), sound_text( you ), bar ),
+        .text_color = stamina.second
+    } );
+    out.body.push_back( {
+        .text = string_format( _( "Mood %d  Focus %d" ), you.get_morale_level(),
+                               you.focus_pool ),
+        .text_color = c_light_gray
+    } );
+    return out;
+}
+
+auto carry_weight_text( const avatar &you ) -> std::string
+{
+    return string_format( "%.1f/%.1f", round_up( convert_weight( you.weight_carried() ), 1 ),
+                          round_up( convert_weight( you.weight_capacity() ), 1 ) );
+}
+
+auto carry_volume_text( const avatar &you ) -> std::string
+{
+    return string_format( "%.2f/%.2f",
+                          round_up( convert_volume( to_milliliter( you.volume_carried() ) ), 2 ),
+                          round_up( convert_volume( to_milliliter( you.volume_capacity() ) ), 2 ) );
+}
+
+auto weight_color( const avatar &you ) -> nc_color
+{
+    if( you.weight_carried() > you.weight_capacity() ) {
+        return c_red;
+    }
+    return you.weight_carried() > you.weight_capacity() * 0.75 ? c_yellow : c_light_gray;
+}
+
+auto volume_color( const avatar &you ) -> nc_color
+{
+    if( you.volume_carried() > you.volume_capacity() * 0.85 ) {
+        return c_red;
+    }
+    return you.volume_carried() > you.volume_capacity() * 0.65 ? c_yellow : c_light_gray;
+}
+
+auto weight_content( const avatar &you ) -> content
+{
+    auto out = content{
+        .id = weight_id, .name = _( "Weight" )
+    };
+    const auto weight = carry_weight_text( you );
+    const auto volume = carry_volume_text( you );
+    out.body.push_back( {
+        .text = string_format( _( "Weight %s" ), weight ), .text_color = weight_color( you )
+    } );
+    out.body.push_back( {
+        .text = string_format( _( "Volume %s" ), volume ), .text_color = volume_color( you )
+    } );
+    out.summary = string_format( _( "Wgt %s  Vol %s" ), weight, volume );
+    return out;
+}
+
+auto compass_content( const avatar &you ) -> content
+{
+    auto out = content{
+        .id = compass_id, .name = _( "Compass" )
+    };
+    // Mirror the sidebar compass: direction labels, visible symbols and threat colours.
+    static constexpr auto labels = std::array<const char *, 9> {
+        "North:", "NE:", "East:", "SE:", "South:", "SW:", "West:", "NW:", "Near:"
+    };
+    const auto &sight = you.get_mon_visible();
+    auto summary = std::string();
+    for( int i = 0; i < 9; i++ ) {
+        auto text = std::string( _( labels[i] ) ) + " ";
+        auto count = static_cast<int>( sight.unique_types[i].size() );
+        for( size_t n = 0; n < sight.unique_types[i].size(); n++ ) {
+            text += "@";
+        }
+        for( const auto &mon : sight.unique_mons[i] ) {
+            text += mon.first->sym;
+            count += mon.second;
+        }
+        const auto empty = count <= 0;
+        const auto dangerous = i < 8 && sight.dangerous[i];
+        out.body.push_back( {
+            .text = empty ? text + "-" : text + string_format( " %d", count ),
+            .text_color = empty ? c_dark_gray : dangerous ? c_light_red : c_light_gray
+        } );
+        if( !empty ) {
+            if( !summary.empty() ) {
+                summary += " ";
+            }
+            summary += string_format( "%s%d", i == 8 ? _( "Near" ) : _( labels[i] ), count );
+        }
+    }
+    out.summary = summary.empty() ? std::string( _( "Clear" ) ) : summary;
+    return out;
+}
+
+auto log_content( const int max_inner ) -> content
+{
+    auto out = content{
+        .id = log_id, .name = _( "Log" )
+    };
+    constexpr auto body_rows = 10;
+    const auto fold_width = std::clamp( max_inner - 2, 6, 44 );
+    const auto recent = Messages::recent_messages( 10 );
+    auto lines = std::vector<std::string>();
+    for( const auto &msg : recent ) {
+        // Colour tags stay; the log window prints them with print_colored_text.
+        for( auto &line : foldstring( msg.second, fold_width ) ) {
+            lines.push_back( std::move( line ) );
+        }
+    }
+    const auto visible_lines = std::min( body_rows, static_cast<int>( lines.size() ) );
+    for( auto i = 0; i < body_rows - visible_lines; ++i ) {
+        out.body.push_back( {
+            .text = std::string(), .text_color = c_light_gray
+        } );
+    }
+    for( auto i = static_cast<int>( lines.size() ) - visible_lines;
+         i < static_cast<int>( lines.size() ); ++i ) {
+        out.body.push_back( {
+            .text = lines[static_cast<size_t>( i )], .text_color = c_light_gray
+        } );
+    }
+    out.summary = recent.empty() ? std::string( _( "No messages" ) ) :
+                  utf8_truncate( remove_color_tags( recent.back().second ), 24 );
+    return out;
+}
+
+/// Width every row needs, title row included, capped to the map area.
+auto finish( content &c, const int max_inner ) -> void
+{
+    auto body_inner = 0;
+    for( const auto &row : c.body ) {
+        const auto text = utf8_width( row.text, true );
+        if( c.label_width > 0 ) {
+            body_inner = std::max( body_inner, c.icon_width + c.label_width + 3 + text );
+        } else {
+            const auto prefix = c.icon_width > 0 ? c.icon_width :
+                                row.icon_w > 0 ? row.icon_w + 1 : 0;
+            body_inner = std::max( body_inner, prefix + text );
+        }
+    }
+    const auto title_inner = utf8_width( c.name ) + utf8_width( c.summary, true ) + 6;
+    c.inner = std::clamp( std::max( {
+        body_inner, title_inner, 10
+    } ), 10, std::max( 10, max_inner ) );
+}
+
+struct cell_rect {
+    point at;
+    int width = 0;
+    int height = 0;
+};
+
+auto rects_overlap( const point at, const int width, const int height,
+                    const std::vector<cell_rect> &rects ) -> bool
+{
+    return std::ranges::any_of( rects, [&]( const cell_rect & other ) {
+        return at.x < other.at.x + other.width && other.at.x < at.x + width &&
+               at.y < other.at.y + other.height && other.at.y < at.y + height;
+    } );
+}
+
+/// Stacks windows that share a corner, then slides past anything the player already placed.
+/// Nothing is placed until the player moves a window, so reading the defaults is deterministic.
+auto default_at( const std::string &id, const point map, const int width, const int height,
+                 const std::vector<cell_rect> &occupied ) -> point
+{
+    auto corner = corner_for( id );
+    if( corner == "off" ) {
+        corner = "top_left";
+    }
+    const auto right = corner.ends_with( "right" );
+    const auto bottom = corner.starts_with( "bottom" );
+    auto at = point( right ? map.x - width : 0, bottom ? map.y - height : 0 );
+    for( int step = 0; step <= map.y; ++step ) {
+        if( !rects_overlap( at, width, height, occupied ) ) {
+            break;
+        }
+        at.y += bottom ? -1 : 1;
+        at.y = std::clamp( at.y, 0, std::max( 0, map.y - height ) );
+    }
+    return at;
+}
+
+auto control_columns( const hit_box &box ) -> std::pair<int, int>
+{
+    // `[-]` sits one column in from the right border.
+    return { box.inner - 1, box.inner + 1 };
+}
+
+auto paint( const catacurses::window &target, const content &c, const hit_box &box ) -> void
+{
+    const auto frame = frame_for( unicode_locale(), get_option<bool>( "UI_ROUNDED_BORDERS" ) );
+    std::string top = frame.top_left;
+    std::string bottom = frame.bottom_left;
+    for( int i = 0; i < c.inner + 2; i++ ) {
+        top += frame.horizontal;
+        bottom += frame.horizontal;
+    }
+    top += frame.top_right;
+    bottom += frame.bottom_right;
+    mvwprintz( target, box.at, c_dark_gray, top );
+    const auto title_row = box.at + point( 0, 1 );
+    mvwprintz( target, title_row, c_dark_gray, frame.vertical );
+    mvwprintz( target, title_row + point( 1, 0 ), c_black, std::string( c.inner + 2, ' ' ) );
+    mvwprintz( target, title_row + point( 2, 0 ), box.grabbed ? c_yellow : c_white, c.name );
+    const auto summary_at = 2 + utf8_width( c.name ) + 2;
+    const auto summary_width = std::max( 0, box.inner - 2 - summary_at );
+    if( summary_width > 0 ) {
+        trim_and_print( target, title_row + point( summary_at, 0 ), summary_width,
+                        c_light_gray, c.summary );
+    }
+    mvwprintz( target, title_row + point( box.inner - 1, 0 ),
+               box.collapsed ? c_light_green : c_light_red,
+               box.collapsed ? "[+]" : "[-]" );
+    mvwprintz( target, title_row + point( box.inner + 3, 0 ), c_dark_gray, frame.vertical );
+    if( !box.collapsed ) {
+        for( auto i = 0; i < box.rows; i++ ) {
+            const auto row = box.at + point( 0, i + 2 );
+            mvwprintz( target, row, c_dark_gray, frame.vertical );
+            mvwprintz( target, row + point( 1, 0 ), c_black, std::string( c.inner + 2, ' ' ) );
+            const auto &entry = c.body[static_cast<size_t>( i )];
+            if( c.label_width > 0 ) {
+                mvwprintz( target, row + point( 2, 0 ), entry.icon_color, entry.icon );
+                const auto label_at = row + point( 2 + c.icon_width, 0 );
+                mvwprintz( target, label_at, c_light_gray, entry.label );
+                mvwprintz( target, label_at + point( c.label_width, 0 ), c_dark_gray, " | " );
+                trim_and_print( target, label_at + point( c.label_width + 3, 0 ),
+                                c.inner - c.icon_width - c.label_width - 3,
+                                entry.text_color, entry.text );
+            } else {
+                mvwprintz( target, row + point( 2, 0 ), entry.icon_color, entry.icon );
+                const auto prefix = c.icon_width > 0 ? c.icon_width :
+                                    entry.icon_w > 0 ? entry.icon_w + 1 : 0;
+                if( c.id == log_id ) {
+                    // Message colours live in tags; the compact log keeps them.
+                    auto color = entry.text_color;
+                    print_colored_text( target, row + point( 2 + prefix, 0 ), color,
+                                        entry.text_color, entry.text );
+                } else {
+                    trim_and_print( target, row + point( 2 + prefix, 0 ), c.inner - prefix,
+                                    entry.text_color, entry.text );
+                }
+            }
+            mvwprintz( target, row + point( c.inner + 3, 0 ), c_dark_gray, frame.vertical );
+        }
+    }
+    mvwprintz( target, box.at + point( 0, box.height() - 1 ), c_dark_gray, bottom );
+}
+
+} // namespace
+
+auto active() -> bool
+{
+    if( !get_option<bool>( "HUD_WINDOWS" ) || get_option<bool>( "HUD_CORNER_BARS" ) ) {
+        return false;
+    }
+    // Classic and compact keep their own combined panels; the floating HUD belongs to the
+    // modern layouts, including the first-run grouped one.
+    const auto layout = panel_manager::get_manager().get_current_layout_id();
+    return layout == "labels" || layout == "labels-narrow" || layout == "grouped";
+}
+
+auto visible( const avatar &you, const std::string &id ) -> bool
+{
+    return state_for( you, id ).visible;
+}
+
+auto shown( const std::string &id ) -> bool
+{
+    if( !active() || !visible( get_avatar(), id ) ) {
+        return false;
+    }
+    if( std::ranges::find( last_shown, id ) != last_shown.end() ) {
+        return true;
+    }
+    if( std::ranges::find( last_skipped, id ) != last_skipped.end() ) {
+        return false;
+    }
+    // Not evaluated since the last draw (e.g. just enabled in the menu): assume the reading
+    // moved to the window so the menu does not keep a phantom sidebar row.
+    return true;
+}
+
+auto toggle( avatar &you, const std::string &id ) -> void
+{
+    auto &state = mutable_state( you, id );
+    state.visible = !state.visible;
+}
+
+auto raise( avatar &you, const std::string &id ) -> void
+{
+    raise_window( you, id );
+}
+
+auto entries() -> std::vector<std::pair<std::string, std::string>>
+{
+    return {
+        { weather_id, _( "Weather" ) }, { combat_id, _( "Combat" ) },
+        { needs_id, _( "Needs" ) }, { limbs_id, _( "Limbs" ) },
+        { stats_id, _( "Stats" ) }, { movement_id, _( "Movement" ) },
+        { weight_id, _( "Weight" ) }, { compass_id, _( "Compass" ) },
+        { log_id, _( "Log" ) }, { vehicle_id, _( "Vehicle" ) }
+    };
+}
+
+auto draw( const avatar &you, const catacurses::window &w ) -> void
+{
+    geometry.clear();
+    last_shown.clear();
+    last_skipped.clear();
+    if( !active() ) {
+        grabbed_id.reset();
+        return;
+    }
+    const auto map = map_size( w );
+    // A map narrower than one minimum window cannot host the layout without covering the sidebar.
+    if( map.x < 14 || map.y < 3 ) {
+        grabbed_id.reset();
+        return;
+    }
+    const auto icons = get_option<std::string>( "HUD_ICONS" );
+    const auto max_inner = map.x - 4;
+    // Content order is the default-placement and reservation order.  The vehicle window is
+    // reserved first because its reading is the one a small terminal must keep; the log fills
+    // in around it.  Painting follows the saved stacking order below.
+    auto contents = std::array<content, 10> {
+        vehicle_content( you, icons ), weather_content( you, icons ),
+        combat_content( you, icons ), needs_content( you, icons ),
+        limbs_content( you ), stats_content( you ), movement_content( you ),
+        weight_content( you ), compass_content( you ), log_content( max_inner )
+    };
+    struct pending {
+        content *body;
+        hit_box box;
+        bool placed = false;
+        bool skip = false;
+        int order = 0;
+    };
+    auto items = std::vector<pending>();
+    // Placed windows reserve their cells first, so fresh windows never cover them.
+    auto occupied = std::vector<cell_rect>();
+    for( auto &c : contents ) {
+        if( !c.applicable ) {
+            // Evaluated and deliberately absent, e.g. the vehicle window on foot.
+            last_skipped.push_back( c.id );
+            continue;
+        }
+        const auto state = state_for( you, c.id );
+        if( !state.visible ) {
+            continue;
+        }
+        finish( c, max_inner );
+        auto box = hit_box{
+            .id = c.id, .at = point_zero, .inner = c.inner,
+            .rows = static_cast<int>( c.body.size() ),
+            .collapsed = state.collapsed,
+            .grabbed = grabbed_id && *grabbed_id == c.id,
+            .title_name_end = 2 + utf8_width( c.name ) + 1
+        };
+        if( state.placed ) {
+            box.at = state.pos;
+            box.at.x = std::clamp( box.at.x, 0, std::max( 0, map.x - box.width() ) );
+            box.at.y = std::clamp( box.at.y, 0, std::max( 0, map.y - box.height() ) );
+            occupied.push_back( { box.at, box.width(), box.height() } );
+        }
+        items.push_back( { &c, box, state.placed, false, state.order } );
+    }
+    // The legacy placer keeps the avatar's centre clear; do the same for fresh windows.
+    occupied.push_back( {
+        point( std::max( 0, map.x / 2 - 1 ), std::max( 0, map.y / 2 - 1 ) ),
+        std::min( 3, map.x ), std::min( 3, map.y )
+    } );
+    for( auto &item : items ) {
+        if( item.placed ) {
+            continue;
+        }
+        item.box.at = default_at( item.box.id, map, item.box.width(), item.box.height(),
+                                  occupied );
+        item.box.at.x = std::clamp( item.box.at.x, 0,
+                                    std::max( 0, map.x - item.box.width() ) );
+        item.box.at.y = std::clamp( item.box.at.y, 0,
+                                    std::max( 0, map.y - item.box.height() ) );
+        if( rects_overlap( item.box.at, item.box.width(), item.box.height(), occupied ) ) {
+            // No free cells: the sidebar keeps this reading instead of stacking windows.
+            item.skip = true;
+            last_skipped.push_back( item.box.id );
+            continue;
+        }
+        occupied.push_back( { item.box.at, item.box.width(), item.box.height() } );
+    }
+    // Painting and hit testing follow the player's stacking order; equal orders keep the
+    // default content order.
+    std::stable_sort( items.begin(), items.end(), []( const pending &a, const pending &b ) {
+        return a.order < b.order;
+    } );
+    static auto windows = std::array<catacurses::window, 10>();
+    for( size_t index = 0; index < items.size(); ++index ) {
+        if( items[index].skip ) {
+            continue;
+        }
+        const auto &c = *items[index].body;
+        auto &box = items[index].box;
+        if( is_draw_tiles_mode() ) {
+            auto &box_win = windows[index];
+            const auto origin = point( getbegx( w ) + box.at.x, getbegy( w ) + box.at.y );
+            if( !box_win || getmaxx( box_win ) != box.width() ||
+                getmaxy( box_win ) != box.height() ||
+                getbegx( box_win ) != origin.x || getbegy( box_win ) != origin.y ) {
+                box_win = catacurses::newwin( box.height(), box.width(), origin );
+            }
+            werase( box_win );
+            paint( box_win, c, {
+                .id = box.id, .at = point_zero, .inner = box.inner, .rows = box.rows,
+                .collapsed = box.collapsed, .grabbed = box.grabbed
+            } );
+            wnoutrefresh( box_win );
+        } else {
+            paint( w, c, box );
+        }
+        last_shown.push_back( box.id );
+        geometry.push_back( box );
+    }
+}
+
+auto secondary_clicked( avatar &you, const catacurses::window &w,
+                        const point &map_cell ) -> bool
+{
+    if( !active() ) {
+        return false;
+    }
+    const auto map = map_size( w );
+    if( map_cell.x < 0 || map_cell.y < 0 || map_cell.x >= map.x || map_cell.y >= map.y ) {
+        return false;
+    }
+    for( auto it = geometry.rbegin(); it != geometry.rend(); ++it ) {
+        const auto &box = *it;
+        if( map_cell.x >= box.at.x && map_cell.x < box.at.x + box.width() &&
+            map_cell.y >= box.at.y && map_cell.y < box.at.y + box.height() ) {
+            raise_window( you, box.id );
+            return true;
+        }
+    }
+    return false;
+}
+
+auto clicked( avatar &you, const catacurses::window &w, const point &map_cell ) -> bool
+{
+    if( !active() ) {
+        return false;
+    }
+    const auto map = map_size( w );
+    const auto rel = map_cell;
+    if( rel.x < 0 || rel.y < 0 || rel.x >= map.x || rel.y >= map.y ) {
+        if( grabbed_id ) {
+            // A click outside the map drops the window where it was clamped.
+            grabbed_id.reset();
+            return true;
+        }
+        return false;
+    }
+    // Last drawn is on top.
+    for( auto it = geometry.rbegin(); it != geometry.rend(); ++it ) {
+        const auto &box = *it;
+        if( rel.x < box.at.x || rel.x >= box.at.x + box.width() ||
+            rel.y < box.at.y || rel.y >= box.at.y + box.height() ) {
+            continue;
+        }
+        raise_window( you, box.id );
+        if( rel.y == box.at.y + 1 ) {
+            const auto [control_first, control_last] = control_columns( box );
+            const auto column = rel.x - box.at.x;
+            if( column >= control_first && column <= control_last ) {
+                auto &state = mutable_state( you, box.id );
+                state.collapsed = !state.collapsed;
+                grabbed_id.reset();
+                return true;
+            }
+            if( box.collapsed && column < box.title_name_end ) {
+                // Clicking the name of a collapsed window restores it; the rest of the
+                // title row stays a drag handle so a collapsed window can be moved.
+                auto &state = mutable_state( you, box.id );
+                state.collapsed = false;
+                grabbed_id.reset();
+                return true;
+            }
+            if( grabbed_id && *grabbed_id == box.id ) {
+                grabbed_id.reset();
+            } else {
+                grabbed_id = box.id;
+                grab_offset = rel - box.at;
+            }
+            return true;
+        }
+        // A body click belongs to the window, never to the map behind it.
+        grabbed_id.reset();
+        return true;
+    }
+    if( grabbed_id ) {
+        grabbed_id.reset();
+        return true;
+    }
+    return false;
+}
+
+auto pointer_moved( avatar &you, const catacurses::window &w, const point &map_cell ) -> bool
+{
+    if( !active() || !grabbed_id ) {
+        return false;
+    }
+    const auto found = std::ranges::find( geometry, *grabbed_id, &hit_box::id );
+    if( found == geometry.end() ) {
+        grabbed_id.reset();
+        return false;
+    }
+    const auto map = map_size( w );
+    const auto rel = map_cell;
+    auto target = rel - grab_offset;
+    // The sidebar is outside the map window, so this clamp is also the sidebar guard.
+    target.x = std::clamp( target.x, 0, std::max( 0, map.x - found->width() ) );
+    target.y = std::clamp( target.y, 0, std::max( 0, map.y - found->height() ) );
+    // Never hide any window completely: it would lose its title and [-] control.
+    const auto covers_rect = []( const point a, const int aw, const int ah,
+                                 const point b, const int bw, const int bh ) {
+        return b.x >= a.x && b.y >= a.y && b.x + bw <= a.x + aw && b.y + bh <= a.y + ah;
+    };
+    const auto hides_a_window = [&]( const hit_box & other ) {
+        return other.id != found->id &&
+               ( covers_rect( target, found->width(), found->height(),
+                              other.at, other.width(), other.height() ) ||
+                 covers_rect( other.at, other.width(), other.height(),
+                              target, found->width(), found->height() ) );
+    };
+    if( std::ranges::any_of( geometry, hides_a_window ) ) {
+        return true;
+    }
+    auto &state = mutable_state( you, *grabbed_id );
+    state.pos = target;
+    state.placed = true;
+    found->at = target;
+    return true;
+}
+
+auto release() -> void
+{
+    grabbed_id.reset();
+}
+
+auto set_vehicle_provider( vehicle_provider provider ) -> void
+{
+    vehicle_body_provider = std::move( provider );
+}
+
+} // namespace hud_windows
+
 namespace hud_boxes
 {
 
@@ -868,6 +1891,9 @@ auto mana_reading( const Character &you ) -> mana_text
 
 auto weather_box_shown() -> bool
 {
+    if( hud_windows::active() ) {
+        return hud_windows::shown( "weather" );
+    }
     return !compact_bars() && plan_for( get_avatar() ).geometry.boxes[0].rows > 0;
 }
 
@@ -878,26 +1904,42 @@ auto weather_box_shows_environment() -> bool
 
 auto combat_box_shown() -> bool
 {
+    if( hud_windows::active() ) {
+        return hud_windows::shown( "combat" );
+    }
     return !compact_bars() && plan_for( get_avatar() ).geometry.boxes[1].rows > 0;
 }
 
 auto status_box_shows_needs() -> bool
 {
+    if( hud_windows::active() ) {
+        return hud_windows::shown( "needs" );
+    }
     return !compact_bars() && plan_for( get_avatar() ).geometry.needs;
 }
 
 auto combat_box_shows_mana( const Character &you ) -> bool
 {
+    if( hud_windows::active() ) {
+        return hud_windows::shown( "combat" ) && mana_matters( you );
+    }
     return !compact_bars() && combat_box_shown() && mana_matters( you );
 }
 
 auto vehicle_box_shown() -> bool
 {
+    if( hud_windows::active() ) {
+        return hud_windows::shown( "vehicle" );
+    }
     return plan_for( get_avatar() ).geometry.boxes[2].rows > 0;
 }
 
 auto draw( const avatar &you, const catacurses::window &w ) -> void
 {
+    if( hud_windows::active() ) {
+        hud_windows::draw( you, w );
+        return;
+    }
     const auto plan = plan_for( you );
     const auto icons = get_option<std::string>( "HUD_ICONS" );
     static auto windows = std::array<catacurses::window, 3>();
