@@ -123,7 +123,7 @@ def test_tab_hint_and_shift_tab_in_inventory(g):
     before = action_clock(g)
     # Tab opens the advanced inventory from the inventory screen.
     g.keys("i", delay=1)
-    g.wait_for("[TAB] Advanced inventory", timeout=10)
+    g.wait_for("[Tab] Advanced inventory", timeout=10)
     g.keys("Tab", delay=1)
     g.wait_for("Surrounding area", timeout=10)
     g.keys("Escape", delay=0.8)
@@ -131,7 +131,7 @@ def test_tab_hint_and_shift_tab_in_inventory(g):
     assert in_game(g.screen()), "Escape must return from the advanced inventory to the game"
     # Shift+Tab still toggles the category selection the Tab key used to open.
     g.keys("i", delay=1)
-    g.wait_for("[TAB] Advanced inventory", timeout=10)
+    g.wait_for("[Tab] Advanced inventory", timeout=10)
     g.keys("BTab", delay=0.8)
     g.wait_for("Category selection mode", timeout=10)
     g.keys("BTab", delay=0.8)
@@ -139,8 +139,8 @@ def test_tab_hint_and_shift_tab_in_inventory(g):
     g.keys("Escape", delay=0.6)
     # A click on the hint label opens it too.
     g.keys("i", delay=1)
-    g.wait_for("[TAB] Advanced inventory", timeout=10)
-    x, y = row_of(g, "[TAB] Advanced inventory")
+    g.wait_for("[Tab] Advanced inventory", timeout=10)
+    x, y = row_of(g, "[Tab] Advanced inventory")
     g.click(x, y)
     g.wait_for("Surrounding area", timeout=10)
     g.keys("Escape", delay=0.8)

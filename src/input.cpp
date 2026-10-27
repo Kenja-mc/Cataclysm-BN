@@ -43,6 +43,43 @@ using std::max;
 
 static const std::string default_context_id( "default" );
 
+namespace
+{
+
+/// Display names for keys whose portable names read as code ("RETURN", "PPAGE").
+/// Used only when the language has no translation of the portable name.
+auto readable_key_name( const std::string &raw ) -> std::optional<std::string>
+{
+    static const auto names = std::array{
+        std::pair{ "RETURN", translate_marker_context( "key name", "Enter" ) },
+        std::pair{ "ESC", translate_marker_context( "key name", "Esc" ) },
+        std::pair{ "TAB", translate_marker_context( "key name", "Tab" ) },
+        std::pair{ "BACKTAB", translate_marker_context( "key name", "Shift+Tab" ) },
+        std::pair{ "SPACE", translate_marker_context( "key name", "Space" ) },
+        std::pair{ "SHIFT_SPACE", translate_marker_context( "key name", "Shift+Space" ) },
+        std::pair{ "PPAGE", translate_marker_context( "key name", "PgUp" ) },
+        std::pair{ "NPAGE", translate_marker_context( "key name", "PgDn" ) },
+        std::pair{ "BACKSPACE", translate_marker_context( "key name", "Backspace" ) },
+        std::pair{ "DELETE", translate_marker_context( "key name", "Del" ) },
+        std::pair{ "HOME", translate_marker_context( "key name", "Home" ) },
+        std::pair{ "END", translate_marker_context( "key name", "End" ) },
+        std::pair{ "UP", translate_marker_context( "key name", "Up" ) },
+        std::pair{ "DOWN", translate_marker_context( "key name", "Down" ) },
+        std::pair{ "LEFT", translate_marker_context( "key name", "Left" ) },
+        std::pair{ "RIGHT", translate_marker_context( "key name", "Right" ) },
+    };
+    if( const auto it = std::ranges::find( names, raw, []( const auto & p ) { return std::string_view( p.first ); } );
+    it != names.end() ) {
+        return pgettext( "key name", it->second );
+    }
+    if( raw.starts_with( "NUMPAD_" ) ) {
+        return string_format( pgettext( "key name", "Numpad %s" ), raw.substr( 7 ) );
+    }
+    return std::nullopt;
+}
+
+} // namespace
+
 template <class T1, class T2>
 struct ContainsPredicate {
     const T1 &container;
@@ -529,7 +566,9 @@ std::string input_manager::get_keyname( int ch, input_event_t inp_type, bool por
                 if( portable ) {
                     return a->second;
                 } else {
-                    return string_format( pgettext( "control key name", "CTRL+%c" ), ch + 64 );
+                    const auto *format = pgettext( "control key name", "CTRL+%c" );
+                    return string_format( std::string_view( format ) == "CTRL+%c" ?
+                                          pgettext( "control key name", "Ctrl+%c" ) : format, ch + 64 );
                 }
             } else if( ch >= char_key_beg && ch <= char_key_end && ch != ' ' ) {
                 // character keys except space need no translation
@@ -563,7 +602,16 @@ std::string input_manager::get_keyname( int ch, input_event_t inp_type, bool por
         }
         return string_format( _( "unknown key %ld" ), ch );
     }
-    return portable ? *raw : pgettext( "key name", raw->c_str() );
+    if( portable ) {
+        return *raw;
+    }
+    const auto *translated = pgettext( "key name", raw->c_str() );
+    if( inp_type == input_event_t::keyboard && *raw == translated ) {
+        if( auto readable = readable_key_name( *raw ) ) {
+            return *readable;
+        }
+    }
+    return translated;
 }
 
 const std::vector<input_event> &input_manager::get_input_for_action( const std::string

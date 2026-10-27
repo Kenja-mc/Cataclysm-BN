@@ -123,17 +123,17 @@ def test_vehicle_screen_diagonals(g):
         choose_menu_entry(g, "examine the")
     g.wait_for("Examine vehicle")
     choose_menu_entry(g, "Examine vehicle")
-    g.wait_for("ESC-back")
+    g.wait_for("Esc-back")
     try:
         start = g.screen()
         g.keys("s", delay=0.2)
         g.settle_screen()
         moved = g.screen()
-        assert "ESC-back" in moved and moved != start, "s should move the cursor, not siphon"
+        assert "Esc-back" in moved and moved != start, "s should move the cursor, not siphon"
         g.keys("e", delay=0.2)
         g.settle_screen()
         diag = g.screen()
-        assert "ESC-back" in diag and "new name" not in diag.lower() and diag != moved, "e should move diagonally, not rename"
+        assert "Esc-back" in diag and "new name" not in diag.lower() and diag != moved, "e should move diagonally, not rename"
     finally:
         g.keys("Escape", delay=1)
 
