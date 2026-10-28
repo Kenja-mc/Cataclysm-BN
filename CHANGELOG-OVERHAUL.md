@@ -4,6 +4,25 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-26
+
+### Added
+
+- A **Force a Melee Attack** action, bound to `F` in Modern, attacks an aimed or nearby hostile
+  with the wielded weapon even while a firearm is in a firing mode.
+
+### Changed
+
+- Modern `f` now follows what is aimed: a hostile is attacked first, then a bashable object is
+  smashed, a reachable corpse that can still get up is pulped, and with a loaded gun any other
+  corpse opens normal gun aiming. Empty ground asks before a gun aims there, and a melee weapon
+  reports that there is nothing to attack.
+  Every question and rejection spends no time. With no reticle it attacks a hostile in reach (a
+  firearm only at arm's length), then a loaded gun opens normal aiming, then it smashes the object
+  you last faced.
+- Modern's fire-mode key moved into **Enter → Combat**; Classic keeps `f` for fire and `F` for the
+  fire mode. The tutorial's Modern gun lesson names the new route.
+
 ## 2026-10-25
 
 ### Added

@@ -716,10 +716,17 @@
   },
   {
     "type": "keybinding",
+    "name": "Force a Melee Attack",
+    "category": "DEFAULTMODE",
+    "id": "force_melee",
+    "bindings": [ { "input_method": "keyboard", "key": "F" } ]
+  },
+  {
+    "type": "keybinding",
     "name": "Toggle attack mode of Wielded Item",
     "category": "DEFAULTMODE",
     "id": "select_fire_mode",
-    "bindings": [ { "input_method": "keyboard", "key": "F" } ]
+    "bindings": [  ]
   },
   {
     "type": "keybinding",

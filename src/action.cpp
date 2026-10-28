@@ -143,6 +143,7 @@ std::string io::enum_to_string<action_id>( action_id data )
             PAIR( ACTION_MEND )
             PAIR( ACTION_THROW )
             PAIR( ACTION_FIRE )
+            PAIR( ACTION_FORCE_MELEE )
             PAIR( ACTION_FIRE_BURST )
             PAIR( ACTION_SELECT_FIRE_MODE )
             PAIR( ACTION_SELECT_DEFAULT_AMMO )
@@ -415,6 +416,8 @@ std::string action_ident( action_id act )
             return "throw";
         case ACTION_FIRE:
             return "fire";
+        case ACTION_FORCE_MELEE:
+            return "force_melee";
         case ACTION_FIRE_BURST:
             return "fire_burst";
         case ACTION_CAST_SPELL:
@@ -1261,7 +1264,8 @@ action_id handle_action_menu()
         } else if( category_id == "combat" ) {
             register_actions( {
                 ACTION_CYCLE_MOVE, ACTION_RESET_MOVE, ACTION_TOGGLE_RUN, ACTION_TOGGLE_CROUCH,
-                ACTION_TOGGLE_PRONE, ACTION_OPEN_MOVEMENT, ACTION_AUTOATTACK, ACTION_FIRE, ACTION_RELOAD_ITEM, ACTION_RELOAD_WEAPON,
+                ACTION_TOGGLE_PRONE, ACTION_OPEN_MOVEMENT, ACTION_AUTOATTACK, ACTION_FIRE,
+                ACTION_FORCE_MELEE, ACTION_RELOAD_ITEM, ACTION_RELOAD_WEAPON,
                 ACTION_TOGGLE_MANUAL_COMBAT_MODE,
                 ACTION_RELOAD_WIELDED, ACTION_CAST_SPELL, ACTION_CAST_LAST_SPELL,
                 ACTION_SELECT_FIRE_MODE,

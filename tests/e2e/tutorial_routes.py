@@ -199,7 +199,8 @@ def test_tutorial_lessons_supply_what_they_promise(_g):
         assert "<press_NEXT_TARGET:TARGET>" in SNIPPETS[lesson_id], lesson_id
         assert "<press_QUIT:TARGET>" in SNIPPETS[lesson_id], lesson_id
         assert "<press_fire>" in SNIPPETS[lesson_id], lesson_id
-    assert "<press_select_fire_mode>" in SNIPPETS["LESSON_GUN_FIRE_MODERN"]
+    assert "<press_force_melee>" in SNIPPETS["LESSON_GUN_FIRE_MODERN"]
+    assert "<press_select_fire_mode>" not in SNIPPETS["LESSON_GUN_FIRE_MODERN"]
     # Rebindable keys are expanded live, never copied from the shipped defaults.
     assert "<press_player_data>" in SNIPPETS["LESSON_WORE_STORAGE"]
     assert "<press_player_data>" in SNIPPETS["LESSON_WORE_MASK"]
@@ -444,7 +445,7 @@ def test_tutorial_aim_keys_use_target_context(_g):
             # Main-map commands keep their DEFAULTMODE bindings.
             {"type": "keybinding", "id": "fire", "category": "DEFAULTMODE",
              "bindings": [{"input_method": "keyboard", "key": "z"}]},
-            {"type": "keybinding", "id": "select_fire_mode", "category": "DEFAULTMODE",
+            {"type": "keybinding", "id": "force_melee", "category": "DEFAULTMODE",
              "bindings": [{"input_method": "keyboard", "key": "y"}]},
             # The aiming screen registers its own FIRE, NEXT_TARGET and QUIT ids.
             {"type": "keybinding", "id": "NEXT_TARGET", "category": "TARGET",

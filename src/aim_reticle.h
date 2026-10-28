@@ -38,8 +38,12 @@ auto move( avatar &you, map &m, const point_rel_ms &delta ) -> void;
 
 /// Keyboard fire with no selection attacks the nearest hostile in the weapon's reach, in
 /// place. Firearms fall back to their aiming screen. Direct clicks never retarget.
+/// With a selection: a hostile is attacked; otherwise a reachable object is smashed, a
+/// reachable corpse is pulped, a distant target is shot with a firearm, and empty ground is
+/// confirmed before aiming. `force_melee` never opens the aiming screen.
 /// ACTION_FIRE: aim; ACTION_NULL: handled; nullopt: no selection.
-auto attack( avatar &you, map &m, attack_mode mode ) -> std::optional<action_id>;
+auto attack( avatar &you, map &m, attack_mode mode, bool force_melee = false )
+    -> std::optional<action_id>;
 
 /// Return whether a selection was cleared.
 auto clear() -> bool;

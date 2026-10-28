@@ -135,6 +135,17 @@ def test_grouped_fire_from_empty_inspection_aims_at_hostile(_game):
             assert "zombie" not in mouse_view(game), "the inspection tile must be empty"
             assert grouped_gun_state(game) == before, "inspection must be free"
             game.keys("f", delay=1)
+            # Bare ground is not a target worth spending a round on without asking.
+            game.wait_for("Fire at the empty ground?")
+            assert grouped_gun_state(game) == before, "asking must be free"
+            # Modern has no Y/N hotkeys: the cursor starts on No, Enter confirms it.
+            game.keys("Enter", delay=0.6)
+            game.wait_gone("Fire at the empty ground?")
+            assert "< Firing " not in game.screen(), "declining must not open the aiming screen"
+            assert grouped_gun_state(game) == before, "declining must preserve ammo, health, position and time"
+            game.keys("f", delay=1)
+            game.wait_for("Fire at the empty ground?")
+            game.keys("Left", "Enter", delay=0.8)
             panel = firing_target_panel(game)
             assert "decayed zombie" in panel, "f must aim at the actual hostile:\n" + panel
             game.keys("Escape", delay=0.6)

@@ -37,10 +37,16 @@ direction prompts. Top-row numbers do not move you on the map.
   toward, and falls back to the nearby list ("Interact with what?") only before you have moved.
   **Shift+Space** toggles the selected vehicle curtain, or names nearby curtains when nothing is
   selected. Clicking your own stairs uses them, and a loaded vehicle trunk opens pickup directly.
-- **`f` — attack anything.** `f` fires at a creature as before; on an aimed tile with no creature it
-  smashes what is bashable there instead (a web, a corpse, a door that will not open), so one key
-  attacks creatures and breaks obstacles. Smashing still spends its normal moves and can ruin a
-  brittle weapon.
+- **`f` — attack what is aimed.** With a reticle, a hostile is attacked first: a melee swing when
+  it is within the weapon's reach, otherwise the normal aiming screen for a gun. With no creature,
+  a bashable aimed object is smashed, a reachable corpse that can still get up is pulped, and with
+  a loaded gun any other corpse (in reach or beyond) opens normal aiming. A loaded gun aimed at
+  empty ground asks before aiming there, and a melee weapon only reports that there is nothing to
+  attack. Every question and rejection spends no time. With no reticle it swings at a hostile in
+  reach (a firearm in a firing mode only at arm's length), then a loaded gun opens normal aiming,
+  then it smashes the object you last pressed against. **Shift+`F`** forces a melee attack even
+  while a gun is in a firing mode; the fire mode itself is in **Enter → Combat**. Smashing and
+  pulping keep their normal moves and can ruin a brittle weapon.
 - **Select keys — unbound by default.** Tile selection is a mouse action. The eight **Select tile**
   actions stay in the keybindings menu: binding them (for example to Shift+WASD/QEZC) moves the
   selection marker one tile per press, starting at your position and accumulating. The Mouse View
@@ -51,7 +57,8 @@ direction prompts. Top-row numbers do not move you on the map.
 - **Shift+X — movement mode.** Cycle walk, run, crouch and prone. F2/F3/F4 are unbound on the map.
 - **Tab / Shift+Tab — targets.** Cycle forward/backward through visible hostiles, ordered by
   distance then position, wrapping at either end. Selection takes no time; **`f`** attacks the
-  selected target, using the normal aiming screen with a gun. **`F`** changes the fire mode.
+  selected target, using the normal aiming screen with a gun. **`F`** forces a melee attack; the
+  fire mode is in **Enter → Combat**.
 
 **Ctrl+X** opens wait/rest; **`x`** or numpad 5 waits one turn. In a Modern terminal build,
 **Ctrl+C** and **Ctrl+Z** are game chords (diagonal peeks), not terminal quit/suspend signals.
@@ -60,12 +67,15 @@ direction prompts. Top-row numbers do not move you on the map.
 **Arrow keys aim**, as in The Pit (Options → Interface → Arrow keys aim; on in Modern, off in
 Classic). An arrow key puts a targeting reticle on the nearest hostile you can see, or on your own
 tile, and further arrow keys move it over tiles you can see. This takes no time. The reticle tile is
-highlighted and the Mouse View box says what is there. `f` then attacks what the reticle covers:
-a melee swing with a melee weapon when it is next to you, otherwise the normal aim screen opens
-on that creature. An empty tile rejects a melee attack without spending time; with a gun in a
-firing mode, `f` instead opens normal manual aiming. An unreachable creature is rejected without
-spending time. Esc, walking or any action that takes time removes the reticle; Esc does not open
-the main menu while a reticle is up.
+highlighted and the Mouse View box says what is there. `f` then acts on what the reticle covers: a
+hostile first (a melee swing when it is within the weapon's reach, otherwise the normal aiming
+screen for a gun), then a bashable object is smashed, a reachable corpse that can still get up is
+pulped, and with a loaded gun any other corpse (including one out of reach) opens normal aiming.
+A loaded gun aimed at empty ground asks before the aiming screen opens; a melee weapon reports
+that there is nothing to attack. A hostile on the tile always takes priority over smashing it.
+Every question and rejection spends no time. An unreachable hostile is rejected without spending
+time. Esc, walking or any action that takes time removes the reticle; Esc does not open the main
+menu while a reticle is up.
 Turn the option off to walk with the arrow keys again.
 
 In **Modern**, lowercase WASD also navigates menus. Menu actions that used those letters move to
@@ -128,7 +138,7 @@ food and a weapon, because houses usually have all three.
 | Numpad               | move; numpad 5 waits one turn                                      |
 | Ctrl+direction       | physical peek (normal 200-move cost)                               |
 | Tab / Shift+Tab      | next / previous visible hostile                                    |
-| `f`, `F`, `r`, `t`   | attack selected target / fire mode / reload / throw                |
+| `f`, `F`, `r`, `t`   | attack the selected target / force melee / reload / throw          |
 | `p`                  | smash or pulp in a chosen direction                                |
 | Space                | nearby or selected-tile actions, including explicit Jump and Smash |
 | Shift+Space          | toggle a selected vehicle curtain, or choose one nearby            |

@@ -108,6 +108,7 @@ auto menu_category( const action_id act ) -> std::optional<std::string>
         case ACTION_OPEN_MOVEMENT:
         case ACTION_AUTOATTACK:
         case ACTION_FIRE:
+        case ACTION_FORCE_MELEE:
         case ACTION_RELOAD_ITEM:
         case ACTION_RELOAD_WEAPON:
         case ACTION_RELOAD_WIELDED:

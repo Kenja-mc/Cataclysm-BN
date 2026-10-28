@@ -203,8 +203,10 @@ Long-form write-ups should follow
 ## What to pay attention to
 
 - **Controls:** WASD + Q E Z C walk and bump-attack; arrow keys aim. Tab/Shift+Tab cycle visible
-  hostiles freely in distance/position order with wraparound; `f` attacks the selection using
-  normal gun aiming. Enter groups all actions (Info for character/status screens). Ctrl+X opens
+  hostiles freely in distance/position order with wraparound; `f` attacks the aimed tile (hostile,
+  smashable object, or a corpse that can still get up); a loaded gun opens normal aiming for any
+  other corpse, and asks before aiming at empty ground; `F` forces a melee attack. Fire mode lives
+  in Enter → Combat. Enter groups all actions (Info for character/status screens). Ctrl+X opens
   wait/rest; Shift+X cycles walk/run/crouch/prone, with F2/F3/F4 unbound.
 - **Inventory:** `i`, then select an item for Wield/Wear/Eat/Use/Read and other context actions.
   `v` opens Wield directly. F5 crafts even when inventory is empty; Tab opens advanced inventory,
@@ -233,7 +235,7 @@ Long-form write-ups should follow
   Try Text only, Unicode and Icon font. Make sure that urgent needs, limb health and controls
   survive resizing to 80×25. A watch reveals exact time and a thermometer reveals temperature.
   `h` opens body details (also Enter → Info → Body status). `@` opens the character sheet and `P` the log.
-  `F` opens fire-mode selection.
+  `F` forces a melee attack; Enter → Combat changes the fire mode.
   Check vehicle/readout fallbacks at 80×25, driving hints (`ws`/`ad`), and their return to
   `wasd` on release. The new bundled typeface should show readable labels and complete glyphs.
 - **Targeting:** gun aiming starts on the reachable hostile and warns about allies in the line of

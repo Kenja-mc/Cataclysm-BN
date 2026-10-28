@@ -2115,6 +2115,13 @@
   },
   {
     "type": "keybinding",
+    "name": "Force a Melee Attack",
+    "category": "DEFAULTMODE",
+    "id": "force_melee",
+    "bindings": [  ]
+  },
+  {
+    "type": "keybinding",
     "name": "Toggle attack mode of Wielded Item",
     "category": "DEFAULTMODE",
     "id": "select_fire_mode",

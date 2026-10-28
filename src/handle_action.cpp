@@ -3080,27 +3080,25 @@ bool game::handle_action()
             }
 
             case ACTION_FIRE: {
-                // In Modern the attack key also breaks terrain: a door that will not open is
-                // bashed with the same gesture that attacks, as long as no creature stands there.
-                if( !mouse_target && get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
-                    const auto reticle = aim_reticle::pos();
-                    const auto aimed = reticle ? reticle : tile_selection::facing_tile( u );
-                    if( aimed && tile_selection::reachable( u, *aimed ) &&
-                        !tile_selection::has_hostile( u, *aimed ) ) {
-                        const auto choices = tile_selection::interact_choices( u, *aimed, false );
-                        if( std::ranges::any_of( choices, []( const auto & c ) {
-                                return c.act == ACTION_SMASH;
-                            } ) ) {
-                            tile_selection::smash_at( *aimed );
-                            break;
-                        }
-                    }
-                }
-                const auto aim = !mouse_target && get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ?
+                // Modern's attack key routes through the reticle, which decides between a
+                // creature, a smashable tile and the ordinary aiming screen.
+                const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+                const auto aim = !mouse_target && modern ?
                                  aim_reticle::attack( u, m, reticle_attack_mode ) : std::nullopt;
                 if( !aim || *aim == ACTION_FIRE ) {
                     fire();
                 }
+                if( aim && !aim_reticle::active() ) {
+                    liveview.hide();
+                }
+                break;
+            }
+
+            case ACTION_FORCE_MELEE: {
+                // Shift+F: swing at the aimed or nearest hostile even while a firearm is in a
+                // firing mode. It never opens the aiming screen.
+                const auto aim = aim_reticle::attack( u, m, aim_reticle::attack_mode::fire_command,
+                                                     true );
                 if( aim && !aim_reticle::active() ) {
                     liveview.hide();
                 }

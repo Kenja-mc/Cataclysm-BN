@@ -58,7 +58,8 @@ to triage; reference the session commit SHA (shown by `--version` in the game's 
 ### Targeting & combat
 
 - [ ] Aiming starts on the reachable hostile; allies in the line of fire are warned
-- [ ] On the map, `f` attacks the selected target; inside aiming, `f` fires, `r` switches ammo, `F`/`m` fire mode
+- [ ] On the map, `f` attacks the aimed hostile, smashes a bashable object, pulps a reached corpse that can still get up and asks before shooting empty ground; `F` forces melee
+- [ ] Inside aiming, `f` fires, `r` switches ammo, `F`/`m` fire mode; the map's fire mode is in Enter → Combat
 - [ ] Gun info shows loudness (`Loudness: N (loud|very loud|…)`)
 - [ ] Mouse hover/click on map tiles: hints name the action and key
 

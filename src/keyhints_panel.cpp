@@ -82,7 +82,7 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
         { ACTION_PAUSE, _( "wait" ) }, { ACTION_EXAMINE, _( "interact" ) },
         { ACTION_PICKUP, _( "pick up" ) }, { ACTION_PICKUP_LIST, _( "item list" ) }, { ACTION_BODY_STATUS, _( "health" ) },
         { ACTION_INVENTORY, _( "inventory" ) }, { ACTION_USE, _( "use" ) }, { ACTION_WIELD, _( "wield" ) },
-        { ACTION_AUTOATTACK, _( "attack" ) }, { ACTION_FIRE, _( "fire" ) }, { ACTION_RELOAD_ITEM, _( "reload" ) }, { ACTION_CRAFT, _( "craft" ) },
+        { ACTION_AUTOATTACK, _( "attack" ) }, { ACTION_FIRE, _( "fire" ) }, { ACTION_FORCE_MELEE, _( "melee" ) }, { ACTION_RELOAD_ITEM, _( "reload" ) }, { ACTION_CRAFT, _( "craft" ) },
         { ACTION_QUICK_STACK, _( "stash" ) }, { ACTION_SORT_PILE, _( "sort pile" ) }, { ACTION_MAP, _( "map" ) },
         // Look goes last: it is the first to drop off a full strip, and hovering the map covers it.
         { ACTION_AUTO_EXPLORE, _( "explore" ) }, { ACTION_TOGGLE_PANEL_ADM, _( "sidebar" ) }, { ACTION_LOOK, _( "look" ) },
