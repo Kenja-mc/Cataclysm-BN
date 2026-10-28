@@ -14,6 +14,7 @@ Flow for each case:
 Usage:
   python3 tests/e2e/tiles.py minimap [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py mouse [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
+  python3 tests/e2e/tiles.py side_buttons [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py sound_menu [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py zoom [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py overmap [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
@@ -840,6 +841,86 @@ def saved_turn(path):
     return json.loads(path.read_text().split("\n", 1)[1])["turn"]
 
 
+def frames_close(a, b, tolerance=0.002):
+    """True when two captures are the same frame; a blinking cursor stays under the tolerance."""
+    if a[:2] != b[:2]:
+        return False
+    left, right = a[2], b[2]
+    changed = sum(1 for left_byte, right_byte in zip(left, right) if left_byte != right_byte)
+    return changed <= tolerance * len(left)
+
+
+def settle_capture(session, x11, win, png, timeout=20):
+    """Captures until two consecutive frames match, so a half-drawn redraw is never compared."""
+    deadline = time.time() + timeout
+    previous = None
+    while time.time() < deadline:
+        rgb = frame_rgb(capture(session.display, win, png))
+        if previous is not None and frames_close(previous, rgb):
+            return rgb
+        previous = rgb
+        time.sleep(0.6)
+    raise Failure(f"tiles frame did not settle: {png}")
+
+
+def wait_capture(session, x11, win, png, predicate, timeout=20):
+    """Waits for the frame to satisfy `predicate` before settling, so input latency is not a failure."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        rgb = frame_rgb(capture(session.display, win, png))
+        if predicate(rgb):
+            return settle_capture(session, x11, win, png, timeout=max(5.0, deadline - time.time()))
+        time.sleep(0.5)
+    raise Failure(f"tiles frame never satisfied its expectation: {png}")
+
+
+def case_side_buttons(session):
+    """X1 backs out of the open screen; on the map it does nothing."""
+    options = {
+        "CONTROL_SCHEME": "modern",
+        "MOUSE_MOVE": "false",
+        "MOUSE_TILE_SELECTION": "false",
+        "CURSOR_PANNING": "false",
+    }
+    observations = {}
+    with session.running_game("side-buttons", options) as live:
+        x11 = X11(session.display)
+        try:
+            win = x11.find_window(WINDOW_TITLE_PREFIX)
+            require(win is not None, "side-buttons: game window disappeared")
+            width, height, _ = frame_rgb(live.frame)
+            # Park the pointer over the sidebar: hovering the map would change the frame.
+            x11.focus_local(win, width - 8, height - 8)
+            shots = session.artifacts
+
+            def shot(name):
+                return settle_capture(session, x11, win, shots / f"side-buttons-{name}.png")
+
+            map_frame = shot("map")
+
+            # On the map there is no screen to leave, so the back button does nothing.
+            x11.click(8, delay=0.6)
+            require(frames_close(shot("map-back"), map_frame),
+                    "back with no open screen must not change the frame")
+
+            # Bionics is a real screen and Modern opens it with p.
+            x11.key("p", delay=0.8)
+            screen_frame = wait_capture(session, x11, win, shots / "side-buttons-screen.png",
+                                        lambda frame: not frames_close(frame, map_frame))
+            require(not frames_close(screen_frame, map_frame), "p must open the bionics screen")
+
+            x11.click(8, delay=0.8)
+            wait_capture(session, x11, win, shots / "side-buttons-back.png",
+                         lambda frame: frames_close(frame, map_frame))
+            observations["frames"] = {
+                "map": str(shots / "side-buttons-map.png"),
+                "screen": str(shots / "side-buttons-screen.png"),
+            }
+        finally:
+            x11.close()
+    return [], observations
+
+
 def column_levels(rgb, width, x0, x1, y0, y1):
     levels = []
     for x in range(x0, x1):
@@ -1253,8 +1334,9 @@ def case_sound_menu(session):
     return [], observations
 
 
-CASES = {"minimap": case_minimap, "mouse": case_mouse, "sound_menu": case_sound_menu,
-         "zoom": case_zoom, "overmap": case_overmap, "known_locks": case_known_locks}
+CASES = {"minimap": case_minimap, "mouse": case_mouse, "side_buttons": case_side_buttons,
+         "sound_menu": case_sound_menu, "zoom": case_zoom, "overmap": case_overmap,
+         "known_locks": case_known_locks}
 
 
 def main(argv=None):

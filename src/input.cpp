@@ -532,6 +532,7 @@ void input_manager::init_keycode_mapping()
     keyname_to_keycode["SCROLL_UP"] = SCROLLWHEEL_UP;
     keyname_to_keycode["SCROLL_DOWN"] = SCROLLWHEEL_DOWN;
     keyname_to_keycode["MOUSE_MOVE"] = MOUSE_MOVE;
+    keyname_to_keycode["MOUSE_BACK"] = MOUSE_BUTTON_BACK;
 }
 
 int input_manager::get_keycode( const std::string &name ) const
@@ -587,6 +588,12 @@ std::string input_manager::get_keyname( int ch, input_event_t inp_type, bool por
             raw = translate_marker_context( "key name", "SCROLL_DOWN" );
         } else if( ch == MOUSE_MOVE ) {
             raw = translate_marker_context( "key name", "MOUSE_MOVE" );
+        } else if( ch == MOUSE_BUTTON_BACK ) {
+            // The portable token stays stable for keybinding files; hints read the readable name.
+            if( portable ) {
+                return "MOUSE_BACK";
+            }
+            return pgettext( "key name", translate_marker_context( "key name", "Mouse back" ) );
         }
     } else if( inp_type == input_event_t::gamepad ) {
         const t_key_to_name_map::const_iterator a = gamepad_keycode_to_keyname.find( ch );

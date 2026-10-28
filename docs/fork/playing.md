@@ -245,6 +245,13 @@ Long-form write-ups should follow
   closing that list keeps the selection. Hover does not replace a locked target.
   Left click uses an adjacent door, item or furniture, attacks a hostile, or selects other tiles.
   Default Modern clicks do not walk. Classic keeps upstream mouse behavior.
+  A mouse's back button does what Escape does where Escape cancels: it leaves a screen, closes a
+  list, answers No to a Yes/No prompt, declines to cancel an activity, or cancels a text prompt.
+  It does nothing on the map and nothing on the title screen, so a stray press cannot open the
+  quit prompt. The button is listed in the Controls screen under Cancel, so a mouse without side
+  buttons loses nothing. Classic keeps upstream's keys and clicks. Terminal builds only receive
+  the button when the ncurses they were built against supports the extended mouse protocol; the
+  tiles build always does.
 - **Menus:** Space acts like Enter on the highlighted choice, including No in a confirmation.
   Spaces stay literal in text fields. The title supports hover and clicking and asks before quitting.
   In custom action lists, click once to select and again to act; in trade, the second click marks

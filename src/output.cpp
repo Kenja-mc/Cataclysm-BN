@@ -210,7 +210,7 @@ void print_colored_text( const catacurses::window &w, point p, nc_color &color,
 
         if( seg[0] == '<' ) {
             const color_tag_parse_result::tag_type type = update_color_stack(
-                        color_stack, seg, color_error );
+                    color_stack, seg, color_error );
             if( type != color_tag_parse_result::non_color_tag ) {
                 seg = rm_prefix( seg );
             }
@@ -430,7 +430,7 @@ void scrollable_text( const std::function<catacurses::window()> &init_window,
             if( const auto mouse = ctxt.get_coordinates( w ) ) {
                 const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
                 if( const auto hit = scrollbar_input::click( {
-                    .offset = point( width - 1, text2.y ),
+                .offset = point( width - 1, text2.y ),
                     .viewport_size = text_h,
                     .content_size = static_cast<int>( lines.size() ),
                     .viewport_pos = std::min( beg_line, max_beg_line ),
@@ -667,11 +667,11 @@ void border_helper::draw_border( const catacurses::window &win )
                 const point pbottom( x, end.y - 1 );
                 if( x > beg.x ) {
                     border_connection_map.value()[ptop].left =
-                        border_connection_map.value()[pbottom].left = true;
+                                             border_connection_map.value()[pbottom].left = true;
                 }
                 if( x < end.x - 1 ) {
                     border_connection_map.value()[ptop].right =
-                        border_connection_map.value()[pbottom].right = true;
+                                             border_connection_map.value()[pbottom].right = true;
                 }
             }
             for( int y = beg.y; y < end.y; ++y ) {
@@ -679,11 +679,11 @@ void border_helper::draw_border( const catacurses::window &win )
                 const point pright( end.x - 1, y );
                 if( y > beg.y ) {
                     border_connection_map.value()[pleft].top =
-                        border_connection_map.value()[pright].top = true;
+                                             border_connection_map.value()[pright].top = true;
                 }
                 if( y < end.y - 1 ) {
                     border_connection_map.value()[pleft].bottom =
-                        border_connection_map.value()[pright].bottom = true;
+                                             border_connection_map.value()[pright].bottom = true;
                 }
             }
         }
@@ -737,9 +737,13 @@ bool query_yn( const std::string &text )
 {
     // TODO: Queries are often opened in test_mode, shouldn't it be an error?
     const bool force_uc = get_option<bool>( "FORCE_CAPITAL_YN" );
+    const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
     // Without Y/N hotkeys, y and n only move the highlight; Enter confirms and Esc still cancels.
-    static const input_context::input_event_filter select_only = []( const input_event & evt ) {
-        return evt.get_first_input() == KEY_ESCAPE;
+    // Modern binds the mouse back button to No, so it cancels the same way.
+    const input_context::input_event_filter select_only = [modern]( const input_event & evt ) {
+        return evt.get_first_input() == KEY_ESCAPE ||
+               ( modern && evt.type == input_event_t::mouse &&
+                 evt.get_first_input() == MOUSE_BUTTON_BACK );
     };
     const auto &allow_key = !get_option<bool>( "YN_HOTKEYS" ) ? select_only
                             : force_uc ? input_context::disallow_lower_case : input_context::allow_all_keys;
@@ -1132,9 +1136,9 @@ input_event draw_item_info( const std::function<catacurses::window()> &init_wind
                 const auto bar = point( data.scrollbar_left ? 0 : getmaxx( win ) - 1,
                                         data.without_border && data.use_full_win ? 0 : 1 );
                 if( const auto hit = scrollbar_input::click( {
-                    .offset = bar,
-                    .viewport_size = height,
-                    .content_size = static_cast<int>( folded.size() ),
+                .offset = bar,
+                .viewport_size = height,
+                .content_size = static_cast<int>( folded.size() ),
                     .viewport_pos = *data.ptr_selected,
                     .scroll_to_last = false,
                 }, cell ) ) {

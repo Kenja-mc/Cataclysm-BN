@@ -11,6 +11,11 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Music follows the game state: `danger`, `vehicle`, `underground`, `night`, `shelter` and
   `explore` playlists, crossfades, minimum play time and hysteresis, with a switch that keeps
   the old single `title` playlist.
+- In Modern, a mouse's back side button (X1) does what Escape does where Escape cancels: it
+  leaves a screen, closes a list, answers No to a Yes/No prompt and cancels a text prompt. It does
+  nothing on the map or the title screen, so a stray press cannot open the quit prompt. It is the
+  ordinary `MOUSE_BACK` binding ("Mouse back"); Classic leaves it unbound. Terminal builds see
+  the button only when ncurses has the extended mouse protocol.
 
 ### Changed
 
@@ -30,7 +35,6 @@ Upstream's own changes are in `docs/en/game/changelog`.
   longer says the arrow keys walk in Modern, and says F1 opens the help topics.
 - `OVERHAUL.md`, `docs/fork/playing.md` and the controls diagram match the Modern bindings: `p`
   bionics, `G` pickup list, Ctrl+G drop, `I` advanced inventory, `v` use by item kind.
-
 ## 2026-10-26
 
 ### Added

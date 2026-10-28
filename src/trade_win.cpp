@@ -813,7 +813,7 @@ auto trading_window::show_item_data( size_t index, bool target_is_theirs ) -> in
                         scroll_pos = static_cast<size_t>( hit->viewport_pos );
                     }
                 }
-            } else {
+            } else if( action != "QUIT" ) {
                 action.clear();
             }
         }
@@ -1413,7 +1413,7 @@ auto trading_window::perform_trade( npc &np, const std::string &deal ) -> bool
                         }
                     }
                 }
-            } else {
+            } else if( action != "QUIT" ) {
                 action.clear();
             }
         } else {

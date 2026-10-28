@@ -878,7 +878,7 @@ auto show_technique_reference_popup( const std::string &text ) -> void
                     }
                 }
                 action.clear();
-            } else {
+            } else if( action != "QUIT" ) {
                 action.clear();
             }
         }

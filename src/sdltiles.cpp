@@ -3520,6 +3520,10 @@ static void CheckMessages()
                     case SDL_BUTTON_RIGHT:
                         last_input = input_event( MOUSE_BUTTON_RIGHT, input_event_t::mouse );
                         break;
+                    case SDL_BUTTON_X1:
+                        // The browser-style back side button. Only a screen that binds it reacts.
+                        last_input = input_event( MOUSE_BUTTON_BACK, input_event_t::mouse );
+                        break;
                 }
                 break;
 

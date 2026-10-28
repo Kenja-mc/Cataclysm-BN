@@ -204,17 +204,17 @@ auto missions_view::handle( std::string action, input_context &ctxt,
             action.clear();
             if( const auto mouse = ctxt.get_coordinates( w ) ) {
                 const auto cell = mouse->xy().raw() + point( getmaxx( w ),
-                                  getmaxy( w ) ) / 2;
+                    getmaxy( w ) ) / 2;
                 const std::vector<std::string> tab_texts = {
                     _( "ACTIVE MISSIONS" ), _( "COMPLETED MISSIONS" ), _( "FAILED MISSIONS" )
                 };
                 if( cell.y < 3 ) {
                     if( const auto clicked = tab_input::index_at( {
-                            .texts = tab_texts,
-                            .current = static_cast<size_t>( tab ),
-                            .max_width = getmaxx( w ),
-                            .x = cell.x,
-                        } ) ) {
+                    .texts = tab_texts,
+                    .current = static_cast<size_t>( tab ),
+                        .max_width = getmaxx( w ),
+                        .x = cell.x,
+                    } ) ) {
                         if( *clicked != static_cast<int>( tab ) ) {
                             tab = static_cast<mission_tab>( *clicked );
                             selection = 0;
@@ -223,11 +223,11 @@ auto missions_view::handle( std::string action, input_context &ctxt,
                     }
                 } else if( const auto hit = scrollbar_input::click( {
                 .offset = point( 0, 3 ),
-                .viewport_size = entries_per_page,
-                .content_size = static_cast<int>( umissions.size() ),
-                .viewport_pos = static_cast<int>( selection ),
-                .scroll_to_last = true,
-                           }, cell ) ) {
+                    .viewport_size = entries_per_page,
+                    .content_size = static_cast<int>( umissions.size() ),
+                    .viewport_pos = static_cast<int>( selection ),
+                    .scroll_to_last = true,
+                }, cell ) ) {
                     selection = static_cast<size_t>( hit->viewport_pos );
                     mouse_row.reset();
                 } else if( cell.x >= 1 && cell.x < 30 && cell.y >= 3 &&
@@ -247,7 +247,7 @@ auto missions_view::handle( std::string action, input_context &ctxt,
                     }
                 }
             }
-        } else {
+        } else if( action != "QUIT" ) {
             action.clear();
         }
     } else {

@@ -175,6 +175,15 @@ same sleep confirmation and alarm prompts as the sleep action. Classic keeps its
 
 **Mouse tile selection**, inspired by Sword of the Stars: The Pit, works in the terminal too.
 
+- **Side buttons:** the back button (X1) does what Escape does where Escape cancels: it leaves
+  the current screen, closes a list, answers No to a Yes/No prompt, answers No to the
+  cancel-activity prompt and cancels a text prompt. It does nothing on the map, which is the
+  root, and nothing on the title screen, so a stray press cannot open the quit prompt. Only the
+  Modern scheme binds the button by default; Classic keeps upstream's keys and clicks. The
+  binding is ordinary: the Controls screen lists it under Cancel/No as "Mouse back". The terminal
+  build only sees it when ncurses was compiled with the extended mouse protocol
+  (`BUTTON8_PRESSED`); the tiles build always does, and its `tests/e2e/tiles.py side_buttons`
+  check is run by hand because CI's suite is curses-only.
 - **Hover:** previews a tile in the Mouse View box without changing a locked target or its marker.
 - **Right click:** locks a hostile without attacking. On an object or door it opens the action list
   without running an action; closing the list keeps the tile selected.

@@ -264,7 +264,7 @@ void draw_perk_menu( Character &player )
                         info_position = hit->viewport_pos;
                     }
                 }
-            } else {
+            } else if( action != "QUIT" ) {
                 action.clear();
             }
         }

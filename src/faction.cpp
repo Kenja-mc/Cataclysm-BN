@@ -605,7 +605,7 @@ int npc::faction_display( const catacurses::window &fac_w, const int width ) con
     }
     std::string best_three_noncombat = _( "Best other skills: " );
     std::string best_skill_text = string_format( _( "Best combat skill: %s: %d" ),
-                                  best_skill().obj().name(), best_skill_level() );
+        best_skill().obj().name(), best_skill_level() );
     mvwprintz( fac_w, point( width, ++y ), col, best_skill_text );
     mvwprintz( fac_w, point( width, ++y ), col, best_three_noncombat + skill_strs[0] );
     mvwprintz( fac_w, point( width + 20, ++y ), col, skill_strs[1] );
@@ -850,7 +850,7 @@ void faction_view::draw( const catacurses::window &w_missions )
                     const int y = i - top_of_page + 3;
                     trim_and_print( w_missions, point( 1, y ), 28, selection == i ? hilite( col ) : col,
                                     string_format( "%s  %s", colorize( creatures[i]->sym,
-                                                   selection == i ? hilite( creatures[i]->color ) : creatures[i]->color ),
+                                            selection == i ? hilite( creatures[i]->color ) : creatures[i]->color ),
                                                    creatures[i]->nname() ) );
                 }
                 if( !cur_creature.is_null() ) {
@@ -883,17 +883,17 @@ auto faction_view::handle( std::string action, input_context &ctxt,
             action.clear();
             if( const auto mouse = ctxt.get_coordinates( w_missions ) ) {
                 const auto cell = mouse->xy().raw() + point( getmaxx( w_missions ),
-                                  getmaxy( w_missions ) ) / 2;
+                    getmaxy( w_missions ) ) / 2;
                 const std::vector<std::string> tab_texts = {
                     _( "YOUR FOLLOWERS" ), _( "OTHER FACTIONS" ), _( "LORE" ), _( "CREATURES" )
                 };
                 if( cell.y < 3 ) {
                     if( const auto clicked = tab_input::index_at( {
-                            .texts = tab_texts,
-                            .current = static_cast<size_t>( tab ),
-                            .max_width = getmaxx( w_missions ),
-                            .x = cell.x,
-                        } ) ) {
+                    .texts = tab_texts,
+                    .current = static_cast<size_t>( tab ),
+                        .max_width = getmaxx( w_missions ),
+                        .x = cell.x,
+                    } ) ) {
                         if( *clicked != static_cast<int>( tab ) ) {
                             tab = static_cast<tab_mode>( *clicked );
                             selection = 0;
@@ -902,11 +902,11 @@ auto faction_view::handle( std::string action, input_context &ctxt,
                     }
                 } else if( const auto hit = scrollbar_input::click( {
                 .offset = point( 0, 3 ),
-                .viewport_size = entries_per_page,
-                .content_size = static_cast<int>( active_vec_size ),
-                .viewport_pos = static_cast<int>( selection ),
-                .scroll_to_last = true,
-                           }, cell ) ) {
+                    .viewport_size = entries_per_page,
+                    .content_size = static_cast<int>( active_vec_size ),
+                    .viewport_pos = static_cast<int>( selection ),
+                    .scroll_to_last = true,
+                }, cell ) ) {
                     selection = static_cast<size_t>( hit->viewport_pos );
                     mouse_row.reset();
                 } else if( cell.x >= 1 && cell.x < 30 && cell.y >= 3 &&
@@ -926,7 +926,7 @@ auto faction_view::handle( std::string action, input_context &ctxt,
                     }
                 }
             }
-        } else {
+        } else if( action != "QUIT" ) {
             action.clear();
         }
     } else {
