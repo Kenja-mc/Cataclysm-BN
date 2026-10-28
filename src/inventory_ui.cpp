@@ -2114,6 +2114,11 @@ auto inventory_selector::hint_hotspot_at( point cell ) const -> bool
 auto inventory_selector::mouse_input( inventory_input res ) -> inventory_input
 {
     res.entry = nullptr;
+    // Cancel is a real mouse binding now (the back side button); only clicks and the wheel
+    // are translated into inventory navigation here.
+    if( res.action == "QUIT" ) {
+        return res;
+    }
     if( res.action == "SCROLL_UP" || res.action == "SCROLL_DOWN" ) {
         res.action = res.action == "SCROLL_UP" ? "UP" : "DOWN";
         return res;

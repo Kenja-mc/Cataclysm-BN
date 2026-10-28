@@ -1112,7 +1112,7 @@ void iexamine::vending( player &p, const tripoint_bub_ms &examp )
                         }
                     }
                 }
-            } else {
+            } else if( action != "QUIT" ) {
                 action.clear();
             }
         }

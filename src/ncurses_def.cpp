@@ -502,6 +502,10 @@ void catacurses::init_interface()
 #if defined(BUTTON5_PRESSED)
     mouse_events |= BUTTON5_PRESSED;
 #endif
+    // ncurses defines button 8 only with the extended mouse protocol; terminals report back as 8.
+#if defined(BUTTON8_PRESSED)
+    mouse_events |= BUTTON8_PRESSED;
+#endif
     mousemask( mouse_events, nullptr );
     // Ask the terminal for motion events too, so hovering the map works (any-event tracking).
     std::fputs( "\033[?1003h", stdout );
@@ -640,6 +644,10 @@ input_event input_manager::get_input_event()
                 } else if( ( event.bstate & BUTTON5_PRESSED ) &&
                            get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
                     rval.add_input( SCROLLWHEEL_DOWN );
+#endif
+#if defined(BUTTON8_PRESSED)
+                } else if( event.bstate & BUTTON8_PRESSED ) {
+                    rval.add_input( MOUSE_BUTTON_BACK );
 #endif
                 } else if( event.bstate & REPORT_MOUSE_POSITION ) {
                     rval.add_input( MOUSE_MOVE );

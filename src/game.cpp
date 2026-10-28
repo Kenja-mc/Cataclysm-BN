@@ -10513,7 +10513,7 @@ void game::zones_manager()
                         mouse_row.reset();
                     }
                 }
-            } else {
+            } else if( action != "QUIT" ) {
                 action.clear();
             }
         } else {

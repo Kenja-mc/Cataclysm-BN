@@ -250,7 +250,7 @@ void game::list_missions()
                         }
                     }
                 }
-            } else {
+            } else if( action != "QUIT" ) {
                 action.clear();
             }
         } else {

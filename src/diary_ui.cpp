@@ -392,7 +392,7 @@ void diary::show_diary_ui( diary *c_diary )
                 click_list( w_pages, window_mode::PAGE_WIN, 1 ) ||
                 click_list( w_changes, window_mode::CHANGE_WIN, 0 ) ||
                 click_list( w_text, window_mode::TEXT_WIN, 0 );
-            } else {
+            } else if( action != "QUIT" ) {
                 action.clear();
             }
         }

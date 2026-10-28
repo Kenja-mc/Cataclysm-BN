@@ -4,6 +4,20 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-26
+
+### Added
+
+- A mouse's back side button (X1) does what Escape does where Escape cancels: it leaves a
+  screen, closes a list, answers No to a Yes/No prompt, declines to cancel an activity and
+  cancels a text prompt. It is inert on the map and on the title screen, so a stray press cannot
+  open the quit prompt.
+- `MOUSE_BACK` is an ordinary keybinding, shown as "Mouse back" in the controls screen. The Modern
+  scheme binds it to Cancel, No/Abort and text-input cancel; Classic leaves it unbound.
+- The side button reaches terminal builds only when ncurses was built with the extended mouse
+  protocol (`BUTTON8`); the tiles build always receives it. The tiles regression is
+  `tests/e2e/tiles.py side_buttons`, a manual check because CI runs the curses suite.
+
 ## 2026-10-25
 
 ### Added

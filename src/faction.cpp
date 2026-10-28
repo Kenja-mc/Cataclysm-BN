@@ -935,7 +935,7 @@ void faction_manager::display() const
                         }
                     }
                 }
-            } else {
+            } else if( action != "QUIT" ) {
                 action.clear();
             }
         } else {

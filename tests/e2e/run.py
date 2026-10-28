@@ -82,6 +82,7 @@ from numeric_invkeys import TESTS as NUMERIC_INVKEYS_TESTS
 from wear_refresh import TESTS as WEAR_REFRESH_TESTS
 from creation_crafting_mouse import TESTS as CREATION_CRAFTING_MOUSE_TESTS
 from keybinding_search import TESTS as KEYBINDING_SEARCH_TESTS
+from mouse_side_buttons import TESTS as MOUSE_SIDE_BUTTONS_TESTS
 from pulp_key import TESTS as PULP_KEY_TESTS
 from known_locks import TESTS as KNOWN_LOCKS_TESTS
 from vehicle_mouse import TESTS as VEHICLE_MOUSE_TESTS
@@ -149,6 +150,7 @@ MODULES = [
     ("wear_refresh", WEAR_REFRESH_TESTS),
     ("creation_crafting_mouse", CREATION_CRAFTING_MOUSE_TESTS),
     ("keybinding_search", KEYBINDING_SEARCH_TESTS),
+    ("mouse_side_buttons", MOUSE_SIDE_BUTTONS_TESTS),
     ("pulp_key", PULP_KEY_TESTS),
     ("known_locks", KNOWN_LOCKS_TESTS),
     ("vehicle_mouse", VEHICLE_MOUSE_TESTS),
