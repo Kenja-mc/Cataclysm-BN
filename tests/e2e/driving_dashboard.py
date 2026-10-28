@@ -4,13 +4,69 @@ The dashboard owns that window's reading only: the fixed layouts keep the compac
 readout, and turning the floating HUD off must bring that readout back.  These tests drive real
 vehicles, drain a real tank and take remote control, then read the window's own cells.
 """
+import json
 import re
+import tempfile
+from pathlib import Path
 
-from helpers import action_menu
+from helpers import HELPERS, Game, action_menu, arena, choose_menu_entry, start_new_game
 from remote_vehicle import enter_remote_control, remote_vehicle_game
+from tmux_game import ROOT
 from vehicle_box import spawn_vehicle, vehicle_game
 
 BAR = r"[#-]{6}"
+
+# A deterministic aircraft for the lift semantics: three wings with huge lift make the computed
+# takeoff speed only a few mph, so real engine thrust reaches it inside the arena.  This keeps the
+# speed comparison real instead of injecting a velocity.
+PLANE_WING = {
+    "type": "vehicle_part", "id": "e2e_dashboard_wing", "copy-from": "wing_metal_external",
+    "name": "dashboard test wing", "lift_coff": 5000,
+}
+PLANE_PROTOTYPE = {
+    "type": "vehicle", "id": "e2e_dashboard_plane", "name": "Dashboard Test Plane",
+    "blueprint": [[" | "], [" | "], ["-#-"], [" | "], [" | "], [" | "], [" | "]],
+    "parts": [
+        {"x": 0, "y": 0, "parts": ["xlframe_cross", "seat", "seatbelt", "controls",
+                                   "dashboard", "e2e_dashboard_wing"]},
+        {"x": 0, "y": -1, "parts": ["xlframe_vertical", "e2e_dashboard_wing",
+                                    "wheel_mount_light", "wheel_small"]},
+        {"x": 0, "y": 1, "parts": ["xlframe_vertical", "e2e_dashboard_wing",
+                                   "wheel_mount_light", "wheel_small"]},
+        {"x": 0, "y": 2, "parts": ["xlframe_horizontal", "engine_inline4",
+                                   {"part": "tank_small", "fuel": "gasoline"}, "battery_car",
+                                   "wheel_mount_light_steerable", "wheel_small",
+                                   "propeller_metal"]},
+    ],
+}
+
+
+def aircraft_game(name):
+    userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-dashboard-plane-"))
+    mod_dir = userdir / "mods" / "e2e_dashboard_plane"
+    mod_dir.mkdir(parents=True)
+    (mod_dir / "modinfo.json").write_text(json.dumps([{
+        "type": "MOD_INFO", "id": "e2e_dashboard_plane", "name": "E2E dashboard plane",
+        "description": "High-lift aircraft for the driving dashboard lift check.",
+        "category": "content", "dependencies": ["bn"],
+    }]))
+    (mod_dir / "vehicles.json").write_text(json.dumps([PLANE_WING, PLANE_PROTOTYPE]))
+    defaults = json.loads((ROOT / "data/mods/default.json").read_text())
+    (userdir / "config").mkdir()
+    (userdir / "config/default_mods.json").write_text(
+        json.dumps([*defaults, "e2e_dashboard_plane"]))
+    profile = {"SAFEMODE": "false", "HUD_WINDOWS": "true", "HUD_ICONS": "ascii",
+               "SHOW_WELCOME": "false", "ANIMATIONS": "false",
+               "USE_METRIC_SPEEDS": "mph"}
+    game = Game(name=name, userdir=userdir, options=profile)
+    try:
+        start_new_game(game)
+        game.define_lua(HELPERS)
+        arena(game)
+        return game
+    except Exception:
+        game.close()
+        raise
 
 
 def dashboard_game(name, **options):
@@ -90,7 +146,8 @@ def test_dashboard_driving_facts_fit_80x25(_game):
         assert re.search(BAR, speed_row), speed_row
         assert not re.search(r"\d", speed_row), \
             "the speed number belongs to the title, not a duplicate body row:\n" + speed_row
-        assert re.search(r"Cruise\s+Off", row_text(screen, "Cruise")), screen
+        # A new vehicle has cruise control on with a zero target; the target rises with throttle.
+        assert re.search(r"Cruise\s+On\s+0 mph", row_text(screen, "Cruise")), screen
         assert re.search(r"Heading\s+0°", row_text(screen, "Heading")), screen
         assert not re.search(r"\bN\b", row_text(screen, "Heading")), \
             "the cardinal belongs to the title, not a duplicate body row:\n" + screen
@@ -113,6 +170,16 @@ def test_dashboard_driving_facts_fit_80x25(_game):
         assert cruise and int(cruise.group(1)) > 0, "the cruise target must read as ON:\n" + screen
         assert not re.search(r"\d", row_text(screen, "Speed")), \
             "the body speed row carries the bar only:\n" + screen
+
+        # Cruise control is on by default; disabling it from the vehicle controls must show Off.
+        game.keys("Enter", delay=1.0)
+        choose_menu_entry(game, "Control Vehicle")
+        game.wait_for("Vehicle controls")
+        choose_menu_entry(game, "Disable cruise control")
+        # The vehicle controls menu returns after one choice; no Escape is needed or wanted.
+        game.settle_screen(minimum=0.6, timeout=3)
+        screen = game.screen()
+        assert re.search(r"Cruise\s+Off", row_text(screen, "Cruise")), screen
 
         # The minimum supported terminal: the window fits beside the 44-cell sidebar, every row
         # inside its borders, and nothing spills into the sidebar.
@@ -169,9 +236,9 @@ def test_dashboard_fuel_warning_is_worded(_game):
 
 
 def test_dashboard_aircraft_takeoff_state(_game):
-    game = dashboard_game("bn-e2e-dashboard-aircraft")
+    game = aircraft_game("bn-e2e-dashboard-aircraft")
     try:
-        spawn_vehicle(game, "plane_small")
+        spawn_vehicle(game, "e2e_dashboard_plane")
         screen = game.screen()
         takeoff = re.search(r"Takeoff\s+(\d+) mph\s+no lift", row_text(screen, "Takeoff"))
         assert takeoff and int(takeoff.group(1)) > 0, \
@@ -179,10 +246,13 @@ def test_dashboard_aircraft_takeoff_state(_game):
         needed = int(takeoff.group(1))
 
         take_control(game)
-        for _ in range(30):
+        for _ in range(12):
             if re.search(r"Takeoff\s+\d+ mph\s+lift", game.screen()):
                 break
-            game.keys("w", delay=0.8)
+            # Throttle changes the cruise target without spending moves; a wait applies the turn
+            # of thrust, which is what actually accelerates the plane.
+            game.keys("w", delay=0.2)
+            game.keys("x", delay=0.8)
         screen = game.screen()
         assert re.search(r"Takeoff\s+\d+ mph\s+lift", row_text(screen, "Takeoff")), \
             "reaching takeoff speed must read lift without relying on colour:\n" + screen

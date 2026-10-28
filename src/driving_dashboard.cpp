@@ -21,6 +21,9 @@
 #include "vehicle/vehicle_part.h"
 #include "vehicle/vpart_position.h"
 
+namespace driving_dashboard
+{
+
 namespace
 {
 
@@ -29,7 +32,7 @@ constexpr auto label_column = 8;
 /// A short bar reads in a terminal and still shows a direction of change without colour.
 constexpr auto bar_cells = 6;
 
-auto label( const std::string &text ) -> std::string
+auto padded_label( const std::string &text ) -> std::string
 {
     auto out = utf8_truncate( text, label_column );
     out.append( static_cast<size_t>( label_column - utf8_width( out ) ), ' ' );
@@ -251,7 +254,7 @@ auto icon_column( const std::string &style ) -> int
 auto fuel_row( const itype_id &fuel, const std::string &icon, const int percent,
                const nc_color color ) -> driving_dashboard::line
 {
-    const auto name = label( item::nname( fuel ) );
+    const auto name = padded_label( item::nname( fuel ) );
     return icon_row( icon,
                      string_format( "%s %s %d%%%s", name, bar( percent, 100 ), percent,
                                     fuel_note( percent ) ),
@@ -283,9 +286,6 @@ auto compass_letter( const int octant ) -> std::string
 }
 
 } // namespace
-
-namespace driving_dashboard
-{
 
 auto read( const avatar &you ) -> reading
 {
@@ -322,26 +322,26 @@ auto read( const avatar &you ) -> reading
     const auto scale = std::max( std::abs( safe_speed ), 1 );
     const auto strain = strain_level_of( veh->strain() );
     out.body.push_back( text_row(
-                            string_format( "%s %s", label( _( "Speed" ) ),
+                            string_format( "%s %s", padded_label( _( "Speed" ) ),
                                            bar( std::abs( speed ), scale ) ),
                             speed_color( strain ) ) );
 
     out.body.push_back( text_row(
-                            string_format( "%s %s", label( _( "Cruise" ) ),
+                            string_format( "%s %s", padded_label( _( "Cruise" ) ),
                                            cruising ? string_format( "%s %d %s", _( "On" ), cruise,
                                                    units ) : std::string( _( "Off" ) ) ),
                             cruising ? c_light_green : c_light_gray ) );
 
     out.body.push_back( icon_row(
                             gauge_glyph( gauge::compass, icons ),
-                            string_format( "%s %s", label( _( "Heading" ) ),
+                            string_format( "%s %s", padded_label( _( "Heading" ) ),
                                            veh->face.to_string_azimuth_from_north() ),
                             c_light_gray ) );
 
     // Every coloured strain state also has a marker: `!`, `!!` and `!!!` for its three levels.
     const auto engine_state = veh->engine_on ? _( "On" ) : _( "Off" );
     out.body.push_back( text_row(
-                            string_format( "%s %s%s", label( _( "Engine" ) ), engine_state,
+                            string_format( "%s %s%s", padded_label( _( "Engine" ) ), engine_state,
                                            strain_marker( strain ) ),
                             engine_color( veh->engine_on, strain ) ) );
 
@@ -367,7 +367,7 @@ auto read( const avatar &you ) -> reading
         // Zero means the wings cannot lift this vehicle; reaching the number means lift.
         const auto enough = takeoff > 0 && speed >= takeoff;
         out.body.push_back( text_row(
-                                string_format( "%s %d %s %s", label( _( "Takeoff" ) ), takeoff,
+                                string_format( "%s %d %s %s", padded_label( _( "Takeoff" ) ), takeoff,
                                                units, enough ? _( "lift" ) : _( "no lift" ) ),
                                 enough ? c_light_green : c_light_red ) );
     }

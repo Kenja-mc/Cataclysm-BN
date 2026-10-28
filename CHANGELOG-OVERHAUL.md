@@ -14,8 +14,9 @@ Upstream's own changes are in `docs/en/game/changelog`.
   position, collapse and visibility.
 - Sidebar Options lists every window so the whole layout is reachable without a mouse; a disabled
   or unfittable window hands its reading back to the sidebar. Both terminal and tiles build it.
-- The vehicle window is a replaceable provider (`hud_windows::set_vehicle_provider`) for the
-  driving-dashboard work.
+- The floating vehicle window shows a driving dashboard with speed, heading, cruise, engine,
+  fuel and battery readings, plus takeoff state for aircraft. Compact layouts keep their
+  existing vehicle readout.
 - Clicking or dragging a window, or pressing Enter on it in Sidebar Options, raises it to the
   front; the stacking order is saved with the character.
 
