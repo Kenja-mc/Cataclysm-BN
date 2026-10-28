@@ -981,6 +981,7 @@ void iexamine::vending( player &p, const tripoint_bub_ms &examp )
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 
     std::vector<std::vector<item *>> item_map;
     for( item *&it : vend_items ) {

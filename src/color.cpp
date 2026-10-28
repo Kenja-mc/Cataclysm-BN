@@ -818,6 +818,7 @@ void color_manager::show_gui()
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 
     // Matches the draw_scrollbar() call in on_redraw below.
     const auto scrollbar_geometry = [&]() {

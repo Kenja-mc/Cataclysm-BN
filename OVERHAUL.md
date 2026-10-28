@@ -75,7 +75,8 @@ Generated shortcuts and inventory, mutation and bionic letters leave navigation 
 free. Text fields still accept normal typing; **Classic** retains the upstream controls.
 
 In ordinary Modern menus, **Space** confirms the highlighted choice just like Enter; it never
-means an unconditional Yes. Spaces stay literal in filters, world names and the Lua console.
+means an unconditional Yes. A list menu that already binds Space to another action keeps that
+action, including a player rebind. Spaces stay literal in filters, world names and the Lua console.
 The title menu supports mouse hover and clicking; Quit asks for confirmation.
 
 Where a Shift shortcut was already occupied, the other menu action moves:
@@ -180,23 +181,32 @@ same sleep confirmation and alarm prompts as the sleep action. Classic keeps its
   Safe click-to-walk on, long travel needs a second click, visible threats limit a distant click
   to one step, and a known trap/dangerous field asks for confirmation.
 
-Modern custom action lists use two clicks: the first focuses/selects a row, the second performs
-its existing keyboard action. Tabs, filters and content changes reset that pairing. Trade's second
-click only marks an item; Enter or Accept still confirms the deal. Advanced-inventory clicks do
-not transfer items. Armor rows stay read-only; body-part names and header arrows switch tabs.
-The health report stays a scrollable text report with Close.
+Modern list menus that used to confirm on one click now take a double click: the first click
+focuses/selects the row, and the second does exactly what Enter would, including a confirmation
+prompt. The two clicks must land within half a second, and tabs, filters, scrolling and other keys
+reset the pairing. **Options → Interface → Modern list mouse** turns this off, so those lists act
+on one click again; Classic keeps its keyboard-only lists either way, and lists that already used
+two clicks keep their own pairing.
+Right click keeps whatever the list already offered: its item action menu where one exists, and
+otherwise its previous behaviour.
+Trade's second click only marks an item; Enter or Accept still confirms the deal. Advanced-inventory
+clicks do not transfer items. Armor rows stay read-only; body-part names and header arrows switch
+tabs. The health report stays a scrollable text report with Close.
 
-Inventory hover highlights an item, left click picks it (or marks it in multi-item menus), and the
-wheel scrolls. Right click on an inventory item opens its actions; right click outside cancels.
+Inventory hover highlights an item, a left click selects it, and a double click picks it (with
+Modern list mouse off, one click picks). The wheel scrolls. Right click on an inventory item opens
+its actions; right click outside cancels. Pickup keeps left click as mark/unmark, and a double
+click on a row picks like Enter.
 
 **Quick pickup and area pickup.** In Modern, `g` takes all ground and vehicle-cargo items on your
 own tile without a menu, using the normal pickup activity and its capacity handling. Ctrl+G opens
 the area pickup menu; `g`, Enter or Space picks up marked items, or the highlighted item if none
 are marked. Escape cancels.
 Inside pickup, local shortcuts act on the highlighted item: `h` wields it and `W` wears it.
-With the mouse, hover highlights a row, left click marks or unmarks it, and the wheel moves through
-the list. Right click lists Pick up, Wield and Wear; each acts on that item alone. The footer shows
-the bound keys. Classic keeps the upstream menu, including Enter doing nothing with no marked items.
+With the mouse, hover highlights a row, left click marks or unmarks it, a double click picks like
+Enter (with Modern list mouse off, a double click only marks and unmarks), and the wheel moves
+through the list. Right click lists Pick up, Wield and Wear; each acts on that item alone. The
+footer shows the bound keys. Classic keeps the upstream menu, including Enter doing nothing with no marked items.
 
 **Options menu.** A two-row key guide keeps navigation, help and exit visible at 80×25. In Modern,
 `r` resets the highlighted option to its default and `R` resets the whole page after a Yes/No

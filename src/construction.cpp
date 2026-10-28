@@ -501,6 +501,7 @@ std::optional<construction_id> construction_menu( const bool blueprint )
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 
     const std::vector<construction_category> &construct_cat = construction_categories::get_all();
     std::vector<size_t> construct_cat_order;

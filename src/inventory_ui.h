@@ -19,6 +19,7 @@
 #include "detached_ptr.h"
 #include "input.h"
 #include "item_handling_util.h"
+#include "list_mouse.h"
 #include "memory_fast.h"
 #include "pimpl.h"
 #include "units.h"
@@ -683,6 +684,14 @@ class inventory_selector
         /// Modern scheme: turns hover, clicks and the wheel into selection and actions.
         auto mouse_input( inventory_input res ) -> inventory_input;
 
+        /// True when a left click on a row should follow Enter instead of acting at once.
+        virtual auto click_confirms() const -> bool {
+            return false;
+        }
+
+        /// Pairs the two clicks of a double-click on one list row.
+        list_mouse::click_state mouse_click;
+
         /// True when cell lies on the clickable hint suffix drawn in the header.
         auto hint_hotspot_at( point cell ) const -> bool;
 
@@ -722,6 +731,10 @@ class inventory_pick_selector : public inventory_selector
         item *execute();
 
     protected:
+        auto click_confirms() const -> bool override {
+            return true;
+        }
+
         virtual auto handle_action( const std::string &/*action*/ ) -> bool {
             return false;
         }

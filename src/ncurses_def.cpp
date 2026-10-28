@@ -495,7 +495,8 @@ void catacurses::init_interface()
     }
 #if !defined(__CYGWIN__)
     // ncurses mouse registration
-    auto mouse_events = BUTTON1_CLICKED | BUTTON3_CLICKED | REPORT_MOUSE_POSITION;
+    auto mouse_events = BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED |
+                        BUTTON3_CLICKED | BUTTON3_DOUBLE_CLICKED | REPORT_MOUSE_POSITION;
 #if defined(BUTTON4_PRESSED)
     mouse_events |= BUTTON4_PRESSED;
 #endif
@@ -627,9 +628,9 @@ input_event input_manager::get_input_event()
             if( getmouse( &event ) == OK ) {
                 rval.type = input_event_t::mouse;
                 rval.mouse_pos = point( event.x, event.y );
-                if( event.bstate & BUTTON1_CLICKED ) {
+                if( event.bstate & ( BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED ) ) {
                     rval.add_input( MOUSE_BUTTON_LEFT );
-                } else if( event.bstate & BUTTON3_CLICKED ) {
+                } else if( event.bstate & ( BUTTON3_CLICKED | BUTTON3_DOUBLE_CLICKED ) ) {
                     rval.add_input( MOUSE_BUTTON_RIGHT );
 #if defined(BUTTON4_PRESSED)
                 } else if( ( event.bstate & BUTTON4_PRESSED ) &&

@@ -1587,6 +1587,7 @@ int editmap::select_shape( shapetype shape, int mode )
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
     ctxt.register_action( "ANY_INPUT" );
+    ctxt.set_space_action_priority( true );
     std::string action;
     bool update = false;
     blink = true;
@@ -1973,6 +1974,7 @@ void editmap::mapgen_retarget()
     ctxt.register_action( "HELP_KEYBINDINGS" );
     // Needed for timeout to be useful
     ctxt.register_action( "ANY_INPUT" );
+    ctxt.set_space_action_priority( true );
     std::string action;
     auto origm = target;
 

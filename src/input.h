@@ -496,6 +496,7 @@ class input_context
             iso_mode = other.iso_mode;
             action_name_overrides = other.action_name_overrides;
             timeout = other.timeout;
+            space_action_priority = other.space_action_priority;
             return *this;
         }
 
@@ -511,7 +512,8 @@ class input_context
                    next_action == other.next_action &&
                    iso_mode == other.iso_mode &&
                    action_name_overrides == other.action_name_overrides &&
-                   timeout == other.timeout;
+                   timeout == other.timeout &&
+                   space_action_priority == other.space_action_priority;
         }
         bool operator!=( const input_context &other ) const {
             return !( *this == other );
@@ -526,6 +528,11 @@ class input_context
         auto get_category() const -> const std::string & { return category; } // *NOPAD*
         auto get_registered_actions() const -> const std::vector<std::string> & { // *NOPAD*
             return registered_actions;
+        }
+
+        /// Let a Space binding on another action win over CONFIRM in this Modern list.
+        void set_space_action_priority( bool enabled ) {
+            space_action_priority = enabled;
         }
 
         /**
@@ -744,6 +751,7 @@ class input_context
     private:
         bool registered_any_input;
         std::string category; // The input category this context uses.
+        bool space_action_priority = false; // Eligible Modern list: another Space action beats CONFIRM.
         point coordinate;
         bool coordinate_input_received;
         bool handling_coordinate_input;

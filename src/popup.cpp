@@ -297,6 +297,7 @@ query_popup::result query_popup::query_once()
     if( cancel ) {
         ctxt.register_action( "QUIT" );
     }
+    ctxt.set_space_action_priority( true );
 
     result res;
     // Assign outside construction of `res` to ensure execution order

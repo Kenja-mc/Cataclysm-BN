@@ -1023,6 +1023,7 @@ tab_direction set_points( avatar &u, points_left &points )
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 
     const std::string point_pool = get_option<std::string>( "CHARACTER_POINT_POOLS" );
 
@@ -1574,6 +1575,7 @@ tab_direction set_traits( avatar &u, points_left &points )
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 #if defined(TILES)
     ctxt.register_action( "zoom_in" );
     ctxt.register_action( "zoom_out" );
@@ -2084,6 +2086,7 @@ tab_direction set_bionics( avatar &u, points_left &points )
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 #if defined(TILES)
     ctxt.register_action( "zoom_in" );
     ctxt.register_action( "zoom_out" );
@@ -2578,6 +2581,7 @@ tab_direction set_profession( avatar &u, points_left &points,
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 
     bool recalc_profs = true;
     int profs_length = 0;
@@ -3702,6 +3706,7 @@ tab_direction set_scenario( avatar &u, points_left &points,
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 
     bool recalc_scens = true;
     int scens_length = 0;
@@ -4210,6 +4215,7 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 #if defined(TILES)
     ctxt.register_action( "zoom_in" );
     ctxt.register_action( "zoom_out" );

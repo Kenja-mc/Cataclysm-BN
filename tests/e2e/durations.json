@@ -21,7 +21,7 @@
  "test_classic_inventory_has_no_craft_hub": 21.1,
  "test_classic_wait_and_safe_mode_keep_upstream_interface": 25.3,
  "test_classic_weather_resize_preserves_facts_and_help": 14.8,
- "test_click_picks_an_inventory_row": 7.8,
+ "test_double_click_picks_an_inventory_row": 8.1,
  "test_click_picks_nearby_item_without_inventory": 8.2,
  "test_combine_partly_used_tools": 9.0,
  "test_construction_opens_on_content": 25.6,

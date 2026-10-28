@@ -660,6 +660,7 @@ void faction_manager::display() const
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 
     std::vector<npc *> followers;
     std::vector<const faction *> valfac; // Factions that we know of.

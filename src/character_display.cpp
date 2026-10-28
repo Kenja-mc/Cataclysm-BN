@@ -1777,6 +1777,7 @@ void character_display::disp_info( Character &ch )
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 
     std::map<std::string, int> speed_effects;
     for( auto &elem : ch.get_all_effects() ) {

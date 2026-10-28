@@ -235,7 +235,7 @@ def capture_tiles(handle) -> bytes:
 
 
 def _button(action: ActionSpec) -> int:
-    """Left click selects a row; the secondary_* actions right click, as the mouse tests do."""
+    """Left clicks confirm a list row; the secondary_* actions right click, as the mouse tests do."""
     return 2 if action.id.startswith("secondary_") else 0
 
 
@@ -247,7 +247,8 @@ def send_action(handle, action: ActionSpec, *, mode: str) -> None:
             x, y = action.click
             x11 = _tiles_x11(handle)
             x11.focus_local(_tiles_window(handle), x, y)
-            x11.click(_button(action) + 1)
+            for _ in range(action.clicks):
+                x11.click(_button(action) + 1)
         if action.keys:
             keys = x11_keys(action.keys)
             sender = getattr(tiles, "key", None)
@@ -260,7 +261,8 @@ def send_action(handle, action: ActionSpec, *, mode: str) -> None:
     if action.keys:
         game.keys(*action.keys)
     if action.click is not None:
-        game.click(*action.click, button=_button(action))
+        for i in range(action.clicks):
+            game.click(*action.click, button=_button(action), settle=i == action.clicks - 1)
 
 
 # ---------------------------------------------------------------- the dump

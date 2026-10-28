@@ -1787,6 +1787,7 @@ auto make_spell_selector_input_context() -> input_context {
     ctxt.register_action(assign_spell_hotkey_action);
     ctxt.register_action("DESC_UP");
     ctxt.register_action("DESC_DOWN");
+    ctxt.set_space_action_priority( true );
     return ctxt;
 }
 

@@ -224,10 +224,14 @@ Long-form write-ups should follow
   closing that list keeps the selection. Hover does not replace a locked target.
   Left click uses an adjacent door, item or furniture, attacks a hostile, or selects other tiles.
   Default Modern clicks do not walk. Classic keeps upstream mouse behavior.
-- **Menus:** Space acts like Enter on the highlighted choice, including No in a confirmation.
-  Spaces stay literal in text fields. The title supports hover and clicking and asks before quitting.
-  In custom action lists, click once to select and again to act; in trade, the second click marks
-  an item and Enter or Accept confirms the deal. Scrollbar clicks never activate a row behind them.
+- **Menus:** Space acts like Enter on the highlighted choice, including No in a confirmation,
+  unless the menu already uses Space for another action. Spaces stay literal in text fields.
+  In list menus, click once to select a row and double click to act exactly like Enter, including
+  any confirmation; right click keeps the row's previous behaviour, which is an action menu only
+  where the list already has one. Turn the double click off with Options → Interface → Modern list
+  mouse. In trade, the second click marks an item and Enter or Accept confirms the deal. Scrollbar
+  clicks never activate a row behind them. Classic keeps its keyboard-only lists. The title
+  supports hover and clicking and asks before quitting.
 - **HUD:** select **grouped** in Enter → Misc → Sidebar Options for the new right-sidebar layout.
   Weather, Character and Needs move off the map. Existing layouts remain selectable.
   Try Text only, Unicode and Icon font. Make sure that urgent needs, limb health and controls

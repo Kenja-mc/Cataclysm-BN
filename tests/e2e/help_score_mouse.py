@@ -91,14 +91,20 @@ def test_help_topic_opens_by_click(g):
 
         x, y = row_of(game.screen(), "Introduction")
         game.click(x, y)
+        assert "survival roguelike" not in game.screen(), \
+            "one click must only select a topic\n" + game.screen()
+        game.double_click(x, y)
         screen = game.screen()
-        assert "survival roguelike" in screen, "the clicked topic should open\n" + screen
+        assert "survival roguelike" in screen, "the double clicked topic should open\n" + screen
 
         # Introduction fits the fixed-height help viewer. Open a genuinely long topic
         # before exercising the shared scrollbar.
         game.keys("Escape", delay=0.8)
         x, y = row_of(game.screen(), "Items overview")
         game.click(x, y)
+        assert "Please press one of the following" in game.screen(), \
+            "one click must keep the topic list open\n" + game.screen()
+        game.double_click(x, y)
         screen = game.screen()
         assert "wide variety of items" in screen, screen
         bar = find_scrollbar(screen)
@@ -149,7 +155,7 @@ def test_help_click_after_resize_hits_right_columns(g):
             assert wait_until(resized_menu, timeout=10), \
                 "the resized help menu should redraw both columns\n" + screen
             x, y = row_of(screen, "Items overview")
-            game.click(x, y)
+            game.double_click(x, y)
             screen = game.screen()
             assert "wide variety of items" in screen, \
                 "a second-column topic must open by its own label after resize\n" + screen

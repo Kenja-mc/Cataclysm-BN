@@ -37,6 +37,8 @@ to triage; reference the session commit SHA (shown by `--version` in the game's 
 - [ ] `n` auto-explore avoids walls/closed doors/traps and refuses to start near hostiles
 - [ ] Space uses the RMB-selected tile and offers applicable Open/Close/Examine/Pickup/Jump/Smash
 - [ ] Jump and Smash require an explicit choice, not automatic action dispatch
+- [ ] Lists select on one click and run Enter's action (and prompt) on a double click; right click
+      opens only a row's existing actions; Space confirms unless the list already uses it
 - [ ] Shift+X cycles walk/run/crouch/prone; Status / Movement row agree; F2/F3/F4 are unbound
 - [ ] Enter's Quick stack sends items to nearby matching storage; worn/wielded/favorite items stay
 - [ ] Enter's Sort pile routes items to the right storage

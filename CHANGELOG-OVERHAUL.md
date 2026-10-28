@@ -4,6 +4,19 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-26
+
+### Added
+
+- **Modern list mouse** (Options → Interface, on by default): one click selects a list row,
+  a double click runs the row's Enter action and its confirmation prompt, and right click keeps
+  the row's existing action menu. Help topics, pickup and single-item inventory lists follow it.
+  Classic keeps its keyboard-only lists.
+
+### Changed
+
+- Space confirms a list row only when the menu has not already bound Space to another action.
+
 ## 2026-10-25
 
 ### Added

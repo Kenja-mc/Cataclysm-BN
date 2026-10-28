@@ -221,6 +221,7 @@ void diary::show_diary_ui( diary *c_diary )
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 
     std::map<window_mode, scrollable_list_layout> pane_layout;
 

@@ -438,6 +438,7 @@ WORLDINFO *worldfactory::pick_world( bool show_prompt, bool empty_only )
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
     auto last_clicked_world = -1;
 
     while( true ) {
@@ -901,6 +902,7 @@ void worldfactory::show_active_world_mods( const std::vector<mod_id> &world_mods
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
         draw_border( w_border, BORDER_COLOR, _( " ACTIVE WORLD MODS " ) );
@@ -1050,6 +1052,7 @@ int worldfactory::show_modselection_window( const catacurses::window &win,
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 
     point filter_pos;
     int filter_view_len = 0;

@@ -32,7 +32,7 @@ def fresh_inventory(g):
     give(g, "pipe")
 
 
-def test_click_picks_an_inventory_row(g):
+def test_double_click_picks_an_inventory_row(g):
     fresh_inventory(g)
     pipe = display_name(g, "pipe")
     action_menu(g, "Inventory", "Wield")
@@ -40,7 +40,10 @@ def test_click_picks_an_inventory_row(g):
     x, y = row_of(g, pipe)
     g.hover(x, y)
     g.click(x, y)
-    assert "Wield item" not in g.screen(), "a left click should pick the row\n" + g.screen()
+    assert "Wield item" in g.screen(), "one left click must only select the row\n" + g.screen()
+    assert wielded(g) == [""], "one click must not pick an item"
+    g.double_click(x, y)
+    assert "Wield item" not in g.screen(), "a double click should pick the row\n" + g.screen()
     assert wielded(g) == ["pipe"], wielded(g)
     g.lua("gapi.get_avatar():drop_all_items() out('ok')")
     arena(g)
@@ -70,6 +73,8 @@ def test_click_picks_nearby_item_without_inventory(g):
     action_menu(g, "Inventory", "Wield")
     x, y = row_of(g, pipe)
     g.click(x, y)
+    assert wielded(g) == [""], "the first click must only select the nearby row"
+    g.double_click(x, y)
     assert wielded(g) == ["pipe"], "a hidden inventory column must not shift mouse selection"
     g.lua("gapi.get_avatar():drop_all_items() out('ok')")
     arena(g)
@@ -149,7 +154,7 @@ def test_tab_hint_and_shift_tab_in_inventory(g):
     assert action_clock(g) == before, "opening and closing the advanced inventory must be free"
 
 
-TESTS = [test_click_picks_an_inventory_row, test_right_click_opens_item_actions,
+TESTS = [test_double_click_picks_an_inventory_row, test_right_click_opens_item_actions,
          test_click_picks_nearby_item_without_inventory, test_wheel_moves_inventory_selection,
          test_inventory_context_wields_and_wears_selected_items, test_right_click_outside_inventory_cancels,
          test_tab_hint_and_shift_tab_in_inventory]

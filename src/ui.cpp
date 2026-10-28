@@ -17,6 +17,7 @@
 #include "game.h"
 #include "ime.h"
 #include "input.h"
+#include "list_mouse.h"
 #include "options.h"
 #include "output.h"
 #include "player.h"
@@ -27,6 +28,50 @@
 #if defined(__ANDROID__)
 #include <SDL3/SDL.h>
 #endif
+
+namespace list_mouse
+{
+
+namespace
+{
+constexpr auto double_click_window = std::chrono::milliseconds( 500 );
+} // namespace
+
+auto enabled() -> bool
+{
+    return get_option<std::string>( "CONTROL_SCHEME" ) == "modern" &&
+           get_option<bool>( "MODERN_LIST_MOUSE" );
+}
+
+auto click_state::second_token( std::uintptr_t new_token ) -> bool
+{
+    const auto now = std::chrono::steady_clock::now();
+    if( armed && token == new_token && now - when <= double_click_window ) {
+        armed = false;
+        return true;
+    }
+    token = new_token;
+    when = now;
+    armed = true;
+    return false;
+}
+
+auto click_state::second( int row ) -> bool
+{
+    return second_token( static_cast<std::uintptr_t>( row ) + 1 );
+}
+
+auto click_state::second( const void *row ) -> bool
+{
+    return second_token( reinterpret_cast<std::uintptr_t>( row ) );
+}
+
+void click_state::reset()
+{
+    armed = false;
+}
+
+} // namespace list_mouse
 
 catacurses::window new_centered_win( int nlines, int ncols )
 {
@@ -249,6 +294,7 @@ input_context uilist::create_main_input_context() const
     for( const auto &additional_action : additional_actions ) {
         ctxt.register_action( additional_action.first, additional_action.second );
     }
+    ctxt.set_space_action_priority( true );
     return ctxt;
 }
 
@@ -1121,6 +1167,7 @@ void uilist::query( bool loop, int timeout )
         return std::ranges::any_of( additional_actions,
         [&action]( const auto & added ) { return added.first == action; } );
     };
+    list_mouse::click_state click;
 
     shared_ptr_fast<ui_adaptor> ui = create_or_get_ui_adaptor();
 
@@ -1139,6 +1186,10 @@ void uilist::query( bool loop, int timeout )
         const auto event = ctxt.get_raw_input();
         keypress = event.get_first_input();
         const auto iter = keymap.find( keypress );
+        if( event.type != input_event_t::mouse ||
+            ( ret_act != "SELECT" && ret_act != "MOUSE_MOVE" ) ) {
+            click.reset();
+        }
 
         if( scrollby( scroll_amount_from_action( ret_act ) ) ) {
             viewport_held = false;
@@ -1154,6 +1205,7 @@ void uilist::query( bool loop, int timeout )
                         vshift = hit->viewport_pos;
                         viewport_held = true;
                         on_scrollbar = true;
+                        click.reset();
                     }
                 }
                 if( !on_scrollbar ) {
@@ -1170,14 +1222,13 @@ void uilist::query( bool loop, int timeout )
                             if( cell.x < label_x + 2 ) {
                                 viewport_held = false;
                                 cycle_category( false );
-                                handled_click = true;
                             } else if( cell.x >= label_x + label_width - 2 ) {
                                 viewport_held = false;
                                 cycle_category( true );
-                                handled_click = true;
                             }
+                            click.reset();
+                            handled_click = true;
                         }
-                        break;
                     }
                     const auto end = std::min( vshift + vmax, static_cast<int>( fentries.size() ) );
                     auto row_click = false;
@@ -1189,6 +1240,9 @@ void uilist::query( bool loop, int timeout )
                             continue;
                         }
                         row_click = true;
+                        const bool paired = ret_act == "SELECT" &&
+                                            list_mouse::enabled() &&
+                                            click.second( entry_index );
                         if( entry.enabled || allow_disabled || hilight_disabled ) {
                             viewport_held = false;
                             selected = entry_index;
@@ -1196,14 +1250,18 @@ void uilist::query( bool loop, int timeout )
                             if( callback != nullptr ) {
                                 callback->select( this );
                             }
-                            if( ret_act == "SELECT" && ( entry.enabled || allow_disabled ) ) {
+                            if( ret_act == "SELECT" && ( entry.enabled || allow_disabled ) &&
+                                ( !list_mouse::enabled() || paired ) ) {
                                 ret = entry.retval;
                             }
                         }
                         break;
                     }
-                    if( !handled_click && !row_click && ret_act == "SELECT" && callback != nullptr ) {
-                        callback->mouse( this, cell );
+                    if( !handled_click && !row_click && ret_act == "SELECT" ) {
+                        click.reset();
+                        if( callback != nullptr ) {
+                            callback->mouse( this, cell );
+                        }
                     }
                 }
             }

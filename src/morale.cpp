@@ -838,6 +838,7 @@ void player_morale::display( int focus_eq, int pain_penalty, int fatigue_cap )
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 
     std::string action;
     do {

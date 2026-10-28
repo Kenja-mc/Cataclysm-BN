@@ -10051,6 +10051,7 @@ void game::zones_manager()
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 
     auto &mgr = zone_manager::get_manager();
     int start_index = 0;

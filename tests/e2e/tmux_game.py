@@ -90,15 +90,23 @@ class Game:
         subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", chunk], check=True)
         time.sleep(delay)
 
-    def click(self, x, y, button=0):
+    def click(self, x, y, button=0, settle=True):
         """Mouse click at a screen cell, SGR (1006) encoded as xterm-256color terminfo expects.
 
         Preserve the one-second observation window; wait longer if the redraw is still changing.
+        Pass ``settle=False`` to send the next click inside the double-click window.
         """
         for suffix in ("M", "m"):
             subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", f"\x1b[<{button};{x + 1};{y + 1}{suffix}"], check=True)
             time.sleep(0.05)
-        self.settle_screen(minimum=1.0, timeout=1.5)
+        if settle:
+            self.settle_screen(minimum=1.0, timeout=1.5)
+
+    def double_click(self, x, y, button=0):
+        """Two clicks on one cell inside the list double-click window, then one redraw wait."""
+        self.click(x, y, button=button, settle=False)
+        time.sleep(0.08)
+        self.click(x, y, button=button)
 
     def hover(self, x, y):
         """Mouse motion with no button held, SGR encoded (button code 35).
