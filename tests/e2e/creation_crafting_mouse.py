@@ -109,6 +109,19 @@ def test_modern_crafting_row_click_selects_then_crafts(_g):
         assert not g.dismiss_error_popup(), "crafting by click must not raise an error"
 
 
+def test_modern_crafting_row_double_click_crafts(_g):
+    """A real double-click is two clicks; ncurses used to fold it into one ignored event."""
+    with _modern_crafting() as g:
+        _fresh(g)
+        before = _crafted(g)
+        _open_filtered_recipe(g, "glass shard trap")
+        x, y = _row_of(g, "glass shard trap")
+        g.double_click(x, y)
+        g.wait_gone("Searched", timeout=15)
+        assert wait_until(lambda: _crafted(g) == before + 1, timeout=45), g.screen()
+        assert not g.dismiss_error_popup(), "crafting by double-click must not raise an error"
+
+
 def test_modern_crafting_scrollbar_moves_selection_without_crafting(_g):
     with _modern_crafting() as g:
         _fresh(g)
@@ -299,6 +312,7 @@ def test_modern_creation_traits_scrollbar_and_first_click_are_safe(_g):
 
 TESTS = [
     test_modern_crafting_row_click_selects_then_crafts,
+    test_modern_crafting_row_double_click_crafts,
     test_modern_crafting_scrollbar_moves_selection_without_crafting,
     test_modern_construction_scrollbar_and_tab_click,
     test_classic_crafting_and_construction_ignore_mouse,

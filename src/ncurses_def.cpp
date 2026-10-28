@@ -495,7 +495,8 @@ void catacurses::init_interface()
     }
 #if !defined(__CYGWIN__)
     // ncurses mouse registration
-    auto mouse_events = BUTTON1_CLICKED | BUTTON3_CLICKED | REPORT_MOUSE_POSITION;
+    auto mouse_events = BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED | BUTTON3_CLICKED |
+                        REPORT_MOUSE_POSITION;
 #if defined(BUTTON4_PRESSED)
     mouse_events |= BUTTON4_PRESSED;
 #endif
@@ -537,6 +538,9 @@ namespace
 /// send it (and from tests); bytes that do not match are pushed back and handled as before.
 constexpr char shift_space_tail[] = { '[', '3', '2', ';', '2', 'u' };
 
+/// ncurses folds two quick clicks into one double-click event; its second click is replayed here.
+auto pending_click = std::optional<point>();
+
 } // namespace
 
 void input_manager::pump_events()
@@ -571,6 +575,14 @@ input_event input_manager::get_input_event()
     input_event rval;
     do {
         previously_pressed_key = 0;
+        if( pending_click ) {
+            rval = input_event();
+            rval.type = input_event_t::mouse;
+            rval.mouse_pos = *pending_click;
+            rval.add_input( MOUSE_BUTTON_LEFT );
+            pending_click.reset();
+            return rval;
+        }
         // flush any output
         catacurses::doupdate();
         key = getch();
@@ -631,8 +643,11 @@ input_event input_manager::get_input_event()
             if( getmouse( &event ) == OK ) {
                 rval.type = input_event_t::mouse;
                 rval.mouse_pos = point( event.x, event.y );
-                if( event.bstate & BUTTON1_CLICKED ) {
+                if( event.bstate & ( BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED ) ) {
                     rval.add_input( MOUSE_BUTTON_LEFT );
+                    if( event.bstate & BUTTON1_DOUBLE_CLICKED ) {
+                        pending_click = rval.mouse_pos;
+                    }
                 } else if( event.bstate & BUTTON3_CLICKED ) {
                     rval.add_input( MOUSE_BUTTON_RIGHT );
 #if defined(BUTTON4_PRESSED)

@@ -35,6 +35,10 @@ Upstream's own changes are in `docs/en/game/changelog`.
   longer says the arrow keys walk in Modern, and says F1 opens the help topics.
 - `OVERHAUL.md`, `docs/fork/playing.md` and the controls diagram match the Modern bindings: `p`
   bionics, `G` pickup list, Ctrl+G drop, `I` advanced inventory, `v` use by item kind.
+- A fast double-click in the terminal build now counts as two clicks, as it does in tiles. ncurses
+  folded the pair into one double-click event that the game ignored, so a row that acts on its
+  second click (crafting, missions, factions) only selected itself.
+
 ## 2026-10-26
 
 ### Added
@@ -110,7 +114,6 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Right-drag pans the overmap; the cursor click that used to jump the view still does not pan.
 - The tiles build remembers the zoom you left and restores it at launch.
 - A CC0 sound audition page (`docs/fork/sound-audition/index.html`) to choose the next pack.
-- CC0 interface research from five games in `docs/fork/qol-research/`.
 
 ### Changed
 

@@ -100,6 +100,14 @@ class Game:
             time.sleep(0.05)
         self.settle_screen(minimum=1.0, timeout=1.5)
 
+    def double_click(self, x, y, button=0):
+        """Two clicks inside the terminal's double-click interval, as a person double-clicks."""
+        for _ in range(2):
+            for suffix in ("M", "m"):
+                subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", f"\x1b[<{button};{x + 1};{y + 1}{suffix}"], check=True)
+                time.sleep(0.02)
+        self.settle_screen(minimum=1.0, timeout=1.5)
+
     def hover(self, x, y):
         """Mouse motion with no button held, SGR encoded (button code 35).
 
