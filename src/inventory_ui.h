@@ -301,6 +301,15 @@ class inventory_column
         /// Index of the selectable entry drawn at `cell` when the column is drawn at `origin`.
         auto entry_index_at( point origin, point cell ) const -> std::optional<size_t>;
 
+        /// Index of the selectable row printed with `number` on the current page, if any.
+        auto numbered_row_index( int number ) const -> std::optional<size_t>;
+        /// Whether this column prints 1-9/0 row numbers and binds them to the visible rows.
+        auto rows_are_numbered() const -> bool;
+        /// False for lists whose digit keys already type a quantity.
+        void set_row_numbers_allowed( bool allowed ) {
+            row_numbers_allowed = allowed;
+        }
+
         void add_entry( const inventory_entry &entry );
         void move_entries_to( inventory_column &dest );
         void clear();
@@ -409,6 +418,8 @@ class inventory_column
         bool active = false;
         bool multiselect = false;
         bool visibility = true;
+        /// False for lists whose digit keys already type a quantity.
+        bool row_numbers_allowed = true;
 
         size_t selected_index = 0;
         size_t page_offset = 0;
@@ -584,6 +595,12 @@ class inventory_selector
         /** @return an entry from all entries by its invlet */
         inventory_entry *find_entry_by_invlet( int invlet ) const;
 
+        /** False for lists whose digit keys already type a quantity. */
+        auto rows_are_numbered() const -> bool;
+        /** Turns 1-9/0 row selection off for lists that type quantities with digits. */
+        void set_row_numbers_allowed( bool allowed );
+        bool row_numbers_allowed = true;
+
         const std::vector<inventory_column *> &get_all_columns() const {
             return columns;
         }
@@ -738,7 +755,7 @@ class inventory_multiselector : public inventory_selector
                                  const std::string &selection_column_title = "" );
     protected:
         void rearrange_columns( size_t client_width ) override;
-        size_t query_count( size_t count );
+        auto query_count( size_t count = 0 ) -> std::optional<size_t>;
         void set_chosen_count( inventory_entry &entry, size_t count );
         std::vector<inventory_entry *> get_selection_column_items() const;
         std::unique_ptr<inventory_column> selection_col;

@@ -1002,6 +1002,8 @@ bool advanced_inventory::show_sort_menu( advanced_inventory_pane &pane )
 input_context advanced_inventory::register_ctxt() const
 {
     input_context ctxt( "ADVANCED_INVENTORY" );
+    // Top-row digits choose the source area here (ITEMS_NW/N/E/.../INVENTORY), so this menu is a
+    // digit-input exception and does not get positional row numbers.
     ctxt.register_action( "HELP_KEYBINDINGS" );
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "UP" );

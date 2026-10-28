@@ -16,6 +16,9 @@
 #include "options.h"
 #include "output.h"
 #include "scrollbar_input.h"
+#if defined(TILES)
+#include "sdltiles.h"
+#endif
 #include "string_formatter.h"
 #include "string_utils.h"
 #include "tab_input.h"
@@ -43,6 +46,7 @@ void game::list_missions()
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    ctxt.register_action( "ANY_INPUT" ); // positional row digits
     const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
     if( modern ) {
         ctxt.register_action( "COORDINATE" );
@@ -52,6 +56,13 @@ void game::list_missions()
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+
+    auto numbered_rows = false;
+    auto number_cells = 0;
+#if defined(TILES)
+    numbered_rows = list_row_numbers_enabled();
+    number_cells = list_row_number_gutter_cells();
+#endif
 
     ui_adaptor ui;
     ui.on_screen_resize( [&]( ui_adaptor & ui ) {
@@ -95,9 +106,14 @@ void game::list_missions()
             const auto miss = umissions[i];
             const nc_color col = u.get_active_mission() == miss ? c_light_green : c_white;
             const int y = i - top_of_page + 3;
-            trim_and_print( w_missions, point( 1, y ), 28,
-                            static_cast<int>( selection ) == i ? hilite( col ) : col,
-                            miss->name() );
+            const nc_color row_color = static_cast<int>( selection ) == i ? hilite( col ) : col;
+            if( numbered_rows && i - top_of_page < 10 ) {
+                const int visible = i - top_of_page + 1;
+                const char digit = visible == 10 ? '0' : static_cast<char>( '0' + visible );
+                mvwputch( w_missions, point( 1, y ), row_color, digit );
+            }
+            trim_and_print( w_missions, point( 1 + number_cells, y ), 28 - number_cells,
+                            row_color, miss->name() );
         }
 
         if( selection < umissions.size() ) {
@@ -256,6 +272,19 @@ void game::list_missions()
         } else {
             // Keyboard navigation and content changes forget the pending row click.
             mouse_row.reset();
+        }
+        if( numbered_rows && ctxt.get_raw_input().type == input_event_t::keyboard ) {
+            const int key = ctxt.get_raw_input().get_first_input();
+            if( key >= '0' && key <= '9' ) {
+                const int top = entries_per_page * ( static_cast<int>( selection ) / entries_per_page );
+                const int row = key == '0' ? 9 : key - '1';
+                const size_t idx = static_cast<size_t>( top + row );
+                if( idx < umissions.size() ) {
+                    selection = idx;
+                    mouse_row.reset();
+                }
+                continue;
+            }
         }
         if( action == "RIGHT" ) {
             tab = static_cast<tab_mode>( static_cast<int>( tab ) + 1 );

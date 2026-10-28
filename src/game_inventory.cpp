@@ -52,6 +52,9 @@
 #include "units.h"
 #include "units_utility.h"
 #include "value_ptr.h"
+#if defined(TILES)
+#include "sdltiles.h"
+#endif
 
 #include <algorithm>
 #include <bitset>
@@ -1763,6 +1766,17 @@ drop_locations game_menus::inv::multidrop( player &p )
     }
 }
 
+/// The pickup hint: numbered rows move the amount behind '#', otherwise digits type it.
+static auto pickup_amount_hint() -> std::string
+{
+#if defined(TILES)
+    if( list_row_numbers_enabled() ) {
+        return _( "Numbers select a row; # sets how many; Enter or Space picks." );
+    }
+#endif
+    return _( "To pickup x items, type a number before selecting." );
+}
+
 std::vector<pickup::pick_drop_selection> game_menus::inv::pickup_from_tile( player &p,
         const tripoint_bub_ms &target )
 {
@@ -1772,7 +1786,7 @@ std::vector<pickup::pick_drop_selection> game_menus::inv::pickup_from_tile( play
     inventory_pickup_selector inv_s( p, preset );
 
     inv_s.set_title( _( "Multipickup" ) );
-    inv_s.set_hint( _( "To pickup x items, type a number before selecting." ) );
+    inv_s.set_hint( pickup_amount_hint() );
 
     while( true ) {
         p.inv_restack( );
@@ -1798,7 +1812,7 @@ std::vector<pickup::pick_drop_selection> game_menus::inv::pickup_nearby( player 
     inventory_pickup_selector inv_s( p, preset );
 
     inv_s.set_title( _( "Multipickup" ) );
-    inv_s.set_hint( _( "To pickup x items, type a number before selecting." ) );
+    inv_s.set_hint( pickup_amount_hint() );
 
     while( true ) {
         p.inv_restack( );
@@ -1934,12 +1948,30 @@ void game_menus::inv::reassign_letter( Character &who, item &it, int invlet )
     }
 }
 
+namespace
+{
+
+/// Manual digit invlets are unreachable while positional row numbers own the digits.
+auto manual_digit_invlets_allowed() -> bool
+{
+    if( get_option<std::string>( "CONTROL_SCHEME" ) != "modern" ) {
+        return false;
+    }
+#if defined(TILES)
+    return !list_row_numbers_enabled();
+#else
+    return true;
+#endif
+}
+
+} // namespace
+
 void game_menus::inv::prompt_reassign_letter( Character &who, item &it )
 {
-    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    const auto allow_digits = manual_digit_invlets_allowed();
     while( true ) {
         const int invlet = popup_getkey(
-                               modern
+                               allow_digits
                                ? _( "Enter new letter or number (0-9).  Press SPACE to clear a manually assigned key, ESCAPE to cancel." )
                                : _( "Enter new letter.  Press SPACE to clear a manually assigned letter, ESCAPE to cancel." ) );
 
@@ -1955,7 +1987,7 @@ void game_menus::inv::prompt_reassign_letter( Character &who, item &it )
             }
             break;
         } else if( inv_chars.valid( invlet ) ||
-                   ( modern && invlet_is_manual_digit( invlet ) ) ) {
+                   ( allow_digits && invlet_is_manual_digit( invlet ) ) ) {
             reassign_letter( who, it, invlet );
             break;
         }
@@ -1978,9 +2010,10 @@ void game_menus::inv::swap_letters( player &p )
     }
 
     const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    const auto allow_digits = manual_digit_invlets_allowed();
     while( true ) {
         auto allowed_chars = inv_chars.get_allowed_chars();
-        if( modern ) {
+        if( modern && allow_digits ) {
             allowed_chars += "0123456789";
         }
         const std::string invlets = colorize_symbols( allowed_chars,

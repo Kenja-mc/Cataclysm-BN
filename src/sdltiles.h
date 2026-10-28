@@ -33,6 +33,10 @@ extern void repoint_overmap_tilecontext();
 class item;
 /// Cells reserved for a thumbnail, or zero when thumbnails are disabled.
 auto item_thumbnail_gutter_cells() -> int;
+/// True when item lists print 1-9/0 row numbers and bind those keys to the visible rows.
+auto list_row_numbers_enabled() -> bool;
+/// Cells reserved for the row number gutter, or zero when row numbers are off.
+auto list_row_number_gutter_cells() -> int;
 
 struct item_thumbnail_options {
     point cell;

@@ -18,6 +18,9 @@ Usage:
   python3 tests/e2e/tiles.py zoom [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py overmap [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py known_locks [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
+  python3 tests/e2e/tiles.py numbered_rows [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
+  python3 tests/e2e/tiles.py numbered_menu [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
+  python3 tests/e2e/tiles.py numbered_mission [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
 
 --root is the game tree (data and the curses build); --binary is the tiles executable.
 Artifacts (window captures, marker crops, logs, fixture asserts, result.json) stay in --out.
@@ -1171,6 +1174,27 @@ def case_known_locks(session):
     return failures, observations
 
 
+def case_numbered_rows(session):
+    """Digits 1-9/0 select visible item rows; Enter confirms; the option gates the gutter."""
+    from numbered_rows import run_numbered_rows
+
+    return run_numbered_rows(session)
+
+
+def case_numbered_menu(session):
+    """Digits select visible options and construction rows; scrolling renumbers them."""
+    from numbered_menu_cases import run_numbered_menu
+
+    return run_numbered_menu(session)
+
+
+def case_numbered_mission(session):
+    """Digits select visible mission rows; the details pane follows the selected row."""
+    from numbered_mission_cases import run_numbered_mission
+
+    return run_numbered_mission(session)
+
+
 def case_sound_menu(session):
     """Drive the tiles menu; check saved settings, not audible output or OCR."""
     bindings = session.curses_userdir / "config" / "keybindings.json"
@@ -1248,7 +1272,9 @@ def case_sound_menu(session):
 
 
 CASES = {"minimap": case_minimap, "mouse": case_mouse, "sound_menu": case_sound_menu,
-         "zoom": case_zoom, "overmap": case_overmap, "known_locks": case_known_locks}
+         "zoom": case_zoom, "overmap": case_overmap, "known_locks": case_known_locks,
+         "numbered_rows": case_numbered_rows, "numbered_menu": case_numbered_menu,
+         "numbered_mission": case_numbered_mission}
 
 
 def main(argv=None):
@@ -1272,6 +1298,12 @@ def main(argv=None):
         if args.case == "known_locks":
             from known_locks import build_known_lock_world
             build_known_lock_world(session)
+        elif args.case == "numbered_rows":
+            from numbered_rows import build_numbered_rows_world
+            build_numbered_rows_world(session)
+        elif args.case == "numbered_mission":
+            from numbered_mission_cases import build_numbered_mission_world
+            build_numbered_mission_world(session)
         else:
             session.build_world(zoom_ruler=args.case == "zoom")
         failures, report = CASES[args.case](session)

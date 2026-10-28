@@ -23,6 +23,9 @@
 #include "string_input_popup.h"
 #include "string_utils.h"
 #include "ui_manager.h"
+#if defined(TILES)
+#include "sdltiles.h"
+#endif
 
 #if defined(__ANDROID__)
 #include <SDL3/SDL.h>
@@ -91,6 +94,10 @@ uilist::uilist( const std::string &hotkeys_override )
     init();
     if( !hotkeys_override.empty() ) {
         hotkeys = hotkeys_override;
+        // A caller that reserves digits as entry shortcuts uses digits as input.
+        row_numbers_allowed = std::none_of( hotkeys.begin(), hotkeys.end(), []( const char key ) {
+            return key >= '0' && key <= '9';
+        } );
     }
 }
 
@@ -172,6 +179,7 @@ void uilist::init()
     keypress = 0;          // last keypress from (int)getch()
     window = catacurses::window();         // our window
     keymap.clear();        // keymap[int] == index, for entries[index]
+    row_numbers = false;   // recomputed in setup() from the entries and the options
     selected = 0;          // current highlight, for entries[index]
     entries.clear();       // uilist_entry(int returnval, bool enabled, int keycode, std::string text, ... TODO: submenu stuff)
     started = false;       // set to true when width and key calculations are done, and window is generated.
@@ -561,6 +569,15 @@ static int find_minimum_fold_width( const std::string &str, int max_lines,
     return min_width;
 }
 
+auto uilist::rows_are_numbered() const -> bool
+{
+#if defined(TILES)
+    return row_numbers_allowed && list_row_numbers_enabled();
+#else
+    return false;
+#endif
+}
+
 /**
  * Calculate sizes, populate arrays, initialize window
  */
@@ -568,15 +585,26 @@ void uilist::setup()
 {
     bool w_auto = !w_width_setup.fun;
 
+    pad_left = pad_left_setup.fun ? pad_left_setup.fun() : 0;
+    pad_right = pad_right_setup.fun ? pad_right_setup.fun() : 0;
+
+    // A menu that gives an entry a digit hotkey uses digits as input; keep them as hotkeys there.
+    const bool explicit_digit_hotkeys = std::any_of( entries.begin(), entries.end(),
+    []( const uilist_entry & entry ) {
+        return entry.enabled && entry.hotkey >= '0' && entry.hotkey <= '9';
+    } );
+    row_numbers = rows_are_numbered() && !explicit_digit_hotkeys;
+    const int gutter = row_numbers ? 2 : 0;
+
     // Space for a line between text and entries. Only needed if there is actually text.
     const int text_separator_line = text.empty() ? 0 : 1;
     if( w_auto ) {
-        w_width = 4;
+        w_width = 4 + gutter;
         if( !title.empty() ) {
-            w_width = utf8_width( remove_color_tags( title ) ) + 5;
+            w_width = utf8_width( remove_color_tags( title ) ) + 5 + gutter;
         }
     } else {
-        w_width = w_width_setup.fun();
+        w_width = w_width_setup.fun() + gutter;
     }
     const int max_desc_width = w_auto ? TERMX - 4 : w_width - 4;
 
@@ -591,9 +619,7 @@ void uilist::setup()
     max_column_len = 0;
     desc_lines = desc_lines_hint;
     std::vector<int> autoassign;
-    pad_left = pad_left_setup.fun ? pad_left_setup.fun() : 0;
-    pad_right = pad_right_setup.fun ? pad_right_setup.fun() : 0;
-    int pad = pad_left + pad_right + 2;
+    int pad = pad_left + pad_right + 2 + gutter;
     int descwidth_final = 0; // for description width guard
     const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
     constexpr auto navigation_keys = std::string_view( "wasd" );
@@ -606,6 +632,12 @@ void uilist::setup()
             }
         }
         std::erase_if( hotkeys, [navigation_keys]( const auto key ) { return navigation_keys.contains( key ); } );
+    }
+    if( row_numbers ) {
+        // The positional numbers own the digits, so auto-assigned shortcuts start at letters.
+        std::erase_if( hotkeys, []( const char key ) {
+            return key >= '0' && key <= '9';
+        } );
     }
     for( size_t i = 0; i < entries.size(); i++ ) {
         if( modern ) {
@@ -867,8 +899,10 @@ void uilist::show( ui_adaptor &ui )
             current_category = 0;
         }
         const auto category_label = "<< " + categories[current_category] + " >>";
-        const auto category_width = std::max( 1, w_width - pad_left - pad_right - 4 );
-        trim_and_print( window, point( pad_left + 2, estart++ ), category_width, c_yellow,
+        const auto category_width = std::max( 1, w_width - pad_left - pad_right - 4 -
+                                              ( row_numbers ? 2 : 0 ) );
+        trim_and_print( window, point( pad_left + 2 + ( row_numbers ? 2 : 0 ), estart++ ),
+                        category_width, c_yellow,
                         _color_error, "%s", category_label );
     }
 
@@ -910,8 +944,12 @@ void uilist::show( ui_adaptor &ui )
             }
 
             mvwprintz( window, point( pad_left + 1, estart + si ), co, padspaces );
+            if( row_numbers && si < 10 ) {
+                const char digit = si == 9 ? '0' : static_cast<char>( '0' + si + 1 );
+                mvwputch( window, point( pad_left + 1, estart + si ), hk_co, digit );
+            }
             if( entries[ ei ].hotkey >= 33 && entries[ ei ].hotkey < 126 ) {
-                mvwprintz( window, point( pad_left + 2, estart + si ), hk_co,
+                mvwprintz( window, point( pad_left + 2 + ( row_numbers ? 2 : 0 ), estart + si ), hk_co,
                            "%c", entries[ ei ].hotkey );
             }
             if( pad_size > 3 ) {
@@ -921,7 +959,7 @@ void uilist::show( ui_adaptor &ui )
                 // to be used.
                 const auto entry = utf8_wrapper( ei == selected ? remove_color_tags( entries[ ei ].txt ) :
                                                  entries[ ei ].txt );
-                trim_and_print( window, point( pad_left + 4, estart + si ),
+                trim_and_print( window, point( pad_left + 4 + ( row_numbers ? 2 : 0 ), estart + si ),
                                 max_entry_len, co, _color_error, "%s", entry.c_str() );
 
                 if( max_column_len && !entries[ ei ].ctxt.empty() ) {
@@ -933,11 +971,13 @@ void uilist::show( ui_adaptor &ui )
             }
             mvwzstr menu_entry_extra_text = entries[ei].extratxt;
             if( !menu_entry_extra_text.txt.empty() ) {
-                mvwprintz( window, point( pad_left + 1 + menu_entry_extra_text.left, estart + si ),
+                mvwprintz( window, point( pad_left + 1 + ( row_numbers ? 2 : 0 ) + menu_entry_extra_text.left,
+                                          estart + si ),
                            menu_entry_extra_text.color, menu_entry_extra_text.txt );
             }
             if( menu_entry_extra_text.sym != 0 ) {
-                mvwputch( window, point( pad_left + 1 + menu_entry_extra_text.left, estart + si ),
+                mvwputch( window, point( pad_left + 1 + ( row_numbers ? 2 : 0 ) + menu_entry_extra_text.left,
+                                         estart + si ),
                           menu_entry_extra_text.color, menu_entry_extra_text.sym );
             }
         } else {
@@ -947,7 +987,7 @@ void uilist::show( ui_adaptor &ui )
 
     if( fentries.empty() && filtering && !filter.empty() && vmax > 0 && pad_size > 2 &&
         get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
-        trim_and_print( window, point( pad_left + 2, estart ), pad_size - 2,
+        trim_and_print( window, point( pad_left + 2 + ( row_numbers ? 2 : 0 ), estart ), pad_size - 2,
                         text_color, _color_error, "%s", _( "--NO MATCHES--" ) );
     }
 
@@ -1140,7 +1180,25 @@ void uilist::query( bool loop, int timeout )
         keypress = event.get_first_input();
         const auto iter = keymap.find( keypress );
 
-        if( scrollby( scroll_amount_from_action( ret_act ) ) ) {
+        const bool digit_key = event.type == input_event_t::keyboard &&
+                               keypress >= '0' && keypress <= '9';
+        if( row_numbers && digit_key && !caller_handles_action( ret_act ) ) {
+            // Positional row numbers: a digit selects the visible row; Enter confirms it.
+            const int row = keypress == '0' ? 9 : keypress - '1';
+            const int filtered_index = vshift + row;
+            if( filtered_index >= 0 && filtered_index < static_cast<int>( fentries.size() ) ) {
+                const int entry_index = fentries[filtered_index];
+                const uilist_entry &row_entry = entries[entry_index];
+                if( row_entry.enabled || allow_disabled || hilight_disabled ) {
+                    viewport_held = false;
+                    fselected = filtered_index;
+                    selected = entry_index;
+                    if( callback != nullptr ) {
+                        callback->select( this );
+                    }
+                }
+            }
+        } else if( scrollby( scroll_amount_from_action( ret_act ) ) ) {
             viewport_held = false;
         } else if( modern && event.type == input_event_t::mouse &&
                    ( ret_act == "SELECT" || ret_act == "MOUSE_MOVE" ) ) {
@@ -1162,9 +1220,10 @@ void uilist::query( bool loop, int timeout )
                         const auto category_row = scrollbar_geometry().offset.y - 1;
                         const auto label = "<< " +
                                             categories[std::min( current_category, categories.size() - 1 )] + " >>";
-                        const auto label_x = pad_left + 2;
+                        const auto label_x = pad_left + 2 + ( row_numbers ? 2 : 0 );
                         const auto label_width = utf8_width( label );
-                        const auto max_width = std::max( 1, w_width - pad_left - pad_right - 4 );
+                        const auto max_width = std::max( 1, w_width - pad_left - pad_right - 4 -
+                                                         ( row_numbers ? 2 : 0 ) );
                         if( category_row >= 0 && cell.y == category_row && label_width <= max_width &&
                             cell.x >= label_x && cell.x < label_x + label_width ) {
                             if( cell.x < label_x + 2 ) {

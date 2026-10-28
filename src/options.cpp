@@ -2804,6 +2804,13 @@ void options_manager::add_options_graphics()
 
     get_option( "ITEM_THUMBNAILS" ).setPrerequisite( "USE_TILES" );
 
+    add( "NUMBERED_LIST_ROWS", graphics, translate_marker( "Numbered list rows" ),
+         translate_marker( "If true, item lists print 1-9 and 0 for the tenth visible row, and those keys select that row.  Tiles build with the Modern control scheme only." ),
+         true, COPT_CURSES_HIDE
+       );
+
+    get_option( "NUMBERED_LIST_ROWS" ).setPrerequisite( "USE_TILES" );
+
     add_empty_line();
 
     add( "PIXEL_MINIMAP", graphics, translate_marker( "Pixel minimap" ),
@@ -4130,6 +4137,15 @@ for( const PageItem &item : page.items_ ) {
     }
 }
 
+static auto options_rows_numbered() -> bool
+{
+#if defined(TILES)
+    return list_row_numbers_enabled();
+#else
+    return false;
+#endif
+}
+
 std::string options_manager::show( bool ingame, const bool world_options_only,
                                    const std::function<bool()> &on_quit )
 {
@@ -4168,6 +4184,7 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
     }
 
     input_context ctxt( "OPTIONS" );
+    ctxt.register_action( "ANY_INPUT" ); // positional row digits
     ctxt.register_cardinal();
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "NEXT_TAB" );
@@ -4351,6 +4368,7 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
         // 2 for the space between name and value column, 3 for the ">> "
         const size_t name_width = value_col - name_col - 2 - 3;
         const size_t value_width = getmaxx( w_options ) - value_col;
+        const bool numbered_rows = options_rows_numbered();
         // Draw options
         for( int i = iStartPos;
              i < iStartPos + ( iContentHeight > static_cast<int>( visible_items.size() ) ?
@@ -4358,7 +4376,14 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
 
             int line_pos = i - iStartPos; // Current line position in window.
 
-            mvwprintz( w_options, point( 1, line_pos ), c_white, "%d", visible_items[i] + 1 );
+            if( numbered_rows ) {
+                if( line_pos < 10 ) {
+                    const char digit = line_pos == 9 ? '0' : static_cast<char>( '1' + line_pos );
+                    mvwputch( w_options, point( 1, line_pos ), c_white, digit );
+                }
+            } else {
+                mvwprintz( w_options, point( 1, line_pos ), c_white, "%d", visible_items[i] + 1 );
+            }
 
             bool is_selected = visible_items[i] == iCurrentLine;
             if( is_selected ) {
@@ -4467,6 +4492,22 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
                                       iCurrentPage == iWorldOptPage;
 
         auto action = ctxt.handle_input();
+
+        if( options_rows_numbered() &&
+            ctxt.get_raw_input().type == input_event_t::keyboard ) {
+            const int key = ctxt.get_raw_input().get_first_input();
+            if( key >= '0' && key <= '9' ) {
+                const auto visible = visible_rows( page_items );
+                const int row = iStartPos + ( key == '0' ? 9 : key - '1' );
+                // Match the mouse path exactly: blank lines are not selectable and a digit on one
+                // changes nothing, rather than jumping to a neighbour the pointer did not name.
+                if( row >= 0 && row < static_cast<int>( visible.size() ) &&
+                    page_items[visible[row]].type != ItemType::BlankLine ) {
+                    iCurrentLine = visible[row];
+                }
+                continue;
+            }
+        }
 
         if( world_options_only && ( action == "NEXT_TAB" || action == "PREV_TAB" ||
                                     ( action == "QUIT" && ( !on_quit || on_quit() ) ) ) ) {

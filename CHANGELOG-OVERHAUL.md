@@ -4,6 +4,28 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-26
+
+### Added
+
+- Numbered rows in the tiles build with Modern controls: list menus that do not already use digits
+  for input print `1`–`9` and `0` for the tenth visible row. That covers inventory and the other item
+  pickers, both pickup lists, Enter's action groups, the item-action menu and the rest of the
+  uilists, plus the construction, mission and options lists. A number moves the highlight, Enter
+  confirms, and scrolling renumbers. Item rows show their thumbnail beside the number. Options → Graphics → Numbered list rows turns it off.
+- Pickup accepts `#` for an amount in both pickup menus when numbered rows are on, so digits can
+  select rows without losing typed counts. Menu entries keep their letters; auto-assigned menu
+  shortcuts start at letters instead of digits.
+- Lists that use digits for input keep them: use, drop and trade amounts, menus with an entry bound
+  to a digit, and advanced inventory's source-area keys.
+- The inventory Reassign prompt asks for a letter while rows are numbered, and Swap Inventory
+  Letters no longer lists digits.
+
+### Changed
+
+- Numeric inventory shortcuts yield to row numbers in the tiles numbered lists; those rows show a
+  free letter instead. Terminal builds and unnumbered lists keep manual digit shortcuts.
+
 ## 2026-10-25
 
 ### Added

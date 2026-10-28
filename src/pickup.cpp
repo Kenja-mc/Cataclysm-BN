@@ -59,6 +59,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <exception>
 #include <functional>
 #include <list>
 #include <map>
@@ -689,6 +690,14 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
         catacurses::window w_pickup;
         catacurses::window w_item_info;
 
+        // Row numbers take the digits, so typed counts move behind SET_COUNT.
+        auto numbered_rows = false;
+        auto number_cells = 0;
+#if defined(TILES)
+        numbered_rows = list_row_numbers_enabled();
+        number_cells = list_row_number_gutter_cells();
+#endif
+
         ui_adaptor ui;
         ui.on_screen_resize( [&]( ui_adaptor & ui ) {
             const int itemsH = std::min( 25, TERMY / 2 );
@@ -713,7 +722,7 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
             //find max length of item name and resize pickup window width
             for( const std::list<item_stack::iterator> &cur_list : stacked_here ) {
                 const item &this_item = **cur_list.front();
-                const int item_len = utf8_width( remove_color_tags( this_item.display_name() ) ) + 10 + icon_cells;
+                const int item_len = utf8_width( remove_color_tags( this_item.display_name() ) ) + 10 + icon_cells + number_cells;
                 if( item_len > pickupW && item_len < TERMX ) {
                     pickupW = item_len;
                 }
@@ -760,6 +769,9 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
         ctxt.register_action( "FILTER" );
         ctxt.register_action( "WEAR", to_translation( "Wear" ) );
         ctxt.register_action( "WIELD", to_translation( "Wield" ) );
+        if( numbered_rows ) {
+            ctxt.register_action( "SET_COUNT", to_translation( "Set pickup count" ) );
+        }
         if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
             ctxt.register_action( "COORDINATE" );
             ctxt.register_action( "MOUSE_MOVE" );
@@ -827,8 +839,17 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
                         icolor = hilite( c_white );
                     }
 
+                    if( numbered_rows ) {
+                        const int visible_row = cur_it - start + 1;
+                        if( visible_row <= 10 ) {
+                            const char digit = visible_row == 10 ? '0' :
+                                               static_cast<char>( '0' + visible_row );
+                            mvwputch( w_pickup, point( 0, 1 + ( cur_it % maxitems ) ), icolor, digit );
+                        }
+                    }
+
                     if( cur_it < static_cast<int>( pickup_chars.size() ) ) {
-                        mvwputch( w_pickup, point( icon_cells, 1 + ( cur_it % maxitems ) ), icolor,
+                        mvwputch( w_pickup, point( number_cells + icon_cells, 1 + ( cur_it % maxitems ) ), icolor,
                                   static_cast<char>( pickup_chars[cur_it] ) );
                     } else if( cur_it < static_cast<int>( pickup_chars.size() ) + static_cast<int>
                                ( pickup_chars.size() ) *
@@ -836,10 +857,12 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
                         int p = cur_it - pickup_chars.size();
                         int p1 = p / pickup_chars.size();
                         int p2 = p % pickup_chars.size();
-                        mvwprintz( w_pickup, point( icon_cells, 1 + ( cur_it % maxitems ) ), icolor, "`%c%c",
+                        mvwprintz( w_pickup, point( number_cells + icon_cells, 1 + ( cur_it % maxitems ) ), icolor,
+                                   "`%c%c",
                                    static_cast<char>( pickup_chars[p1] ), static_cast<char>( pickup_chars[p2] ) );
                     } else {
-                        mvwputch( w_pickup, point( icon_cells, 1 + ( cur_it % maxitems ) ), icolor, ' ' );
+                        mvwputch( w_pickup, point( number_cells + icon_cells, 1 + ( cur_it % maxitems ) ),
+                                  icolor, ' ' );
                     }
                     if( getitem[true_it].parent ) {
                         const pickup_count &parent = getitem[*getitem[true_it].parent];
@@ -899,11 +922,11 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
                         item_name = string_format( "<color_light_red>!</color> %s", item_name );
                     }
 
-                    trim_and_print( w_pickup, point( 6 + icon_cells, 1 + ( cur_it % maxitems ) ),
-                                    pickupW - 4 - icon_cells, icolor, item_name );
+                    trim_and_print( w_pickup, point( 6 + icon_cells + number_cells, 1 + ( cur_it % maxitems ) ),
+                                    pickupW - 4 - icon_cells - number_cells, icolor, item_name );
 #if defined(TILES)
                     register_item_thumbnail( w_pickup, this_item, {
-                        .cell = point( 0, 1 + ( cur_it % maxitems ) ), .size = point( icon_cells, 1 )
+                        .cell = point( number_cells, 1 + ( cur_it % maxitems ) ), .size = point( icon_cells, 1 )
                     } );
 #endif
                 }
@@ -933,6 +956,11 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
 
             right_print( w_pickup, maxitems + 3, 0, c_light_gray, string_format( _( "[%s] Pick up" ),
                     ctxt.get_desc( "CONFIRM", 1 ) ) );
+
+            if( numbered_rows ) {
+                center_print( w_pickup, maxitems + 3, c_light_gray, string_format( _( "[%s] Count" ),
+                              ctxt.get_desc( "SET_COUNT", 1 ) ) );
+            }
 
             const std::string fmted_weight_predict = colorize(
                     string_format( "%.1f", round_up( convert_weight( weight_predict ), 1 ) ),
@@ -1017,17 +1045,44 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
 
             if( action == "ANY_INPUT" &&
                 raw_input_char >= '0' && raw_input_char <= '9' ) {
-                int raw_input_char_value = static_cast<char>( raw_input_char ) - '0';
-                if( !itemcount ) {
-                    itemcount.emplace( 0 );
+                if( numbered_rows ) {
+                    // A number selects the visible row with that number; it types no count.
+                    const int row = raw_input_char == '0' ? 9 : raw_input_char - '1';
+                    const int item_idx = start + row;
+                    if( item_idx >= 0 && item_idx < static_cast<int>( matches.size() ) ) {
+                        selected = item_idx;
+                        iScrollPos = 0;
+                    }
+                } else {
+                    int raw_input_char_value = static_cast<char>( raw_input_char ) - '0';
+                    if( !itemcount ) {
+                        itemcount.emplace( 0 );
+                    }
+                    *itemcount *= 10;
+                    *itemcount += raw_input_char_value;
+                    if( *itemcount < 0 ) {
+                        *itemcount = 0;
+                    }
+                    if( *itemcount == 0 ) {
+                        itemcount.reset();
+                    }
                 }
-                *itemcount *= 10;
-                *itemcount += raw_input_char_value;
-                if( *itemcount < 0 ) {
-                    *itemcount = 0;
-                }
-                if( *itemcount == 0 ) {
+            } else if( action == "SET_COUNT" ) {
+                string_input_popup popup;
+                popup.title( _( "Pick up how many?" ) )
+                .width( 12 )
+                .only_digits( true )
+                .text( itemcount ? std::to_string( *itemcount ) : std::string() );
+                const std::string entered = popup.query_string();
+                if( !popup.canceled() ) {
                     itemcount.reset();
+                    if( !entered.empty() ) {
+                        try {
+                            itemcount = std::stoi( entered );
+                        } catch( const std::exception & ) {
+                            itemcount.reset();
+                        }
+                    }
                 }
             } else if( action == "SCROLL_UP" ) {
                 iScrollPos--;

@@ -27,6 +27,9 @@
 #include "utils/url.h"
 #include "options.h"
 #include "ui.h"
+#if defined(TILES)
+#include "sdltiles.h"
+#endif
 
 struct action_entry {
     std::string action;
@@ -62,6 +65,7 @@ bool run(
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    ctxt.register_action( "ANY_INPUT" ); // positional row digits
 
     // The list is driven by hand below, so uilist's built-in mouse handling never runs; answer
     // the modern scheme's mouse here instead. Classic keeps keyboard-only navigation.
@@ -370,6 +374,27 @@ bool run(
         ui_manager::redraw();
 
         const std::string &action = ctxt.handle_input();
+
+        // This menu runs its own loop, so positional row digits are applied here.
+#if defined(TILES)
+        if( action_list.row_numbers_active() &&
+            ctxt.get_raw_input().type == input_event_t::keyboard ) {
+            const int key = ctxt.get_raw_input().get_first_input();
+            if( key >= '0' && key <= '9' ) {
+                const int row = key == '0' ? 9 : key - '1';
+                const int index = action_list.vshift + row;
+                if( index >= 0 && index < num_actions ) {
+                    const uilist_entry &row_entry = action_list.entries[index];
+                    if( row_entry.enabled || action_list.allow_disabled ||
+                        action_list.hilight_disabled ) {
+                        selected_action = index;
+                        action_list.set_selected( selected_action );
+                    }
+                }
+                continue;
+            }
+        }
+#endif
 
         if( modern && action == "SELECT" ) {
             if( const auto mouse = ctxt.get_coordinates( action_list.window ) ) {

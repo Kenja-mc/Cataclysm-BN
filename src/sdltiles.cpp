@@ -1629,6 +1629,18 @@ auto item_thumbnail_gutter_cells() -> int
     return use_tiles && item_thumbnails_enabled ? item_thumbnail_cells : 0;
 }
 
+auto list_row_numbers_enabled() -> bool
+{
+    return use_tiles &&
+           get_option<std::string>( "CONTROL_SCHEME" ) == "modern" &&
+           get_option<bool>( "NUMBERED_LIST_ROWS" );
+}
+
+auto list_row_number_gutter_cells() -> int
+{
+    return list_row_numbers_enabled() ? 2 : 0;
+}
+
 auto register_item_thumbnail( const catacurses::window &win, const item &itm,
                               const item_thumbnail_options &opts ) -> void
 {

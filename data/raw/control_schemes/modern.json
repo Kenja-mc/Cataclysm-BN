@@ -2264,5 +2264,19 @@
     "category": "DEFAULTMODE",
     "id": "search_action",
     "bindings": [ { "input_method": "keyboard", "key": "CTRL+F" } ]
+  },
+  {
+    "type": "keybinding",
+    "name": "Set pickup count",
+    "category": "PICKUP",
+    "id": "SET_COUNT",
+    "bindings": [ { "input_method": "keyboard", "key": "#" } ]
+  },
+  {
+    "type": "keybinding",
+    "name": "Set pickup count",
+    "category": "INVENTORY",
+    "id": "SET_COUNT",
+    "bindings": [ { "input_method": "keyboard", "key": "#" } ]
   }
 ]

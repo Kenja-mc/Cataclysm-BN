@@ -27,6 +27,20 @@ direction prompts. Top-row numbers do not move you on the map.
   craft, even when the inventory is empty.
   **Tab** opens advanced inventory from this screen; **Shift+Tab** switches category selection.
   The footer's advanced-inventory hint is clickable in both schemes; Classic keeps its keys.
+- **Numbered rows** (tiles build, Modern). List menus built on the shared list or uilist widgets
+  print `1`–`9` and `0` for the tenth visible selectable row when the menu does not use digits for
+  input. A number moves the highlight to the row printed with it; **Enter** confirms. That covers
+  inventory and the other item pickers (with the item's thumbnail beside the number), both pickup
+  lists, Enter's action groups, the item-action menu, help and the other uilist screens, plus the
+  construction, mission and options lists. Scrolling renumbers, so the numbers always name what is on
+  screen; rows past ten keep their letters and stay reachable by the arrow keys and the mouse wheel.
+  Existing letters keep working.
+  Lists where digits already choose something keep those digits: the use and drop amount lists,
+  trade, menus that assign a digit to an entry (reading and training choices), and advanced
+  inventory, where digits pick the source area. The pickup amount prompt moves to **`#`** in both
+  pickup menus. When rows are numbered, the inventory Reassign prompt asks for a letter, because a
+  digit can no longer select an item. Options → Graphics → **Numbered list rows** turns the gutter
+  and the number keys off. The terminal build gets no row numbers or new digit keys.
 - **Space — the obvious action.** With a tile selected (mouse hover or click, arrow aim, or a
   Select tile key), Space runs that tile's most obvious action without asking, in this order:
   **open or close a door**, **pick up a pile**, **use stairs**, **loot a vehicle cargo part**,
@@ -194,9 +208,11 @@ own tile without a menu, using the normal pickup activity and its capacity handl
 the area pickup menu; `g`, Enter or Space picks up marked items, or the highlighted item if none
 are marked. Escape cancels.
 Inside pickup, local shortcuts act on the highlighted item: `h` wields it and `W` wears it.
-With the mouse, hover highlights a row, left click marks or unmarks it, and the wheel moves through
-the list. Right click lists Pick up, Wield and Wear; each acts on that item alone. The footer shows
-the bound keys. Classic keeps the upstream menu, including Enter doing nothing with no marked items.
+With number rows on, `1`–`9` and `0` move the highlight and `#` sets how many to take; Classic and
+unnumbered lists keep typing the amount with the digits. With the mouse, hover highlights a row,
+left click marks or unmarks it, and the wheel moves through the list. Right click lists Pick up,
+Wield and Wear; each acts on that item alone. The footer shows the bound keys. Classic keeps the
+upstream menu, including Enter doing nothing with no marked items.
 
 **Options menu.** A two-row key guide keeps navigation, help and exit visible at 80×25. In Modern,
 `r` resets the highlighted option to its default and `R` resets the whole page after a Yes/No
@@ -347,9 +363,10 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 - **Cliff edge shading** (orthographic tiles): a narrow dark edge marks a visible drop into open
   air without covering the ground texture. Hidden openings are not revealed. Options → Graphics →
   Cliff edge shading restores the original view.
-- **Item thumbnails in UI** (tiles): inventory and pickup rows show the item's real sprite,
-  including jewelry variants and corpses. Filtering clears old thumbnails, and sprites stay inside
-  their list window. Options → Graphics → Item thumbnails in UI turns them off.
+- **Item thumbnails in UI** (tiles): inventory, the wield/wear/read/eat pickers, the pickup menu and
+  the other item lists that share their row layout show the item's real sprite, including jewelry
+  variants and corpses. Filtering clears old thumbnails, and sprites stay inside their list window.
+  Options → Graphics → Item thumbnails in UI turns them off.
 - **Mood lighting** (tiles): atomic lamps cast green light, blue glowsticks cast blue light, and
   candles and fuel lanterns cast warm light. Other colored emitters use the same native lighting
   path. Brightness, range, fuel use and game rules are unchanged. Options → Graphics → Colored
