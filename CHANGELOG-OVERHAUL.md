@@ -12,6 +12,9 @@ Upstream's own changes are in `docs/en/game/changelog`.
   card, a one-line ribbon and a loadout deck over the map, and a right sidebar of minimap, body,
   surroundings and log under section rules. Smaller screens keep the grouped layout; saved
   layouts are unchanged.
+- Space talks to a neighbouring NPC; NPC replies are numbered in Modern with W/S to move; the
+  mouse wheel zooms in Look and the overmap, the overmap pans with a left or right drag, Tab pans
+  to an off-screen hostile, and hovering fog shows remembered terrain. The default volumes are 50.
 - Hotbar: six saved quick slots on `1`–`6` in Modern, assigned with `Z`, shown in the fusion deck.
 
 ## 2026-10-27

@@ -39,7 +39,7 @@ direction prompts. Top-row numbers do not move you on the map.
   The footer's advanced-inventory hint is clickable in both schemes; Classic keeps its keys.
 - **Space — the obvious action.** With a tile selected (mouse hover or click, arrow aim, or a
   Select tile key), Space runs that tile's most obvious action without asking, in this order:
-  **open or close a door**, **pick up a pile**, **use stairs**, **loot a vehicle cargo part**,
+  **open or close a door**, **talk to a neighbouring NPC**, **pick up a pile**, **use stairs**, **loot a vehicle cargo part**,
   **butcher a corpse**, **vault a climbable obstacle**, **examine**, then **smash**. The rest of the
   tile's actions stay in one menu, which appears only for a genuine tie or a destructive choice, so
   Space never auto-smashes. Vaulting a lone climbable obstacle such as a half-height sandbag runs at
@@ -51,6 +51,12 @@ direction prompts. Top-row numbers do not move you on the map.
   smashes what is bashable there instead (a web, a corpse, a door that will not open), so one key
   attacks creatures and breaks obstacles. Smashing still spends its normal moves and can ruin a
   brittle weapon.
+- **NPC dialogue** numbers its replies in Modern: `1`–`9` and `0` pick a reply, `W`/`S` (or the
+  arrows) move the highlight and Enter confirms; beyond ten replies the rest use letters. Classic
+  keeps lettered replies.
+- **Tab** pulls the view toward a hostile that is past the edge of the screen. **Look** and the
+  **overmap** zoom with the mouse wheel; the overmap also pans by dragging with either mouse
+  button. Hovering fog of war shows the terrain you remember there.
 - **Select keys — unbound by default.** Tile selection is a mouse action. The eight **Select tile**
   actions stay in the keybindings menu: binding them (for example to Shift+WASD/QEZC) moves the
   selection marker one tile per press, starting at your position and accumulating. The Mouse View
@@ -502,7 +508,7 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 
 Open **Enter → Misc → Sound & volume** to toggle **Sound**, **Music**, **Music follows the game
 state** and **Monster ambience**, or adjust music, sound effect, ambient and monster ambience volumes.
-Music starts on; it needs a soundpack with music. **Monster ambience** starts off: it plays the idle
+Music starts on; it needs a soundpack with music. Music, sound effect, ambient and monster ambience volumes start at 50 (a saved value is kept). **Monster ambience** starts off: it plays the idle
 sound a monster's data names, on its own 8–20 second pace per creature. No shipped monster declares
 one and no shipped soundpack has the audio, so a mod must add both. On sound builds, a missing clip
 or zero volume leaves no cue or marker. Idle sounds never wake a sleeper or interrupt an activity;

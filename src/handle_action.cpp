@@ -2138,6 +2138,14 @@ bool game::handle_action()
             u.clear_destination();
             destination_preview.clear();
             if( aim_reticle::cycle( u, m, action == "PREV_TARGET" ) ) {
+                // A target past the edge of the view pulls the view toward it; a near one lets it settle.
+                const auto rel = *aim_reticle::pos() - u.bub_pos();
+                const auto off_screen = std::abs( rel.x() ) >= TERRAIN_WINDOW_WIDTH / 2 - 1 ||
+                                        std::abs( rel.y() ) >= TERRAIN_WINDOW_HEIGHT / 2 - 1;
+                u.view_offset.x() = off_screen ? rel.x() : driving_view_offset.x;
+                u.view_offset.y() = off_screen ? rel.y() : driving_view_offset.y;
+                ter_view_p = u.bub_pos() + u.view_offset;
+                invalidate_main_ui_adaptor();
                 liveview.show( *aim_reticle::pos() );
             } else {
                 liveview.hide();
