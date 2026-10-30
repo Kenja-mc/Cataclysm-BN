@@ -11,6 +11,7 @@
 #include "catacharset.h"
 #include "cursesdef.h"
 #include "hud_draw.h"
+#include "game.h"
 #include "hotbar.h"
 #include "hud_snapshot.h"
 #include "input.h"
@@ -28,15 +29,20 @@ namespace
 using namespace hud_draw;
 
 constexpr auto status_width = 38;
-constexpr auto status_height = 10;
+constexpr auto status_height = 11;
 constexpr auto deck_height = 7;
 
+/// Icon, the need's name and its state; an unmet need replaces "ok" with its own wording.
 auto need( const catacurses::window &w, const point at, const char *icon, const nc_color icon_color,
            const hud_snapshot::need &n ) -> void
 {
-    const auto x = text( w, at, icon_color, icon );
-    text( w, point( x + 1, at.y ), n.fine ? pal::muted() : n.color,
-          n.fine ? std::string( _( "ok" ) ) : n.text );
+    auto x = text( w, at, icon_color, icon );
+    if( n.fine ) {
+        x = text( w, point( x + 1, at.y ), pal::muted(), n.label + " " );
+        text( w, point( x, at.y ), pal::muted(), _( "ok" ) );
+    } else {
+        text( w, point( x + 1, at.y ), n.color, n.text );
+    }
 }
 
 struct vital_options {
@@ -60,22 +66,22 @@ auto draw_status( const canvas &area, const hud_snapshot::snapshot &s ) -> void
     const auto w = panel( area, { .at = point_zero, .width = status_width, .height = status_height } );
     card( w, { .title = _( "STATUS" ), .summary = s.stance, .summary_color = s.stance_color } );
     vital( w, { .y = 1, .icon = glyph::hp, .color = s.hp_color, .value = s.hp_percent, .max = 100,
-                .label = string_format( "%d%%", s.hp_percent ) } );
+                .label = string_format( _( "Health %d%%" ), s.hp_percent ) } );
     vital( w, { .y = 2, .icon = glyph::stamina, .color = pal::stamina(), .value = s.stamina,
-                .max = s.stamina_max, .label = string_format( "%d%%", s.stamina * 100 / s.stamina_max ) } );
+                .max = s.stamina_max, .label = string_format( _( "Stamina %d%%" ), s.stamina * 100 / s.stamina_max ) } );
     vital( w, { .y = 3, .icon = glyph::focus, .color = pal::focus(), .value = s.focus, .max = 100,
-                .label = std::to_string( s.focus ) } );
-    text( w, point( 28, 3 ), s.pain_level > 0 ? pal::danger() : pal::muted(),
-          string_format( "%s %d", glyph::pain, s.pain_level ) );
-    hline( w, point( 2, 4 ), status_width - 4, pal::border() );
-    need( w, point( 2, 5 ), glyph::thirst, pal::thirst(), s.thirst );
-    need( w, point( 20, 5 ), glyph::rest, pal::rest(), s.rest );
-    need( w, point( 2, 6 ), glyph::hunger, pal::hunger(), s.hunger );
-    need( w, point( 20, 6 ), glyph::heat, pal::heat(), s.heat );
-    auto x = text( w, point( 2, 7 ), s.weight_color, string_format( "%.1f kg", s.weight_kg ) );
-    x = dot( w, point( x, 7 ) );
-    text( w, point( x, 7 ), s.volume_color, string_format( "%.1f L", s.volume_l ) );
-    text( w, point( 2, 8 ), pal::muted(), string_format( "Str %d  Dex %d  Int %d  Per %d", s.str, s.dex, s.intel, s.per ) );
+                .label = string_format( _( "Focus %d" ), s.focus ) } );
+    text( w, point( 2, 4 ), s.pain_level > 0 ? pal::danger() : pal::muted(),
+          string_format( _( "%s Pain %d" ), glyph::pain, s.pain_level ) );
+    hline( w, point( 2, 5 ), status_width - 4, pal::border() );
+    need( w, point( 2, 6 ), glyph::thirst, pal::thirst(), s.thirst );
+    need( w, point( 20, 6 ), glyph::rest, pal::rest(), s.rest );
+    need( w, point( 2, 7 ), glyph::hunger, pal::hunger(), s.hunger );
+    need( w, point( 20, 7 ), glyph::heat, pal::heat(), s.heat );
+    auto x = text( w, point( 2, 8 ), s.weight_color, string_format( "%.1f kg", s.weight_kg ) );
+    x = dot( w, point( x, 8 ) );
+    text( w, point( x, 8 ), s.volume_color, string_format( "%.1f L", s.volume_l ) );
+    text( w, point( 2, 9 ), pal::muted(), string_format( "Str %d  Dex %d  Int %d  Per %d", s.str, s.dex, s.intel, s.per ) );
 }
 
 auto draw_ribbon( const canvas &area, const hud_snapshot::snapshot &s ) -> void
@@ -91,7 +97,7 @@ auto draw_ribbon( const canvas &area, const hud_snapshot::snapshot &s ) -> void
     x = dot( w, point( x, 0 ) );
     x = text( w, point( x, 0 ), s.wind_color, s.wind );
     x = dot( w, point( x, 0 ) );
-    x = text( w, point( x, 0 ), pal::muted(), string_format( _( "speed %d  sound %s  mood %d" ), s.speed, s.sound, s.morale ) );
+    x = text( w, point( x, 0 ), pal::muted(), string_format( _( "spd %d  snd %s  mood %d" ), s.speed, s.sound, s.morale ) );
     if( s.safe_mode ) {
         x = dot( w, point( x, 0 ) );
         text( w, point( x, 0 ), s.safe_color, string_format( "%s %s", glyph::safe, _( "safe" ) ) );
@@ -251,6 +257,23 @@ auto draw( const avatar &you, const catacurses::window &w_terrain ) -> void
     draw_ribbon( area, s );
     draw_deck( you, area, s );
     end_frame();
+}
+
+auto draw_minimap( avatar &, const catacurses::window &w ) -> void
+{
+    edge( w );
+    wnoutrefresh( w );
+    // The pixel minimap is drawn into a window one column inside the sidebar edge, so it never
+    // overlaps the rule and edge lines.
+    static auto inner = catacurses::window();
+    const auto at = point( getbegx( w ) + 1, getbegy( w ) );
+    if( !inner || getmaxx( inner ) != getmaxx( w ) - 1 || getmaxy( inner ) != getmaxy( w ) ||
+        getbegx( inner ) != at.x || getbegy( inner ) != at.y ) {
+        inner = catacurses::newwin( getmaxy( w ), getmaxx( w ) - 1, at );
+    }
+    werase( inner );
+    g->draw_pixel_minimap( inner );
+    wnoutrefresh( inner );
 }
 
 auto draw_map_rule( avatar &you, const catacurses::window &w ) -> void

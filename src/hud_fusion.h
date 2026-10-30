@@ -20,6 +20,8 @@ auto active() -> bool;
 auto draw( const avatar &you, const catacurses::window &w_terrain ) -> void;
 
 /// Sidebar sections; each draws its rule on its first row.
+/// The pixel minimap, inset one column from the sidebar edge.
+auto draw_minimap( avatar &you, const catacurses::window &w ) -> void;
 auto draw_map_rule( avatar &you, const catacurses::window &w ) -> void;
 auto draw_body( avatar &you, const catacurses::window &w ) -> void;
 auto draw_around( avatar &you, const catacurses::window &w ) -> void;

@@ -2813,7 +2813,7 @@ auto initialize_fusion_panels() -> std::vector<window_panel>
 #if defined(TILES)
     ret.emplace_back( hud_fusion::draw_map_rule, translate_marker( "Map title" ), 1, 44, true,
                       default_render, true );
-    ret.emplace_back( draw_mminimap, translate_marker( "Map" ), -1, 44, true, default_render, true );
+    ret.emplace_back( hud_fusion::draw_minimap, translate_marker( "Map" ), -1, 44, true, default_render, true );
 #endif
     ret.emplace_back( hud_fusion::draw_body, translate_marker( "Body" ), 7, 44, true, limbs_panel );
     ret.emplace_back( hud_fusion::draw_around, translate_marker( "Around" ), 4, 44, true,
