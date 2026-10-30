@@ -48,9 +48,9 @@ def assert_hud_on_right(screen, cols=140):
     return sidebar
 
 
-def test_grouped_sidebar_fresh_default_has_no_map_overlays(_g):
-    # No panel_options.json is seeded: this is the actual first-run layout, not an option mock.
-    game = Game("bn-e2e-grouped-default", options=OPTIONS, layout=None)
+def test_grouped_sidebar_layout_has_no_map_overlays(_g):
+    # Fusion is the fresh default on large screens (hud_fusion.py); grouped is chosen explicitly.
+    game = Game("bn-e2e-grouped-default", options=OPTIONS, layout="grouped")
     try:
         start_new_game(game)
         game.define_lua(HELPERS)
@@ -109,6 +109,6 @@ def test_grouped_sidebar_instruments_do_not_duplicate_clock(_g):
         assert action_clock(game) == before, "instrument knowledge must not spend time"
 
 
-TESTS = [test_grouped_sidebar_fresh_default_has_no_map_overlays,
+TESTS = [test_grouped_sidebar_layout_has_no_map_overlays,
          test_grouped_sidebar_resize_keeps_urgent_needs_and_controls,
          test_grouped_sidebar_instruments_do_not_duplicate_clock]

@@ -416,11 +416,20 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   hands its reading back to the sidebar. Positions, stacking order, collapse and visibility save
   per character. The Vehicle window appears only aboard or while remote-controlling.
   Both the terminal and tiles builds draw the windows.
+- **Fusion HUD** is the layout new configurations start with, on screens of at least 140×36
+  cells; smaller screens draw grouped instead. A rounded **STATUS** card (health, stamina and
+  focus gauges, pain, needs, carry load), a one-line ribbon (date and time, weather, light, wind,
+  safe mode) and a **LOADOUT** deck (weapon card with ammo, Strength to Perception, speed, sound,
+  mood and one row of key hints) sit over the map. The right sidebar stacks the pixel minimap, **BODY**,
+  **AROUND** (the monster compass) and **LOG** under section rules; the log takes the remaining
+  rows. The map shrinks to the free area, so the character stays centred. Select fusion, grouped
+  or another layout in **Enter → Misc → Sidebar Options**. In tiles the Mouse View box moves over
+  the minimap so the status card stays visible.
 - **Grouped right sidebar**, based on the Opus HUD proposal: its HUD groups are the windows above,
   so the sidebar keeps Location, Controls and the optional Map. The Location group keeps its 5×5
   overmap chunk; the larger pixel minimap remains an optional **Map** panel in Sidebar Options.
   Below 40 rows, any remaining groups lose their borders and titles.
-  New configurations use grouped. Existing saved layouts stay unchanged. Select **grouped** (or
+  Existing saved layouts stay unchanged. Select **grouped** (or
   labels / labels-narrow) in **Enter → Misc → Sidebar Options**. **Options → Interface → Floating
   HUD windows** turns the windows off; Classic and compact layouts always keep their combined
   panels. **Options → Interface → Sidebar position** keeps the sidebar right or left, and the

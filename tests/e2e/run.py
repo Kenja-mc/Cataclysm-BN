@@ -79,6 +79,7 @@ from world_presets import TESTS as WORLD_PRESETS_TESTS
 from interaction_routes import TESTS as INTERACTION_ROUTES_TESTS
 from tutorial_routes import TESTS as TUTORIAL_ROUTES_TESTS
 from grouped_sidebar import TESTS as GROUPED_SIDEBAR_TESTS
+from hud_fusion import TESTS as HUD_FUSION_TESTS
 from unbound_mouse import TESTS as UNBOUND_MOUSE_TESTS
 from menu_scrollbars import TESTS as MENU_SCROLLBARS_TESTS
 from overmap_controls import TESTS as OVERMAP_CONTROLS_TESTS
@@ -152,6 +153,7 @@ MODULES = [
     ("interaction_routes", INTERACTION_ROUTES_TESTS),
     ("tutorial_routes", TUTORIAL_ROUTES_TESTS),
     ("grouped_sidebar", GROUPED_SIDEBAR_TESTS),
+    ("hud_fusion", HUD_FUSION_TESTS),
     ("unbound_mouse", UNBOUND_MOUSE_TESTS),
     ("menu_scrollbars", MENU_SCROLLBARS_TESTS),
     ("overmap_controls", OVERMAP_CONTROLS_TESTS),
@@ -226,7 +228,7 @@ SMOKE = [
     "test_status_short_narrow_fallback_retains_needs",
     "test_contextual_left_click_opens_and_closes_without_walking",
     "test_classic_tutorial_preserves_classic_controls",
-    "test_grouped_sidebar_fresh_default_has_no_map_overlays",
+    "test_grouped_sidebar_layout_has_no_map_overlays",
     "test_unbound_mouse_wheel_is_silent",
     "test_uilist_scrollbar_jumps_and_arrows",
     "test_m_toggles_overmap_without_travel",

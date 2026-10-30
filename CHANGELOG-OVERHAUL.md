@@ -4,6 +4,15 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-29
+
+### Added
+
+- Fusion HUD, the layout new configurations start with on screens of at least 140×36: a status
+  card, a one-line ribbon and a loadout deck over the map, and a right sidebar of minimap, body,
+  surroundings and log under section rules. Smaller screens keep the grouped layout; saved
+  layouts are unchanged.
+
 ## 2026-10-27
 
 ### Added
