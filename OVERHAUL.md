@@ -430,12 +430,14 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   Both the terminal and tiles builds draw the windows.
 - **Fusion HUD** is the layout new configurations start with, on screens of at least 140×36
   cells; smaller screens draw grouped instead. A rounded **STATUS** card (health, stamina and
-  focus gauges, pain, needs, carry load), a one-line ribbon (date and time, weather, light, wind,
-  safe mode) and a **LOADOUT** deck (weapon card with ammo, Strength to Perception, speed, sound,
-  mood and one row of key hints) sit over the map. The right sidebar stacks the pixel minimap, **BODY**,
-  **AROUND** (the monster compass) and **LOG** under section rules; the log takes the remaining
-  rows. The map shrinks to the free area, so the character stays centred. Select fusion, grouped
-  or another layout in **Enter → Misc → Sidebar Options**. In tiles the Mouse View box moves over
+  focus gauges, pain, needs), a one-line ribbon (date and time, weather, light, wind,
+  safe mode) and a **LOADOUT** deck (weapon card with ammo, hotbar slots and
+  one row of key hints) sit over the map. STATUS also carries mood, speed, noise and the four
+  stats. The right sidebar stacks the pixel minimap, **BODY** (one line while every limb is
+  healthy), **AROUND** (each creature in sight by name, direction and distance, hostiles first)
+  and **LOG** (messages in the log's own colours) under section rules; the log takes the
+  remaining rows. With no hotbar slot assigned, the deck says how to fill one. The map shrinks to
+  the free area, so the character stays centred. Select fusion, grouped or another layout in **Enter → Misc → Sidebar Options**. In tiles the Mouse View box moves over
   the minimap so the status card stays visible.
 - **Hotbar** (Modern, fusion deck): six quick slots on `1`–`6`. **Ctrl+T** opens *Assign a hotbar
   slot*: pick a slot, then an item (Esc clears it). A slot remembers the item type, not the stack;

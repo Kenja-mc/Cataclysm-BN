@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <vector>
 
@@ -88,10 +89,13 @@ auto draw_status( const canvas &area, const hud_snapshot::snapshot &s ) -> void
     need( w, point( 20, 6 ), glyph::rest, pal::rest(), s.rest );
     need( w, point( 2, 7 ), glyph::hunger, pal::hunger(), s.hunger );
     need( w, point( 20, 7 ), glyph::heat, pal::heat(), s.heat );
-    auto x = text( w, point( 2, 8 ), s.weight_color, string_format( "%.1f kg", s.weight_kg ) );
-    x = dot( w, point( x, 8 ) );
-    text( w, point( x, 8 ), s.volume_color, string_format( "%.1f L", s.volume_l ) );
+    // Carry weight already heads the LOADOUT deck; this row holds what the old Movement panel read.
+    text( w, point( 2, 8 ), pal::muted(), string_format( _( "Speed %d   Noise %s   Moves %d" ),
+                                                        s.speed, s.sound, s.move_counter ) );
     text( w, point( 2, 9 ), pal::muted(), string_format( "Str %d  Dex %d  Int %d  Per %d", s.str, s.dex, s.intel, s.per ) );
+    // Mood changes how fast you learn and whether you can craft, so it sits beside pain.
+    text( w, point( 20, 4 ), s.morale < -10 ? pal::danger() : s.morale > 10 ? c_light_green : pal::muted(),
+          string_format( _( "Mood %+d" ), s.morale ) );
 }
 
 auto draw_ribbon( const canvas &area, const hud_snapshot::snapshot &s ) -> void
@@ -107,8 +111,6 @@ auto draw_ribbon( const canvas &area, const hud_snapshot::snapshot &s ) -> void
     x = text( w, point( x, 0 ), s.light_color, s.light );
     x = dot( w, point( x, 0 ) );
     x = text( w, point( x, 0 ), s.wind_color, s.wind );
-    x = dot( w, point( x, 0 ) );
-    x = text( w, point( x, 0 ), pal::muted(), string_format( _( "spd %d  snd %s  mood %d" ), s.speed, s.sound, s.morale ) );
     if( s.safe_mode ) {
         x = dot( w, point( x, 0 ) );
         text( w, point( x, 0 ), s.safe_color, string_format( "%s %s", glyph::safe, _( "safe" ) ) );
@@ -213,7 +215,18 @@ auto draw_deck( const avatar &you, const canvas &area, const hud_snapshot::snaps
     constexpr auto slot_x = 32;
     const auto room = area.width - slot_x - 2;
     const auto box_w = std::clamp( room / hotbar::slots, 9, 16 );
-    for( auto i = 0; i < hotbar::slots; ++i ) {
+    const auto any_assigned = std::ranges::any_of( std::views::iota( 0, hotbar::slots ), [&]( const int i ) {
+        return hotbar::view( you, i ).assigned;
+    } );
+    if( !any_assigned ) {
+        // Six empty boxes teach nothing; say what the slots are for and how to fill them.
+        const auto assign = key_for( ACTION_HOTBAR_ASSIGN );
+        text( w, point( slot_x, 1 ), pal::heading(), _( "HOTBAR" ) );
+        text( w, point( slot_x, 2 ), pal::muted(), assign.empty() ?
+              _( "Assign items from Enter → Misc → Assign a hotbar slot, then use them with 1–6." ) :
+              string_format( _( "Press %s to put an item in a slot, then use it with 1–6 or a click." ), assign ) );
+    }
+    for( auto i = 0; any_assigned && i < hotbar::slots; ++i ) {
         const auto v = hotbar::view( you, i );
         const auto sx = slot_x + i * box_w;
         hits.push_back( { .at = { .at = point( sx, area.height - deck_height + 1 ), .width = box_w - 1, .height = 3 },
@@ -264,6 +277,20 @@ auto edge( const catacurses::window &w ) -> void
 }
 
 } // namespace
+
+auto body_rows( const avatar &you ) -> int
+{
+    const auto &s = current( you );
+    const auto hurt = std::ranges::any_of( s.limbs, []( const auto & l ) {
+        return l.hp < l.hp_max || !l.wound.empty();
+    } );
+    return hurt ? 1 + static_cast<int>( s.limbs.size() ) : 2;
+}
+
+auto around_rows( const avatar &you ) -> int
+{
+    return 1 + std::clamp( static_cast<int>( current( you ).seen.size() ), 0, 4 );
+}
 
 auto fits() -> bool { return TERMX >= 140 && TERMY >= 36; }
 
@@ -346,6 +373,11 @@ auto draw_body( avatar &you, const catacurses::window &w ) -> void
         .summary = wounded > 0 ? string_format( _( "%d wounded" ), wounded ) : std::string( _( "no wounds" ) ),
         .summary_color = wounded > 0 ? pal::danger() : pal::muted()
     } );
+    if( getmaxy( w ) <= 2 ) {
+        text( w, point( 2, 1 ), c_green, _( "Every limb is healthy." ) );
+        wnoutrefresh( w );
+        return;
+    }
     for( auto i = 0; i < static_cast<int>( s.limbs.size() ); ++i ) {
         const auto &limb = s.limbs[static_cast<size_t>( i )];
         const auto hurt = !limb.wound.empty() || limb.hp < limb.hp_max;
@@ -406,9 +438,8 @@ auto draw_log( avatar &you, const catacurses::window &w ) -> void
     }
     const auto first = std::max( 0, static_cast<int>( lines.size() ) - rows );
     for( auto i = first; i < static_cast<int>( lines.size() ); ++i ) {
-        // Older lines fade so the newest reads first.
-        const auto newest = i >= static_cast<int>( lines.size() ) - 2;
-        text( w, point( 2, 1 + i - first ), newest ? pal::title() : pal::text(), lines[static_cast<size_t>( i )] );
+        // Each message keeps the log's own colour: its type while fresh, gray once old.
+        text( w, point( 2, 1 + i - first ), pal::text(), lines[static_cast<size_t>( i )] );
     }
     wnoutrefresh( w );
 }

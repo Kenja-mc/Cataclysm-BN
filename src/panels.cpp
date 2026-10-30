@@ -2816,8 +2816,10 @@ auto initialize_fusion_panels() -> std::vector<window_panel>
     ret.emplace_back( hud_fusion::draw_minimap, translate_marker( "Map" ), -1, 44, true, default_render, true );
 #endif
     ret.emplace_back( hud_fusion::draw_body, translate_marker( "Body" ), 7, 44, true, limbs_panel );
+    ret.back().set_height_override( []() { return hud_fusion::body_rows( get_avatar() ); } );
     ret.emplace_back( hud_fusion::draw_around, translate_marker( "Around" ), 5, 44, true,
                       compass_panel );
+    ret.back().set_height_override( []() { return hud_fusion::around_rows( get_avatar() ); } );
     ret.emplace_back( hud_fusion::draw_log, translate_marker( "Log" ), -2, 44, true, log_panel );
     return ret;
 }

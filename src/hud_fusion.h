@@ -14,6 +14,11 @@ class window;
 namespace hud_fusion
 {
 
+/// Rows the BODY and AROUND sections need now: healthy limbs fold to one line, and AROUND
+/// grows with what is in sight.
+auto body_rows( const avatar &you ) -> int;
+auto around_rows( const avatar &you ) -> int;
+
 /// The screen is large enough for the fusion layout; smaller screens fall back to "grouped".
 auto fits() -> bool;
 /// The fusion layout is selected and fits.

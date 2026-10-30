@@ -34,6 +34,7 @@
 #include "line.h"
 #include "magic/magic.h"
 #include "messages.h"
+#include "messages_recent.h"
 #include "mtype.h"
 #include "needs_status.h"
 #include "options.h"
@@ -2209,6 +2210,10 @@ auto read( const avatar &you ) -> snapshot
     out.weapon_color = out.armed ? weapon.color() : c_light_gray;
     out.style = you.martial_arts_data->selected_is_none() ? std::string() :
                 you.martial_arts_data->selected_style_name( you );
+    // A selected style that does not apply to what is in hand reports these placeholders.
+    if( out.style == _( "No Style" ) || out.style == _( "Normal" ) ) {
+        out.style.clear();
+    }
 
     out.weight = hud_windows::carry_weight_text( you );
     out.volume = hud_windows::carry_volume_text( you );
@@ -2223,8 +2228,8 @@ auto read( const avatar &you ) -> snapshot
     out.intel = you.get_int();
     out.per = you.get_per();
 
-    for( const auto &msg : Messages::recent_messages( 10 ) ) {
-        out.log.push_back( msg.second );
+    for( const auto &line : Messages::recent_lines( 12 ) ) {
+        out.log.push_back( colorize( line.text, line.color ) );
     }
     for( const auto *critter : you.get_visible_creatures( 60 ) ) {
         const auto rel = critter->bub_pos().raw() - you.bub_pos().raw();

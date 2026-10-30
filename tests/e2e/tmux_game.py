@@ -300,7 +300,9 @@ def in_game(screen):
     # The limb bars are the one reading every layout and panel subset keeps.
     return (("X,Y,Z" in screen and (" move " in screen or "Place :" in screen))
             or ("Location:" in screen and "Stm" in screen)
-            or ("HEAD" in screen and "TORSO" in screen))
+            or ("HEAD" in screen and "TORSO" in screen)
+            # The fusion HUD folds healthy limbs to one line.
+            or ("STATUS" in screen and "LOADOUT" in screen))
 
 
 def start_new_game(game, timeout=240):

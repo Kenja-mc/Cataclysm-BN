@@ -1,4 +1,5 @@
 #include "messages.h"
+#include "messages_recent.h"
 #include "message_types.h"
 #include "calendar.h"
 #include "catacharset.h"
@@ -323,6 +324,18 @@ bool message_exceeds_ttl( const game_message &message )
 std::vector<std::pair<std::string, std::string>> Messages::recent_messages( const size_t count )
 {
     return player_messages.recent_messages( count );
+}
+
+auto Messages::recent_lines( const size_t count ) -> std::vector<recent_line>
+{
+    const auto &all = player_messages.messages;
+    const auto shown = std::min( count, all.size() );
+    auto out = std::vector<recent_line>();
+    out.reserve( shown );
+    for( auto i = all.size() - shown; i < all.size(); ++i ) {
+        out.push_back( { .text = all[i].get_with_count(), .color = all[i].get_color( calendar::turn ) } );
+    }
+    return out;
 }
 
 void Messages::serialize( JsonOut &json )
