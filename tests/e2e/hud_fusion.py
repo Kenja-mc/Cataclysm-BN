@@ -2,7 +2,7 @@
 import re
 
 from fixtures import shared_game
-from helpers import HELPERS, arena, empty_inventory
+from helpers import HELPERS, arena, bub_pos, empty_inventory, give
 from hud_status import healthy
 from tmux_game import Game, start_new_game
 
@@ -64,5 +64,40 @@ def test_fusion_is_the_fresh_default_and_small_screens_fall_back(_g):
         game.close()
 
 
-TESTS = [test_fusion_layout_draws_overlays_and_ruled_sidebar,
+def wielded(game):
+    return game.lua("local n='' for _,w in ipairs(gapi.get_avatar():wielded_items()) do n=n..w:get_type():str() end out(n)")[0]
+
+
+def test_hotbar_slot_wields_its_item_and_empty_slot_is_inert(_g):
+    with shared_game("bn-e2e-fusion", options=OPTIONS, layout="fusion", cols=160, rows=45,
+                     define=HELPERS, setup=fusion_setup) as game:
+        give(game, "knife_combat", 1)
+        before = bub_pos(game)
+        game.keys("1", delay=0.6)
+        assert bub_pos(game) == before, "an empty slot must not move the character"
+        assert "Hotbar slot 1 is empty" in game.screen(), game.screen()
+        assert game.lua("gapi.get_avatar():set_value('hotbar_2','knife_combat') out('ok')") == ["ok"]
+        game.settle_screen()
+        game.keys("2", delay=0.8)
+        game.settle_screen()
+        assert "knife" in wielded(game), "slot 2 should wield the combat knife"
+        assert bub_pos(game) == before
+
+
+def test_hotbar_assign_menu_stores_the_chosen_item(_g):
+    with shared_game("bn-e2e-fusion", options=OPTIONS, layout="fusion", cols=160, rows=45,
+                     define=HELPERS, setup=fusion_setup) as game:
+        give(game, "knife_combat", 1)
+        game.keys("Z", delay=0.6)
+        game.wait_for("Assign which hotbar slot", timeout=15)
+        game.keys("3", delay=0.8)
+        game.wait_for("Put which item", timeout=15)
+        game.keys("Enter", delay=0.8)
+        game.settle_screen()
+        assert game.lua("out(gapi.get_avatar():get_value('hotbar_3'))") == ["knife_combat"], game.screen()
+
+
+TESTS = [test_hotbar_slot_wields_its_item_and_empty_slot_is_inert,
+         test_hotbar_assign_menu_stores_the_chosen_item,
+         test_fusion_layout_draws_overlays_and_ruled_sidebar,
          test_fusion_is_the_fresh_default_and_small_screens_fall_back]

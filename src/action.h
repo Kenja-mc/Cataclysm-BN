@@ -136,6 +136,15 @@ enum action_id : int {
     ACTION_LOOT,
     /** Stash carried items into matching nearby storage */
     ACTION_QUICK_STACK,
+    /** Use the item remembered by a quick slot */
+    ACTION_HOTBAR_1,
+    ACTION_HOTBAR_2,
+    ACTION_HOTBAR_3,
+    ACTION_HOTBAR_4,
+    ACTION_HOTBAR_5,
+    ACTION_HOTBAR_6,
+    /** Choose which item a quick slot remembers */
+    ACTION_HOTBAR_ASSIGN,
     /** Distribute the pile underfoot into matching nearby storage */
     ACTION_SORT_PILE,
     /** Auto-move toward the nearest unexplored area */

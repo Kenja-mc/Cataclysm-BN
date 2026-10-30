@@ -11,6 +11,7 @@
 #include "catacharset.h"
 #include "cursesdef.h"
 #include "hud_draw.h"
+#include "hotbar.h"
 #include "hud_snapshot.h"
 #include "input.h"
 #include "output.h"
@@ -27,7 +28,7 @@ namespace
 using namespace hud_draw;
 
 constexpr auto status_width = 38;
-constexpr auto status_height = 9;
+constexpr auto status_height = 10;
 constexpr auto deck_height = 7;
 
 auto need( const catacurses::window &w, const point at, const char *icon, const nc_color icon_color,
@@ -74,6 +75,7 @@ auto draw_status( const canvas &area, const hud_snapshot::snapshot &s ) -> void
     auto x = text( w, point( 2, 7 ), s.weight_color, string_format( "%.1f kg", s.weight_kg ) );
     x = dot( w, point( x, 7 ) );
     text( w, point( x, 7 ), s.volume_color, string_format( "%.1f L", s.volume_l ) );
+    text( w, point( 2, 8 ), pal::muted(), string_format( "Str %d  Dex %d  Int %d  Per %d", s.str, s.dex, s.intel, s.per ) );
 }
 
 auto draw_ribbon( const canvas &area, const hud_snapshot::snapshot &s ) -> void
@@ -88,6 +90,8 @@ auto draw_ribbon( const canvas &area, const hud_snapshot::snapshot &s ) -> void
     x = text( w, point( x, 0 ), s.light_color, s.light );
     x = dot( w, point( x, 0 ) );
     x = text( w, point( x, 0 ), s.wind_color, s.wind );
+    x = dot( w, point( x, 0 ) );
+    x = text( w, point( x, 0 ), pal::muted(), string_format( _( "speed %d  sound %s  mood %d" ), s.speed, s.sound, s.morale ) );
     if( s.safe_mode ) {
         x = dot( w, point( x, 0 ) );
         text( w, point( x, 0 ), s.safe_color, string_format( "%s %s", glyph::safe, _( "safe" ) ) );
@@ -111,24 +115,28 @@ auto draw_hints( const catacurses::window &w, const point at, const int room ) -
     struct entry {
         std::vector<action_id> acts;
         const char *label;
+        /// Join the first and last key as "1-6" instead of running them together.
+        bool range = false;
     };
-    static const auto entries = std::array<entry, 9> { {
+    static const auto entries = std::array<entry, 11> { {
             { { ACTION_MOVE_FORTH, ACTION_MOVE_LEFT, ACTION_MOVE_BACK, ACTION_MOVE_RIGHT }, translate_marker( "move" ) },
+            { { ACTION_HOTBAR_1, ACTION_HOTBAR_6 }, translate_marker( "hotbar" ), true },
+            { { ACTION_HOTBAR_ASSIGN }, translate_marker( "assign slot" ) },
             { { ACTION_EXAMINE }, translate_marker( "interact" ) },
             { { ACTION_INVENTORY }, translate_marker( "inventory" ) },
             { { ACTION_ACTIONMENU }, translate_marker( "menus" ) },
+            { { ACTION_KEYBINDINGS }, translate_marker( "all keys" ) },
             { { ACTION_FIRE }, translate_marker( "attack" ) },
             { { ACTION_PICKUP }, translate_marker( "pick up" ) },
             { { ACTION_PAUSE }, translate_marker( "wait" ) },
             { { ACTION_MAP }, translate_marker( "map" ) },
-            { { ACTION_KEYBINDINGS }, translate_marker( "all keys" ) },
         }
     };
     auto x = at.x;
     for( const auto &e : entries ) {
         auto keys = std::string();
         for( const auto act : e.acts ) {
-            keys += key_for( act );
+            keys += ( e.range && !keys.empty() ? "-" : "" ) + key_for( act );
         }
         if( keys.empty() ) {
             continue;
@@ -141,7 +149,7 @@ auto draw_hints( const catacurses::window &w, const point at, const int room ) -
     }
 }
 
-auto draw_deck( const canvas &area, const hud_snapshot::snapshot &s ) -> void
+auto draw_deck( const avatar &you, const canvas &area, const hud_snapshot::snapshot &s ) -> void
 {
     const auto w = panel( area, {
         .at = point( 0, area.height - deck_height ), .width = area.width, .height = deck_height
@@ -154,32 +162,44 @@ auto draw_deck( const canvas &area, const hud_snapshot::snapshot &s ) -> void
     text( w, point( 2, 2 ), pal::border(), "│     │" );
     text( w, point( 2, 3 ), pal::border(), "╰─────╯" );
     text( w, point( 5, 2 ), s.weapon_color, s.weapon_symbol );
-    text( w, point( 11, 1 ), pal::title(), utf8_truncate( s.weapon, 28 ) );
-    auto x = 11;
+    constexpr auto weapon_room = 20;
+    text( w, point( 10, 1 ), pal::title(), utf8_truncate( s.weapon, weapon_room ) );
+    auto x = 10;
     if( s.gun ) {
         x = text( w, point( x, 2 ), pal::accent(), s.ammo );
         x = dot( w, point( x, 2 ) );
     }
     if( s.armed ) {
-        text( w, point( x, 2 ), pal::text(), std::string( glyph::weapon ) + " " + _( "wielded" ) );
+        text( w, point( x, 2 ), pal::text(), glyph::weapon );
     }
-    text( w, point( 11, 3 ), pal::muted(), s.style.empty() ? s.stance : s.style );
+    text( w, point( 10, 3 ), pal::muted(), utf8_truncate( s.style.empty() ? s.stance : s.style, weapon_room ) );
 
-    // Stats and movement, as the old Stats and Movement panels read them.
-    constexpr auto info_x = 44;
-    vline( w, point( info_x - 2, 1 ), 3, pal::border() );
-    const auto pair = [&]( const point at, const std::string & label, const std::string & value ) {
-        const auto end = text( w, at, pal::muted(), label + " " );
-        return text( w, point( end, at.y ), pal::title(), value ) + 2;
-    };
-    auto ix = pair( point( info_x, 1 ), _( "Str" ), std::to_string( s.str ) );
-    ix = pair( point( ix, 1 ), _( "Dex" ), std::to_string( s.dex ) );
-    ix = pair( point( ix, 1 ), _( "Int" ), std::to_string( s.intel ) );
-    pair( point( ix, 1 ), _( "Per" ), std::to_string( s.per ) );
-    ix = pair( point( info_x, 2 ), _( "Speed" ), std::to_string( s.speed ) );
-    pair( point( ix, 2 ), _( "Move" ), std::to_string( s.move_counter ) );
-    ix = pair( point( info_x, 3 ), _( "Sound" ), s.sound );
-    pair( point( ix, 3 ), _( "Mood" ), std::to_string( s.morale ) );
+    // Hotbar: six boxes, the key in the top edge, the item's symbol and name inside.
+    constexpr auto slot_x = 32;
+    const auto room = area.width - slot_x - 2;
+    const auto box_w = std::clamp( room / hotbar::slots, 9, 16 );
+    for( auto i = 0; i < hotbar::slots; ++i ) {
+        const auto v = hotbar::view( you, i );
+        const auto sx = slot_x + i * box_w;
+        const auto ready = v.assigned && v.count > 0;
+        const auto color = v.wielded ? pal::accent() : ready ? pal::text() : pal::border();
+        hline( w, point( sx + 1, 1 ), box_w - 3, color );
+        hline( w, point( sx + 1, 3 ), box_w - 3, color );
+        text( w, point( sx, 1 ), color, "╭" );
+        text( w, point( sx + box_w - 2, 1 ), color, "╮" );
+        text( w, point( sx, 2 ), color, "│" );
+        text( w, point( sx + box_w - 2, 2 ), color, "│" );
+        text( w, point( sx, 3 ), color, "╰" );
+        text( w, point( sx + box_w - 2, 3 ), color, "╯" );
+        text( w, point( sx + 2, 1 ), v.wielded ? pal::accent() : pal::heading(), std::to_string( i + 1 ) );
+        if( !v.assigned ) {
+            text( w, point( sx + 2, 2 ), pal::border(), "·" );
+            continue;
+        }
+        text( w, point( sx + 2, 2 ), ready ? v.color : pal::border(), v.symbol );
+        const auto label = v.name + ( v.count > 1 ? " x" + std::to_string( v.count ) : std::string() );
+        text( w, point( sx + 4, 2 ), ready ? pal::title() : pal::muted(), utf8_truncate( label, box_w - 7 ) );
+    }
 
     hline( w, point( 2, 4 ), area.width - 4, pal::border() );
     draw_hints( w, point( 2, 5 ), area.width - 4 );
@@ -229,7 +249,7 @@ auto draw( const avatar &you, const catacurses::window &w_terrain ) -> void
     begin_frame();
     draw_status( area, s );
     draw_ribbon( area, s );
-    draw_deck( area, s );
+    draw_deck( you, area, s );
     end_frame();
 }
 

@@ -3931,6 +3931,13 @@ input_context get_default_mode_input_context()
     ctxt.register_action( "smash" );
     ctxt.register_action( "loot" );
     ctxt.register_action( "quick_stack" );
+    ctxt.register_action( "hotbar_1" );
+    ctxt.register_action( "hotbar_2" );
+    ctxt.register_action( "hotbar_3" );
+    ctxt.register_action( "hotbar_4" );
+    ctxt.register_action( "hotbar_5" );
+    ctxt.register_action( "hotbar_6" );
+    ctxt.register_action( "hotbar_assign" );
     ctxt.register_action( "sort_pile" );
     ctxt.register_action( "auto_explore" );
     ctxt.register_action( "attack" );

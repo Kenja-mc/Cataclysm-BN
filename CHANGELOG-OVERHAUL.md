@@ -12,6 +12,7 @@ Upstream's own changes are in `docs/en/game/changelog`.
   card, a one-line ribbon and a loadout deck over the map, and a right sidebar of minimap, body,
   surroundings and log under section rules. Smaller screens keep the grouped layout; saved
   layouts are unchanged.
+- Hotbar: six saved quick slots on `1`–`6` in Modern, assigned with `Z`, shown in the fusion deck.
 
 ## 2026-10-27
 

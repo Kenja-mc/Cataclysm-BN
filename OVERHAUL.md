@@ -425,6 +425,12 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   rows. The map shrinks to the free area, so the character stays centred. Select fusion, grouped
   or another layout in **Enter → Misc → Sidebar Options**. In tiles the Mouse View box moves over
   the minimap so the status card stays visible.
+- **Hotbar** (Modern, fusion deck): six quick slots on `1`–`6`. **Z** opens *Assign a hotbar
+  slot*: pick a slot, then an item (Esc clears it). A slot remembers the item type, not the stack;
+  its key does what the Use menu does with the first matching carried item (read, eat, wield, wear
+  or activate; a wielded gun is reloaded). An empty slot, or one whose item you no longer carry,
+  only says so. Slots are saved with the character, so they work in every layout; only the fusion
+  deck draws them. Classic has no default hotbar keys; bind *Hotbar slot N* if you want them.
 - **Grouped right sidebar**, based on the Opus HUD proposal: its HUD groups are the windows above,
   so the sidebar keeps Location, Controls and the optional Map. The Location group keeps its 5×5
   overmap chunk; the larger pixel minimap remains an optional **Map** panel in Sidebar Options.

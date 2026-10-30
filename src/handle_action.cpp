@@ -76,6 +76,7 @@
 #include "player_activity.h"
 #include "pickup.h"
 #include "body_panel.h"
+#include "hotbar.h"
 #include "quick_stack.h"
 #include "popup.h"
 #include "profile.h"
@@ -2938,6 +2939,19 @@ bool game::handle_action()
                 auto_explore::handle( u );
                 break;
 
+            case ACTION_HOTBAR_1:
+            case ACTION_HOTBAR_2:
+            case ACTION_HOTBAR_3:
+            case ACTION_HOTBAR_4:
+            case ACTION_HOTBAR_5:
+            case ACTION_HOTBAR_6:
+                hotbar::use( u, act - ACTION_HOTBAR_1 );
+                break;
+
+            case ACTION_HOTBAR_ASSIGN:
+                hotbar::assign( u );
+                break;
+
             case ACTION_QUICK_STACK:
                 if( u.is_mounted() ) {
                     add_msg( m_info, _( "You can't stash things while you're riding." ) );
@@ -2999,20 +3013,7 @@ bool game::handle_action()
                     add_msg( _( "Never mind." ) );
                     break;
                 }
-                if( loc->is_book() ) {
-                    u.read( loc );
-                } else if( loc->is_comestible() ) {
-                    avatar_action::eat( u, loc );
-                } else if( loc->is_gun() && u.is_wielding( *loc ) && loc->ammo_remaining() > 0 ) {
-                    avatar_action::unload( u );
-                } else if( loc->is_gun() || loc->is_melee() ) {
-                    avatar_action::wield( *loc );
-                } else if( loc->is_armor() ) {
-                    loc->obtain( u );
-                    u.wear_possessed( *loc );
-                } else {
-                    avatar_funcs::use_item( u, *loc );
-                }
+                hotbar::use_item( u, loc );
                 break;
             }
 

@@ -4078,6 +4078,55 @@
   },
   {
     "type": "keybinding",
+    "id": "hotbar_1",
+    "category": "DEFAULTMODE",
+    "name": "Hotbar slot 1",
+    "bindings": [  ]
+  },
+  {
+    "type": "keybinding",
+    "id": "hotbar_2",
+    "category": "DEFAULTMODE",
+    "name": "Hotbar slot 2",
+    "bindings": [  ]
+  },
+  {
+    "type": "keybinding",
+    "id": "hotbar_3",
+    "category": "DEFAULTMODE",
+    "name": "Hotbar slot 3",
+    "bindings": [  ]
+  },
+  {
+    "type": "keybinding",
+    "id": "hotbar_4",
+    "category": "DEFAULTMODE",
+    "name": "Hotbar slot 4",
+    "bindings": [  ]
+  },
+  {
+    "type": "keybinding",
+    "id": "hotbar_5",
+    "category": "DEFAULTMODE",
+    "name": "Hotbar slot 5",
+    "bindings": [  ]
+  },
+  {
+    "type": "keybinding",
+    "id": "hotbar_6",
+    "category": "DEFAULTMODE",
+    "name": "Hotbar slot 6",
+    "bindings": [  ]
+  },
+  {
+    "type": "keybinding",
+    "id": "hotbar_assign",
+    "category": "DEFAULTMODE",
+    "name": "Assign a hotbar slot",
+    "bindings": [  ]
+  },
+  {
+    "type": "keybinding",
     "id": "quick_stack",
     "category": "DEFAULTMODE",
     "name": "Quick stack to nearby storage",

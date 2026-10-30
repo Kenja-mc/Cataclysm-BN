@@ -117,6 +117,13 @@ std::string io::enum_to_string<action_id>( action_id data )
             PAIR( ACTION_ZONES )
             PAIR( ACTION_LOOT )
             PAIR( ACTION_QUICK_STACK )
+            PAIR( ACTION_HOTBAR_1 )
+            PAIR( ACTION_HOTBAR_2 )
+            PAIR( ACTION_HOTBAR_3 )
+            PAIR( ACTION_HOTBAR_4 )
+            PAIR( ACTION_HOTBAR_5 )
+            PAIR( ACTION_HOTBAR_6 )
+            PAIR( ACTION_HOTBAR_ASSIGN )
             PAIR( ACTION_SORT_PILE )
             PAIR( ACTION_AUTO_EXPLORE )
             PAIR( ACTION_ATTACK )
@@ -367,6 +374,20 @@ std::string action_ident( action_id act )
             return "loot";
         case ACTION_QUICK_STACK:
             return "quick_stack";
+        case ACTION_HOTBAR_1:
+            return "hotbar_1";
+        case ACTION_HOTBAR_2:
+            return "hotbar_2";
+        case ACTION_HOTBAR_3:
+            return "hotbar_3";
+        case ACTION_HOTBAR_4:
+            return "hotbar_4";
+        case ACTION_HOTBAR_5:
+            return "hotbar_5";
+        case ACTION_HOTBAR_6:
+            return "hotbar_6";
+        case ACTION_HOTBAR_ASSIGN:
+            return "hotbar_assign";
         case ACTION_SORT_PILE:
             return "sort_pile";
         case ACTION_AUTO_EXPLORE:
@@ -1256,6 +1277,7 @@ action_id handle_action_menu()
                 ACTION_OPEN, ACTION_CLOSE, ACTION_CHAT, ACTION_PICKUP,
                 ACTION_PICKUP_ALL, ACTION_PICKUP_FEET, ACTION_GRAB, ACTION_HAUL, ACTION_BUTCHER, ACTION_LOOT,
                 ACTION_QUICK_STACK, ACTION_SORT_PILE, ACTION_AUTO_EXPLORE, ACTION_ATTACK,
+                ACTION_HOTBAR_ASSIGN,
             } );
             register_lua_action_entries( category_id );
         } else if( category_id == "combat" ) {

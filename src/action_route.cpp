@@ -96,6 +96,13 @@ auto menu_category( const action_id act ) -> std::optional<std::string>
         case ACTION_BUTCHER:
         case ACTION_LOOT:
         case ACTION_QUICK_STACK:
+        case ACTION_HOTBAR_1:
+        case ACTION_HOTBAR_2:
+        case ACTION_HOTBAR_3:
+        case ACTION_HOTBAR_4:
+        case ACTION_HOTBAR_5:
+        case ACTION_HOTBAR_6:
+        case ACTION_HOTBAR_ASSIGN:
         case ACTION_SORT_PILE:
         case ACTION_AUTO_EXPLORE:
         case ACTION_ATTACK:

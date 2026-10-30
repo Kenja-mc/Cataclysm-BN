@@ -523,6 +523,55 @@
   },
   {
     "type": "keybinding",
+    "id": "hotbar_1",
+    "category": "DEFAULTMODE",
+    "name": "Hotbar slot 1",
+    "bindings": [ { "input_method": "keyboard", "key": "1" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "hotbar_2",
+    "category": "DEFAULTMODE",
+    "name": "Hotbar slot 2",
+    "bindings": [ { "input_method": "keyboard", "key": "2" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "hotbar_3",
+    "category": "DEFAULTMODE",
+    "name": "Hotbar slot 3",
+    "bindings": [ { "input_method": "keyboard", "key": "3" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "hotbar_4",
+    "category": "DEFAULTMODE",
+    "name": "Hotbar slot 4",
+    "bindings": [ { "input_method": "keyboard", "key": "4" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "hotbar_5",
+    "category": "DEFAULTMODE",
+    "name": "Hotbar slot 5",
+    "bindings": [ { "input_method": "keyboard", "key": "5" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "hotbar_6",
+    "category": "DEFAULTMODE",
+    "name": "Hotbar slot 6",
+    "bindings": [ { "input_method": "keyboard", "key": "6" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "hotbar_assign",
+    "category": "DEFAULTMODE",
+    "name": "Assign a hotbar slot",
+    "bindings": [ { "input_method": "keyboard", "key": "Z" } ]
+  },
+  {
+    "type": "keybinding",
     "id": "quick_stack",
     "category": "DEFAULTMODE",
     "name": "Quick stack to nearby storage",
