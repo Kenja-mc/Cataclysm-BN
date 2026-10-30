@@ -1344,9 +1344,91 @@ def case_sound_menu(session):
     return [], observations
 
 
+MENU_DRAG_TERMINAL = (80, 24)
+MENU_DRAG_FONT = (8, 16)
+
+
+def menu_scrollbar_cells(session):
+    """(column, first row, last row) of the action search's scrollbar, read from a curses game.
+
+    The list menu's layout depends only on its entries and the terminal size, so a curses game
+    at the same size shows the cells the tiles window draws. The action search has far more
+    entries than the 24-row terminal shows, so its scrollbar can be dragged.
+    """
+    cols, rows = MENU_DRAG_TERMINAL
+    probe = Game(name="bn-tiles-e2e-menu-probe", cols=cols, rows=rows, userdir=session.work / "probe",
+                 options={"CONTROL_SCHEME": "modern", "SAFEMODE": "false", "SHOW_WELCOME": "false"})
+    try:
+        start_new_game(probe)
+        probe.keys("C-f", delay=0.5)
+        probe.wait_for("Find an action")
+        probe.type("e")
+        probe.keys("Enter", delay=0.6)
+        probe.wait_for("Actions matching")
+        screen = probe.screen().splitlines()
+    finally:
+        probe.close()
+    title = next(y for y, line in enumerate(screen) if "Actions matching" in line)
+    # The search list spans the terminal with left padding, so its scrollbar replaces the
+    # left border; arrows flank the draggable track rows.
+    up = next((y for y in range(title + 1, len(screen)) if y < len(screen) and len(screen[y]) > 0 and screen[y][0] == "^"), None)
+    down = next((y for y in range(len(screen)-1, up or title, -1) if y < len(screen) and len(screen[y]) > 0 and screen[y][0] == "v"), None)
+    require(up is not None and down is not None, "menu drag: no scrolling list found\n" + "\n".join(screen))
+    return 0, up + 1, down - 1
+
+
+def case_menu_drag(session):
+    """Holding the left button on a list menu's scrollbar drags the thumb before any release."""
+    column, first, last = menu_scrollbar_cells(session)
+    font_w, font_h = MENU_DRAG_FONT
+    options = {"CONTROL_SCHEME": "modern", "TERMINAL_X": str(MENU_DRAG_TERMINAL[0]),
+               "TERMINAL_Y": str(MENU_DRAG_TERMINAL[1]), "FONT_WIDTH": str(font_w),
+               "FONT_HEIGHT": str(font_h), "FONT_SIZE": str(font_h), "SCALING_FACTOR": "1"}
+
+    def pixel(cell_x, cell_y):
+        return cell_x * font_w + font_w // 2, cell_y * font_h + font_h // 2
+
+    def changed(a, b):
+        """Fraction of the list's pixel rows that differ between two frames."""
+        width, _, left = a
+        _, _, right = b
+        top, bottom = 3 * first * font_h * width, 3 * (last + 1) * font_h * width
+        rows = [left[i:i + 3 * width] != right[i:i + 3 * width] for i in range(top, bottom, 3 * width)]
+        return sum(rows) / len(rows)
+
+    with session.running_game("menu-drag", options) as live:
+        x11 = X11(session.display)
+        try:
+            win = x11.find_window(WINDOW_TITLE_PREFIX)
+            require(win is not None, "menu drag: game window disappeared")
+            # The pointer waits on the scrollbar column, where hover highlights no row.
+            x11.focus_local(win, *pixel(column, first + 1))
+            x11.key("Control_L", "f", delay=0.6)
+            x11.key("e", delay=0.2)
+            x11.key("Return", delay=1)
+            before = settle_capture(session, x11, win, session.artifacts / "menu-drag-before.png")
+            x11.press(1, delay=0.2)
+            for row in range(first + 1, last + 1):
+                x11.focus_local(win, *pixel(column, row))
+                time.sleep(0.1)
+            held = settle_capture(session, x11, win, session.artifacts / "menu-drag-held.png")
+            x11.release(1, delay=0.5)
+            released = settle_capture(session, x11, win, session.artifacts / "menu-drag-released.png")
+            require(changed(before, held) > 0.2,
+                    "dragging the scrollbar must scroll the list while the button is still held")
+            require(changed(held, released) < 0.02,
+                    "the release that ends a drag must neither jump nor pick a row")
+            x11.key("Escape", delay=1)
+            closed = settle_capture(session, x11, win, session.artifacts / "menu-drag-closed.png")
+            require(changed(released, closed) > 0.2, "Escape must still close the search list")
+        finally:
+            x11.close()
+    return [], {"scrollbar": {"column": column, "rows": [first, last]}}
+
+
 CASES = {"minimap": case_minimap, "mouse": case_mouse, "side_buttons": case_side_buttons,
          "sound_menu": case_sound_menu, "zoom": case_zoom, "overmap": case_overmap,
-         "known_locks": case_known_locks}
+         "known_locks": case_known_locks, "menu_drag": case_menu_drag}
 
 
 def main(argv=None):

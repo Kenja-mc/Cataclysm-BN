@@ -4,6 +4,21 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-30
+
+### Added
+
+- Mouse support from Dark Days Ahead and The Last Generation: direction prompts take a click on a
+  neighbouring tile (Modern), popup buttons follow hover (Modern), and the tiles build drags list
+  menu scrollbars.
+
+### Changed
+
+- Fusion HUD: the log keeps the message colours, BODY folds to one line while every limb is
+  healthy, AROUND names each creature in sight with direction and distance, STATUS shows mood,
+  speed and noise, and an empty hotbar explains how to fill it.
+- The README describes the fork, and the in-game bug report opens this fork's issue form.
+
 ## 2026-10-29
 
 ### Changed

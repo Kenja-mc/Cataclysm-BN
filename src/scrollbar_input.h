@@ -112,6 +112,17 @@ inline auto click( const geometry &g, point mouse ) -> std::optional<click_resul
     return click_result{ .part = click_part::track, .viewport_pos = std::clamp( target, 0, max_pos ) };
 }
 
+/// Viewport position for the thumb dragged to window-relative row y; rows past either end clamp to it.
+inline auto drag( const geometry &g, int y ) -> std::optional<int>
+{
+    if( !is_drawn( g ) || g.viewport_size < 3 ) {
+        return std::nullopt;
+    }
+    const auto row = std::clamp( y, g.offset.y + 1, g.offset.y + g.viewport_size - 2 );
+    const auto hit = click( g, point( g.offset.x, row ) );
+    return hit ? std::optional<int>( hit->viewport_pos ) : std::nullopt;
+}
+
 } // namespace scrollbar_input
 
 #endif // CATA_SRC_SCROLLBAR_INPUT_H

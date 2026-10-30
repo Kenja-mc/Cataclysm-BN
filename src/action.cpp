@@ -1403,16 +1403,33 @@ std::optional<tripoint_rel_ms> choose_direction( const std::string &message,
         ctxt.register_action( "LEVEL_UP" );
         ctxt.register_action( "LEVEL_DOWN" );
     }
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    if( modern ) {
+        ctxt.register_action( "SELECT" );
+    }
 
     static_popup popup;
-    //~ %s: "Close where?" "Pry where?" etc.
-    popup.message( _( "%s (Direction button)" ), message ).on_top( true );
+    popup.message( modern
+                   //~ %s: "Close where?" "Pry where?" etc.
+                   ? _( "%s (Direction button or click)" )
+                   //~ %s: "Close where?" "Pry where?" etc.
+                   : _( "%s (Direction button)" ), message ).on_top( true );
 
     std::string action;
     do {
         ui_manager::redraw();
         action = ctxt.handle_input();
-        if( const std::optional<tripoint_rel_ms> vec = ctxt.get_direction( action ) ) {
+        auto vec = ctxt.get_direction( action );
+        if( action == "SELECT" ) {
+            // A click on a tile beside you answers like its direction key.
+            if( const auto clicked = ctxt.get_coordinates( g->w_terrain ) ) {
+                const auto delta = *clicked - g->u.bub_pos();
+                if( delta.z() == 0 && std::abs( delta.x() ) <= 1 && std::abs( delta.y() ) <= 1 ) {
+                    vec = delta;
+                }
+            }
+        }
+        if( vec ) {
             // Make player's sprite face left/right if interacting with something to the left or right
             if( vec->x() > 0 ) {
                 g->u.facing = FD_RIGHT;

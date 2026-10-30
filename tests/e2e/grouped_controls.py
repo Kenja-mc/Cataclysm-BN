@@ -22,18 +22,6 @@ def mark_direction(game, dx, dy):
     ) == ["ok"]
 
 
-def test_grouped_shift_direction_keys_do_not_select_by_default(_game):
-    with no_mouse_movement_game("bn-e2e-grouped-look", ARROW_KEY_AIM="false") as game:
-        for key, _dx, _dy in DIRECTIONS:
-            # The fixture has no hostiles, so Tab clears any leftover selection first.
-            game.keys("Tab", delay=0.5)
-            before = bub_pos(game), action_clock(game)
-            game.keys(key, delay=0.8)
-            assert "Mouse View" not in game.screen(), \
-                f"Shift+{key} must not select a tile: the default binds were removed"
-            assert (bub_pos(game), action_clock(game)) == before, "an unbound key must be free"
-
-
 def test_grouped_look_selects_the_space_interaction_tile(_game):
     with no_mouse_movement_game("bn-e2e-grouped-look-interact") as game:
         assert game.lua("for _,dx in ipairs({-1,1}) do "
@@ -244,8 +232,7 @@ def test_grouped_live_classic_switch_clears_inspection_before_fire(_game):
             game.close()
 
 
-TESTS = [test_grouped_shift_direction_keys_do_not_select_by_default,
-         test_grouped_look_selects_the_space_interaction_tile,
+TESTS = [test_grouped_look_selects_the_space_interaction_tile,
          test_grouped_ctrl_direction_peeks_and_restores_position,
          test_grouped_shift_x_opens_the_stance_menu_for_every_mode,
          test_grouped_tab_cycles_visible_hostiles_and_wraps,

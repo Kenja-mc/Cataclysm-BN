@@ -224,15 +224,15 @@ Long-form write-ups should follow
 - **Controls:** WASD + Q E Z C walk and bump-attack; arrow keys aim. Tab/Shift+Tab cycle visible
   hostiles freely in distance/position order with wraparound; `f` attacks the selection using
   normal gun aiming. Enter groups all actions (Info for character/status screens). Ctrl+X opens
-  wait/rest; Shift+X cycles walk/run/crouch/prone, with F2/F3/F4 unbound.
+  wait/rest; Shift+X opens the walk/run/crouch/prone menu, with F2/F3/F4 unbound.
 - **Inventory:** `i`, then select an item for Wield/Wear/Eat/Use/Read and other context actions.
   `v` uses an item from the map by its kind. F5 crafts even when inventory is empty; Tab or `I`
   opens advanced inventory, and Shift+Tab switches category selection. The advanced-inventory
   footer hint is clickable. `g` picks up a lone item underfoot, or opens the picker for a pile;
-  `G` always opens the picker, and Ctrl+G drops. In the picker, `g`, Enter or Space confirms and
-  Escape cancels. Quick stack and sort pile remain in Enter.
-- **Select and interact:** right click selects a tile without spending time; the eight Select tile
-  keys ship unbound and stay rebindable in the options menu.
+  `G` takes everything on the tile beside you, and Ctrl+G lists everything nearby. Drop lives in
+  the inventory. In the picker, `g`, Enter or Space confirms and Escape cancels. Quick stack and
+  sort pile remain in Enter.
+- **Select and interact:** right click or Shift+WASD/QEZC selects a tile without spending time.
   Space acts on that selection. Without a selection, it lists nearby actions with directions
   and highlights the tile of the current row. Jump and Smash need explicit choices (`S` for Smash).
   Space offers Butcher for a corpse underfoot and opens loaded vehicle trunks directly.

@@ -3,11 +3,13 @@
 #include <algorithm>
 #include <array>
 #include <memory>
+#include <optional>
 
 #include "cached_options.h"
 #include "catacharset.h"
 #include "ime.h"
 #include "input.h"
+#include "options.h"
 #include "output.h"
 #include "sdl_wrappers.h"
 #include "ui_manager.h"
@@ -285,6 +287,9 @@ query_popup::result query_popup::query_once()
         ctxt.register_action( "RIGHT" );
         ctxt.register_action( "CONFIRM" );
         ctxt.register_action( "SELECT" );
+        if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+            ctxt.register_action( "MOUSE_MOVE" );
+        }
         for( const auto &opt : options ) {
             ctxt.register_action( opt.action );
         }
@@ -298,12 +303,30 @@ query_popup::result query_popup::query_once()
         ctxt.register_action( "QUIT" );
     }
 
+    const auto button_at = [&]( const point & mouse ) -> std::optional<size_t> {
+        const auto p = mouse - point( getbegx( win ) + border_width, getbegy( win ) + border_width );
+        for( size_t ind = 0; ind < buttons.size(); ++ind ) {
+            const auto &btn = buttons[ind];
+            if( p.y == btn.pos.y && p.x >= btn.pos.x && p.x < btn.pos.x + utf8_width( btn.text, true ) ) {
+                return ind;
+            }
+        }
+        return std::nullopt;
+    };
+
     result res;
     // Assign outside construction of `res` to ensure execution order
     res.wait_input = !anykey;
     do {
         res.action = ctxt.handle_input();
         res.evt = ctxt.get_raw_input();
+        if( res.action == "MOUSE_MOVE" ) {
+            // Modern: the button under the pointer takes the highlight.
+            if( const auto ind = button_at( res.evt.mouse_pos ); ind && *ind != cur ) {
+                cur = *ind;
+                ui_manager::redraw();
+            }
+        }
     } while(
         // Always ignore mouse movement
         ( res.evt.type == input_event_t::mouse && res.evt.get_first_input() == MOUSE_MOVE ) ||
@@ -332,14 +355,10 @@ query_popup::result query_popup::query_once()
         }
     } else if( res.action == "SELECT" ) {
         // Clicking a button picks it.
-        const auto p = res.evt.mouse_pos - point( getbegx( win ) + border_width, getbegy( win ) + border_width );
-        for( size_t ind = 0; ind < buttons.size(); ++ind ) {
-            const auto &btn = buttons[ind];
-            if( p.y == btn.pos.y && p.x >= btn.pos.x && p.x < btn.pos.x + utf8_width( btn.text, true ) ) {
-                cur = ind;
-                res.wait_input = false;
-                res.action = options[ind].action;
-            }
+        if( const auto ind = button_at( res.evt.mouse_pos ) ) {
+            cur = *ind;
+            res.wait_input = false;
+            res.action = options[*ind].action;
         }
     } else if( res.action == "HELP_KEYBINDINGS" ) {
         // Keybindings may have changed, regenerate the UI

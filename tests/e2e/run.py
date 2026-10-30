@@ -67,6 +67,7 @@ from vehicle_memory import TESTS as VEHICLE_MEMORY_TESTS
 from aim_reticle import TESTS as AIM_RETICLE_TESTS
 from safe_click import TESTS as SAFE_CLICK_TESTS
 from map_mouse import TESTS as MAP_MOUSE_TESTS
+from mouse_prompts import TESTS as MOUSE_PROMPTS_TESTS
 from inventory_mouse import TESTS as INVENTORY_MOUSE_TESTS
 from pickup_flow import TESTS as PICKUP_FLOW_TESTS
 from modern_map_controls import TESTS as MODERN_MAP_CONTROLS_TESTS
@@ -143,6 +144,7 @@ MODULES = [
     ("aim_reticle", AIM_RETICLE_TESTS),
     ("safe_click", SAFE_CLICK_TESTS),
     ("map_mouse", MAP_MOUSE_TESTS),
+    ("mouse_prompts", MOUSE_PROMPTS_TESTS),
     ("inventory_mouse", INVENTORY_MOUSE_TESTS),
     ("pickup_flow", PICKUP_FLOW_TESTS),
     ("modern_map_controls", MODERN_MAP_CONTROLS_TESTS),

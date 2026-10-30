@@ -112,7 +112,7 @@ enum action_id : int {
     ACTION_HORN,
     /** Pick up items from all current/adjacent squares */
     ACTION_PICKUP_ALL,
-    /// Take everything underfoot without a selection menu.
+    /// Take everything on the faced or selected neighbouring tile (else underfoot) without a menu.
     ACTION_QUICK_PICKUP,
     /** Pick up items from current square. Auto pickup if only one item */
     ACTION_PICKUP_FEET,

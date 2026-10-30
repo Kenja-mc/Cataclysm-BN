@@ -9,6 +9,7 @@
 #include <iterator>
 #include <memory>
 #include <string_view>
+#include <utility>
 
 #include "avatar.h"
 #include "cata_utility.h"
@@ -24,9 +25,23 @@
 #include "string_utils.h"
 #include "ui_manager.h"
 
-#if defined(__ANDROID__)
+#if defined(TILES) || defined(__ANDROID__)
 #include <SDL3/SDL.h>
 #endif
+
+namespace
+{
+
+auto left_button_held() -> bool
+{
+#if defined(TILES)
+    return ( SDL_GetMouseState( nullptr, nullptr ) & SDL_BUTTON_LMASK ) != 0;
+#else
+    return false;
+#endif
+}
+
+} // namespace
 
 catacurses::window new_centered_win( int nlines, int ncols )
 {
@@ -1123,6 +1138,8 @@ void uilist::query( bool loop, int timeout )
     };
 
     shared_ptr_fast<ui_adaptor> ui = create_or_get_ui_adaptor();
+    // Set while a held left button drags the scrollbar thumb, until the release that ends it.
+    auto scrollbar_drag = false;
 
     ui_manager::redraw();
 
@@ -1148,9 +1165,23 @@ void uilist::query( bool loop, int timeout )
             if( mouse ) {
                 const auto cell = mouse->xy().raw() + point( getmaxx( window ), getmaxy( window ) ) / 2;
                 bool on_scrollbar = false;
+                const auto geo = scrollbar_geometry();
+                if( ret_act == "MOUSE_MOVE" && left_button_held() ) {
+                    if( scrollbar_drag || scrollbar_input::click( geo, cell ) ) {
+                        if( const auto pos = scrollbar_input::drag( geo, cell.y ) ) {
+                            vshift = *pos;
+                            viewport_held = true;
+                            scrollbar_drag = true;
+                            on_scrollbar = true;
+                        }
+                    }
+                } else if( ret_act == "MOUSE_MOVE" ) {
+                    scrollbar_drag = false;
+                }
                 if( ret_act == "SELECT" ) {
-                    if( const auto hit = scrollbar_input::click( scrollbar_geometry(),
-                        cell ) ) {
+                    if( std::exchange( scrollbar_drag, false ) ) {
+                        on_scrollbar = true;
+                    } else if( const auto hit = scrollbar_input::click( geo, cell ) ) {
                         vshift = hit->viewport_pos;
                         viewport_held = true;
                         on_scrollbar = true;

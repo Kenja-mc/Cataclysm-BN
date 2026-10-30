@@ -2126,7 +2126,7 @@ void options_manager::add_options_interface()
        );
 
     add( "CONTROL_SCHEME", interface, translate_marker( "Control scheme" ),
-         translate_marker( "Modern: WASD movement, Space for contextual interaction, Inventory for item actions and crafting, and Enter for secondary menus.  Shift plus movement looks, Ctrl plus movement peeks, Shift+X cycles movement modes, and Tab cycles targets.  Classic: the original vi-keys and numpad layout, with capital Y/N prompts.  Both schemes allow attacks by walking into enemies.  Your own key changes are kept either way." ),
+         translate_marker( "Modern: WASD movement, Space for contextual interaction, Inventory for item actions and crafting, and Enter for secondary menus.  Shift plus movement looks, Ctrl plus movement peeks, Shift+X opens the movement mode menu, and Tab cycles targets.  Classic: the original vi-keys and numpad layout, with capital Y/N prompts.  Both schemes allow attacks by walking into enemies.  Your own key changes are kept either way." ),
     { { "modern", translate_marker( "Modern (WASD)" ) }, { "classic", translate_marker( "Classic" ) } },
     "modern" );
 

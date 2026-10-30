@@ -108,11 +108,11 @@ Where a Shift shortcut was already occupied, the other menu action moves:
 
 ![Modern control scheme](docs/fork/images/controls-modern.svg)
 
-Regenerate the diagram from the binding files with `python3 build-scripts/gen_controls_svg.py`.
-The diagram uses standard ANSI key widths and row stagger, including unbound keys and modifiers.
-Arrow/navigation and numpad clusters appear separately below the main keyboard for readable labels.
-Modifier families appear in a small legend rather than on every direction key; the generator
-reports conflicting bindings.
+[The controls guide](docs/fork/controls.md) adds the Shift and Ctrl layers and a table for every
+screen. Regenerate the keyboards and tables from the binding files with
+`python3 build-scripts/gen_controls_guide.py`; `--check` reports stale output.
+The keyboards use standard ANSI key widths; keys are coloured by action family, and the
+generator reports keys bound to two map actions.
 
 `n` **auto-explores**: each press walks you to the nearest spot you can reach that borders ground
 you have not seen yet, on your current floor. It goes around walls, closed doors, known traps and
@@ -210,6 +210,14 @@ same sleep confirmation and alarm prompts as the sleep action. Classic keeps its
 - **Safe click-to-walk**, when using a movement-enabled scheme: with Mouse tile selection and
   Safe click-to-walk on, long travel needs a second click, visible threats limit a distant click
   to one step, and a known trap/dangerous field asks for confirmation.
+- **Direction prompts** ("Close where?", "Examine where?") accept a left click on a tile beside
+  you or on your own tile, as Dark Days Ahead and The Last Generation do; the prompt says
+  "(Direction button or click)". Classic keeps the keyboard-only prompt.
+- **Popup buttons** follow the pointer in Modern: hovering a button highlights it, so Enter or
+  Space confirms what is under the mouse. Clicking a button still picks it in both schemes.
+- **Scrollbar dragging** (tiles): in the shared list menus (the Enter menu, item actions and
+  most pickers), holding the left button on the scrollbar and moving drags its thumb, as in Dark Days Ahead; releasing selects nothing. Clicking the track or the arrows
+  still jumps or steps. The terminal build has no held-button motion, so it keeps clicks only.
 
 Modern custom action lists use two clicks: the first focuses/selects a row, the second performs
 its existing keyboard action. Tabs, filters and content changes reset that pairing. Trade's second

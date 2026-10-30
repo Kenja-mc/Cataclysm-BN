@@ -1,23 +1,14 @@
-# Cataclysm: Bright Nights
+# Bright Nights Overhaul
 
-> **This is the overhaul fork.** It adds WASD controls with mouse tile selection, a modern terminal
-> look with weather, weapon and body panels, Terraria-style quick stacking instead of loot zones,
-> stackable item variants and other ways to cut busywork. See [OVERHAUL.md](./OVERHAUL.md),
-> [the screenshots](./docs/fork/feature-screenshots.md) and [the changelog](./CHANGELOG-OVERHAUL.md).
+> **Work in progress.** Bright Nights Overhaul is a fork of
+> [Cataclysm: Bright Nights](https://github.com/cataclysmbn/Cataclysm-BN) that aims to make the
+> game more accessible and intuitive for players. It keeps Bright Nights' world, items, monsters
+> and rules, and reworks the controls, the interface and the busywork around them. Expect rough
+> edges: features change between releases, and feedback shapes what comes next.
 
 <header align="center">
-  <a><img src="docs/en/contribute/img/readme-title.png" title="screenshots of (clockwise from upper-right: Chaosvolt (x2), ExecutorBill, scarf005"></a>
-
-[![en][icon-en]][en] [![ko][icon-ko]][ko] [![ja][icon-ja]][ja]
-
+  <a><img src="docs/fork/images/features/hud-fusion.png" title="The fusion HUD in the tiles build"></a>
 </header>
-
-[en]: ./README.md
-[icon-en]: https://img.shields.io/badge/lang-en-red?style=flat-square
-[ko]: ./README.ko.md
-[icon-ko]: https://img.shields.io/badge/lang-ko-orange?style=flat-square
-[ja]: ./README.ja.md
-[icon-ja]: https://img.shields.io/badge/lang-ja-green?style=flat-square
 
 Cataclysm: Bright Nights is a roguelike with sci-fi elements set in a post-apocalyptic world.
 
@@ -32,8 +23,36 @@ who want what you have.
 
 Find a way to stop the Cataclysm ... or become one of its strongest monsters.
 
-> Cataclysm: Bright Nights is a fork of Cataclysm: Dark Days Ahead.
-> [see the differences from its ancestor.](https://docs.cataclysmbn.org/game/changelog/).
+## What the overhaul changes
+
+- **Modern controls.** WASD walks (Q E Z C for diagonals) and walking into an enemy attacks it.
+  Space does the obvious thing with the tile beside you: opens a door, talks, picks up, uses stairs.
+  Enter holds every other action, `i` opens items with their actions, and `?` lists every key on
+  every screen. The original keys remain one option away (Options → Interface → Control scheme →
+  Classic).
+- **Mouse support.** Hover a tile to see what is there, right click to select it without spending
+  time, left click to use what is beside you. Menus, inventory, crafting, trade, the overmap and the
+  hotbar respond to clicks and the wheel. In Modern, a click never moves your character.
+- **A readable interface.** The fusion HUD puts health, needs, loadout, surroundings and a coloured
+  log on one screen, with a hotbar for six items. Smaller screens get a grouped sidebar. A welcome
+  card and first tips explain the basics.
+- **Less busywork.** Quick stack puts carried items into nearby storage that already holds them.
+  Related items (batteries, rings, novels and the like) fold into one line with a count. Pickup,
+  sorting and crafting need fewer steps.
+- **Upstream bug fixes** that the fork found while playtesting.
+
+[The controls guide](./docs/fork/controls.md) maps every key, [OVERHAUL.md](./OVERHAUL.md)
+explains every change, [the screenshots](./docs/fork/feature-screenshots.md) show them, and
+[the changelog](./CHANGELOG-OVERHAUL.md) lists them by date.
+
+|                    Inventory                     |                    Crafting                     |
+| :----------------------------------------------: | :---------------------------------------------: |
+| ![](docs/fork/images/features/inventory.png)     | ![](docs/fork/images/features/crafting.png)     |
+|           Look around and tile selection          |                 The Enter menu                  |
+| ![](docs/fork/images/features/look.png)          | ![](docs/fork/images/features/enter-menu.png)   |
+
+> Cataclysm: Bright Nights is itself a fork of Cataclysm: Dark Days Ahead.
+> [See how Bright Nights differs from its ancestor](https://docs.cataclysmbn.org/game/changelog/).
 
 ## Downloads
 
@@ -49,11 +68,13 @@ your saves and settings. See the [installation and update guide](docs/fork/playi
 Maintainers use the [release guide](docs/fork/releasing.md).
 
 Upstream Bright Nights releases, Flatpak packages and third-party launchers do not contain this
-fork's changes.
+fork's changes. The fork keeps its own saves and settings, so it can sit next to an upstream
+install.
 
 ### Third Party Mods
 
-Bright Nights uses a [mod registry](https://mods.cataclysmbn.org/) for easier discovery of mods not shipped with the main game.
+Bright Nights mods work here too. The [Bright Nights mod registry](https://mods.cataclysmbn.org/)
+lists mods that are not shipped with the game.
 
 ### Source Code
 
@@ -67,7 +88,9 @@ Bright Nights uses a [mod registry](https://mods.cataclysmbn.org/) for easier di
 
 #### Building from source
 
-Please read the official docs for details:
+On Linux, the [installation guide](docs/fork/playing.md#building-from-source-on-linux) builds the
+terminal and tiles versions and installs `bno` / `bno-tiles` launchers. The upstream guides cover
+other platforms:
 
 - [building with cmake](docs/en/dev/guides/building/cmake.md)
 - [building with MSYS2](docs/en/dev/guides/building/msys.md)
@@ -81,18 +104,32 @@ Please read the official docs for details:
 > project is not part of the project and is released under different software licenses, the files
 > covered by different software licenses have their own license notices.
 
-Please check the [official docs](https://docs.cataclysmbn.org/contribute/contributing/) for
-details.
+Issues and pull requests for the overhaul go to
+[this fork](https://github.com/Kenja-mc/Cataclysm-BN/issues), not to upstream Bright Nights.
+[AGENTS.md](./AGENTS.md) lists the fork's rules: no balance changes without the owner's approval,
+new behaviour behind an option when the old one can still be wanted, and an end-to-end test for
+each feature. The upstream [contributing docs](https://docs.cataclysmbn.org/contribute/contributing/)
+cover the code style.
 
 ## Documentation
 
-Gameplay and developing documentation is available in the [doc](./docs/) directory
+- [OVERHAUL.md](./OVERHAUL.md): every fork change, how to use it and how to switch it off.
+- [Controls guide](docs/fork/controls.md): keyboards and key tables for Modern and Classic.
+- [Installation and feedback guide](docs/fork/playing.md).
+- [Fork screenshots](docs/fork/feature-screenshots.md) and [visual changes](docs/fork/visual-changes.md).
+- [Asset credits and licenses](docs/fork/asset-credits.md).
+
+Gameplay and development documentation for Bright Nights itself is in the [docs](./docs/) directory
 in markdown format. You can also
 
-- visit the [official docs](https://docs.cataclysmbn.org/) site
+- visit the [official Bright Nights docs](https://docs.cataclysmbn.org/) site
 - [build and serve the documentation locally](./docs/en/contribute/docs.md)
 
 ## Community
+
+Fork-specific questions and reports belong on
+[this fork's issue tracker](https://github.com/Kenja-mc/Cataclysm-BN/issues). The Bright Nights
+community covers the game itself:
 
 [![Official Docs](https://img.shields.io/badge/Docs-LightGray?style=for-the-badge)][docs]
 [![Discussions](https://img.shields.io/badge/Discussions-black?style=for-the-badge&logo=github)][discussion]
@@ -108,15 +145,16 @@ in markdown format. You can also
 
 #### Is there a tutorial?
 
-Yes, you can find the tutorial in the **Special** menu at the main menu (be aware that due to many
-code changes the tutorial may not function). You can also access documentation in-game via the `?`
-key.
+Your first new game opens with a welcome card listing the main keys, and first tips appear as you
+play (Options → Interface → Show welcome card brings the card back). The tutorial in the
+**Special** menu on the title screen teaches the Modern keys when Modern is selected. Press `?`
+anywhere to see that screen's keys.
 
 #### How can I change the key bindings?
 
-Press the `?` key, followed by the `1` key to see the full list of key commands. Press the `+` key
-to add a key binding, select which action with the corresponding letter key `a-w`, and then the key
-you wish to assign to that action.
+Press `?` to list the keys of the current screen. Press `+` there to add a key binding, choose the
+action with its letter, and then press the key you want. Options → Interface → Control scheme
+switches between Modern (WASD) and Classic; your own key changes are kept either way.
 
 #### How can I start a new world?
 
@@ -124,60 +162,56 @@ you wish to assign to that action.
 
 #### There is no music (or sound) in the game. How can I add it?
 
-See where to place 3rd party mods, but replace mods/ with sounds/, this is the folder you will put it into
-
-Find a soundpack such as the recommended one [Otopack](https://github.com/NarandBD/Otopack-BN-Mk-2).
-
-Unzip the zip into the noted folder
-
-Then finally select it from the settings, and then restart the game.
+The release ships sound effects but no music, because the recommended
+[Otopack](https://github.com/NarandBD/Otopack-BN-Mk-2) soundpack does not allow redistribution.
+The [installation guide](docs/fork/playing.md#music) explains where to unpack it; then choose it
+under **Options → General → Choose soundpack** and restart. **Enter → Misc → Sound & volume**
+sets the volumes. The terminal version has no audio.
 
 #### Where should I put 3rd-party mods?
 
-If not in the List of common directories or it fails to work:
-
-First boot up the game, select help, click 6 ( resolved game directories )
-
-Place mods in the folder after "user mods: "
+First boot up the game, select **Help**, and choose **Resolved game directories**. Place mods in
+the folder after "user mods: ".
 
 Otherwise:
 
-For Windows users it is wherever your game folder is ( same level as the EXE ) /mods
+- Windows: the `mods` folder inside the game folder (next to the `.exe`). Updates keep your own mods.
+- Linux release: `~/.cataclysm-bn/mods`.
+- Linux, installed with `bin/install-bno.sh`: `~/.local/share/bright-nights-overhaul/mods`.
 
-For Android users using the non-legacy storage, the user mods folder is `Documents/Cataclysm-BN/mods`
+#### How do I update the game?
 
-For Linux users using the XDG directories (but NOT the flatpak): The user mods directory should be in `~/.local/share/cataclysm-bn/mods` (`~/.local/share/cataclysm-bn` is the user directory in general)
-
-For flatpak users, the user mods folder is `~/.var/app/org.cataclysmbn.CataclysmBN/data/cataclysm-bn/mods` (the user directory in general is `~/.var/app/org.cataclysmbn.CataclysmBN/data/cataclysm-bn/`)
-
-#### How do I update the game manually?
-
-Assuming you've managed your mods appropriately, the correct update process is to delete the old data folder (alongside the gfx folder if you want to be extra safe) and _then_ overwrite the contents of the old BN folder with the new BN download. Deleting the old data folder is specifically necessary due to the fact that simply overwriting the old folder will **not** account for updates which delete files, as may happen with the obsoletion folder for example.
-
-Don't delete any of the userdata folders!
-
-Userdata folders are found by selecting help from the launch menu and clicking 6 ( resolved game directory )
+On Windows, `Launch Bright Nights.bat` offers each new release and keeps your saves, settings,
+mods, tilesets and soundpacks. On Linux, delete the old `BrightNightsOverhaul` folder (your saves
+are not in it) and unpack the new release in its place. The
+[installation guide](docs/fork/playing.md) has the details.
 
 #### I've found a bug. What should I do?
 
-[Bug report](https://github.com/cataclysmbn/Cataclysm-BN/issues/new?template=bug_report.yml) can
-be submitted via debug menu.
+[Open a bug report on this fork](https://github.com/Kenja-mc/Cataclysm-BN/issues/new?template=bug_report.yml)
+and attach `debug.log` ([where to find it](docs/fork/playing.md#the-game-log)). Report a bug to
+upstream Bright Nights only when it also happens in an upstream release.
 
-Run `Submit a bug report on github` inside the game to submit an issue.
-
-|   1. open Options (ESC) -> Debug Menu (a)   |              2. open Info (i)               |
-| :-----------------------------------------: | :-----------------------------------------: |
-| ![](docs/en/contribute/img/readme-bug1.png) | ![](docs/en/contribute/img/readme-bug2.png) |
-|    3. Submit a bug report on github (U)     |      4. An link to issue is generated       |
-| ![](docs/en/contribute/img/readme-bug3.png) | ![](docs/en/contribute/img/readme-bug4.png) |
-
-It will open a bug report on browser with `Version and configuration` filled in.
+In game, **Escape → Debug Menu → Info → Submit a bug report on github** opens the same form with
+the version and configuration filled in.
 
 #### I would like to make a suggestion. What should I do?
 
-- For simple ideas: please visit
-  [our Discussions page](https://github.com/cataclysmbn/Cataclysm-BN/discussions/categories/ideas).
-  It could be a new feature, a port request, a mod idea, or anything else.
-- Please submit an issue on
-  [our GitHub page](https://github.com/cataclysmbn/Cataclysm-BN/issues/) using
-  [feature request form](https://github.com/cataclysmbn/Cataclysm-BN/issues/new?template=feature_request.yml).
+[Open an issue on this fork](https://github.com/Kenja-mc/Cataclysm-BN/issues/new?template=feature_request.yml).
+Ideas that make the game easier to learn or use, without changing its balance, fit the overhaul
+best.
+
+## Credits
+
+- **Cataclysm** was created by Whales; TheDarklingWolf and GlyphGryph started Dark Days Ahead.
+- **Cataclysm: Dark Days Ahead** is developed by CleverRaven and its contributors, including
+  Kevin Granade.
+- **Cataclysm: Bright Nights** is developed by the
+  [Bright Nights contributors](https://github.com/cataclysmbn/Cataclysm-BN/graphs/contributors);
+  nearly all of this game is their work. The in-game credits list them in full.
+- **Bright Nights Overhaul** is maintained by [Kenja-mc](https://github.com/Kenja-mc).
+- The tilesets, fonts, sounds and mod artwork come from many artists; see
+  [asset credits](docs/fork/asset-credits.md). The default tileset is MSX++ UnDeadPeople Edition by
+  SomeDeadGuy and its contributors.
+- Design ideas were borrowed from Sword of the Stars: The Pit (mouse tile selection), Terraria
+  (quick stack), Project Zomboid (body panel) and Caves of Qud (onboarding).

@@ -2228,7 +2228,7 @@ void debug()
 
         case DEBUG_BUG_REPORT: {
             constexpr const char *const bug_report_url =
-                "https://github.com/cataclysmbn/Cataclysm-BN/issues/new"
+                "https://github.com/Kenja-mc/Cataclysm-BN/issues/new"
                 "?labels=bug"
                 "&template=bug_report.yml"
                 "&versions-and-configuration=";

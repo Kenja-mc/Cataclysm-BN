@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1188" height="624" viewBox="0 0 1188 624" font-family="DejaVu Sans, Verdana, sans-serif">
+<title>Modern controls on the map: Hold Shift</title>
+<desc>Hold Shift and press the key. Grey keys do nothing with Shift on the map. Generated from the binding files.</desc>
+<rect width="1188" height="624" rx="10" fill="#ffffff"/>
+<text x="24" y="38" font-size="26" font-weight="700" fill="#1a202c">Modern controls on the map: Hold Shift</text>
+<text x="24" y="62" font-size="14" fill="#4a5568">Hold Shift and press the key. Grey keys do nothing with Shift on the map.</text>
+<rect x="24" y="84" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="32" y="105" font-size="16.0" font-weight="700" fill="#4a5568">~</text>
+<rect x="100" y="84" width="71" height="93" rx="6" fill="#c53030" fill-opacity="0.12" stroke="#c53030" stroke-width="1.8"/>
+<text x="108" y="105" font-size="16.0" font-weight="700" fill="#1a202c">!</text>
+<text x="108" y="128.0" font-size="11.0" font-weight="600" fill="#c53030">safe mode</text>
+<rect x="176" y="84" width="71" height="93" rx="6" fill="#b7791f" fill-opacity="0.12" stroke="#b7791f" stroke-width="1.8"/>
+<text x="184" y="105" font-size="16.0" font-weight="700" fill="#1a202c">@</text>
+<text x="184" y="128.0" font-size="11.0" font-weight="600" fill="#b7791f">character</text>
+<rect x="252" y="84" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="260" y="105" font-size="16.0" font-weight="700" fill="#4a5568">#</text>
+<rect x="328" y="84" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="336" y="105" font-size="16.0" font-weight="700" fill="#4a5568">$</text>
+<rect x="404" y="84" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="412" y="105" font-size="16.0" font-weight="700" fill="#4a5568">%</text>
+<rect x="480" y="84" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="488" y="105" font-size="16.0" font-weight="700" fill="#4a5568">^</text>
+<rect x="556" y="84" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="564" y="105" font-size="16.0" font-weight="700" fill="#4a5568">&amp;</text>
+<rect x="632" y="84" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="640" y="105" font-size="16.0" font-weight="700" fill="#4a5568">*</text>
+<rect x="708" y="84" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="716" y="105" font-size="16.0" font-weight="700" fill="#4a5568">(</text>
+<rect x="784" y="84" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="792" y="105" font-size="16.0" font-weight="700" fill="#4a5568">)</text>
+<rect x="860" y="84" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="868" y="105" font-size="16.0" font-weight="700" fill="#4a5568">_</text>
+<rect x="936" y="84" width="71" height="93" rx="6" fill="#6b46c1" fill-opacity="0.12" stroke="#6b46c1" stroke-width="1.8"/>
+<text x="944" y="105" font-size="16.0" font-weight="700" fill="#1a202c">+</text>
+<text x="944" y="128.0" font-size="13.0" font-weight="600" fill="#6b46c1">zoom in</text>
+<rect x="1012" y="84" width="147" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="1020" y="105" font-size="16.0" font-weight="700" fill="#4a5568">Backspace</text>
+<rect x="24" y="182" width="109.0" height="93" rx="6" fill="#6b46c1" fill-opacity="0.12" stroke="#6b46c1" stroke-width="1.8"/>
+<text x="32" y="203" font-size="16.0" font-weight="700" fill="#1a202c">Tab</text>
+<text x="32" y="226.0" font-size="13.0" font-weight="600" fill="#6b46c1">prev hostile</text>
+<rect x="138.0" y="182" width="71" height="93" rx="6" fill="#6b46c1" fill-opacity="0.12" stroke="#6b46c1" stroke-width="1.8"/>
+<text x="146.0" y="203" font-size="16.0" font-weight="700" fill="#1a202c">Q</text>
+<text x="146.0" y="226.0" font-size="11.0" font-weight="600" fill="#6b46c1">select NW</text>
+<rect x="214.0" y="182" width="71" height="93" rx="6" fill="#6b46c1" fill-opacity="0.12" stroke="#6b46c1" stroke-width="1.8"/>
+<text x="222.0" y="203" font-size="16.0" font-weight="700" fill="#1a202c">W</text>
+<text x="222.0" y="226.0" font-size="12.5" font-weight="600" fill="#6b46c1">select N</text>
+<rect x="290.0" y="182" width="71" height="93" rx="6" fill="#6b46c1" fill-opacity="0.12" stroke="#6b46c1" stroke-width="1.8"/>
+<text x="298.0" y="203" font-size="16.0" font-weight="700" fill="#1a202c">E</text>
+<text x="298.0" y="226.0" font-size="11.0" font-weight="600" fill="#6b46c1">select NE</text>
+<rect x="366.0" y="182" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="374.0" y="203" font-size="16.0" font-weight="700" fill="#4a5568">R</text>
+<rect x="442.0" y="182" width="71" height="93" rx="6" fill="#2b6cb0" fill-opacity="0.12" stroke="#2b6cb0" stroke-width="1.8"/>
+<text x="450.0" y="203" font-size="16.0" font-weight="700" fill="#1a202c">T</text>
+<text x="450.0" y="226.0" font-size="13.0" font-weight="600" fill="#2b6cb0">auto</text>
+<text x="450.0" y="242.0" font-size="13.0" font-weight="600" fill="#2b6cb0">travel</text>
+<rect x="518.0" y="182" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="526.0" y="203" font-size="16.0" font-weight="700" fill="#4a5568">Y</text>
+<rect x="594.0" y="182" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="602.0" y="203" font-size="16.0" font-weight="700" fill="#4a5568">U</text>
+<rect x="670.0" y="182" width="71" height="93" rx="6" fill="#2f855a" fill-opacity="0.12" stroke="#2f855a" stroke-width="1.8"/>
+<text x="678.0" y="203" font-size="16.0" font-weight="700" fill="#1a202c">I</text>
+<text x="678.0" y="226.0" font-size="11.0" font-weight="600" fill="#2f855a">adv.</text>
+<text x="678.0" y="240.0" font-size="11.0" font-weight="600" fill="#2f855a">inventory</text>
+<rect x="746.0" y="182" width="71" height="93" rx="6" fill="#4a5568" fill-opacity="0.12" stroke="#4a5568" stroke-width="1.8"/>
+<text x="754.0" y="203" font-size="16.0" font-weight="700" fill="#1a202c">O</text>
+<text x="754.0" y="226.0" font-size="13.0" font-weight="600" fill="#4a5568">options</text>
+<rect x="822.0" y="182" width="71" height="93" rx="6" fill="#b7791f" fill-opacity="0.12" stroke="#b7791f" stroke-width="1.8"/>
+<text x="830.0" y="203" font-size="16.0" font-weight="700" fill="#1a202c">P</text>
+<text x="830.0" y="226.0" font-size="12.5" font-weight="600" fill="#b7791f">messages</text>
+<rect x="898.0" y="182" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="906.0" y="203" font-size="16.0" font-weight="700" fill="#4a5568">{</text>
+<rect x="974.0" y="182" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="982.0" y="203" font-size="16.0" font-weight="700" fill="#4a5568">}</text>
+<rect x="1050.0" y="182" width="109.0" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="1058.0" y="203" font-size="16.0" font-weight="700" fill="#4a5568">|</text>
+<rect x="24" y="280" width="128.0" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="32" y="301" font-size="16.0" font-weight="700" fill="#4a5568">Caps Lock</text>
+<rect x="157.0" y="280" width="71" height="93" rx="6" fill="#6b46c1" fill-opacity="0.12" stroke="#6b46c1" stroke-width="1.8"/>
+<text x="165.0" y="301" font-size="16.0" font-weight="700" fill="#1a202c">A</text>
+<text x="165.0" y="324.0" font-size="12.5" font-weight="600" fill="#6b46c1">select W</text>
+<rect x="233.0" y="280" width="71" height="93" rx="6" fill="#6b46c1" fill-opacity="0.12" stroke="#6b46c1" stroke-width="1.8"/>
+<text x="241.0" y="301" font-size="16.0" font-weight="700" fill="#1a202c">S</text>
+<text x="241.0" y="324.0" font-size="12.5" font-weight="600" fill="#6b46c1">select S</text>
+<rect x="309.0" y="280" width="71" height="93" rx="6" fill="#6b46c1" fill-opacity="0.12" stroke="#6b46c1" stroke-width="1.8"/>
+<text x="317.0" y="301" font-size="16.0" font-weight="700" fill="#1a202c">D</text>
+<text x="317.0" y="324.0" font-size="12.5" font-weight="600" fill="#6b46c1">select E</text>
+<rect x="385.0" y="280" width="71" height="93" rx="6" fill="#c53030" fill-opacity="0.12" stroke="#c53030" stroke-width="1.8"/>
+<text x="393.0" y="301" font-size="16.0" font-weight="700" fill="#1a202c">F</text>
+<text x="393.0" y="324.0" font-size="11.0" font-weight="600" fill="#c53030">fire mode</text>
+<rect x="461.0" y="280" width="71" height="93" rx="6" fill="#2f855a" fill-opacity="0.12" stroke="#2f855a" stroke-width="1.8"/>
+<text x="469.0" y="301" font-size="16.0" font-weight="700" fill="#1a202c">G</text>
+<text x="469.0" y="324.0" font-size="12.5" font-weight="600" fill="#2f855a">take all</text>
+<text x="469.0" y="339.5" font-size="12.5" font-weight="600" fill="#2f855a">beside</text>
+<rect x="537.0" y="280" width="71" height="93" rx="6" fill="#2f855a" fill-opacity="0.12" stroke="#2f855a" stroke-width="1.8"/>
+<text x="545.0" y="301" font-size="16.0" font-weight="700" fill="#1a202c">H</text>
+<text x="545.0" y="324.0" font-size="13.0" font-weight="600" fill="#2f855a">horn</text>
+<rect x="613.0" y="280" width="71" height="93" rx="6" fill="#b7791f" fill-opacity="0.12" stroke="#b7791f" stroke-width="1.8"/>
+<text x="621.0" y="301" font-size="16.0" font-weight="700" fill="#1a202c">J</text>
+<text x="621.0" y="324.0" font-size="13.0" font-weight="600" fill="#b7791f">diary</text>
+<rect x="689.0" y="280" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="697.0" y="301" font-size="16.0" font-weight="700" fill="#4a5568">K</text>
+<rect x="765.0" y="280" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="773.0" y="301" font-size="16.0" font-weight="700" fill="#4a5568">L</text>
+<rect x="841.0" y="280" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="849.0" y="301" font-size="16.0" font-weight="700" fill="#4a5568">:</text>
+<rect x="917.0" y="280" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="925.0" y="301" font-size="16.0" font-weight="700" fill="#4a5568">"</text>
+<rect x="993.0" y="280" width="166.0" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="1001.0" y="301" font-size="16.0" font-weight="700" fill="#4a5568">Enter</text>
+<rect x="24" y="378" width="166.0" height="93" rx="6" fill="#1a202c"/>
+<text x="32" y="400" font-size="15" font-weight="700" fill="#ffffff">Shift</text>
+<text x="32" y="420" font-size="12" fill="#ffffff">hold</text>
+<rect x="195.0" y="378" width="71" height="93" rx="6" fill="#6b46c1" fill-opacity="0.12" stroke="#6b46c1" stroke-width="1.8"/>
+<text x="203.0" y="399" font-size="16.0" font-weight="700" fill="#1a202c">Z</text>
+<text x="203.0" y="422.0" font-size="11.0" font-weight="600" fill="#6b46c1">select SW</text>
+<rect x="271.0" y="378" width="71" height="93" rx="6" fill="#2b6cb0" fill-opacity="0.12" stroke="#2b6cb0" stroke-width="1.8"/>
+<text x="279.0" y="399" font-size="16.0" font-weight="700" fill="#1a202c">X</text>
+<text x="279.0" y="422.0" font-size="13.0" font-weight="600" fill="#2b6cb0">stance</text>
+<text x="279.0" y="438.0" font-size="13.0" font-weight="600" fill="#2b6cb0">menu</text>
+<rect x="347.0" y="378" width="71" height="93" rx="6" fill="#6b46c1" fill-opacity="0.12" stroke="#6b46c1" stroke-width="1.8"/>
+<text x="355.0" y="399" font-size="16.0" font-weight="700" fill="#1a202c">C</text>
+<text x="355.0" y="422.0" font-size="11.0" font-weight="600" fill="#6b46c1">select SE</text>
+<rect x="423.0" y="378" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="431.0" y="399" font-size="16.0" font-weight="700" fill="#4a5568">V</text>
+<rect x="499.0" y="378" width="71" height="93" rx="6" fill="#2f855a" fill-opacity="0.12" stroke="#2f855a" stroke-width="1.8"/>
+<text x="507.0" y="399" font-size="16.0" font-weight="700" fill="#1a202c">B</text>
+<text x="507.0" y="422.0" font-size="13.0" font-weight="600" fill="#2f855a">butcher</text>
+<rect x="575.0" y="378" width="71" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="583.0" y="399" font-size="16.0" font-weight="700" fill="#4a5568">N</text>
+<rect x="651.0" y="378" width="71" height="93" rx="6" fill="#6b46c1" fill-opacity="0.12" stroke="#6b46c1" stroke-width="1.8"/>
+<text x="659.0" y="399" font-size="16.0" font-weight="700" fill="#1a202c">M</text>
+<text x="659.0" y="422.0" font-size="13.0" font-weight="600" fill="#6b46c1">World</text>
+<text x="659.0" y="438.0" font-size="13.0" font-weight="600" fill="#6b46c1">page</text>
+<rect x="727.0" y="378" width="71" height="93" rx="6" fill="#2b6cb0" fill-opacity="0.12" stroke="#2b6cb0" stroke-width="1.8"/>
+<text x="735.0" y="399" font-size="16.0" font-weight="700" fill="#1a202c">&lt;</text>
+<text x="735.0" y="422.0" font-size="11.0" font-weight="600" fill="#2b6cb0">stairs up</text>
+<rect x="803.0" y="378" width="71" height="93" rx="6" fill="#2b6cb0" fill-opacity="0.12" stroke="#2b6cb0" stroke-width="1.8"/>
+<text x="811.0" y="399" font-size="16.0" font-weight="700" fill="#1a202c">&gt;</text>
+<text x="811.0" y="422.0" font-size="13.0" font-weight="600" fill="#2b6cb0">stairs</text>
+<text x="811.0" y="438.0" font-size="13.0" font-weight="600" fill="#2b6cb0">down</text>
+<rect x="879.0" y="378" width="71" height="93" rx="6" fill="#4a5568" fill-opacity="0.12" stroke="#4a5568" stroke-width="1.8"/>
+<text x="887.0" y="399" font-size="16.0" font-weight="700" fill="#1a202c">?</text>
+<text x="887.0" y="422.0" font-size="12.5" font-weight="600" fill="#4a5568">all keys</text>
+<rect x="955.0" y="378" width="204.0" height="93" rx="6" fill="#1a202c"/>
+<text x="963.0" y="400" font-size="15" font-weight="700" fill="#ffffff">Shift</text>
+<text x="963.0" y="420" font-size="12" fill="#ffffff">hold</text>
+<rect x="24" y="476" width="90.0" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="32" y="497" font-size="16.0" font-weight="700" fill="#4a5568">Ctrl</text>
+<rect x="119.0" y="476" width="90.0" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="127.0" y="497" font-size="16.0" font-weight="700" fill="#4a5568">Super</text>
+<rect x="214.0" y="476" width="90.0" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="222.0" y="497" font-size="16.0" font-weight="700" fill="#4a5568">Alt</text>
+<rect x="309.0" y="476" width="470.0" height="93" rx="6" fill="#2f855a" fill-opacity="0.12" stroke="#2f855a" stroke-width="1.8"/>
+<text x="317.0" y="497" font-size="16.0" font-weight="700" fill="#1a202c">Space</text>
+<text x="317.0" y="520.0" font-size="13.0" font-weight="600" fill="#2f855a">curtain</text>
+<rect x="784.0" y="476" width="90.0" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="792.0" y="497" font-size="16.0" font-weight="700" fill="#4a5568">Alt</text>
+<rect x="879.0" y="476" width="90.0" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="887.0" y="497" font-size="16.0" font-weight="700" fill="#4a5568">Super</text>
+<rect x="974.0" y="476" width="90.0" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="982.0" y="497" font-size="16.0" font-weight="700" fill="#4a5568">Menu</text>
+<rect x="1069.0" y="476" width="90.0" height="93" rx="6" fill="none" fill-opacity="0" stroke="#a0aec0" stroke-width="0.8"/>
+<text x="1077.0" y="497" font-size="16.0" font-weight="700" fill="#4a5568">Ctrl</text>
+<rect x="24" y="590" width="18" height="18" rx="4" fill="#2b6cb0" fill-opacity="0.25" stroke="#2b6cb0" stroke-width="1.8"/>
+<text x="50" y="604" font-size="13" fill="#1a202c">Moving</text>
+<rect x="121.68" y="590" width="18" height="18" rx="4" fill="#6b46c1" fill-opacity="0.25" stroke="#6b46c1" stroke-width="1.8"/>
+<text x="147.68" y="604" font-size="13" fill="#1a202c">Looking and selecting</text>
+<rect x="328.56000000000006" y="590" width="18" height="18" rx="4" fill="#2f855a" fill-opacity="0.25" stroke="#2f855a" stroke-width="1.8"/>
+<text x="354.56000000000006" y="604" font-size="13" fill="#1a202c">Items and interaction</text>
+<rect x="535.44" y="590" width="18" height="18" rx="4" fill="#c53030" fill-opacity="0.25" stroke="#c53030" stroke-width="1.8"/>
+<text x="561.44" y="604" font-size="13" fill="#1a202c">Combat</text>
+<rect x="633.1200000000001" y="590" width="18" height="18" rx="4" fill="#b7791f" fill-opacity="0.25" stroke="#b7791f" stroke-width="1.8"/>
+<text x="659.1200000000001" y="604" font-size="13" fill="#1a202c">Character</text>
+<rect x="752.6400000000001" y="590" width="18" height="18" rx="4" fill="#4a5568" fill-opacity="0.25" stroke="#4a5568" stroke-width="1.8"/>
+<text x="778.6400000000001" y="604" font-size="13" fill="#1a202c">Menus and system</text>
+<rect x="923.1200000000001" y="590" width="18" height="18" rx="4" fill="#319795" fill-opacity="0.25" stroke="#319795" stroke-width="1.8"/>
+<text x="949.1200000000001" y="604" font-size="13" fill="#1a202c">Other</text>
+</svg>
