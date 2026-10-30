@@ -93,6 +93,14 @@ auto use( avatar &you, const int slot ) -> void
 {
     const auto type = assigned_type( you, slot );
     if( type.is_empty() || !type.is_valid() ) {
+        // An item given this digit as its inventory letter is what the player means by "slot N".
+        const auto letter = static_cast<char>( '1' + slot );
+        for( item *it : you.all_items( false ) ) {
+            if( it->invlet == letter ) {
+                use_item( you, it );
+                return;
+            }
+        }
         add_msg( m_info, _( "Hotbar slot %d is empty.  Assign an item to it from the hotbar menu." ),
                  slot + 1 );
         return;

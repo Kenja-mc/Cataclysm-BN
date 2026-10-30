@@ -2406,9 +2406,27 @@ talk_topic dialogue::opt( dialogue_window &d_win, const std::string &npc_name,
 
     apply_speaker_effects( topic );
 
+    // Modern picks replies with 1-9 then 0 (wasd moves the selection); Classic keeps letters.
+    // Beyond ten replies the rest fall back to letters, so every reply stays reachable.
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    const auto label_for = [modern]( const size_t i ) -> char {
+        if( !modern ) {
+            return static_cast<char>( 'a' + i );
+        }
+        return i < 9 ? static_cast<char>( '1' + i ) : i == 9 ? '0' : static_cast<char>( 'a' + i - 10 );
+    };
+    const auto index_for = [modern]( const int key ) -> int {
+        if( !modern ) {
+            return key - 'a';
+        }
+        if( key >= '1' && key <= '9' ) {
+            return key - '1';
+        }
+        return key == '0' ? 9 : key >= 'a' && key <= 'z' ? key - 'a' + 10 : -1;
+    };
     std::vector<talk_data> response_lines;
     for( size_t i = 0; i < responses.size(); i++ ) {
-        response_lines.push_back( responses[i].create_option_line( *this, 'a' + i ) );
+        response_lines.push_back( responses[i].create_option_line( *this, label_for( i ) ) );
     }
     auto selected_response = size_t{ 0 };
 
@@ -2442,6 +2460,9 @@ talk_topic dialogue::opt( dialogue_window &d_win, const std::string &npc_name,
         do {
             ui_manager::redraw();
             ch = inp_mngr.get_input_event().get_first_input();
+            if( modern && ( ch == 'w' || ch == 's' ) && response_count > 0 ) {
+                ch = ch == 'w' ? KEY_UP : KEY_DOWN;
+            }
             if( ch == KEY_UP ) {
                 if( selected_response > 0 ) {
                     selected_response -= 1;
@@ -2472,7 +2493,7 @@ talk_topic dialogue::opt( dialogue_window &d_win, const std::string &npc_name,
             if( ch == KEY_ENTER || ch == '\n' || ch == '\r' ) {
                 ch = static_cast<int>( selected_response );
             } else {
-                ch -= 'a';
+                ch = index_for( ch );
             }
         } while( ( ch < 0 || ch >= static_cast<int>( response_count ) ) );
         okay = true;

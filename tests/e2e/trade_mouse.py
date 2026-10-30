@@ -6,6 +6,7 @@ it to Debt, and unmarking flips it back. Row clicks must only select and
 mark - no click closes the screen, accepts the deal or transfers either
 side's items. Escape cancels the marked/unmarked trade.
 """
+import re
 from helpers import HELPERS, action_menu, arena, settle
 from tmux_game import Game, start_new_game
 
@@ -46,8 +47,10 @@ def test_trade_clicks_pair_and_never_confirm_the_deal(_g):
         g.wait_for("Talk to ")
         g.keys("t", delay=0.5)
         g.wait_for("Let's trade")
-        # The response can wrap across terminal rows; its hotkey still selects it.
-        g.keys("c", delay=0.5)
+        # The response can wrap across terminal rows; its number (Modern) still selects it.
+        reply = re.search(r"│ (\d) [^\n]*Let's trade", g.screen()) or re.search(r"│ (\d) A daring trader", g.screen())
+        assert reply, g.screen()
+        g.keys(reply.group(1), delay=0.5)
         g.wait_for("Inventory:")
         assert "Credit" in g.screen(), \
             "the farmer must trade at prices, not exchange freely\n" + g.screen()

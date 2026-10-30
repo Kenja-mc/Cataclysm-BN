@@ -130,6 +130,8 @@ auto hotkey_for( const action_id act ) -> int
         return 'S';
     case ACTION_BUTCHER:
         return 'B';
+    case ACTION_CHAT:
+        return 't';
     default:
         return MENU_AUTOASSIGN;
 }
@@ -242,6 +244,12 @@ auto interact_choices( const avatar &you, const tripoint_bub_ms &p,
     if( p == you.bub_pos() && can_examine_at( p ) ) {
         out.push_back( { .act = ACTION_EXAMINE, .label = string_format( _( "examine the %s" ), m.name( p ) ) } );
     }
+    // Somebody standing next to you is talked to, not examined like the floor under them.
+    if( const auto *guy = g->critter_at<npc>( p ); guy != nullptr && p != you.bub_pos() &&
+        square_dist( p.xy(), you.bub_pos().xy() ) == 1 && you.sees( *guy ) ) {
+        std::erase_if( out, []( const choice & c ) { return c.act == ACTION_EXAMINE; } );
+        out.push_back( { .act = ACTION_CHAT, .label = string_format( _( "talk to %s" ), guy->disp_name() ) } );
+    }
     // Butchery follows the corpse, not a key: it appears wherever a body lies in reach.
     const auto has_butcher_tool = [&you] {
         return you.max_quality( quality_id( "BUTCHER" ) ) > INT_MIN ||
@@ -318,6 +326,9 @@ auto run_interaction( avatar &you, const interaction &what ) -> void
         case ACTION_SMASH:
             smash_at( p );
             break;
+        case ACTION_CHAT:
+            g->chat();
+            break;
         case ACTION_BUTCHER:
             if( you.has_active_mutation( trait_SHELL2 ) ) {
                 add_msg( m_info, _( "You can't butcher while you're in your shell." ) );
@@ -348,6 +359,8 @@ auto choice_rank( const choice &c, const bool obstacle ) -> int
         case ACTION_OPEN:
         case ACTION_CLOSE:
             return 10;
+        case ACTION_CHAT:
+            return 15;
         case ACTION_PICKUP:
             return c.vehicle_cargo ? 40 : 20;
         case ACTION_MOVE_DOWN:

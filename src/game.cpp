@@ -9618,6 +9618,19 @@ void game::print_all_tile_info( const tripoint_bub_ms &lp, const catacurses::win
         case VIS_LIT:
         case VIS_HIDDEN:
             print_visibility_info( w_look, column, line, visibility );
+            // What the player remembers of an unseen tile is still worth reading.
+            if( inbounds ) {
+                const auto &memory = u.get_memorized_tile( bub_to_abs( lp ) );
+                const auto remembered = furn_str_id( memory.tile ).is_valid() ?
+                                        furn_str_id( memory.tile )->name() :
+                                        ter_str_id( memory.tile ).is_valid() ?
+                                        ter_str_id( memory.tile )->name() : std::string();
+                if( !remembered.empty() ) {
+                    mvwprintz( w_look, point( column, line - 1 ), c_dark_gray,
+                               string_format( _( "Remembered: %s" ), remembered ) );
+                    line += 1;
+                }
+            }
 
             if( creature != nullptr ) {
                 std::vector<std::string> buf;

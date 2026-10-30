@@ -621,6 +621,7 @@ class game : public submap_load_listener
          */
         void unload_npcs();
     public:
+        void chat(); // Talk to a nearby NPC  'C'
         /** Unloads, then loads the NPCs */
         void reload_npcs();
         /** Immediately removes NPC with the given id from active_npc. */
@@ -995,7 +996,6 @@ class game : public submap_load_listener
                                     bool allow_ledge_examine ) const;
     private:
         auto player_visibility_cache_current() const -> bool;
-        void chat(); // Talk to a nearby NPC  'C'
 
         // Internal methods to show "look around" info
         void print_fields_info( const tripoint_bub_ms &lp, const catacurses::window &w_look, int column,

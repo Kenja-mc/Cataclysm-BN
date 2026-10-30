@@ -2078,6 +2078,8 @@ static auto display(const tripoint_abs_omt& orig, const draw_data_t& data = draw
     // Right-drag pans: the map follows the pointer, one overmap tile per tile of travel.
     std::optional<point> drag_anchor;
     point drag_remainder{};
+    // A left press selects at once; a drag that follows undoes that jump and pans instead.
+    std::optional<tripoint_abs_omt> before_select;
 #endif
     std::chrono::time_point<std::chrono::steady_clock> last_blink =
         std::chrono::steady_clock::now();
@@ -2113,8 +2115,9 @@ static auto display(const tripoint_abs_omt& orig, const draw_data_t& data = draw
 #if defined(TILES)
             if (action == "MOUSE_MOVE" && use_tiles_overmap && overmap_tilecontext) {
                 const auto raw = ictxt.get_raw_input();
+                const auto buttons = SDL_GetMouseState(nullptr, nullptr);
                 const bool right_held = raw.type == input_event_t::mouse &&
-                                        (SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON_RMASK) != 0;
+                                        (buttons & (SDL_BUTTON_RMASK | SDL_BUTTON_LMASK)) != 0;
                 if (right_held) {
                     if (drag_anchor) {
                         drag_remainder += raw.mouse_pos - *drag_anchor;
@@ -2122,6 +2125,10 @@ static auto display(const tripoint_abs_omt& orig, const draw_data_t& data = draw
                         const int tile_h = std::max(1, overmap_tilecontext->get_tile_height());
                         const point steps(drag_remainder.x / tile_w, drag_remainder.y / tile_h);
                         if (steps != point_zero) {
+                            if (before_select) {
+                                curs = *before_select;
+                                before_select.reset();
+                            }
                             curs -= steps;
                             drag_remainder -= point(steps.x * tile_w, steps.y * tile_h);
                         }
@@ -2130,10 +2137,16 @@ static auto display(const tripoint_abs_omt& orig, const draw_data_t& data = draw
                 } else {
                     drag_anchor.reset();
                     drag_remainder = point_zero;
+                    before_select.reset();
                 }
             }
 #endif
         } else if (action == "SELECT" && (mouse_pos = ictxt.get_coordinates(g->w_overmap))) {
+#if defined(TILES)
+            before_select = curs;
+            drag_anchor = ictxt.get_raw_input().mouse_pos;
+            drag_remainder = point_zero;
+#endif
             curs += mouse_pos->xy().raw();
         } else if (action == "CENTER") {
             curs = orig;

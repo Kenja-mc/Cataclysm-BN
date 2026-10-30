@@ -80,6 +80,7 @@ from interaction_routes import TESTS as INTERACTION_ROUTES_TESTS
 from tutorial_routes import TESTS as TUTORIAL_ROUTES_TESTS
 from grouped_sidebar import TESTS as GROUPED_SIDEBAR_TESTS
 from hud_fusion import TESTS as HUD_FUSION_TESTS
+from npc_talk import TESTS as NPC_TALK_TESTS
 from unbound_mouse import TESTS as UNBOUND_MOUSE_TESTS
 from menu_scrollbars import TESTS as MENU_SCROLLBARS_TESTS
 from overmap_controls import TESTS as OVERMAP_CONTROLS_TESTS
@@ -154,6 +155,7 @@ MODULES = [
     ("tutorial_routes", TUTORIAL_ROUTES_TESTS),
     ("grouped_sidebar", GROUPED_SIDEBAR_TESTS),
     ("hud_fusion", HUD_FUSION_TESTS),
+    ("npc_talk", NPC_TALK_TESTS),
     ("unbound_mouse", UNBOUND_MOUSE_TESTS),
     ("menu_scrollbars", MENU_SCROLLBARS_TESTS),
     ("overmap_controls", OVERMAP_CONTROLS_TESTS),

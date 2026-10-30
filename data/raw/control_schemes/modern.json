@@ -24,7 +24,7 @@
     "id": "ZOOM_OUT",
     "category": "OVERMAP",
     "name": "Zoom Out",
-    "bindings": [ { "input_method": "keyboard", "key": "-" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "-" }, { "input_method": "mouse", "key": "SCROLL_DOWN" } ]
   },
   {
     "type": "keybinding",
@@ -130,7 +130,11 @@
     "id": "ZOOM_IN",
     "category": "OVERMAP",
     "name": "Zoom In",
-    "bindings": [ { "input_method": "keyboard", "key": "=" }, { "input_method": "keyboard", "key": "+" } ]
+    "bindings": [
+      { "input_method": "keyboard", "key": "=" },
+      { "input_method": "keyboard", "key": "+" },
+      { "input_method": "mouse", "key": "SCROLL_UP" }
+    ]
   },
   {
     "type": "keybinding",
@@ -656,14 +660,18 @@
     "id": "zoom_in",
     "category": "LOOK",
     "name": "Zoom in",
-    "bindings": [ { "input_method": "keyboard", "key": "=" }, { "input_method": "keyboard", "key": "+" } ]
+    "bindings": [
+      { "input_method": "keyboard", "key": "=" },
+      { "input_method": "keyboard", "key": "+" },
+      { "input_method": "mouse", "key": "SCROLL_UP" }
+    ]
   },
   {
     "type": "keybinding",
     "id": "zoom_out",
     "category": "LOOK",
     "name": "Zoom out",
-    "bindings": [ { "input_method": "keyboard", "key": "-" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "-" }, { "input_method": "mouse", "key": "SCROLL_DOWN" } ]
   },
   {
     "type": "keybinding",
