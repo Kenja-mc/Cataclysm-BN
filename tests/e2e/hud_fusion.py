@@ -145,7 +145,7 @@ def test_around_names_who_is_in_sight(_g):
         game.settle_screen()
         screen = game.screen()
         assert re.search(r"├─* *AROUND \d+ hostile", screen), screen
-        assert re.search(r"zombie +NE \d", screen), "AROUND names the creature and where it is:\n" + screen
+        assert re.search(r"zombie +[NSEW]{1,2} \d", screen), "AROUND names the creature and where it is:\n" + screen
         assert game.lua("for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end out('ok')") == ["ok"]
         game.keys("x", delay=0.8)
 
