@@ -10,6 +10,7 @@ rest of the set.
 """
 import argparse
 import hashlib
+import json
 import os
 import shutil
 import subprocess
@@ -28,6 +29,12 @@ from helpers import HELPERS, arena, give, spawn, settle, save_and_quit  # noqa: 
 
 # Each key tuple is one chord; successive tuples are separate key presses.
 SHOTS = [
+    dict(id="hud-fusion", title="Fusion HUD",
+         keys=[], layout="fusion",
+         options={"CONTROL_SCHEME": "modern", "TERMINAL_X": "160", "TERMINAL_Y": "45"},
+         body="The default layout on screens of at least 140 by 36 cells. A status card, a one-line "
+              "ribbon and a loadout deck sit over the map; the sidebar stacks the minimap, body, "
+              "surroundings and log under section rules."),
     dict(id="hud-modern", title="Modern HUD",
          keys=[], options={"CONTROL_SCHEME": "modern", "HUD_WEATHER_BOX": "top_left",
                            "HUD_COMBAT_BOX": "top_left"},
@@ -131,13 +138,16 @@ def build_world(session, scheme="modern", setup=""):
     return userdir, world
 
 
-def launch(session, label, options, run_root, fixture):
+def launch(session, label, options, run_root, fixture, layout=None):
     """Starts the tiles build on a copy of the scheme's fixture save and returns the process and window."""
     fixture_dir, world = fixture
     run = run_root / label
     userdir, xdg = run / "userdir", run / "xdg"
     shutil.copytree(fixture_dir / "config", userdir / "config")
     shutil.copytree(fixture_dir / "save", userdir / "save")
+    if layout:
+        (userdir / "config" / "panel_options.json").write_text(
+            json.dumps([{"current_layout_id": layout, "layouts": []}]))
     shutil.copytree(userdir / "config", xdg / "cataclysm-bn")
     patch_launch_options(userdir, xdg, {**DETERMINISTIC_OPTIONS, **options})
     for sub in ("home", "cache", "data", "state"):
@@ -205,7 +215,7 @@ def main():
             proc = x11 = None
             try:
                 proc, x11, window, run = launch(session, shot["id"], shot["options"], work,
-                                                fixtures[(scheme, setup)])
+                                                fixtures[(scheme, setup)], shot.get("layout"))
                 for keys in shot.get("keys", ()):
                     x11.key(*keys, delay=0.6)
                 if shot.get("click"):

@@ -1,5 +1,6 @@
 #include "hud_boxes.h"
 #include "hud_sidebar.h"
+#include "hud_snapshot.h"
 
 #include <algorithm>
 #include <array>
@@ -35,6 +36,7 @@
 #include "needs_status.h"
 #include "options.h"
 #include "output.h"
+#include "overmap/omdata.h"
 #include "overmap/overmapbuffer_registry.h"
 #include "panels.h"
 #include "panels_utility.h"
@@ -2113,3 +2115,137 @@ auto draw( avatar &you, const catacurses::window &w, const section content ) -> 
 }
 
 } // namespace hud_sidebar
+
+namespace hud_snapshot
+{
+
+auto read( const avatar &you ) -> snapshot
+{
+    auto out = snapshot();
+    out.underground = you.bub_pos().z() < 0;
+    out.time = time_text( you );
+    out.date = season_day_text();
+    const auto &w = get_weather();
+    out.weather = weather_text( you, out.underground );
+    out.weather_color = out.underground ? c_light_gray : w.weather_id->color;
+    const auto light = get_light_level( character_funcs::fine_detail_vision_mod( you ) );
+    out.light = light.first;
+    out.light_color = light.second;
+    const auto wind = wind_text( you, false );
+    out.wind = wind.text;
+    out.wind_color = wind.color;
+    out.place = ACTIVE_OVERMAP_BUFFER.ter( you.abs_omt_pos() )->get_name();
+
+    auto hp = 0;
+    auto hp_max = 0;
+    for( const auto &bp : you.get_all_body_parts( true ) ) {
+        hp += you.get_part_hp_cur( bp );
+        hp_max += you.get_part_hp_max( bp );
+        auto entry = limb{
+            .name = body_part_hp_bar_ui_text( bp ), .hp = you.get_part_hp_cur( bp ),
+            .hp_max = you.get_part_hp_max( bp ),
+            .color = get_hp_bar( you.get_part_hp_cur( bp ), you.get_part_hp_max( bp ) ).second
+        };
+        if( const auto wound = hud_windows::wound_for( you, bp ) ) {
+            entry.wound = wound->first;
+            entry.wound_color = wound->second;
+        }
+        out.limbs.push_back( std::move( entry ) );
+    }
+    out.hp_percent = hp_max > 0 ? hp * 100 / hp_max : 0;
+    out.hp_color = get_hp_bar( hp, hp_max ).second;
+    out.stamina = you.get_stamina();
+    out.stamina_max = std::max( 1, you.get_stamina_max() );
+    out.focus = you.focus_pool;
+    out.pain_level = you.get_perceived_pain();
+    out.morale = you.get_morale_level();
+    out.speed = you.get_speed();
+    out.move_counter = you.movecounter;
+    out.sound = hud_windows::sound_text( you );
+    out.stance = _( "Walking" );
+    if( you.movement_mode_is( CMM_RUN ) ) {
+        out.stance = _( "Running" );
+        out.stance_color = c_red;
+    } else if( you.movement_mode_is( CMM_CROUCH ) ) {
+        out.stance = _( "Crouching" );
+        out.stance_color = c_light_blue;
+    } else if( you.movement_mode_is( CMM_PRONE ) ) {
+        out.stance = _( "Prone" );
+        out.stance_color = c_brown;
+    }
+
+    const auto values = needs_status::read( you );
+    const auto to_need = []( const char *label, const needs_status::reading & r ) {
+        return need{ .label = _( label ), .text = r.text, .color = r.color, .fine = r.fine };
+    };
+    out.pain = to_need( "Pain", values.pain );
+    out.thirst = to_need( "Thirst", values.thirst );
+    out.hunger = to_need( "Hunger", values.hunger );
+    out.rest = to_need( "Rest", values.rest );
+    out.heat = to_need( "Body temp", values.heat );
+
+    const auto &weapon = you.primary_weapon();
+    out.armed = you.is_armed();
+    out.weapon = out.armed ? weapon.tname() : std::string( _( "fists" ) );
+    out.gun = out.armed && weapon.is_gun();
+    if( out.gun ) {
+        out.ammo = string_format( "%d/%d", weapon.ammo_remaining(), weapon.ammo_capacity() );
+    }
+    out.weapon_symbol = out.armed ? weapon.symbol() : std::string( "@" );
+    out.weapon_color = out.armed ? weapon.color() : c_light_gray;
+    out.style = you.martial_arts_data->selected_is_none() ? std::string() :
+                you.martial_arts_data->selected_style_name( you );
+
+    out.weight = hud_windows::carry_weight_text( you );
+    out.volume = hud_windows::carry_volume_text( you );
+    out.weight_kg = convert_weight( you.weight_carried() );
+    out.volume_l = convert_volume( to_milliliter( you.volume_carried() ) );
+    out.weight_color = hud_windows::weight_color( you );
+    out.volume_color = hud_windows::volume_color( you );
+    out.safe_mode = g->safe_mode != SAFE_MODE_OFF;
+    out.safe_color = hud_windows::safe_color();
+    out.str = you.get_str();
+    out.dex = you.get_dex();
+    out.intel = you.get_int();
+    out.per = you.get_per();
+
+    for( const auto &msg : Messages::recent_messages( 10 ) ) {
+        out.log.push_back( msg.second );
+    }
+    const auto &sight = you.get_mon_visible();
+    for( auto i = size_t{ 0 }; i < out.compass.size(); ++i ) {
+        auto &cell = out.compass[i];
+        cell.count = static_cast<int>( sight.unique_types[i].size() );
+        cell.symbols.append( sight.unique_types[i].size(), '@' );
+        for( const auto &mon : sight.unique_mons[i] ) {
+            cell.symbols += mon.first->sym;
+            cell.count += mon.second;
+        }
+        cell.dangerous = i < 8 && sight.dangerous[i];
+    }
+
+    const auto describe = []( const item & it ) {
+        auto detail = std::string();
+        if( it.is_gun() ) {
+            detail = string_format( "%d/%d", it.ammo_remaining(), it.ammo_capacity() );
+        } else if( it.count_by_charges() && it.charges > 1 ) {
+            detail = string_format( "x%d", it.charges );
+        }
+        return carried{ .name = it.type_name(), .symbol = it.symbol(), .color = it.color(),
+                        .detail = detail };
+    };
+    if( out.armed ) {
+        out.loadout.push_back( describe( weapon ) );
+    }
+    for( const auto *it : you.all_items( false ) ) {
+        if( out.loadout.size() >= 6 ) {
+            break;
+        }
+        if( it != &weapon && !it->is_null() ) {
+            out.loadout.push_back( describe( *it ) );
+        }
+    }
+    return out;
+}
+
+} // namespace hud_snapshot

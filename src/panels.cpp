@@ -28,6 +28,7 @@
 #include "json.h"
 #include "body_panel.h"
 #include "hud_boxes.h"
+#include "hud_fusion.h"
 #include "hud_sidebar.h"
 #include "hud_windows.h"
 #include "keyhints_panel.h"
@@ -2804,6 +2805,23 @@ auto initialize_grouped_panels() -> std::vector<window_panel>
     return ret;
 }
 
+/// The fusion sidebar: map, body, surroundings and log, each opened by a section rule. The
+/// status card, ribbon and loadout deck draw over the map (hud_fusion).
+auto initialize_fusion_panels() -> std::vector<window_panel>
+{
+    auto ret = std::vector<window_panel>();
+#if defined(TILES)
+    ret.emplace_back( hud_fusion::draw_map_rule, translate_marker( "Map title" ), 1, 44, true,
+                      default_render, true );
+    ret.emplace_back( draw_mminimap, translate_marker( "Map" ), -1, 44, true, default_render, true );
+#endif
+    ret.emplace_back( hud_fusion::draw_body, translate_marker( "Body" ), 7, 44, true, limbs_panel );
+    ret.emplace_back( hud_fusion::draw_around, translate_marker( "Around" ), 4, 44, true,
+                      compass_panel );
+    ret.emplace_back( hud_fusion::draw_log, translate_marker( "Log" ), -2, 44, true, log_panel );
+    return ret;
+}
+
 } // namespace
 
 static std::map<std::string, std::vector<window_panel>> initialize_default_panel_layouts()
@@ -2816,19 +2834,20 @@ static std::map<std::string, std::vector<window_panel>> initialize_default_panel
                  initialize_default_label_narrow_panels() );
     ret.emplace( translate_marker( "labels" ), initialize_default_label_panels() );
     ret.emplace( translate_marker( "grouped" ), initialize_grouped_panels() );
+    ret.emplace( translate_marker( "fusion" ), initialize_fusion_panels() );
 
     return ret;
 }
 
 panel_manager::panel_manager()
 {
-    current_layout_id = "grouped";
+    current_layout_id = "fusion";
     layouts = initialize_default_panel_layouts();
 }
 
 std::vector<window_panel> &panel_manager::get_current_layout()
 {
-    auto kv = layouts.find( current_layout_id );
+    auto kv = layouts.find( get_current_layout_id() );
     if( kv != layouts.end() ) {
         return kv->second;
     }
@@ -2839,7 +2858,9 @@ std::vector<window_panel> &panel_manager::get_current_layout()
 
 std::string panel_manager::get_current_layout_id() const
 {
-    return current_layout_id;
+    // Fusion needs a large screen; smaller ones use the grouped layout of the same width.
+    return current_layout_id == "fusion" && !hud_fusion::fits() ? std::string( "grouped" ) :
+           current_layout_id;
 }
 
 int panel_manager::get_width_right()

@@ -4,6 +4,7 @@
 #include "cursesdef.h"
 #include "cursesport.h"
 #include "game.h"
+#include "hud_fusion.h"
 #include "map/map.h"
 #include "options.h"
 #include "output.h"
@@ -55,8 +56,10 @@ void live_view::show( const tripoint_bub_ms &p )
             g->pre_print_all_tile_info( mouse_position, win, line_out, line_limit, cache );
             const int live_view_box_height = std::min( max_height, std::max( line_out + 2, MIN_BOX_HEIGHT ) );
 
-            // The box sits in the top-left corner whatever side the sidebar takes.
-            win = catacurses::newwin( live_view_box_height, width, point_zero );
+            // The box sits in the top-left corner whatever side the sidebar takes; the fusion
+            // layout keeps that corner for its status card, so the box covers the minimap instead.
+            const auto at = hud_fusion::active() && sidebar_right ? point( TERMX - width, 0 ) : point_zero;
+            win = catacurses::newwin( live_view_box_height, width, at );
             ui.position_from_window( win );
         } );
         ui->on_redraw( [this]( const ui_adaptor & ) {

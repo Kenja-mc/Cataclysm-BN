@@ -88,6 +88,7 @@
 #include "first_tips.h"
 #include "enemy_indicators.h"
 #include "hud_boxes.h"
+#include "hud_fusion.h"
 #include "hud_windows.h"
 #include "keyhints_panel.h"
 #include "kill_tracker.h"
@@ -5222,14 +5223,18 @@ void game::draw( ui_adaptor &ui )
     }
     // Terminal boxes go into the map window; tiles boxes are their own windows on top of the
     // map, so they must come after the map refresh that paints the tiles.
-    if( !is_draw_tiles_mode() ) {
+    const auto fusion = hud_fusion::active();
+    if( !is_draw_tiles_mode() && !fusion ) {
         hud_boxes::draw( u, w_terrain );
     }
     {
         ZoneScopedN( "game_draw_wrefresh" );
         wnoutrefresh( w_terrain );
     }
-    if( is_draw_tiles_mode() ) {
+    // The fusion overlays are their own windows in both builds, painted over the refreshed map.
+    if( fusion ) {
+        hud_fusion::draw( u, w_terrain );
+    } else if( is_draw_tiles_mode() ) {
         hud_boxes::draw( u, w_terrain );
     }
 
