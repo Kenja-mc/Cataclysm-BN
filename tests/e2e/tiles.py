@@ -1020,6 +1020,16 @@ def case_overmap(session):
                              for i in range(0, len(before[2]), 3))
                 checks.append(Check(f"{scale}x right-drag pans the overmap",
                                     panned > 0, f"{panned} pixels changed"))
+                # Left-drag pans too, and the release that ends it does not also select.
+                x11.drag(window, (center_x, center_y), (center_x - 3 * tile, center_y - tile), button=1)
+                left = settled("left-dragged", reference=dragged)
+                moved = sum(dragged[2][i:i + 3] != left[2][i:i + 3] for i in range(0, len(left[2]), 3))
+                checks.append(Check(f"{scale}x left-drag pans the overmap", moved > 0, f"{moved} pixels changed"))
+                x11.drag(window, (center_x - 3 * tile, center_y - tile), (center_x, center_y), button=1)
+                back = settled("left-dragged-back", reference=left)
+                undone = sum(dragged[2][i:i + 3] != back[2][i:i + 3] for i in range(0, len(back[2]), 3))
+                checks.append(Check(f"{scale}x dragging back restores the view (release does not select)",
+                                    undone == 0, f"{undone} pixels differ"))
                 x11.key("m")
                 returned = wait_for_frame(session, live.proc, live.run, session.timeout)
                 checks.append(Check(f"{scale}x m closes the overmap",

@@ -1501,9 +1501,15 @@ auto pickup::pick_up_all_nearby() -> void
 
 auto pickup::pick_up_all_at_feet() -> void
 {
-    const auto nearby = nearby_items_for_pickup( g->u.bub_pos(), 0 );
+    pick_up_all_at( g->u.bub_pos() );
+}
+
+auto pickup::pick_up_all_at( const tripoint_bub_ms &p ) -> void
+{
+    const auto nearby = nearby_items_for_pickup( p, 0 );
     if( nearby.items.empty() ) {
-        add_msg( _( "There is nothing to pick up here." ) );
+        add_msg( p == g->u.bub_pos() ? _( "There is nothing to pick up here." ) :
+                 _( "There is nothing to pick up there." ) );
         return;
     }
     auto locations = nearby.items | std::views::transform( []( const auto & it ) { return *it; } ) |

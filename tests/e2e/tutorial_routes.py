@@ -71,7 +71,7 @@ def initial_lessons(game, scheme):
 
 
 def open_pickup_menu(game, scheme, item):
-    game.keys("G" if scheme == "modern" else ",", delay=0)
+    game.keys("C-g" if scheme == "modern" else ",", delay=0)
     game.wait_for(item)
     game.wait_for("Select all")
     game.wait_for("Confirm Choice")

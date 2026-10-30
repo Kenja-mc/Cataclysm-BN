@@ -63,11 +63,13 @@ def test_grouped_ctrl_direction_peeks_and_restores_position(_game):
             assert action_clock(game) > clock, "peeking keeps its normal time cost"
 
 
-def test_grouped_shift_x_cycles_all_movement_modes(_game):
+def test_grouped_shift_x_opens_the_stance_menu_for_every_mode(_game):
     with no_mouse_movement_game("bn-e2e-grouped-stances") as game:
         before = bub_pos(game)
-        for mode in ("Running", "Crouching", "Prone", "Walking"):
+        for mode, key in (("Running", "r"), ("Crouching", "c"), ("Prone", "p"), ("Walking", "W")):
             game.keys("X", delay=1)
+            assert "Change to which movement mode?" in game.screen(), game.screen()
+            game.keys(key, delay=1)
             assert any(mode in line for line in game.screen().splitlines()[:15]), (
                 "the HUD must show the next movement mode " + mode + ":\n" + game.screen())
             assert bub_pos(game) == before, "changing movement mode must not move the avatar"
@@ -245,7 +247,7 @@ def test_grouped_live_classic_switch_clears_inspection_before_fire(_game):
 TESTS = [test_grouped_shift_direction_keys_do_not_select_by_default,
          test_grouped_look_selects_the_space_interaction_tile,
          test_grouped_ctrl_direction_peeks_and_restores_position,
-         test_grouped_shift_x_cycles_all_movement_modes,
+         test_grouped_shift_x_opens_the_stance_menu_for_every_mode,
          test_grouped_tab_cycles_visible_hostiles_and_wraps,
          test_grouped_fire_from_empty_inspection_aims_at_hostile,
          test_grouped_distant_melee_selection_never_redirects_or_walks,

@@ -1,4 +1,4 @@
-"""Ctrl+Space finds an action by name, shows how it is reached, and runs the pick."""
+"""Ctrl+F and Ctrl+Space find an action by name, show how it is reached, and run the pick."""
 from fixtures import shared_game
 
 
@@ -6,7 +6,7 @@ def test_ctrl_space_search_runs_the_picked_action(_g):
     with shared_game("bn-e2e-action-search", options={
         "CONTROL_SCHEME": "modern", "SAFEMODE": "false", "EDGE_SCROLL": "-1",
     }) as game:
-        game.keys("C-f", delay=0.6)
+        game.keys("C-Space", delay=0.6)
         game.wait_for("Find an action")
         game.type("view map")
         game.keys("Enter", delay=0.6)          # submit the query

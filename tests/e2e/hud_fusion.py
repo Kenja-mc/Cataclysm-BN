@@ -88,7 +88,7 @@ def test_hotbar_assign_menu_stores_the_chosen_item(_g):
     with shared_game("bn-e2e-fusion", options=OPTIONS, layout="fusion", cols=160, rows=45,
                      define=HELPERS, setup=fusion_setup) as game:
         give(game, "knife_combat", 1)
-        game.keys("Z", delay=0.6)
+        game.keys("C-t", delay=0.6)
         game.wait_for("Assign which hotbar slot", timeout=15)
         game.keys("3", delay=0.8)
         game.wait_for("Put which item", timeout=15)

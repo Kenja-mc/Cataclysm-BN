@@ -87,7 +87,7 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
         { ACTION_FIRE, modern ? _( "attack" ) : _( "fire" ) }, { ACTION_AUTOATTACK, _( "attack" ) },
         { ACTION_PICKUP, _( "pick up" ) }, { ACTION_PAUSE, _( "wait" ) }, { ACTION_MAP, _( "map" ) },
         { ACTION_WORLD_HUB, _( "world" ) }, { ACTION_BODY_STATUS, _( "health" ) },
-        { ACTION_PICKUP_LIST, _( "pickup list" ) }, { ACTION_RELOAD_ITEM, _( "reload" ) },
+        { ACTION_QUICK_PICKUP, _( "take all" ) }, { ACTION_PICKUP_ALL, _( "nearby items" ) }, { ACTION_RELOAD_ITEM, _( "reload" ) },
         { ACTION_CRAFT, _( "craft" ) }, { ACTION_AUTO_EXPLORE, _( "explore" ) },
         { ACTION_SEARCH_ACTION, _( "find action" ) },
     };
@@ -134,7 +134,7 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
         if( !ctxt.key_bound_to( "NEXT_TARGET", 0, false ).empty() ) {
             push( ctxt.get_desc( "NEXT_TARGET", 1 ), _( "target" ) );
         }
-        push( first_key( ACTION_CYCLE_MOVE ), _( "stance" ) );
+        push( first_key( ACTION_OPEN_MOVEMENT ), _( "stance" ) );
         // Shift+direction moves the selection marker; calling it "look" made it read like peeking.
         push( joined_keys( { ACTION_SHIFT_N, ACTION_SHIFT_W, ACTION_SHIFT_S, ACTION_SHIFT_E } ),
               _( "select" ) );
@@ -280,14 +280,14 @@ const auto key = []( const action_id act ) { return colorize( action_route( act 
     text += string_format(
                 _( "%1$s acts on the tile you face or select: doors, items, corpses, stairs.  Jump and Smash are always asked first.\n"
                    "%2$s opens inventory; pick an item for its actions, or press %3$s there to craft.  %4$s uses an item by its kind.\n"
-                   "%5$s picks up underfoot; %6$s opens the pickup list.  %7$s lists every command; %8$s finds one by name.\n"
+                   "%5$s picks up items beside you; %6$s lists everything nearby.  %7$s lists every command; %8$s finds one by name.\n"
                    "%9$s selects a hostile and %10$s attacks it; walking into an enemy attacks too.  %11$s changes stance.\n"
                    "%12$s opens the map; %13$s opens missions, factions, zones and scores.\n" ),
                 key( ACTION_EXAMINE ), key( ACTION_INVENTORY ),
                 colorize( action_route( "CRAFT", "INVENTORY" ), c_light_cyan ), key( ACTION_USE_CONTEXTUAL ),
-                key( ACTION_PICKUP ), key( ACTION_PICKUP_LIST ), key( ACTION_ACTIONMENU ),
+                key( ACTION_PICKUP ), key( ACTION_PICKUP_ALL ), key( ACTION_ACTIONMENU ),
                 key( ACTION_SEARCH_ACTION ), key_id( "NEXT_TARGET" ), key( ACTION_FIRE ),
-                key( ACTION_CYCLE_MOVE ), key( ACTION_MAP ), key( ACTION_WORLD_HUB ) );
+                key( ACTION_OPEN_MOVEMENT ), key( ACTION_MAP ), key( ACTION_WORLD_HUB ) );
         if( const auto peek = peek_keys( input_context( "DEFAULTMODE" ) ); !peek.empty() ) {
             text += string_format( _( "%s peeks around a corner, which takes time.\n" ),
                                    colorize( peek, c_light_cyan ) );

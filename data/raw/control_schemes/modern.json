@@ -446,28 +446,28 @@
     "name": "Select tile north",
     "category": "DEFAULTMODE",
     "id": "shift_n",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "W" } ]
   },
   {
     "type": "keybinding",
     "name": "Select tile east",
     "category": "DEFAULTMODE",
     "id": "shift_e",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "D" } ]
   },
   {
     "type": "keybinding",
     "name": "Select tile south",
     "category": "DEFAULTMODE",
     "id": "shift_s",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "S" } ]
   },
   {
     "type": "keybinding",
     "name": "Select tile west",
     "category": "DEFAULTMODE",
     "id": "shift_w",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "A" } ]
   },
   {
     "type": "keybinding",
@@ -516,14 +516,14 @@
     "name": "Pick up items from all nearby tiles",
     "category": "DEFAULTMODE",
     "id": "pickup_all",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "CTRL+G" } ]
   },
   {
     "type": "keybinding",
     "id": "quick_pickup",
     "category": "DEFAULTMODE",
     "name": "Take everything underfoot",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "G" } ]
   },
   {
     "type": "keybinding",
@@ -572,7 +572,7 @@
     "id": "hotbar_assign",
     "category": "DEFAULTMODE",
     "name": "Assign a hotbar slot",
-    "bindings": [ { "input_method": "keyboard", "key": "Z" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "CTRL+T" } ]
   },
   {
     "type": "keybinding",
@@ -784,7 +784,7 @@
     "name": "Drop Item",
     "category": "DEFAULTMODE",
     "id": "drop",
-    "bindings": [ { "input_method": "keyboard", "key": "CTRL+G" } ]
+    "bindings": [  ]
   },
   {
     "type": "keybinding",
@@ -2103,28 +2103,28 @@
     "name": "Select tile northeast",
     "category": "DEFAULTMODE",
     "id": "shift_ne",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "E" } ]
   },
   {
     "type": "keybinding",
     "name": "Select tile southeast",
     "category": "DEFAULTMODE",
     "id": "shift_se",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "C" } ]
   },
   {
     "type": "keybinding",
     "name": "Select tile southwest",
     "category": "DEFAULTMODE",
     "id": "shift_sw",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "Z" } ]
   },
   {
     "type": "keybinding",
     "name": "Select tile northwest",
     "category": "DEFAULTMODE",
     "id": "shift_nw",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "Q" } ]
   },
   {
     "type": "keybinding",
@@ -2138,14 +2138,14 @@
     "name": "Cycle move mode (run/walk/crouch)",
     "category": "DEFAULTMODE",
     "id": "cycle_move",
-    "bindings": [ { "input_method": "keyboard", "key": "X" } ]
+    "bindings": [  ]
   },
   {
     "type": "keybinding",
     "name": "Movement Mode Menu",
     "category": "DEFAULTMODE",
     "id": "open_movement",
-    "bindings": [  ]
+    "bindings": [ { "input_method": "keyboard", "key": "X" } ]
   },
   {
     "type": "keybinding",
@@ -2467,7 +2467,7 @@
     "name": "Pick up (open the picker)",
     "category": "DEFAULTMODE",
     "id": "pickup_list",
-    "bindings": [ { "input_method": "keyboard", "key": "G" } ]
+    "bindings": [  ]
   },
   {
     "type": "keybinding",
@@ -2488,6 +2488,6 @@
     "name": "Find an Action",
     "category": "DEFAULTMODE",
     "id": "search_action",
-    "bindings": [ { "input_method": "keyboard", "key": "CTRL+F" } ]
+    "bindings": [ { "input_method": "keyboard", "key": "CTRL+F" }, { "input_method": "keyboard", "key": "CTRL_SPACE" } ]
   }
 ]

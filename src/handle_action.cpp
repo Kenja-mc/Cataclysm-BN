@@ -1890,7 +1890,9 @@ static void open_movement_mode_menu()
     as_m.entries.emplace_back( CMM_WALK, true, 'w', _( "Walk" ) );
     as_m.entries.emplace_back( CMM_CROUCH, true, 'c', _( "Crouch" ) );
     as_m.entries.emplace_back( CMM_PRONE, true, 'p', _( "Prone" ) );
-    as_m.entries.emplace_back( CMM_COUNT, true, '"', _( "Cycle move mode" ) );
+    // In Modern the stance key opens this menu, so pressing it again cycles.
+    const auto stance_key = get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ? 'X' : '"';
+    as_m.entries.emplace_back( CMM_COUNT, true, stance_key, _( "Cycle move mode" ) );
     as_m.selected = 1;
     as_m.query();
 
@@ -2859,6 +2861,11 @@ bool game::handle_action()
                     add_msg( m_info, _( "You can't pick anything up while you're in your shell." ) );
                 } else if( u.is_mounted() ) {
                     add_msg( m_info, _( "You can't pick anything up while you're riding." ) );
+                } else if( mouse_target && tile_selection::reachable( u, *mouse_target ) ) {
+                    pickup::pick_up_all_at( *mouse_target );
+                } else if( const auto tile = modern_pickup_target( u ) ) {
+                    // Modern: everything on the tile beside you that you face or selected.
+                    pickup::pick_up_all_at( *tile );
                 } else {
                     pickup::pick_up_all_at_feet();
                 }

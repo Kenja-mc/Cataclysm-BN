@@ -2126,6 +2126,10 @@ static int sdl_keysym_to_curses( const SDL_Keycode sym, const SDL_Keymod mod )
         // ASCII ctrl codes, ^A through ^Z.
         return sym - 'a' + '\1';
     }
+    if( mod & SDL_KMOD_CTRL && sym == SDLK_SPACE ) {
+        // Where this reaches us as a key at all it is NUL; 0 is the invalid-key sentinel.
+        return KEY_CTRL_SPACE;
+    }
     switch( sym ) {
         // This is special: allow entering a Unicode character with ALT+number
         case SDLK_RALT:
@@ -3002,6 +3006,7 @@ static void CheckMessages()
 {
     // Text events have no modifiers; global state may already reflect key-up.
     static auto pending_shifted_space = false;
+    static auto pending_ctrl_space = false;
     SDL_Event ev;
     bool quit = false;
     bool text_refresh = false;
@@ -3378,6 +3383,7 @@ static void CheckMessages()
 #endif
                 is_repeat = ev.key.repeat;
                 pending_shifted_space = ev.key.key == SDLK_SPACE && ( ev.key.mod & SDL_KMOD_SHIFT );
+                pending_ctrl_space = ev.key.key == SDLK_SPACE && ( ev.key.mod & SDL_KMOD_CTRL );
                 //hide mouse cursor on keyboard input
                 if( get_option<std::string>( "HIDE_CURSOR" ) != "show" && SDL_CursorVisible() ) {
                     SDL_HideCursor();
@@ -3433,6 +3439,10 @@ static void CheckMessages()
                 }
 #endif
                 is_repeat = ev.key.repeat;
+                if( ev.key.key == SDLK_SPACE ) {
+                    // A later, unrelated space must not be read as Ctrl+Space.
+                    pending_ctrl_space = false;
+                }
                 if( ev.key.key == SDLK_LALT || ev.key.key == SDLK_RALT ) {
                     int code = end_alt_code();
                     if( code ) {
@@ -3444,9 +3454,14 @@ static void CheckMessages()
             break;
             case SDL_EVENT_TEXT_INPUT: {
                 const auto shifted_space = std::exchange( pending_shifted_space, false );
+                const auto ctrl_space = std::exchange( pending_ctrl_space, false );
                 if( !add_alt_code( *ev.text.text ) ) {
                     if( strlen( ev.text.text ) > 0 ) {
                         const unsigned lc = UTF8_getch( ev.text.text );
+                        if( lc == ' ' && ctrl_space ) {
+                            // The key-down already reported Ctrl+Space; its text twin is not a space.
+                            break;
+                        }
                         // Keep literal text below for editors.
                         const auto code = lc == ' ' && shifted_space ? KEY_SHIFT_SPACE : static_cast<int>( lc );
                         last_input = input_event( code, input_event_t::keyboard );

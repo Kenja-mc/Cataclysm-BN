@@ -11,7 +11,7 @@ def open_pickup(g, *items):
     names = {item: display_name(g, item) for item in items}
     for item in items:
         spawn(g, 0, 0, item)
-    g.keys("G", delay=0.2)
+    g.keys("g", delay=0.2)
     # "Pick up" is the menu's own label; Weight is now also a HUD window title.
     g.wait_for("Pick up")
     return names
@@ -105,7 +105,7 @@ def test_space_picks_marked_row_with_quantity(g):
     spawn(g, 0, 0, "rock", 5)
     spawn(g, 0, 0, "stick")
     rock = g.lua("local it=gapi.create_item(ItypeId.new('rock'),5) out(it:display_name(1))")[0]
-    g.keys("G", delay=0.2)
+    g.keys("g", delay=0.2)
     g.wait_for("Pick up")
     g.keys("3", delay=0.3)
     g.click(*row_of(g, rock))

@@ -57,14 +57,16 @@ direction prompts. Top-row numbers do not move you on the map.
 - **Tab** pulls the view toward a hostile that is past the edge of the screen. **Look** and the
   **overmap** zoom with the mouse wheel; the overmap also pans by dragging with either mouse
   button. Hovering fog of war shows the terrain you remember there.
-- **Select keys — unbound by default.** Tile selection is a mouse action. The eight **Select tile**
-  actions stay in the keybindings menu: binding them (for example to Shift+WASD/QEZC) moves the
-  selection marker one tile per press, starting at your position and accumulating. The Mouse View
+- **Shift+WASD/QEZC — select a tile.** The eight **Select tile** actions move the selection marker
+  one tile per press, starting at your position and accumulating, so Shift+direction looks around
+  without entering Look mode. Wear, apply, eat, drop-adjacent, chat and save have no key of their
+  own in Modern: use the inventory, Space and the Enter menu (Save and Quit is in its top list). The Mouse View
   box describes the selected tile. Selecting spends no time.
 - **Ctrl+direction — peek.** Ctrl+WASD/QEZC physically peeks from the neighboring tile through
   the normal peek action. It costs the usual **200 moves**, unlike selecting; canceling returns you
   to your starting position, and the current selection is kept.
-- **Shift+X — movement mode.** Cycle walk, run, crouch and prone. F2/F3/F4 are unbound on the map.
+- **Shift+X — movement mode.** Opens the stance menu: `r` run, `W` walk, `c` crouch, `p` prone, and
+  Shift+X again cycles to the next mode. Each change costs what the stance itself costs. F2/F3/F4 are unbound on the map.
 - **Tab / Shift+Tab — targets.** Cycle forward/backward through visible hostiles, ordered by
   distance then position, wrapping at either end. Selection takes no time; **`f`** attacks the
   selected target, using the normal aiming screen with a gun. **`F`** changes the fire mode.
@@ -141,6 +143,7 @@ food and a weapon, because houses usually have all three.
 | Key / family         | Action                                                             |
 | -------------------- | ------------------------------------------------------------------ |
 | `w a s d`, `q e z c` | move; bump an enemy to melee attack                                |
+| `W A S D`, `Q E Z C` | select (look at) the next tile in that direction; no time passes   |
 | Numpad               | move; numpad 5 waits one turn                                      |
 | Ctrl+direction       | physical peek (normal 200-move cost)                               |
 | Tab / Shift+Tab      | next / previous visible hostile                                    |
@@ -148,12 +151,14 @@ food and a weapon, because houses usually have all three.
 | `p`                  | bionics                                                            |
 | Space                | nearby or selected-tile actions, including explicit Jump and Smash |
 | Shift+Space          | toggle a selected vehicle curtain, or choose one nearby            |
-| `g` / `G` / Ctrl+G   | pick up underfoot / pickup list / drop                             |
+| `g` / `G` / Ctrl+G   | pick up beside you / take everything beside you / nearby list      |
 | `i`, `v`, `I`        | inventory / use item by kind / advanced inventory                  |
 | `i`, then F5         | craft (also works with empty inventory)                            |
 | `@`, `P`, `B`        | character sheet / message log / butcher                            |
 | Enter                | all action groups; Info contains character/status screens          |
-| Shift+X              | cycle walk / run / crouch / prone                                  |
+| Shift+X              | stance menu (run, walk, crouch, prone; X again cycles)             |
+| Ctrl+F, Ctrl+Space   | find an action by name                                             |
+| `1`–`6`, Ctrl+T      | hotbar slots / assign a slot                                       |
 | `x` / Ctrl+X         | wait one turn / wait or rest a while                               |
 | `m`, `n`             | map / auto-explore                                                 |
 | `M` (Modern)         | world page: inline tabs for missions, factions, zones, scores       |
@@ -216,8 +221,9 @@ Inventory hover highlights an item, left click picks it (or marks it in multi-it
 wheel scrolls. Right click on an inventory item opens its actions; right click outside cancels.
 
 **Quick pickup and pickup list.** In Modern, `g` picks up a lone item on your tile without a menu;
-when several items lie there it opens the pickup picker. `G` always opens the picker, and Ctrl+G
-drops items. Inside the picker, `g`, Enter or Space picks up marked items, or the highlighted item
+when several items lie there it opens the pickup picker. `G` takes everything on the tile beside you
+that you face or selected (or your own tile) without a menu, and Ctrl+G opens one list of every
+item on your tile and the eight around it. Drop is in the inventory. Inside the picker, `g`, Enter or Space picks up marked items, or the highlighted item
 if none are marked.
 Escape cancels.
 Inside pickup, local shortcuts act on the highlighted item: `h` wields it and `W` wears it.
@@ -279,8 +285,8 @@ lives in `data/raw/control_schemes/modern.json` on top of the untouched upstream
 other schemes can be added the same way. Quick stack, sort pile,
 directional attack, auto-explore and body status have no key in classic; bind them or use the Enter action
 menu. Modern groups actions under Enter, inventory and Space; right clicks select,
-Ctrl+direction peeks, Ctrl+X waits/rests and Shift+X cycles movement modes. The Select tile keys
-ship unbound; bind them in the keybindings menu if you want them.
+Ctrl+direction peeks, Ctrl+X waits/rests, Shift+X opens the stance menu and Shift+direction
+selects a tile.
 
 `keybindings.json` starts with a format marker and holds only the keys you changed, including a
 key set back to its upstream default. A file saved by an older version, without the marker, held
@@ -300,7 +306,7 @@ highlights the tile of the highlighted row; a single safe action runs directly. 
 always need an explicit choice; Smash uses local `S` so `s` remains menu navigation. It never
 auto-attacks. Use item actions through inventory or the general Enter menu.
 
-**Stances**, as in Quasimorph: **Shift+X** cycles walking, running, crouching and prone in Modern;
+**Stances**, as in Quasimorph: **Shift+X** opens the stance menu in Modern (Shift+X there cycles);
 the Status box shows the current mode as a figure. F2/F3/F4 no longer select stances on the map. The
 movement mode menu remains in Enter; Classic keeps its upstream movement controls.
 
@@ -431,7 +437,7 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   rows. The map shrinks to the free area, so the character stays centred. Select fusion, grouped
   or another layout in **Enter → Misc → Sidebar Options**. In tiles the Mouse View box moves over
   the minimap so the status card stays visible.
-- **Hotbar** (Modern, fusion deck): six quick slots on `1`–`6`. **Z** opens *Assign a hotbar
+- **Hotbar** (Modern, fusion deck): six quick slots on `1`–`6`. **Ctrl+T** opens *Assign a hotbar
   slot*: pick a slot, then an item (Esc clears it). A slot remembers the item type, not the stack;
   its key does what the Use menu does with the first matching carried item (read, eat, wield, wear
   or activate; a wielded gun is reloaded). An empty slot, or one whose item you no longer carry,

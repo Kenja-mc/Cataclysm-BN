@@ -57,6 +57,7 @@ auto readable_key_name( const std::string &raw ) -> std::optional<std::string>
         std::pair{ "BACKTAB", translate_marker_context( "key name", "Shift+Tab" ) },
         std::pair{ "SPACE", translate_marker_context( "key name", "Space" ) },
         std::pair{ "SHIFT_SPACE", translate_marker_context( "key name", "Shift+Space" ) },
+        std::pair{ "CTRL_SPACE", translate_marker_context( "key name", "Ctrl+Space" ) },
         std::pair{ "PPAGE", translate_marker_context( "key name", "PgUp" ) },
         std::pair{ "NPAGE", translate_marker_context( "key name", "PgDn" ) },
         std::pair{ "BACKSPACE", translate_marker_context( "key name", "Backspace" ) },
@@ -468,6 +469,7 @@ void input_manager::init_keycode_mapping()
     add_keycode_pair( KEY_BTAB,      translate_marker_context( "key name", "BACKTAB" ) );
     add_keycode_pair( ' ',           translate_marker_context( "key name", "SPACE" ) );
     add_keycode_pair( KEY_SHIFT_SPACE, translate_marker_context( "key name", "SHIFT_SPACE" ) );
+    add_keycode_pair( KEY_CTRL_SPACE, translate_marker_context( "key name", "CTRL_SPACE" ) );
     add_keycode_pair( KEY_UP,        translate_marker_context( "key name", "UP" ) );
     add_keycode_pair( KEY_DOWN,      translate_marker_context( "key name", "DOWN" ) );
     add_keycode_pair( KEY_LEFT,      translate_marker_context( "key name", "LEFT" ) );

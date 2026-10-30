@@ -6,6 +6,12 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ## 2026-10-29
 
+### Changed
+
+- Modern keys: Shift+WASD/QEZC select a tile; `G` takes everything beside you and Ctrl+G lists
+  everything nearby (Drop moves to the inventory); Shift+X opens the stance menu; Ctrl+Space also
+  finds an action; the overmap pans by dragging with either mouse button, text overmap included.
+
 ### Added
 
 - Fusion HUD, the layout new configurations start with on screens of at least 140×36: a status
@@ -15,7 +21,7 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Space talks to a neighbouring NPC; NPC replies are numbered in Modern with W/S to move; the
   mouse wheel zooms in Look and the overmap, the overmap pans with a left or right drag, Tab pans
   to an off-screen hostile, and hovering fog shows remembered terrain. The default volumes are 50.
-- Hotbar: six saved quick slots on `1`–`6` in Modern, assigned with `Z`, shown in the fusion deck.
+- Hotbar: six saved quick slots on `1`–`6` in Modern, assigned with Ctrl+T, shown in the fusion deck.
 
 ## 2026-10-27
 

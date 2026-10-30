@@ -51,7 +51,7 @@ def test_context_keyhints_inventory_pickup_crafting_and_look(_game):
 
         spawn(game, 0, 0, "rock")
         spawn(game, 0, 0, "stick")
-        game.keys("G")
+        game.keys("g")
         game.wait_for("Pick up", timeout=15)
         assert_footer(game, ", Select all", "g Confirm Choice")
         game.keys("Escape")

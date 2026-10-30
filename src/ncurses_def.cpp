@@ -629,6 +629,11 @@ input_event input_manager::get_input_event()
             }
         }
         rval = input_event();
+        if( key == 0 ) {
+            // Terminals send Ctrl+Space as NUL; keycode 0 means "no key" everywhere else.
+            previously_pressed_key = KEY_CTRL_SPACE;
+            return input_event( KEY_CTRL_SPACE, input_event_t::keyboard );
+        }
         if( key == ERR ) {
             if( input_timeout > 0 ) {
                 rval.type = input_event_t::timeout;

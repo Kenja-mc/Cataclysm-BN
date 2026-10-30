@@ -183,9 +183,9 @@ def test_stance_toggle(g):
     settle(g)
     before = bub_pos(g)
     # Crouching and standing back up spend moves upstream; only the cycle itself is asserted here.
-    for mode, label in (("run", "Running"), ("crouch", "Crouching"),
-                        ("prone", "Prone"), ("walk", "Walking")):
-        g.keys("X", delay=0.8)
+    for mode, label, key in (("run", "Running", "r"), ("crouch", "Crouching", "c"),
+                             ("prone", "Prone", "p"), ("walk", "Walking", "W")):
+        g.keys("X", key, delay=0.8)
         assert label in g.screen(), f"HUD must refresh to {mode}:\n{g.screen()}"
         assert g.lua(f"out(gapi.get_avatar():get_movement_mode() == CharacterMoveMode.{mode})") == ["true"]
         assert bub_pos(g) == before, "changing stance must not move the player"

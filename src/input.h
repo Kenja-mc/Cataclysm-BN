@@ -75,6 +75,9 @@ static constexpr int KEY_END        = 0x168;    /* End */
 /// Shift+Space from terminals and window systems that report it. Above every Unicode scalar
 /// value, so no text input can produce this code by accident.
 static constexpr int KEY_SHIFT_SPACE = 0x110000;
+/// Ctrl+Space. Terminals send NUL, but keycode 0 is the invalid-key sentinel, so the backends
+/// translate it to this code instead.
+static constexpr int KEY_CTRL_SPACE = 0x110001;
 
 static constexpr int LEGEND_HEIGHT = 11;
 static constexpr int BORDER_SPACE = 2;

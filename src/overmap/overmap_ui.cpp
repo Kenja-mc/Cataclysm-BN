@@ -2075,11 +2075,13 @@ static auto display(const tripoint_abs_omt& orig, const draw_data_t& data = draw
     int fast_scroll_offset = get_option<int>("FAST_SCROLL_OFFSET");
     std::optional<tripoint_bub_ms> mouse_pos;
 #if defined(TILES)
-    // Right-drag pans: the map follows the pointer, one overmap tile per tile of travel.
     std::optional<point> drag_anchor;
     point drag_remainder{};
-    // A left press selects at once; a drag that follows undoes that jump and pans instead.
-    std::optional<tripoint_abs_omt> before_select;
+    // Set once a held-button drag has moved the map, until the release that ends it.
+    bool dragged = false;
+    // Buttons held at the last pointer event, and where the pointer last was.
+    Uint32 drag_buttons = 0;
+    std::optional<point> last_pointer;
 #endif
     std::chrono::time_point<std::chrono::steady_clock> last_blink =
         std::chrono::steady_clock::now();
@@ -2107,45 +2109,60 @@ static auto display(const tripoint_abs_omt& orig, const draw_data_t& data = draw
             int scroll_d = fast_scroll ? fast_scroll_offset : 1;
             curs += vec->xy().raw() * scroll_d;
         } else if (action == "MOUSE_MOVE" || action == "TIMEOUT") {
-            auto edge_scroll = g->mouse_edge_scrolling_overmap(ictxt);
-            if (edge_scroll != tripoint_rel_omt::zero()) {
-                if (action == "MOUSE_MOVE") { edge_scroll += edge_scroll; }
-                curs += edge_scroll;
-            }
 #if defined(TILES)
-            if (action == "MOUSE_MOVE" && use_tiles_overmap && overmap_tilecontext) {
-                const auto raw = ictxt.get_raw_input();
-                const auto buttons = SDL_GetMouseState(nullptr, nullptr);
-                const bool right_held = raw.type == input_event_t::mouse &&
-                                        (buttons & (SDL_BUTTON_RMASK | SDL_BUTTON_LMASK)) != 0;
-                if (right_held) {
-                    if (drag_anchor) {
-                        drag_remainder += raw.mouse_pos - *drag_anchor;
-                        const int tile_w = std::max(1, overmap_tilecontext->get_tile_width());
-                        const int tile_h = std::max(1, overmap_tilecontext->get_tile_height());
-                        const point steps(drag_remainder.x / tile_w, drag_remainder.y / tile_h);
-                        if (steps != point_zero) {
-                            if (before_select) {
-                                curs = *before_select;
-                                before_select.reset();
-                            }
-                            curs -= steps;
-                            drag_remainder -= point(steps.x * tile_w, steps.y * tile_h);
-                        }
+            // Dragging with either button pans: the map follows the pointer one overmap cell per
+            // cell of travel, measured in the overmap window's own cells (tiles or text).
+            const auto raw = ictxt.get_raw_input();
+            const auto buttons = SDL_GetMouseState(nullptr, nullptr) & (SDL_BUTTON_RMASK | SDL_BUTTON_LMASK);
+            const bool held = action == "MOUSE_MOVE" && raw.type == input_event_t::mouse && buttons != 0;
+            if (held && buttons != drag_buttons) {
+                // A new stroke: no event reports the press, so it starts where the pointer last
+                // rested with the buttons up (or here, if a different button took over).
+                drag_anchor = drag_buttons == 0 && last_pointer ? last_pointer : std::optional<point>(raw.mouse_pos);
+                drag_remainder = point_zero;
+            }
+            if (action == "MOUSE_MOVE" && raw.type == input_event_t::mouse) {
+                drag_buttons = buttons;
+                last_pointer = raw.mouse_pos;
+            }
+            if (held) {
+                if (drag_anchor) {
+                    const auto pitch = get_window_dimensions(g->w_overmap).scaled_font_size;
+                    const int cell_w = std::max(1, pitch.x);
+                    const int cell_h = std::max(1, pitch.y);
+                    drag_remainder += raw.mouse_pos - *drag_anchor;
+                    const point steps(drag_remainder.x / cell_w, drag_remainder.y / cell_h);
+                    if (steps != point_zero) {
+                        curs -= steps;
+                        drag_remainder -= point(steps.x * cell_w, steps.y * cell_h);
+                        dragged = true;
                     }
-                    drag_anchor = raw.mouse_pos;
-                } else {
-                    drag_anchor.reset();
-                    drag_remainder = point_zero;
-                    before_select.reset();
                 }
+                drag_anchor = raw.mouse_pos;
+            } else if (buttons == 0 && action == "MOUSE_MOVE") {
+                drag_anchor.reset();
+                drag_remainder = point_zero;
+            }
+            if (!held) {
+#endif
+                auto edge_scroll = g->mouse_edge_scrolling_overmap(ictxt);
+                if (edge_scroll != tripoint_rel_omt::zero()) {
+                    if (action == "MOUSE_MOVE") { edge_scroll += edge_scroll; }
+                    curs += edge_scroll;
+                }
+#if defined(TILES)
             }
 #endif
         } else if (action == "SELECT" && (mouse_pos = ictxt.get_coordinates(g->w_overmap))) {
 #if defined(TILES)
-            before_select = curs;
-            drag_anchor = ictxt.get_raw_input().mouse_pos;
+            // Buttons report on release, so the release that ends a drag must not also select.
+            drag_anchor.reset();
+            drag_buttons = 0;
+            last_pointer = ictxt.get_raw_input().mouse_pos;
             drag_remainder = point_zero;
+            if (std::exchange(dragged, false)) {
+                continue;
+            }
 #endif
             curs += mouse_pos->xy().raw();
         } else if (action == "CENTER") {

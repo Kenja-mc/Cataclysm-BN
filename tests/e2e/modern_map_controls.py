@@ -1,6 +1,6 @@
 """Modern map controls: contextual stairs, quick/area pickup and health."""
 from aim_reticle import action_clock
-from contextual_hub import contextual_game
+from contextual_hub import contextual_game, select_tile
 from helpers import arena, bub_pos, count_at, count_carried, settle, spawn, wait_until
 
 
@@ -72,7 +72,7 @@ def test_modern_pickup_list_opens_for_the_player_tile(_game):
         spawn(game, 0, 0, "stick")
         spawn(game, 1, 0, "pipe")
         before, clock = bub_pos(game), action_clock(game)
-        game.keys("G", delay=0.2)
+        game.keys("C-g", delay=0.2)
         game.wait_for("Pick up")
         game.wait_for("Weight")
         game.wait_for("rock")
@@ -96,7 +96,31 @@ def test_modern_h_opens_health(_game):
         assert bub_pos(game) == before and action_clock(game) == clock, "health inspection is free"
 
 
-TESTS = [test_modern_space_pagedown_and_click_use_stairs,
+def test_modern_capital_g_takes_everything_beside_you(_game):
+    with contextual_game("bn-e2e-modern-take-all", SHOW_TIPS="false") as game:
+        spawn(game, 1, 0, "rock")
+        spawn(game, 1, 0, "stick")
+        select_tile(game, 1, 0)
+        before = bub_pos(game)
+        game.keys("G", delay=1.0)
+        assert wait_until(lambda: count_carried(game, "rock") == 1 and count_carried(game, "stick") == 1), \
+            game.screen()
+        assert "Pick up" not in game.screen(), "G must not open a menu"
+        assert bub_pos(game) == before, "taking items beside you must not walk there"
+
+
+def test_modern_shift_direction_selects_a_tile_without_time(_game):
+    with contextual_game("bn-e2e-modern-shift-select", SHOW_TIPS="false") as game:
+        spawn(game, 2, 0, "rock")
+        before, clock = bub_pos(game), action_clock(game)
+        game.keys("D", "D", delay=0.4)
+        game.wait_for("rock")
+        assert bub_pos(game) == before and action_clock(game) == clock, "selecting is free"
+
+
+TESTS = [test_modern_shift_direction_selects_a_tile_without_time,
+         test_modern_capital_g_takes_everything_beside_you,
+         test_modern_space_pagedown_and_click_use_stairs,
          test_modern_click_on_other_stairs_only_selects,
          test_modern_g_opens_the_picker_for_a_pile,
          test_modern_pickup_list_opens_for_the_player_tile, test_modern_h_opens_health]

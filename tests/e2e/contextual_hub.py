@@ -270,7 +270,7 @@ def test_pickup_keys_take_a_lone_item_and_list_a_pile(_game):
         spawn(game, 1, 0, "rock")
         spawn(game, 1, 0, "stick")
         select_tile(game, 1, 0)
-        game.keys("G", delay=0.8)
+        game.keys("g", delay=0.8)
         game.wait_for("Pick up")
         game.keys("Escape", delay=0.6)
 
