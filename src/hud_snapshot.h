@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <string>
 #include <vector>
 
@@ -30,11 +29,14 @@ struct limb {
     nc_color wound_color = c_light_gray;
 };
 
-struct compass_cell {
-    /// Monster symbols seen in this direction.
-    std::string symbols;
-    int count = 0;
-    bool dangerous = false;
+struct sighting {
+    std::string name;
+    std::string symbol;
+    nc_color color = c_light_gray;
+    /// Compass direction from the player, e.g. "NE"; empty when adjacent and level.
+    std::string direction;
+    int distance = 0;
+    bool hostile = false;
 };
 
 struct carried {
@@ -103,8 +105,8 @@ struct snapshot {
     std::vector<limb> limbs;
     /// Newest last; colour tags kept for print_colored_text.
     std::vector<std::string> log;
-    /// N, NE, E, SE, S, SW, W, NW, near.
-    std::array<compass_cell, 9> compass;
+    /// Creatures in sight, nearest hostiles first.
+    std::vector<sighting> seen;
     /// Wielded item first, then the first few carried items.
     std::vector<carried> loadout;
 };

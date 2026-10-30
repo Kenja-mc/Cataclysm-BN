@@ -24,12 +24,14 @@
 #include "character_martial_arts.h"
 #include "color.h"
 #include "cursesdef.h"
+#include "creature.h"
 #include "effect.h"
 #include "flag.h"
 #include "game.h"
 #include "hud_windows.h"
 #include "icon_font.h"
 #include "item.h"
+#include "line.h"
 #include "magic/magic.h"
 #include "messages.h"
 #include "mtype.h"
@@ -42,6 +44,7 @@
 #include "panels_utility.h"
 #include "sounds.h"
 #include "string_formatter.h"
+#include "string_utils.h"
 #include "translations.h"
 #include "units.h"
 #include "weather/weather.h"
@@ -2223,17 +2226,18 @@ auto read( const avatar &you ) -> snapshot
     for( const auto &msg : Messages::recent_messages( 10 ) ) {
         out.log.push_back( msg.second );
     }
-    const auto &sight = you.get_mon_visible();
-    for( auto i = size_t{ 0 }; i < out.compass.size(); ++i ) {
-        auto &cell = out.compass[i];
-        cell.count = static_cast<int>( sight.unique_types[i].size() );
-        cell.symbols.append( sight.unique_types[i].size(), '@' );
-        for( const auto &mon : sight.unique_mons[i] ) {
-            cell.symbols += mon.first->sym;
-            cell.count += mon.second;
-        }
-        cell.dangerous = i < 8 && sight.dangerous[i];
+    for( const auto *critter : you.get_visible_creatures( 60 ) ) {
+        const auto rel = critter->bub_pos().raw() - you.bub_pos().raw();
+        out.seen.push_back( {
+            .name = critter->get_name(), .symbol = critter->symbol(), .color = critter->symbol_color(),
+            .direction = rel.xy() == point_zero ? std::string() : trim( direction_name_short( direction_from( rel.xy() ) ) ),
+            .distance = rl_dist( you.bub_pos(), critter->bub_pos() ),
+            .hostile = critter->attitude_to( you ) == Attitude::A_HOSTILE
+        } );
     }
+    std::ranges::stable_sort( out.seen, []( const sighting & a, const sighting & b ) {
+        return a.hostile != b.hostile ? a.hostile : a.distance < b.distance;
+    } );
 
     const auto describe = []( const item & it ) {
         auto detail = std::string();

@@ -361,34 +361,32 @@ auto draw_around( avatar &you, const catacurses::window &w ) -> void
 {
     edge( w );
     const auto &s = current( you );
-    // Snapshot order is N, NE, E, SE, S, SW, W, NW, near; the grid reads row by row.
-    struct cell {
-        const char *label;
-        size_t index;
-    };
-    static constexpr auto grid = std::array<cell, 9> { {
-            { "NW", 7 }, { "N", 0 }, { "NE", 1 }, { "W", 6 }, { "@", 8 }, { "E", 2 },
-            { "SW", 5 }, { "S", 4 }, { "SE", 3 }
-        }
-    };
-    auto seen = 0;
-    for( const auto &c : s.compass ) {
-        seen += c.count;
-    }
+    const auto hostiles = std::ranges::count_if( s.seen, []( const auto & c ) { return c.hostile; } );
     rule( w, {
         .title = _( "AROUND" ),
-        .summary = seen > 0 ? string_format( _( "%d seen" ), seen ) : std::string( _( "clear" ) ),
-        .summary_color = seen > 0 ? pal::danger() : pal::muted()
+        .summary = s.seen.empty() ? std::string( _( "nothing in sight" ) ) :
+                   hostiles > 0 ? string_format( _( "%d hostile" ), hostiles ) :
+                   string_format( _( "%d in sight" ), static_cast<int>( s.seen.size() ) ),
+        .summary_color = hostiles > 0 ? pal::danger() : pal::muted()
     } );
-    const auto column = ( getmaxx( w ) - 4 ) / 3;
-    for( auto i = size_t{ 0 }; i < grid.size(); ++i ) {
-        const auto &c = s.compass[grid[i].index];
-        const auto at = point( 2 + static_cast<int>( i % 3 ) * column, 1 + static_cast<int>( i / 3 ) );
-        const auto color = c.count == 0 ? pal::muted() : c.dangerous ? pal::danger() : pal::title();
-        const auto x = text( w, at, grid[i].index == 8 ? pal::title() : color, grid[i].label );
-        if( c.count > 0 ) {
-            text( w, point( x + 1, at.y ), color, string_format( "%s%d", c.symbols, c.count ) );
+    // Who is there: symbol, name, direction and distance, nearest hostiles first.
+    const auto rows = getmaxy( w ) - 1;
+    const auto shown = std::min( static_cast<int>( s.seen.size() ), rows );
+    const auto room = getmaxx( w ) - 2;
+    for( auto i = 0; i < shown; ++i ) {
+        const auto &c = s.seen[static_cast<size_t>( i )];
+        const auto last = i == rows - 1 && static_cast<int>( s.seen.size() ) > rows;
+        if( last ) {
+            text( w, point( 2, 1 + i ), pal::muted(),
+                  string_format( _( "+%d more" ), static_cast<int>( s.seen.size() ) - i ) );
+            break;
         }
+        const auto where = c.direction.empty() ? std::string( _( "here" ) ) :
+                           string_format( "%s %d", c.direction, c.distance );
+        text( w, point( 2, 1 + i ), c.color, c.symbol );
+        text( w, point( 4, 1 + i ), c.hostile ? pal::danger() : pal::text(),
+              utf8_truncate( c.name, room - 4 - utf8_width( where ) - 2 ) );
+        text( w, point( room - utf8_width( where ), 1 + i ), pal::muted(), where );
     }
     wnoutrefresh( w );
 }

@@ -7,7 +7,7 @@ from hud_status import healthy
 from tmux_game import Game, start_new_game
 
 OPTIONS = {"CONTROL_SCHEME": "modern", "SAFEMODE": "false", "SHOW_WELCOME": "false",
-           "SHOW_TIPS": "false", "ANIMATIONS": "false"}
+           "SHOW_TIPS": "false", "ANIMATIONS": "false", "INITIAL_TIME": "12"}
 
 
 def fusion_setup(game):
@@ -137,7 +137,21 @@ def test_vehicle_card_replaces_the_floating_vehicle_window_while_aboard(_g):
         game.close()
 
 
-TESTS = [test_vehicle_card_replaces_the_floating_vehicle_window_while_aboard,
+def test_around_names_who_is_in_sight(_g):
+    with shared_game("bn-e2e-fusion", options=OPTIONS, layout="fusion", cols=160, rows=45,
+                     define=HELPERS, setup=fusion_setup) as game:
+        assert game.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'),here(4,-3)) out('ok')") == ["ok"]
+        game.keys("x", delay=0.8)
+        game.settle_screen()
+        screen = game.screen()
+        assert re.search(r"├─* *AROUND \d+ hostile", screen), screen
+        assert re.search(r"zombie +NE \d", screen), "AROUND names the creature and where it is:\n" + screen
+        assert game.lua("for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end out('ok')") == ["ok"]
+        game.keys("x", delay=0.8)
+
+
+TESTS = [test_around_names_who_is_in_sight,
+         test_vehicle_card_replaces_the_floating_vehicle_window_while_aboard,
          test_clicking_a_hotbar_slot_uses_it_and_overlay_clicks_stay_off_the_map,
          test_hotbar_slot_wields_its_item_and_empty_slot_is_inert,
          test_hotbar_assign_menu_stores_the_chosen_item,
