@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "color.h"
 
@@ -34,5 +35,12 @@ auto status_box_shows_needs() -> bool;
 auto combat_box_shows_mana( const Character &you ) -> bool;
 
 auto vehicle_box_shown() -> bool;
+
+struct vehicle_row {
+    std::string text;
+    nc_color color;
+};
+/// The driving readings (azimuth, speed, cruise, engine, fuel, battery); empty off a vehicle.
+auto vehicle_rows( const avatar &you ) -> std::vector<vehicle_row>;
 
 } // namespace hud_boxes

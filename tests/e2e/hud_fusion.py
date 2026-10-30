@@ -97,7 +97,49 @@ def test_hotbar_assign_menu_stores_the_chosen_item(_g):
         assert game.lua("out(gapi.get_avatar():get_value('hotbar_3'))") == ["knife_combat"], game.screen()
 
 
-TESTS = [test_hotbar_slot_wields_its_item_and_empty_slot_is_inert,
+def test_clicking_a_hotbar_slot_uses_it_and_overlay_clicks_stay_off_the_map(_g):
+    with shared_game("bn-e2e-fusion", options=OPTIONS, layout="fusion", cols=160, rows=45,
+                     define=HELPERS, setup=fusion_setup) as game:
+        give(game, "knife_combat", 1)
+        assert game.lua("gapi.get_avatar():set_value('hotbar_2','knife_combat') out('ok')") == ["ok"]
+        game.settle_screen()
+        before = bub_pos(game)
+        for y, line in enumerate(game.screen().splitlines()):
+            if "╭─2" in line:
+                x = line.index("╭─2")
+                break
+        else:
+            raise AssertionError("hotbar slot 2 missing:\n" + game.screen())
+        game.click(x + 2, y + 1)
+        game.settle_screen()
+        assert "knife" in wielded(game), "a click on the slot should use it:\n" + game.screen()
+        assert bub_pos(game) == before
+        # A click on the status card is swallowed, never walked to or selected on the map.
+        game.click(5, 2)
+        assert bub_pos(game) == before
+
+
+def test_vehicle_card_replaces_the_floating_vehicle_window_while_aboard(_g):
+    from vehicle_box import spawn_vehicle
+    game = Game(name="bn-e2e-fusion-vehicle", layout="fusion", cols=160, rows=45,
+                options={**OPTIONS, "USE_METRIC_SPEEDS": "mph"})
+    try:
+        start_new_game(game)
+        game.define_lua(HELPERS)
+        arena(game)
+        game.settle_screen()
+        assert "VEHICLE" not in game.screen(), game.screen()
+        spawn_vehicle(game)
+        screen = game.screen()
+        assert re.search(r"╭[^\n]*\bVEHICLE\b", screen), screen
+        assert "Azimuth" in screen and "Speed: 0 mph" in screen, screen
+    finally:
+        game.close()
+
+
+TESTS = [test_vehicle_card_replaces_the_floating_vehicle_window_while_aboard,
+         test_clicking_a_hotbar_slot_uses_it_and_overlay_clicks_stay_off_the_map,
+         test_hotbar_slot_wields_its_item_and_empty_slot_is_inert,
          test_hotbar_assign_menu_stores_the_chosen_item,
          test_fusion_layout_draws_overlays_and_ruled_sidebar,
          test_fusion_is_the_fresh_default_and_small_screens_fall_back]

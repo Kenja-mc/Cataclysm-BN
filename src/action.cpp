@@ -1277,7 +1277,6 @@ action_id handle_action_menu()
                 ACTION_OPEN, ACTION_CLOSE, ACTION_CHAT, ACTION_PICKUP,
                 ACTION_PICKUP_ALL, ACTION_PICKUP_FEET, ACTION_GRAB, ACTION_HAUL, ACTION_BUTCHER, ACTION_LOOT,
                 ACTION_QUICK_STACK, ACTION_SORT_PILE, ACTION_AUTO_EXPLORE, ACTION_ATTACK,
-                ACTION_HOTBAR_ASSIGN,
             } );
             register_lua_action_entries( category_id );
         } else if( category_id == "combat" ) {
@@ -1310,6 +1309,7 @@ action_id handle_action_menu()
             register_actions( {
                 ACTION_WAIT, ACTION_SLEEP, ACTION_BIONICS, ACTION_MUTATIONS, ACTION_PERKS,
                 ACTION_CONTROL_VEHICLE, ACTION_ITEMACTION, ACTION_TOGGLE_THIEF_MODE, ACTION_SOUND_MENU,
+                ACTION_HOTBAR_ASSIGN,
                 // Modern unbinds the sidebar options key, so the menu keeps them reachable.
                 ACTION_TOGGLE_PANEL_ADM
             } );

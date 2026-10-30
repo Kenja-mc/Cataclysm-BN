@@ -1936,6 +1936,17 @@ auto vehicle_box_shown() -> bool
     return plan_for( get_avatar() ).geometry.boxes[2].rows > 0;
 }
 
+auto vehicle_rows( const avatar &you ) -> std::vector<vehicle_row>
+{
+    const auto state = current_vehicle( you );
+    auto out = std::vector<vehicle_row>();
+    for( const auto &row : vehicle_lines( state, "unicode" ) ) {
+        out.push_back( { .text = ( row.icon.empty() ? std::string() : row.icon + " " ) + row.text,
+                         .color = row.text_color } );
+    }
+    return out;
+}
+
 auto draw( const avatar &you, const catacurses::window &w ) -> void
 {
     if( hud_windows::active() ) {

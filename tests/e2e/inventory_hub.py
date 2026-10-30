@@ -1,3 +1,4 @@
+import re
 from contextlib import contextmanager
 
 from aim_reticle import action_clock
@@ -111,6 +112,19 @@ def test_classic_inventory_has_no_craft_hub(_game):
         assert action_clock(game) > before, "Classic Wield must still spend moves"
 
 
-TESTS = [test_modern_inventory_crafts_with_empty_or_carried_inventory,
+def test_modern_item_menu_numbers_its_rows(_game):
+    with inventory_game("numbers") as game:
+        give(game, "pipe")
+        before = action_clock(game)
+        game.keys("i", "Enter", delay=1)
+        screen = game.screen()
+        assert re.search(r"\b5\s+Wield", screen), "Modern item rows are numbered:\n" + screen
+        game.keys("5", delay=1)
+        assert wielded(game) == ["pipe"], game.screen()
+        assert action_clock(game) > before
+
+
+TESTS = [test_modern_item_menu_numbers_its_rows,
+         test_modern_inventory_crafts_with_empty_or_carried_inventory,
          test_modern_inventory_item_action_equips_with_normal_cost,
          test_classic_inventory_has_no_craft_hub]

@@ -436,7 +436,11 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   its key does what the Use menu does with the first matching carried item (read, eat, wield, wear
   or activate; a wielded gun is reloaded). An empty slot, or one whose item you no longer carry,
   only says so. Slots are saved with the character, so they work in every layout; only the fusion
-  deck draws them. Classic has no default hotbar keys; bind *Hotbar slot N* if you want them.
+  deck draws them, and clicking a slot uses it. A slot with nothing assigned uses the item whose inventory
+  letter is that digit. Classic has no default hotbar keys; bind *Hotbar slot N* if you want them.
+  Aboard or remote-controlling a vehicle, a **VEHICLE** card (azimuth, speed, cruise, engine, fuel,
+  battery) appears above the deck.
+- **Inventory item menu** numbers its rows `1`–`9`, `0` in Modern; the old letters still work.
 - **Grouped right sidebar**, based on the Opus HUD proposal: its HUD groups are the windows above,
   so the sidebar keeps Location, Controls and the optional Map. The Location group keeps its 5×5
   overmap chunk; the larger pixel minimap remains an optional **Map** panel in Sidebar Options.

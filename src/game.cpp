@@ -3632,6 +3632,19 @@ auto game::handle_mouseview( input_context &ctxt, std::string &action,
                                  : poll_timeout;
             action = ctxt.handle_input( timeout );
         }
+        // The fusion overlays own their cells: a click on a hotbar slot uses it, any other click on
+        // an overlay is swallowed, and none of them reaches the map behind.
+        if( hud_fusion::active() && ctxt.get_raw_input().type == input_event_t::mouse ) {
+            const auto &raw = ctxt.get_raw_input();
+            const auto left = std::ranges::find( raw.sequence, MOUSE_BUTTON_LEFT ) !=
+                              raw.sequence.end();
+            if( left && hud_fusion::clicked( u, map_window_cell( raw, w_terrain ) ) ) {
+                liveview.hide();
+                ui_manager::redraw();
+                action = "MOUSE_MOVE";
+                continue;
+            }
+        }
         // Floating HUD windows own their cells: a click never reaches the map behind them,
         // and pointer motion moves a grabbed window instead of the look cursor.
         if( hud_windows::active() && ctxt.get_raw_input().type == input_event_t::mouse ) {

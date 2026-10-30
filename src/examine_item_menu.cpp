@@ -67,6 +67,7 @@ bool run(
     // the modern scheme's mouse here instead. Classic keeps keyboard-only navigation.
     const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
     if( modern ) {
+        ctxt.register_action( "ANY_INPUT" );
         ctxt.register_action( "COORDINATE" );
         ctxt.register_action( "MOUSE_MOVE" );
         ctxt.register_action( "SELECT" );
@@ -121,6 +122,11 @@ bool run(
 
         std::string bound_key = ctxt.key_bound_to( act );
         int bound_key_i = bound_key.size() == 1 ? bound_key[0] : '?';
+        // Modern numbers the rows 1-9 then 0, and the number runs the row; the old letter keys
+        // keep working but are no longer drawn.
+        if( modern && actions.size() <= 10 ) {
+            bound_key_i = actions.size() == 10 ? '0' : '0' + static_cast<int>( actions.size() );
+        }
         std::string act_name = ctxt.get_action_name( act );
         if( number == INT_MIN ) {
             action_list.addentry( actions.size(), true, bound_key_i, act_name );
@@ -413,6 +419,13 @@ bool run(
         } else if( action == "SCROLL_DOWN" || action == "DOWN" ) {
             selected_action = ( selected_action + 1 + num_actions ) % num_actions;
             action_list.set_selected( selected_action );
+        } else if( modern && action == "ANY_INPUT" ) {
+            const auto key = ctxt.get_raw_input().get_first_input();
+            const auto index = key == '0' ? 9 : key >= '1' && key <= '9' ? key - '1' : -1;
+            if( index >= 0 && index < num_actions ) {
+                ret_val = actions[index].on_select();
+                exit = true;
+            }
         } else {
             for( action_entry &entry : actions ) {
                 if( entry.action == action ) {

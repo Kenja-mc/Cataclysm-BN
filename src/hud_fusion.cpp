@@ -13,6 +13,7 @@
 #include "hud_draw.h"
 #include "game.h"
 #include "hotbar.h"
+#include "hud_boxes.h"
 #include "hud_snapshot.h"
 #include "input.h"
 #include "output.h"
@@ -33,6 +34,14 @@ constexpr auto status_height = 11;
 constexpr auto deck_height = 7;
 
 /// Icon, the need's name and its state; an unmet need replaces "ok" with its own wording.
+struct hit_area {
+    rect at;
+    /// Hotbar slot index, or -1 for an overlay that only swallows the click.
+    int slot = -1;
+};
+/// Where the last frame drew its overlays, in map-window cells, for click handling.
+auto hits = std::vector<hit_area>();
+
 auto need( const catacurses::window &w, const point at, const char *icon, const nc_color icon_color,
            const hud_snapshot::need &n ) -> void
 {
@@ -63,6 +72,7 @@ auto vital( const catacurses::window &w, const vital_options &opts ) -> void
 
 auto draw_status( const canvas &area, const hud_snapshot::snapshot &s ) -> void
 {
+    hits.push_back( { .at = { .at = point_zero, .width = status_width, .height = status_height } } );
     const auto w = panel( area, { .at = point_zero, .width = status_width, .height = status_height } );
     card( w, { .title = _( "STATUS" ), .summary = s.stance, .summary_color = s.stance_color } );
     vital( w, { .y = 1, .icon = glyph::hp, .color = s.hp_color, .value = s.hp_percent, .max = 100,
@@ -86,6 +96,7 @@ auto draw_status( const canvas &area, const hud_snapshot::snapshot &s ) -> void
 
 auto draw_ribbon( const canvas &area, const hud_snapshot::snapshot &s ) -> void
 {
+    hits.push_back( { .at = { .at = point( status_width + 1, 0 ), .width = area.width - status_width - 1, .height = 1 } } );
     const auto w = panel( area, {
         .at = point( status_width + 1, 0 ), .width = area.width - status_width - 1, .height = 1
     } );
@@ -155,8 +166,26 @@ auto draw_hints( const catacurses::window &w, const point at, const int room ) -
     }
 }
 
+auto draw_vehicle( const avatar &you, const canvas &area ) -> void
+{
+    const auto rows = hud_boxes::vehicle_rows( you );
+    if( rows.empty() ) {
+        return;
+    }
+    const auto height = static_cast<int>( rows.size() ) + 2;
+    hits.push_back( { .at = { .at = point( 0, area.height - deck_height - height ), .width = 32, .height = height } } );
+    const auto w = panel( area, {
+        .at = point( 0, area.height - deck_height - height ), .width = 32, .height = height
+    } );
+    card( w, { .title = _( "VEHICLE" ) } );
+    for( auto i = 0; i < static_cast<int>( rows.size() ); ++i ) {
+        text( w, point( 2, 1 + i ), rows[static_cast<size_t>( i )].color, rows[static_cast<size_t>( i )].text );
+    }
+}
+
 auto draw_deck( const avatar &you, const canvas &area, const hud_snapshot::snapshot &s ) -> void
 {
+    hits.push_back( { .at = { .at = point( 0, area.height - deck_height ), .width = area.width, .height = deck_height } } );
     const auto w = panel( area, {
         .at = point( 0, area.height - deck_height ), .width = area.width, .height = deck_height
     } );
@@ -187,6 +216,8 @@ auto draw_deck( const avatar &you, const canvas &area, const hud_snapshot::snaps
     for( auto i = 0; i < hotbar::slots; ++i ) {
         const auto v = hotbar::view( you, i );
         const auto sx = slot_x + i * box_w;
+        hits.push_back( { .at = { .at = point( sx, area.height - deck_height + 1 ), .width = box_w - 1, .height = 3 },
+                          .slot = i } );
         const auto ready = v.assigned && v.count > 0;
         const auto color = v.wielded ? pal::accent() : ready ? pal::text() : pal::border();
         hline( w, point( sx + 1, 1 ), box_w - 3, color );
@@ -252,9 +283,11 @@ auto draw( const avatar &you, const catacurses::window &w_terrain ) -> void
         .height = is_draw_tiles_mode() ? TERRAIN_WINDOW_TERM_HEIGHT : getmaxy( w_terrain ),
     };
     const auto &s = refresh( you );
+    hits.clear();
     begin_frame();
     draw_status( area, s );
     draw_ribbon( area, s );
+    draw_vehicle( you, area );
     draw_deck( you, area, s );
     end_frame();
 }
@@ -274,6 +307,26 @@ auto draw_minimap( avatar &, const catacurses::window &w ) -> void
     werase( inner );
     g->draw_pixel_minimap( inner );
     wnoutrefresh( inner );
+}
+
+auto clicked( avatar &you, const point &cell ) -> bool
+{
+    if( !active() ) {
+        return false;
+    }
+    // Later entries sit on top of earlier ones: the slots over the deck they are drawn in.
+    for( auto it = hits.rbegin(); it != hits.rend(); ++it ) {
+        const auto &hit = *it;
+        const auto &r = hit.at;
+        if( cell.x < r.at.x || cell.y < r.at.y || cell.x >= r.at.x + r.width || cell.y >= r.at.y + r.height ) {
+            continue;
+        }
+        if( hit.slot >= 0 ) {
+            hotbar::use( you, hit.slot );
+        }
+        return true;
+    }
+    return false;
 }
 
 auto draw_map_rule( avatar &you, const catacurses::window &w ) -> void

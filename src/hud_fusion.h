@@ -1,5 +1,7 @@
 #pragma once
 
+#include "point.h"
+
 class avatar;
 
 namespace catacurses
@@ -20,6 +22,9 @@ auto active() -> bool;
 auto draw( const avatar &you, const catacurses::window &w_terrain ) -> void;
 
 /// Sidebar sections; each draws its rule on its first row.
+/// A left click at a map-window cell: runs a hotbar slot, or is swallowed by an overlay.
+auto clicked( avatar &you, const point &cell ) -> bool;
+
 /// The pixel minimap, inset one column from the sidebar edge.
 auto draw_minimap( avatar &you, const catacurses::window &w ) -> void;
 auto draw_map_rule( avatar &you, const catacurses::window &w ) -> void;
