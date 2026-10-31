@@ -31,11 +31,13 @@ import os
 import select
 import shutil
 import signal
+import sqlite3
 import subprocess
 import sys
 import tempfile
 import time
 import traceback
+import zlib
 from dataclasses import dataclass, field
 from contextlib import contextmanager
 from pathlib import Path
@@ -841,6 +843,28 @@ def saved_turn(path):
     return json.loads(path.read_text().split("\n", 1)[1])["turn"]
 
 
+def saved_overmap_notes(save_dir):
+    """Overmap notes from a save, keyed by text, as global (x, y) overmap-tile positions.
+
+    Notes live in the player's `.seen.X.Y` view files: plain files in a V1 save, zlib rows of a
+    `files` table in a V2 save's sqlite databases.
+    """
+    views = {path.name: path.read_text() for path in save_dir.glob("*.seen.*")}
+    for db in save_dir.glob("*.sqlite3"):
+        with sqlite3.connect(f"{db.as_uri()}?mode=ro", uri=True) as con:
+            for path, data, compression in con.execute(
+                    "SELECT path, data, compression FROM files WHERE path LIKE '%.seen.%'"):
+                views[path] = (zlib.decompress(data) if compression == "zlib" else data).decode()
+    notes = {}
+    for name, text in views.items():
+        om_x, om_y = (int(part) for part in name.rsplit(".", 2)[-2:])
+        view = json.loads(text[text.index("{"):])
+        for layer in view.get("notes", []):
+            for x, y, note, *_ in layer:
+                notes[note] = (om_x * 180 + x, om_y * 180 + y)
+    return notes
+
+
 def frames_close(a, b, tolerance=0.002):
     """True when two captures are the same frame; a blinking cursor stays under the tolerance."""
     if a[:2] != b[:2]:
@@ -954,12 +978,13 @@ def tile_pitch(png, terrain_width, center_y):
 
 
 def case_overmap(session):
-    """Click the drawn cursor on partial-tile viewports without shifting the map."""
+    """Clicks on partial-tile viewports keep the map still; drags pan one overmap tile per tile."""
     state_path = session.curses_userdir / "save" / session.world / "uistate.json"
     state = json.loads(state_path.read_text())
     state["overmap_blinking"] = False
     state["overmap_show_overlays"] = True
     state_path.write_text(json.dumps(state))
+    add_keybinding(session, "quicksave", "F6")
     checks, observations = [], {}
     for scale, columns, rows in ((1, 166, 60), (2, 90, 30)):
         label = f"overmap-{scale}x"
@@ -1013,9 +1038,19 @@ def case_overmap(session):
                               for i in range(0, len(before[2]), 3))
                 checks.append(Check(f"{scale}x cursor click does not pan",
                                     changed == 0, f"{changed} pixels changed"))
+
+                def place_note(text, reference):
+                    x11.key("Shift_L", "n")
+                    popup = settled(f"note-{text}-popup", reference=reference)
+                    x11.key(text)
+                    x11.key("Return")
+                    return settled(f"note-{text}", reference=popup)
+
+                # Notes mark the cursor before and after the drags; the save proves the distance.
+                noted = place_note("a", after)
                 # Right-drag pans the map with the pointer.
                 x11.drag(window, (center_x, center_y), (center_x + 2 * tile, center_y + tile))
-                dragged = settled("dragged", reference=after)
+                dragged = settled("dragged", reference=noted)
                 panned = sum(before[2][i:i + 3] != dragged[2][i:i + 3]
                              for i in range(0, len(before[2]), 3))
                 checks.append(Check(f"{scale}x right-drag pans the overmap",
@@ -1030,11 +1065,28 @@ def case_overmap(session):
                 undone = sum(dragged[2][i:i + 3] != back[2][i:i + 3] for i in range(0, len(back[2]), 3))
                 checks.append(Check(f"{scale}x dragging back restores the view (release does not select)",
                                     undone == 0, f"{undone} pixels differ"))
+                place_note("b", back)
                 x11.key("m")
                 returned = wait_for_frame(session, live.proc, live.run, session.timeout)
                 checks.append(Check(f"{scale}x m closes the overmap",
                                     frame_shows_world(frame_rgb(returned)), str(returned)))
-                observations[label] = {"cursor": [center_x, center_y], "changed_pixels": changed}
+                save_dir = live.run / "userdir" / "save" / session.world
+                save = next(save_dir.glob("*.sav"), None)
+                require(save is not None, f"{label}: running copy has no character save")
+                stamp = save.stat().st_mtime_ns
+                x11.key("F6", delay=0.5)
+                deadline = time.time() + 30
+                while save.stat().st_mtime_ns == stamp and time.time() < deadline:
+                    time.sleep(0.2)
+                require(save.stat().st_mtime_ns != stamp, f"{label}: quicksave did not write the save")
+                notes = saved_overmap_notes(save_dir)
+                shift = (tuple(b - a for a, b in zip(notes["a"], notes["b"]))
+                         if {"a", "b"} <= notes.keys() else None)
+                # The map follows the pointer, so the view centre moves against the drag.
+                checks.append(Check(f"{scale}x a two-by-one tile right-drag moves the cursor two by one",
+                                    shift == (-2, -1), f"saved notes {notes}"))
+                observations[label] = {"cursor": [center_x, center_y], "changed_pixels": changed,
+                                       "drag_shift": shift}
             finally:
                 x11.close()
     return [check.detail for check in checks if not check.ok], {
@@ -1042,18 +1094,21 @@ def case_overmap(session):
     }
 
 
-def case_zoom(session):
-    """Default keyboard and wheel zoom change the rendered tile pitch and spend no turn."""
+def add_keybinding(session, action, key):
+    """Binds a DEFAULTMODE action to one key in the fixture config every launch copies."""
     bindings = session.curses_userdir / "config" / "keybindings.json"
     rows = json.loads(bindings.read_text()) if bindings.exists() else []
-    rows = [row for row in rows if not (row.get("category") == "DEFAULTMODE"
-                                      and row.get("id") == "quicksave")]
-    rows.append({"type": "keybinding", "id": "quicksave", "category": "DEFAULTMODE",
-                 "bindings": [{"input_method": "keyboard", "key": "F6"}]})
-    # Modern leaves the full look screen unbound; bind it so the case can open it by key.
-    rows.append({"type": "keybinding", "id": "look", "category": "DEFAULTMODE",
-                 "bindings": [{"input_method": "keyboard", "key": ";"}]})
+    rows = [row for row in rows if not (row.get("category") == "DEFAULTMODE" and row.get("id") == action)]
+    rows.append({"type": "keybinding", "id": action, "category": "DEFAULTMODE",
+                 "bindings": [{"input_method": "keyboard", "key": key}]})
     bindings.write_text(json.dumps(rows))
+
+
+def case_zoom(session):
+    """Default keyboard and wheel zoom change the rendered tile pitch and spend no turn."""
+    add_keybinding(session, "quicksave", "F6")
+    # Modern leaves the full look screen unbound; bind it so the case can open it by key.
+    add_keybinding(session, "look", ";")
     source = session.curses_userdir / "save" / session.world
     starts = list(source.glob("*.sav"))
     require(len(starts) == 1, f"zoom: expected one character save in {source}, got {starts}")
