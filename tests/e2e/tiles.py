@@ -1126,7 +1126,8 @@ def case_zoom(session):
         "SCALING_FACTOR": "1", "FONT_WIDTH": str(ZOOM_FONT_WIDTH), "FONT_HEIGHT": "16",
         "FONT_SIZE": "16", "TILES": "UNDEAD_PEOPLE_BASE",
         "TERMINAL_X": "160", "TERMINAL_Y": "60", "SIDEBAR_POSITION": "right",
-        "MOUSE_MOVE": "false",
+        # Floating HUD windows sit over the measured floor columns.
+        "MOUSE_MOVE": "false", "HUD_WINDOWS": "false",
     }
     checks, pitches, frames = [], {}, {}
     final_turn = None
