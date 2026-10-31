@@ -130,7 +130,7 @@ reticle. Top-row <kbd>1</kbd>–<kbd>6</kbd> use the hotbar slots, never move yo
 | Action | Modern | Classic |
 | --- | --- | --- |
 | Action Menu | <kbd>Enter</kbd> | <kbd>Enter</kbd> |
-| Find an Action | <kbd>Ctrl</kbd>+<kbd>F</kbd>, <kbd>Ctrl</kbd>+<kbd>Space</kbd> | — |
+| Search everything | <kbd>Ctrl</kbd>+<kbd>F</kbd>, <kbd>Ctrl</kbd>+<kbd>Space</kbd> | — |
 | Main Menu | <kbd>Esc</kbd> | <kbd>Esc</kbd> |
 | Options | <kbd>Shift</kbd>+<kbd>O</kbd> | — |
 | Keybindings | <kbd>?</kbd> | <kbd>?</kbd> |

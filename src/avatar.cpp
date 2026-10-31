@@ -287,6 +287,11 @@ memorized_terrain_tile avatar::get_terrain_tile( const tripoint_abs_ms &pos ) co
     return player_map_memory->get_terrain_tile( pos );
 }
 
+const map_memory &avatar::map_memory_data() const
+{
+    return *player_map_memory;
+}
+
 void avatar::clear_memorized_overlay( const tripoint_abs_ms &pos )
 {
     player_map_memory->clear_memorized_overlay( pos );

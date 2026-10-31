@@ -2485,7 +2485,7 @@
   },
   {
     "type": "keybinding",
-    "name": "Find an Action",
+    "name": "Search everything",
     "category": "DEFAULTMODE",
     "id": "search_action",
     "bindings": [ { "input_method": "keyboard", "key": "CTRL+F" }, { "input_method": "keyboard", "key": "CTRL_SPACE" } ]

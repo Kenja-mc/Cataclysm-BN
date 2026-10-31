@@ -228,6 +228,12 @@ class game : public submap_load_listener
         shared_ptr_fast<ui_adaptor> create_or_get_main_ui_adaptor();
         void invalidate_main_ui_adaptor() const;
         void mark_main_ui_adaptor_resize() const;
+        /// Show the Mouse View box for a tile, as arrow-key aiming does.
+        void show_tile_preview( const tripoint_bub_ms &p );
+        /// The tile whose Mouse View box is up, if any.
+        auto tile_preview_position() -> std::optional<tripoint_bub_ms>;
+        /// Take the Mouse View box down again.
+        void hide_tile_preview();
         void draw( ui_adaptor &ui );
         void draw_ter( bool draw_sounds = true );
         void draw_ter( const tripoint_bub_ms &center, bool looking = false, bool draw_sounds = true );

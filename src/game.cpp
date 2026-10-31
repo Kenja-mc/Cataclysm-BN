@@ -5069,6 +5069,24 @@ void game::mark_main_ui_adaptor_resize() const
     }
 }
 
+void game::show_tile_preview( const tripoint_bub_ms &p )
+{
+    liveview.show( p );
+}
+
+auto game::tile_preview_position() -> std::optional<tripoint_bub_ms>
+{
+    if( !liveview.is_enabled() ) {
+        return std::nullopt;
+    }
+    return liveview.position();
+}
+
+void game::hide_tile_preview()
+{
+    liveview.hide();
+}
+
 game::draw_callback_t::draw_callback_t( const std::function<void()> &cb )
     : cb( cb )
 {

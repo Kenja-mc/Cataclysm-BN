@@ -148,6 +148,8 @@ class avatar : public player
                                     int rotation );
         /** Returns memorized base terrain tile in given location */
         memorized_terrain_tile get_terrain_tile( const tripoint_abs_ms &p ) const;
+        /** Read-only map memory, for enumerating what the avatar remembers nearby. */
+        const map_memory &map_memory_data() const;
         /** Memorizes a given tile in curses mode; finalize_terrain_memory_curses needs to be called after it */
         void memorize_symbol( const tripoint_abs_ms &pos, int symbol );
         /** Returns last stored map tile in given location in curses mode */

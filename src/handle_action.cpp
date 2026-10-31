@@ -38,6 +38,7 @@
 #include "game_inventory.h"
 #include "gamemode.h"
 #include "gates.h"
+#include "global_search.h"
 #include "gun_mode.h"
 #include "help.h"
 #include "iexamine.h"
@@ -2161,6 +2162,19 @@ bool game::handle_action()
             return false;
         }
 
+        if( act == ACTION_SEARCH_ACTION ) {
+            if( uquit == QUIT_WATCH ) {
+                return false;
+            }
+            u.clear_destination();
+            destination_preview.clear();
+            const auto picked = global_search::run( get_default_mode_input_context() );
+            act = picked.empty() ? ACTION_NULL : look_up_action( picked );
+            if( act == ACTION_NULL ) {
+                return false;
+            }
+        }
+
         if( act == ACTION_MAIN_MENU ) {
             if( uquit == QUIT_WATCH ) {
                 return false;
@@ -2174,18 +2188,6 @@ bool game::handle_action()
             u.clear_destination();
             destination_preview.clear();
             act = handle_main_menu();
-            if( act == ACTION_NULL ) {
-                return false;
-            }
-        }
-
-        if( act == ACTION_SEARCH_ACTION ) {
-            if( uquit == QUIT_WATCH ) {
-                return false;
-            }
-            u.clear_destination();
-            destination_preview.clear();
-            act = handle_action_search();
             if( act == ACTION_NULL ) {
                 return false;
             }

@@ -89,7 +89,7 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
         { ACTION_WORLD_HUB, _( "world" ) }, { ACTION_BODY_STATUS, _( "health" ) },
         { ACTION_QUICK_PICKUP, _( "take all" ) }, { ACTION_PICKUP_ALL, _( "nearby items" ) }, { ACTION_RELOAD_ITEM, _( "reload" ) },
         { ACTION_CRAFT, _( "craft" ) }, { ACTION_AUTO_EXPLORE, _( "explore" ) },
-        { ACTION_SEARCH_ACTION, _( "find action" ) },
+        { ACTION_SEARCH_ACTION, _( "search" ) },
     };
     // Toggles and base-keeping come after the keys a new player needs to act at all.
     const auto later = std::vector<std::pair<action_id, std::string>> {

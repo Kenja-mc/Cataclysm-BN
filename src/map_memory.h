@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "game_constants.h"
 #include "memory_fast.h"
@@ -30,6 +31,15 @@ enum class locked_door_kind : std::uint8_t {
     none = 0,
     terrain = 1,
     vehicle = 2,
+};
+
+/** One memorized tile, with both of its layers, in global map-square coordinates. */
+struct memorized_tile {
+    tripoint_abs_ms pos;
+    /// Base terrain layer; empty when only the overlay was memorized.
+    memorized_terrain_tile base;
+    /// Overlay layer: furniture, vehicle part or trap id; empty when none was memorized.
+    memorized_terrain_tile overlay;
 };
 
 /** Represent a submap-sized chunk of tile memory. */
@@ -274,6 +284,15 @@ class map_memory
          * @param pos tile position, in global ms coords.
          */
         auto clear_locked_door( const tripoint_abs_ms &pos ) -> void;
+
+        /**
+         * Tiles the memory holds whose submap lies inside [min, max], both inclusive, on the
+         * given z level.  Nothing outside those submaps is copied, so a long session with a wide
+         * explored area does not pay for it.  Only tiles with a memorized terrain or overlay
+         * layer are returned.
+         */
+        auto memorized_tiles( const tripoint_abs_sm &min, const tripoint_abs_sm &max ) const
+        -> std::vector<memorized_tile>;
 
     private:
         std::map<tripoint_abs_sm, shared_ptr_fast<mm_submap>> submaps;

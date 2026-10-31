@@ -2519,7 +2519,7 @@
   },
   {
     "type": "keybinding",
-    "name": "Find an Action",
+    "name": "Search everything",
     "category": "DEFAULTMODE",
     "id": "search_action",
     "bindings": [  ]
@@ -4152,5 +4152,63 @@
     "category": "DEFAULTMODE",
     "name": "Explore the nearest unexplored area",
     "bindings": [  ]
+  },
+  {
+    "type": "keybinding",
+    "id": "QUIT",
+    "category": "GLOBAL_SEARCH",
+    "name": "Close the search",
+    "//": "Escape only: q, Q and Space are query text here.",
+    "bindings": [ { "input_method": "keyboard", "key": "ESC" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "CONFIRM",
+    "category": "GLOBAL_SEARCH",
+    "name": "Run the picked control or select the match",
+    "bindings": [ { "input_method": "keyboard", "key": "RETURN" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "NEXT_TAB",
+    "category": "GLOBAL_SEARCH",
+    "name": "Next match",
+    "bindings": [ { "input_method": "keyboard", "key": "TAB" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "PREV_TAB",
+    "category": "GLOBAL_SEARCH",
+    "name": "Previous match",
+    "bindings": [ { "input_method": "keyboard", "key": "BACKTAB" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "UP",
+    "category": "GLOBAL_SEARCH",
+    "name": "Previous match",
+    "//": "Arrows only: j and k are query text here.",
+    "bindings": [ { "input_method": "keyboard", "key": "UP" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "DOWN",
+    "category": "GLOBAL_SEARCH",
+    "name": "Next match",
+    "bindings": [ { "input_method": "keyboard", "key": "DOWN" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "PAGE_UP",
+    "category": "GLOBAL_SEARCH",
+    "name": "Previous page of matches",
+    "bindings": [ { "input_method": "keyboard", "key": "PPAGE" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "PAGE_DOWN",
+    "category": "GLOBAL_SEARCH",
+    "name": "Next page of matches",
+    "bindings": [ { "input_method": "keyboard", "key": "NPAGE" } ]
   }
 ]

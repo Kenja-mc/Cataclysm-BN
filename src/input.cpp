@@ -20,6 +20,7 @@
 #include "filesystem.h"
 #include "fstream_utils.h"
 #include "game.h"
+#include "global_search.h"
 #include "help.h"
 #include "ime.h"
 #include "init.h"
@@ -1123,6 +1124,22 @@ const std::string &input_context::handle_input( const int timeout )
             coordinate = next_action.mouse_pos;
         } else {
             coordinate_input_received = false;
+        }
+
+        // The map's search key opens the palette on any screen that leaves the key unbound.
+        if( action == CATA_ERROR && global_search::opens_here( next_action, *this ) ) {
+            ZoneScopedN( "input_context_global_search" );
+            inp_mngr.reset_timeout();
+            static auto palette_action = std::string();
+            palette_action = global_search::run( *this );
+            inp_mngr.set_timeout( timeout );
+            // The caller may block on the next key without drawing, so repaint what the palette covered.
+            ui_manager::redraw();
+            if( palette_action.empty() ) {
+                continue;
+            }
+            result = &palette_action;
+            break;
         }
 
         if( action != CATA_ERROR ) {

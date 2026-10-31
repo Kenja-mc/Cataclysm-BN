@@ -34,7 +34,7 @@ from onboarding import TESTS as ONBOARDING_TESTS
 from movement import TESTS as MOVEMENT_TESTS
 from menus import TESTS as MENUS_TESTS
 from world_hub import TESTS as WORLD_HUB_TESTS
-from action_search import TESTS as ACTION_SEARCH_TESTS
+from global_search import TESTS as GLOBAL_SEARCH_TESTS
 from items import TESTS as ITEMS_TESTS
 from unpack_flow import TESTS as UNPACK_FLOW_TESTS
 from storage import TESTS as STORAGE_TESTS
@@ -111,7 +111,7 @@ MODULES = [
     ("movement", MOVEMENT_TESTS),
     ("menus", MENUS_TESTS),
     ("world_hub", WORLD_HUB_TESTS),
-    ("action_search", ACTION_SEARCH_TESTS),
+    ("global_search", GLOBAL_SEARCH_TESTS),
     ("items", ITEMS_TESTS),
     ("unpack_flow", UNPACK_FLOW_TESTS),
     ("storage", STORAGE_TESTS),

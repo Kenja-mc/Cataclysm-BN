@@ -4,6 +4,15 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-31
+
+### Changed
+
+- Ctrl+F (and Ctrl+Space) search everything: the controls of the current screen, and on the map
+  the creatures you have detected plus the terrain, furniture, traps and items you can see or
+  remember. Enter runs a control or leaves the selection on the picked tile; Tab cycles matches.
+  The same key works inside menus that leave it unbound. It replaces the one-shot action search.
+
 ## 2026-10-30
 
 ### Added

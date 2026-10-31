@@ -157,7 +157,7 @@ food and a weapon, because houses usually have all three.
 | `@`, `P`, `B`        | character sheet / message log / butcher                            |
 | Enter                | all action groups; Info contains character/status screens          |
 | Shift+X              | stance menu (run, walk, crouch, prone; X again cycles)             |
-| Ctrl+F, Ctrl+Space   | find an action by name                                             |
+| Ctrl+F, Ctrl+Space   | search controls, creatures, tiles and items (see below)            |
 | `1`–`6`, Ctrl+T      | hotbar slots / assign a slot                                       |
 | `x` / Ctrl+X         | wait one turn / wait or rest a while                               |
 | `m`, `n`             | map / auto-explore                                                 |
@@ -183,6 +183,18 @@ the right door: the opening lesson next to a closed door, the closing lesson nex
 The wait menu (**Ctrl+X** in Modern; `|` in Classic) lists 5, 30 minutes, 1, 2, 3 and 6 hours, a custom duration,
 times of day and the next weather change. In Modern it also offers **Sleep** on `$`, using the
 same sleep confirmation and alarm prompts as the sleep action. Classic keeps its old entries.
+
+**Search everything** (**Ctrl+F** or **Ctrl+Space** in Modern; Classic leaves it unbound): type
+any part of a name to filter a live list of the current screen's controls, with the key or menu
+path that reaches each, and on the map every creature you have detected plus the terrain,
+furniture, traps and items you can see or remember. Enter runs a control as if you had pressed its
+key, or leaves the selection on the picked tile; Tab and Shift+Tab cycle the matches and move the
+selection marker as they go. A remembered tile pans the view onto map memory instead of placing
+the marker, and the tile inspector stays closed, so the list never shows what stands there now.
+Nothing is listed until you type, and Escape puts the view and the marker back. The search spends
+no time, never acts on the world, and never lists anything hidden by walls, darkness or a sealed
+container. Inside menus the same key lists that menu's own controls, unless the menu uses the key
+itself. Some desktop input methods claim Ctrl+Space; Ctrl+F always works.
 
 **Mouse tile selection**, inspired by Sword of the Stars: The Pit, works in the terminal too.
 

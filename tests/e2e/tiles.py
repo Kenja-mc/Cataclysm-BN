@@ -1401,13 +1401,15 @@ def case_sound_menu(session):
 
 MENU_DRAG_TERMINAL = (80, 24)
 MENU_DRAG_FONT = (8, 16)
+# Debug menu → Spawning → Spawn monster: a list of every monster type.
+MENU_DRAG_KEYS = ("F12", "S", "m")
 
 
 def menu_scrollbar_cells(session):
-    """(column, first row, last row) of the action search's scrollbar, read from a curses game.
+    """(column, first row, last row) of a long list menu's scrollbar, read from a curses game.
 
     The list menu's layout depends only on its entries and the terminal size, so a curses game
-    at the same size shows the cells the tiles window draws. The action search has far more
+    at the same size shows the cells the tiles window draws. The debug monster list has far more
     entries than the 24-row terminal shows, so its scrollbar can be dragged.
     """
     cols, rows = MENU_DRAG_TERMINAL
@@ -1415,19 +1417,15 @@ def menu_scrollbar_cells(session):
                  options={"CONTROL_SCHEME": "modern", "SAFEMODE": "false", "SHOW_WELCOME": "false"})
     try:
         start_new_game(probe)
-        probe.keys("C-f", delay=0.5)
-        probe.wait_for("Find an action")
-        probe.type("e")
-        probe.keys("Enter", delay=0.6)
-        probe.wait_for("Actions matching")
+        probe.keys(*MENU_DRAG_KEYS, delay=1)
+        probe.wait_for("riot control bot")
         screen = probe.screen().splitlines()
     finally:
         probe.close()
-    title = next(y for y, line in enumerate(screen) if "Actions matching" in line)
-    # The search list spans the terminal with left padding, so its scrollbar replaces the
-    # left border; arrows flank the draggable track rows.
-    up = next((y for y in range(title + 1, len(screen)) if y < len(screen) and len(screen[y]) > 0 and screen[y][0] == "^"), None)
-    down = next((y for y in range(len(screen)-1, up or title, -1) if y < len(screen) and len(screen[y]) > 0 and screen[y][0] == "v"), None)
+    # The list spans the terminal, so its scrollbar replaces the left border; arrows flank the
+    # draggable track rows.
+    up = next((y for y, line in enumerate(screen) if line[:1] == "^"), None)
+    down = next((y for y in range(len(screen) - 1, up or 0, -1) if screen[y][:1] == "v"), None)
     require(up is not None and down is not None, "menu drag: no scrolling list found\n" + "\n".join(screen))
     return 0, up + 1, down - 1
 
@@ -1458,9 +1456,9 @@ def case_menu_drag(session):
             require(win is not None, "menu drag: game window disappeared")
             # The pointer waits on the scrollbar column, where hover highlights no row.
             x11.focus_local(win, *pixel(column, first + 1))
-            x11.key("Control_L", "f", delay=0.6)
-            x11.key("e", delay=0.2)
-            x11.key("Return", delay=1)
+            x11.key("F12", delay=1)
+            x11.key("Shift_L", "s", delay=1)
+            x11.key("m", delay=1.5)
             before = settle_capture(session, x11, win, session.artifacts / "menu-drag-before.png")
             x11.press(1, delay=0.2)
             for row in range(first + 1, last + 1):

@@ -63,7 +63,7 @@ SHORT = {
     "safemode": "safe mode", "ignore_enemy": "ignore foe", "player_data": "character",
     "body_status": "body", "bionics": "bionics", "mutations": "mutations", "perks": "perks",
     "messages": "messages", "diary": "diary", "action_menu": "all actions",
-    "search_action": "find action", "main_menu": "menu", "open_options": "options",
+    "search_action": "search", "main_menu": "menu", "open_options": "options",
     "HELP_KEYBINDINGS": "all keys", "help": "help", "debug": "debug", "lua_console": "Lua console",
 }
 for _n in range(1, 7):

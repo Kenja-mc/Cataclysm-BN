@@ -601,8 +601,6 @@ point_rel_ms get_delta_from_movement_action( action_id act, iso_rotate rot );
  * @returns action_id ID of action requested by user at menu.
  */
 action_id handle_action_menu();
-/// Free-text search over every action, showing how each one is reached.
-action_id handle_action_search();
 
 /**
  * Show in-game main menu

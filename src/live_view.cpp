@@ -84,3 +84,8 @@ bool live_view::is_enabled()
 {
     return ui != nullptr;
 }
+
+auto live_view::position() const -> const tripoint_bub_ms &
+{
+    return mouse_position;
+}

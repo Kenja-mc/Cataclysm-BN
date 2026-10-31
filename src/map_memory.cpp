@@ -134,6 +134,37 @@ auto map_memory::clear_locked_door( const tripoint_abs_ms &pos ) -> void
     set_locked_door( pos, locked_door_kind::none );
 }
 
+auto map_memory::memorized_tiles( const tripoint_abs_sm &min, const tripoint_abs_sm &max ) const
+-> std::vector<memorized_tile>
+{
+    std::vector<memorized_tile> ret;
+    for( const auto &entry : submaps ) {
+        const tripoint_abs_sm &sm_pos = entry.first;
+        if( sm_pos.z() != min.z() || sm_pos.x() < min.x() || sm_pos.x() > max.x() ||
+            sm_pos.y() < min.y() || sm_pos.y() > max.y() ) {
+            continue;
+        }
+        const shared_ptr_fast<mm_submap> &sm = entry.second;
+        if( !sm || sm->is_empty() ) {
+            continue;
+        }
+        for( int y = 0; y < SEEY; y++ ) {
+            for( int x = 0; x < SEEX; x++ ) {
+                const point_sm_ms p( x, y );
+                const memorized_terrain_tile &base = sm->terrain_tile( p );
+                const memorized_terrain_tile &overlay = sm->tile( p );
+                if( base.tile.empty() && overlay.tile.empty() ) {
+                    continue;
+                }
+                ret.push_back( memorized_tile{
+                    project_combine( sm_pos, p ), base, overlay
+                } );
+            }
+        }
+    }
+    return ret;
+}
+
 bool map_memory::prepare_region( const tripoint_abs_ms &p1, const tripoint_abs_ms &p2 )
 {
     assert( p1.z() == p2.z() );
