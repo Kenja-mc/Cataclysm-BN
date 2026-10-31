@@ -22,8 +22,8 @@ def contextual_setup(game):
 
 
 @contextmanager
-def contextual_game(name, **options):
-    with shared_game(name, define=HELPERS, setup=contextual_setup, options={
+def contextual_game(name, keybindings=None, **options):
+    with shared_game(name, define=HELPERS, setup=contextual_setup, keybindings=keybindings, options={
         "CONTROL_SCHEME": "modern", "CONTEXTUAL_INTERACT": "true",
         "MOUSE_TILE_SELECTION": "true", "MOUSE_MOVE": "false", "SAFEMODE": "false",
         "AUTOSELECT_SINGLE_VALID_TARGET": "false", **options,

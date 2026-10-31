@@ -63,5 +63,31 @@ def test_popup_button_follows_hover(_g):
                     f"Enter must confirm the hovered {label} button:\n" + game.screen()
 
 
+def test_click_selects_a_row_in_a_categorized_menu(_g):
+    """Clicks in a multi-category list select rows and cycle the category label."""
+    import json, tempfile
+    from pathlib import Path
+    # The spell selector is the reachable categorized list; cast_spell has no default key.
+    bindings = Path(tempfile.mkdtemp()) / "keybindings.json"
+    bindings.write_text(json.dumps([{"id": "cast_spell", "category": "DEFAULTMODE",
+                                     "bindings": [{"input_method": "keyboard", "key": "F9"}]}]))
+    with contextual_game("bn-e2e-mouse-category", keybindings=str(bindings)) as game:
+        assert game.lua("local a=gapi.get_avatar() a:get_magic():learn_spell(SpellTypeId.new('debug_hp'),a,true) "
+                        "out('ok')") == ["ok"]
+        game.keys("F9", delay=0.8)
+        game.wait_for("Debug HP Spell")
+        game.keys("*", delay=0.4)  # favorite it, so the list grows a Favorites category
+        game.wait_for("*b Debug HP Spell")
+        # Clicking the category label cycles the filter instead of leaving the menu.
+        game.click(*game.find("<<"))
+        assert wait_until(lambda: "<< Favorites >>" in game.screen(), 10), \
+            f"the category label click must cycle the filter:\n{game.screen()}"
+        game.click(*game.find("<<"))  # back to all spells, so the row is on screen
+        game.wait_for("Debug HP Spell")
+        # Clicking a row selects it: the self-target spell starts a casting activity.
+        game.click(*game.find("Debug HP Spell"))
+        assert wait_until(lambda: game.lua("out(gapi.get_avatar():get_activity() ~= nil)") == ["true"],
+                          10), f"a row click must select the spell:\n{game.screen()}"
+
 TESTS = [test_click_answers_a_direction_prompt, test_classic_direction_prompt_ignores_clicks,
-         test_popup_button_follows_hover]
+         test_popup_button_follows_hover, test_click_selects_a_row_in_a_categorized_menu]

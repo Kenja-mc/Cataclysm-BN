@@ -244,6 +244,7 @@ SMOKE = [
     "test_modern_attack_pulps_the_chosen_corpse",
     "test_world_page_draws_tab_content_inline",
     "test_world_defaults_unchanged_without_preset",
+    "test_click_selects_a_row_in_a_categorized_menu",
 ]
 SMOKE_TESTS = [test for test in TESTS if test.__name__ in SMOKE]
 

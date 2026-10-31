@@ -1208,7 +1208,6 @@ void uilist::query( bool loop, int timeout )
                                 handled_click = true;
                             }
                         }
-                        break;
                     }
                     const auto end = std::min( vshift + vmax, static_cast<int>( fentries.size() ) );
                     auto row_click = false;
