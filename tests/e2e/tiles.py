@@ -792,19 +792,27 @@ def case_mouse(session):
                 origin = sidebar_width if side == "left" else 0
                 avatar_x = origin + (terrain_width // tile_size // 2) * tile_size + tile_size // 2
                 avatar_y = (height // tile_size // 2) * tile_size + tile_size // 2
-                sidebar_x = 0 if side == "left" else terrain_width
+                # The Mouse View box sits in the top-left corner whichever side the sidebar is on.
                 x11.focus_local(win, avatar_x + tile_size, avatar_y)
                 time.sleep(1)
                 hover_png = capture(session.display, win, session.artifacts / f"{label}-hover.png")
                 _, _, hovered = frame_rgb(hover_png)
-                def panel(rgb):
-                    # Mouse View is a fixed-width sidebar panel; compare its actual rendered
-                    # terrain description and action hint, not just the presence of changed pixels.
-                    return b"".join(rgb[3 * (y * width + sidebar_x):
-                                        3 * (y * width + sidebar_x + sidebar_width)]
-                                    for y in range(height // 2))
-                actual_panel = panel(hovered)
-                require(actual_panel != panel(before), f"{label}: adjacent tile produced no hover")
+                def mouse_view(rgb):
+                    """The box between its top and bottom border lines, found as rows whose left
+                    stretch is one non-black colour (the box's horizontal rule)."""
+                    def row(frame, y):
+                        return frame[3 * y * width:3 * (y * width + sidebar_width)]
+                    def ruled(y):
+                        stretch = {bytes(rgb[3 * (y * width + x):3 * (y * width + x) + 3]) for x in range(30, 200)}
+                        return len(stretch) == 1 and stretch != {b"\x00\x00\x00"}
+                    rules = [y for y in range(height // 2) if ruled(y)]
+                    bottom = next((y for y in rules if rules and y > rules[0] + 32), None)
+                    if bottom is None:
+                        return b""
+                    # Other windows below the box have rules of their own; stop at the box's.
+                    return b"".join(row(rgb, y) for y in range(rules[0], bottom + 2))
+                actual_panel = mouse_view(hovered)
+                require(actual_panel, f"{label}: adjacent tile produced no hover")
                 if hover_panel is None:
                     hover_panel = actual_panel
                 else:
@@ -1169,8 +1177,7 @@ def case_zoom(session):
             reticle_in = observe("reticle-zoom-in")
             x11.key("minus")
             observe("reticle-zoom-out")
-            # Escape opens the main menu in the tiles build, so close it before opening look.
-            x11.key("Escape")
+            # Esc first takes the reticle away; a second press would open the main menu.
             x11.key("Escape")
             map_frame_label = "map-after-reticle"
             map_frame = observe(map_frame_label)
