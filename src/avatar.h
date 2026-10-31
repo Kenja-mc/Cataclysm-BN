@@ -302,10 +302,10 @@ class avatar : public player
         }
 
         /// Placement, collapse and visibility of the floating HUD windows.
-        auto hud_layout() -> std::map<std::string, hud_windows::state> & {
+        auto hud_layout() -> std::map<std::string, hud_windows::state>& {
             return hud_window_layout;
         }
-        auto hud_layout() const -> const std::map<std::string, hud_windows::state> & {
+        auto hud_layout() const -> const std::map<std::string, hud_windows::state>& {
             return hud_window_layout;
         }
 

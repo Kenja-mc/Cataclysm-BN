@@ -310,7 +310,7 @@ auto avatar::get_known_locked_door( const tripoint_abs_ms &p ) const -> locked_d
 auto avatar::remember_locked_door( const tripoint_abs_ms &p, const bool vehicle ) -> void
 {
     player_map_memory->set_locked_door( p, vehicle ? locked_door_kind::vehicle :
-                                       locked_door_kind::terrain );
+                                        locked_door_kind::terrain );
 }
 
 auto avatar::forget_locked_door( const tripoint_abs_ms &p ) -> void

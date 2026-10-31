@@ -43,10 +43,11 @@ namespace
 constexpr char search_action_id[] = "search_action";
 
 /// Idents that are plumbing rather than something a player can pick from a search.
-constexpr auto plumbing_actions = std::array{
+constexpr auto plumbing_actions = std::array
+{
     std::string_view( "ANY_INPUT" ), std::string_view( "COORDINATE" ),
-    std::string_view( "MOUSE_MOVE" ), std::string_view( "SELECT" ),
-    std::string_view( "SEC_SELECT" )
+        std::string_view( "MOUSE_MOVE" ), std::string_view( "SELECT" ),
+        std::string_view( "SEC_SELECT" )
 };
 
 /// Screens whose keys belong to a text field, plus the palette itself.  The search key must not
@@ -483,7 +484,7 @@ auto run( const input_context &origin ) -> std::string
         restore_cursor();
     };
 
-    const auto rebuild = [&]( const std::string &query ) {
+    const auto rebuild = [&]( const std::string & query ) {
         const std::string folded_query = to_lower_case( query );
         std::vector<std::string> terms;
         for( const std::string &term : string_split( folded_query, ' ' ) ) {
@@ -568,7 +569,7 @@ auto run( const input_context &origin ) -> std::string
     recalc_size( ui );
     ui.on_screen_resize( recalc_size );
 
-    const auto redraw = [&]( ui_adaptor &adaptor ) {
+    const auto redraw = [&]( ui_adaptor & adaptor ) {
         werase( w );
         draw_border( w, BORDER_COLOR, _( "Search" ), c_light_red );
         const int inner_width = getmaxx( w ) - 4;
@@ -597,7 +598,7 @@ auto run( const input_context &origin ) -> std::string
             const target &picked = *matches[index].target;
             const bool active = index == selected;
             const nc_color name_color = active ? hilite( kind_color( picked.type ) ) :
-                                       kind_color( picked.type );
+                                        kind_color( picked.type );
             const nc_color detail_color = active ? hilite( c_dark_gray ) : c_dark_gray;
             const point row_pos( 2, list_top + row );
             trim_and_print( w, row_pos, name_width, name_color, "%s", picked.label );
