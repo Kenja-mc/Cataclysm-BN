@@ -94,9 +94,16 @@ def marker_count(game):
     return len(glyph_cells(game, "?"))
 
 
+def turn(game):
+    """One turn, then wait until it is processed and drawn: a one-turn marker sampled early is lost."""
+    settle(game)
+    assert game.lua("out('ok')") == ["ok"]
+    game.settle_screen(minimum=0.3, timeout=3.0)
+
+
 def wait_for_marker(game, turns=26):
     for _ in range(turns):
-        settle(game)
+        turn(game)
         if marker_count(game):
             return True
     return False
@@ -108,7 +115,7 @@ def test_idle_sound_needs_the_data_field_and_rerolls_its_cooldown(_g):
     try:
         spawn(game, SILENT, ring_positions(6))
         for _ in range(24):
-            settle(game)
+            turn(game)
         assert marker_count(game) == 0, \
             "a monster without idle_sound must not emit a sound or a marker:\n" + game.screen()
 
@@ -119,7 +126,7 @@ def test_idle_sound_needs_the_data_field_and_rerolls_its_cooldown(_g):
             "a monster with idle_sound should emit within its 8-20 second cooldown:\n" + game.screen()
 
         for _ in range(4):
-            settle(game)
+            turn(game)
             if marker_count(game) == 0:
                 break
         assert wait_for_marker(game), \

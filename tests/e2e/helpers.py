@@ -109,14 +109,8 @@ def settle(g):
     g.keys("." if option_value(g, "CONTROL_SCHEME") == "classic" else "x", delay=0.6)
 
 
-def choose_menu_entry(g, label):
-    """Select a menu row using Modern mouse controls or its Classic hotkey.
-
-    The message log and the sidebar repeat menu wording ("open the…", "Wield", "Debug…"), so
-    only text inside a bordered row counts: the characters between the nearest `│` left of the
-    match and the next `│` after it must be the row's hotkey prefix, not prose.
-    """
-    screen = g.screen()
+def menu_rows(screen, label):
+    """(x, y, hotkey) of each bordered menu row showing `label`."""
     pattern = re.compile(r"(?<!\w)" + re.escape(label) + r"(?!\w)", re.IGNORECASE)
     rows = []
     for y, line in enumerate(screen.splitlines()):
@@ -126,6 +120,24 @@ def choose_menu_entry(g, label):
             if left < 0 or right < 0 or len(line[left + 1:match.start()]) > 6:
                 continue
             rows.append((match.start(), y, line[left + 1:match.start()].strip()))
+    return rows
+
+
+def choose_menu_entry(g, label, timeout=10):
+    """Select a menu row using Modern mouse controls or its Classic hotkey.
+
+    The message log and the sidebar repeat menu wording ("open the…", "Wield", "Debug…"), so
+    only text inside a bordered row counts: the characters between the nearest `│` left of the
+    match and the next `│` after it must be the row's hotkey prefix, not prose. A slow machine
+    may still be drawing the menu, so wait for the row instead of sampling once.
+    """
+    deadline = time.time() + timeout
+    while True:
+        screen = g.screen()
+        rows = menu_rows(screen, label)
+        if len(rows) == 1 or time.time() >= deadline:
+            break
+        time.sleep(0.1)
     assert len(rows) == 1, f"expected one menu row for {label!r}:\n{screen}"
     x, y, hotkey = rows[0]
     if option_value(g, "CONTROL_SCHEME", "modern") == "classic":
