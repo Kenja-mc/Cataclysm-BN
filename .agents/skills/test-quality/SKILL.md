@@ -17,6 +17,12 @@ Use when adding or changing automated tests.
   fix the parser or documentation in the same change, not just the invocation used for testing.
 - Drive modal transitions one key at a time and wait for the next prompt. In the keybinding
   editor, a second Escape can dismiss the save confirmation and silently discard the new binding.
+- A new modal or dialog needs an explicit cancel-path test: Escape must leave state unchanged and
+  report nothing taken. #33 shipped a take-list that treated `QUIT` as confirm, so Escape carried
+  every item, and no test covered the cancel path.
+- A glyph, marker or icon change with a directional or state variant needs a test for that variant,
+  not only the default. #35 checked marker age before z-level, so an aged marker on another level
+  drew `·` instead of `^`/`v`, and the test covered fresh and stale on one level only.
 - Reject capture fixtures that raised debug assertions or used invalid item IDs. Repeated item
   names do not prove duplicate rendering: verify instance counts and worn/carried membership
   before attributing the rows to a UI bug.
