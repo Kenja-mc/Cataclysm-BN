@@ -103,12 +103,6 @@ class Game:
             self.settle_screen(minimum=1.0, timeout=1.5)
 
     def double_click(self, x, y, button=0):
-        """Two clicks on one cell inside the list double-click window, then one redraw wait."""
-        self.click(x, y, button=button, settle=False)
-        time.sleep(0.08)
-        self.click(x, y, button=button)
-
-    def double_click(self, x, y, button=0):
         """Two clicks inside the terminal's double-click interval, as a person double-clicks."""
         for _ in range(2):
             for suffix in ("M", "m"):

@@ -67,7 +67,7 @@ def test_double_click_picks_a_pickup_row(g):
     names = open_pickup(g, "rock", "stick")
     try:
         g.double_click(*row_of(g, names["rock"]))
-        assert "Weight" not in g.screen(), "a double click should confirm like Enter\n" + g.screen()
+        assert "Pick up" not in g.screen(), "a double click should confirm like Enter\n" + g.screen()
         assert count_carried(g, "rock") == 1
         assert count_carried(g, "stick") == 0
     finally:
@@ -82,7 +82,10 @@ def test_option_off_double_click_only_marks(_g):
         g.define_lua(HELPERS)
         names = open_pickup(g, "rock")
         g.double_click(*row_of(g, names["rock"]))
-        assert "Weight" in g.screen(), "the pickup menu must stay open\n" + g.screen()
+        assert "Pick up" in g.screen(), "the pickup menu must stay open\n" + g.screen()
+        # A lua read closes an open list with its console Escape, so leave the menu first.
+        g.keys("Escape", delay=0.5)
+        g.wait_gone("Pick up", timeout=10)
         assert count_carried(g, "rock") == 0, "with the option off a double click only marks"
         close_and_clean(g)
     finally:

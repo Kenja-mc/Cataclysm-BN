@@ -12,7 +12,7 @@ from fixtures import shared_game
 from helpers import (HELPERS, action_menu, arena, choose_menu_entry, count_carried,
                      empty_inventory, give, spawn)
 from inventory_mouse import display_name, row_of, wielded
-from keybinding_search import _selected_pickup_item
+from keybinding_search import _hotkey_for_action, _selected_pickup_item
 from menu_space import cell_of
 from tmux_game import Game, start_new_game
 
@@ -46,8 +46,8 @@ def test_double_click_runs_enter_action_and_its_prompt(_g):
             "the double click must run the row's confirmation\n" + g.screen()
         g.keys("Escape", delay=0.8)
         g.wait_gone("Save and quit?", timeout=10)
-        g.keys("Escape", delay=0.8)
-        assert "Save and Quit" not in g.screen(), "the test must leave the game in play\n" + g.screen()
+        assert "Save and Quit" not in g.screen(), \
+            "answering No to the double-clicked row must return to play\n" + g.screen()
 
 
 def test_existing_space_and_user_rebind_stay_in_the_list(_g):
@@ -66,9 +66,8 @@ def test_existing_space_and_user_rebind_stay_in_the_list(_g):
 
         game.keys("G", delay=0.8)
         game.wait_for("Pick up")
-        game.wait_for("Weight")
         game.keys("Space", delay=1.2)
-        assert "Weight" not in game.screen(), "Space must still confirm a pickup row\n" + game.screen()
+        assert "Pick up" not in game.screen(), "Space must still confirm a pickup row\n" + game.screen()
         assert count_carried(game, "rock") + count_carried(game, "stick") == 1
 
         game.lua("gapi.get_avatar():drop_all_items() out('ok')")
@@ -77,27 +76,29 @@ def test_existing_space_and_user_rebind_stay_in_the_list(_g):
         spawn(game, 0, 0, "stick")
         game.keys("G", delay=0.8)
         game.wait_for("Pick up")
-        game.wait_for("Weight")
         previous = _selected_pickup_item(game.screen())
         game.keys("?", delay=0.5)
         game.wait_for("Keybindings")
         game.type("next item", delay=0.2)
         game.wait_for("Next item:")
         game.keys("+", delay=0.3)
-        game.keys("Space", delay=0.4)
+        hotkey = _hotkey_for_action(game.screen(), "Next item")
+        game.keys(hotkey, delay=0.4)
         game.wait_for("New key for Next item", timeout=10)
         game.keys("Space", delay=0.4)
         game.wait_for("This key conflicts with", timeout=10)
-        game.keys("y", delay=0.5)
+        # Modern answers prompts with Enter; y only moves the highlight to Yes.
+        game.keys("y", "Enter", delay=0.5)
+        game.wait_gone("This key conflicts with", timeout=10)
         game.keys("Escape", delay=0.5)
         game.wait_for("Save changes?")
-        game.keys("y", delay=0.8)
+        game.keys("y", "Enter", delay=0.8)
         game.wait_gone("Save changes?", timeout=10)
         game.wait_for("Pick up")
 
         current = _selected_pickup_item(game.screen())
         game.keys("Space", delay=0.6)
-        assert "Weight" in game.screen(), "the rebound Space must move, not confirm\n" + game.screen()
+        assert "Pick up" in game.screen(), "the rebound Space must move, not confirm\n" + game.screen()
         moved = _selected_pickup_item(game.screen())
         assert moved != current, f"Space must run Next item: {current!r} -> {moved!r}"
     finally:

@@ -34,6 +34,8 @@ def fresh_inventory(g):
 
 def test_double_click_picks_an_inventory_row(g):
     fresh_inventory(g)
+    # A lua read closes an open list with its console Escape, so read before opening one.
+    assert wielded(g) == [""], "the fixture must start empty-handed"
     pipe = display_name(g, "pipe")
     action_menu(g, "Inventory", "Wield")
     assert "Wield item" in g.screen(), g.screen()
@@ -41,7 +43,6 @@ def test_double_click_picks_an_inventory_row(g):
     g.hover(x, y)
     g.click(x, y)
     assert "Wield item" in g.screen(), "one left click must only select the row\n" + g.screen()
-    assert wielded(g) == [""], "one click must not pick an item"
     g.double_click(x, y)
     assert "Wield item" not in g.screen(), "a double click should pick the row\n" + g.screen()
     assert wielded(g) == ["pipe"], wielded(g)
@@ -70,10 +71,10 @@ def test_click_picks_nearby_item_without_inventory(g):
     spawn(g, 0, 0, "pipe")
     spawn(g, 1, 0, "rock")
     pipe = display_name(g, "pipe")
+    assert wielded(g) == [""], "the fixture must start empty-handed"
     action_menu(g, "Inventory", "Wield")
     x, y = row_of(g, pipe)
     g.click(x, y)
-    assert wielded(g) == [""], "the first click must only select the nearby row"
     g.double_click(x, y)
     assert wielded(g) == ["pipe"], "a hidden inventory column must not shift mouse selection"
     g.lua("gapi.get_avatar():drop_all_items() out('ok')")
