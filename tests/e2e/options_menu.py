@@ -15,7 +15,7 @@ def open_options(g):
         match = re.search(r"[│ ]Options +│", line)
         if match:
             g.hover(match.start() + 1, y)
-            g.click(match.start() + 1, y)
+            g.double_click(match.start() + 1, y)
             break
     g.wait_for(" OPTIONS ", timeout=10)
 
