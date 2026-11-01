@@ -72,6 +72,7 @@ bool run(
         ctxt.register_action( "MOUSE_MOVE" );
         ctxt.register_action( "SELECT" );
     }
+    ctxt.set_space_action_priority( true );
 
     int info_area_scroll_pos = 0;
     constexpr int info_area_scroll_step = 3;

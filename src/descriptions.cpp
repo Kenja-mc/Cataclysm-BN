@@ -82,6 +82,7 @@ void game::extended_description( const tripoint_bub_ms &p )
     ctxt.register_action( "CONFIRM" );
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    ctxt.set_space_action_priority( true );
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
         werase( w_head );

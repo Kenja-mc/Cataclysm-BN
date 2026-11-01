@@ -94,6 +94,10 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Added
 
+- **Modern list mouse** (Options → Interface, on by default): one click selects a list row,
+  a double click runs the row's Enter action and its confirmation prompt, and right click keeps
+  the row's existing action menu. Help topics, pickup and single-item inventory lists follow it.
+  Classic keeps its keyboard-only lists.
 - `bin/dev-iterate.sh` and `just dev`, with the `linux-curses-dev` and `linux-tiles-dev` presets:
   a game-only `-O0` build that launches into an isolated `out/dev-userdir/` for saves, config and
   logs. It is for iteration only — asserts are off and tests are not built.
@@ -123,6 +127,7 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Changed
 
+- Space confirms a list row only when the menu has not already bound Space to another action.
 - Sound markers shrink to a dot as they age, so a fresh noise reads differently from a stale one;
   the first marker in a game explains the glyphs once (with Show first-time tips on), and going
   deaf clears any markers already on the map.

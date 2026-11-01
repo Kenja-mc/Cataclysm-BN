@@ -125,6 +125,7 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
         ctxt.register_action( "SWITCH_SAFEMODE_OPTION" );
         ctxt.register_action( "SWAP_RULE_GLOBAL_CHAR" );
     }
+    ctxt.set_space_action_priority( true );
 
     const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
     if( modern ) {

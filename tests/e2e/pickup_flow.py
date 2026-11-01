@@ -64,6 +64,35 @@ def test_mouse_marks_pickup_rows(g):
         close_and_clean(g)
 
 
+def test_double_click_picks_a_pickup_row(g):
+    names = open_pickup(g, "rock", "stick")
+    try:
+        g.double_click(*row_of(g, names["rock"]))
+        assert "Pick up" not in g.screen(), "a double click should confirm like Enter\n" + g.screen()
+        assert count_carried(g, "rock") == 1
+        assert count_carried(g, "stick") == 0
+    finally:
+        close_and_clean(g)
+
+
+def test_option_off_double_click_only_marks(_g):
+    g = Game(name="bn-e2e-pickup-list-mouse-off",
+             options={"CONTROL_SCHEME": "modern", "MODERN_LIST_MOUSE": "false", "SAFEMODE": "false"})
+    try:
+        start_new_game(g)
+        g.define_lua(HELPERS)
+        names = open_pickup(g, "rock")
+        g.double_click(*row_of(g, names["rock"]))
+        assert "Pick up" in g.screen(), "the pickup menu must stay open\n" + g.screen()
+        # A lua read closes an open list with its console Escape, so leave the menu first.
+        g.keys("Escape", delay=0.5)
+        g.wait_gone("Pick up", timeout=10)
+        assert count_carried(g, "rock") == 0, "with the option off a double click only marks"
+        close_and_clean(g)
+    finally:
+        g.close()
+
+
 def test_pickup_context_action_takes_only_that_item(g):
     names = open_pickup(g, "rock", "stick")
     try:
@@ -167,7 +196,8 @@ def test_classic_space_still_cancels_pickup(_g):
 
 
 TESTS = [test_g_again_picks_up_the_highlighted_item, test_h_wields_from_pickup,
-         test_mouse_marks_pickup_rows, test_pickup_context_action_takes_only_that_item,
+         test_mouse_marks_pickup_rows, test_double_click_picks_a_pickup_row,
+         test_option_off_double_click_only_marks, test_pickup_context_action_takes_only_that_item,
          test_classic_empty_pickup_confirmation_takes_nothing, test_wheel_selects_pickup_row,
          test_space_confirms_like_g, test_space_picks_marked_row_with_quantity,
          test_escape_cancels_pickup_in_modern, test_classic_space_still_cancels_pickup]

@@ -293,6 +293,7 @@ void user_interface::show()
     if( is_autopickup ) {
         ctxt.register_action( "SWITCH_AUTO_PICKUP_OPTION" );
     }
+    ctxt.set_space_action_priority( true );
 
     while( true ) {
         rule_list &cur_rules = tabs[iTab].new_rules;

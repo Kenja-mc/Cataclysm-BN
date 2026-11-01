@@ -19,6 +19,7 @@
 #include "fstream_utils.h"
 #include "input.h"
 #include "json.h"
+#include "list_mouse.h"
 #include "options.h"
 #include "output.h"
 #include "path_info.h"
@@ -201,9 +202,11 @@ void help::display_help()
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 
     std::string action;
     auto selected_topic = size_t{ 0 };
+    list_mouse::click_state click;
 
     const auto show_topic = [&]( size_t i ) {
         std::vector<std::string> i18n_help_texts;
@@ -243,18 +246,33 @@ void help::display_help()
         ui_manager::redraw();
 
         action = ctxt.handle_input();
+        const auto event = ctxt.get_raw_input();
+        if( event.type != input_event_t::mouse ||
+            ( action != "SELECT" && action != "MOUSE_MOVE" ) ) {
+            click.reset();
+        }
         if( modern && action == "SELECT" ) {
             if( const auto mouse = ctxt.get_coordinates( w_help ) ) {
                 const auto cell = mouse->xy().raw() + point( getmaxx( w_help ),
                                   getmaxy( w_help ) ) / 2;
+                bool on_row = false;
                 for( size_t i = 0; i < menu_rows.size(); ++i ) {
                     const auto &row = menu_rows[i];
                     if( cell.y == row.first.y && cell.x >= row.first.x &&
                         cell.x < row.first.x + row.second ) {
-                        show_topic( i );
-                        action = "CONFIRM";
+                        on_row = true;
+                        selected_topic = i;
+                        if( !list_mouse::enabled() || click.second( static_cast<int>( i ) ) ) {
+                            show_topic( i );
+                            action = "CONFIRM";
+                        } else {
+                            action.clear();
+                        }
                         break;
                     }
+                }
+                if( !on_row ) {
+                    click.reset();
                 }
             }
             continue;

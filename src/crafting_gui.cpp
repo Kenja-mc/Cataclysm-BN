@@ -833,6 +833,7 @@ static input_context make_crafting_context( bool highlight_unread_recipes )
         ctxt.register_action( "MARK_ALL_RECIPES_READ" );
         ctxt.register_action( "TOGGLE_UNREAD_RECIPES_FIRST" );
     }
+    ctxt.set_space_action_priority( true );
     return ctxt;
 }
 

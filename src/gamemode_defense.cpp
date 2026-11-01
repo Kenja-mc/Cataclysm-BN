@@ -500,6 +500,7 @@ void defense_game::setup()
     ctxt.register_action( "PREV_TAB" );
     ctxt.register_action( "START" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    ctxt.set_space_action_priority( true );
 
     while( true ) {
         ui_manager::redraw();
@@ -914,6 +915,7 @@ void defense_game::caravan()
     ctxt.register_action( "NEXT_TAB" );
     ctxt.register_action( "HELP" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
+    ctxt.set_space_action_priority( true );
 
     bool done = false;
     bool cancel = false;

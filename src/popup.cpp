@@ -302,6 +302,7 @@ query_popup::result query_popup::query_once()
     if( cancel ) {
         ctxt.register_action( "QUIT" );
     }
+    ctxt.set_space_action_priority( true );
 
     const auto button_at = [&]( const point & mouse ) -> std::optional<size_t> {
         const auto p = mouse - point( getbegx( win ) + border_width, getbegy( win ) + border_width );

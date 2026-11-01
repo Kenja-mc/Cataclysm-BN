@@ -801,6 +801,12 @@ const std::string TIMEOUT = "TIMEOUT";
 
 const std::string &input_context::input_to_action( const input_event &inp ) const
 {
+    // Modern lists opt in: a Space binding of their own wins over the shared CONFIRM,
+    // even when CONFIRM was registered first. Classic and other contexts are unchanged.
+    const bool space = space_action_priority &&
+                       get_option<std::string>( "CONTROL_SCHEME" ) == "modern" &&
+                       inp.type == input_event_t::keyboard && inp.get_first_input() == ' ';
+    const std::string *deferred_confirm = nullptr;
     for( auto &elem : registered_actions ) {
         const std::string &action = elem;
         const std::vector<input_event> &check_inp = inp_mngr.get_input_for_action( action, category );
@@ -808,11 +814,15 @@ const std::string &input_context::input_to_action( const input_event &inp ) cons
         // Does this action have our queried input event in its keybindings?
         for( auto &check_inp_i : check_inp ) {
             if( check_inp_i == inp ) {
+                if( space && action == "CONFIRM" ) {
+                    deferred_confirm = &action;
+                    break;
+                }
                 return action;
             }
         }
     }
-    return CATA_ERROR;
+    return deferred_confirm != nullptr ? *deferred_confirm : CATA_ERROR;
 }
 
 std::vector<const input_context *> input_context::active_contexts;

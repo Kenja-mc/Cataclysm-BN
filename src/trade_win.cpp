@@ -148,6 +148,7 @@ auto register_trade_actions( input_context &ctxt, bool include_any_input ) -> vo
     if( include_any_input ) {
         ctxt.register_action( "ANY_INPUT" );
     }
+    ctxt.set_space_action_priority( true );
 }
 } // namespace
 
@@ -780,6 +781,7 @@ auto trading_window::show_item_data( size_t index, bool target_is_theirs ) -> in
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 
     auto result = info_popup_result::none;
     auto exit = false;

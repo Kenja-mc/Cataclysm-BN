@@ -179,6 +179,7 @@ auto enchantment_selector_menu(std::vector<enchant_info> options, Character& use
         ctxt.register_action("SCROLL_UP");
         ctxt.register_action("SCROLL_DOWN");
     }
+    ctxt.set_space_action_priority( true );
 
     ui.on_screen_resize([&](ui_adaptor& ui) {
         width = TERMX / 2 - 2;

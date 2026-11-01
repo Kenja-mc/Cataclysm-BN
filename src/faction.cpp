@@ -1050,6 +1050,7 @@ void faction_manager::display() const
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 
     ui_adaptor ui;
     ui.on_screen_resize( [&]( ui_adaptor & ui ) {

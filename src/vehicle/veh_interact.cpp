@@ -261,6 +261,7 @@ veh_interact::veh_interact(vehicle& veh, tripoint_mnt_veh p)
         main_context.register_action("SCROLL_UP");
         main_context.register_action("SCROLL_DOWN");
     }
+    main_context.set_space_action_priority( true );
 
     count_durability();
     cache_tool_availability();

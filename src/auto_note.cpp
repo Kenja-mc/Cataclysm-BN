@@ -234,6 +234,7 @@ void auto_note_manager_gui::show()
         ctx.register_action( "DISABLE_MAPEXTRA_NOTE" );
         ctx.register_action( "CHANGE_MAPEXTRA_CHARACTER" );
     }
+    ctx.set_space_action_priority( true );
 
     // Matches the draw_scrollbar() call in on_redraw below.
     const auto scrollbar_geometry = [&]() {

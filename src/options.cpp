@@ -188,6 +188,7 @@ auto scheme_companions( const bool classic ) -> std::vector<scheme_companion>
         { .id = "MOUSE_MOVE", .value = classic },
         { .id = "ARROW_KEY_AIM", .value = !classic },
         { .id = "CONTEXTUAL_INTERACT", .value = !classic },
+        { .id = "MODERN_LIST_MOUSE", .value = !classic },
         { .id = "KNOWN_LOCKED_DOOR_ICONS", .value = !classic } };
 }
 
@@ -2143,6 +2144,11 @@ void options_manager::add_options_interface()
     add( "MOUSE_MOVE", interface, translate_marker( "Mouse movement" ),
          translate_marker( "Allow map mouse clicks to move your character.  Off in Modern: right click selects and left click attacks without walking.  On in Classic to preserve upstream click-to-walk." ),
          false
+       );
+
+    add( "MODERN_LIST_MOUSE", interface, translate_marker( "Modern list mouse" ),
+         translate_marker( "Only applies in Modern.  If true, confirm a list row with a double click: the first click selects it and the second runs the row's Enter action, including any confirmation prompt.  Right click keeps opening a row's existing action menu where a list has one.  Space confirms the highlighted row unless the list already binds Space to something else.  Off, or in Classic, the lists that used to confirm on one click act at once again.  Lists where a click marks or compares items, and lists that already used two clicks, keep their current behaviour." ),
+         true
        );
 
     add( "ARROW_KEY_AIM", interface, translate_marker( "Arrow keys aim" ),
@@ -4224,6 +4230,7 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
         ctxt.register_action( "SELECT" );
         ctxt.register_action( "SEC_SELECT" );
     }
+    ctxt.set_space_action_priority( true );
 
     const int iWorldOffset = world_options_only ? 2 : 0;
     int iMinScreenWidth = 0;

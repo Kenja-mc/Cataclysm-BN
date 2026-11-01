@@ -23,6 +23,7 @@
 #include "item_stack.h"
 #include "json.h"
 #include "line.h"
+#include "list_mouse.h"
 #include "make_static.h"
 #include "map/map.h"
 #include "map/map_selector.h"
@@ -766,6 +767,7 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
             ctxt.register_action( "SELECT" );
             ctxt.register_action( "SEC_SELECT" );
         }
+        ctxt.set_space_action_priority( true );
 #if defined(__ANDROID__)
         ctxt.allow_text_entry = true; // allow user to specify pickup amount
 #endif
@@ -783,6 +785,7 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
         units::volume volume_predict = 0_ml;
 
         const std::string all_pickup_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:;";
+        list_mouse::click_state click;
 
         ui.on_redraw( [&]( const ui_adaptor & ) {
             const item &selected_item = **stacked_here[matches[selected]].front();
@@ -1082,9 +1085,16 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
                                 selected = item_idx;
                                 iScrollPos = 0;
                             } else if( action == "SELECT" ) {
-                                idx = item_idx;
                                 selected = item_idx;
                                 start = ( item_idx / maxitems ) * maxitems;
+                                if( list_mouse::enabled() && click.second( item_idx ) ) {
+                                    // The second click follows Enter, including its prompts. Leave at
+                                    // once: the loop's trailing handle_input() would block and drop it.
+                                    action = "CONFIRM";
+                                    idx = -1;
+                                    break;
+                                }
+                                idx = item_idx;
                             } else if( action == "SEC_SELECT" ) {
                                 selected = item_idx;
                                 const auto &menu_item = **stacked_here[matches[item_idx]].front();
@@ -1278,7 +1288,12 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
 
             ui_manager::redraw();
             action = ctxt.handle_input();
-            raw_input_char = ctxt.get_raw_input().get_first_input();
+            const auto event = ctxt.get_raw_input();
+            raw_input_char = event.get_first_input();
+            if( event.type != input_event_t::mouse ||
+                ( action != "SELECT" && action != "MOUSE_MOVE" ) ) {
+                click.reset();
+            }
 
         } while( action != "QUIT" && action != "CONFIRM" );
 

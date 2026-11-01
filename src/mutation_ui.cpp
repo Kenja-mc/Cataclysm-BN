@@ -159,6 +159,7 @@ detail::mutations_ui_result detail::show_mutations_ui_internal( Character &who )
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
     auto available_chars = std::optional<invlet_wrapper> {};
     if( modern ) {
         available_chars.emplace(

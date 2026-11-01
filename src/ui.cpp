@@ -18,6 +18,7 @@
 #include "game.h"
 #include "ime.h"
 #include "input.h"
+#include "list_mouse.h"
 #include "options.h"
 #include "output.h"
 #include "player.h"
@@ -264,6 +265,7 @@ input_context uilist::create_main_input_context() const
     for( const auto &additional_action : additional_actions ) {
         ctxt.register_action( additional_action.first, additional_action.second );
     }
+    ctxt.set_space_action_priority( true );
     return ctxt;
 }
 
@@ -1136,6 +1138,7 @@ void uilist::query( bool loop, int timeout )
         return std::ranges::any_of( additional_actions,
         [&action]( const auto & added ) { return added.first == action; } );
     };
+    list_mouse::click_state click;
 
     shared_ptr_fast<ui_adaptor> ui = create_or_get_ui_adaptor();
     // Set while a held left button drags the scrollbar thumb, until the release that ends it.
@@ -1156,6 +1159,10 @@ void uilist::query( bool loop, int timeout )
         const auto event = ctxt.get_raw_input();
         keypress = event.get_first_input();
         const auto iter = keymap.find( keypress );
+        if( event.type != input_event_t::mouse ||
+            ( ret_act != "SELECT" && ret_act != "MOUSE_MOVE" ) ) {
+            click.reset();
+        }
 
         if( scrollby( scroll_amount_from_action( ret_act ) ) ) {
             viewport_held = false;
@@ -1185,6 +1192,7 @@ void uilist::query( bool loop, int timeout )
                         vshift = hit->viewport_pos;
                         viewport_held = true;
                         on_scrollbar = true;
+                        click.reset();
                     }
                 }
                 if( !on_scrollbar ) {
@@ -1192,7 +1200,7 @@ void uilist::query( bool loop, int timeout )
                     if( ret_act == "SELECT" && categories.size() > 1 ) {
                         const auto category_row = scrollbar_geometry().offset.y - 1;
                         const auto label = "<< " +
-                                            categories[std::min( current_category, categories.size() - 1 )] + " >>";
+                                           categories[std::min( current_category, categories.size() - 1 )] + " >>";
                         const auto label_x = pad_left + 2;
                         const auto label_width = utf8_width( label );
                         const auto max_width = std::max( 1, w_width - pad_left - pad_right - 4 );
@@ -1201,12 +1209,12 @@ void uilist::query( bool loop, int timeout )
                             if( cell.x < label_x + 2 ) {
                                 viewport_held = false;
                                 cycle_category( false );
-                                handled_click = true;
                             } else if( cell.x >= label_x + label_width - 2 ) {
                                 viewport_held = false;
                                 cycle_category( true );
-                                handled_click = true;
                             }
+                            click.reset();
+                            handled_click = true;
                         }
                     }
                     const auto end = std::min( vshift + vmax, static_cast<int>( fentries.size() ) );
@@ -1219,6 +1227,9 @@ void uilist::query( bool loop, int timeout )
                             continue;
                         }
                         row_click = true;
+                        const bool paired = ret_act == "SELECT" &&
+                                            list_mouse::enabled() &&
+                                            click.second( entry_index );
                         if( entry.enabled || allow_disabled || hilight_disabled ) {
                             viewport_held = false;
                             selected = entry_index;
@@ -1226,14 +1237,18 @@ void uilist::query( bool loop, int timeout )
                             if( callback != nullptr ) {
                                 callback->select( this );
                             }
-                            if( ret_act == "SELECT" && ( entry.enabled || allow_disabled ) ) {
+                            if( ret_act == "SELECT" && ( entry.enabled || allow_disabled ) &&
+                                ( !list_mouse::enabled() || paired ) ) {
                                 ret = entry.retval;
                             }
                         }
                         break;
                     }
-                    if( !handled_click && !row_click && ret_act == "SELECT" && callback != nullptr ) {
-                        callback->mouse( this, cell );
+                    if( !handled_click && !row_click && ret_act == "SELECT" ) {
+                        click.reset();
+                        if( callback != nullptr ) {
+                            callback->mouse( this, cell );
+                        }
                     }
                 }
             }

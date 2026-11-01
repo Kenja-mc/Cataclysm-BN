@@ -143,8 +143,10 @@ def choose_menu_entry(g, label, timeout=10):
     if option_value(g, "CONTROL_SCHEME", "modern") == "classic":
         assert len(hotkey) == 1 and hotkey != "-", f"expected a Classic menu hotkey: {label!r} {hotkey!r}"
         g.keys(hotkey, delay=0.8)
-    else:
+    elif option_value(g, "MODERN_LIST_MOUSE", "true") == "false":
         g.click(x, y)
+    else:
+        g.double_click(x, y)
 
 
 def save_and_quit(g):

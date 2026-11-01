@@ -34,6 +34,7 @@ class ActionSpec:
     label: str                               # one line the model reads
     keys: tuple[str, ...] = ()               # keys to send, e.g. ("k",) or ("Shift_L", "bracketright")
     click: tuple[int, int] | None = None     # mouse action for the tiles build
+    clicks: int = 1                          # repeated at the same cell, inside the double-click window
 
 
 # ---------------------------------------------------------------- binding data
@@ -455,17 +456,23 @@ def _menu_actions(scheme: str, text: str, mouse: bool, menu: str, colored: str =
     ]
     rows = menu_rows(text, colored=colored) if text and "\n" in text else ()
     hotkey_rows = {row.y for row in rows}
+    # These screens are uilist-drawn, so their rows now confirm on the second click. Other
+    # generic framed menus include custom lists that still act on one click.
+    double = menu in ("inventory", "item_actions", "action_menu", "ingame_menu") or (
+        menu == "menu" and bool(_UILIST_TITLE_RE.search(text or "")))
     for row in rows:
         actions.append(_spec(f"press_{row.hotkey}", f"press {row.hotkey}: {row.label}",
                              (row.hotkey,)))
         if clicks:
-            actions.append(ActionSpec(f"click_{row.hotkey}", f"click the {row.label} row",
-                                      (), (row.x, row.y)))
+            actions.append(ActionSpec(f"click_{row.hotkey}",
+                                      f"{'double ' if double else ''}click the {row.label} row",
+                                      (), (row.x, row.y), 2 if double else 1))
     if clicks and text and "\n" in text:
         listed = [row for row in list_rows(text) if row.y not in hotkey_rows]
         for row in listed:
-            actions.append(ActionSpec(f"click_row_{row.y}", f"click the row: {row.label}",
-                                      (), (row.x, row.y)))
+            actions.append(ActionSpec(f"click_row_{row.y}",
+                                      f"{'double ' if double else ''}click the row: {row.label}",
+                                      (), (row.x, row.y), 2 if double else 1))
         if menu in ("inventory", "item_actions"):
             for row in listed[:4]:
                 actions.append(ActionSpec(f"secondary_click_row_{row.y}",

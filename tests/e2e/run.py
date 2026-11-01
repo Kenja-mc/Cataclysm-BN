@@ -97,6 +97,7 @@ from vehicle_mouse import TESTS as VEHICLE_MOUSE_TESTS
 from advanced_armor_mouse import TESTS as ADVANCED_ARMOR_MOUSE_TESTS
 from help_score_mouse import TESTS as HELP_SCORE_MOUSE_TESTS
 from menu_space import TESTS as MENU_SPACE_TESTS
+from list_mouse import TESTS as LIST_MOUSE_TESTS
 from status_mouse import TESTS as STATUS_MOUSE_TESTS
 from utility_mouse import TESTS as UTILITY_MOUSE_TESTS
 from info_mouse import TESTS as INFO_MOUSE_TESTS
@@ -173,6 +174,7 @@ MODULES = [
     ("advanced_armor_mouse", ADVANCED_ARMOR_MOUSE_TESTS),
     ("help_score_mouse", HELP_SCORE_MOUSE_TESTS),
     ("menu_space", MENU_SPACE_TESTS),
+    ("list_mouse", LIST_MOUSE_TESTS),
     ("status_mouse", STATUS_MOUSE_TESTS),
     ("utility_mouse", UTILITY_MOUSE_TESTS),
     ("info_mouse", INFO_MOUSE_TESTS),

@@ -2070,6 +2070,7 @@ inventory_selector::inventory_selector( player &u, const inventory_selector_pres
         ctxt.register_action( "SCROLL_UP" );
         ctxt.register_action( "SCROLL_DOWN" );
     }
+    ctxt.set_space_action_priority( true );
 
     append_column( own_inv_column );
     append_column( map_column );
@@ -2114,17 +2115,20 @@ auto inventory_selector::mouse_input( inventory_input res ) -> inventory_input
         return res;
     }
     if( res.action == "SCROLL_UP" || res.action == "SCROLL_DOWN" ) {
+        mouse_click.reset();
         res.action = res.action == "SCROLL_UP" ? "UP" : "DOWN";
         return res;
     }
     const auto mouse = ctxt.get_coordinates( w_inv );
     if( !mouse ) {
+        mouse_click.reset();
         res.action = res.action == "SEC_SELECT" ? "QUIT" : "";
         return res;
     }
     // get_coordinates() is relative to the window centre.
     const auto cell = mouse->xy().raw() + point( getmaxx( w_inv ), getmaxy( w_inv ) ) / 2;
     if( res.action == "SELECT" && hint_hotspot_at( cell ) ) {
+        mouse_click.reset();
         res.action = clickable_hint_action;
         return res;
     }
@@ -2140,10 +2144,25 @@ auto inventory_selector::mouse_input( inventory_input res ) -> inventory_input
         }
         set_active_column( std::distance( columns.begin(), col_it ) );
         visible_columns[i]->select( *index, scroll_direction::FORWARD );
+        auto *const entry = &visible_columns[i]->entries[*index];
+        if( res.action == "SELECT" && click_confirms() && list_mouse::enabled() ) {
+            if( mouse_click.second( entry ) ) {
+                res.action = "CONFIRM";
+            } else {
+                res.action = "";
+            }
+            return res;
+        }
+        if( res.action != "MOUSE_MOVE" ) {
+            mouse_click.reset();
+        }
         if( res.action == "SELECT" || res.action == "SEC_SELECT" ) {
-            res.entry = &visible_columns[i]->entries[*index];
+            res.entry = entry;
         }
         return res;
+    }
+    if( res.action != "MOUSE_MOVE" ) {
+        mouse_click.reset();
     }
     res.action = res.action == "SEC_SELECT" ? "QUIT" : "";
     return res;
@@ -2159,6 +2178,7 @@ inventory_input inventory_selector::get_input()
     if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
         return mouse_input( res );
     }
+    mouse_click.reset();
     const auto bound_action = modern && res.action != "ANY_INPUT";
     res.entry = bound_action ? nullptr : find_entry_by_invlet( res.ch );
 

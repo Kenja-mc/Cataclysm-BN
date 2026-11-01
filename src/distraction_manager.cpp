@@ -113,6 +113,7 @@ void distraction_manager_gui::show()
         ctx.register_action( "SCROLL_UP" );
         ctx.register_action( "SCROLL_DOWN" );
     }
+    ctx.set_space_action_priority( true );
 
     // Matches the draw_scrollbar() call in on_redraw below.
     const auto scrollbar_geometry = [&]() {
