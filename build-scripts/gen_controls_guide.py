@@ -24,6 +24,34 @@ CLASSIC_DIR = ROOT / "data" / "raw" / "keybindings"
 MODERN_FILE = ROOT / "data" / "raw" / "control_schemes" / "modern.json"
 SVG_OUT = ROOT / "docs" / "fork" / "images" / "controls-modern.svg"
 GUIDE = ROOT / "docs" / "fork" / "controls.md"
+OVERHAUL = ROOT / "OVERHAUL.md"
+
+# The quick key table in OVERHAUL.md: each row's wording, and the action ids whose live keys fill
+# its first cell. No key is written here, so a doc can never name a key the data does not bind.
+KEY_ROWS = (
+    ("move; bump an enemy to melee attack", ("UP", "LEFT", "DOWN", "RIGHT")),
+    ("select (look at) the next tile in that direction; no time passes",
+     ("shift_w", "shift_n", "shift_s", "shift_e")),
+    ("move diagonally", ("LEFTUP", "RIGHTUP", "LEFTDOWN", "RIGHTDOWN")),
+    ("physical peek (normal 200-move cost)", ("PEEK_N", "PEEK_W", "PEEK_S", "PEEK_E")),
+    ("next / previous visible hostile", ("NEXT_TARGET", "PREV_TARGET")),
+    ("attack selected target / reload / throw", ("fire", "reload_item", "throw")),
+    ("bionics", ("bionics",)),
+    ("nearby or selected-tile actions, including explicit Jump and Smash", ("examine",)),
+    ("toggle a selected vehicle curtain, or choose one nearby", ("toggle_curtain",)),
+    ("pick up beside you / take everything beside you / nearby list",
+     ("pickup", "quick_pickup", "pickup_all")),
+    ("inventory / use item by kind / advanced inventory",
+     ("inventory", "use_contextual", "advinv")),
+    ("craft (also works with empty inventory)", ("CRAFT",)),
+    ("character sheet / message log / butcher", ("player_data", "messages", "butcher")),
+    ("all action groups; Info contains character/status screens", ("action_menu",)),
+    ("search controls, creatures, tiles and items (see below)", ("search_action",)),
+    ("hotbar slots 1-6 / assign a slot", ("hotbar_1", "hotbar_2", "hotbar_3", "hotbar_4",
+                                          "hotbar_5", "hotbar_6", "hotbar_assign")),
+    ("wait one turn / wait or rest a while", ("pause", "wait")),
+    ("map / auto-explore", ("map", "auto_explore")),
+)
 
 # Map actions by family: (heading, keycap colour, action ids in table order).
 FAMILIES = (
@@ -214,9 +242,49 @@ def replace_block(text, name, lines):
     begin, end = f"<!-- BEGIN generated:{name} -->", f"<!-- END generated:{name} -->"
     pattern = re.compile(re.escape(begin) + r".*?" + re.escape(end), re.S)
     if not pattern.search(text):
-        raise SystemExit(f"{GUIDE}: missing {begin} … {end}")
+        raise SystemExit(f"missing {begin} … {end}")
     body = "\n".join([begin, "", *lines, end])
     return pattern.sub(lambda _: body, text)
+
+
+def id_keys(classic, modern):
+    """Map-screen bindings for each action id; another screen's binding never stands in."""
+    on_map, elsewhere = {}, {}
+    for table in (classic, modern):
+        for (category, action), entry in table.items():
+            (on_map if category == "DEFAULTMODE" else elsewhere)[action] = bindings(entry)
+    return {**elsewhere, **on_map}
+
+
+def row_cell(keys_by_id, ids):
+    """One key per action; a numbered run such as the hotbar folds to its first and last key."""
+    parts, run = [], []
+    for action in ids:
+        keys = keys_by_id.get(action, [])
+        if not keys:
+            continue
+        numbered = re.fullmatch(r"(.*_)(\d+)", action)
+        if numbered and (not run or run[-1][0] == numbered.group(1)):
+            run.append((numbered.group(1), keys[0]))
+            continue
+        if run:
+            parts.append(run_key(run))
+            run = []
+        parts.append(kbd(keys[0]))
+    if run:
+        parts.append(run_key(run))
+    return ", ".join(parts)
+
+
+def run_key(run):
+    return kbd(run[0][1]) if len(run) == 1 else f"{kbd(run[0][1])}–{kbd(run[-1][1])}"
+
+
+def key_table(keys_by_id):
+    lines = ["| Key / family | Action |", "| --- | --- |"]
+    for prose, ids in KEY_ROWS:
+        lines.append(f"| {row_cell(keys_by_id, ids)} | {prose} |")
+    return lines
 
 
 # ---------------------------------------------------------------- keyboard
@@ -440,16 +508,27 @@ def render_guide(classic, modern, current):
     return replace_block(text, "screens", screen_tables(classic, modern))
 
 
+def first_diff(was, now):
+    """The line a generated file first disagrees with the data on."""
+    for number, (old, new) in enumerate(zip(was.splitlines(), now.splitlines()), 1):
+        if old != new:
+            return number
+    return min(len(was.splitlines()), len(now.splitlines())) + 1
+
+
 def main():
     check = "--check" in sys.argv[1:]
     classic, modern = load()
     keyboard = Keyboard(modern)
     outputs = {SVG_OUT.with_name(f"{SVG_OUT.stem}{layer[0]}.svg"): keyboard.render(layer) for layer in LAYERS}
     outputs[GUIDE] = render_guide(classic, modern, GUIDE.read_text(encoding="utf-8"))
+    outputs[OVERHAUL] = replace_block(OVERHAUL.read_text(encoding="utf-8"), "keytable",
+                                      key_table(id_keys(classic, modern)))
     stale = [path for path, text in outputs.items() if not path.exists() or path.read_text(encoding="utf-8") != text]
     if check:
         for path in stale:
-            print(f"out of date: {path.relative_to(ROOT)}")
+            was = path.read_text(encoding="utf-8") if path.exists() else ""
+            print(f"out of date: {path.relative_to(ROOT)}:{first_diff(was, outputs[path])}")
         sys.exit(1 if stale else 0)
     for path, text in outputs.items():
         path.parent.mkdir(parents=True, exist_ok=True)

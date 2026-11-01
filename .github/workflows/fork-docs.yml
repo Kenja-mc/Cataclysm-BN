@@ -1,0 +1,43 @@
+name: fork-docs
+
+# Two checks that catch a merge or an edit the game only notices later: a doc that names a key the
+# Modern scheme does not bind, and a data file whose merge doubled a key. Both read the data files,
+# so neither keeps its own copy of the bindings.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "OVERHAUL.md"
+      - "docs/fork/**"
+      - "data/raw/control_schemes/**"
+      - "data/raw/keybindings/**"
+      - "data/json/**"
+      - "build-scripts/gen_controls_guide.py"
+      - "build-scripts/check-json-duplicates.py"
+      - ".github/workflows/fork-docs.yml"
+  pull_request:
+    paths:
+      - "OVERHAUL.md"
+      - "docs/fork/**"
+      - "data/raw/control_schemes/**"
+      - "data/raw/keybindings/**"
+      - "data/json/**"
+      - "build-scripts/gen_controls_guide.py"
+      - "build-scripts/check-json-duplicates.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Docs name the keys the data binds
+        run: python3 build-scripts/gen_controls_guide.py --check
+      - name: Data has no duplicate JSON keys
+        run: python3 build-scripts/check-json-duplicates.py

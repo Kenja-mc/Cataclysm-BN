@@ -145,34 +145,29 @@ therefore cause an extra safe-mode stop. Changes to passability discard the cach
 The welcome card also explains mouse selection, and a first tip suggests a starter goal: find water,
 food and a weapon, because houses usually have all three.
 
-| Key / family         | Action                                                             |
-| -------------------- | ------------------------------------------------------------------ |
-| `w a s d`, `q e z c` | move; bump an enemy to melee attack                                |
-| `W A S D`, `Q E Z C` | select (look at) the next tile in that direction; no time passes   |
-| Numpad               | move; numpad 5 waits one turn                                      |
-| Ctrl+direction       | physical peek (normal 200-move cost)                               |
-| Tab / Shift+Tab      | next / previous visible hostile                                    |
-| `f`, `F`, `r`, `t`   | attack selected target / fire mode / reload / throw                |
-| `p`                  | bionics                                                            |
-| Space                | nearby or selected-tile actions, including explicit Jump and Smash |
-| Shift+Space          | toggle a selected vehicle curtain, or choose one nearby            |
-| `g` / `G` / Ctrl+G   | pick up beside you / take everything beside you / nearby list      |
-| `i`, `v`, `I`        | inventory / use item by kind / advanced inventory                  |
-| `i`, then F5         | craft (also works with empty inventory)                            |
-| `@`, `P`, `B`        | character sheet / message log / butcher                            |
-| Enter                | all action groups; Info contains character/status screens          |
-| Shift+X              | stance menu (run, walk, crouch, prone; X again cycles)             |
-| Ctrl+F, Ctrl+Space   | search controls, creatures, tiles and items (see below)            |
-| `1`–`6`, Ctrl+T      | hotbar slots / assign a slot                                       |
-| `x` / Ctrl+X         | wait one turn / wait or rest a while                               |
-| `m`, `n`             | map / auto-explore                                                 |
-| `M` (Modern)         | world page: inline tabs for missions, factions, zones, scores       |
-| PageUp / PageDown    | stairs up / down (also `<` / `>`)                           |
-| `h`                  | health and wounds                                          |
-| `!` / `'`            | safe mode / ignore enemy                                           |
-| F1 / `?`             | help topics, starting with the first ten minutes / every key      |
-| Esc                  | cancel selection, or main menu when no selection is active         |
-| F12 / backtick       | developer debug menu / Lua console                                 |
+<!-- BEGIN generated:keytable -->
+
+| Key / family | Action |
+| --- | --- |
+| <kbd>W</kbd>, <kbd>A</kbd>, <kbd>S</kbd>, <kbd>D</kbd> | move; bump an enemy to melee attack |
+| <kbd>Shift</kbd>+<kbd>A</kbd>, <kbd>Shift</kbd>+<kbd>W</kbd>, <kbd>Shift</kbd>+<kbd>S</kbd>, <kbd>Shift</kbd>+<kbd>D</kbd> | select (look at) the next tile in that direction; no time passes |
+| <kbd>Q</kbd>, <kbd>E</kbd>, <kbd>Z</kbd>, <kbd>C</kbd> | move diagonally |
+| <kbd>Ctrl</kbd>+<kbd>W</kbd>, <kbd>Ctrl</kbd>+<kbd>A</kbd>, <kbd>Ctrl</kbd>+<kbd>S</kbd>, <kbd>Ctrl</kbd>+<kbd>D</kbd> | physical peek (normal 200-move cost) |
+| <kbd>Tab</kbd>, <kbd>Shift</kbd>+<kbd>Tab</kbd> | next / previous visible hostile |
+| <kbd>F</kbd>, <kbd>R</kbd>, <kbd>T</kbd> | attack selected target / reload / throw |
+| <kbd>P</kbd> | bionics |
+| <kbd>Space</kbd> | nearby or selected-tile actions, including explicit Jump and Smash |
+| <kbd>Shift</kbd>+<kbd>Space</kbd> | toggle a selected vehicle curtain, or choose one nearby |
+| <kbd>G</kbd>, <kbd>Shift</kbd>+<kbd>G</kbd>, <kbd>Ctrl</kbd>+<kbd>G</kbd> | pick up beside you / take everything beside you / nearby list |
+| <kbd>I</kbd>, <kbd>V</kbd>, <kbd>Shift</kbd>+<kbd>I</kbd> | inventory / use item by kind / advanced inventory |
+| <kbd>F5</kbd> | craft (also works with empty inventory) |
+| <kbd>@</kbd>, <kbd>Shift</kbd>+<kbd>P</kbd>, <kbd>Shift</kbd>+<kbd>B</kbd> | character sheet / message log / butcher |
+| <kbd>Enter</kbd> | all action groups; Info contains character/status screens |
+| <kbd>Ctrl</kbd>+<kbd>F</kbd> | search controls, creatures, tiles and items (see below) |
+| <kbd>1</kbd>–<kbd>6</kbd>, <kbd>Ctrl</kbd>+<kbd>T</kbd> | hotbar slots 1-6 / assign a slot |
+| <kbd>X</kbd>, <kbd>Ctrl</kbd>+<kbd>X</kbd> | wait one turn / wait or rest a while |
+| <kbd>M</kbd>, <kbd>N</kbd> | map / auto-explore |
+<!-- END generated:keytable -->
 
 Walking into an enemy attacks it in both control schemes. Options → Interface → Attack by walking
 into enemies can disable this; in Modern, select a target and press `f` for a deliberate attack.
