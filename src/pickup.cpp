@@ -1088,12 +1088,13 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
                                 selected = item_idx;
                                 start = ( item_idx / maxitems ) * maxitems;
                                 if( list_mouse::enabled() && click.second( item_idx ) ) {
-                                    // The second click follows Enter, including its prompts.
+                                    // The second click follows Enter, including its prompts. Leave at
+                                    // once: the loop's trailing handle_input() would block and drop it.
                                     action = "CONFIRM";
                                     idx = -1;
-                                } else {
-                                    idx = item_idx;
+                                    break;
                                 }
+                                idx = item_idx;
                             } else if( action == "SEC_SELECT" ) {
                                 selected = item_idx;
                                 const auto &menu_item = **stacked_here[matches[item_idx]].front();
