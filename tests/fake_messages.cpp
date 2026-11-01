@@ -1,5 +1,6 @@
 #include "enums.h"
 #include "messages.h"
+#include "messages_recent.h"
 
 #include <cstddef>
 #include <string>
@@ -20,6 +21,7 @@ class window;
 auto Messages::recent_messages(size_t) -> std::vector<std::pair<std::string, std::string>> {
     return std::vector<std::pair<std::string, std::string>>();
 }
+auto Messages::recent_lines(size_t) -> std::vector<recent_line> { return {}; }
 void Messages::add_msg(std::string) {}
 void Messages::add_msg(const game_message_params&, std::string) {}
 void Messages::clear_messages() {}
