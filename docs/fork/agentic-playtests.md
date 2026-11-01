@@ -214,7 +214,9 @@ bin/playtest-jev hud --models clef-flash   # any other model or pool
 
 Jev is small and names `report_defect` early: measured on 2026-10-25, it did so on turn 2 of the
 tutorial with the normal "Welcome to the Cataclysm tutorial!" popup on screen, at confidence 0.34.
-That is why the wrapper passes `--defect-policy note`; the claim stays in the report with its
+On 2026-11-01 it named one on five of six turns at 0.10 to 0.25, with nothing wrong on screen, so a
+claim below `DEFECT_MIN_CONFIDENCE` (0.60) is now dropped into the report's Notes instead of being
+counted. The wrapper passes `--defect-policy note`; a counted claim stays in the report with its
 screen, the run keeps playing, and the exit code stays 1 when any claim was made. The same run
 then moved, picked an item up and wielded twice over five turns. Its 32,000-token shared context
 caps a run near fifteen turns, because each state costs about 1,800 tokens.

@@ -49,6 +49,9 @@ RESERVED_DONE = "report_done"
 DEFECT_LABEL = ("Report a defect: the state above shows the game failing at the scenario - a control "
                 "that did nothing, a missing or wrong menu entry or message. Ends the run.")
 DONE_LABEL = "Report the scenario checked: nothing left to try here. Ends the run."
+# A defect claim is evidence only when the model is sure of what it saw. A small model that names
+# the escape hatch at coin-flip confidence is guessing, and five such guesses drown a real finding.
+DEFECT_MIN_CONFIDENCE = 0.6
 
 # Sending one action needs the game to settle before the next state dump; tiles redraws slower.
 SETTLE_S = {"curses": 0.6, "tiles": 1.5}
@@ -400,6 +403,12 @@ class Driver:
               f"{' estimated' if not decision.measured else ''}{f' ({retries} retries)' if retries else ''}")
 
         if decision.action_id == RESERVED_DEFECT:
+            if decision.confidence < DEFECT_MIN_CONFIDENCE:
+                report.notes.append(f"turn {turn}: defect claim dropped, confidence "
+                                    f"{decision.confidence:.2f} below {DEFECT_MIN_CONFIDENCE:.2f}")
+                self.record(line)
+                self.check_caps(turn)
+                return
             report.defects.append({"turn": turn, "model": decision.model,
                                    "confidence": decision.confidence, "state": state.text,
                                    "menu": state.menu})
