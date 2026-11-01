@@ -50,6 +50,10 @@ SHOTS = [
          keys=[("Return",)], options={"CONTROL_SCHEME": "modern"},
          body="Enter opens every command group: Items, Interact, Info, Misc, crafting, vehicles and "
               "settings. Modern routes each group here instead of binding a top-row number."),
+    dict(id="world-hub", title="The World page",
+         keys=[("Shift_L", "m")], options={"CONTROL_SCHEME": "modern"},
+         body="One `M` page with numbered tabs: Missions, Factions, Zones and Scores. A number switches "
+              "tabs, the arrows move between them, and leaving a tab returns to the hub."),
     dict(id="interact-menu", title="Interact menu: quick stack and sort pile",
          keys=[("Return",), ("2",)], options={"CONTROL_SCHEME": "modern"},
          body="Enter, then Interact, opens this menu. Quick stack moves carried items into nearby storage "
