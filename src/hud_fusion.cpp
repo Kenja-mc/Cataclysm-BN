@@ -9,6 +9,7 @@
 
 #include "action.h"
 #include "avatar.h"
+#include "cached_options.h"
 #include "catacharset.h"
 #include "cursesdef.h"
 #include "hud_draw.h"
@@ -17,6 +18,7 @@
 #include "hud_boxes.h"
 #include "hud_snapshot.h"
 #include "input.h"
+#include "options.h"
 #include "output.h"
 #include "panels.h"
 #include "string_formatter.h"
@@ -30,8 +32,6 @@ namespace
 
 using namespace hud_draw;
 
-constexpr auto status_width = 38;
-constexpr auto status_height = 11;
 constexpr auto deck_height = 7;
 
 /// Icon, the need's name and its state; an unmet need replaces "ok" with its own wording.
@@ -71,39 +71,10 @@ auto vital( const catacurses::window &w, const vital_options &opts ) -> void
     text( w, point( 20, opts.y ), pal::text(), opts.label );
 }
 
-auto draw_status( const canvas &area, const hud_snapshot::snapshot &s ) -> void
-{
-    hits.push_back( { .at = { .at = point_zero, .width = status_width, .height = status_height } } );
-    const auto w = panel( area, { .at = point_zero, .width = status_width, .height = status_height } );
-    card( w, { .title = _( "STATUS" ), .summary = s.stance, .summary_color = s.stance_color } );
-    vital( w, { .y = 1, .icon = glyph::hp, .color = s.hp_color, .value = s.hp_percent, .max = 100,
-                .label = string_format( _( "Health %d%%" ), s.hp_percent ) } );
-    vital( w, { .y = 2, .icon = glyph::stamina, .color = pal::stamina(), .value = s.stamina,
-                .max = s.stamina_max, .label = string_format( _( "Stamina %d%%" ), s.stamina * 100 / s.stamina_max ) } );
-    vital( w, { .y = 3, .icon = glyph::focus, .color = pal::focus(), .value = s.focus, .max = 100,
-                .label = string_format( _( "Focus %d" ), s.focus ) } );
-    text( w, point( 2, 4 ), s.pain_level > 0 ? pal::danger() : pal::muted(),
-          string_format( _( "%s Pain %d" ), glyph::pain, s.pain_level ) );
-    hline( w, point( 2, 5 ), status_width - 4, pal::border() );
-    need( w, point( 2, 6 ), glyph::thirst, pal::thirst(), s.thirst );
-    need( w, point( 20, 6 ), glyph::rest, pal::rest(), s.rest );
-    need( w, point( 2, 7 ), glyph::hunger, pal::hunger(), s.hunger );
-    need( w, point( 20, 7 ), glyph::heat, pal::heat(), s.heat );
-    // Carry weight already heads the LOADOUT deck; this row holds what the old Movement panel read.
-    text( w, point( 2, 8 ), pal::muted(), string_format( _( "Speed %d   Noise %s   Moves %d" ),
-                                                        s.speed, s.sound, s.move_counter ) );
-    text( w, point( 2, 9 ), pal::muted(), string_format( "Str %d  Dex %d  Int %d  Per %d", s.str, s.dex, s.intel, s.per ) );
-    // Mood changes how fast you learn and whether you can craft, so it sits beside pain.
-    text( w, point( 20, 4 ), s.morale < -10 ? pal::danger() : s.morale > 10 ? c_light_green : pal::muted(),
-          string_format( _( "Mood %+d" ), s.morale ) );
-}
-
 auto draw_ribbon( const canvas &area, const hud_snapshot::snapshot &s ) -> void
 {
-    hits.push_back( { .at = { .at = point( status_width + 1, 0 ), .width = area.width - status_width - 1, .height = 1 } } );
-    const auto w = panel( area, {
-        .at = point( status_width + 1, 0 ), .width = area.width - status_width - 1, .height = 1
-    } );
+    hits.push_back( { .at = { .at = point_zero, .width = area.width, .height = 1 } } );
+    const auto w = panel( area, { .at = point_zero, .width = area.width, .height = 1 } );
     auto x = text( w, point( 1, 0 ), pal::title(), s.date + " " + s.time );
     x = dot( w, point( x, 0 ) );
     x = text( w, point( x, 0 ), s.weather_color, s.weather );
@@ -276,20 +247,57 @@ auto edge( const catacurses::window &w ) -> void
     vline( w, point_zero, getmaxy( w ), pal::border() );
 }
 
+/// The STATUS section: the bars, the needs, and what the old Movement panel read. It sits in the
+/// column so nothing covers the map.
+auto status_section( const catacurses::window &w, const hud_snapshot::snapshot &s ) -> void
+{
+    edge( w );
+    rule( w, { .title = _( "STATUS" ), .summary = s.stance, .summary_color = s.stance_color } );
+    const auto stamina = s.stamina_max > 0 ? s.stamina * 100 / s.stamina_max : 0;
+    vital( w, { .y = 1, .icon = glyph::hp, .color = s.hp_color, .value = s.hp_percent, .max = 100,
+                .label = string_format( _( "Health %d%%" ), s.hp_percent ) } );
+    vital( w, { .y = 2, .icon = glyph::stamina, .color = pal::stamina(), .value = s.stamina,
+                .max = s.stamina_max, .label = string_format( _( "Stamina %d%%" ), stamina ) } );
+    vital( w, { .y = 3, .icon = glyph::focus, .color = pal::focus(), .value = s.focus, .max = 100,
+                .label = string_format( _( "Focus %d" ), s.focus ) } );
+    // Mood changes how fast you learn and whether you can craft, so it sits beside the bars.
+    text( w, point( 32, 3 ), s.morale < -10 ? pal::danger() : s.morale > 10 ? c_light_green : pal::muted(),
+          string_format( _( "Mood %+d" ), s.morale ) );
+    text( w, point( 2, 4 ), s.pain_level > 0 ? pal::danger() : pal::muted(),
+          string_format( _( "%s Pain %d" ), glyph::pain, s.pain_level ) );
+    text( w, point( 12, 4 ), pal::muted(), string_format( _( "Speed %d  Noise %s" ), s.speed, s.sound ) );
+    need( w, point( 2, 5 ), glyph::thirst, pal::thirst(), s.thirst );
+    need( w, point( 20, 5 ), glyph::rest, pal::rest(), s.rest );
+    need( w, point( 2, 6 ), glyph::hunger, pal::hunger(), s.hunger );
+    need( w, point( 20, 6 ), glyph::heat, pal::heat(), s.heat );
+    text( w, point( 2, 7 ), pal::muted(), string_format( "Str %d  Dex %d  Int %d  Per %d", s.str, s.dex, s.intel, s.per ) );
+}
+
 } // namespace
 
 auto body_rows( const avatar &you ) -> int
 {
-    const auto &s = current( you );
-    const auto hurt = std::ranges::any_of( s.limbs, []( const auto & l ) {
-        return l.hp < l.hp_max || !l.wound.empty();
-    } );
-    return hurt ? 1 + static_cast<int>( s.limbs.size() ) : 2;
+    // Every limb keeps its own bar: a single "no wounds" line hides the one that just got hit.
+    return 1 + static_cast<int>( current( you ).limbs.size() );
 }
 
 auto around_rows( const avatar &you ) -> int
 {
     return 1 + std::clamp( static_cast<int>( current( you ).seen.size() ), 0, 4 );
+}
+
+auto minimap_rows() -> int
+{
+#if defined(TILES)
+    if( !pixel_minimap_option ) {
+        return 0;
+    }
+    const auto chosen = get_option<int>( "PIXEL_MINIMAP_HEIGHT" );
+    // The layout's own default when the player has not set a height: compact, so the log grows.
+    return chosen > 0 ? chosen : 12;
+#else
+    return 0;
+#endif
 }
 
 auto fits() -> bool { return TERMX >= 140 && TERMY >= 36; }
@@ -312,7 +320,6 @@ auto draw( const avatar &you, const catacurses::window &w_terrain ) -> void
     const auto &s = refresh( you );
     hits.clear();
     begin_frame();
-    draw_status( area, s );
     draw_ribbon( area, s );
     draw_vehicle( you, area );
     draw_deck( you, area, s );
@@ -363,6 +370,12 @@ auto draw_map_rule( avatar &you, const catacurses::window &w ) -> void
     wnoutrefresh( w );
 }
 
+auto draw_status( avatar &you, const catacurses::window &w ) -> void
+{
+    status_section( w, current( you ) );
+    wnoutrefresh( w );
+}
+
 auto draw_body( avatar &you, const catacurses::window &w ) -> void
 {
     edge( w );
@@ -373,11 +386,6 @@ auto draw_body( avatar &you, const catacurses::window &w ) -> void
         .summary = wounded > 0 ? string_format( _( "%d wounded" ), wounded ) : std::string( _( "no wounds" ) ),
         .summary_color = wounded > 0 ? pal::danger() : pal::muted()
     } );
-    if( getmaxy( w ) <= 2 ) {
-        text( w, point( 2, 1 ), c_green, _( "Every limb is healthy." ) );
-        wnoutrefresh( w );
-        return;
-    }
     for( auto i = 0; i < static_cast<int>( s.limbs.size() ); ++i ) {
         const auto &limb = s.limbs[static_cast<size_t>( i )];
         const auto hurt = !limb.wound.empty() || limb.hp < limb.hp_max;

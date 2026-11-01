@@ -463,16 +463,16 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   per character. The Vehicle window appears only aboard or while remote-controlling.
   Both the terminal and tiles builds draw the windows.
 - **Fusion HUD** is the layout new configurations start with, on screens of at least 140×36
-  cells; smaller screens draw grouped instead. A rounded **STATUS** card (health, stamina and
-  focus gauges, pain, needs), a one-line ribbon (date and time, weather, light, wind,
-  safe mode) and a **LOADOUT** deck (weapon card with ammo, hotbar slots and
-  one row of key hints) sit over the map. STATUS also carries mood, speed, noise and the four
-  stats. The right sidebar stacks the pixel minimap, **BODY** (one line while every limb is
-  healthy), **AROUND** (each creature in sight by name, direction and distance, hostiles first)
-  and **LOG** (messages in the log's own colours) under section rules; the log takes the
-  remaining rows. With no hotbar slot assigned, the deck says how to fill one. The map shrinks to
-  the free area, so the character stays centred. Select fusion, grouped or another layout in **Enter → Misc → Sidebar Options**. In tiles the Mouse View box moves over
-  the minimap so the status card stays visible.
+  cells; smaller screens draw grouped instead. A one-line ribbon (date and time, weather, light,
+  wind, safe mode) runs along the top left, and a **LOADOUT** deck (weapon card with ammo, hotbar
+  slots and one row of key hints) sits at the bottom. The right sidebar stacks **STATUS** (health,
+  stamina and focus gauges with mood, pain, speed, noise, needs and the four stats), **MAP** (the
+  pixel minimap: turn *Pixel minimap* off to clear the column, and it is 12 rows unless you set a
+  height), **BODY** (a bar for every limb, wounded or not), **AROUND** (each creature in sight by
+  name, direction and distance, hostiles first) and **LOG** (messages in the log's own colours);
+  the log takes every row the sections above leave. With no hotbar slot assigned, the deck says how
+  to fill one. The map shrinks to the free area, so the character stays centred. Select fusion,
+  grouped or another layout in **Enter → Misc → Sidebar Options**.
 - **Hotbar** (Modern, fusion deck): six quick slots on `1`–`6`. **Ctrl+T** opens *Assign a hotbar
   slot*: pick a slot, then an item (Esc clears it). A slot remembers the item type, not the stack;
   its key does what the Use menu does with the first matching carried item (read, eat, wield, wear

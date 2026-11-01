@@ -2805,15 +2805,19 @@ auto initialize_grouped_panels() -> std::vector<window_panel>
     return ret;
 }
 
-/// The fusion sidebar: map, body, surroundings and log, each opened by a section rule. The
-/// status card, ribbon and loadout deck draw over the map (hud_fusion).
+/// The fusion sidebar: status, map, body, surroundings and log, each opened by a section rule.
+/// The ribbon and the loadout deck draw over the map (hud_fusion).
 auto initialize_fusion_panels() -> std::vector<window_panel>
 {
     auto ret = std::vector<window_panel>();
+    ret.emplace_back( hud_fusion::draw_status, translate_marker( "Status" ), hud_fusion::status_rows,
+                      44, true );
 #if defined(TILES)
     ret.emplace_back( hud_fusion::draw_map_rule, translate_marker( "Map title" ), 1, 44, true,
                       default_render, true );
-    ret.emplace_back( hud_fusion::draw_minimap, translate_marker( "Map" ), -1, 44, true, default_render, true );
+    ret.emplace_back( hud_fusion::draw_minimap, translate_marker( "Map" ), hud_fusion::minimap_rows(),
+                      44, true, default_render, true );
+    ret.back().set_height_override( hud_fusion::minimap_rows );
 #endif
     ret.emplace_back( hud_fusion::draw_body, translate_marker( "Body" ), 7, 44, true, limbs_panel );
     ret.back().set_height_override( []() { return hud_fusion::body_rows( get_avatar() ); } );

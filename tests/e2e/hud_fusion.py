@@ -25,10 +25,15 @@ def rule_rows(screen, title):
 
 
 def assert_fusion(screen):
-    for card in ("STATUS", "LOADOUT"):
-        assert re.search(r"╭[^\n]*\b" + card + r"\b", screen), f"{card} card missing:\n{screen}"
-    for title in ("BODY", "AROUND", "LOG"):
+    assert re.search(r"╭[^\n]*\bLOADOUT\b", screen), f"the LOADOUT card is missing:\n{screen}"
+    for title in ("STATUS", "BODY", "AROUND", "LOG"):
         assert len(rule_rows(screen, title)) == 1, f"one {title} rule expected:\n{screen}"
+    first = screen.splitlines()[0]
+    assert re.search(r"(Spring|Summer|Autumn|Winter) \d+", first), \
+        f"the date and time belong at the top left:\n{screen}"
+    # Every limb keeps its own bar, healthy or not.
+    for limb in ("HEAD", "TORSO", "L ARM", "R ARM", "L LEG", "R LEG"):
+        assert limb in screen, f"the {limb} bar is missing:\n{screen}"
     assert "bleeding" in screen, "the wound word belongs in BODY:\n" + screen
     assert "all keys" in screen, "the deck carries the key hints:\n" + screen
     # The floating windows and the old sidebar panels are gone.

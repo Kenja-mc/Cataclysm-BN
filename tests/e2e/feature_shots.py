@@ -182,6 +182,9 @@ def launch(session, label, options, run_root, fixture, layout=None):
             raise RuntimeError(f"game window disappeared (see {run / 'tiles.log'})")
         # There is no window manager, so the keys must be aimed at the game window explicitly.
         x11.focus_local(window, 40, 40)
+        # Then park the pointer off the window: a motion event over the map opens the Mouse View
+        # box, which would cover the HUD in the shot. Shot clicks move it back themselves.
+        x11.focus(window, 1900, 1190)
     except BaseException:
         if x11 is not None:
             x11.close()

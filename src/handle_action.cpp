@@ -3385,10 +3385,9 @@ bool game::handle_action()
                 screens.push_back( world_hub::zones_screen() );
                 screens.push_back( world_hub::scores_screen( get_achievements_tracker(), stats(),
                         get_kill_tracker() ) );
-                // The quiet and fusion columns carry the page themselves; other layouts keep
-                // the full-screen page.
-                const auto layout = panel_manager::get_manager().get_current_layout_id();
-                if( layout == "quiet" || layout == "fusion" ) {
+                // The fusion column carries the page itself; other layouts keep the
+                // full-screen page.
+                if( panel_manager::get_manager().get_current_layout_id() == "fusion" ) {
                     world_hub::show_in_sidebar( std::move( screens ) );
                 } else {
                     world_hub::show( std::move( screens ) );
