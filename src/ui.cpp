@@ -29,50 +29,6 @@
 #include <SDL3/SDL.h>
 #endif
 
-namespace list_mouse
-{
-
-namespace
-{
-constexpr auto double_click_window = std::chrono::milliseconds( 500 );
-} // namespace
-
-auto enabled() -> bool
-{
-    return get_option<std::string>( "CONTROL_SCHEME" ) == "modern" &&
-           get_option<bool>( "MODERN_LIST_MOUSE" );
-}
-
-auto click_state::second_token( std::uintptr_t new_token ) -> bool
-{
-    const auto now = std::chrono::steady_clock::now();
-    if( armed && token == new_token && now - when <= double_click_window ) {
-        armed = false;
-        return true;
-    }
-    token = new_token;
-    when = now;
-    armed = true;
-    return false;
-}
-
-auto click_state::second( int row ) -> bool
-{
-    return second_token( static_cast<std::uintptr_t>( row ) + 1 );
-}
-
-auto click_state::second( const void *row ) -> bool
-{
-    return second_token( reinterpret_cast<std::uintptr_t>( row ) );
-}
-
-void click_state::reset()
-{
-    armed = false;
-}
-
-} // namespace list_mouse
-
 catacurses::window new_centered_win( int nlines, int ncols )
 {
     int height = std::min( nlines, TERMY );
@@ -1201,7 +1157,7 @@ void uilist::query( bool loop, int timeout )
                 bool on_scrollbar = false;
                 if( ret_act == "SELECT" ) {
                     if( const auto hit = scrollbar_input::click( scrollbar_geometry(),
-                        cell ) ) {
+                                         cell ) ) {
                         vshift = hit->viewport_pos;
                         viewport_held = true;
                         on_scrollbar = true;
@@ -1213,7 +1169,7 @@ void uilist::query( bool loop, int timeout )
                     if( ret_act == "SELECT" && categories.size() > 1 ) {
                         const auto category_row = scrollbar_geometry().offset.y - 1;
                         const auto label = "<< " +
-                                            categories[std::min( current_category, categories.size() - 1 )] + " >>";
+                                           categories[std::min( current_category, categories.size() - 1 )] + " >>";
                         const auto label_x = pad_left + 2;
                         const auto label_width = utf8_width( label );
                         const auto max_width = std::max( 1, w_width - pad_left - pad_right - 4 );
