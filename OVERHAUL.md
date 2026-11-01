@@ -149,11 +149,12 @@ food and a weapon, because houses usually have all three.
 
 | Key / family | Action |
 | --- | --- |
-| <kbd>W</kbd>, <kbd>A</kbd>, <kbd>S</kbd>, <kbd>D</kbd> | move; bump an enemy to melee attack |
+| <kbd>W</kbd>, <kbd>A</kbd>, <kbd>S</kbd>, <kbd>D</kbd> | move; bump an enemy to melee attack (the keypad moves too, and Numpad 5 waits a turn) |
 | <kbd>Shift</kbd>+<kbd>A</kbd>, <kbd>Shift</kbd>+<kbd>W</kbd>, <kbd>Shift</kbd>+<kbd>S</kbd>, <kbd>Shift</kbd>+<kbd>D</kbd> | select (look at) the next tile in that direction; no time passes |
 | <kbd>Q</kbd>, <kbd>E</kbd>, <kbd>Z</kbd>, <kbd>C</kbd> | move diagonally |
 | <kbd>Ctrl</kbd>+<kbd>W</kbd>, <kbd>Ctrl</kbd>+<kbd>A</kbd>, <kbd>Ctrl</kbd>+<kbd>S</kbd>, <kbd>Ctrl</kbd>+<kbd>D</kbd> | physical peek (normal 200-move cost) |
 | <kbd>Tab</kbd>, <kbd>Shift</kbd>+<kbd>Tab</kbd> | next / previous visible hostile |
+| <kbd>Shift</kbd>+<kbd>X</kbd> | movement mode menu: run, walk, crouch, prone |
 | <kbd>F</kbd>, <kbd>R</kbd>, <kbd>T</kbd> | attack selected target / reload / throw |
 | <kbd>P</kbd> | bionics |
 | <kbd>Space</kbd> | nearby or selected-tile actions, including explicit Jump and Smash |

@@ -29,12 +29,14 @@ OVERHAUL = ROOT / "OVERHAUL.md"
 # The quick key table in OVERHAUL.md: each row's wording, and the action ids whose live keys fill
 # its first cell. No key is written here, so a doc can never name a key the data does not bind.
 KEY_ROWS = (
-    ("move; bump an enemy to melee attack", ("UP", "LEFT", "DOWN", "RIGHT")),
+    ("move; bump an enemy to melee attack (the keypad moves too, and Numpad 5 waits a turn)",
+     ("UP", "LEFT", "DOWN", "RIGHT")),
     ("select (look at) the next tile in that direction; no time passes",
      ("shift_w", "shift_n", "shift_s", "shift_e")),
     ("move diagonally", ("LEFTUP", "RIGHTUP", "LEFTDOWN", "RIGHTDOWN")),
     ("physical peek (normal 200-move cost)", ("PEEK_N", "PEEK_W", "PEEK_S", "PEEK_E")),
     ("next / previous visible hostile", ("NEXT_TARGET", "PREV_TARGET")),
+    ("movement mode menu: run, walk, crouch, prone", ("open_movement",)),
     ("attack selected target / reload / throw", ("fire", "reload_item", "throw")),
     ("bionics", ("bionics",)),
     ("nearby or selected-tile actions, including explicit Jump and Smash", ("examine",)),
