@@ -745,9 +745,14 @@ void faction_view::draw( const catacurses::window &w_missions )
 {
     const int entries_per_page = getmaxy( w_missions ) - 4;
     werase( w_missions );
+    // The sidebar page is only as wide as the HUD column: names fill it and the details move to
+    // the full page, which Enter opens.
+    const bool wide = getmaxx( w_missions ) >= 60;
 
-    for( int i = 3; i < getmaxy( w_missions ) - 1; i++ ) {
-        mvwputch( w_missions, point( 30, i ), BORDER_COLOR, LINE_XOXO );
+    if( wide ) {
+        for( int i = 3; i < getmaxy( w_missions ) - 1; i++ ) {
+            mvwputch( w_missions, point( 30, i ), BORDER_COLOR, LINE_XOXO );
+        }
     }
 
     const std::vector<std::pair<tab_mode, std::string>> tabs = {
@@ -756,13 +761,18 @@ void faction_view::draw( const catacurses::window &w_missions )
         { tab_mode::TAB_LORE, _( "LORE" ) },
         { tab_mode::TAB_CREATURES, _( "CREATURES" ) },
     };
-    draw_tabs( w_missions, tabs, tab );
-    draw_border_below_tabs( w_missions );
+    if( wide ) {
+        draw_tabs( w_missions, tabs, tab );
+        draw_border_below_tabs( w_missions );
 
-    mvwputch( w_missions, point( 30, 2 ), BORDER_COLOR,
-              tab == tab_mode::TAB_FOLLOWERS ? ' ' : LINE_OXXX ); // ^|^
-    mvwputch( w_missions, point( 30, getmaxy( w_missions ) - 1 ), BORDER_COLOR,
-              LINE_XXOX ); // _|_
+        mvwputch( w_missions, point( 30, 2 ), BORDER_COLOR,
+                  tab == tab_mode::TAB_FOLLOWERS ? ' ' : LINE_OXXX ); // ^|^
+        mvwputch( w_missions, point( 30, getmaxy( w_missions ) - 1 ), BORDER_COLOR,
+                  LINE_XXOX ); // _|_
+    } else {
+        draw_narrow_tabs( w_missions, { _( "Followers" ), _( "Others" ), _( "Lore" ), _( "Creatures" ) },
+                          static_cast<size_t>( tab ) );
+    }
     const nc_color col = c_white;
 
     // entries_per_page * page number
@@ -776,10 +786,11 @@ void faction_view::draw( const catacurses::window &w_missions )
                                 point( 0, 3 ) );
                 for( size_t i = top_of_page; i < active_vec_size; i++ ) {
                     const int y = i - top_of_page + 3;
-                    trim_and_print( w_missions, point( 1, y ), 28, selection == i ? hilite( col ) : col,
+                    trim_and_print( w_missions, point( 1, y ), wide ? 28 : getmaxx( w_missions ) - 2,
+                                    selection == i ? hilite( col ) : col,
                                     followers[i]->disp_name() );
                 }
-                if( guy ) {
+                if( wide && guy ) {
                     int retval = guy->faction_display( w_missions, 31 );
                     if( retval == 2 ) {
                         radio_interactable = true;
@@ -787,11 +798,11 @@ void faction_view::draw( const catacurses::window &w_missions )
                         interactable = true;
                     }
                 } else {
-                    mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_ally );
+                    mvwprintz( w_missions, point( wide ? 31 : 1, 4 ), c_light_red, no_ally );
                 }
                 break;
             } else {
-                mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_ally );
+                mvwprintz( w_missions, point( wide ? 31 : 1, 4 ), c_light_red, no_ally );
             }
         }
         break;
@@ -802,17 +813,18 @@ void faction_view::draw( const catacurses::window &w_missions )
                                 point( 0, 3 ) );
                 for( size_t i = top_of_page; i < active_vec_size; i++ ) {
                     const int y = i - top_of_page + 3;
-                    trim_and_print( w_missions, point( 1, y ), 28, selection == i ? hilite( col ) : col,
+                    trim_and_print( w_missions, point( 1, y ), wide ? 28 : getmaxx( w_missions ) - 2,
+                                    selection == i ? hilite( col ) : col,
                                     _( valfac[i]->name ) );
                 }
-                if( cur_fac ) {
+                if( wide && cur_fac ) {
                     cur_fac->faction_display( w_missions, 31 );
                 } else {
-                    mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_fac );
+                    mvwprintz( w_missions, point( wide ? 31 : 1, 4 ), c_light_red, no_fac );
                 }
                 break;
             } else {
-                mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_fac );
+                mvwprintz( w_missions, point( wide ? 31 : 1, 4 ), c_light_red, no_fac );
             }
         }
         break;
@@ -823,46 +835,48 @@ void faction_view::draw( const catacurses::window &w_missions )
                                 point( 0, 3 ) );
                 for( size_t i = top_of_page; i < active_vec_size && i < top_of_page + entries_per_page; i++ ) {
                     const int y = i - top_of_page + 3;
-                    trim_and_print( w_missions, point( 1, y ), 28, selection == i ? hilite( col ) : col,
+                    trim_and_print( w_missions, point( 1, y ), wide ? 28 : getmaxx( w_missions ) - 2,
+                                    selection == i ? hilite( col ) : col,
                                     _( lore[i].second ) );
                 }
-                if( snippet != nullptr ) {
+                if( wide && snippet != nullptr ) {
                     int y = 2;
                     fold_and_print( w_missions, point( 31, ++y ), getmaxx( w_missions ) - 31 - 2, c_light_gray,
                                     SNIPPET.get_snippet_by_id( snippet->first ).value().translated() );
                 } else {
-                    mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_lore );
+                    mvwprintz( w_missions, point( wide ? 31 : 1, 4 ), c_light_red, no_lore );
                 }
                 break;
             } else {
-                mvwprintz( w_missions, point( 31, 4 ), c_light_red, no_lore );
+                mvwprintz( w_missions, point( wide ? 31 : 1, 4 ), c_light_red, no_lore );
             }
         }
         break;
         case tab_mode::TAB_CREATURES: {
             const std::string no_creatures =
                 _( "You haven't recorded sightings of any creatures.  Taking photos can be a good way to keep track of them." );
-            const int w = getmaxx( w_missions ) - 31 - 2;
+            const int w = wide ? getmaxx( w_missions ) - 31 - 2 : getmaxx( w_missions ) - 3;
             if( active_vec_size > 0 ) {
                 draw_scrollbar( w_missions, selection, entries_per_page, active_vec_size,
                                 point( 0, 3 ) );
                 for( size_t i = top_of_page; i < active_vec_size && i < top_of_page + entries_per_page; i++ ) {
                     const int y = i - top_of_page + 3;
-                    trim_and_print( w_missions, point( 1, y ), 28, selection == i ? hilite( col ) : col,
+                    trim_and_print( w_missions, point( 1, y ), wide ? 28 : getmaxx( w_missions ) - 2,
+                                    selection == i ? hilite( col ) : col,
                                     string_format( "%s  %s", colorize( creatures[i]->sym,
                                             selection == i ? hilite( creatures[i]->color ) : creatures[i]->color ),
                                                    creatures[i]->nname() ) );
                 }
-                if( !cur_creature.is_null() ) {
+                if( wide && !cur_creature.is_null() ) {
                     // mtype's display takes a mutable window; the copy points at the same window.
                     catacurses::window w_creatures = w_missions;
                     cur_creature->faction_display( w_creatures, point( 31, 3 ), w );
                 } else {
-                    fold_and_print( w_missions, point( 31, 4 ), w, c_light_red, no_creatures );
+                    fold_and_print( w_missions, point( wide ? 31 : 1, 4 ), w, c_light_red, no_creatures );
                 }
                 break;
             } else {
-                fold_and_print( w_missions, point( 31, 4 ), w, c_light_red, no_creatures );
+                fold_and_print( w_missions, point( wide ? 31 : 1, 4 ), w, c_light_red, no_creatures );
             }
         }
         default:

@@ -206,9 +206,11 @@ auto scores_view::tab_texts() const -> std::vector<std::string>
 
 void scores_view::prepare_view( const catacurses::window &w )
 {
-    const int height = getmaxy( w ) - 4;
+    // The sidebar page is narrow: one tab row and a separator, instead of the three-row strip.
+    const bool wide = getmaxx( w ) >= 60;
+    const int height = getmaxy( w ) - ( wide ? 4 : 3 );
     const int width = getmaxx( w ) - 1;
-    const point origin( getbegx( w ), getbegy( w ) + 3 );
+    const point origin( getbegx( w ), getbegy( w ) + ( wide ? 3 : 2 ) );
     if( !w_view || getmaxy( w_view ) != height || getmaxx( w_view ) != width ||
         getbegx( w_view ) != origin.x || getbegy( w_view ) != origin.y ) {
         w_view = catacurses::newwin( height, width, origin );
@@ -239,8 +241,16 @@ void scores_view::draw( const catacurses::window &w )
     }
 
     werase( w );
-    draw_tabs( w, tabs, tab );
-    draw_border_below_tabs( w );
+    if( getmaxx( w ) >= 60 ) {
+        draw_tabs( w, tabs, tab );
+        draw_border_below_tabs( w );
+    } else {
+        auto labels = std::vector<std::string>();
+        for( const auto &pair : tabs ) {
+            labels.push_back( pair.second );
+        }
+        draw_narrow_tabs( w, labels, static_cast<size_t>( tab ) );
+    }
     wnoutrefresh( w );
 
     view.draw( c_white );

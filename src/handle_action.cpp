@@ -131,8 +131,7 @@
 namespace
 {
 
-constexpr auto peek_actions = std::array<std::string_view, 8>
-{
+constexpr auto peek_actions = std::array<std::string_view, 8> {
     "PEEK_N", "PEEK_NE", "PEEK_E", "PEEK_SE",
     "PEEK_S", "PEEK_SW", "PEEK_W", "PEEK_NW"
 };
@@ -201,12 +200,12 @@ auto is_terrain_memory( const memorized_terrain_tile &memory ) -> bool
 auto has_memorized_terrain_at( avatar &you, map &/*here*/, const tripoint_bub_ms &target ) -> bool
 {
     if( !you.should_show_map_memory() ) {
-        return false;
-    }
+    return false;
+}
 
-    const auto abs_target = bub_to_abs( target );
-    return is_terrain_memory( you.get_terrain_tile( abs_target ) ) ||
-           is_terrain_memory( you.get_memorized_tile( abs_target ) );
+const auto abs_target = bub_to_abs( target );
+return is_terrain_memory( you.get_terrain_tile( abs_target ) ) ||
+       is_terrain_memory( you.get_memorized_tile( abs_target ) );
 }
 
 const flag_id flag_NO_GRAB( "NO_GRAB" );
@@ -225,12 +224,12 @@ auto nearby_grabbed_creature( const avatar &you ) -> Creature *
 auto release_grabbed_creature( avatar &you ) -> bool
 {
     if( !you.has_effect( effect_grabbing ) ) {
-        return false;
-    }
+    return false;
+}
 
-    Creature *const target = nearby_grabbed_creature( you );
-    if( target != nullptr ) {
-        add_msg( _( "You release %s." ), target->disp_name() );
+Creature *const target = nearby_grabbed_creature( you );
+if( target != nullptr ) {
+    add_msg( _( "You release %s." ), target->disp_name() );
         target->remove_effect( effect_grabbed );
     } else {
         add_msg( _( "You release your grip." ) );
@@ -242,30 +241,30 @@ auto release_grabbed_creature( avatar &you ) -> bool
 auto can_grab_creature( const Creature &target ) -> bool
 {
     return !target.is_hallucination() && !target.has_effect_with_flag( flag_NO_GRAB ) &&
-           !target.has_effect( effect_grabbed ) && !target.has_flag( MF_GRAB_IMMUNE );
+    !target.has_effect( effect_grabbed ) && !target.has_flag( MF_GRAB_IMMUNE );
 }
 
 auto confirm_grab_npc( const npc &target ) -> bool
 {
     return target.is_enemy() ||
-           query_yn( _( "You may be attacked!  Proceed?" ) );
+    query_yn( _( "You may be attacked!  Proceed?" ) );
 }
 
 auto grab_creature( avatar &you, Creature &target ) -> void
 {
     if( !can_grab_creature( target ) ) {
-        add_msg( m_info, _( "You can't grab %s." ), target.disp_name() );
+    add_msg( m_info, _( "You can't grab %s." ), target.disp_name() );
         return;
     }
 
     if( npc *const guy = target.as_npc(); guy != nullptr && !confirm_grab_npc( *guy ) ) {
-        return;
-    }
+    return;
+}
 
-    if( monster *const mon = target.as_monster() ) {
-        mon->on_hit( &you, body_part_torso.id(), nullptr, false );
+if( monster *const mon = target.as_monster() ) {
+    mon->on_hit( &you, body_part_torso.id(), nullptr, false );
     } else if( npc *const guy = target.as_npc(); guy != nullptr && !guy->is_enemy() ) {
-        guy->make_angry();
+    guy->make_angry();
     }
 
     const auto grab_strength = std::clamp( you.get_str() / 2, 1, 15 );
@@ -369,7 +368,7 @@ static void generate_weather_anim_frame( const weather_type_id &wtype, weather_p
 
     const weather_animation_t &anim = wtype->animation;
     point offset( u.view_offset.xy().raw() + point( -getmaxx( g->w_terrain ) / 2 + u.bub_pos().x(),
-                  -getmaxy( g->w_terrain ) / 2 + u.bub_pos().y() ) );
+            -getmaxy( g->w_terrain ) / 2 + u.bub_pos().y() ) );
 
     if( tile_iso && use_tiles ) {
         iStart.x = 0;
@@ -760,8 +759,8 @@ auto open( const tripoint_bub_ms *target = nullptr ) -> void
     auto &u = g->u;
     const auto openp_ = target ? std::nullopt :
                         choose_adjacent_highlight( _( "Open where?" ),
-                                pgettext( "no door, gate, curtain, etc.", "There is nothing that can be opened nearby." ),
-                                ACTION_OPEN, false );
+                            pgettext( "no door, gate, curtain, etc.", "There is nothing that can be opened nearby." ),
+                            ACTION_OPEN, false );
 
     if( !target && !openp_ ) {
         return;
@@ -781,7 +780,7 @@ auto open( const tripoint_bub_ms *target = nullptr ) -> void
         } else {
             // If there are any OPENABLE parts here, they must be already open
             if( const std::optional<vpart_reference> already_open = vp.part_with_feature( "OPENABLE",
-                    true ) ) {
+                true ) ) {
                 const std::string name = already_open->info().name();
                 add_msg( m_info, _( "That %s is already open." ), name );
             }
@@ -809,8 +808,8 @@ auto open( const tripoint_bub_ms *target = nullptr ) -> void
 static void close()
 {
     if( const std::optional<tripoint_bub_ms> pnt = choose_adjacent_highlight( _( "Close where?" ),
-            pgettext( "no door, gate, etc.", "There is nothing that can be closed nearby." ),
-            ACTION_CLOSE, false ) ) {
+        pgettext( "no door, gate, etc.", "There is nothing that can be closed nearby." ),
+        ACTION_CLOSE, false ) ) {
         doors::close_door( get_map(), g->u, *pnt );
     }
 }
@@ -1077,7 +1076,7 @@ auto smash( const tripoint_bub_ms *target = nullptr ) -> void
                 if( vol > 20 ) {
                     // Hurt left arm too, if it was big
                     u.deal_damage( nullptr, bodypart_id( "hand_l" ), damage_instance( DT_CUT, rng( 0,
-                                   static_cast<int>( vol * .5 ) ) ) );
+                            static_cast<int>( vol * .5 ) ) ) );
                 }
                 u.remove_primary_weapon();
                 u.check_dead_state();
@@ -1192,8 +1191,8 @@ static auto parse_custom_wait_duration( const std::string &value ) -> std::optio
     const auto numeric_text = trimmed_value.substr( 0, digits_end );
     auto amount = std::int64_t( 0 );
     const auto parse_result = std::from_chars( numeric_text.data(),
-                              numeric_text.data() + numeric_text.size(),
-                              amount );
+        numeric_text.data() + numeric_text.size(),
+        amount );
     if( parse_result.ec != std::errc() ) {
         return std::nullopt;
     }
@@ -1216,7 +1215,7 @@ static auto parse_custom_wait_duration( const std::string &value ) -> std::optio
         }
     }
     const auto normalized_unit = static_cast<char>( std::tolower( static_cast<unsigned char>
-                                 ( unit ) ) );
+        ( unit ) ) );
     switch( normalized_unit ) {
         case 's':
             return amount * 1_seconds;
@@ -1340,7 +1339,7 @@ static void wait()
     }
 
     as_m.text = ( has_watch ) ? string_format( _( "It's %s now. " ),
-                to_string_time_of_day( calendar::turn ) ) : "";
+        to_string_time_of_day( calendar::turn ) ) : "";
     as_m.text += setting_alarm ? _( "Set alarm for when?" ) : _( "Wait for how long?" );
     as_m.query(); /* calculate key and window variables, generate window, and loop until we get a valid answer */
 
@@ -1394,7 +1393,7 @@ static void wait()
         }
 
         u.assign_activity( std::make_unique<player_activity>( actType,
-                           to_moves<int>( time_to_wait ), 0 ), false );
+                to_moves<int>( time_to_wait ), 0 ), false );
     }
 }
 
@@ -1495,7 +1494,7 @@ static void sleep()
         as_m.reset();
         as_m.text = can_hibernate ?
                     _( "You're engorged to hibernate.  The alarm would only attract attention.  "
-                       "Set an alarm anyway?" ) :
+           "Set an alarm anyway?" ) :
                     _( "You have an alarm clock.  Set an alarm?" );
         as_m.text += deaf_text;
 
@@ -1787,8 +1786,8 @@ static void fire()
             options.push_back( _( "Unarmed Reach Attack" ) );
             actions.emplace_back( [&] {
                 if( u.has_effect( effect_relax_gas ) )
-                {
-                    if( one_in( 8 ) ) {
+            {
+                if( one_in( 8 ) ) {
                         add_msg( m_good, _( "Your willpower asserts itself, and so do you!" ) );
                         reach_attack( u );
                     } else {
@@ -1808,9 +1807,9 @@ static void fire()
                 //~ draw (first) gun contained in holster
                 //~ %1$s: weapon name, %2$s: container name, %3$d: remaining ammo count
                 options.push_back( _( "Draw: " ) + string_format( pgettext( "holster", "%1$s from %2$s (%3$d)" ),
-                                   w->contents.front().tname(),
-                                   w->type_name(),
-                                   w->contents.front().ammo_remaining() ) );
+                        w->contents.front().tname(),
+                        w->type_name(),
+                        w->contents.front().ammo_remaining() ) );
 
                 actions.emplace_back( [&] { u.invoke_item( w, "holster" ); } );
 
@@ -1912,7 +1911,7 @@ namespace
 auto start_spellcasting_activity( player &u, spell &sp ) -> void
 {
     auto cast_spell = std::make_unique<player_activity>( ACT_SPELLCASTING,
-                      sp.casting_time( u ) );
+        sp.casting_time( u ) );
     // [0] this is used as a spell level override for items casting spells
     cast_spell->values.emplace_back( -1 );
     // [1] if this value is 1, the spell never fails
@@ -1944,15 +1943,15 @@ auto start_spellcasting_activity( player &u, spell &sp ) -> void
 auto try_cast_spell( player &u, spell &sp ) -> bool
 {
     if( !( sp.has_flag( spell_flag::BRAWL ) || sp.has_flag( spell_flag::PHYSICAL ) ) &&
-        u.has_trait( trait_BRAWLER ) ) {
-        add_msg( game_message_params{ m_bad, gmf_bypass_cooldown },
-                 _( "Pfft, that spell is for COWARDS, and a Brawler like you is no coward!" ) );
+    u.has_trait( trait_BRAWLER ) ) {
+    add_msg( game_message_params{ m_bad, gmf_bypass_cooldown },
+             _( "Pfft, that spell is for COWARDS, and a Brawler like you is no coward!" ) );
         return false;
     }
 
     const auto blockers = sp.get_blocker_muts();
     if( !blockers.empty() ) {
-        for( const auto &blocker : blockers ) {
+    for( const auto &blocker : blockers ) {
             if( u.has_trait( blocker ) ) {
                 add_msg( game_message_params{ m_bad, gmf_bypass_cooldown },
                          _( "Your %s mutation prevents you from casting this spell!" ), blocker->name() );
@@ -1964,21 +1963,21 @@ auto try_cast_spell( player &u, spell &sp ) -> bool
     if( u.is_armed() && !( sp.has_flag( spell_flag::NO_HANDS ) ||
                            sp.has_flag( spell_flag::PHYSICAL ) ) &&
         !u.primary_weapon().has_flag( flag_MAGIC_FOCUS ) && u.primary_weapon().is_two_handed( u ) ) {
-        add_msg( game_message_params{ m_bad, gmf_bypass_cooldown },
-                 _( "You need at least one hand free to cast this spell!" ) );
+    add_msg( game_message_params{ m_bad, gmf_bypass_cooldown },
+             _( "You need at least one hand free to cast this spell!" ) );
         return false;
     }
 
     if( !u.magic->has_enough_energy( u, sp ) ) {
-        add_msg( game_message_params{ m_bad, gmf_bypass_cooldown },
-                 _( "You don't have enough %s to cast the spell." ),
-                 sp.energy_string() );
+    add_msg( game_message_params{ m_bad, gmf_bypass_cooldown },
+             _( "You don't have enough %s to cast the spell." ),
+             sp.energy_string() );
         return false;
     }
 
     if( sp.energy_source() == hp_energy && !u.has_quality( qual_CUT ) ) {
-        add_msg( game_message_params{ m_bad, gmf_bypass_cooldown },
-                 _( "You cannot cast Blood Magic without a cutting implement." ) );
+    add_msg( game_message_params{ m_bad, gmf_bypass_cooldown },
+             _( "You cannot cast Blood Magic without a cutting implement." ) );
         return false;
     }
 
@@ -1988,8 +1987,8 @@ auto try_cast_spell( player &u, spell &sp ) -> bool
     } );
     if( !hook_results.get_or( "allowed", true ) ) { return false; }
 
-    if( sp.type->lua_callbacks ) {
-        if( !sp.type->lua_callbacks->call_on_try_cast( *u.as_character(), sp ) ) { return false;}
+if( sp.type->lua_callbacks ) {
+    if( !sp.type->lua_callbacks->call_on_try_cast( *u.as_character(), sp ) ) { return false;}
     }
 
     start_spellcasting_activity( u, sp );
@@ -2121,7 +2120,7 @@ bool game::handle_action()
     const auto controlled_vehicle = remote_vehicle != nullptr ? remote_vehicle :
                                     local_vehicle_in_control ? player_vehicle : nullptr;
     const auto veh_ctrl = !u.is_dead_state() && ( local_vehicle_in_control ||
-                          remote_vehicle != nullptr );
+        remote_vehicle != nullptr );
 
     std::optional<tripoint_bub_ms> mouse_target;
     // A right-click action ran from inside the mouse branch; the normal tail still runs for it.
@@ -2569,8 +2568,8 @@ bool game::handle_action()
                         ZoneScopedN( "handle_action_auto_travel_route" );
                         for( int i = 0; i < SEEX; i++ ) {
                             tripoint_bub_ms auto_travel_destination( u.bub_pos().x() + dest_delta.x() * ( SEEX - i ),
-                                    u.bub_pos().y() + dest_delta.y() * ( SEEX - i ),
-                                    u.bub_pos().z() );
+                                u.bub_pos().y() + dest_delta.y() * ( SEEX - i ),
+                                u.bub_pos().z() );
                             destination_preview = m.route( u.bub_pos(),
                                                            auto_travel_destination,
                                                            u.get_legacy_pathfinding_settings(),
@@ -3385,8 +3384,15 @@ bool game::handle_action()
                 screens.push_back( world_hub::factions_screen() );
                 screens.push_back( world_hub::zones_screen() );
                 screens.push_back( world_hub::scores_screen( get_achievements_tracker(), stats(),
-                                   get_kill_tracker() ) );
-                world_hub::show( std::move( screens ) );
+                        get_kill_tracker() ) );
+                // The quiet and fusion columns carry the page themselves; other layouts keep
+                // the full-screen page.
+                const auto layout = panel_manager::get_manager().get_current_layout_id();
+                if( layout == "quiet" || layout == "fusion" ) {
+                    world_hub::show_in_sidebar( std::move( screens ) );
+                } else {
+                    world_hub::show( std::move( screens ) );
+                }
                 break;
             }
 

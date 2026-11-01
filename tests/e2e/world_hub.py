@@ -12,6 +12,8 @@ BASE = ROOT / "data" / "raw" / "keybindings" / "keybindings.json"
 TABS = ("1 Missions", "2 Factions", "3 Zones", "4 Scores")
 STRIP = "<│1 Missions│>"
 PLAY_ROW = "X,Y,Z"
+# The fusion layout's column on a 140x45 screen.
+COLS, ROWS, SIDEBAR = 140, 45, 44
 
 
 def tab_strip(tab):
@@ -249,6 +251,39 @@ def test_world_page_saves_zone_edits_before_leaving(_g):
         game.wait_for(PLAY_ROW)
 
 
+def test_world_page_embeds_in_the_sidebar(_g):
+    """The sidebar layouts carry the page in their column: arrows switch tabs, and Enter opens
+    the full page when the details need the room."""
+    with shared_game("bn-e2e-world-sidebar", define=HELPERS, setup=arena, cols=COLS, rows=ROWS,
+                     layout="fusion",
+                     options={"CONTROL_SCHEME": "modern", "SAFEMODE": "false",
+                              "SHOW_WELCOME": "false", "SHOW_TIPS": "false"}) as game:
+        game.keys("M", delay=0.8)
+        game.wait_for("1 Missions")
+        page = game.screen()
+        column = "\n".join(line[COLS - SIDEBAR:] for line in page.splitlines())
+        assert "2 Factions" in column and "3 Zones" in column, \
+            "the tabs sit in the sidebar:\n" + page
+        assert "\n".join(line[:COLS - SIDEBAR] for line in page.splitlines()).strip(), \
+            "the map stays beside the page:\n" + page
+
+        game.keys("Right", delay=0.6)
+        assert "1 Missions" in game.screen(), "the arrow stays on the page:\n" + game.screen()
+
+        game.keys("Escape", delay=0.6)
+        assert_page_closed(game)
+
+        game.keys("M", delay=0.8)
+        game.wait_for("1 Missions")
+        # The tab you left on is restored; 1 jumps back to Missions.
+        game.keys("1", delay=0.6)
+        game.keys("Enter", delay=0.8)
+        game.wait_for("ACTIVE MISSIONS")
+        game.keys("Escape", delay=0.6)
+        game.wait_gone("<│ACTIVE MISSIONS│>")
+        assert_page_closed(game)
+
+
 TESTS = [
     test_world_screens_stay_bindable_without_plain_marker_keys,
     test_world_page_draws_tab_content_inline,
@@ -256,4 +291,5 @@ TESTS = [
     test_classic_direct_keys_still_open_their_screens,
     test_world_page_arrows_and_inner_pages,
     test_world_page_saves_zone_edits_before_leaving,
+    test_world_page_embeds_in_the_sidebar,
 ]

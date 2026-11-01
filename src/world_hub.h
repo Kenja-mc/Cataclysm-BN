@@ -56,6 +56,9 @@ auto scores_screen( const achievements_tracker &achievements, stats_tracker &sta
                     const kill_tracker &kills ) -> panel_ptr;
 
 /// Draws the World page with its numbered tabs and loops until the player presses Esc.
-auto show( std::vector<panel_ptr> screens ) -> void;
+auto show( std::vector<panel_ptr> screens, size_t start_tab = 0 ) -> void;
+
+/// The same page drawn into the sidebar column: compact lists, Enter opens the full page.
+auto show_in_sidebar( std::vector<panel_ptr> screens ) -> void;
 
 } // namespace world_hub

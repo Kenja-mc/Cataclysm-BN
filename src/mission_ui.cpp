@@ -90,13 +90,19 @@ void missions_view::refresh()
 void missions_view::draw( const catacurses::window &w, int entries_per_page )
 {
     werase( w );
+    // The sidebar page is only as wide as the HUD column: the list fills it and the details
+    // move to the full page, which Enter opens.
+    const bool wide = getmaxx( w ) >= 60;
+    const int list_top = wide ? 3 : 2;
     // entries_per_page * page number
     const int top_of_page = entries_per_page * ( selection / entries_per_page );
     const int bottom_of_page =
         std::min( top_of_page + entries_per_page - 1, static_cast<int>( umissions.size() ) - 1 );
 
-    for( int i = 3; i < getmaxy( w ) - 1; i++ ) {
-        mvwputch( w, point( 30, i ), BORDER_COLOR, LINE_XOXO );
+    if( wide ) {
+        for( int i = 3; i < getmaxy( w ) - 1; i++ ) {
+            mvwputch( w, point( 30, i ), BORDER_COLOR, LINE_XOXO );
+        }
     }
 
     const std::vector<std::pair<mission_tab, std::string>> tabs = {
@@ -104,22 +110,34 @@ void missions_view::draw( const catacurses::window &w, int entries_per_page )
         { mission_tab::TAB_COMPLETED, _( "COMPLETED MISSIONS" ) },
         { mission_tab::TAB_FAILED, _( "FAILED MISSIONS" ) },
     };
-    draw_tabs( w, tabs, tab );
-    draw_border_below_tabs( w );
+    if( wide ) {
+        draw_tabs( w, tabs, tab );
+        draw_border_below_tabs( w );
+        mvwputch( w, point( 30, 2 ), BORDER_COLOR,
+                  tab == mission_tab::TAB_COMPLETED ? ' ' : LINE_OXXX ); // ^|^
+        mvwputch( w, point( 30, getmaxy( w ) - 1 ), BORDER_COLOR, LINE_XXOX ); // _|_
+    } else {
+        draw_narrow_tabs( w, { _( "Active" ), _( "Completed" ), _( "Failed" ) },
+                          static_cast<size_t>( tab ) );
+        for( auto i = 1; i < getmaxx( w ) - 1; ++i ) {
+            mvwputch( w, point( i, 1 ), c_dark_gray, LINE_OXOX );
+        }
+    }
 
-    mvwputch( w, point( 30, 2 ), BORDER_COLOR,
-              tab == mission_tab::TAB_COMPLETED ? ' ' : LINE_OXXX ); // ^|^
-    mvwputch( w, point( 30, getmaxy( w ) - 1 ), BORDER_COLOR, LINE_XXOX ); // _|_
-
-    draw_scrollbar( w, selection, entries_per_page, umissions.size(), point( 0, 3 ) );
+    draw_scrollbar( w, selection, entries_per_page, umissions.size(), point( 0, list_top ) );
 
     for( int i = top_of_page; i <= bottom_of_page; i++ ) {
         const auto miss = umissions[i];
         const nc_color col = get_avatar().get_active_mission() == miss ? c_light_green : c_white;
-        const int y = i - top_of_page + 3;
-        trim_and_print( w, point( 1, y ), 28,
+        const int y = i - top_of_page + list_top;
+        trim_and_print( w, point( 1, y ), wide ? 28 : getmaxx( w ) - 2,
                         static_cast<int>( selection ) == i ? hilite( col ) : col,
                         miss->name() );
+    }
+
+    if( !wide ) {
+        wnoutrefresh( w );
+        return;
     }
 
     if( selection < umissions.size() ) {

@@ -4,6 +4,14 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-11-01
+
+### Changed
+
+- The World page (`M`) lives in the HUD column on the quiet and fusion layouts: a two-row tab
+  strip in the sidebar, numbers and arrows switch tabs, the list fills the column, Enter opens
+  the full page for the details, and Esc remembers the tab.
+
 ## 2026-10-31
 
 ### Changed

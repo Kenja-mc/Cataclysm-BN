@@ -251,7 +251,7 @@ inline int fold_and_print( const catacurses::window &w, point begin,
                            const char *const mes, Args &&... args )
 {
     return fold_and_print( w, begin, width, base_color, string_format( mes,
-                           std::forward<Args>( args )... ) );
+            std::forward<Args>( args )... ) );
 }
 /**
  * Like @ref fold_and_print, but starts the output with the N-th line of the folded string.
@@ -364,6 +364,11 @@ void draw_custom_border(
 void draw_border( const catacurses::window &w, nc_color border_color = BORDER_COLOR,
                   const std::string &title = "", nc_color title_color = c_light_red );
 void draw_border_below_tabs( const catacurses::window &w, nc_color border_color = BORDER_COLOR );
+
+/// A single row of short tab names for narrow windows, such as the HUD sidebar; the current one
+/// is highlighted. Wraps nothing: tabs that do not fit are left out.
+auto draw_narrow_tabs( const catacurses::window &w, const std::vector<std::string> &labels,
+                       size_t current ) -> void;
 
 class border_helper
 {

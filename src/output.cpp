@@ -637,6 +637,20 @@ void draw_border_below_tabs( const catacurses::window &w, nc_color border_color 
     mvwputch( w, point( width - 1, height - 1 ), border_color, LINE_XOOX ); // _|
 }
 
+auto draw_narrow_tabs( const catacurses::window &w, const std::vector<std::string> &labels,
+                       const size_t current ) -> void
+{
+    auto x = 1;
+    for( size_t i = 0; i < labels.size(); ++i ) {
+        const auto label = " " + labels[i] + " ";
+        if( x + utf8_width( label ) > getmaxx( w ) - 1 ) {
+            break;
+        }
+        mvwprintz( w, point( x, 0 ), i == current ? hilite( c_white ) : c_dark_gray, label );
+        x += utf8_width( label ) + 1;
+    }
+}
+
 border_helper::border_info::border_info( border_helper &helper )
     : helper( helper )
 {

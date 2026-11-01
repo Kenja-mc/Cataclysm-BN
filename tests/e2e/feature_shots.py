@@ -51,9 +51,14 @@ SHOTS = [
          body="Enter opens every command group: Items, Interact, Info, Misc, crafting, vehicles and "
               "settings. Modern routes each group here instead of binding a top-row number."),
     dict(id="world-hub", title="The World page",
-         keys=[("Shift_L", "m")], options={"CONTROL_SCHEME": "modern"},
+         keys=[("Shift_L", "m")], layout="labels", options={"CONTROL_SCHEME": "modern"},
          body="One `M` page with numbered tabs: Missions, Factions, Zones and Scores. A number switches "
               "tabs, the arrows move between them, and leaving a tab returns to the hub."),
+    dict(id="world-hub-sidebar", title="The World page in the sidebar",
+         keys=[("Shift_L", "m"), ("3",)], layout="fusion",
+         options={"CONTROL_SCHEME": "modern", "TERMINAL_X": "160", "TERMINAL_Y": "45"},
+         body="In the sidebar layouts the same page lives in the HUD column: the arrows switch tabs, "
+              "the list fills the column, and Enter opens the full page when the details need room."),
     dict(id="interact-menu", title="Interact menu: quick stack and sort pile",
          keys=[("Return",), ("2",)], options={"CONTROL_SCHEME": "modern"},
          body="Enter, then Interact, opens this menu. Quick stack moves carried items into nearby storage "

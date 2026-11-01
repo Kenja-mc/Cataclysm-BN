@@ -30,6 +30,10 @@ direction prompts. Top-row numbers do not move you on the map.
   The four screens stay bindable actions for Classic and custom layouts; Modern binds none of
   them, and plain **z/x/c/v** trigger nothing. Zones can still be added, edited, enabled,
   reordered and shown on the map from the Zones tab, with the zone screen's own keys.
+  In the **quiet** and **fusion** layouts the same page lives in the HUD column: its tab strip
+  sits at the top of the sidebar, **1**-**4** and Left/Right switch tabs, Up/Down move the list,
+  **Enter** opens the full page when the details need the room, and **Esc** returns to play and
+  remembers the tab. The list fills the column; the split panes stay on the full page.
 - **`i` — inventory and equipment.** Select an item to open its context menu for **Wield**,
   **Wear**, **Eat**, **Use**, **Read** and other item actions. The menu shows its local shortcuts.
   **`v`** uses an item from the map by its kind: wield, wear, eat, read, unload or activate.

@@ -118,15 +118,22 @@ void zones_panel::draw( const catacurses::window &body, input_context & )
 
     const std::string title = string_format( _( "Zones (%d)" ), static_cast<int>( zones.size() ) );
     mvwprintz( body, point( 2, 0 ), c_white, title );
-    mvwprintz( body, point( 2 + utf8_width( title ) + 2, 0 ), c_dark_gray,
-               show_all ? _( "showing every zone" ) : _( "showing zones nearby" ) );
-
-    const int list_width = 30;
-    for( int y = 2; y < height - 5; ++y ) {
-        mvwputch( body, point( list_width, y ), BORDER_COLOR, LINE_XOXO );
+    // The sidebar page is only as wide as the HUD column: names fill it and the details move to
+    // the full page, which Enter opens.
+    const bool wide = getmaxx( body ) >= 60;
+    if( wide ) {
+        mvwprintz( body, point( 2 + utf8_width( title ) + 2, 0 ), c_dark_gray,
+                   show_all ? _( "showing every zone" ) : _( "showing zones nearby" ) );
     }
 
-    const int rows = std::max( 0, height - 8 );
+    const int list_width = 30;
+    if( wide ) {
+        for( int y = 2; y < height - 5; ++y ) {
+            mvwputch( body, point( list_width, y ), BORDER_COLOR, LINE_XOXO );
+        }
+    }
+
+    const int rows = std::max( 0, height - ( wide ? 8 : 4 ) );
     rows_visible = rows;
     if( zones.empty() ) {
         top_index = 0;
@@ -152,9 +159,14 @@ void zones_panel::draw( const catacurses::window &body, input_context & )
                 mvwprintz( body, point( 1, y ), c_light_green, ">" );
             }
             mvwprintz( body, point( 3, y ), index == active_index ? hilite( color ) : color,
-                       trim_by_length( zone.get_name(), list_width - 4 ) );
+                       trim_by_length( zone.get_name(), ( wide ? list_width - 4 : getmaxx( body ) - 5 ) ) );
         }
 
+        if( !wide ) {
+            // Details and edits need the whole page; the list is what fits here.
+            wnoutrefresh( body );
+            return;
+        }
         const zone_data &zone = zones[active_index].get();
         auto &mgr = zone_manager::get_manager();
         int y = 2;
@@ -179,7 +191,7 @@ void zones_panel::draw( const catacurses::window &body, input_context & )
     }
 
     // Keys come from the zone screen's own context, so renamed bindings stay truthful.
-    const auto key = [this]( const std::string &action ) {
+    const auto key = [this]( const std::string & action ) {
         return zones_ctxt.get_desc( action, 1 );
     };
     mvwprintz( body, point( 2, height - 3 ), c_dark_gray,
@@ -208,23 +220,23 @@ auto zones_panel::query_position( world_hub::host &page )
 
     tripoint_bub_ms center = get_avatar().bub_pos() + get_avatar().view_offset;
     const look_around_result first = g->look_around( /*show_window=*/false, center, center, false,
-                                     true, false );
+        true, false );
     if( !first.position ) {
-        return std::nullopt;
-    }
-    popup.message( "%s", _( "Select second point." ) );
-    const look_around_result second = g->look_around( /*show_window=*/false, center, *first.position,
-                                      true, true, false );
-    if( !second.position ) {
-        return std::nullopt;
-    }
-    const tripoint_bub_ms start( std::min( first.position->x(), second.position->x() ),
-                                 std::min( first.position->y(), second.position->y() ),
-                                 std::min( first.position->z(), second.position->z() ) );
-    const tripoint_bub_ms end( std::max( first.position->x(), second.position->x() ),
-                               std::max( first.position->y(), second.position->y() ),
-                               std::max( first.position->z(), second.position->z() ) );
-    return std::pair<tripoint_abs_ms, tripoint_abs_ms>( bub_to_abs( start ), bub_to_abs( end ) );
+    return std::nullopt;
+}
+popup.message( "%s", _( "Select second point." ) );
+const look_around_result second = g->look_around( /*show_window=*/false, center, *first.position,
+    true, true, false );
+if( !second.position ) {
+    return std::nullopt;
+}
+const tripoint_bub_ms start( std::min( first.position->x(), second.position->x() ),
+                             std::min( first.position->y(), second.position->y() ),
+                             std::min( first.position->z(), second.position->z() ) );
+const tripoint_bub_ms end( std::max( first.position->x(), second.position->x() ),
+                           std::max( first.position->y(), second.position->y() ),
+                           std::max( first.position->z(), second.position->z() ) );
+return std::pair<tripoint_abs_ms, tripoint_abs_ms>( bub_to_abs( start ), bub_to_abs( end ) );
 }
 
 void zones_panel::add_zone( world_hub::host &page )
@@ -324,7 +336,7 @@ void zones_panel::edit_selected( world_hub::host &page )
                 const tripoint_abs_ms new_end_point = zone.get_end_point() - zone.get_start_point() +
                                                       new_start_point;
                 zone.set_position( std::pair<tripoint_abs_ms, tripoint_abs_ms>( new_start_point,
-                                   new_end_point ) );
+                        new_end_point ) );
                 dirty = true;
             }
             break;
@@ -349,11 +361,11 @@ void zones_panel::handle( const std::string &action, input_context &ctxt,
                 const point cell = mouse->xy().raw() + point( getmaxx( body ), getmaxy( body ) ) / 2;
                 if( const auto hit = scrollbar_input::click( {
                 .offset = point( 0, 2 ),
-                .viewport_size = rows_visible,
-                .content_size = static_cast<int>( zones.size() ),
-                .viewport_pos = active_index,
-                .scroll_to_last = true,
-                           }, cell ) ) {
+                    .viewport_size = rows_visible,
+                    .content_size = static_cast<int>( zones.size() ),
+                    .viewport_pos = active_index,
+                    .scroll_to_last = true,
+                }, cell ) ) {
                     active_index = hit->viewport_pos;
                     mouse_row.reset();
                 } else if( cell.x >= 1 && cell.x < 28 && cell.y >= 2 &&
