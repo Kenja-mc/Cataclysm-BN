@@ -205,9 +205,9 @@ def test_world_page_saves_zone_edits_before_leaving(_g):
         game.keys("A", delay=0.8)
         game.wait_for("Select zone type:")
         # Click the row label itself. The picker's left column is a scrollbar, so border-based
-        # helpers cannot find the row; a single click on a uilist row activates it.
+        # helpers cannot find the row; a paired click on a uilist row activates it.
         x, y = text_position(game, "Auto Drink")
-        game.click(x, y)
+        game.double_click(x, y)
         game.wait_for("Zone name:")
         game.keys("Enter", delay=0.6)
 
