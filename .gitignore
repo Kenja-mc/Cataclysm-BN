@@ -247,3 +247,7 @@ __cmake_systeminformation/
 # Registry content fetched by build-scripts/bundle-registry-mods.ts
 /data/sound/Otopack+ModsUpdates BN/
 /data/mods/external-mods-CREDITS.txt
+
+# Local-only working notes, kept out of the published fork
+/NEXT.md
+/docs/fork/qol-research/

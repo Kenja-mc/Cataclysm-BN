@@ -477,12 +477,12 @@ def test_tutorial_aim_keys_use_target_context(_g):
             # Both contexts are named: the main map's custom keys...
             assert re.search(r"\bz\b", popup), popup
             assert re.search(r"\by\b", popup), popup
-            assert re.search(r"\bTAB\b", popup), popup
+            assert re.search(r"\bTab\b", popup), popup
             # ...and the aiming screen's own FIRE, NEXT_TARGET and QUIT bindings.
             assert re.search(r"\bf\b", popup), popup
             assert re.search(r"\bk\b", popup), popup
             assert re.search(r"\bj\b", popup), popup
-            assert "ESC" not in popup, \
+            assert not re.search(r"\bEsc\b", popup), \
                 "the aiming cancel key must come from TARGET, not the global QUIT:\n" + popup
         finally:
             game.close()

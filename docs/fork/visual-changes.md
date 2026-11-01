@@ -12,11 +12,56 @@ beneath it. The title art fits an 80-column terminal and uses the same asset in 
 
 ## In game
 
-New configurations use the **grouped** sidebar, based on the Opus HUD proposal. Weather,
-Character and Needs sit on the right instead of covering map tiles. Existing saved layouts stay
-unchanged. Select grouped in **Enter → Misc → Sidebar Options** to try it.
+New configurations use the **grouped** sidebar, based on the Opus HUD proposal. Its HUD readings
+now float over the map as ten titled windows, and the remaining panels (Location, Controls, Map and
+so on) stay on the right. The **labels** and **labels-narrow** layouts use the same windows. The
+Classic and compact layouts keep their combined panels unchanged.
+
+### Floating HUD windows
+
+The slide-2 mockup's minimizable windows are the default HUD layout, and no keybinding was added
+for them.
+
+- The **Weather**, **Combat**, **Needs**, **Limbs**, **Stats**, **Movement**, **Weight**,
+  **Compass**, **Log** and **Vehicle** windows each have a title row with the window name, one line
+  of live state and `[-]` at the right. Clicking `[-]` collapses the window to that row — the
+  control becomes `[+]` and the live state stays, so the readings are hidden, not lost. Clicking
+  the window name (or `[+]`) restores it.
+- Click a title to pick the window up, move the pointer, then click again to put it down. The
+  rest of a collapsed window's title row is still a drag handle, so it can be moved without
+  expanding. The window stays inside the map area and never covers the sidebar column.
+- Left and right clicks on a window never reach the map, so a stray click cannot walk, aim or
+  open a tile action under the window.
+- Position, collapsed state and visibility are saved per character.
+- **Enter → Misc → Sidebar Options** lists the windows in the third column, below the layouts.
+  Move there with the arrow keys and press Tab to enable or disable the selected window; a mouse is
+  never required. Disabling a window puts its readings back in the sidebar. A window that cannot
+  fit the map — a small terminal with several windows open — also hands its reading back instead
+  of overlapping another.
+- The readings mirror the sidebar panels: **Limbs** gives each limb's health bar and worst wound;
+  **Stats** gives Str, Dex, Int, Per in the panel's boosted/reduced colours, bionic power and the
+  safe-mode readout; **Movement** gives speed, move cost, sound, stamina, mood and focus; **Weight**
+  gives carried weight and volume; **Compass** gives each direction's seen symbols, counts and
+  threat colour; **Log** gives the recent coloured message lines at the window's width; **Vehicle**
+  gives speed, azimuth, engine, fuel and battery. The **Needs** window lists only needs that call
+  for attention, with a glyph and label instead of an adjective, or a **Needs met** row. The
+  **Vehicle** window exists only while aboard or remote-controlling a vehicle.
+- Both the terminal and tiles builds draw the same windows. Where a build has no mouse, only the
+  Sidebar Options path applies.
+- **Options → Interface → Floating HUD windows** is on by default for the modern layouts. Turning
+  it off keeps the old fixed corner boxes; the weather, status and vehicle box corner options still
+  seed each window's first position and visibility. **Compact corner bars** also keeps the old
+  layout, and Classic and compact layouts always keep their combined panels.
+- The vehicle reading is a replaceable provider
+  (`hud_windows::set_vehicle_provider`) so the driving-dashboard work can take that window over
+  without changing its id, placement, collapse or save state.
+- Clicking or dragging a window brings it to the front, and **Enter** on its row in Sidebar
+  Options does the same from the keyboard. The stacking order saves per character with the
+  positions. A dragged window keeps its top-left through a collapse; an untouched default window
+  stays bottom-anchored in its corner.
 
 ![Earlier in-game capture: weather and weapon boxes, body panel, and obsolete Controls-strip shortcuts](images/game.png)
+
 
 - Top left: the **weather box** (icon, weather, time) and the **Status box** (weapon, style, stance
   and needs; this capture shows its earlier weapon-only form).

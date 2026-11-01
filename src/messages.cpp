@@ -741,7 +741,7 @@ void Messages::dialog::input( const ui_adaptor &ui )
                     }
                 }
                 action.clear();
-            } else {
+            } else if( action != "QUIT" ) {
                 action.clear();
             }
         }

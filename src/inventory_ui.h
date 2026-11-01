@@ -48,7 +48,6 @@ enum class scroll_direction : int {
 };
 
 struct navigation_mode_data;
-struct inventory_input;
 
 /// Display-only key hint. Doesn't participate in inventory-letter lookup.
 struct inventory_invlet_hint {
@@ -147,6 +146,12 @@ class inventory_entry
         const item_category *custom_category = nullptr;
         bool enabled = true;
 
+};
+
+struct inventory_input {
+    std::string action;
+    int ch;
+    inventory_entry *entry;
 };
 
 class inventory_selector_preset

@@ -88,6 +88,7 @@
 #include "first_tips.h"
 #include "enemy_indicators.h"
 #include "hud_boxes.h"
+#include "hud_windows.h"
 #include "keyhints_panel.h"
 #include "kill_tracker.h"
 #include "line.h"
@@ -126,6 +127,7 @@
 #include "monstergenerator.h"
 #include "morale_types.h"
 #include "mtype.h"
+#include "music.h"
 #include "mutation.h"
 #include "npc.h"
 #include "npc_class.h"
@@ -1070,6 +1072,7 @@ auto game::suggest_auto_walk_to_stairs( Character &u, map &m, const std::string 
 // Set up all default values for a new game
 bool game::start_game()
 {
+    music::reset();
     if( !gamemode ) {
         gamemode = std::make_unique<special_game>();
     }
@@ -2546,6 +2549,9 @@ bool game::do_turn()
     }
     {
         ZoneScopedN( "do_turn_sfx" );
+        // Select the context first: do_danger_music() yields the old danger
+        // ambience to the danger playlist when the latter is playing.
+        music::update();
         sfx::do_danger_music();
         sfx::do_vehicle_engine_sfx();
         sfx::do_vehicle_exterior_engine_sfx();
@@ -3582,6 +3588,27 @@ void game::handle_key_blocking_activity()
 
 // Checks input to see if mouse was moved and handles the mouse view box accordingly.
 // Returns true if input requires breaking out into a game action.
+namespace
+{
+/// Mouse input is scaled pixels in tiles and screen cells in the terminal; the HUD windows
+/// are laid out in map-window cells.
+auto map_window_cell( const input_event &event, const catacurses::window &w ) -> point
+{
+#if defined(TILES)
+    // HUD windows are laid out in standard-font terminal cells, not map-tile cells.
+    const auto dim = get_window_dimensions( w );
+    // A non-terrain window reports the standard-font cell, which is what HUD windows use.
+    const auto cell = get_window_dimensions( point_zero, point( 1, 1 ) ).scaled_font_size;
+    const auto fx = std::max( 1, cell.x );
+    const auto fy = std::max( 1, cell.y );
+    return point( ( event.mouse_pos.x - dim.window_pos_pixel.x ) / fx,
+                  ( event.mouse_pos.y - dim.window_pos_pixel.y ) / fy );
+#else
+    return point( event.mouse_pos.x - getbegx( w ), event.mouse_pos.y - getbegy( w ) );
+#endif
+}
+} // namespace
+
 auto game::handle_mouseview( input_context &ctxt, std::string &action,
                              const int poll_timeout ) -> bool
 {
@@ -3603,6 +3630,36 @@ auto game::handle_mouseview( input_context &ctxt, std::string &action,
                                  ? ( poll_timeout < 0 ? pan_timeout : std::min( poll_timeout, pan_timeout ) )
                                  : poll_timeout;
             action = ctxt.handle_input( timeout );
+        }
+        // Floating HUD windows own their cells: a click never reaches the map behind them,
+        // and pointer motion moves a grabbed window instead of the look cursor.
+        if( hud_windows::active() && ctxt.get_raw_input().type == input_event_t::mouse ) {
+            const auto &raw = ctxt.get_raw_input();
+            const auto left = std::ranges::find( raw.sequence, MOUSE_BUTTON_LEFT ) !=
+                              raw.sequence.end();
+            const auto right = std::ranges::find( raw.sequence, MOUSE_BUTTON_RIGHT ) !=
+                               raw.sequence.end();
+            if( action == "MOUSE_MOVE" &&
+                hud_windows::pointer_moved( u, w_terrain,
+                                            map_window_cell( raw, w_terrain ) ) ) {
+                liveview.hide();
+                ui_manager::redraw();
+                continue;
+            }
+            const auto cell = map_window_cell( raw, w_terrain );
+            const auto consumed = left ? hud_windows::clicked( u, w_terrain, cell ) :
+                                  right && hud_windows::secondary_clicked( u, w_terrain, cell );
+            if( consumed ) {
+                liveview.hide();
+                ui_manager::redraw();
+                // `continue` in a do/while only re-tests the condition, which would exit with
+                // the click action and let handle_action run it on the map.  Keep waiting
+                // instead, so a consumed click never reaches the map.
+                action = "MOUSE_MOVE";
+                continue;
+            }
+        } else if( ctxt.get_raw_input().type == input_event_t::keyboard ) {
+            hud_windows::release();
         }
         if( action == "MOUSE_MOVE" ) {
             ZoneScopedN( "handle_mouseview_mouse_move" );
@@ -4369,6 +4426,7 @@ bool game::load( const std::string &world )
 
 bool game::load( const save_t &name )
 {
+    music::reset();
     auto background = std::unique_ptr<background_pane>();
     auto popup = std::unique_ptr<static_popup>();
     if( !test_mode ) {
@@ -4657,6 +4715,11 @@ kill_tracker &game::get_kill_tracker()
     return *kill_tracker_ptr;
 }
 
+achievements_tracker &game::get_achievements_tracker()
+{
+    return *achievements_tracker_ptr;
+}
+
 memorial_logger &game::memorial()
 {
     return *memorial_logger_ptr;
@@ -4881,17 +4944,28 @@ auto footstep_color( const sounds::footstep_marker &mark ) -> nc_color
     }
     return violent ? c_light_red : talk ? c_light_cyan : c_yellow;
 }
+
+/// Glyph of a heard-sound marker, smaller once it is stale.
+auto footstep_glyph( const sounds::footstep_marker &mark, const tripoint_rel_ms &offset,
+                     const bool age_glyphs ) -> std::string
+{
+    // Direction wins: a stale marker on another level still has to say which way it is.
+    if( mark.pos.z() != offset.z() ) { // Here z isn't an offset, but a coordinate
+        return mark.pos.z() > offset.z() ? "^" : "v";
+    }
+    if( age_glyphs && mark.age >= 2 ) {
+        return "·";
+    }
+    return "?";
+}
 } // namespace
 
 static void draw_footsteps( const catacurses::window &window, const tripoint_rel_ms &offset )
 {
+    const auto age_glyphs = get_option<bool>( "SOUND_MARKER_GLYPH_AGING" );
     for( const auto &mark : sounds::get_footstep_markers() ) {
-        auto glyph = '?';
-        if( mark.pos.z() != offset.z() ) { // Here z isn't an offset, but a coordinate
-            glyph = mark.pos.z() > offset.z() ? '^' : 'v';
-        }
-
-        mvwputch( window, mark.pos.xy().raw() + offset.xy().raw(), footstep_color( mark ), glyph );
+        mvwputch( window, mark.pos.xy().raw() + offset.xy().raw(), footstep_color( mark ),
+                  footstep_glyph( mark, offset, age_glyphs ) );
     }
 }
 
@@ -5177,6 +5251,21 @@ void game::draw_panels( bool force_draw )
     auto &mgr = panel_manager::get_manager();
     int y = 0;
     const bool sidebar_right = get_option<std::string>( "SIDEBAR_POSITION" ) == "right";
+    // Panels do not cover every sidebar cell (a panel may be hidden or the layout may leave
+    // gaps), so clear the column first.  Otherwise a previous full-screen UI, such as the
+    // overmap legend, stays visible between the panels.
+    const int sidebar_width = sidebar_right ? mgr.get_width_right() : mgr.get_width_left();
+    if( sidebar_width > 0 ) {
+        static auto sidebar_bg = catacurses::window();
+        const auto sidebar_at = point( sidebar_right ? TERMX - sidebar_width : 0, 0 );
+        if( !sidebar_bg || getmaxx( sidebar_bg ) != sidebar_width ||
+            getmaxy( sidebar_bg ) != TERMY || getbegx( sidebar_bg ) != sidebar_at.x ||
+            getbegy( sidebar_bg ) != sidebar_at.y ) {
+            sidebar_bg = catacurses::newwin( TERMY, sidebar_width, sidebar_at );
+        }
+        werase( sidebar_bg );
+        wnoutrefresh( sidebar_bg );
+    }
     int spacer = get_option<bool>( "SIDEBAR_SPACERS" ) ? 1 : 0;
     int log_height = 0;
     for( const window_panel &panel : mgr.get_current_layout() ) {
@@ -9845,6 +9934,11 @@ bool game::is_zones_manager_open() const
     return zones_manager_open;
 }
 
+void game::set_zones_manager_open( bool open )
+{
+    zones_manager_open = open;
+}
+
 bool game::is_zone_submap_grid_overlay_enabled() const
 {
     return zone_submap_grid_overlay;
@@ -10514,7 +10608,7 @@ void game::zones_manager()
                         mouse_row.reset();
                     }
                 }
-            } else {
+            } else if( action != "QUIT" ) {
                 action.clear();
             }
         } else {

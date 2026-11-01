@@ -94,7 +94,15 @@ static constexpr int NUMPAD_0 = 0x40a;
 bool is_mouse_enabled();
 std::string get_input_string_from_file( const std::string &fname = "input.txt" );
 
-enum mouse_buttons { MOUSE_BUTTON_LEFT = 1, MOUSE_BUTTON_RIGHT, SCROLLWHEEL_UP, SCROLLWHEEL_DOWN, MOUSE_MOVE };
+enum mouse_buttons {
+    MOUSE_BUTTON_LEFT = 1,
+    MOUSE_BUTTON_RIGHT,
+    SCROLLWHEEL_UP,
+    SCROLLWHEEL_DOWN,
+    MOUSE_MOVE,
+    // The browser-style back side button (X1).
+    MOUSE_BUTTON_BACK,
+};
 
 enum class input_event_t : int  {
     error,

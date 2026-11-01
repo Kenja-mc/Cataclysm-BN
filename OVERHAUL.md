@@ -21,11 +21,21 @@ direction prompts. Top-row numbers do not move you on the map.
   construction, storage, talking and equipment. **Info** holds body status, missions, morale and
   the other status screens; **`@`** opens the character sheet and **`P`** the message log directly.
   **Misc → Sidebar Options** moves, hides and reorders the sidebar panels.
+- **`M` — World page (Modern).** Missions, factions, zones and scores are numbered tabs on one
+  page, and the active tab's own screen is drawn in place: switching tabs never closes the page.
+  **1**-**4** switch tabs; Left/Right (including the arrow keys) move between tabs; **Tab** and
+  **Shift+Tab** switch the tab's own inner pages; **Esc** returns to play, after the zone save
+  prompt when zones were edited; **?** lists the page's keys. The page's own keys win, so bind a
+  screen action to a different key if it lands on a number, a direction, Tab, Enter or Esc.
+  The four screens stay bindable actions for Classic and custom layouts; Modern binds none of
+  them, and plain **z/x/c/v** trigger nothing. Zones can still be added, edited, enabled,
+  reordered and shown on the map from the Zones tab, with the zone screen's own keys.
 - **`i` — inventory and equipment.** Select an item to open its context menu for **Wield**,
   **Wear**, **Eat**, **Use**, **Read** and other item actions. The menu shows its local shortcuts.
-  **`v`** wields from the map: it lists what you can wield. Press **F5 Craft** inside inventory to
-  craft, even when the inventory is empty.
-  **Tab** opens advanced inventory from this screen; **Shift+Tab** switches category selection.
+  **`v`** uses an item from the map by its kind: wield, wear, eat, read, unload or activate.
+  Press **F5 Craft** inside inventory to craft, even when the inventory is empty.
+  **Tab** or **`I`** opens advanced inventory from this screen; **Shift+Tab** switches category
+  selection.
   The footer's advanced-inventory hint is clickable in both schemes; Classic keeps its keys.
 - **Space — the obvious action.** With a tile selected (mouse hover or click, arrow aim, or a
   Select tile key), Space runs that tile's most obvious action without asking, in this order:
@@ -70,7 +80,7 @@ Turn the option off to walk with the arrow keys again.
 
 In **Modern**, lowercase WASD also navigates menus. Menu actions that used those letters move to
 Shift+WASD, including sorting, adding rules and dropping. Context-local shortcuts remain local:
-for example, inventory and pickup offer Wield and Wear alongside the map's `v` wield key.
+for example, inventory and pickup offer Wield and Wear alongside the map's `v` use key.
 Generated shortcuts and inventory, mutation and bionic letters leave navigation keys
 free. Text fields still accept normal typing; **Classic** retains the upstream controls.
 
@@ -130,30 +140,31 @@ food and a weapon, because houses usually have all three.
 | Ctrl+direction       | physical peek (normal 200-move cost)                               |
 | Tab / Shift+Tab      | next / previous visible hostile                                    |
 | `f`, `F`, `r`, `t`   | attack selected target / fire mode / reload / throw                |
-| `p`                  | smash or pulp in a chosen direction                                |
+| `p`                  | bionics                                                            |
 | Space                | nearby or selected-tile actions, including explicit Jump and Smash |
 | Shift+Space          | toggle a selected vehicle curtain, or choose one nearby            |
-| `g` / Ctrl+G         | take everything underfoot / choose items nearby            |
-| `i`, `v`, `/`        | inventory / wield / advanced inventory                             |
+| `g` / `G` / Ctrl+G   | pick up underfoot / pickup list / drop                             |
+| `i`, `v`, `I`        | inventory / use item by kind / advanced inventory                  |
 | `i`, then F5         | craft (also works with empty inventory)                            |
 | `@`, `P`, `B`        | character sheet / message log / butcher                            |
 | Enter                | all action groups; Info contains character/status screens          |
 | Shift+X              | cycle walk / run / crouch / prone                                  |
 | `x` / Ctrl+X         | wait one turn / wait or rest a while                               |
 | `m`, `n`             | map / auto-explore                                                 |
-| `M`                  | world: missions, factions, zones, scores                           |
+| `M` (Modern)         | world page: inline tabs for missions, factions, zones, scores       |
 | PageUp / PageDown    | stairs up / down (also `<` / `>`)                           |
 | `h`                  | health and wounds                                          |
 | `!` / `'`            | safe mode / ignore enemy                                           |
-| F1 / `?`             | help (opens on a first-ten-minutes page) / full keybinding list   |
+| F1 / `?`             | help topics, starting with the first ten minutes / every key      |
 | Esc                  | cancel selection, or main menu when no selection is active         |
 | F12 / backtick       | developer debug menu / Lua console                                 |
 
 Walking into an enemy attacks it in both control schemes. Options → Interface → Attack by walking
 into enemies can disable this; in Modern, select a target and press `f` for a deliberate attack.
 The separate map shortcuts for Craft, Open and Jump are unbound, not removed actions:
-use inventory, Space or Enter. Modern **`p`** smashes terrain or pulps a corpse in a chosen
-direction; Classic keeps **`s`**. Walking into a closed door still opens it. Text that names a key,
+use inventory, Space or Enter. Modern has no directional smash key: aim at a bashable tile and
+press **`f`**, or pick Smash from the Space list. Classic keeps **`s`**. Walking into a closed door
+still opens it. Text that names a key,
 such as tutorial pop-ups and help pages, names the way to reach an unbound action instead, for
 example "i → item → Activate". In Modern, the tutorial's lessons describe Modern's own way of
 doing each thing (clicking, Space, selecting with the mouse), and the door lessons now appear for
@@ -165,6 +176,15 @@ same sleep confirmation and alarm prompts as the sleep action. Classic keeps its
 
 **Mouse tile selection**, inspired by Sword of the Stars: The Pit, works in the terminal too.
 
+- **Side buttons:** the back button (X1) does what Escape does where Escape cancels: it leaves
+  the current screen, closes a list, answers No to a Yes/No prompt, answers No to the
+  cancel-activity prompt and cancels a text prompt. It does nothing on the map, which is the
+  root, and nothing on the title screen, so a stray press cannot open the quit prompt. Only the
+  Modern scheme binds the button by default; Classic keeps upstream's keys and clicks. The
+  binding is ordinary: the Controls screen lists it under Cancel/No as "Mouse back". The terminal
+  build only sees it when ncurses was compiled with the extended mouse protocol
+  (`BUTTON8_PRESSED`); the tiles build always does, and its `tests/e2e/tiles.py side_buttons`
+  check is run by hand because CI's suite is curses-only.
 - **Hover:** previews a tile in the Mouse View box without changing a locked target or its marker.
 - **Right click:** locks a hostile without attacking. On an object or door it opens the action list
   without running an action; closing the list keeps the tile selected.
@@ -198,10 +218,11 @@ Modern list mouse off, one click picks). The wheel scrolls. Right click on an in
 its actions; right click outside cancels. Pickup keeps left click as mark/unmark, and a double
 click on a row picks like Enter.
 
-**Quick pickup and area pickup.** In Modern, `g` takes all ground and vehicle-cargo items on your
-own tile without a menu, using the normal pickup activity and its capacity handling. Ctrl+G opens
-the area pickup menu; `g`, Enter or Space picks up marked items, or the highlighted item if none
-are marked. Escape cancels.
+**Quick pickup and pickup list.** In Modern, `g` picks up a lone item on your tile without a menu;
+when several items lie there it opens the pickup picker. `G` always opens the picker, and Ctrl+G
+drops items. Inside the picker, `g`, Enter or Space picks up marked items, or the highlighted item
+if none are marked.
+Escape cancels.
 Inside pickup, local shortcuts act on the highlighted item: `h` wields it and `W` wears it.
 With the mouse, hover highlights a row, left click marks or unmarks it, a double click picks like
 Enter (with Modern list mouse off, a double click only marks and unmarks), and the wheel moves
@@ -232,8 +253,8 @@ Clicks select vehicle parts and overview rows or use the displayed action and ta
 existing hints and mouse wheel scroll the descriptions and parts list.
 
 A **Controls** strip at the bottom of the sidebar shows the most used keys. `? all keys` stays
-near the movement hints, and five rows keep the other hints visible. It reads live keybindings,
-so action hints stay correct if you rebind them. On a terminal too short for five rows the strip
+near the movement hints, and up to three rows keep the other hints visible. It reads live keybindings,
+so action hints stay correct if you rebind them. On a terminal too short for three rows the strip
 keeps its first row or two instead of vanishing, so the core keys stay on screen.
 The compass gives up rows first. Hidden panels do not reserve space, and sidebar spacers count
 toward the available height.
@@ -332,9 +353,17 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   is cold. Monsters never got these; the overlays are the ones the tileset already draws on
   characters. They loop in real time even while you stand still, starting without another keypress.
   Options → Graphics → Status effect animations turns them off.
-- **Fading sound markers**: the `?` for a sound you heard but cannot see stays for a few turns and
-  dims as it ages, so you can see where noises came from (Options → Interface → Sound marker turns;
-  1 gives the upstream behaviour, where it vanishes after your next action).
+- **Fading sound markers**: the `?` for a sound you heard but cannot see stays for a few turns,
+  dims, and becomes a small `·` once it is two turns old, so a fresh cue looks different from a
+  stale one.  The first marker in a game explains the glyphs in the log once, when
+  Options → Interface → Show first-time tips is on.  Losing your hearing clears the markers
+  already on the map.  Options → Interface → Sound marker turns sets how long a cue lasts (1
+  turn gives the upstream behaviour, where it vanishes after your next action); Sound markers
+  shrink keeps the single glyph.
+- **Activity line in the log**: while an activity runs, the top row of the Message log names it,
+  its progress and the time left, counted with that activity's own speed factors.  Further log
+  rows keep their messages.  Options → Interface → Activity line in the log turns the line off
+  and gives the row back to messages.
 - **Monster health bars** (tiles view): a small bar under every hurt monster in view, using the same
   coarse reading the look-around list gives rather than exact hit points. Options → Graphics →
   Monster health bars turns it off.
@@ -380,19 +409,36 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   `bin/install-bno.sh` uses `build-scripts/bundle-registry-mods.ts` and keeps the pack's
   credits with its files. Pick it under Options → General → Choose soundpack.
   With shoes on, footsteps follow the ground type; moving through obstacles has its own clearing sound.
+- **A 24-voice budget for one-shot world sounds.** The mixer never plays more than 24 one-shot
+  effects at once, so a large crowd cannot turn into a wall of overlapping clips. At the limit a
+  new cue takes the place of the lowest-priority voice, then the quietest one, then the oldest, so
+  no cue is refused while a track is free. Music and the looping ambience beds have their own
+  reserved channels and are neither counted nor evicted. A creature's idle sound is the first
+  voice to give way, and its map marker is drawn only when the cue actually played.
 
-- **Grouped right sidebar**, based on the Opus HUD proposal, keeps the map free of HUD boxes.
-  Weather, Character and Needs form titled groups. The sidebar also keeps limb health, wounds,
-  movement, stats, load, location, messages, compass and controls. Vehicle readings join it when
-  needed. The Location group keeps its 5×5 overmap chunk. The larger pixel minimap remains an
-  optional **Map** panel in Sidebar Options. Below 40 rows, the groups lose their borders and
-  titles, and urgent needs wrap to save space.
-  New configurations use this layout. Existing saved layouts stay unchanged. Select **grouped**
-  in **Enter → Misc → Sidebar Options** to try it, or choose a previous layout to restore map boxes.
-  **Options → Interface → Sidebar position** keeps the sidebar on the right or moves it left.
-  Corner positions and Compact corner bars do not apply to grouped. **Box icons** still selects
-  the icon style of its Weather, Character, Needs and Vehicle groups.
-- **Optional Weather and Status map boxes** remain available in the other sidebar layouts.
+- **Floating HUD windows**, from the Opus HUD proposal's slide-2 mockup: in the labels,
+  labels-narrow and grouped layouts the readings are ten titled windows over the map — Weather,
+  Combat, Needs, Limbs, Stats, Movement, Weight, Compass, Log and Vehicle. A title row carries the
+  window name, one line of live state and `[-]`. Clicking the name or the control collapses and
+  restores the window; dragging the rest of the title moves it. Clicking, dragging or pressing
+  **Enter** on a window in Sidebar Options brings it to the front. Windows stay inside the map and
+  never cover the sidebar. A window that cannot fit, or that is turned off in Sidebar Options,
+  hands its reading back to the sidebar. Positions, stacking order, collapse and visibility save
+  per character. The Vehicle window appears only aboard or while remote-controlling.
+  Both the terminal and tiles builds draw the windows.
+- **Grouped right sidebar**, based on the Opus HUD proposal: its HUD groups are the windows above,
+  so the sidebar keeps Location, Controls and the optional Map. The Location group keeps its 5×5
+  overmap chunk; the larger pixel minimap remains an optional **Map** panel in Sidebar Options.
+  Below 40 rows, any remaining groups lose their borders and titles.
+  New configurations use grouped. Existing saved layouts stay unchanged. Select **grouped** (or
+  labels / labels-narrow) in **Enter → Misc → Sidebar Options**. **Options → Interface → Floating
+  HUD windows** turns the windows off; Classic and compact layouts always keep their combined
+  panels. **Options → Interface → Sidebar position** keeps the sidebar right or left, and the
+  windows clamp to the remaining map. The weather, status and vehicle box options seed each
+  window's first corner and visibility. **Compact corner bars** restores the old one-row bars and
+  does not apply while the floating windows are active. **Box icons** selects their icon style.
+- **Optional Weather and Status map boxes** remain available when the floating layout is off
+  (labels, labels-narrow, grouped) and in the Classic and compact layouts.
   Weather has four rows: an icon and description, season/day with time and a short sky track,
   Light, and Wind. The sky track shows the sun crossing the day, or at night the moon in its
   current phase crossing the night, so the night's moonlight can be judged at a glance; it is
@@ -417,7 +463,8 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   in Status. Weather, weapon and mana sidebar fields likewise return when their box cannot
   fit or is disabled, including immediately after changing options or resizing.
   **Compact corner bars** (Options → Interface) draws Weather and Status as one-row strips
-  instead of the larger boxes. The Weather strip holds the same readings on one line.
+  instead of the larger boxes when the floating windows are off. The Weather strip holds the same
+  readings on one line.
   The Status strip holds weapon, chosen style, stance and mana, with urgent needs when they fit.
   The sidebar keeps the panels that the full boxes hide, so a short strip loses no reading.
 - **Readable default typeface:** bundled JetBrains Mono NL Regular with Unifont fallback,
@@ -428,11 +475,12 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 - **Vehicle box** appears when you board a vehicle or control one remotely. It shows
   azimuth (degrees clockwise from north), current speed, cruise target, engine state, the selected
   engine's fuel percentage and battery charge. Aircraft keep their takeoff-speed readout. Low fuel
-  and battery readings change color; empty fuel still reads `0%`. In the grouped layout it stays
-  in the sidebar. In other layouts it starts at the bottom right and stacks with boxes in the same
-  corner. Options → Interface → Vehicle box moves the map box or turns it off. The Vehicle
-  sidebar panel steps aside only when the box fits; disabling it or losing room restores that
-  panel. Native tiles readouts are unchanged.
+  and battery readings change color; empty fuel still reads `0%`. With the floating layout on it
+  is the bottom-right window (the `HUD_VEHICLE_BOX` option seeds the corner and visibility); when
+  the layout is off or a fixed layout is selected it is the old map box or sidebar panel. The
+  Vehicle sidebar panel steps aside only when the window/box fits; disabling it or losing room
+  restores that panel. The window's reading is a replaceable provider so a future driving
+  dashboard can take it over. Native tiles readouts are unchanged.
   Speed, azimuth and fuel values stay readable at the minimum supported 80 × 25 terminal size.
 - **Body panel** (inspired by Project Zomboid's health screen): the sidebar lists every hurt limb
   and what is wrong with it (bleeding, infected, bitten, broken, bandaged, disinfected).
@@ -447,11 +495,24 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 
 ## Sound & volume
 
-Open **Enter → Misc → Sound & volume** to toggle **Sound** and **Music** separately, or adjust
-**Music volume**, **Sound effect volume** and **Ambient volume** from 0 to 100%. Music starts on;
-it needs a soundpack with music. Up/Down selects a row, Left/Right changes it, and Enter toggles a
-switch or raises a volume. Changes apply immediately; **Escape** closes the menu and saves them.
-The terminal build instead shows “Sound is unavailable in this build.”; Escape closes that notice.
+Open **Enter → Misc → Sound & volume** to toggle **Sound**, **Music**, **Music follows the game
+state** and **Monster ambience**, or adjust music, sound effect, ambient and monster ambience volumes.
+Music starts on; it needs a soundpack with music. **Monster ambience** starts off: it plays the idle
+sound a monster's data names, on its own 8–20 second pace per creature. No shipped monster declares
+one and no shipped soundpack has the audio, so a mod must add both. On sound builds, a missing clip
+or zero volume leaves no cue or marker. Idle sounds never wake a sleeper or interrupt an activity;
+a crowd is held to four new cue clips per quarter second. Up/Down selects a row, Left/Right changes
+it, and Enter toggles a switch or raises a volume. Changes apply immediately; **Escape** closes the
+menu and saves them. The terminal build instead shows “Sound is unavailable in this build.”
+
+**Music follows the game state** (on by default) selects a soundpack's `danger`, `vehicle`,
+`underground`, `night`, `shelter` or `explore` playlist, in that priority. A missing, empty or
+unplayable context playlist falls back to `title`, which remains required for the main menu and
+single-playlist mode. Danger starts at once; sleep releases it at once. Other changes wait for the
+new context to remain the best choice for 4 seconds and the current context to have been active for
+20 seconds. Danger clears after 5 seconds without a hostile and at least 20 seconds of play. Changes
+crossfade over 2 seconds; while the `danger` playlist plays, older danger ambience themes stay quiet.
+Turn the row off to play the `title` playlist everywhere.
 
 ## Items and storage
 
@@ -477,6 +538,16 @@ that is optional:
   you can craft from, not an empty favorites list. **Construction (Enter action menu)** does the
   same: an empty Favorite tab opens on `All` instead.
 - **One pick-up list**: `g` shows everything within reach in one list.
+- **Unpacking is a take list.** Activating a first aid kit, go-bag, survival kit or alien pod opens
+  one list with every content marked. Enter takes them; a click or Right unmarks one row; digits
+  typed before a click take that many charges; `W` wears the highlighted item; Escape leaves
+  everything on the floor. The row shows how many charges of a stack it will take. Taking costs
+  the same 100 moves as picking the item up by hand, and a selected item that will not fit stays
+  behind with a message saying you cannot carry it. Wearing into a filled slot offers
+  **Replace it**, **Layer it** when layering is legal, or **Cancel**; layering shows the added
+  weight and encumbrance.
+  Options → Interface → Unpack into a take list turns the list off and drops every content at once,
+  as upstream does.
 - **Combine** (item menu, `C` in the modern scheme): partly used tools that hold their own charges
   and that nothing refills, such as matchbooks, pour into one, as in Project Zomboid. Every charge
   is kept and the emptied copies go away. Duct tape, thread and other counted items already stack.
@@ -784,7 +855,8 @@ stays the gate; a model run adds evidence, it never replaces a check.
 ## Building
 
 Same as upstream; see `docs/en/dev/guides/building`. The presets need `clang`, `mold` and `ccache`
-(`pacman -S --needed clang mold ccache`). The terminal version:
+(`pacman -S --needed clang mold ccache`, or `mise install` for the CMake, Ninja, mold and ccache
+versions pinned in `mise.toml`). The terminal version:
 
 ```sh
 cmake --preset linux-curses
@@ -792,18 +864,43 @@ cmake --build --preset linux-curses --target cataclysm-bn
 out/build/linux-curses/src/cataclysm-bn --basepath .
 ```
 
+For an edit-compile-run loop, `bin/dev-iterate.sh` (`just dev`, which also needs `just` installed)
+builds only the game with the `linux-curses-dev` or `linux-tiles-dev` (`--tiles`) preset, which is
+`-O0 -g1` with `NDEBUG` and no tests, and loads world `dev` and its first character from an isolated
+`out/dev-userdir/`. Both presets build with `USE_XDG_DIR` and `USE_HOME_DIR` off, so saves, config
+and logs stay there instead of your normal profile. Create the world and a character from the main
+menu once; without a character the game would quit immediately, so the launcher then opens the main
+menu instead. `--no-run` builds and exits and refuses game arguments, so it is safe for automation.
+It is an iteration build: asserts are off, the game is slower, and `-g1` is not enough for gdb, so
+run the test gate and performance checks with `linux-curses` or `linux-full`. See `--help` and the
+"Quick iteration" part of `AGENTS.md`.
+
 ## Upstream merges
 
 The fork follows upstream `main` with plain merges. When upstream adds black powder ammo
 (`bp_*`) or items the fork folded into variants, fold them the same way: the new items become
 migrations so old saves keep working, and loot entries keep the black powder `stack_modifier`.
 
-The **Upstream feature candidates** workflow runs daily or on manual dispatch and appends new
-upstream commits to [the review tracker](https://github.com/Kenja-mc/Cataclysm-BN/issues/3).
-Likely additions are grouped separately, but every new commit is retained for review. Checklists
-are not approvals: reject balance changes and choose useful UI, control or item-folding changes
-manually. CI preserves checklist edits, advances its checkpoint only after posting every report,
-and never ports code automatically. Close the tracker to stop reporting.
+The **Upstream feature issues** workflow runs daily or on manual dispatch. It reads upstream
+`main` only and files one issue per clear feature: a non-merge conventional `feat:` or
+`feature:` commit outside the `balance` scope. Issues are labelled `upstream-candidate` and
+grouped by the upstream PR reference — including PRs merged with a merge commit — so several
+commits of one feature share a ticket. Every other new commit, including `feat(balance)`, stays in
+[the review tracker](https://github.com/Kenja-mc/Cataclysm-BN/issues/3) as a checklist row.
+Commits at or below the fork's upstream merge base are already merged and are skipped.
+
+Feature issues and checklists are not approvals: reject balance changes and choose useful UI,
+control or item-folding changes manually. Closing a feature issue records rejection; later commits
+for it are listed in the tracker, and the watcher never reopens or refiles it. Every write carries
+a stable marker, so a failed run is safe to rerun; the tracker checkpoint advances a batch at a
+time, only after that batch's issues and rows exist. CI never writes to the upstream and never
+ports code automatically. Close the tracker to stop reporting; the workflow then exits without
+writing and the daily job stays green. The tracker's CI-owned description is refreshed in place
+when the workflow changes, leaving human notes alone. `--dry-run` prints the pending issues and
+rows without writing, and `--self-check` runs offline before any API call: it covers
+classification, PR grouping (including merge commits), deduplication, untrusted text, the merge
+gate, the closed-feature fallback, the stop switch, tracker description migration, truncated
+comparisons and partial-failure reruns.
 
 ## Future work
 
@@ -835,6 +932,24 @@ Without the ICD the `20-visibility` shard fails to create a GPU device. For one 
 run `out/build/linux-curses/tests/cata_test` directly with `CATA_TEST_COMPUTE_ACCELERATION=cpu` and
 a Catch2 filter. Running every test in one process is not supported upstream either: some tests
 leave the map shifted for the next one.
+
+Dynamic music transitions are smoked with real SDL audio instead of a committed C++ test, because
+the fork does not add C++ unit tests for fork features. The smoke uses a throwaway soundpack
+outside the repo:
+
+1. Create `soundpack.txt` and a `musicset.json` there with `title`, `explore` and `danger`
+   playlists. Point `title` and `explore` at two short synthetic tones of different pitch (for
+   example, three-second sine waves made with `ffmpeg`/`sox`) and point `danger` at a missing
+   file. Nothing from this pack is committed.
+2. Select it in a sound-enabled build with music enabled, then switch from `title` to an
+   `explore` context. Two tones must overlap for about two seconds rather than cutting.
+3. Spawn and remove a hostile: `danger` starts at once, holds through the release window, and
+   returns to the previous context after the minimum play time.
+4. Trigger the broken `danger` context and confirm the `title` tune plays instead.
+5. Delete the scratch pack.
+
+The deterministic e2e checks still cover the context ids and fallback through
+`tests/e2e/dynamic_music.py`; this smoke is only for the audible mixer behaviour.
 
 The hidden `[benchmark][smart_safemode]` cases measure 12 blocked route searches and the
 over-budget conservative stop separately. Monster-list timings are steady-state scans; they do
@@ -895,6 +1010,10 @@ The checks also isolate reload inventories and use an unseen NPC call for sound-
 so earlier weapons, automatic over-capacity drops and wind-masked footsteps do not change the fixture.
 The targeting fixture starts with a real bound, loaded gun; the separate reload check drives
 the reload UI. Lua setup refuses to type into the game if its console did not open.
+The dynamic-music checks park every monster, record the baseline
+`gapi.music_context()`, and then observe `danger` as soon as a hostile is in the bubble and the
+baseline playlist again after the hysteresis delay; a second game with the option off stays on
+`title` even with a hostile present.
 
 ## Performance checks
 

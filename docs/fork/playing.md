@@ -81,10 +81,29 @@ under **Options → General → Choose soundpack**, and restart. Updates keep it
 
 While playing the sound-enabled graphical version, open **Enter → Misc → Sound & volume**.
 **Sound** controls all audio; **Music** switches music independently and starts on by default.
-The three volume rows control music, sound effects and ambience from 0 to 100%. Select a row
-with Up/Down and change it with Left/Right; Enter toggles a switch or raises a volume.
-Changes take effect at once. Press **Escape** to close the menu and save them.
+The volume rows control music, sound effects, ambience and monster idle sounds from 0 to 100%.
+**Monster ambience** starts off: no shipped monster declares an `idle_sound` and no shipped
+soundpack has the audio, so a mod must add both before it can be heard. A monster without the
+field stays silent even when the switch is on, and the pack must contain the clip or the monster
+makes no cue and no marker; setting the volume to 0 turns the cue off completely. Idle sounds never
+wake a sleeper or stop an activity. Select a row with Up/Down and change it with Left/Right; Enter
+toggles a switch or raises a volume. Changes take effect at once. Press **Escape** to close the
+menu and save them.
+
+The mixer plays at most 24 one-shot world sounds at once. Music and looping ambience beds have
+separate channels. When the limit is full, a new cue replaces the lowest-priority sound, then the
+quietest, then the oldest. Creature idle sounds give way first; on sound builds their map markers
+appear only when the cue plays.
 The terminal version has no audio and shows “Sound is unavailable in this build.” instead.
+
+**Music follows the game state** is the row below **Music**, on by default. It plays the
+soundpack's own `danger`, `vehicle`, `underground`, `night`, `shelter` and `explore` playlists
+when the world matches, crossfading between them. Danger starts at once; other changes wait for
+the state to settle, danger clears slowly, and sleeping releases or blocks the danger track.
+When the `danger` playlist plays, the older danger ambience themes stay quiet. A soundpack
+without a context playlist keeps playing `title`, so nothing changes unless it ships one; a pack
+still needs `title` for the menu and for that fallback. Turn the row off to keep `title` playing
+everywhere.
 
 ## Linux: download a release
 
@@ -207,23 +226,32 @@ Long-form write-ups should follow
   normal gun aiming. Enter groups all actions (Info for character/status screens). Ctrl+X opens
   wait/rest; Shift+X cycles walk/run/crouch/prone, with F2/F3/F4 unbound.
 - **Inventory:** `i`, then select an item for Wield/Wear/Eat/Use/Read and other context actions.
-  `v` opens Wield directly. F5 crafts even when inventory is empty; Tab opens advanced inventory,
-  and Shift+Tab switches category selection. The advanced-inventory footer hint is clickable.
-  `g` takes everything underfoot without a menu; Ctrl+G opens area pickup, where `g`, Enter or
-  Space confirms and Escape cancels. Quick stack and sort pile remain in Enter.
+  `v` uses an item from the map by its kind. F5 crafts even when inventory is empty; Tab or `I`
+  opens advanced inventory, and Shift+Tab switches category selection. The advanced-inventory
+  footer hint is clickable. `g` picks up a lone item underfoot, or opens the picker for a pile;
+  `G` always opens the picker, and Ctrl+G drops. In the picker, `g`, Enter or Space confirms and
+  Escape cancels. Quick stack and sort pile remain in Enter.
 - **Select and interact:** right click selects a tile without spending time; the eight Select tile
   keys ship unbound and stay rebindable in the options menu.
   Space acts on that selection. Without a selection, it lists nearby actions with directions
   and highlights the tile of the current row. Jump and Smash need explicit choices (`S` for Smash).
   Space offers Butcher for a corpse underfoot and opens loaded vehicle trunks directly.
-  Shift+Space toggles a selected vehicle curtain or lists nearby curtains. `p` smashes or pulps
-  in a chosen direction; `B` opens Butcher.
+  Shift+Space toggles a selected vehicle curtain or lists nearby curtains. `p` opens bionics.
+  Smash a bashable tile by aiming at it and pressing `f`, or pick Smash from the Space list; `B`
+  opens Butcher.
   Ctrl+WASD/QEZC physically peeks for the normal 200 moves, then returns without clearing selection.
   In Modern curses, Ctrl+C/Z are game chords. Classic keeps normal terminal signals.
 - **Mouse:** right click locks a hostile or opens an object's actions without running one;
   closing that list keeps the selection. Hover does not replace a locked target.
   Left click uses an adjacent door, item or furniture, attacks a hostile, or selects other tiles.
   Default Modern clicks do not walk. Classic keeps upstream mouse behavior.
+  A mouse's back button does what Escape does where Escape cancels: it leaves a screen, closes a
+  list, answers No to a Yes/No prompt, declines to cancel an activity, or cancels a text prompt.
+  It does nothing on the map and nothing on the title screen, so a stray press cannot open the
+  quit prompt. The button is listed in the Controls screen under Cancel, so a mouse without side
+  buttons loses nothing. Classic keeps upstream's keys and clicks. Terminal builds only receive
+  the button when the ncurses they were built against supports the extended mouse protocol; the
+  tiles build always does.
 - **Menus:** Space acts like Enter on the highlighted choice, including No in a confirmation,
   unless the menu already uses Space for another action. Spaces stay literal in text fields.
   In list menus, click once to select a row and double click to act exactly like Enter, including
@@ -237,14 +265,16 @@ Long-form write-ups should follow
   Try Text only, Unicode and Icon font. Make sure that urgent needs, limb health and controls
   survive resizing to 80×25. A watch reveals exact time and a thermometer reveals temperature.
   `h` opens body details (also Enter → Info → Body status). `@` opens the character sheet and `P` the log.
-  `F` opens fire-mode selection.
+  `F` opens fire-mode selection. While an activity runs, the log's top row names it, its progress
+  and the time left; Options → Interface → Activity line in the log turns that off.
   Check vehicle/readout fallbacks at 80×25, driving hints (`ws`/`ad`), and their return to
   `wasd` on release. The new bundled typeface should show readable labels and complete glyphs.
 - **Targeting:** gun aiming starts on the reachable hostile and warns about allies in the line of
   fire; check loudness. Map target cycling is selection, not an attack.
 - **Crafting:** `i`, then F5; opens on recent recipes, "Missing: …", part producer hints (`p`).
 - **Look:** ASCII art, colors, map glyphs, box behavior.
-- **Sound:** fade-in markers and music/ambience with the Otopack soundpack selected.
+- **Sound:** fade-in markers and music/ambience with the Otopack soundpack selected, plus the
+  Monster ambience switch and its volume row.
 
 Report bugs and suggestions via `bin/feedback`, and use the [feedback template](feedback-template.md)
 when filing anything on GitHub.

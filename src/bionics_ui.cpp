@@ -869,7 +869,7 @@ void show_bionics_ui( Character &who )
                         }
                     }
                 }
-            } else {
+            } else if( action != "QUIT" ) {
                 action.clear();
             }
         } else {

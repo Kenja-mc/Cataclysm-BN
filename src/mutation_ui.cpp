@@ -480,7 +480,7 @@ detail::mutations_ui_result detail::show_mutations_ui_internal( Character &who )
                         }
                     }
                 }
-            } else {
+            } else if( action != "QUIT" ) {
                 action.clear();
             }
         } else {

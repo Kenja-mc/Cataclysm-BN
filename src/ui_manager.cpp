@@ -12,6 +12,7 @@
 #include "game_ui.h"
 #include "input.h"
 #include "keyhints_panel.h"
+#include "music.h"
 #include "point.h"
 #include "sdltiles.h"
 #include "profile.h"
@@ -330,6 +331,10 @@ void ui_adaptor::redraw_invalidated()
     if( test_mode || ui_stack.empty() ) {
         return;
     }
+
+    // Advance a finished music track even when no turn is being processed
+    // (menus, inventory, or simply standing still).
+    music::pump();
 
     static auto last_context = size_t{ 0 };
     const auto context = input_context::active_context_version();

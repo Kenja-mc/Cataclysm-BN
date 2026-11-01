@@ -138,6 +138,8 @@ pictograms; do not assume a newly chosen icon is available.
 
 The Overhaul notice records Ogg Vorbis conversion/downmixing and an exact sound-event-to-file
 mapping. Basic and Overhaul have empty music sets; neither supplies background music.
+Dynamic music adds no audio of its own: it only selects playlists the chosen soundpack already
+ships, so every track it can play is covered by that soundpack's credits and redistribution terms.
 
 ## Optional downloaded Otopack: music, ambience and effects
 

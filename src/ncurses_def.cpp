@@ -495,13 +495,17 @@ void catacurses::init_interface()
     }
 #if !defined(__CYGWIN__)
     // ncurses mouse registration
-    auto mouse_events = BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED |
-                        BUTTON3_CLICKED | BUTTON3_DOUBLE_CLICKED | REPORT_MOUSE_POSITION;
+    auto mouse_events = BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED | BUTTON3_CLICKED |
+                        REPORT_MOUSE_POSITION;
 #if defined(BUTTON4_PRESSED)
     mouse_events |= BUTTON4_PRESSED;
 #endif
 #if defined(BUTTON5_PRESSED)
     mouse_events |= BUTTON5_PRESSED;
+#endif
+    // ncurses defines button 8 only with the extended mouse protocol; terminals report back as 8.
+#if defined(BUTTON8_PRESSED)
+    mouse_events |= BUTTON8_PRESSED;
 #endif
     mousemask( mouse_events, nullptr );
     // Ask the terminal for motion events too, so hovering the map works (any-event tracking).
@@ -533,6 +537,9 @@ namespace
 /// The game never asks for the protocol, so it only arrives from terminals configured to always
 /// send it (and from tests); bytes that do not match are pushed back and handled as before.
 constexpr char shift_space_tail[] = { '[', '3', '2', ';', '2', 'u' };
+
+/// ncurses folds two quick clicks into one double-click event; its second click is replayed here.
+auto pending_click = std::optional<point>();
 
 } // namespace
 
@@ -568,6 +575,14 @@ input_event input_manager::get_input_event()
     input_event rval;
     do {
         previously_pressed_key = 0;
+        if( pending_click ) {
+            rval = input_event();
+            rval.type = input_event_t::mouse;
+            rval.mouse_pos = *pending_click;
+            rval.add_input( MOUSE_BUTTON_LEFT );
+            pending_click.reset();
+            return rval;
+        }
         // flush any output
         catacurses::doupdate();
         key = getch();
@@ -630,7 +645,10 @@ input_event input_manager::get_input_event()
                 rval.mouse_pos = point( event.x, event.y );
                 if( event.bstate & ( BUTTON1_CLICKED | BUTTON1_DOUBLE_CLICKED ) ) {
                     rval.add_input( MOUSE_BUTTON_LEFT );
-                } else if( event.bstate & ( BUTTON3_CLICKED | BUTTON3_DOUBLE_CLICKED ) ) {
+                    if( event.bstate & BUTTON1_DOUBLE_CLICKED ) {
+                        pending_click = rval.mouse_pos;
+                    }
+                } else if( event.bstate & BUTTON3_CLICKED ) {
                     rval.add_input( MOUSE_BUTTON_RIGHT );
 #if defined(BUTTON4_PRESSED)
                 } else if( ( event.bstate & BUTTON4_PRESSED ) &&
@@ -641,6 +659,10 @@ input_event input_manager::get_input_event()
                 } else if( ( event.bstate & BUTTON5_PRESSED ) &&
                            get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
                     rval.add_input( SCROLLWHEEL_DOWN );
+#endif
+#if defined(BUTTON8_PRESSED)
+                } else if( event.bstate & BUTTON8_PRESSED ) {
+                    rval.add_input( MOUSE_BUTTON_BACK );
 #endif
                 } else if( event.bstate & REPORT_MOUSE_POSITION ) {
                     rval.add_input( MOUSE_MOVE );

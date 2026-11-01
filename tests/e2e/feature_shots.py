@@ -31,8 +31,9 @@ SHOTS = [
     dict(id="hud-modern", title="Modern HUD",
          keys=[], options={"CONTROL_SCHEME": "modern", "HUD_WEATHER_BOX": "top_left",
                            "HUD_COMBAT_BOX": "top_left"},
-         body="Weather and time sit above the weapon, style, stance and needs boxes. The sidebar keeps "
-              "the limb bars, sound, mood, stats, message log, compass and pixel minimap."),
+         body="Weather, combat, needs, limbs, stats, movement, weight, compass, log and vehicle are "
+              "titled windows over the map, each with a live-state title row and a `[-]` control. "
+              "The sidebar keeps the location, controls and pixel minimap."),
     dict(id="hud-classic", title="Classic HUD",
          keys=[], options={"CONTROL_SCHEME": "classic", "HUD_WEATHER_BOX": "top_left",
                            "HUD_COMBAT_BOX": "top_left"},

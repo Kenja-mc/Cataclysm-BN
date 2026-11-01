@@ -22,7 +22,8 @@ def map_only(g, columns=EDGE_MAP_COLUMNS):
 
 def zombie_down_a_corridor(name, options):
     """An 80x24 game with a zombie 30 tiles east down a lit corridor: visible, but off the map window."""
-    edge = Game(name=name, cols=80, rows=24, options={"SAFEMODE": "false", **options})
+    edge = Game(name=name, cols=80, rows=24,
+                options={"SAFEMODE": "false", "HUD_WINDOWS": "false", **options})
     start_new_game(edge)
     edge.resize(80, 24)
     edge.define_lua(HELPERS + " function corridor() for dx=5,40 do for dy=-1,1 do local p=here(dx,dy) "
@@ -122,17 +123,17 @@ def test_vehicle_screen_diagonals(g):
         choose_menu_entry(g, "examine the")
     g.wait_for("Examine vehicle")
     choose_menu_entry(g, "Examine vehicle")
-    g.wait_for("ESC-back")
+    g.wait_for("Esc-back")
     try:
         start = g.screen()
         g.keys("s", delay=0.2)
         g.settle_screen()
         moved = g.screen()
-        assert "ESC-back" in moved and moved != start, "s should move the cursor, not siphon"
+        assert "Esc-back" in moved and moved != start, "s should move the cursor, not siphon"
         g.keys("e", delay=0.2)
         g.settle_screen()
         diag = g.screen()
-        assert "ESC-back" in diag and "new name" not in diag.lower() and diag != moved, "e should move diagonally, not rename"
+        assert "Esc-back" in diag and "new name" not in diag.lower() and diag != moved, "e should move diagonally, not rename"
     finally:
         g.keys("Escape", delay=1)
 

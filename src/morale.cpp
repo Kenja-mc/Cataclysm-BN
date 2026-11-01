@@ -864,7 +864,7 @@ void player_morale::display( int focus_eq, int pain_penalty, int fatigue_cap )
                     }
                 }
                 action.clear();
-            } else {
+            } else if( action != "QUIT" ) {
                 action.clear();
             }
         }

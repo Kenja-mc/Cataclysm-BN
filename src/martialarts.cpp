@@ -1749,7 +1749,7 @@ bool ma_style_callback::key( const input_context &ctxt, const input_event &event
                         }
                     }
                     action.clear();
-                } else {
+                } else if( action != "QUIT" ) {
                     action.clear();
                 }
             }

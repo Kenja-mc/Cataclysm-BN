@@ -9,6 +9,9 @@ def test_welcome_card(g):
     assert getattr(g, "saw_welcome", False), "first new game should show the welcome card"
     card = g.welcome_screen
     assert "Unsupported" not in card and "%" not in card, "the card text must be formatted:\n" + card
+    # Modern unbinds many classic keys; the card must name a real key or route for every command.
+    assert "(unbound)" not in card and "Unbound" not in card, "the card names an unbound key:\n" + card
+    assert "RETURN" not in card and "BACKTAB" not in card, "keys must use readable names:\n" + card
 
 
 def test_death_mode_choice(g):
@@ -77,7 +80,8 @@ def test_help_opens_with_a_quickstart(_g):
         game.wait_for("FIRST TEN MINUTES")
         screen = game.screen()
         assert "press_" not in screen, "key tags must expand to the bound keys:\n" + screen
-        assert "F1 brings this page back" in screen, "the help key must name itself:\n" + screen
+        assert "F1 opens these help topics" in screen, "the help key must name itself:\n" + screen
+        assert "x waits a turn" in screen, "waiting one turn is the pause key, not the wait menu:\n" + screen
         assert "? shows every key" in screen, "the keybindings key must name itself:\n" + screen
         game.keys("Escape", delay=0.6)
         game.wait_gone("FIRST TEN MINUTES")

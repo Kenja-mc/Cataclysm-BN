@@ -81,11 +81,11 @@ auto activity_uses_calendar_duration_progress( const activity_id &id ) -> bool
            id == ACT_WAIT_STAMINA || id == ACT_WAIT_WEATHER;
 }
 
-static auto progress_per_calendar_turn_for( const player_activity &activity ) -> int
+auto player_activity::progress_per_calendar_turn() const -> int
 {
-    return activity_uses_calendar_duration_progress( activity.id() ) ?
+    return activity_uses_calendar_duration_progress( id() ) ?
            action_time_scale::base_moves_per_turn :
-           activity.speed.calendar_moves_per_turn();
+           speed.calendar_moves_per_turn();
 }
 
 static auto progress_per_tick_for( const player_activity &activity ) -> int
@@ -336,7 +336,7 @@ std::optional<std::string> player_activity::get_progress_message( const avatar &
         */
         std::string target = "";
         std::string progress_desc = "Progress: ";
-        const auto progress_per_calendar_turn = progress_per_calendar_turn_for( *this );
+        const auto own_progress_per_turn = progress_per_calendar_turn();
 
         /*
          * TODO progress for targets
@@ -361,7 +361,7 @@ std::optional<std::string> player_activity::get_progress_message( const avatar &
                     progress_desc += string_format( _( "  - Estimated time: %s\n" ),
                                                     to_string( time_duration::from_turns(
                                                             action_time_scale::turns_for_progress( actor->progress.get_moves_left(),
-                                                                    progress_per_calendar_turn ) ) ) );
+                                                                    own_progress_per_turn ) ) ) );
                     progress_desc += " - Current: ";
                 }
                 progress_desc += string_format( "%.1f%%\n",
@@ -373,7 +373,7 @@ std::optional<std::string> player_activity::get_progress_message( const avatar &
                 progress_desc += string_format( _( "Time left: %s\n" ),
                                                 to_string( time_duration::from_turns(
                                                         action_time_scale::turns_for_progress( actor->progress.front().moves_left,
-                                                                progress_per_calendar_turn ) ) ) );
+                                                                own_progress_per_turn ) ) ) );
             }
         } else {
             if( !targets.empty() && targets.front().is_accessible() && !targets.front().is_destroyed() ) {
@@ -387,7 +387,7 @@ std::optional<std::string> player_activity::get_progress_message( const avatar &
                 progress_desc += string_format( _( "Time left: %s\n" ),
                                                 to_string( time_duration::from_turns(
                                                         action_time_scale::turns_for_progress( moves_left,
-                                                                progress_per_calendar_turn ) ) ) );
+                                                                own_progress_per_turn ) ) ) );
             }
             if( moves_total <= 0 && moves_left <= 0 ) {
                 progress_desc = "";

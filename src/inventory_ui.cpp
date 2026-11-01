@@ -88,12 +88,6 @@ struct navigation_mode_data {
     nc_color color;
 };
 
-struct inventory_input {
-    std::string action;
-    int ch;
-    inventory_entry *entry;
-};
-
 bool inventory_entry::operator==( const inventory_entry &other ) const
 {
     return get_category_ptr() == other.get_category_ptr() && locations == other.locations;
@@ -2115,6 +2109,11 @@ auto inventory_selector::hint_hotspot_at( point cell ) const -> bool
 auto inventory_selector::mouse_input( inventory_input res ) -> inventory_input
 {
     res.entry = nullptr;
+    // Cancel is a real mouse binding now (the back side button); only clicks and the wheel
+    // are translated into inventory navigation here.
+    if( res.action == "QUIT" ) {
+        return res;
+    }
     if( res.action == "SCROLL_UP" || res.action == "SCROLL_DOWN" ) {
         mouse_click.reset();
         res.action = res.action == "SCROLL_UP" ? "UP" : "DOWN";

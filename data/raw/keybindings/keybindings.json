@@ -2302,6 +2302,13 @@
   },
   {
     "type": "keybinding",
+    "name": "World",
+    "category": "DEFAULTMODE",
+    "id": "world_hub",
+    "bindings": []
+  },
+  {
+    "type": "keybinding",
     "name": "View Factions",
     "category": "DEFAULTMODE",
     "id": "factions",

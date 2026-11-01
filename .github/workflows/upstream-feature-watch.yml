@@ -1,10 +1,18 @@
-name: Upstream feature candidates
+name: Upstream feature issues
 
 on:
   schedule:
     - cron: "17 6 * * *"
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Print the pending feature issues and tracker rows without writing"
+        type: boolean
+        default: false
 
+# The job token can read public upstream data and write only in this repository. Upstream writes
+# are refused by the script itself and by the job-level repository guard below; no PR permission
+# is granted, so nothing can comment on or edit the upstream.
 permissions:
   contents: read
   issues: write
@@ -17,15 +25,21 @@ jobs:
   report:
     if: github.repository == 'Kenja-mc/Cataclysm-BN'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: build-scripts
-      - name: Check comparison and report boundaries
+          persist-credentials: false
+      - name: Check classification, comparison and text safety offline
         run: python3 build-scripts/upstream_features.py --self-check
-      - name: Record upstream candidates for human review
+      - name: File feature issues and update the tracker
         env:
           GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: python3 build-scripts/upstream_features.py --repo "$GH_REPO"
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          args=(--repo "$GITHUB_REPOSITORY")
+          if [ "$DRY_RUN" = "true" ]; then
+            args+=(--dry-run)
+          fi
+          python3 build-scripts/upstream_features.py "${args[@]}"

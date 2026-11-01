@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iterator>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -23,6 +24,7 @@
 #include "translations.h"
 #include "ui.h"
 #include "ui_manager.h"
+#include "world_hub.h"
 
 static std::string get_achievements_text( const achievements_tracker &achievements )
 {
@@ -151,22 +153,197 @@ auto handle_text_view_mouse( scrolling_text_view &view, const input_context &ctx
     view.scroll_to( hit->viewport_pos );
     return true;
 }
+
+/// The achievements/scores/kills text screen, shared by the standalone screen and the World
+/// page's Scores tab. It owns the inner tab strip and the scrolling pane.
+class scores_view
+{
+    public:
+        scores_view( const achievements_tracker &achievements, stats_tracker &stats,
+                     const kill_tracker &kills )
+            : achievements_( achievements ), stats_( stats ), kills_( kills ) {}
+
+        void draw( const catacurses::window &w );
+        /// Returns true when the screen should close.
+        auto handle( std::string action, input_context &ctxt, const catacurses::window &w,
+                     bool modern ) -> bool;
+
+    private:
+        enum class tab_mode {
+            achievements,
+            scores,
+            kills,
+            num_tabs,
+            first_tab = achievements,
+        };
+
+        void prepare_view( const catacurses::window &w );
+        auto tab_texts() const -> std::vector<std::string>;
+
+        const achievements_tracker &achievements_;
+        stats_tracker &stats_;
+        const kill_tracker &kills_;
+        tab_mode tab = tab_mode::first_tab;
+        bool new_tab = true;
+        catacurses::window w_view;
+        scrolling_text_view view{ w_view };
+        std::vector<std::pair<tab_mode, std::string>> tabs = {
+            { tab_mode::achievements, _( "ACHIEVEMENTS" ) },
+            { tab_mode::scores, _( "SCORES" ) },
+            { tab_mode::kills, _( "KILLS" ) },
+        };
+};
+
+auto scores_view::tab_texts() const -> std::vector<std::string>
+{
+    std::vector<std::string> texts;
+    texts.reserve( tabs.size() );
+    for( const auto &tab_pair : tabs ) {
+        texts.push_back( tab_pair.second );
+    }
+    return texts;
+}
+
+void scores_view::prepare_view( const catacurses::window &w )
+{
+    const int height = getmaxy( w ) - 4;
+    const int width = getmaxx( w ) - 1;
+    const point origin( getbegx( w ), getbegy( w ) + 3 );
+    if( !w_view || getmaxy( w_view ) != height || getmaxx( w_view ) != width ||
+        getbegx( w_view ) != origin.x || getbegy( w_view ) != origin.y ) {
+        w_view = catacurses::newwin( height, width, origin );
+        // The pane below the tabs moved, so the wrapped text has to be built again.
+        new_tab = true;
+    }
+}
+
+void scores_view::draw( const catacurses::window &w )
+{
+    prepare_view( w );
+    if( new_tab ) {
+        switch( tab ) {
+            case tab_mode::achievements:
+                view.set_text( get_achievements_text( achievements_ ) );
+                break;
+            case tab_mode::scores:
+                view.set_text( get_scores_text( stats_ ) );
+                break;
+            case tab_mode::kills:
+                view.set_text( kills_.get_kills_text() );
+                break;
+            case tab_mode::num_tabs:
+                assert( false );
+                break;
+        }
+        new_tab = false;
+    }
+
+    werase( w );
+    draw_tabs( w, tabs, tab );
+    draw_border_below_tabs( w );
+    wnoutrefresh( w );
+
+    view.draw( c_white );
+}
+
+auto scores_view::handle( std::string action, input_context &ctxt, const catacurses::window &w,
+                          bool modern ) -> bool
+{
+    const auto event = ctxt.get_raw_input();
+    if( modern && event.type == input_event_t::mouse && action == "SELECT" ) {
+        if( const auto mouse = ctxt.get_coordinates( w ) ) {
+            const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
+            if( cell.y >= 0 && cell.y <= 1 ) {
+                // The tab labels are the only clickable part of the tab strip.
+                const auto texts = tab_texts();
+                const auto xs = tab_positions( w, texts, static_cast<size_t>( tab ) );
+                for( size_t i = 0; i < tabs.size(); ++i ) {
+                    if( xs[i] >= 0 && cell.x >= xs[i] &&
+                        cell.x < xs[i] + utf8_width( texts[i] ) + 3 ) {
+                        tab = tabs[i].first;
+                        new_tab = true;
+                        break;
+                    }
+                }
+                return false;
+            }
+            handle_text_view_mouse( view, ctxt, w_view );
+        }
+        return false;
+    }
+    // The World page owns Left/Right for its outer tabs; inside it the panel uses Tab keys.
+    if( action == "NEXT_TAB" ) {
+        action = "RIGHT";
+    } else if( action == "PREV_TAB" ) {
+        action = "LEFT";
+    }
+    if( action == "RIGHT" ) {
+        tab = static_cast<tab_mode>( static_cast<int>( tab ) + 1 );
+        if( tab >= tab_mode::num_tabs ) {
+            tab = tab_mode::first_tab;
+        }
+        new_tab = true;
+    } else if( action == "LEFT" ) {
+        tab = static_cast<tab_mode>( static_cast<int>( tab ) - 1 );
+        if( tab < tab_mode::first_tab ) {
+            tab = static_cast<tab_mode>( static_cast<int>( tab_mode::num_tabs ) - 1 );
+        }
+        new_tab = true;
+    } else if( action == "DOWN" ) {
+        view.scroll_down();
+    } else if( action == "UP" ) {
+        view.scroll_up();
+    } else if( action == "SCROLL_DOWN" ) {
+        view.scroll_to( view.offset() + wheel_text_lines );
+    } else if( action == "SCROLL_UP" ) {
+        view.scroll_to( view.offset() - wheel_text_lines );
+    } else if( action == "PAGE_DOWN" ) {
+        view.page_down();
+    } else if( action == "PAGE_UP" ) {
+        view.page_up();
+    } else if( action == "CONFIRM" || action == "QUIT" ) {
+        return true;
+    }
+    return false;
+}
+
+class scores_panel : public world_hub::panel
+{
+    public:
+        scores_panel( const achievements_tracker &achievements, stats_tracker &stats,
+                      const kill_tracker &kills )
+            : view( achievements, stats, kills ) {}
+
+        auto name() const -> std::string override {
+            return _( "Scores" );
+        }
+        void draw( const catacurses::window &body, input_context & ) override {
+            view.draw( body );
+        }
+        void handle( const std::string &action, input_context &ctxt,
+                     const catacurses::window &body, world_hub::host & ) override {
+            view.handle( action, ctxt, body,
+                         get_option<std::string>( "CONTROL_SCHEME" ) == "modern" );
+        }
+
+    private:
+        scores_view view;
+};
+
 } // namespace
+
+auto world_hub::scores_screen( const achievements_tracker &achievements, stats_tracker &stats,
+                               const kill_tracker &kills ) -> panel_ptr
+{
+    return std::make_unique<scores_panel>( achievements, stats, kills );
+}
 
 void show_scores_ui( const achievements_tracker &achievements, stats_tracker &stats,
                      const kill_tracker &kills )
 {
+    scores_view view( achievements, stats, kills );
     catacurses::window w;
 
-    enum class tab_mode {
-        achievements,
-        scores,
-        kills,
-        num_tabs,
-        first_tab = achievements,
-    };
-
-    tab_mode tab = static_cast<tab_mode>( 0 );
     input_context ctxt( "SCORES" );
     ctxt.register_cardinal();
     ctxt.register_action( "PAGE_UP" );
@@ -180,115 +357,24 @@ void show_scores_ui( const achievements_tracker &achievements, stats_tracker &st
         register_modern_mouse( ctxt );
     }
 
-    catacurses::window w_view;
-    scrolling_text_view view( w_view );
-    bool new_tab = true;
-
     ui_adaptor ui;
     const auto &init_windows = [&]( ui_adaptor & ui ) {
         w = new_centered_win( TERMY - 2, FULL_SCREEN_WIDTH );
-        w_view = catacurses::newwin( getmaxy( w ) - 4, getmaxx( w ) - 1,
-                                     point( getbegx( w ), getbegy( w ) + 3 ) );
         ui.position_from_window( w );
     };
     ui.on_screen_resize( init_windows );
-    // initialize explicitly here since w_view is used before first redraw
+    // initialize explicitly here since the view's window is created from this one
     init_windows( ui );
 
-    const std::vector<std::pair<tab_mode, std::string>> tabs = {
-        { tab_mode::achievements, _( "ACHIEVEMENTS" ) },
-        { tab_mode::scores, _( "SCORES" ) },
-        { tab_mode::kills, _( "KILLS" ) },
-    };
-    const auto tab_texts = [&] {
-        auto texts = std::vector<std::string>{};
-        texts.reserve( tabs.size() );
-        for( const auto &tab_pair : tabs ) {
-            texts.push_back( tab_pair.second );
-        }
-        return texts;
-    }();
-
     ui.on_redraw( [&]( const ui_adaptor & ) {
-        werase( w );
-        draw_tabs( w, tabs, tab );
-        draw_border_below_tabs( w );
-        wnoutrefresh( w );
-
-        view.draw( c_white );
+        view.draw( w );
     } );
 
-    while( true ) {
-        if( new_tab ) {
-            switch( tab ) {
-                case tab_mode::achievements:
-                    view.set_text( get_achievements_text( achievements ) );
-                    break;
-                case tab_mode::scores:
-                    view.set_text( get_scores_text( stats ) );
-                    break;
-                case tab_mode::kills:
-                    view.set_text( kills.get_kills_text() );
-                    break;
-                case tab_mode::num_tabs:
-                    assert( false );
-                    break;
-            }
-        }
-
+    bool done = false;
+    while( !done ) {
         ui_manager::redraw();
         const std::string action = ctxt.handle_input();
-        const auto event = ctxt.get_raw_input();
-        if( modern && event.type == input_event_t::mouse && action == "SELECT" ) {
-            if( const auto mouse = ctxt.get_coordinates( w ) ) {
-                const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
-                if( cell.y >= 0 && cell.y <= 1 ) {
-                    // The tab labels are the only clickable part of the tab strip.
-                    const auto xs = tab_positions( w, tab_texts, static_cast<size_t>( tab ) );
-                    for( size_t i = 0; i < tabs.size(); ++i ) {
-                        if( xs[i] >= 0 && cell.x >= xs[i] &&
-                            cell.x < xs[i] + utf8_width( tab_texts[i] ) + 3 ) {
-                            tab = tabs[i].first;
-                            new_tab = true;
-                            break;
-                        }
-                    }
-                    continue;
-                }
-                if( handle_text_view_mouse( view, ctxt, w_view ) ) {
-                    continue;
-                }
-            }
-            continue;
-        }
-        new_tab = false;
-        if( action == "RIGHT" || action == "NEXT_TAB" ) {
-            tab = static_cast<tab_mode>( static_cast<int>( tab ) + 1 );
-            if( tab >= tab_mode::num_tabs ) {
-                tab = tab_mode::first_tab;
-            }
-            new_tab = true;
-        } else if( action == "LEFT" || action == "PREV_TAB" ) {
-            tab = static_cast<tab_mode>( static_cast<int>( tab ) - 1 );
-            if( tab < tab_mode::first_tab ) {
-                tab = static_cast<tab_mode>( static_cast<int>( tab_mode::num_tabs ) - 1 );
-            }
-            new_tab = true;
-        } else if( action == "DOWN" ) {
-            view.scroll_down();
-        } else if( action == "UP" ) {
-            view.scroll_up();
-        } else if( action == "SCROLL_DOWN" ) {
-            view.scroll_to( view.offset() + wheel_text_lines );
-        } else if( action == "SCROLL_UP" ) {
-            view.scroll_to( view.offset() - wheel_text_lines );
-        } else if( action == "PAGE_DOWN" ) {
-            view.page_down();
-        } else if( action == "PAGE_UP" ) {
-            view.page_up();
-        } else if( action == "CONFIRM" || action == "QUIT" ) {
-            break;
-        }
+        done = view.handle( action, ctxt, w, modern );
     }
 }
 

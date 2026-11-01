@@ -1963,6 +1963,14 @@ void options_manager::add_options_general()
 
     get_option( "MUSIC_ENABLED" ).setPrerequisite( "SOUND_ENABLED" );
 
+    add( "DYNAMIC_MUSIC", general, translate_marker( "Music follows the game state" ),
+         translate_marker( "If true, background music changes with danger, vehicles, depth, night and shelter.  "
+                           "If false, the title playlist plays throughout." ),
+         true, COPT_NO_SOUND_HIDE
+       );
+
+    get_option( "DYNAMIC_MUSIC" ).setPrerequisite( "MUSIC_ENABLED" );
+
     add( "MUSIC_VOLUME", general, translate_marker( "Music volume" ),
          translate_marker( "Adjust the volume of the music being played in the background." ),
          0, 128, 100, COPT_NO_SOUND_HIDE
@@ -1983,6 +1991,20 @@ void options_manager::add_options_general()
        );
 
     get_option( "AMBIENT_SOUND_VOLUME" ).setPrerequisite( "SOUND_ENABLED" );
+
+    add( "MONSTER_AMBIENCE", general, translate_marker( "Monster ambience" ),
+         translate_marker( "Play the idle sound a monster's data names.  Off by default: no shipped monster declares an idle sound and no shipped soundpack has the audio, so a mod must add both.  A monster without an idle sound stays silent." ),
+         false, COPT_NO_SOUND_HIDE
+       );
+
+    get_option( "MONSTER_AMBIENCE" ).setPrerequisite( "SOUND_ENABLED" );
+
+    add( "MONSTER_AMBIENCE_VOLUME", general, translate_marker( "Monster ambience volume" ),
+         translate_marker( "Adjust the volume of monster idle sounds relative to the sound effect volume.  0 turns the cue off entirely, markers included." ),
+         0, 128, 100, COPT_NO_SOUND_HIDE
+       );
+
+    get_option( "MONSTER_AMBIENCE_VOLUME" ).setPrerequisite( "MONSTER_AMBIENCE" );
 }
 
 void options_manager::add_options_interface()
@@ -2066,6 +2088,10 @@ void options_manager::add_options_interface()
     add( "SOUND_MARKER_TURNS", interface, translate_marker( "Sound marker turns" ),
          translate_marker( "How many turns a ? marker for a sound you heard but couldn't see stays on the map, fading as it ages.  1 clears it after your next action, as upstream does." ),
          1, 10, 3 );
+    add( "SOUND_MARKER_GLYPH_AGING", interface, translate_marker( "Sound markers shrink" ),
+         translate_marker( "In the terminal view, a sound marker becomes a small dot once it is two turns old.  If false, it keeps its ? or arrow for its whole lifetime; the colour still fades.  The one-time glyph legend appears with first-time tips." ),
+         true
+       );
 
     add( "ENEMY_EDGE_ARROWS", interface, translate_marker( "Enemy edge arrows" ),
          translate_marker( "An arrow at the map edge for every hostile you can see that is off-screen, pointing at it: red when it can reach you soon, yellow when it cannot.  An arrow sits on the edge itself when the hostile is hunting you, one cell in when it is only trailing." ),
@@ -2161,6 +2187,11 @@ void options_manager::add_options_interface()
          true
        );
 
+    add( "UNPACK_TAKE_LIST", interface, translate_marker( "Unpack into a take list" ),
+         translate_marker( "If true, unpacking a kit opens a list of its contents so you can take what you want; the rest drops on the floor and taking costs the same moves as picking it up by hand.  If false, every content drops on the floor at once, as upstream does." ),
+         true
+       );
+
     add( "SHOW_WELCOME", interface, translate_marker( "Show welcome card" ),
          translate_marker( "If true, the next new game starts with a short card explaining the controls." ),
          true
@@ -2195,6 +2226,10 @@ void options_manager::add_options_interface()
     add( "HUD_CORNER_BARS", interface, translate_marker( "Compact corner bars" ),
          translate_marker( "Shows the weather and status readings as one-row bars in the map corners instead of boxes.  The status bar carries the needs summary when the row has room for it.  The sidebar keeps the panels it would otherwise hide." ),
          false );
+
+    add( "HUD_WINDOWS", interface, translate_marker( "Floating HUD windows" ),
+         translate_marker( "Shows the HUD readings as titled windows over the map in the labels, labels-narrow and grouped layouts: weather, combat, needs, limbs, stats, movement, weight, compass, log and vehicle.  Click a title's [-] to collapse a window to its title row, which keeps one line of live state; click the title to restore it.  Click a title, move the pointer and click again to move a window, which stays inside the map and never covers the sidebar.  Positions, collapse and visibility are saved with the character, and the Sidebar Options menu toggles the same windows without a mouse.  The weather, status and vehicle box options still choose each window's first corner.  Turn this off to keep the fixed corner boxes and sidebar panels; the classic and compact layouts always keep their combined panels." ),
+         true );
 
     add( "HUD_ICONS", interface, translate_marker( "Box icons" ),
          translate_marker( "Icons in the weather, status and vehicle boxes.  Icon font draws Material Design Icons and human stance figures; the graphical version bundles it, and a terminal needs a Nerd Font.  Unicode uses common symbols.  Text only uses ASCII labels and works everywhere." ),
@@ -2373,6 +2408,11 @@ void options_manager::add_options_interface()
     add( "MESSAGE_LIMIT", interface, translate_marker( "Limit message history" ),
          translate_marker( "Number of messages to preserve in the history, and when saving." ),
          1, 10000, 255
+       );
+
+    add( "ACTIVITY_LINE", interface, translate_marker( "Activity line in the log" ),
+         translate_marker( "Show the running activity, its progress and the time left on the first row of the Message log.  Off restores the upstream log, which uses that row for messages." ),
+         true
        );
 
     add( "NO_UNKNOWN_COMMAND_MSG", interface,

@@ -54,7 +54,7 @@ def test_options_footer_lists_keys(_g):
         start_new_game(g)
         open_options(g)
         screen = g.screen()
-        for text in ("[r] default", "[R] page default", "[Reset to default]", "[?] keys", "[ESC] done"):
+        for text in ("[r] default", "[R] page default", "[Reset to default]", "[?] keys", "[Esc] done"):
             assert text in screen, f"{text!r} missing from the key guide\n{screen}"
     finally:
         g.close()

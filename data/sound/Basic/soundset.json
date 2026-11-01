@@ -10,5 +10,12 @@
     "id": "menu_error",
     "volume": 100,
     "files": [ "menu_error.ogg" ]
+  },
+  {
+    "type": "sound_effect",
+    "id": "unpack",
+    "variant": "default",
+    "volume": 80,
+    "files": [ "menu_move.ogg" ]
   }
 ]

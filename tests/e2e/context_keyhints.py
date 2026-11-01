@@ -40,8 +40,9 @@ def test_context_keyhints_inventory_pickup_crafting_and_look(_game):
         assert_map(game)
         game.wait_for("g pick up", timeout=15)
         hints = game.screen()
-        assert "safe mode" in hints and "auto travel" in hints, \
-            "safe mode and auto travel must show their keys in the hints:\n" + hints
+        # A three-row strip must spend its room on the keys a new player acts with.
+        for core in ("i inventory", "Enter menus", "v use", "f attack"):
+            assert core in hints, f"{core!r} must show in the map strip:\n" + hints
         game.keys("i")
         game.wait_for("Inventory", timeout=15)
         assert_footer(game, "F5 Craft", "Confirm your selection")

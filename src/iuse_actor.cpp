@@ -505,10 +505,12 @@ int unpack_actor::use( player &p, item &it, bool, const tripoint_bub_ms & ) cons
     }
 
     p.add_msg_if_player( _( "You unpack the %s." ), unpacked->tname() );
+    if( p.is_avatar() ) {
+        sfx::play_variant_sound( "unpack", "default", 100 );
+    }
 
     std::vector<detached_ptr<item>> items = item_group::items_from( unpack_group, calendar::turn );
     item *last_armor = &null_item_reference();
-    map &here = get_map();
     for( detached_ptr<item> &content : items ) {
         if( content->is_armor() ) {
             if( items_fit ) {
@@ -522,9 +524,31 @@ int unpack_actor::use( player &p, item &it, bool, const tripoint_bub_ms & ) cons
             }
             last_armor = &*content;
         }
+    }
 
+    auto taken = game_menus::inv::unpack_result();
+    const auto offer_list = p.is_avatar() && get_option<bool>( "UNPACK_TAKE_LIST" );
+    if( offer_list ) {
+        taken = game_menus::inv::unpack( p, items );
+    }
+    if( !taken.taken.empty() ) {
+        p.add_msg_if_player( m_good, _( "You take %s." ),
+                             enumerate_as_string( taken.taken ) );
+    }
+    if( !taken.no_room.empty() ) {
+        p.add_msg_if_player( m_bad, _( "You cannot carry %s." ),
+                             enumerate_as_string( taken.no_room ) );
+    }
 
+    map &here = get_map();
+    auto left = std::vector<std::string>();
+    for( detached_ptr<item> &content : items ) {
+        left.push_back( colorize( content->tname(), content->color_in_inventory() ) );
         here.add_item_or_charges( p.bub_pos(), std::move( content ) );
+    }
+    if( !left.empty() ) {
+        p.add_msg_if_player( m_info, _( "You leave %s on the floor." ),
+                             enumerate_as_string( left ) );
     }
 
     return 0;

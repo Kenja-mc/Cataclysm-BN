@@ -87,7 +87,7 @@ def test_vehicle_grid_and_overview_clicks_select_parts(_g):
         # A drawn car part sits just left of the centred cursor cell (24, 9).
         g.click(26, 7)
         selected = g.screen()
-        assert "ESC-back" in selected, selected
+        assert "Esc-back" in selected, selected
         assert selected != before
         assert "quarterpanel" in parts_pane(selected), \
             "clicking a drawn part must select the mount it belongs to\n" + selected
@@ -99,7 +99,7 @@ def test_vehicle_grid_and_overview_clicks_select_parts(_g):
         assert "reclining seat" in parts_pane(after), \
             "clicking an overview row must make that part the cursor mount\n" + after
         assert after != selected
-        assert "ESC-back" in after
+        assert "Esc-back" in after
     finally:
         g.close()
 
@@ -113,7 +113,7 @@ def test_action_label_click_opens_the_rename_prompt(_g):
         g.wait_for("Enter new vehicle name:")
         g.keys("Escape", delay=0.8)
         screen = g.screen()
-        assert "ESC-back" in screen, "cancelling the prompt must return to the work screen\n" + screen
+        assert "Esc-back" in screen, "cancelling the prompt must return to the work screen\n" + screen
     finally:
         g.close()
 
@@ -126,14 +126,14 @@ def test_part_clicks_do_not_advance_time_or_start_work(_g):
         g.click(26, 7)
         x, y = row_of(g.screen(), "reclining seat", 48)
         g.click(50, y)
-        # Cancel the rename prompt, then leave through the drawn ESC-back label.
+        # Cancel the rename prompt, then leave through the drawn Esc-back label.
         x, y = row_of(g.screen(), "rEname")
         g.click(x + 1, y)
         g.wait_for("Enter new vehicle name:")
         g.keys("Escape", delay=0.8)
-        x, y = row_of(g.screen(), "ESC-back")
+        x, y = row_of(g.screen(), "Esc-back")
         g.click(x + 1, y)
-        g.wait_gone("ESC-back", timeout=5)
+        g.wait_gone("Esc-back", timeout=5)
         after = g.lua("out(gapi.current_turn():to_turn(),gapi.get_avatar():get_moves())")
         assert after == before, f"browsing parts must not consume time or moves: {before} -> {after}"
     finally:
@@ -170,7 +170,7 @@ def test_install_row_and_tab_clicks(_g):
         assert "<Cargo>" in screen, "clicking the C tab must select Cargo\n" + screen
 
         g.keys("Escape", delay=0.8)
-        assert "ESC-back" in g.screen()
+        assert "Esc-back" in g.screen()
     finally:
         g.close()
 
@@ -248,9 +248,9 @@ def test_resize_rebuilds_the_click_map(_g):
 
         g.resize(140, 45)
         g.settle_screen(minimum=0.8, timeout=3)
-        x, y = row_of(g.screen(), "ESC-back")
+        x, y = row_of(g.screen(), "Esc-back")
         g.click(x + 1, y)
-        g.wait_gone("ESC-back", timeout=5)
+        g.wait_gone("Esc-back", timeout=5)
         assert "X,Y,Z" in g.screen() or "Location:" in g.screen()
     finally:
         g.close()

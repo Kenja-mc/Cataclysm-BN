@@ -4,6 +4,41 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-10-27
+
+### Added
+
+- Music follows the game state: `danger`, `vehicle`, `underground`, `night`, `shelter` and
+  `explore` playlists, crossfades, minimum play time and hysteresis, with a switch that keeps
+  the old single `title` playlist.
+- In Modern, a mouse's back side button (X1) does what Escape does where Escape cancels: it
+  leaves a screen, closes a list, answers No to a Yes/No prompt and cancels a text prompt. It does
+  nothing on the map or the title screen, so a stray press cannot open the quit prompt. It is the
+  ordinary `MOUSE_BACK` binding ("Mouse back"); Classic leaves it unbound. Terminal builds see
+  the button only when ncurses has the extended mouse protocol.
+
+### Changed
+
+- Keys read as people say them on every screen: Enter, Esc, Tab, Shift+Tab, PgUp, PgDn, Ctrl+X
+  and Numpad 8 instead of RETURN, ESC, BACKTAB, PPAGE, NPAGE, CTRL+X and NUMPAD_8. Saved
+  keybindings and existing translations are unchanged.
+- The Controls strip lists the keys a new player acts with first — interact, inventory, menus,
+  use, attack, pick up, wait, map — and moves safe mode and auto travel after them, so a short
+  strip no longer hides `i`, Enter and `v`.
+
+### Fixed
+
+- The welcome card no longer leaves a blank where the craft key should be, no longer says Shift
+  selects tiles (those keys ship unbound), and names `v`, `g`/`G`, Ctrl+F, `M` and the real place
+  of quick stack and sort pile. It fits an 80×25 terminal.
+- The first-ten-minutes help page names `x` for waiting one turn (Ctrl+X opens the wait menu), no
+  longer says the arrow keys walk in Modern, and says F1 opens the help topics.
+- `OVERHAUL.md`, `docs/fork/playing.md` and the controls diagram match the Modern bindings: `p`
+  bionics, `G` pickup list, Ctrl+G drop, `I` advanced inventory, `v` use by item kind.
+- A fast double-click in the terminal build now counts as two clicks, as it does in tiles. ncurses
+  folded the pair into one double-click event that the game ignored, so a row that acts on its
+  second click (crafting, missions, factions) only selected itself.
+
 ## 2026-10-26
 
 ### Added
@@ -12,10 +47,64 @@ Upstream's own changes are in `docs/en/game/changelog`.
   a double click runs the row's Enter action and its confirmation prompt, and right click keeps
   the row's existing action menu. Help topics, pickup and single-item inventory lists follow it.
   Classic keeps its keyboard-only lists.
+- `bin/dev-iterate.sh` and `just dev`, with the `linux-curses-dev` and `linux-tiles-dev` presets:
+  a game-only `-O0` build that launches into an isolated `out/dev-userdir/` for saves, config and
+  logs. It is for iteration only — asserts are off and tests are not built.
+- Unpacking a kit, go-bag, survival kit or alien pod opens one take list. Every content starts
+  marked; Enter takes it, a click or Right unmarks a row, digits typed before a click take that
+  many charges, `W` wears it, and Escape leaves it all on the floor. Taking costs the same 100
+  moves as picking it up by hand, and what will not fit stays behind with a message. Wearing into
+  a filled slot offers Replace it, Layer it when layering is legal, or Cancel; layering shows the
+  added weight and encumbrance. Options → Interface → Unpack into a take list restores the old
+  drop-everything flow.
+- Monster idle ambience from a new `idle_sound` data field, with an off-by-default
+  **Monster ambience** switch and its own volume. No shipped monster declares the field and no
+  shipped soundpack carries the audio, so a mod must supply both; a sound build sends no cue and
+  draws no marker for a clip the selected pack lacks.
+- The Message log shows one line for the running activity, its progress and the time left, using
+  that activity's own speed factors. Options → Interface → Activity line in the log turns it off.
+- Floating HUD windows in the labels, labels-narrow and grouped layouts: weather, combat, needs,
+  limbs, stats, movement, weight, compass, log and vehicle each have a title row, one line of live
+  state, a `[-]` collapse control, drag placement clamped to the map, and per-character saved
+  position, collapse and visibility.
+- Sidebar Options lists every window so the whole layout is reachable without a mouse; a disabled
+  or unfittable window hands its reading back to the sidebar. Both terminal and tiles build it.
+- The vehicle window is a replaceable provider (`hud_windows::set_vehicle_provider`) for the
+  driving-dashboard work.
+- Clicking or dragging a window, or pressing Enter on it in Sidebar Options, raises it to the
+  front; the stacking order is saved with the character.
 
 ### Changed
 
 - Space confirms a list row only when the menu has not already bound Space to another action.
+- Sound markers shrink to a dot as they age, so a fresh noise reads differently from a stale one;
+  the first marker in a game explains the glyphs once (with Show first-time tips on), and going
+  deaf clears any markers already on the map.
+- The mixer plays at most 24 one-shot world sounds at once. When full, a new cue replaces the
+  lowest-priority sound, then the quietest, then the oldest. Music and looping ambience channels
+  are outside the count. Creature idle sounds give way first; on sound builds their map markers
+  appear only when the cue plays.
+- **Upstream feature issues**: the daily watcher now files one deduplicated, labelled
+  `upstream-candidate` issue per clear upstream feature — a conventional `feat:` commit outside
+  the `balance` scope — grouping commits by their upstream PR reference, including PRs merged
+  with merge commits. Commits it cannot classify, and `feat(balance)` changes, stay in the #3
+  tracker; commits already merged into the fork are skipped, and later commits for a closed
+  feature issue are listed in the tracker instead of reopening it. Every write carries a stable
+  marker and the checkpoint advances per batch, so a failed run is safe to rerun. Closing the
+  tracker stops reporting with a clean exit, and the tracker's CI-owned description is refreshed
+  without touching human notes. `--dry-run` previews the writes, and the offline self-check now
+  covers classification, PR grouping, deduplication, untrusted text, the merge gate, the
+  closed-feature fallback, the stop switch, tracker description migration, truncated comparisons
+  and partial failures.
+- `M` opens one World page with numbered tabs: missions, factions, zones and scores are drawn
+  inline on that page. `1`-`4` and Left/Right switch tabs, Tab switches a tab's inner pages, and
+  Escape returns to play (after the usual zone save prompt when zones were changed). The tabs use
+  no plain z/x/c/v.
+- Clicking a HUD window no longer acts on the map tile beneath it.
+- The sidebar is cleared before its panels are drawn, so a full-screen view's legend (for example
+  the overmap's) no longer lingers between panels after it closes.
+- The limb, stat, compass and log windows keep the sidebar's wound text, stat colours, direction
+  symbols and threat colours, and message colours.
 
 ## 2026-10-25
 
@@ -30,7 +119,6 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Right-drag pans the overmap; the cursor click that used to jump the view still does not pan.
 - The tiles build remembers the zoom you left and restores it at launch.
 - A CC0 sound audition page (`docs/fork/sound-audition/index.html`) to choose the next pack.
-- CC0 interface research from five games in `docs/fork/qol-research/`.
 
 ### Changed
 

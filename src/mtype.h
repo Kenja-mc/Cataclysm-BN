@@ -403,6 +403,8 @@ struct mtype {
         damage_instance melee_damage; // Basic melee attack damage
         harvest_id harvest;
         float luminance;           // 0 is default, >0 gives luminance to lightmap
+        /// Soundset id for this monster's idle ambience. Empty means it makes no idle noise.
+        std::string idle_sound;
 
         unsigned int def_chance; // How likely a special "defensive" move is to trigger (0-100%, default 0)
         // special attack frequencies and function pointers

@@ -1,4 +1,5 @@
 #include "../src/map/map.h"
+#include "action_time_scale.h"
 #include "activity_actor_definitions.h"
 #include "activity_handlers.h"
 #include "avatar.h"
@@ -23,6 +24,7 @@
 #include "vehicle/vehicle_part.h"
 
 #include <algorithm>
+#include <memory>
 
 static const activity_id ACT_NULL = activity_id::NULL_ID();
 static const activity_id ACT_BOLTCUTTING("ACT_BOLTCUTTING");
@@ -916,5 +918,33 @@ TEST_CASE("oxytorch", "[activity][oxytorch]") {
                 }
             }
         }
+    }
+}
+
+TEST_CASE("activity_progress_rate_follows_the_activity", "[activity][time_scale]") {
+    clear_all_state();
+    const auto cleanup = on_out_of_scope([]() { clear_all_state(); });
+
+    SECTION("calendar-duration activities use the base rate") {
+        const player_activity wait(activity_id("ACT_WAIT"), 12000);
+        CHECK(wait.progress_per_calendar_turn() == action_time_scale::base_moves_per_turn);
+    }
+
+    SECTION("other activities estimate with their own factors") {
+        player_activity craft(activity_id("ACT_CRAFT"), 12000);
+        craft.speed.skills = 0.5f;
+        CHECK(craft.progress_per_calendar_turn() == craft.speed.calendar_moves_per_turn());
+        CHECK(craft.progress_per_calendar_turn() <
+              action_time_scale::activity_progress_per_calendar_turn());
+    }
+
+    SECTION("actor activities expose the actor's own progress") {
+        auto actor = std::make_unique<craft_activity_actor>();
+        actor->progress.emplace("test target", 12000);
+        actor->progress.mod_moves_left(-6000);
+        const player_activity craft(std::move(actor));
+        CHECK(craft.get_moves_total() == 12000);
+        CHECK(craft.get_moves_left() == 6000);
+        CHECK(craft.progress_per_calendar_turn() == craft.speed.calendar_moves_per_turn());
     }
 }

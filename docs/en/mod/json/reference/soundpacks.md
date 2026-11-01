@@ -116,6 +116,30 @@ played instead. The file name of the sound effect is relative to the soundpack d
 file name is set to "sfx.wav" and your soundpack is in `data/sound/mypack`, the file must be placed
 at `data/sound/mypack/sfx.wav`.
 
+### Context playlists
+
+Dynamic music looks for playlists named after the game-state context, next to the existing
+`title` playlist:
+
+- `explore` — the default outdoors with no threat in sight
+- `danger` — a hostile creature is visible inside the combat bubble
+- `vehicle` — the avatar is riding in or driving a vehicle
+- `underground` — the avatar is below z-level 0
+- `night` — between dusk and dawn
+- `shelter` — indoors during the day
+
+The context is chosen in this priority order: `danger`, `vehicle`, `underground`, `night`,
+`shelter`, `explore`. A context whose playlist is missing, or present but empty, plays `title`,
+so a soundpack that only ships the old single playlist behaves exactly as before. `title` is
+still required for the main menu, for single-playlist mode and as that fallback; a pack without
+it is silent outside its contexts. If a context playlist exists but none of its files can be
+loaded, the game also falls back to `title`.
+
+Context playlists are normal playlists: `shuffle`, multiple files and per-file `volume` work as
+shown above. When the `danger` playlist is actually playing, the older `danger_low`,
+`danger_medium`, `danger_high` and `danger_extreme` ambience themes are suppressed, so a pack
+that ships both does not layer two danger beds. A sleeping avatar never switches to `danger`.
+
 ## Sound effects list
 
 A full list of sound effect id's and variants is given in the following. Each line in the list has

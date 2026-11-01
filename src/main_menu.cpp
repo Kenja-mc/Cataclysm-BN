@@ -21,6 +21,7 @@
 #include "map/mapbuffer.h"
 #include "mapsharing.h"
 #include "messages.h"
+#include "music.h"
 #include "newcharacter.h"
 #include "options.h"
 #include "output.h"
@@ -673,6 +674,9 @@ bool main_menu::opening_screen()
     current_holiday = get_holiday_from_time();
 
     // Play title music, whoo!
+    // Round trip through the title screen clears the in-game context, so the
+    // next game starts from its own state instead of the last game's.
+    music::reset();
     play_music( "title" );
 
     world_generator->set_active_world( nullptr );

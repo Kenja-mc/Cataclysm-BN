@@ -36,13 +36,18 @@ from menus import TESTS as MENUS_TESTS
 from world_hub import TESTS as WORLD_HUB_TESTS
 from action_search import TESTS as ACTION_SEARCH_TESTS
 from items import TESTS as ITEMS_TESTS
+from unpack_flow import TESTS as UNPACK_FLOW_TESTS
 from storage import TESTS as STORAGE_TESTS
 from crafting import TESTS as CRAFTING_TESTS
 from hud_boxes import TESTS as HUD_BOXES_TESTS
+from hud_windows import TESTS as HUD_WINDOWS_TESTS
 from map_view import TESTS as MAP_VIEW_TESTS
 from combat import TESTS as COMBAT_TESTS
 from sound_feedback import TESTS as SOUND_FEEDBACK_TESTS
+from monster_ambience import TESTS as MONSTER_AMBIENCE_TESTS
+from activity_line import TESTS as ACTIVITY_LINE_TESTS
 from sound_menu import TESTS as SOUND_MENU_TESTS
+from dynamic_music import TESTS as DYNAMIC_MUSIC_TESTS
 from safemode import TESTS as SAFEMODE_TESTS
 from char_creation import TESTS as CHAR_CREATION_TESTS
 from fluid_grid import TESTS as FLUID_GRID_TESTS
@@ -82,6 +87,7 @@ from numeric_invkeys import TESTS as NUMERIC_INVKEYS_TESTS
 from wear_refresh import TESTS as WEAR_REFRESH_TESTS
 from creation_crafting_mouse import TESTS as CREATION_CRAFTING_MOUSE_TESTS
 from keybinding_search import TESTS as KEYBINDING_SEARCH_TESTS
+from mouse_side_buttons import TESTS as MOUSE_SIDE_BUTTONS_TESTS
 from pulp_key import TESTS as PULP_KEY_TESTS
 from known_locks import TESTS as KNOWN_LOCKS_TESTS
 from vehicle_mouse import TESTS as VEHICLE_MOUSE_TESTS
@@ -105,13 +111,18 @@ MODULES = [
     ("world_hub", WORLD_HUB_TESTS),
     ("action_search", ACTION_SEARCH_TESTS),
     ("items", ITEMS_TESTS),
+    ("unpack_flow", UNPACK_FLOW_TESTS),
     ("storage", STORAGE_TESTS),
     ("crafting", CRAFTING_TESTS),
     ("hud_boxes", HUD_BOXES_TESTS),
+    ("hud_windows", HUD_WINDOWS_TESTS),
     ("map_view", MAP_VIEW_TESTS),
     ("combat", COMBAT_TESTS),
     ("sound_feedback", SOUND_FEEDBACK_TESTS),
+    ("monster_ambience", MONSTER_AMBIENCE_TESTS),
+    ("activity_line", ACTIVITY_LINE_TESTS),
     ("sound_menu", SOUND_MENU_TESTS),
+    ("dynamic_music", DYNAMIC_MUSIC_TESTS),
     ("safemode", SAFEMODE_TESTS),
     ("char_creation", CHAR_CREATION_TESTS),
     ("fluid_grid", FLUID_GRID_TESTS),
@@ -150,6 +161,7 @@ MODULES = [
     ("wear_refresh", WEAR_REFRESH_TESTS),
     ("creation_crafting_mouse", CREATION_CRAFTING_MOUSE_TESTS),
     ("keybinding_search", KEYBINDING_SEARCH_TESTS),
+    ("mouse_side_buttons", MOUSE_SIDE_BUTTONS_TESTS),
     ("pulp_key", PULP_KEY_TESTS),
     ("known_locks", KNOWN_LOCKS_TESTS),
     ("vehicle_mouse", VEHICLE_MOUSE_TESTS),
@@ -178,6 +190,7 @@ SMOKE = [
     "test_wait_keeps_position",
     "test_rounded_frames",
     "test_folded_families",
+    "test_first_aid_kit_opens_one_take_list",
     "test_quick_stack_not_through_windows",
     "test_crafting_opens_on_content",
     "test_readable_map_glyphs",
@@ -185,6 +198,8 @@ SMOKE = [
     "test_magnet_pull_through_monster",
     "test_sound_marker_fading",
     "test_sound_menu_curses_unavailable",
+    "test_idle_sound_needs_the_data_field_and_rerolls_its_cooldown",
+    "test_activity_line_names_progress_and_time_left",
     "test_smart_safe_mode_horde",
     "test_char_creation_overview_fits_small_terminal",
     "test_partial_grid_transfer_keeps_the_rest",
@@ -223,6 +238,7 @@ SMOKE = [
     "test_modern_crafting_scrollbar_moves_selection_without_crafting",
     "test_letters_search_keybindings_after_scrolling",
     "test_modern_attack_pulps_the_chosen_corpse",
+    "test_world_page_draws_tab_content_inline",
     "test_world_defaults_unchanged_without_preset",
 ]
 SMOKE_TESTS = [test for test in TESTS if test.__name__ in SMOKE]

@@ -106,6 +106,7 @@
 #include "vehicle/vpart_position.h"
 #include "vehicle/vpart_range.h"
 #include "weather/weather.h"
+#include "world_hub.h"
 #include "worldfactory.h"
 
 #include <algorithm>
@@ -116,12 +117,14 @@
 #include <cstdint>
 #include <cstdlib>
 #include <initializer_list>
+#include <memory>
 #include <optional>
 #include <ranges>
 #include <set>
 #include <sstream>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace
 {
@@ -3357,30 +3360,14 @@ bool game::handle_action()
                 break;
 
             case ACTION_WORLD_HUB: {
-                // One key for the screens a run reads: missions, factions, zones and scores.
-                auto hub = uilist();
-                hub.title = _( "World" );
-                hub.addentry( 0, true, 'z', _( "Missions" ) );
-                hub.addentry( 1, true, 'x', _( "Factions" ) );
-                hub.addentry( 2, true, 'c', _( "Zones" ) );
-                hub.addentry( 3, true, 'v', _( "Scores" ) );
-                hub.query();
-                switch( hub.ret ) {
-                    case 0:
-                        list_missions();
-                        break;
-                    case 1:
-                        faction_manager_ptr->display();
-                        break;
-                    case 2:
-                        zones_manager();
-                        break;
-                    case 3:
-                        show_scores_ui( *achievements_tracker_ptr, stats(), get_kill_tracker() );
-                        break;
-                    default:
-                        break;
-                }
+                // One page with numbered tabs; each tab draws its screen inline.
+                std::vector<world_hub::panel_ptr> screens;
+                screens.push_back( world_hub::missions_screen() );
+                screens.push_back( world_hub::factions_screen() );
+                screens.push_back( world_hub::zones_screen() );
+                screens.push_back( world_hub::scores_screen( get_achievements_tracker(), stats(),
+                                   get_kill_tracker() ) );
+                world_hub::show( std::move( screens ) );
                 break;
             }
 

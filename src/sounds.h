@@ -93,8 +93,12 @@ std::pair< std::vector<tripoint_bub_ms>, std::vector<tripoint_bub_ms>> get_monst
 std::string sound_at( const tripoint_bub_ms &location );
 /** Tells us if sound has been enabled in options */
 extern bool sound_enabled;
-
-
+/// True when the loaded soundpack provides the effect under this variant. Builds without
+/// audio report true: a marker is their only sound cue, so no id is silent-but-visible.
+auto has_asset( const std::string &id, const std::string &variant ) -> bool;
+/// True when monster idle ambience may create an event at all: the option is on, its volume is
+/// above zero, and (on a build with audio) the loaded pack provides the clip.
+auto monster_ambience_allowed( const std::string &id, const std::string &variant ) -> bool;
 
 } // namespace sounds
 
@@ -446,13 +450,29 @@ enum class group : int {
     fatigue         //SFX related to fatigue
 };
 
+// How a fire-and-forget cue competes for the 24-voice world pool. When the pool
+// is full, lower values are evicted first.
+enum class sound_priority : int {
+    ambience = 0, // Creature idle chatter.
+    effect = 10,  // Ordinary one-shot effect.
+};
+
 void load_sound_effects( const JsonObject &jsobj );
 void load_sound_effect_preload( const JsonObject &jsobj );
 void load_playlist( const JsonObject &jsobj );
-void play_variant_sound( const std::string &id, const std::string &variant, int volume,
-                         units::angle angle, double pitch_min = -1.0, double pitch_max = -1.0, const bool stacks = false );
-void play_variant_sound( const std::string &id, const std::string &variant, int volume,
-                         const bool stacks = true );
+/// Play a fire-and-forget cue. Main thread only.
+/// Returns true when the cue was started (or when the build/player has no
+/// audio, so the sound marker remains the only cue). Returns false when the cue
+/// was dropped: zero volume, missing asset, repeat suppression, or a failed
+/// mixer call. At 24 voices a new cue evicts the lowest-priority, then
+/// quietest, then oldest voice.
+bool play_variant_sound( const std::string &id, const std::string &variant, int volume,
+                         units::angle angle, double pitch_min = -1.0, double pitch_max = -1.0,
+                         const bool stacks = false,
+                         const sound_priority priority = sound_priority::effect );
+bool play_variant_sound( const std::string &id, const std::string &variant, int volume,
+                         const bool stacks = true,
+                         const sound_priority priority = sound_priority::effect );
 void play_ambient_variant_sound( const std::string &id, const std::string &variant, int volume,
                                  channel channel, int fade_in_duration, double pitch = -1.0, int loops = -1 );
 void play_activity_sound( const std::string &id, const std::string &variant, int volume );
@@ -607,6 +627,8 @@ struct sound_event {
     // This stuff is for selecting actual sfx to play through an audio device in THE REAL WORLD. (spooky)
     std::string id = std::string( "" );
     std::string variant = std::string( "default" );
+    // Uses the monster ambience volume and counts against the creature ambience crowd cap.
+    bool monster_ambience = false;
     // NPC and monster faction of the source creature, if applicable. Do not set for sounds not from creatures.
     faction_id faction = faction_id( "no_faction" );
     mfaction_str_id monfaction = mfaction_str_id( "" );
