@@ -30,6 +30,10 @@ learn and use. It keeps the BN game rules. `OVERHAUL.md` explains each change.
    (enabled with `git config core.hooksPath .githooks`) refuses upstream pushes, and
    `git remote set-url --push upstream DISABLED-fetch-only` blocks the push at the remote. Fetching
    and merging from upstream are unaffected.
+8. Before implementing from a ticket, run the test it cites and confirm it fails for the stated
+   reason, and confirm the cited line sits in the function you are about to change. #33 cited
+   `test_mre_unpacks_its_entree`, but MRE rations use `DISASSEMBLE` and never run `unpack_actor`,
+   so that test could not have been its regression test.
 
 ### Build
 
@@ -216,6 +220,11 @@ about 50 here). Three traps were found running it there, and each of them cost w
 2. Upstream can add items that the fork folded, for example `bp_` ammo, jewelry or novels. Fold the
    new items in the same way. Add a migration for each item that you remove.
 3. Do not change the authors of upstream commits.
+4. `out/build/<preset>/src/cataclysm-bn --basepath ./ --userdir /tmp/chk/ --check-all-mods` must be
+   clean.
+5. Run `python3 build-scripts/check-json-duplicates.py` before trusting that check. The loader stops
+   at the first file it rejects, while a merge can double a key in several files at once and still
+   resolve without a textual conflict.
 
 ## Part 2: Upstream guide
 
