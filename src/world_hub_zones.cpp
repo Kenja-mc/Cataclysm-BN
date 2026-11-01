@@ -138,6 +138,10 @@ void zones_panel::draw( const catacurses::window &body, input_context & )
     if( zones.empty() ) {
         top_index = 0;
         mvwprintz( body, point( 2, 3 ), c_white, _( "No zones here." ) );
+        if( !wide ) {
+            wnoutrefresh( body );
+            return;
+        }
     } else {
         int top = active_index - rows / 2;
         top = std::max( top, 0 );
