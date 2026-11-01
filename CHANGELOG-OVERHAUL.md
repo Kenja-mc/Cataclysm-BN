@@ -8,10 +8,11 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Changed
 
-- Fusion HUD: the STATUS card moved into the sidebar column, so only the ribbon and the loadout
-  deck draw over the map, and the date and time ribbon now starts at the top left. BODY lists every
-  limb again, healthy or not; the pixel minimap is 12 rows unless you set a height, so the log
-  takes the rest.
+- Fusion HUD: the STATUS card and the LOADOUT deck moved into the sidebar column, so the map keeps
+  only the ribbon row and the vehicle card; the date and time ribbon now starts at the top left.
+  BODY lists every limb again, healthy or not. The pixel minimap gives way when the column is full
+  and is turned off with *Pixel minimap*; the LOADOUT section carries the weapon, the hotbar and the
+  key hints, wrapped over three rows.
 - The World page (`M`) lives in the HUD column on the fusion layout: a two-row tab
   strip in the sidebar, numbers and arrows switch tabs, the list fills the column, Enter opens
   the full page for the details, and Esc remembers the tab.

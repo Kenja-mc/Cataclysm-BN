@@ -2824,6 +2824,8 @@ auto initialize_fusion_panels() -> std::vector<window_panel>
     ret.emplace_back( hud_fusion::draw_around, translate_marker( "Around" ), 5, 44, true,
                       compass_panel );
     ret.back().set_height_override( []() { return hud_fusion::around_rows( get_avatar() ); } );
+    ret.emplace_back( hud_fusion::draw_loadout, translate_marker( "Loadout" ), hud_fusion::loadout_rows,
+                      44, true );
     ret.emplace_back( hud_fusion::draw_log, translate_marker( "Log" ), -2, 44, true, log_panel );
     return ret;
 }

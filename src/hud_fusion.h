@@ -17,6 +17,7 @@ namespace hud_fusion
 /// Rows the STATUS section needs, and the BODY and AROUND sections now: every limb is listed, and
 /// AROUND grows with what is in sight.
 inline constexpr int status_rows = 8;
+inline constexpr int loadout_rows = 9;
 auto body_rows( const avatar &you ) -> int;
 auto around_rows( const avatar &you ) -> int;
 
@@ -39,6 +40,7 @@ auto clicked( avatar &you, const point &cell ) -> bool;
 auto draw_minimap( avatar &you, const catacurses::window &w ) -> void;
 auto draw_map_rule( avatar &you, const catacurses::window &w ) -> void;
 auto draw_status( avatar &you, const catacurses::window &w ) -> void;
+auto draw_loadout( avatar &you, const catacurses::window &w ) -> void;
 auto draw_body( avatar &you, const catacurses::window &w ) -> void;
 auto draw_around( avatar &you, const catacurses::window &w ) -> void;
 auto draw_log( avatar &you, const catacurses::window &w ) -> void;

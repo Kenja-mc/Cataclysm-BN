@@ -32,8 +32,6 @@ namespace
 
 using namespace hud_draw;
 
-constexpr auto deck_height = 7;
-
 /// Icon, the need's name and its state; an unmet need replaces "ok" with its own wording.
 struct hit_area {
     rect at;
@@ -42,6 +40,10 @@ struct hit_area {
 };
 /// Where the last frame drew its overlays, in map-window cells, for click handling.
 auto hits = std::vector<hit_area>();
+/// Where the LOADOUT section drew its hotbar cells, in sidebar cells, for click handling.
+auto loadout_hits = std::vector<hit_area>();
+
+auto edge( const catacurses::window &w ) -> void;
 
 auto need( const catacurses::window &w, const point at, const char *icon, const nc_color icon_color,
            const hud_snapshot::need &n ) -> void
@@ -99,8 +101,8 @@ auto key_for( const action_id act ) -> std::string
     return desc == inp_mngr.get_keyname( ' ', input_event_t::keyboard ) ? std::string( _( "spc" ) ) : desc;
 }
 
-/// The handful of keys a player needs most, with their live bindings, on one row.
-auto draw_hints( const catacurses::window &w, const point at, const int room ) -> void
+/// The handful of keys a player needs most, with their live bindings, wrapped over `rows` rows.
+auto draw_hints( const catacurses::window &w, const point at, const int room, const int rows = 1 ) -> void
 {
     struct entry {
         std::vector<action_id> acts;
@@ -111,18 +113,19 @@ auto draw_hints( const catacurses::window &w, const point at, const int room ) -
     static const auto entries = std::array<entry, 11> { {
             { { ACTION_MOVE_FORTH, ACTION_MOVE_LEFT, ACTION_MOVE_BACK, ACTION_MOVE_RIGHT }, translate_marker( "move" ) },
             { { ACTION_HOTBAR_1, ACTION_HOTBAR_6 }, translate_marker( "hotbar" ), true },
-            { { ACTION_HOTBAR_ASSIGN }, translate_marker( "assign slot" ) },
             { { ACTION_EXAMINE }, translate_marker( "interact" ) },
             { { ACTION_INVENTORY }, translate_marker( "inventory" ) },
             { { ACTION_ACTIONMENU }, translate_marker( "menus" ) },
             { { ACTION_KEYBINDINGS }, translate_marker( "all keys" ) },
             { { ACTION_FIRE }, translate_marker( "attack" ) },
             { { ACTION_PICKUP }, translate_marker( "pick up" ) },
+            { { ACTION_HOTBAR_ASSIGN }, translate_marker( "assign slot" ) },
             { { ACTION_PAUSE }, translate_marker( "wait" ) },
             { { ACTION_MAP }, translate_marker( "map" ) },
         }
     };
     auto x = at.x;
+    auto y = at.y;
     for( const auto &e : entries ) {
         auto keys = std::string();
         for( const auto act : e.acts ) {
@@ -132,10 +135,14 @@ auto draw_hints( const catacurses::window &w, const point at, const int room ) -
             continue;
         }
         if( x + width( keys ) + 1 + utf8_width( _( e.label ) ) > at.x + room ) {
-            break;
+            if( y + 1 >= at.y + rows ) {
+                break;
+            }
+            ++y;
+            x = at.x;
         }
-        x = text( w, point( x, at.y ), pal::heading(), keys );
-        x = text( w, point( x + 1, at.y ), pal::muted(), _( e.label ) ) + 3;
+        x = text( w, point( x, y ), pal::heading(), keys );
+        x = text( w, point( x + 1, y ), pal::muted(), _( e.label ) ) + 3;
     }
 }
 
@@ -146,9 +153,9 @@ auto draw_vehicle( const avatar &you, const canvas &area ) -> void
         return;
     }
     const auto height = static_cast<int>( rows.size() ) + 2;
-    hits.push_back( { .at = { .at = point( 0, area.height - deck_height - height ), .width = 32, .height = height } } );
+    hits.push_back( { .at = { .at = point( 0, area.height - height ), .width = 32, .height = height } } );
     const auto w = panel( area, {
-        .at = point( 0, area.height - deck_height - height ), .width = 32, .height = height
+        .at = point( 0, area.height - height ), .width = 32, .height = height
     } );
     card( w, { .title = _( "VEHICLE" ) } );
     for( auto i = 0; i < static_cast<int>( rows.size() ); ++i ) {
@@ -156,74 +163,47 @@ auto draw_vehicle( const avatar &you, const canvas &area ) -> void
     }
 }
 
-auto draw_deck( const avatar &you, const canvas &area, const hud_snapshot::snapshot &s ) -> void
+/// The LOADOUT section: the held weapon, the hotbar and the keys most used, in the column.
+auto loadout_section( const catacurses::window &w, const avatar &you, const hud_snapshot::snapshot &s ) -> void
 {
-    hits.push_back( { .at = { .at = point( 0, area.height - deck_height ), .width = area.width, .height = deck_height } } );
-    const auto w = panel( area, {
-        .at = point( 0, area.height - deck_height ), .width = area.width, .height = deck_height
-    } );
-    card( w, { .title = _( "LOADOUT" ), .summary = string_format( "%s kg  %s L", s.weight, s.volume ),
+    edge( w );
+    rule( w, { .title = _( "LOADOUT" ),
+               .summary = string_format( "%s kg  %s L", s.weight, s.volume ),
                .summary_color = pal::muted() } );
 
-    // The weapon card; the item's map symbol stands in for its tile.
-    text( w, point( 2, 1 ), pal::border(), "╭─────╮" );
-    text( w, point( 2, 2 ), pal::border(), "│     │" );
-    text( w, point( 2, 3 ), pal::border(), "╰─────╯" );
-    text( w, point( 5, 2 ), s.weapon_color, s.weapon_symbol );
-    constexpr auto weapon_room = 20;
-    text( w, point( 10, 1 ), pal::title(), utf8_truncate( s.weapon, weapon_room ) );
-    auto x = 10;
+    // The held weapon: its map symbol, its name, and the ammo it fires.
+    text( w, point( 2, 1 ), s.weapon_color, s.weapon_symbol );
+    auto x = text( w, point( 4, 1 ), pal::title(), utf8_truncate( s.weapon, 24 ) );
     if( s.gun ) {
-        x = text( w, point( x, 2 ), pal::accent(), s.ammo );
-        x = dot( w, point( x, 2 ) );
+        x = text( w, point( x + 1, 1 ), pal::accent(), s.ammo );
     }
     if( s.armed ) {
-        text( w, point( x, 2 ), pal::text(), glyph::weapon );
+        text( w, point( x + 1, 1 ), pal::text(), glyph::weapon );
     }
-    text( w, point( 10, 3 ), pal::muted(), utf8_truncate( s.style.empty() ? s.stance : s.style, weapon_room ) );
+    text( w, point( 4, 2 ), pal::muted(), utf8_truncate( s.style.empty() ? s.stance : s.style, 36 ) );
 
-    // Hotbar: six boxes, the key in the top edge, the item's symbol and name inside.
-    constexpr auto slot_x = 32;
-    const auto room = area.width - slot_x - 2;
-    const auto box_w = std::clamp( room / hotbar::slots, 9, 16 );
-    const auto any_assigned = std::ranges::any_of( std::views::iota( 0, hotbar::slots ), [&]( const int i ) {
-        return hotbar::view( you, i ).assigned;
-    } );
-    if( !any_assigned ) {
-        // Six empty boxes teach nothing; say what the slots are for and how to fill them.
-        const auto assign = key_for( ACTION_HOTBAR_ASSIGN );
-        text( w, point( slot_x, 1 ), pal::heading(), _( "HOTBAR" ) );
-        text( w, point( slot_x, 2 ), pal::muted(), assign.empty() ?
-              _( "Assign items from Enter → Misc → Assign a hotbar slot, then use them with 1–6." ) :
-              string_format( _( "Press %s to put an item in a slot, then use it with 1–6 or a click." ), assign ) );
-    }
-    for( auto i = 0; any_assigned && i < hotbar::slots; ++i ) {
+    // Hotbar: three cells per row, the digit that uses the slot first. Empty slots still draw, so
+    // the row shows what there is to fill and where.
+    constexpr auto cell_w = 14;
+    for( auto i = 0; i < hotbar::slots; ++i ) {
         const auto v = hotbar::view( you, i );
-        const auto sx = slot_x + i * box_w;
-        hits.push_back( { .at = { .at = point( sx, area.height - deck_height + 1 ), .width = box_w - 1, .height = 3 },
-                          .slot = i } );
+        const auto sx = 2 + ( i % 3 ) * cell_w;
+        const auto sy = 3 + i / 3;
+        loadout_hits.push_back( { .at = { .at = point( getbegx( w ) + sx, getbegy( w ) + sy ),
+                                         .width = cell_w, .height = 1 }, .slot = i } );
         const auto ready = v.assigned && v.count > 0;
-        const auto color = v.wielded ? pal::accent() : ready ? pal::text() : pal::border();
-        hline( w, point( sx + 1, 1 ), box_w - 3, color );
-        hline( w, point( sx + 1, 3 ), box_w - 3, color );
-        text( w, point( sx, 1 ), color, "╭" );
-        text( w, point( sx + box_w - 2, 1 ), color, "╮" );
-        text( w, point( sx, 2 ), color, "│" );
-        text( w, point( sx + box_w - 2, 2 ), color, "│" );
-        text( w, point( sx, 3 ), color, "╰" );
-        text( w, point( sx + box_w - 2, 3 ), color, "╯" );
-        text( w, point( sx + 2, 1 ), v.wielded ? pal::accent() : pal::heading(), std::to_string( i + 1 ) );
+        auto cx = text( w, point( sx, sy ), v.wielded ? pal::accent() : pal::heading(), std::to_string( i + 1 ) );
         if( !v.assigned ) {
-            text( w, point( sx + 2, 2 ), pal::border(), "·" );
+            text( w, point( cx + 1, sy ), pal::border(), "·" );
             continue;
         }
-        text( w, point( sx + 2, 2 ), ready ? v.color : pal::border(), v.symbol );
+        cx = text( w, point( cx + 1, sy ), ready ? v.color : pal::border(), " " + v.symbol );
         const auto label = v.name + ( v.count > 1 ? " x" + std::to_string( v.count ) : std::string() );
-        text( w, point( sx + 4, 2 ), ready ? pal::title() : pal::muted(), utf8_truncate( label, box_w - 7 ) );
+        text( w, point( cx + 1, sy ), ready ? pal::title() : pal::muted(), utf8_truncate( label, cell_w - 6 ) );
     }
 
-    hline( w, point( 2, 4 ), area.width - 4, pal::border() );
-    draw_hints( w, point( 2, 5 ), area.width - 4 );
+    hline( w, point( 2, 5 ), getmaxx( w ) - 4, pal::border() );
+    draw_hints( w, point( 2, 6 ), getmaxx( w ) - 4, 3 );
 }
 
 /// Read once per map frame by the overlays and reused by the sidebar sections drawn after them.
@@ -293,8 +273,10 @@ auto minimap_rows() -> int
         return 0;
     }
     const auto chosen = get_option<int>( "PIXEL_MINIMAP_HEIGHT" );
-    // The layout's own default when the player has not set a height: compact, so the log grows.
-    return chosen > 0 ? chosen : 12;
+    // The minimap gives way first, so every section below it still fits on the screen.
+    const auto rest = 1 + status_rows + loadout_rows + body_rows( get_avatar() ) +
+                      around_rows( get_avatar() ) + sidebar::log_min_rows;
+    return std::clamp( chosen > 0 ? chosen : 12, 6, std::max( 6, TERMY - rest ) );
 #else
     return 0;
 #endif
@@ -319,10 +301,10 @@ auto draw( const avatar &you, const catacurses::window &w_terrain ) -> void
     };
     const auto &s = refresh( you );
     hits.clear();
+    loadout_hits.clear();
     begin_frame();
     draw_ribbon( area, s );
     draw_vehicle( you, area );
-    draw_deck( you, area, s );
     end_frame();
 }
 
@@ -348,7 +330,23 @@ auto clicked( avatar &you, const point &cell ) -> bool
     if( !active() ) {
         return false;
     }
-    // Later entries sit on top of earlier ones: the slots over the deck they are drawn in.
+    // The hotbar lives in the column now: a click there uses a slot, and any other click on the
+    // column stops here instead of reaching the map behind it.
+    if( get_option<std::string>( "SIDEBAR_POSITION" ) == "right" ) {
+        const auto sidebar_x = TERMX - panel_manager::get_manager().get_width_right();
+        if( cell.x >= sidebar_x ) {
+            for( const auto &hit : loadout_hits ) {
+                const auto &r = hit.at;
+                if( cell.x >= r.at.x && cell.x < r.at.x + r.width && cell.y >= r.at.y &&
+                    cell.y < r.at.y + r.height ) {
+                    hotbar::use( you, hit.slot );
+                    return true;
+                }
+            }
+            return true;
+        }
+    }
+    // Later entries sit on top of earlier ones: the vehicle card over the map it sits on.
     for( auto it = hits.rbegin(); it != hits.rend(); ++it ) {
         const auto &hit = *it;
         const auto &r = hit.at;
@@ -373,6 +371,12 @@ auto draw_map_rule( avatar &you, const catacurses::window &w ) -> void
 auto draw_status( avatar &you, const catacurses::window &w ) -> void
 {
     status_section( w, current( you ) );
+    wnoutrefresh( w );
+}
+
+auto draw_loadout( avatar &you, const catacurses::window &w ) -> void
+{
+    loadout_section( w, you, current( you ) );
     wnoutrefresh( w );
 }
 

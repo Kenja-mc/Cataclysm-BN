@@ -25,8 +25,7 @@ def rule_rows(screen, title):
 
 
 def assert_fusion(screen):
-    assert re.search(r"╭[^\n]*\bLOADOUT\b", screen), f"the LOADOUT card is missing:\n{screen}"
-    for title in ("STATUS", "BODY", "AROUND", "LOG"):
+    for title in ("STATUS", "BODY", "AROUND", "LOADOUT", "LOG"):
         assert len(rule_rows(screen, title)) == 1, f"one {title} rule expected:\n{screen}"
     first = screen.splitlines()[0]
     assert re.search(r"(Spring|Summer|Autumn|Winter) \d+", first), \
@@ -110,17 +109,17 @@ def test_clicking_a_hotbar_slot_uses_it_and_overlay_clicks_stay_off_the_map(_g):
         game.settle_screen()
         before = bub_pos(game)
         for y, line in enumerate(game.screen().splitlines()):
-            if "╭─2" in line:
-                x = line.index("╭─2")
+            if "combat" in line:
+                x = line.index("combat")
                 break
         else:
             raise AssertionError("hotbar slot 2 missing:\n" + game.screen())
-        game.click(x + 2, y + 1)
+        game.click(x, y)
         game.settle_screen()
         assert "knife" in wielded(game), "a click on the slot should use it:\n" + game.screen()
         assert bub_pos(game) == before
-        # A click on the status card is swallowed, never walked to or selected on the map.
-        game.click(5, 2)
+        # A click on the column is swallowed, never walked to or selected on the map.
+        game.click(120, 2)
         assert bub_pos(game) == before
 
 
@@ -147,6 +146,12 @@ def test_around_names_who_is_in_sight(_g):
                      define=HELPERS, setup=fusion_setup) as game:
         assert game.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'),here(4,-3)) out('ok')") == ["ok"]
         game.keys("x", delay=0.8)
+        game.settle_screen()
+        # The load race can dim a noon world (the light-cache bug); AROUND then sees nothing and
+        # this test would look like a layout failure. Say which one it is.
+        top = game.screen().splitlines()[0]
+        assert "very dark" not in top, f"the world loaded dim, the light-cache bug:\n{top}"
+        game.wait_for("hostile", timeout=15)
         game.settle_screen()
         screen = game.screen()
         assert re.search(r"├─* *AROUND \d+ hostile", screen), screen

@@ -464,24 +464,24 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   Both the terminal and tiles builds draw the windows.
 - **Fusion HUD** is the layout new configurations start with, on screens of at least 140×36
   cells; smaller screens draw grouped instead. A one-line ribbon (date and time, weather, light,
-  wind, safe mode) runs along the top left, and a **LOADOUT** deck (weapon card with ammo, hotbar
-  slots and one row of key hints) sits at the bottom. The right sidebar stacks **STATUS** (health,
+  wind, safe mode) runs along the top left, and the right sidebar stacks **STATUS** (health,
   stamina and focus gauges with mood, pain, speed, noise, needs and the four stats), **MAP** (the
-  pixel minimap: turn *Pixel minimap* off to clear the column, and it is 12 rows unless you set a
-  height), **BODY** (a bar for every limb, wounded or not), **AROUND** (each creature in sight by
-  name, direction and distance, hostiles first) and **LOG** (messages in the log's own colours);
-  the log takes every row the sections above leave. With no hotbar slot assigned, the deck says how
-  to fill one. The map shrinks to the free area, so the character stays centred. Select fusion,
-  grouped or another layout in **Enter → Misc → Sidebar Options**.
-- **Hotbar** (Modern, fusion deck): six quick slots on `1`–`6`. **Ctrl+T** opens *Assign a hotbar
-  slot*: pick a slot, then an item (Esc clears it). A slot remembers the item type, not the stack;
-  its key does what the Use menu does with the first matching carried item (read, eat, wield, wear
-  or activate; a wielded gun is reloaded). An empty slot, or one whose item you no longer carry,
+  pixel minimap: turn *Pixel minimap* off to clear it, and it gives way when the column is full),
+  **BODY** (a bar for every limb, wounded or not), **AROUND** (each creature in sight by name,
+  direction and distance, hostiles first), **LOADOUT** (the held weapon with its ammo, the style
+  or stance, six hotbar cells and the key hints, wrapped) and **LOG** (messages in the log's own
+  colours); the log takes every row the sections above leave. The map keeps only the ribbon row
+  and the VEHICLE card, and the character stays centred. Select fusion, grouped or another layout
+  in **Enter → Misc → Sidebar Options**.
+- **Hotbar** (Modern, fusion LOADOUT section): six quick slots on `1`–`6`. **Ctrl+T** opens *Assign
+  a hotbar slot*: pick a slot, then an item (Esc clears it). A slot remembers the item type, not the
+  stack; its key does what the Use menu does with the first matching carried item (read, eat, wield,
+  wear or activate; a wielded gun is reloaded). An empty slot, or one whose item you no longer carry,
   only says so. Slots are saved with the character, so they work in every layout; only the fusion
-  deck draws them, and clicking a slot uses it. A slot with nothing assigned uses the item whose inventory
-  letter is that digit. Classic has no default hotbar keys; bind *Hotbar slot N* if you want them.
-  Aboard or remote-controlling a vehicle, a **VEHICLE** card (azimuth, speed, cruise, engine, fuel,
-  battery) appears above the deck.
+  LOADOUT section draws them, and clicking a cell uses it. A slot with nothing assigned uses the item
+  whose inventory letter is that digit. Classic has no default hotbar keys; bind *Hotbar slot N* if
+  you want them. Aboard or remote-controlling a vehicle, a **VEHICLE** card (azimuth, speed, cruise,
+  engine, fuel, battery) sits at the bottom left of the map.
 - **Inventory item menu** numbers its rows `1`–`9`, `0` in Modern; the old letters still work.
 - **Grouped right sidebar**, based on the Opus HUD proposal: its HUD groups are the windows above,
   so the sidebar keeps Location, Controls and the optional Map. The Location group keeps its 5×5
