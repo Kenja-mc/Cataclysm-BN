@@ -1706,7 +1706,8 @@ void inventory_selector::prepare_layout()
     };
 
     const int nc_width = 2 * ( 1 + border );
-    const int nc_height = get_header_height() + 1 + 2 * border;
+    const int nc_height = get_header_height() + 1 + 2 * border +
+                          static_cast<int>( preset.get_preview_height() );
 
     prepare_layout( TERMX - nc_width, TERMY - nc_height );
 
@@ -1903,6 +1904,7 @@ void inventory_selector::refresh_window() const
     draw_frame( w_inv );
     draw_header( w_inv );
     draw_columns( w_inv );
+    draw_preview( w_inv );
     draw_footer( w_inv );
 
     wnoutrefresh( w_inv );
@@ -2122,6 +2124,40 @@ void inventory_selector::draw_footer( const catacurses::window &w ) const
             mvwputch( w, point( x1 - 2, y ), c_light_gray, LINE_XOXX );
             mvwputch( w, point( x2 + 2, y ), c_light_gray, LINE_XXXO );
         }
+    }
+}
+
+auto inventory_selector::get_preview_lines() const -> std::vector<std::string>
+{
+    const auto height = preset.get_preview_height();
+    if( height == 0 || empty() ) {
+        return {};
+    }
+    const inventory_entry &selected = get_active_column().get_selected();
+    if( !selected || !selected.is_item() ) {
+        return {};
+    }
+    auto lines = preset.get_preview( selected.any_item() );
+    if( lines.size() > height ) {
+        lines.resize( height );
+    }
+    return lines;
+}
+
+void inventory_selector::draw_preview( const catacurses::window &w ) const
+{
+    if( preset.get_preview_height() == 0 ) {
+        return;
+    }
+    const auto lines = get_preview_lines();
+    if( lines.empty() ) {
+        return;
+    }
+    const int width = getmaxx( w ) - 2 * ( border + 1 );
+    int y = getmaxy( w ) - border - static_cast<int>( lines.size() );
+    for( const std::string &line : lines ) {
+        trim_and_print( w, point( border + 1, y ), width, c_light_gray, line );
+        y++;
     }
 }
 

@@ -689,6 +689,13 @@ that is optional:
   weight and encumbrance.
   Options → Interface → Unpack into a take list turns the list off and drops every content at once,
   as upstream does.
+- **Wear preview.** The Wear menu's CHANGE column names the body part that would gain the most
+  encumbrance, and a three-line block above the footer shows every changed part before the item is
+  put on: `Torso 12 → 37 (layering +10 with hoodie) · melee hit -37%, dodge -3`, followed by
+  warmth, storage and time. The parenthetical names the worn item on the same layer; the numbers
+  come from the character sheet's own encumbrance formulas, so the sheet and the preview agree.
+  An item that adds nothing says `No encumbrance change`. The item menu's description shows the
+  same lines, and the unpack take list uses the same numbers for its layer prompt.
 - **Combine** (item menu, `C` in the modern scheme): partly used tools that hold their own charges
   and that nothing refills, such as matchbooks, pour into one, as in Project Zomboid. Every charge
   is kept and the emptied copies go away. Duct tape, thread and other counted items already stack.

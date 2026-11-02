@@ -1,5 +1,6 @@
 #include "examine_item_menu.h"
 
+#include "action_preview.h"
 #include "auto_pickup.h"
 #include "avatar.h"
 #include "avatar_action.h"
@@ -81,6 +82,12 @@ bool run(
     constexpr int info_area_scroll_step = 3;
     temperature_flag temperature = rot::temp::for_location( get_map(), itm );
     std::vector<iteminfo> item_info_vals = itm.info( temperature );
+    if( itm.is_armor() && !you.is_wearing( itm ) ) {
+        item_info_vals.emplace_back( "DESCRIPTION", _( "If you wear it:" ) );
+        for( const std::string &line : describe( you, preview_wear( you, itm ) ) ) {
+            item_info_vals.emplace_back( "DESCRIPTION", line );
+        }
+    }
     std::vector<iteminfo> dummy_compare;
     item_info_data data( itm.tname(), itm.type_name(), item_info_vals, dummy_compare,
                          info_area_scroll_pos );

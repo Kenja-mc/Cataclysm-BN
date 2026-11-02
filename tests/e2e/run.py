@@ -96,6 +96,7 @@ from overmap_controls import TESTS as OVERMAP_CONTROLS_TESTS
 from target_lock import TESTS as TARGET_LOCK_TESTS
 from numeric_invkeys import TESTS as NUMERIC_INVKEYS_TESTS
 from wear_refresh import TESTS as WEAR_REFRESH_TESTS
+from wear_preview import TESTS as WEAR_PREVIEW_TESTS
 from creation_crafting_mouse import TESTS as CREATION_CRAFTING_MOUSE_TESTS
 from keybinding_search import TESTS as KEYBINDING_SEARCH_TESTS
 from mouse_side_buttons import TESTS as MOUSE_SIDE_BUTTONS_TESTS
@@ -182,6 +183,7 @@ MODULES = [
     ("target_lock", TARGET_LOCK_TESTS),
     ("numeric_invkeys", NUMERIC_INVKEYS_TESTS),
     ("wear_refresh", WEAR_REFRESH_TESTS),
+    ("wear_preview", WEAR_PREVIEW_TESTS),
     ("creation_crafting_mouse", CREATION_CRAFTING_MOUSE_TESTS),
     ("keybinding_search", KEYBINDING_SEARCH_TESTS),
     ("mouse_side_buttons", MOUSE_SIDE_BUTTONS_TESTS),

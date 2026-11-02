@@ -8,6 +8,10 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Added
 
+- **Wear preview**: the Wear menu lists a CHANGE column with the body part that gains the most
+  encumbrance, and previews above its footer every changed body part (`Torso 12 → 37 (layering +10
+  with hoodie) · melee hit -37%, dodge -3`), plus warmth, storage and time. The item menu's
+  description shows the same lines, so layering cost is visible before the item is worn.
 - **Numbered list rows** (Options → Graphics, off by default): opt in to `1`–`9` beside the first
   nine visible rows and `0` beside the tenth in the tiles build with Modern controls.
   A digit moves the highlight; Enter confirms, and scrolling renumbers. Inventory and other item

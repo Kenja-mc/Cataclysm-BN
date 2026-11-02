@@ -177,6 +177,18 @@ class inventory_selector_preset
         /** Color that will be used to display the entry string. */
         virtual nc_color get_color( const inventory_entry &entry ) const;
 
+        /**
+         * Lines describing the highlighted entry, drawn above the footer.
+         * Empty by default; get_preview_height() must cover them.
+         */
+        virtual auto get_preview( const item * ) const -> std::vector<std::string> {
+            return {};
+        }
+        /** Rows to keep free above the footer for get_preview(). Zero hides the block. */
+        virtual auto get_preview_height() const -> size_t {
+            return 0;
+        }
+
         std::string get_denial( const inventory_entry &entry ) const;
         /** Text in the cell */
         std::string get_cell_text( const inventory_entry &entry, size_t cell_index ) const;
@@ -623,6 +635,8 @@ class inventory_selector
 
         void draw_header( const catacurses::window &w ) const;
         void draw_footer( const catacurses::window &w ) const;
+        void draw_preview( const catacurses::window &w ) const;
+        auto get_preview_lines() const -> std::vector<std::string>;
         void draw_columns( const catacurses::window &w ) const;
         void draw_frame( const catacurses::window &w ) const;
 
