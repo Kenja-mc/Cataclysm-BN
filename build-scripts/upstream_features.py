@@ -5,10 +5,12 @@ Upstream is read-only: every upstream request is a GET, and a write to it is ref
 runs. The target repository gets one issue per clear upstream feature, identified by the upstream
 PR reference (`(#NNNNN)`) and grouped by it, so several commits of one feature share a ticket; PRs
 merged with merge commits map their branch commits to the same PR. A feature is a non-merge commit
-whose subject is a conventional `feat:`/`feature:` commit outside the `balance` scope, which the
-fork rules reject wholesale. Every other new commit stays in the tracker checklist for manual
-classification, later commits for a closed feature issue are listed there too, and commits the fork
-already merged are skipped. Closing the tracker stops reporting without failing the workflow.
+whose subject is a conventional `feat:`/`feature:` commit outside the `balance` scope and free of
+balance words such as `rebalance` or `nerf`, which the fork rules reject wholesale, and that does not
+change a world option's range. Candidates that touch item data the fork folded say so in their
+issue. Every other new commit stays in the tracker checklist for manual classification, later
+commits for a closed feature issue are listed there too, and commits the fork already merged are
+skipped. Closing the tracker stops reporting without failing the workflow.
 
 All writes carry stable markers, so partial failures and reruns never duplicate an issue, a comment
 or a checklist row. The checkpoint advances one batch at a time, only after that batch's issues and
@@ -62,6 +64,24 @@ REPO = "Kenja-mc/Cataclysm-BN"
 REPO_PATTERN = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
 CANDIDATE_LABEL = "upstream-candidate"
 BLOCKED_SCOPES = {"balance"}
+BALANCE_WORDS = ("rebalance", "rebalanced", "rebalances", "rebalancing", "balance", "balanced", "balancing",
+                 "nerf", "nerfed", "nerfs", "buff", "buffed", "buffs")
+WORLD_OPTIONS_FILE = "src/options.cpp"
+WORLD_OPTIONS_SECTION = "add_options_world_default"
+WORLD_OPTION_RANGE = re.compile(
+    r"^[+-]\s*-?[0-9][0-9.]*(?:\s*,\s*-?[0-9][0-9.]*)+\s*[,;)]*\s*$")
+FOLDED_PATHS = (
+    "data/json/items/armor/jewelry.json",
+    "data/json/item_variants.json",
+    "data/json/obsoletion/",
+    "data/json/obsoletion/black_powder.json",
+    "data/json/items/battery.json",
+    "data/json/items/containers.json",
+    "data/json/items/book/misc.json",
+    "data/json/items/fluff.json",
+)
+FOLD_NOTE = ("**Fold required:** this change touches item data the fork folded; fold new items "
+             "into variants and add a migration (AGENTS.md, Upstream merges step 2).")
 
 BODY_BUDGET = 58000       # GitHub stops at 65536 characters per comment.
 COMPARE_LIMIT = 250       # The compare endpoint returns at most 250 commits per response.
@@ -141,6 +161,11 @@ def feature_slug(scope, title):
     return f"{readable}-{hashlib.sha256(key.encode()).hexdigest()[:12]}"
 
 
+def balance_subject(subject):
+    words = set(re.findall(r"[a-z]+", subject.lower()))
+    return any(word in words for word in BALANCE_WORDS)
+
+
 def feature_from_commit(commit, pr_map=None):
     """Return the clear feature this commit declares, or None for manual classification."""
     if not isinstance(commit, dict) or not isinstance(commit.get("sha"), str) \
@@ -155,6 +180,8 @@ def feature_from_commit(commit, pr_map=None):
     scope = (match.group("scope") or "").strip()
     if BLOCKED_SCOPES & {part.strip().lower() for part in re.split(r"[/,]", scope)}:
         return None  # Balance work is rejected wholesale by the fork rules.
+    if balance_subject(subject):
+        return None  # A balance subject is balance work even without the balance scope.
     title = " ".join(match.group("title").split())
     pr = ""
     pr_match = PR_REF.search(title)
@@ -180,7 +207,43 @@ def feature_from_commit(commit, pr_map=None):
     }
 
 
-def classify(commits, merged=(), pr_map=None):
+def commit_files(commit, api=api):
+    """Return the file entries of an upstream commit, or an empty list when unavailable."""
+    payload = api(f"repos/{UPSTREAM}/commits/{commit['sha']}")
+    files = payload.get("files") if isinstance(payload, dict) else None
+    if not isinstance(files, list):
+        return []
+    return [entry for entry in files if isinstance(entry, dict)]
+
+
+def touches_folded(files):
+    for entry in files:
+        name = entry.get("filename")
+        if not isinstance(name, str):
+            continue
+        for path in FOLDED_PATHS:
+            if name == path or (path.endswith("/") and name.startswith(path)):
+                return True
+    return False
+
+
+def changes_world_option_range(files):
+    for entry in files:
+        if entry.get("filename") != WORLD_OPTIONS_FILE:
+            continue
+        patch = entry.get("patch")
+        if not isinstance(patch, str):
+            continue
+        in_section = False
+        for line in patch.splitlines():
+            if line.startswith("@@"):
+                in_section = WORLD_OPTIONS_SECTION in line
+            elif in_section and WORLD_OPTION_RANGE.match(line):
+                return True
+    return False
+
+
+def classify(commits, merged=(), pr_map=None, api=None):
     """Split a range into feature candidates, uncertain commits and already-merged commits."""
     features, uncertain, already = [], [], []
     for commit in commits:
@@ -189,6 +252,13 @@ def classify(commits, merged=(), pr_map=None):
             already.append(commit)
         elif feature is None:
             uncertain.append(commit)
+        elif api is not None:
+            files = commit_files(commit, api=api)
+            if changes_world_option_range(files):
+                uncertain.append(commit)
+            else:
+                feature["fold"] = touches_folded(files)
+                features.append(feature)
         else:
             features.append(feature)
     return features, uncertain, already
@@ -348,6 +418,8 @@ def feature_body(key, commits):
         lines.append(f"- [ ] [`{commit['sha'][:10]}`]({commit_url(commit['sha'])}) "
                      f"<code>{safe(commit['subject'], 300)}</code> "
                      f"<!-- upstream-commit:{commit['sha']} -->")
+    if any(commit.get("fold") for commit in commits):
+        lines += ["", FOLD_NOTE]
     lines += [
         "",
         "Check a commit once it has been reviewed. Adopting a change stays manual; closing this "
@@ -663,7 +735,7 @@ def publish(repo, tracker, base, head, commits, known, merged=(), pr_map=None, a
             reported, reported_features = set(), set()
         else:
             reported, reported_features = tracker_marks(repo, tracker, api=api)
-        features, uncertain, skipped = classify(commits, merged, pr_map)
+        features, uncertain, skipped = classify(commits, merged, pr_map, api=api)
         states = ensure_feature_issues(repo, features, known, api=api, apply=False)
         for state in states.values():
             if state["created"]:
@@ -691,7 +763,7 @@ def publish(repo, tracker, base, head, commits, known, merged=(), pr_map=None, a
         if index >= MAX_BATCHES or created >= MAX_NEW_ISSUES:
             break
         end = batch[-1]["sha"]
-        features, uncertain, skipped = classify(batch, merged, pr_map)
+        features, uncertain, skipped = classify(batch, merged, pr_map, api=api)
         skipped_total += len(skipped)
         states = ensure_feature_issues(repo, features, known, api=api)
         created += sum(1 for state in states.values() if state["created"])
@@ -734,6 +806,7 @@ class FakeGitHub:
         self.compares = {}
         self.fork_compare = {"status": "diverged", "merge_base_commit": {"sha": BASE}}
         self.walk = walk or []
+        self.files = {}
         self.fail_when = fail_when
         self._next = 1
 
@@ -770,7 +843,8 @@ class FakeGitHub:
                     return payload if isinstance(payload, list) else [payload]
                 return payload[0] if isinstance(payload, list) else payload
             if endpoint.startswith(f"repos/{UPSTREAM}/commits/"):
-                return {"sha": endpoint.split("?", 1)[0].rsplit("/", 1)[1]}
+                sha = endpoint.split("?", 1)[0].rsplit("/", 1)[1]
+                return {"sha": sha, "files": list(self.files.get(sha, []))}
             page = int((re.search(r"[?&]page=(\d+)", endpoint) or [0, 1])[1])
             return self.walk[page - 1] if page <= len(self.walk) else []
         escaped = re.escape(REPO)
@@ -848,6 +922,24 @@ def check_classification():
     features, _, _ = classify([mapped], pr_map={mapped["sha"]: "9377"})
     assert features[0]["key"] == "pr-9377" and features[0]["pr"] == "9377"
     assert classify([mapped])[0][0]["key"] != "pr-9377"
+    rebalance = commit("6", "feat: rebalance dragon skin vest")
+    assert feature_from_commit(rebalance) is None
+    assert classify([rebalance]) == ([], [rebalance], [])
+    fake = FakeGitHub()
+    capped = commit("8", "feat: cap vehicle damage")
+    fake.files[capped["sha"]] = [{
+        "filename": "src/options.cpp",
+        "patch": ("@@ -2832,8 +2832,8 @@ void options_manager::add_options_world_default()\n"
+                  "-         0.0, 10.0, 1, 0.1\n"
+                  "+         0.0, 4.0, 1, 0.1\n")}]
+    assert classify([capped], api=fake) == ([], [capped], [])
+    reworded = commit("9", "feat: reword an option")
+    fake.files[reworded["sha"]] = [{
+        "filename": "src/options.cpp",
+        "patch": ("@@ -1,2 +1,2 @@ void options_manager::add_options_world_default()\n"
+                  "-         translate_marker( \"A scaling factor\" ),\n"
+                  "+         translate_marker( \"A factor\" ),\n")}]
+    assert len(classify([reworded], api=fake)[0]) == 1
     for broken in ({"sha": "nope", "commit": {"message": "feat: x"}}, "text",
                    {"sha": "a" * 40}, {"sha": "a" * 40, "commit": {}}):
         try:
@@ -1345,6 +1437,21 @@ def check_multibatch_rows():
     assert CHECKPOINT.findall(fake.find(1)["body"]) == [HEAD]
 
 
+def check_fold_notes():
+    folded = commit("e", "feat: add a gold chain (#10953)")
+    plain = commit("d", "feat: add a widget (#10954)")
+    fake = FakeGitHub()
+    fake.files[folded["sha"]] = [{"filename": "data/json/items/armor/jewelry.json"}]
+    fake.files[plain["sha"]] = [{"filename": "src/widget.cpp"}]
+    features, uncertain, already = classify([folded, plain], api=fake)
+    assert uncertain == [] and already == [] and len(features) == 2
+    assert FOLD_NOTE in feature_body(features[0]["key"], features[:1])
+    assert FOLD_NOTE not in feature_body(features[1]["key"], features[1:])
+    obsolete = commit("c", "feat: add an old ring (#10955)")
+    fake.files[obsolete["sha"]] = [{"filename": "data/json/obsoletion/rings.json"}]
+    assert classify([obsolete], api=fake)[0][0]["fold"] is True
+
+
 def self_check():
     with contextlib.redirect_stdout(io.StringIO()):
         check_classification()
@@ -1355,9 +1462,11 @@ def self_check():
         check_tracker_intro()
         check_publish()
         check_multibatch_rows()
+        check_fold_notes()
     print("PASS feature classification, PR grouping (including merge commits), deduplication, "
           "safe text, merge gate, closed-feature fallback, stop switch, tracker intro migration, "
-          "paginated comparison, partial-failure checkpoints and upstream read-only guard")
+          "paginated comparison, partial-failure checkpoints, balance subjects, world option "
+          "ranges, fold notes and upstream read-only guard")
 
 
 def main():
