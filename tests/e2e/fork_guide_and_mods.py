@@ -12,7 +12,7 @@ import re
 import tempfile
 from pathlib import Path
 
-from helpers import choose_menu_entry, give, menu_rows, wait_until
+from helpers import HELPERS, choose_menu_entry, give, menu_rows, wait_until
 from inventory_mouse import row_of
 from options_menu import close_options, open_options
 from tmux_game import ROOT, Game, start_new_game
@@ -37,6 +37,7 @@ def recording_game(name, mods=None):
     opener.write_text(f"#!/bin/sh\nprintf '%s\\n' \"$1\" >> '{opened}'\nexit 0\n")
     opener.chmod(0o755)
     start_new_game(game)
+    game.define_lua(HELPERS)
     return game, opened
 
 

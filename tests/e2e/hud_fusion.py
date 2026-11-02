@@ -36,7 +36,8 @@ def assert_fusion(screen):
     assert "Stamina" in screen, f"the stamina bar is missing:\n{screen}"
     assert "Health " not in screen, "there is no aggregate health bar:\n" + screen
     assert not rule_rows(screen, "BODY"), "the limbs live in STATUS now:\n" + screen
-    assert "Needs met" in screen, "a fresh character never shows a needs row:\n" + screen
+    # The shared character may carry a wound, so the needs row's met state is covered on a fresh
+    # character by test_needs_collapse_to_one_needs_met_line.
     # The floating windows and the old sidebar panels are gone.
     for old in ("Compass", "Movement", "Stats ", "Weight"):
         assert old not in screen, f"{old!r} belongs to another layout:\n{screen}"
@@ -204,9 +205,35 @@ def test_key_bar_switches_to_combat_keys_with_a_hostile_in_sight(_g):
             "the bar returns to the calm keys:\n" + game.screen()
 
 
+def status_region(screen):
+    """The drawn rows of the STATUS section, from its rule down to the next section's rule."""
+    lines = screen.splitlines()
+    start = next(y for y, line in enumerate(lines) if re.search(r"├─* *STATUS\b", line))
+    end = next(y for y in range(start + 1, len(lines))
+               if re.search(r"├─* *[A-Z]+\b", lines[y]))
+    return lines[start:end]
+
+
+def test_status_names_a_bleeding_limb_in_the_needs_line(_g):
+    with shared_game("bn-e2e-fusion", options=OPTIONS, layout="fusion", cols=160, rows=45,
+                     define=HELPERS, setup=fusion_setup) as game:
+        assert game.lua("local a=gapi.get_avatar() a:clear_effects() a:set_pain(0) "
+                        "a:add_effect(EffectTypeId.new('bleed'),TimeDuration.from_minutes(30),"
+                        "BodyPartTypeId.new('arm_l'),1) out('ok')") == ["ok"]
+        game.settle_screen()
+        screen = game.screen()
+        needs = next((line for line in status_region(screen) if "Bleeding" in line), None)
+        assert needs is not None, "the STATUS needs line names the wound:\n" + screen
+        assert "L ARM" in needs, "the wound names the limb it sits on:\n" + needs
+        assert "Needs met" not in "\n".join(status_region(screen)), \
+            "a wounded character cannot collapse its needs:\n" + screen
+
+
 def test_needs_collapse_to_one_needs_met_line(_g):
     with shared_game("bn-e2e-fusion", options=OPTIONS, layout="fusion", cols=160, rows=45,
                      define=HELPERS, setup=fusion_setup) as game:
+        # The fixture carries a bleeding arm; a character with nothing wrong collapses its needs.
+        assert game.lua("local a=gapi.get_avatar() a:clear_effects() a:set_pain(0) out('ok')") == ["ok"]
         game.settle_screen()
         screen = game.screen()
         assert "Needs met" in screen, "a character with nothing wrong collapses its needs:\n" + screen
@@ -224,6 +251,7 @@ TESTS = [test_around_names_who_is_in_sight,
          test_fusion_layout_draws_overlays_and_ruled_sidebar,
          test_status_draws_the_limb_grid_above_stamina_and_no_body_rule,
          test_key_bar_switches_to_combat_keys_with_a_hostile_in_sight,
+         test_status_names_a_bleeding_limb_in_the_needs_line,
          test_needs_collapse_to_one_needs_met_line,
          test_fusion_is_the_fresh_default_and_small_screens_fall_back]
 

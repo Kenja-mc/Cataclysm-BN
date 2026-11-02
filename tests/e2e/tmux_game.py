@@ -50,7 +50,7 @@ class Game:
         (stub_bin / "xdg-open").write_text("#!/bin/sh\nexit 0\n")
         (stub_bin / "xdg-open").chmod(0o755)
         env = f"PATH={stub_bin}:$PATH BROWSER=true LANG=C.UTF-8 LC_ALL=C.UTF-8 TERM=xterm-256color"
-        state_arg = f" --state-out={self.state_path}" if self.state_path else ""
+        state_arg = f" --state-out {self.state_path}" if self.state_path else ""
         cmd = (f"cd {ROOT} && env -u DISPLAY -u WAYLAND_DISPLAY {env} "
                f"{os.environ.get('GAME_WRAPPER', '')} {find_binary()} "
                f"--basepath {ROOT}/ --userdir {self.userdir}/{state_arg}")

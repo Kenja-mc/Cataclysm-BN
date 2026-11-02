@@ -35,6 +35,8 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 - Agentic playtests read Modern menu rows inside their own frames. Map glyphs and HUD text behind
   a popup no longer hide its commands or supply unrelated ones.
+- Fusion HUD: the STATUS needs line names every wounded limb and its wound in the wound's colour
+  (`Pain 1  Bleeding L ARM`), so a bleeding character can no longer read `✓ Needs met`.
 
 ## 2026-11-01
 

@@ -80,7 +80,25 @@ def stance(screen):
 
 
 def weapon_line(screen):
-    return section_lines(screen, "LOADOUT", 2)[0]
+    """The row right under the LOADOUT rule: the held weapon as the section draws it."""
+    return section_lines(screen, "LOADOUT", 1)[0]
+
+
+def names(screen_row, name):
+    """Whether a drawn row names `name`, ignoring the edge, its markers and loose spacing."""
+    bare = re.sub(r"[│├─◆@]", " ", screen_row)
+    return " ".join(name.split()).casefold() in " ".join(bare.split()).casefold()
+
+
+def picker_row(game, name, header):
+    """The row naming `name` inside the open picker, never the sidebar's own copy of it."""
+    lines = game.screen().splitlines()
+    start = next((y for y, line in enumerate(lines) if header in line), None)
+    assert start is not None, f"no {header!r} picker:\n" + game.screen()
+    for y in range(start, len(lines)):
+        if name in lines[y]:
+            return lines[y].index(name), y
+    raise AssertionError(f"no {header!r} row for {name!r}:\n" + game.screen())
 
 
 def glyph_at(game, dx, dy):
@@ -130,7 +148,7 @@ def test_wield_changes_the_loadout_weapon(_game):
     with verb_game() as game:
         give(game, "pipe")
         game.settle_screen()
-        assert wait_until(lambda: "fists" in weapon_line(game.screen()), timeout=10), \
+        assert wait_until(lambda: names(weapon_line(game.screen()), "fists"), timeout=10), \
             "the unarmed LOADOUT line names the fists:\n" + game.screen()
         pipe = display_name(game, "pipe")
         game.keys("i", delay=1)
@@ -139,9 +157,9 @@ def test_wield_changes_the_loadout_weapon(_game):
         game.click(x, y, button=2)
         game.wait_for("Reassign", timeout=15)
         game.keys("h", delay=1.5)
-        assert wait_until(lambda: pipe in weapon_line(game.screen()), timeout=10), \
+        assert wait_until(lambda: names(weapon_line(game.screen()), pipe), timeout=10), \
             "the LOADOUT weapon line must name the wielded pipe:\n" + game.screen()
-        assert "fists" not in weapon_line(game.screen())
+        assert not names(weapon_line(game.screen()), "fists")
 
 
 def test_drop_leaves_the_item_on_the_ground_tile(_game):
@@ -169,7 +187,7 @@ def test_drop_leaves_the_item_on_the_ground_tile(_game):
 
 def test_unload_changes_the_loadout_ammo(_game):
     with verb_game() as game:
-        gun = display_name(game, "model_10_revolver")
+        gun = re.sub(r"\s*\(.*\)$", "", display_name(game, "model_10_revolver"))
         assert game.lua("local a=gapi.get_avatar() "
                         "local w=a:create_item(ItypeId.new('model_10_revolver'),-1) "
                         "w:ammo_set(ItypeId.new('38_special'),6) out(a:wield(w))") == ["true"]
@@ -178,7 +196,7 @@ def test_unload_changes_the_loadout_ammo(_game):
             "the LOADOUT line must show the loaded gun's rounds:\n" + game.screen()
         action_menu(game, "Inventory", "Unload or Empty Wielded Item")
         game.wait_for("Unload item", timeout=15)
-        x, y = row_of(game, gun)
+        x, y = picker_row(game, gun, "WEAPON HELD")
         game.double_click(x, y)
         assert wait_until(lambda: "0/6" in weapon_line(game.screen()), timeout=10), \
             "the LOADOUT ammo count must fall to 0/6:\n" + game.screen()

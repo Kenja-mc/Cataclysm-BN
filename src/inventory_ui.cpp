@@ -1923,7 +1923,7 @@ void inventory_selector::refresh_window() const
                 if( entry->get_invlet() > 0 ) {
                     hotkey = utf32_to_utf8( static_cast<uint32_t>( entry->get_invlet() ) );
                 }
-                rows.push_back( { .text = preset.get_cell_text( *entry, 0 ), .hotkey = hotkey,
+                rows.push_back( { .text = remove_color_tags( preset.get_cell_text( *entry, 0 ) ), .hotkey = hotkey,
                                   .enabled = entry->is_selectable() } );
             }
         }

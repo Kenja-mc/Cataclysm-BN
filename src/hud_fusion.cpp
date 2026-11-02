@@ -272,6 +272,15 @@ auto edge( const catacurses::window &w ) -> void
     vline( w, point_zero, getmaxy( w ), pal::border() );
 }
 
+/// The body panel's wound wording, with the first letter up so it heads a row.
+auto sentence( std::string text ) -> std::string
+{
+    if( !text.empty() && text.front() >= 'a' && text.front() <= 'z' ) {
+        text.front() = static_cast<char>( text.front() - 'a' + 'A' );
+    }
+    return text;
+}
+
 /// The needs line: one row that only names what needs action, and says so when nothing does.
 auto needs_line( const catacurses::window &w, const hud_snapshot::snapshot &s ) -> void
 {
@@ -291,7 +300,10 @@ auto needs_line( const catacurses::window &w, const hud_snapshot::snapshot &s ) 
     const auto all_fine = std::ranges::all_of( chips, []( const auto & c ) {
         return c.reading->fine;
     } );
-    if( s.pain_level == 0 && all_fine ) {
+    const auto wounded = std::ranges::any_of( s.limbs, []( const auto & l ) {
+        return !l.wound.empty();
+    } );
+    if( s.pain_level == 0 && all_fine && !wounded ) {
         x = text( w, point( x, y ), pal::muted(),
                   std::string( glyph::check ) + " " + _( "Needs met" ) ) + 2;
         x = text( w, point( x, y ), pal::muted(), string_format( _( "Focus %d" ), s.focus ) );
@@ -307,7 +319,16 @@ auto needs_line( const catacurses::window &w, const hud_snapshot::snapshot &s ) 
         }
     }
     if( s.pain_level > 0 ) {
-        text( w, point( x, y ), s.pain.color, string_format( _( "Pain %d" ), s.pain_level ) );
+        x = text( w, point( x, y ), s.pain.color, string_format( _( "Pain %d" ), s.pain_level ) ) + 2;
+    }
+    // Each wound is named with the limb that carries it, in the wound's own colour, so a bleeding
+    // arm cannot hide behind a calm needs row.
+    for( const auto &limb : s.limbs ) {
+        if( limb.wound.empty() ) {
+            continue;
+        }
+        x = text( w, point( x, y ), limb.wound_color, sentence( limb.wound ) );
+        x = text( w, point( x + 1, y ), pal::text(), limb.name ) + 2;
     }
 }
 

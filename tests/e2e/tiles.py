@@ -657,7 +657,7 @@ class Session:
                str(self.tiles_binary), "--basepath", f"{self.root}/", "--userdir", f"{userdir}/",
                "--world", self.world]
         if state_path:
-            cmd.append(f"--state-out={state_path}")
+            cmd += ["--state-out", str(state_path)]
         proc = subprocess.Popen(cmd, cwd=self.root, env=env, stdout=log, stderr=log)
         try:
             shot = wait_for_frame(self, proc, run, self.timeout)

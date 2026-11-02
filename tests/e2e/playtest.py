@@ -500,7 +500,7 @@ def start_tiles(userdir, save_name, seed=None, timeout=180):
     }
     state_path = (run / "state.json").resolve()
     cmd = [str(tiles_binary()), "--basepath", f"{ROOT}/", "--userdir", f"{userdir}/", "--world",
-           save_name, f"--state-out={state_path}"]
+           save_name, "--state-out", str(state_path)]
     if seed:
         cmd += ["--seed", seed]
     log = (run / "tiles.log").open("w")
