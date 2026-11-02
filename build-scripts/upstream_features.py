@@ -64,7 +64,8 @@ REPO = "Kenja-mc/Cataclysm-BN"
 REPO_PATTERN = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
 CANDIDATE_LABEL = "upstream-candidate"
 BLOCKED_SCOPES = {"balance"}
-BALANCE_WORDS = ("rebalance", "balance", "nerf", "buff")
+BALANCE_WORDS = ("rebalance", "rebalanced", "rebalances", "rebalancing", "balance", "balanced", "balancing",
+                 "nerf", "nerfed", "nerfs", "buff", "buffed", "buffs")
 WORLD_OPTIONS_FILE = "src/options.cpp"
 WORLD_OPTIONS_SECTION = "add_options_world_default"
 WORLD_OPTION_RANGE = re.compile(
