@@ -125,7 +125,7 @@ auto preview_wear( const Character &who, const item &it ) -> wear_preview
                                    .layering_after = layered_it->second.layer_penalty };
         for( const item * const &worn_item : who.worn ) {
             if( worn_item->get_layer() == it.get_layer() && worn_item->covers( bp ) ) {
-                change.sharing.push_back( worn_item->tname() );
+                change.sharing.push_back( worn_item->tname( 1, false ) );
             }
         }
         preview.parts.push_back( std::move( change ) );
@@ -243,13 +243,13 @@ auto put_away_text( const avatar &who, const item &weapon ) -> std::string
     }
     for( const item * const &worn : who.worn ) {
         if( worn->can_holster( weapon ) ) {
-            return string_format( _( "%1$s → %2$s" ), weapon.tname(), worn->tname() );
+            return string_format( _( "%1$s → %2$s" ), weapon.tname( 1, false ), worn->tname( 1, false ) );
         }
     }
     if( who.volume_carried() + weapon.volume() <= who.volume_capacity() ) {
-        return string_format( _( "%1$s → %2$s" ), weapon.tname(), _( "inventory" ) );
+        return string_format( _( "%1$s → %2$s" ), weapon.tname( 1, false ), _( "inventory" ) );
     }
-    return colorize( string_format( _( "%s drops" ), weapon.tname() ), c_light_red );
+    return colorize( string_format( _( "%s drops" ), weapon.tname( 1, false ) ), c_light_red );
 }
 
 auto wield_cost( const avatar &who, const item &it ) -> std::string

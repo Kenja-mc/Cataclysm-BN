@@ -45,8 +45,15 @@ def close_item_menu(game):
     game.settle_screen()
 
 
+def plain_name(game, item):
+    out = game.lua(f"out(gapi.create_item(ItypeId.new('{item}'),-1):tname(1,false,0))")
+    assert len(out) == 1, out
+    return re.sub(r"</?color[^>]*>", "", out[0])
+
+
+# A menu row is "│ <hotkey> <label>"; the key bar's "h Wield  W Wear" must not count.
 def annotated_row(screen, label):
-    match = re.search(rf"│[^│]*\b{label}\s{{2,}}[^\s│][^│]*│", screen)
+    match = re.search(rf"│ \S {label}\s{{2,}}[^\s│][^│]*│", screen)
     assert match, f"the {label} row must show its cost:\n{screen}"
     return match.group(0)
 
@@ -54,7 +61,7 @@ def annotated_row(screen, label):
 def test_item_menu_shows_times_and_where_the_held_weapon_goes(_game):
     with shared_game("bn-e2e-action-costs", options=ON, define=HELPERS, setup=fresh) as game:
         hold_pipe(game)
-        pipe = display_name(game, "pipe")
+        pipe = plain_name(game, "pipe")
         loaded_gun(game)
         give(game, "textbook_mechanics")
         give(game, "tshirt")
@@ -75,7 +82,7 @@ def test_item_menu_shows_times_and_where_the_held_weapon_goes(_game):
         close_item_menu(game)
 
         screen = open_item_menu(game, book)
-        assert re.search(r"\b\d+\s*(?:s|m|h)\b", annotated_row(screen, "Read")), (
+        assert re.search(r"\b\d+\s*(?:s|m|h|seconds?|minutes?|hours?)\b", annotated_row(screen, "Read")), (
             "the Read row must show its reading time:\n" + screen)
         close_item_menu(game)
 
@@ -92,14 +99,14 @@ def test_item_menu_shows_times_and_where_the_held_weapon_goes(_game):
 def test_item_menu_action_costs_off_leaves_rows_alone(_game):
     with shared_game("bn-e2e-action-costs-off", options=OFF, define=HELPERS, setup=fresh) as game:
         hold_pipe(game)
-        pipe = display_name(game, "pipe")
+        pipe = plain_name(game, "pipe")
         loaded_gun(game)
         gun = re.sub(r"\s*\(.*\)$", "", display_name(game, "model_10_revolver"))
 
         open_inventory(game)
         screen = open_item_menu(game, gun)
         assert "Unload" in screen and "Wield" in screen, screen
-        assert not re.search(r"│[^│]*\b(?:Unload|Wield|Disassemble)\s{2,}[^\s│][^│]*│",
+        assert not re.search(r"│ \S (?:Unload|Wield|Disassemble)\s{2,}[^\s│][^│]*│",
                              screen), (
             "the option off must leave the rows as they were:\n" + screen)
         assert f"{pipe} →" not in screen and f"{pipe} drops" not in screen, (

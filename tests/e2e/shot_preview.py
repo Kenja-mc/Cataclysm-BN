@@ -5,7 +5,7 @@ from pathlib import Path
 
 from aim_reticle import action_clock
 from fixtures import shared_game
-from helpers import HELPERS, arena, bub_pos, choose_menu_entry, settle, wait_until
+from helpers import HELPERS, arena, choose_menu_entry, settle, wait_until
 from map_mouse import firing_target_panel, mouse_view
 
 BASE = {
@@ -273,22 +273,28 @@ def test_click_retargets_then_fires(_g):
         spawn(game, "A", 4, 0)
         spawn(game, "B", 5, 0)
         pin(game, ("A", 4, 0), ("B", 5, 0))
+        clock = action_clock(game)
         open_aim_on_nearest(game)
         panel_until(game, r"Range: 4/")
 
-        player = bub_pos(game)
+        # game.lua types into the Lua console, and its retry presses Escape, which would close
+        # the aim window. Read the state file while the window is open.
+        before = game.state()
         origin = game.find("@")
         assert origin, game.screen()
-        clock = action_clock(game)
         # Modern binds the target button to the right mouse button.
         game.click(origin[0] + 5, origin[1], button=2)
-        assert bub_pos(game) == player, "retargeting must not move the player"
-        assert action_clock(game) == clock, "retargeting must spend no moves"
         panel_until(game, r"Range: 5/")
+        after = game.state()
+        assert after["player"]["pos"] == before["player"]["pos"], \
+            "retargeting must not move the player"
+        assert after["turn"] == before["turn"], "retargeting must not pass a turn"
 
         game.click(origin[0] + 5, origin[1])
-        assert wait_until(lambda: action_clock(game) > clock, timeout=20), \
-            "a click on the current target must fire\n" + game.screen()
+        # The window reopens after the shot, so wait for the spent round, not for it to close.
+        panel_until(game, r"Ammo: [^\n]*\(5/6\)")
+        game.keys("Escape", delay=0.6)
+        assert action_clock(game) > clock, "the shot must spend moves"
         assert game.lua("out(GUN:ammo_remaining())") == ["5"], "the shot did not spend ammo"
 
 
