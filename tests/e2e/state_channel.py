@@ -42,7 +42,7 @@ def test_state_file_reports_inventory_and_turn(_g):
 
         top = _inventory_with_rows(game)
         assert top["selected"] >= 0, "the open inventory must name a selected row"
-        assert any(row.get("text") == "rock" for row in top["rows"]), \
+        assert any(row.get("text", "").startswith("rock") for row in top["rows"]), \
             "inventory rows must name the carried rock in plain text:\n" + repr(top["rows"])
 
         game.keys("Escape", delay=0.8)

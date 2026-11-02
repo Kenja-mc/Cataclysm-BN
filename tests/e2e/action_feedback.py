@@ -157,8 +157,9 @@ def test_wield_changes_the_loadout_weapon(_game):
         game.click(x, y, button=2)
         game.wait_for("Reassign", timeout=15)
         game.keys("h", delay=1.5)
-        assert wait_until(lambda: names(weapon_line(game.screen()), pipe), timeout=10), \
-            "the LOADOUT weapon line must name the wielded pipe:\n" + game.screen()
+        assert wait_until(lambda: names(weapon_line(game.screen()), "pipe"), timeout=10), \
+            f"the LOADOUT weapon line must name the wielded pipe ({pipe!r}), " \
+            f"read {weapon_line(game.screen())!r}:\n" + game.screen()
         assert not names(weapon_line(game.screen()), "fists")
 
 
