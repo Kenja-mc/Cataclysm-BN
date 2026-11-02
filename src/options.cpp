@@ -190,6 +190,7 @@ auto scheme_companions( const bool classic ) -> std::vector<scheme_companion>
         { .id = "SHOT_PREVIEW", .value = !classic },
         { .id = "CONTEXTUAL_INTERACT", .value = !classic },
         { .id = "MODERN_LIST_MOUSE", .value = !classic },
+        { .id = "ACTION_COSTS", .value = !classic },
         { .id = "KNOWN_LOCKED_DOOR_ICONS", .value = !classic } };
 }
 
@@ -2134,6 +2135,11 @@ void options_manager::add_options_interface()
 
     add( "CONTEXT_KEYHINTS", interface, translate_marker( "Menu key hints" ),
          translate_marker( "If true and the Controls sidebar panel is enabled, show the current menu's keys in the panel and a one-line footer above full-screen menus.  Closing a menu restores map keys.  If false, keep the map-only Controls strip." ),
+         true
+       );
+
+    add( "ACTION_COSTS", interface, translate_marker( "Show action costs in item menus" ),
+         translate_marker( "If true, each item menu row shows its time and main effect after the label, dimmed: wearing time and added encumbrance, wielding time and where the held weapon goes, eating time with calories, quench and joy, reading time, unloading and disassembling time.  Rows without a computable cost show only their label." ),
          true
        );
 

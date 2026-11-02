@@ -1,6 +1,7 @@
 #include "game_inventory.h"
 
 #include "action.h"
+#include "action_preview.h"
 #include "avatar.h"
 #include "avatar_action.h"
 #include "avatar_functions.h"
@@ -9,6 +10,7 @@
 #include "cata_utility.h"
 #include "character.h"
 #include "character_encumbrance.h"
+#include "character_display.h"
 #include "character_functions.h"
 #include "character_martial_arts.h"
 #include "color.h"
@@ -388,12 +390,15 @@ item *game_menus::inv::titled_menu( avatar &you, const std::string &title,
 class armor_inventory_preset: public inventory_selector_preset
 {
     public:
-        armor_inventory_preset( player &pl, const std::string &color_in ) :
+        armor_inventory_preset( player &pl, const std::string &color_in,
+                                bool show_avg_encumbrance = true ) :
             p( pl ), color( color_in ) {
 
-            append_cell( [ this ]( const item * loc ) {
-                return get_number_string( loc->get_avg_encumber( p ) );
-            }, _( "AVG ENCUMBRANCE" ) );
+            if( show_avg_encumbrance ) {
+                append_cell( [ this ]( const item * loc ) {
+                    return get_number_string( loc->get_avg_encumber( p ) );
+                }, _( "AVG ENCUMBRANCE" ) );
+            }
 
             append_cell( [ this ]( const item * loc ) {
                 return loc->get_storage() > 0_ml ? string_format( "<%s>%s</color>", color,
@@ -447,8 +452,11 @@ class wear_inventory_preset: public armor_inventory_preset
 {
     public:
         wear_inventory_preset( player &p, const std::string &color ) :
-            armor_inventory_preset( p, color )
-        {}
+            armor_inventory_preset( p, color, false ) {
+            append_cell( [ this ]( const item * loc ) {
+                return change_text( *loc );
+            }, _( "CHANGE" ) );
+        }
 
         bool is_shown( const item *loc ) const override {
             return loc->is_armor() && !p.is_worn( *loc );
@@ -462,6 +470,38 @@ class wear_inventory_preset: public armor_inventory_preset
             }
 
             return std::string();
+        }
+
+        auto get_preview( const item *loc ) const -> std::vector<std::string> override {
+            if( loc == nullptr ) {
+                return {};
+            }
+            return describe( p, preview_wear( p, *loc ) );
+        }
+
+        auto get_preview_height() const -> size_t override {
+            return 3;
+        }
+
+    private:
+        auto change_text( const item &loc ) const -> std::string {
+            const auto preview = preview_wear( p, loc );
+            const body_change *worst = nullptr;
+            for( const body_change &part : preview.parts ) {
+                const auto delta = part.after - part.before;
+                if( delta <= 0 ) {
+                    continue;
+                }
+                if( worst == nullptr || delta > worst->after - worst->before ) {
+                    worst = &part;
+                }
+            }
+            if( worst == nullptr ) {
+                return std::string();
+            }
+            return colorize( string_format( "%+d %s", worst->after - worst->before,
+                                            body_part_name_as_heading( worst->part, 1 ) ),
+                             character_display::encumb_color( worst->after ) );
         }
 };
 
@@ -2580,21 +2620,12 @@ auto unpack_inventory_selector::stow( detached_ptr<item> &&content ) -> void
 
 auto unpack_inventory_selector::encumbrance_text( const item &new_item ) const -> std::string
 {
-    const auto current = u.get_encumbrance();
-    const auto layered = u.get_encumbrance( new_item );
+    const auto preview = preview_wear( u, new_item );
     auto parts = std::vector<std::string>();
-    for( const bodypart_id &bp : u.get_all_body_parts() ) {
-        if( !new_item.covers( bp ) ) {
-            continue;
-        }
-        const auto current_it = current.elems.find( bp.id() );
-        const auto layered_it = layered.elems.find( bp.id() );
-        if( current_it == current.elems.end() || layered_it == current.elems.end() ) {
-            continue;
-        }
-        const auto added = layered_it->second.encumbrance - current_it->second.encumbrance;
+    for( const body_change &part : preview.parts ) {
+        const auto added = part.after - part.before;
         if( added > 0 ) {
-            parts.push_back( string_format( "%s +%d", body_part_name( bp ), added ) );
+            parts.push_back( string_format( "%s +%d", body_part_name( part.part ), added ) );
         }
     }
     return parts.empty() ? std::string() : enumerate_as_string( parts );

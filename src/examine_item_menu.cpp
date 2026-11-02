@@ -1,5 +1,6 @@
 #include "examine_item_menu.h"
 
+#include "action_preview.h"
 #include "auto_pickup.h"
 #include "avatar.h"
 #include "avatar_action.h"
@@ -81,6 +82,12 @@ bool run(
     constexpr int info_area_scroll_step = 3;
     temperature_flag temperature = rot::temp::for_location( get_map(), itm );
     std::vector<iteminfo> item_info_vals = itm.info( temperature );
+    if( itm.is_armor() && !you.is_wearing( itm ) ) {
+        item_info_vals.emplace_back( "DESCRIPTION", _( "If you wear it:" ) );
+        for( const std::string &line : describe( you, preview_wear( you, itm ) ) ) {
+            item_info_vals.emplace_back( "DESCRIPTION", line );
+        }
+    }
     std::vector<iteminfo> dummy_compare;
     item_info_data data( itm.tname(), itm.type_name(), item_info_vals, dummy_compare,
                          info_area_scroll_pos );
@@ -90,6 +97,7 @@ bool run(
 
     const bool has_pickup_rule = get_auto_pickup().has_rule( &itm );
     const bool is_wielded = you.is_wielding( itm );
+    const bool show_action_costs = get_option<bool>( "ACTION_COSTS" );
     const bool cant_unwield_if_weapon = is_wielded && !you.can_unwield( itm ).success();
     const bool cant_unwield_existing_weapon = you.is_armed() &&
             !you.can_unwield( you.primary_weapon() ).success();
@@ -135,12 +143,16 @@ bool run(
             bound_key_i = actions.size() == 10 ? '0' : '0' + static_cast<int>( actions.size() );
         }
         std::string act_name = ctxt.get_action_name( act );
-        if( number == INT_MIN ) {
-            action_list.addentry( actions.size(), true, bound_key_i, act_name );
-        } else {
-            action_list.addentry( actions.size(), true, bound_key_i,
-                                  act_name + " (" + std::to_string( number ) + ")" );
+        if( number != INT_MIN ) {
+            act_name += " (" + std::to_string( number ) + ")";
         }
+        if( show_action_costs && hint != hint_rating::cant ) {
+            const auto cost = action_cost( you, itm, act );
+            if( !cost.empty() ) {
+                act_name += "  <color_dark_gray>" + cost + "</color>";
+            }
+        }
+        action_list.addentry( actions.size(), true, bound_key_i, act_name );
 
         auto &list_entry = action_list.entries.back();
         switch( hint ) {

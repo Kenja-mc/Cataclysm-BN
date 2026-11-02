@@ -12,6 +12,15 @@ Upstream's own changes are in `docs/en/game/changelog`.
   weight it prints `Over by 2.3 kg: stamina drains 18% faster while moving`, using the same
   overburden percentage as movement, and over volume it warns that items that do not fit must be
   worn, wielded or left. Both lines disappear when the marked items fit again.
+- **Wear preview**: the Wear menu lists a CHANGE column with the body part that gains the most
+  encumbrance, and previews above its footer every changed body part (`Torso 12 → 37 (layering +10
+  with hoodie) · melee hit -37%, dodge -3`), plus warmth, storage and time. The item menu's
+  description shows the same lines, so layering cost is visible before the item is worn.
+- **Action costs in the item menu**: each action row shows its time and main effect, dimmed after
+  the label. Wear adds the worst encumbrance change (`30 s · torso +13`), Wield names where the
+  held weapon goes (`1 s · pipe → inventory`, red `pipe drops`), Eat shows time, calories, quench
+  and joy, Read its reading time, Unload its time, and Disassemble its time and `can't undo`.
+  Options → Interface → Show action costs in item menus; on in Modern, off in Classic.
 - **Numbered list rows** (Options → Graphics, off by default): opt in to `1`–`9` beside the first
   nine visible rows and `0` beside the tenth in the tiles build with Modern controls.
   A digit moves the highlight; Enter confirms, and scrolling renumbers. Inventory and other item

@@ -1277,6 +1277,9 @@ class Character : public Creature, public location_visitable<Character>
         /** Calculate (but do not deduct) the number of moves required to wear an item */
         int item_wear_cost( const item &it ) const;
 
+        /** Calculate (but do not deduct) the moves eating or drinking @p food takes */
+        int consume_moves( const item &food ) const;
+
         /** Returns the amount of item `type' that is currently worn */
         int amount_worn( const itype_id &id ) const;
 

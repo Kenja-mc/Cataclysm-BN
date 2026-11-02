@@ -98,6 +98,7 @@ from overmap_controls import TESTS as OVERMAP_CONTROLS_TESTS
 from target_lock import TESTS as TARGET_LOCK_TESTS
 from numeric_invkeys import TESTS as NUMERIC_INVKEYS_TESTS
 from wear_refresh import TESTS as WEAR_REFRESH_TESTS
+from wear_preview import TESTS as WEAR_PREVIEW_TESTS
 from creation_crafting_mouse import TESTS as CREATION_CRAFTING_MOUSE_TESTS
 from keybinding_search import TESTS as KEYBINDING_SEARCH_TESTS
 from mouse_side_buttons import TESTS as MOUSE_SIDE_BUTTONS_TESTS
@@ -114,6 +115,7 @@ from info_mouse import TESTS as INFO_MOUSE_TESTS
 from trade_mouse import TESTS as TRADE_MOUSE_TESTS
 from fork_guide_and_mods import TESTS as FORK_GUIDE_AND_MODS_TESTS
 from action_feedback import TESTS as ACTION_FEEDBACK_TESTS
+from action_costs import TESTS as ACTION_COSTS_TESTS
 
 from title_wordmark import TESTS as TITLE_WORDMARK_TESTS
 # The modules, in run order. A module's tests that take `g` run on the main game, so a
@@ -186,6 +188,7 @@ MODULES = [
     ("target_lock", TARGET_LOCK_TESTS),
     ("numeric_invkeys", NUMERIC_INVKEYS_TESTS),
     ("wear_refresh", WEAR_REFRESH_TESTS),
+    ("wear_preview", WEAR_PREVIEW_TESTS),
     ("creation_crafting_mouse", CREATION_CRAFTING_MOUSE_TESTS),
     ("keybinding_search", KEYBINDING_SEARCH_TESTS),
     ("mouse_side_buttons", MOUSE_SIDE_BUTTONS_TESTS),
@@ -201,6 +204,7 @@ MODULES = [
     ("info_mouse", INFO_MOUSE_TESTS),
     ("trade_mouse", TRADE_MOUSE_TESTS),
     ("action_feedback", ACTION_FEEDBACK_TESTS),
+    ("action_costs", ACTION_COSTS_TESTS),
     # Applies and resets world options on the main world, so it runs last.
     ("world_presets", WORLD_PRESETS_TESTS),
 ]
