@@ -112,6 +112,7 @@
 #include "map_item_stack.h"
 #include "map_iterator.h"
 #include "map_memory.h"
+#include "map_overlay.h"
 #include "mapsharing.h"
 #include "memorial_logger.h"
 #include "memory_fast.h"
@@ -170,6 +171,7 @@
 #include "string_id.h"
 #include "string_input_popup.h"
 #include "string_utils.h"
+#include "test_state.h"
 #include "thread_pool.h"
 #include "tileray.h"
 #include "tile_selection.h"
@@ -2601,6 +2603,8 @@ bool game::do_turn()
         Pathfinding::clear_d_maps();
     }
 
+    test_state::on_turn( u );
+
     return false;
 }
 
@@ -4951,16 +4955,13 @@ void game::disp_NPCs()
 namespace
 {
 /// Colour of a heard-sound marker: by kind, dimmer as it ages.
-auto footstep_color( const sounds::footstep_marker &mark ) -> nc_color
+auto footstep_color( const map_overlay::overlay &mark ) -> nc_color
 {
     if( mark.age >= 2 ) {
         return c_dark_gray;
     }
-    using sounds::sound_t;
-    const auto violent = mark.category == sound_t::combat || mark.category == sound_t::alarm ||
-                         mark.category == sound_t::destructive_activity;
-    const auto talk = mark.category == sound_t::speech || mark.category == sound_t::electronic_speech ||
-                      mark.category == sound_t::alert || mark.category == sound_t::order;
+    const auto violent = mark.flavor == map_overlay::sound_flavor::violent;
+    const auto talk = mark.flavor == map_overlay::sound_flavor::talk;
     if( mark.age == 1 ) {
         return violent ? c_red : talk ? c_cyan : c_brown;
     }
@@ -4968,26 +4969,28 @@ auto footstep_color( const sounds::footstep_marker &mark ) -> nc_color
 }
 
 /// Glyph of a heard-sound marker, smaller once it is stale.
-auto footstep_glyph( const sounds::footstep_marker &mark, const tripoint_rel_ms &offset,
-                     const bool age_glyphs ) -> std::string
+auto footstep_glyph( const map_overlay::overlay &mark ) -> std::string
 {
     // Direction wins: a stale marker on another level still has to say which way it is.
-    if( mark.pos.z() != offset.z() ) { // Here z isn't an offset, but a coordinate
-        return mark.pos.z() > offset.z() ? "^" : "v";
+    if( mark.z_offset != 0 ) {
+        return mark.z_offset > 0 ? "^" : "v";
     }
-    if( age_glyphs && mark.age >= 2 ) {
+    if( mark.stale ) {
         return "·";
     }
     return "?";
 }
 } // namespace
 
-static void draw_footsteps( const catacurses::window &window, const tripoint_rel_ms &offset )
+static void draw_footsteps( const catacurses::window &window, const tripoint_rel_ms &offset,
+                            const std::vector<map_overlay::overlay> &overlays )
 {
-    const auto age_glyphs = get_option<bool>( "SOUND_MARKER_GLYPH_AGING" );
-    for( const auto &mark : sounds::get_footstep_markers() ) {
+    for( const auto &mark : overlays ) {
+        if( mark.kind != map_overlay::overlay_kind::sound_marker ) {
+            continue;
+        }
         mvwputch( window, mark.pos.xy().raw() + offset.xy().raw(), footstep_color( mark ),
-                  footstep_glyph( mark, offset, age_glyphs ) );
+                  footstep_glyph( mark ) );
     }
 }
 
@@ -5464,9 +5467,10 @@ void game::draw_ter( const tripoint_bub_ms &center, const bool looking, const bo
 
     m.draw( w_terrain, center );
 
+    const auto overlays = map_overlay::collect( u );
     if( draw_sounds ) {
         draw_footsteps( w_terrain, tripoint_rel_ms( -center.x(), -center.y(),
-                        center.z() ) + point_rel_ms( POSX, POSY ) );
+                        center.z() ) + point_rel_ms( POSX, POSY ), overlays );
     }
 
     for( Creature &critter : all_creatures() ) {
@@ -5495,9 +5499,10 @@ void game::draw_ter( const tripoint_bub_ms &center, const bool looking, const bo
     }
 
     // Keep selection visible after the mouse leaves.
-    if( const auto reticle = aim_reticle::pos();
-        reticle && !looking && u.view_offset.z() == 0 && tile_selection::hovered() != reticle ) {
-        m.drawsq( w_terrain, *reticle, drawsq_params().highlight( true ).center( center ) );
+    for( const auto &overlay : overlays ) {
+        if( overlay.kind == map_overlay::overlay_kind::reticle && !looking ) {
+            m.drawsq( w_terrain, overlay.pos, drawsq_params().highlight( true ).center( center ) );
+        }
     }
 
     if( ( u.controlling_vehicle || remoteveh() ) && !looking ) {

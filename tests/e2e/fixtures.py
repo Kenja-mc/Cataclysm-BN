@@ -29,8 +29,9 @@ def _close_all():
 atexit.register(_close_all)
 
 
-def _key(options, cols, rows, keybindings, userdir, layout):
-    return json.dumps([sorted((options or {}).items()), cols, rows, str(keybindings), str(userdir), layout])
+def _key(options, cols, rows, keybindings, userdir, layout, state_path):
+    return json.dumps([sorted((options or {}).items()), cols, rows, str(keybindings), str(userdir),
+                       layout, str(state_path)])
 
 
 def retire(game):
@@ -50,11 +51,11 @@ def retire(game):
 
 @contextmanager
 def shared_game(name, options=None, cols=140, rows=45, keybindings=None, userdir=None,
-                define="", setup=None, layout="labels", retries=1):
+                define="", setup=None, layout="labels", retries=1, state_path=None):
     """Borrows a profile. `retries` re-creates a game whose setup failed (a bad game state)."""
     for attempt in range(retries + 1):
         cm = _shared_game_once(name, options, cols, rows, keybindings, userdir,
-                               define, setup, layout)
+                               define, setup, layout, state_path)
         try:
             game = cm.__enter__()
         except AssertionError:
@@ -72,16 +73,18 @@ def shared_game(name, options=None, cols=140, rows=45, keybindings=None, userdir
 
 
 @contextmanager
-def _shared_game_once(name, options, cols, rows, keybindings, userdir, define, setup, layout):
+def _shared_game_once(name, options, cols, rows, keybindings, userdir, define, setup, layout,
+                      state_path):
     """Borrow a profile; nested failures cannot close another caller's active game."""
-    key = _key(options, cols, rows, keybindings, userdir, layout)
+    key = _key(options, cols, rows, keybindings, userdir, layout, state_path)
     game = _games.get(key)
     if game in _retired:
         raise RuntimeError(f"game profile {game.name} was retired by an active borrower")
     fresh = game is None
     if fresh:
         game = Game(name=name, cols=cols, rows=rows, options=options,
-                    keybindings=keybindings, userdir=userdir, layout=layout)
+                    keybindings=keybindings, userdir=userdir, layout=layout,
+                    state_path=state_path)
         _games[key] = game
     _borrowers[game] = _borrowers.get(game, 0) + 1
     try:

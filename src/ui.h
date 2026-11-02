@@ -338,6 +338,7 @@ class uilist // NOLINT(cata-xy)
     public:
         // Parameters
         // TODO change to setters
+        std::string state_id;
         std::string title;
         std::string text;
         // basically the same as desc, except it doesn't change based on selection

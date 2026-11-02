@@ -26,10 +26,11 @@ def find_binary():
 
 class Game:
     def __init__(self, name="bn-e2e", cols=140, rows=45, options=None, keybindings=None,
-                 userdir=None, layout="labels"):
+                 userdir=None, layout="labels", state_path=None):
         # Sessions from two processes must not collide: local parallel shards run at once.
         self.name = f"{name}-{os.getpid()}"
         self.userdir = Path(userdir) if userdir else Path(tempfile.mkdtemp(prefix="bn-e2e-"))
+        self.state_path = Path(state_path).resolve() if state_path else None
         config = self.userdir / "config"
         config.mkdir(parents=True, exist_ok=True)
         # Legacy HUD contracts are explicit fixtures, not assumptions about the fresh-user default.
@@ -49,12 +50,21 @@ class Game:
         (stub_bin / "xdg-open").write_text("#!/bin/sh\nexit 0\n")
         (stub_bin / "xdg-open").chmod(0o755)
         env = f"PATH={stub_bin}:$PATH BROWSER=true LANG=C.UTF-8 LC_ALL=C.UTF-8 TERM=xterm-256color"
-        cmd = f"cd {ROOT} && env -u DISPLAY -u WAYLAND_DISPLAY {env} {os.environ.get('GAME_WRAPPER', '')} {find_binary()} --basepath {ROOT}/ --userdir {self.userdir}/"
+        state_arg = f" --state-out={self.state_path}" if self.state_path else ""
+        cmd = (f"cd {ROOT} && env -u DISPLAY -u WAYLAND_DISPLAY {env} "
+               f"{os.environ.get('GAME_WRAPPER', '')} {find_binary()} "
+               f"--basepath {ROOT}/ --userdir {self.userdir}/{state_arg}")
         subprocess.run(["tmux", "new-session", "-d", "-s", self.name, "-x", str(cols), "-y", str(rows), cmd], check=True)
 
     def screen(self):
         return subprocess.run(["tmux", "capture-pane", "-p", "-t", self.name],
                               capture_output=True, text=True, check=True).stdout
+
+    def state(self):
+        """The structured state file the game writes with --state-out, or None without the flag."""
+        if self.state_path is None:
+            return None
+        return json.loads(self.state_path.read_text())
 
     def resize(self, cols, rows):
         """Force the pane size: tmux sizes new windows from the server, not only from -x/-y."""

@@ -36,6 +36,7 @@
 #include "loading_ui.h"
 #include "runtime_handlers.h"
 #include "string_formatter.h"
+#include "test_state.h"
 #include "main_menu.h"
 #include "mapsharing.h"
 #include "options.h"
@@ -270,7 +271,7 @@ int main( int argc, char *argv[] )
         const char *section_default = nullptr;
         const char *section_map_sharing = "Map sharing";
         const char *section_user_directory = "User directories";
-        const std::array<arg_handler, 17> first_pass_arguments = {{
+        const std::array<arg_handler, 18> first_pass_arguments = {{
                 {
                     "--seed", "<string of letters and or numbers>",
                     "Sets the random number generator's seed value",
@@ -489,6 +490,18 @@ int main( int argc, char *argv[] )
                     test_mode = true;
                     lua_types_output_path = params[0];
                     return 0;
+                }
+            },
+            {
+                "--state-out", "<path>",
+                "Write machine-readable game state to this file for automated tests.",
+                section_default,
+                []( int num_args, const char **params ) -> int {
+                    if( num_args < 1 ) {
+                        return -1;
+                    }
+                    test_state::set_path( params[0] );
+                    return 1;
                 }
             },
             {

@@ -285,6 +285,9 @@ class map_memory
          */
         auto clear_locked_door( const tripoint_abs_ms &pos ) -> void;
 
+        /// Every door the loaded memory still records as locked, in global ms coords.
+        auto locked_door_positions() const -> std::vector<tripoint_abs_ms>;
+
         /**
          * Tiles the memory holds whose submap lies inside [min, max], both inclusive, on the
          * given z level.  Nothing outside those submaps is copied, so a long session with a wide

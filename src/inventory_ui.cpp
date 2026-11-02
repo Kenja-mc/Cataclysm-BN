@@ -27,6 +27,7 @@
 #include "string_formatter.h"
 #include "string_id.h"
 #include "string_input_popup.h"
+#include "test_state.h"
 #include "translations.h"
 #include "type_id.h"
 #include "ui_manager.h"
@@ -1905,6 +1906,29 @@ void inventory_selector::refresh_window() const
     draw_footer( w_inv );
 
     wnoutrefresh( w_inv );
+
+    if( test_state::enabled() ) {
+        std::vector<test_state::row> rows;
+        int selected = -1;
+        for( inventory_column *column : get_visible_columns() ) {
+            const auto entries = column->get_entries( []( const inventory_entry & ) {
+                return true;
+            } );
+            if( column == &get_active_column() && !column->get_selected().is_null() ) {
+                selected = static_cast<int>( rows.size() ) +
+                           static_cast<int>( column->get_selected_index() );
+            }
+            for( const inventory_entry *entry : entries ) {
+                std::string hotkey;
+                if( entry->get_invlet() > 0 ) {
+                    hotkey = utf32_to_utf8( static_cast<uint32_t>( entry->get_invlet() ) );
+                }
+                rows.push_back( { .text = preset.get_cell_text( *entry, 0 ), .hotkey = hotkey,
+                                  .enabled = entry->is_selectable() } );
+            }
+        }
+        test_state::ui_show( title.empty() ? "inventory" : title, title, rows, selected );
+    }
 }
 
 void inventory_selector::set_filter()
@@ -2144,7 +2168,10 @@ inventory_selector::inventory_selector( player &u, const inventory_selector_pres
     append_column( own_gear_column );
 }
 
-inventory_selector::~inventory_selector() = default;
+inventory_selector::~inventory_selector()
+{
+    test_state::ui_close( title.empty() ? std::string( "inventory" ) : title );
+}
 
 bool inventory_selector::empty() const
 {

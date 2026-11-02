@@ -19,18 +19,20 @@ learn and use. It keeps the BN game rules. `OVERHAUL.md` explains each change.
    effects, salvage and loot must keep working. Anything else that changes balance needs the
    owner's approval first.
 2. Put a new behavior behind an option when a player can want the old behavior.
-3. Keep the classic control scheme the same as upstream.
-4. Do not add AI art.
-5. Keep comments terse. Add one only for a non-obvious reason; remove comments that restate code.
-6. Obey the upstream code rules in Part 2.
-7. Never touch the upstream. `cataclysmbn/Cataclysm-BN` is a source to merge from and nothing else:
+3. Controls and gameplay information must work in both the curses and tiles builds; purely
+   cosmetic visuals may be tiles-only. Current exceptions: numbered list rows (tiles only).
+4. Keep the classic control scheme the same as upstream.
+5. Do not add AI art.
+6. Keep comments terse. Add one only for a non-obvious reason; remove comments that restate code.
+7. Obey the upstream code rules in Part 2.
+8. Never touch the upstream. `cataclysmbn/Cataclysm-BN` is a source to merge from and nothing else:
    do not open a pull request, issue, comment, branch or release there. Everything we submit goes to
    `Kenja-mc/Cataclysm-BN`. The PR workflow in Part 2 predates this fork and applies to the fork only.
    Three guards enforce it: the `gh-fork` wrapper refuses upstream writes, `.githooks/pre-push`
    (enabled with `git config core.hooksPath .githooks`) refuses upstream pushes, and
    `git remote set-url --push upstream DISABLED-fetch-only` blocks the push at the remote. Fetching
    and merging from upstream are unaffected.
-8. Before implementing from a ticket, run the test it cites and confirm it fails for the stated
+9. Before implementing from a ticket, run the test it cites and confirm it fails for the stated
    reason, and confirm the cited line sits in the function you are about to change. #33 cited
    `test_mre_unpacks_its_entree`, but MRE rations use `DISASSEMBLE` and never run `unpack_actor`,
    so that test could not have been its regression test.

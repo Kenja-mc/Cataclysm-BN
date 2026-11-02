@@ -5,8 +5,15 @@ make the game easier to pick up. The simulation, content and tone stay the same:
 items, same zombies. The changes are to the controls, the look of the interface and the busywork
 around managing items.
 
+<<<<<<< HEAD
 Branched from `cataclysmbn/Cataclysm-BN@d14e047`; for the last merged upstream commit, run
 `git merge-base main upstream/main`.
+=======
+Controls and gameplay information must work in both the curses and tiles builds; purely cosmetic
+visuals may be tiles-only. Current exceptions: numbered list rows (tiles only).
+
+Branched from `cataclysmbn/Cataclysm-BN@d14e047`; last merged upstream `main`: `631956df27`.
+>>>>>>> task/map-overlay
 
 Screenshots: [docs/fork/visual-changes.md](docs/fork/visual-changes.md). Changes by date:
 [CHANGELOG-OVERHAUL.md](CHANGELOG-OVERHAUL.md).

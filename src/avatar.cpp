@@ -307,6 +307,11 @@ auto avatar::get_known_locked_door( const tripoint_abs_ms &p ) const -> locked_d
     return player_map_memory->get_locked_door( p );
 }
 
+auto avatar::known_locked_door_positions() const -> std::vector<tripoint_abs_ms>
+{
+    return player_map_memory->locked_door_positions();
+}
+
 auto avatar::remember_locked_door( const tripoint_abs_ms &p, const bool vehicle ) -> void
 {
     player_map_memory->set_locked_door( p, vehicle ? locked_door_kind::vehicle :
