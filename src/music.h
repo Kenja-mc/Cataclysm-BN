@@ -97,5 +97,8 @@ void reset();
 /// The context selected by the last update, for Lua and diagnostics. Menu and
 /// single-playlist mode report "title".
 auto current_context() -> context;
+/// The playlist the soundpack supplies for current_context(), or "title" when
+/// it has none. Read-only: it reports the selection without starting anything.
+auto current_playlist() -> std::string;
 
 } // namespace music

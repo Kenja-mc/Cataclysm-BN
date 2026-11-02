@@ -16,6 +16,8 @@ void play_music( const std::string &playlist );
 void play_music_context( music::context ctx );
 /// Whether this playlist, and not another, owns the currently playing track.
 bool music_playlist_playing( const std::string &playlist );
+/// Whether the loaded soundpack supplies at least one track for this playlist.
+bool music_has_playlist( const std::string &playlist );
 /// Advance a finished track and release its audio. Call from the main thread.
 void process_music_events();
 void stop_music();
@@ -34,6 +36,10 @@ inline void play_music( const std::string &/*playlist*/ )
 }
 inline void play_music_context( music::context /*ctx*/ ) { }
 inline bool music_playlist_playing( const std::string &/*playlist*/ )
+{
+    return false;
+}
+inline bool music_has_playlist( const std::string &/*playlist*/ )
 {
     return false;
 }
