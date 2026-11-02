@@ -108,6 +108,7 @@ from utility_mouse import TESTS as UTILITY_MOUSE_TESTS
 from info_mouse import TESTS as INFO_MOUSE_TESTS
 from trade_mouse import TESTS as TRADE_MOUSE_TESTS
 from fork_guide_and_mods import TESTS as FORK_GUIDE_AND_MODS_TESTS
+from action_feedback import TESTS as ACTION_FEEDBACK_TESTS
 
 from title_wordmark import TESTS as TITLE_WORDMARK_TESTS
 # The modules, in run order. A module's tests that take `g` run on the main game, so a
@@ -189,6 +190,7 @@ MODULES = [
     ("utility_mouse", UTILITY_MOUSE_TESTS),
     ("info_mouse", INFO_MOUSE_TESTS),
     ("trade_mouse", TRADE_MOUSE_TESTS),
+    ("action_feedback", ACTION_FEEDBACK_TESTS),
     # Applies and resets world options on the main world, so it runs last.
     ("world_presets", WORLD_PRESETS_TESTS),
 ]
