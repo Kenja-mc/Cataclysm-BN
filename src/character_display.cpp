@@ -57,12 +57,15 @@ static const trait_flag_str_id trait_flag_UNARMED_BONUS( "UNARMED_BONUS" );
 // use this instead of having to type out 26 spaces like before
 static const std::string header_spaces( 26, ' ' );
 
-static nc_color encumb_color( int level )
+namespace character_display
+{
+
+auto encumb_color( const int level ) -> nc_color
 {
     if( level < 0 ) {
         return c_green;
     }
-    if( level < 10 ) {
+    if( level < encumb_notice ) {
         return c_light_gray;
     }
     if( level < 40 ) {
@@ -73,6 +76,8 @@ static nc_color encumb_color( int level )
     }
     return c_red;
 }
+
+} // namespace character_display
 
 static auto get_temp_conv( const Character &c, const bodypart_str_id &bp ) -> units::temperature
 {

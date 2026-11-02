@@ -29,6 +29,13 @@ struct limb {
     nc_color wound_color = c_light_gray;
 };
 
+/// A body part whose encumbrance the character sheet no longer shows as normal.
+struct encumbered {
+    std::string name;
+    int level = 0;
+    nc_color color = c_light_gray;
+};
+
 struct sighting {
     std::string name;
     std::string symbol;
@@ -103,6 +110,8 @@ struct snapshot {
     int per = 0;
 
     std::vector<limb> limbs;
+    /// Body parts with noticeable encumbrance, worst first.
+    std::vector<encumbered> encumbered;
     /// Newest last; colour tags kept for print_colored_text.
     std::vector<std::string> log;
     /// Creatures in sight, nearest hostiles first.

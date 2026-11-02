@@ -243,6 +243,36 @@ def test_needs_collapse_to_one_needs_met_line(_g):
             assert old not in screen, f"{old!r} is on the @ sheet or is the normal state:\n" + screen
 
 
+def test_status_flags_heavy_encumbrance_and_clicking_it_opens_armor(_g):
+    with shared_game("bn-e2e-fusion", options=OPTIONS, layout="fusion", cols=160, rows=45,
+                     define=HELPERS, setup=fusion_setup) as game:
+        encumbrance = game.lua("local a=gapi.get_avatar() a:clear_effects() a:set_pain(0) "
+                               "for _,id in ipairs({'tshirt','sweatshirt','flotation_vest'}) do "
+                               "local it=a:create_item(ItypeId.new(id),-1) assert(a:wear(it,false),id) end "
+                               "out(a:get_part_encumbrance(BodyPartTypeId.new('torso')))")
+        assert int(encumbrance[0]) >= 10, f"the worn layers must encumber the torso: {encumbrance}"
+        game.settle_screen()
+        screen = game.screen()
+        region = "\n".join(status_region(screen))
+        assert "Encumbered" in region, "heavy encumbrance belongs on the needs line:\n" + screen
+        assert re.search(r"Encumbered TORSO", region), \
+            "the encumbered part is named where the limb grid names it:\n" + region
+        assert "Needs met" not in region, "an encumbered character cannot collapse its needs:\n" + screen
+        row = next(y for y, line in enumerate(screen.splitlines()) if "Encumbered" in line)
+        game.click(screen.splitlines()[row].index("Encumbered"), row)
+        assert wait_until(lambda: "Sort Armor" in game.screen(), timeout=15), \
+            "a click on the encumbrance entries opens the armor screen:\n" + game.screen()
+        game.keys("Escape", delay=1)
+        assert wait_until(lambda: "Encumbered" in game.screen(), timeout=15), game.screen()
+        assert game.lua("local a=gapi.get_avatar() a:drop_all_items() a:reset_encumbrance() "
+                        "out('ok')") == ["ok"]
+        game.settle_screen()
+        region = "\n".join(status_region(game.screen()))
+        assert "Encumbered" not in region, \
+            "taking the layers off clears the encumbrance entries:\n" + game.screen()
+        assert "Needs met" in region, "nothing wrong collapses the needs again:\n" + game.screen()
+
+
 TESTS = [test_around_names_who_is_in_sight,
          test_vehicle_card_replaces_the_floating_vehicle_window_while_aboard,
          test_clicking_a_hotbar_slot_uses_it_and_overlay_clicks_stay_off_the_map,
@@ -253,5 +283,6 @@ TESTS = [test_around_names_who_is_in_sight,
          test_key_bar_switches_to_combat_keys_with_a_hostile_in_sight,
          test_status_names_a_bleeding_limb_in_the_needs_line,
          test_needs_collapse_to_one_needs_met_line,
+         test_status_flags_heavy_encumbrance_and_clicking_it_opens_armor,
          test_fusion_is_the_fresh_default_and_small_screens_fall_back]
 
