@@ -10,6 +10,7 @@
 #include "map_memory.h"
 #include "monster.h"
 #include "options.h"
+#include "shot_preview.h"
 #include "sounds.h"
 #include "tile_selection.h"
 #include "type_id.h"
@@ -102,6 +103,36 @@ auto add_health_bars( std::vector<map_overlay::overlay> &out, const avatar &you 
     }
 }
 
+auto add_shot_preview( std::vector<map_overlay::overlay> &out ) -> void
+{
+    const auto &preview = shot_preview::current();
+    if( !preview.active ) {
+        return;
+    }
+    if( preview.blocker ) {
+        out.push_back( map_overlay::overlay{
+            .pos = preview.blocker->pos,
+            .kind = map_overlay::overlay_kind::shot_blocker,
+            .severity = preview.blocker->severity,
+            .label = preview.blocker->label,
+        } );
+    }
+    for( const tripoint_bub_ms &p : preview.strays ) {
+        out.push_back( map_overlay::overlay{
+            .pos = p,
+            .kind = map_overlay::overlay_kind::stray_tile,
+        } );
+    }
+    if( preview.aim_label ) {
+        out.push_back( map_overlay::overlay{
+            .pos = preview.aim_label->pos,
+            .kind = map_overlay::overlay_kind::aim_label,
+            .severity = preview.aim_label->severity,
+            .label = preview.aim_label->label,
+        } );
+    }
+}
+
 } // namespace
 
 namespace map_overlay
@@ -114,6 +145,7 @@ auto collect( const avatar &you ) -> std::vector<overlay>
     add_reticle( out, you );
     add_known_locks( out, you );
     add_health_bars( out, you );
+    add_shot_preview( out );
     return out;
 }
 
@@ -128,6 +160,12 @@ auto kind_name( const overlay_kind kind ) -> std::string
             return "known_lock";
         case overlay_kind::health_bar:
             return "health_bar";
+        case overlay_kind::shot_blocker:
+            return "shot_blocker";
+        case overlay_kind::stray_tile:
+            return "stray_tile";
+        case overlay_kind::aim_label:
+            return "aim_label";
     }
     return "unknown";
 }

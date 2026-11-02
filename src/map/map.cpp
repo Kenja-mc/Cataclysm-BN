@@ -82,6 +82,7 @@
 #include "point_float.h"
 #include "profile.h"
 #include "projectile.h"
+#include "ranged_rules.h"
 #include "rng.h"
 #include "rot.h"
 #include "safe_reference.h"
@@ -4485,8 +4486,7 @@ void map::shoot(
         float destroy_roll = point_blank ? dam * breaching_mod : dam * rng_float(0.9, 1.1);
         const ranged_bash_info& rfi = *furn.bash.ranged;
         if (!hit_items
-            && (!check(rfi.block_unaimed_chance)
-                || (rfi.block_unaimed_chance < 100_pct && point_blank))) {
+            && !ranged_rules::cover_blocks_unaimed(rfi, check(rfi.block_unaimed_chance), point_blank)) {
             // Nothing, it's a miss, we're shooting over nearby furniture.
         } else if (proj.has_effect(ammo_effect_NO_PENETRATE_OBSTACLES)) {
             // We shot something with a flamethrower or other non-penetrating weapon.
@@ -4535,8 +4535,7 @@ void map::shoot(
         float destroy_roll = point_blank ? dam * breaching_mod : dam * rng_float(0.9, 1.1);
         const ranged_bash_info& ri = *ter.bash.ranged;
         if (!hit_items
-            && (!check(ri.block_unaimed_chance)
-                || (ri.block_unaimed_chance < 100_pct && point_blank))) {
+            && !ranged_rules::cover_blocks_unaimed(ri, check(ri.block_unaimed_chance), point_blank)) {
             // Nothing, it's a miss or we're shooting over nearby terrain
         } else if (proj.has_effect(ammo_effect_NO_PENETRATE_OBSTACLES)) {
             // We shot something with a flamethrower or other non-penetrating weapon.
@@ -6968,6 +6967,9 @@ auto map::draw_maptile(
     } else if (graf) {
         tercol = red_background(tercol);
     }
+    if (param.has_color()) {
+        tercol = param.color();
+    }
 
     if (item_sym.empty() && sym == ' ') {
         if (p.z() <= -OVERMAP_DEPTH || !curr_ter.has_flag(TFLAG_NO_FLOOR)) {
@@ -7056,6 +7058,7 @@ void map::draw_from_above(
     }
 
     if (params.highlight()) { tercol = invert_color(tercol); }
+    if (params.has_color()) { tercol = params.color(); }
 
     if (params.output()) { put_glyph(w, tercol, square_corner(sym)); }
 }

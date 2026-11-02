@@ -37,9 +37,11 @@
 #include "item_functions.h"
 #include "itype.h"
 #include "line.h"
+#include "live_view.h"
 #include "magic/magic.h"
 #include "map/map.h"
 #include "map/utils/map_functions.h"
+#include "map_iterator.h"
 #include "material.h"
 #include "math_defines.h"
 #include "messages.h"
@@ -56,13 +58,16 @@
 #include "reload/reload_ui.h"
 #include "point.h"
 #include "projectile.h"
+#include "ranged_rules.h"
 #include "rng.h"
 #include "shape_impl.h"
 #include "skill.h"
+#include "shot_preview.h"
 #include "sounds.h"
 #include "stack_modifier.h"
 #include "string_formatter.h"
 #include "string_id.h"
+#include "test_state.h"
 #include "translations.h"
 #include "trap.h"
 #include "type_id.h"
@@ -594,6 +599,11 @@ class target_ui
         // List of vehicle turrets in range (out of those listed in 'vturrets')
         std::vector<turret_with_lof> turrets_in_range;
 
+        // Lines printed under the target panel by the shot preview.
+        std::vector<std::string> shot_preview_lines;
+        // Where the Mouse View box is pinned during the preview, in the terminal renderer.
+        std::optional<tripoint_bub_ms> preview_liveview_at;
+
         // If true, draws turret lines
         // relevant for TargetMode::Turrets
         bool draw_turret_lines = false;
@@ -655,6 +665,15 @@ class target_ui
 
         // Prints a warning if an ally stands in the firing line to the current cursor position.
         void panel_ally_warning( int &text_y );
+
+        // Recompute the shot preview marks, overlay label and panel lines for the current aim.
+        void refresh_shot_preview();
+
+        // Print the cover, creature and stray lines produced by refresh_shot_preview().
+        void panel_shot_preview( int &text_y );
+
+        // The tile under the mouse, if the last input was a click on the map.
+        auto clicked_tile() const -> std::optional<tripoint_bub_ms>;
 
         // Toggle snap-to-target
         void toggle_snap_to_target();
@@ -2191,6 +2210,7 @@ static int print_ranged_chance( const catacurses::window &w, int line_number,
                                 const std::vector<ranged::aim_type> &aim_types,
                                 const std::function<dispersion_sources( const ranged::aim_type & )> &dispersion_fun,
                                 const std::function<int( const ranged::aim_type & )> &cost_fun,
+                                const std::function<int( const ranged::aim_type & )> &advance_fun,
                                 const std::vector<confidence_rating> &confidence_config,
                                 double range, double target_size )
 {
@@ -2258,6 +2278,10 @@ static int print_ranged_chance( const catacurses::window &w, int line_number,
         }
 
         int moves_to_fire = cost_fun( type );
+        const int advance = advance_fun ? advance_fun( type ) : 0;
+        const std::string advance_text = advance > 0
+                                         ? string_format( _( " <color_yellow>(~%d tiles)</color>" ), advance )
+                                         : std::string();
 
         auto hotkey = front_or( type.action.empty() ? "FIRE" : type.action, ' ' );
         if( ( panel_type == "compact" || panel_type == "labels-narrow" ) ) {
@@ -2266,15 +2290,15 @@ static int print_ranged_chance( const catacurses::window &w, int line_number,
                 t_confidence[( aim_iter * 4 ) + 3] = string_format( "<color_light_blue>%d</color>", moves_to_fire );
             } else {
                 print_colored_text( w, point( 1, line_number ), col, col, string_format( _( "%s %s:" ), label,
-                        aim_l ) );
+                        aim_l ) + advance_text );
                 right_print( w, line_number++, 1, c_light_blue, _( "Moves" ) );
                 right_print( w, line_number, 1, c_light_blue, string_format( "%d", moves_to_fire ) );
             }
         } else {
             print_colored_text( w, point( 1, line_number++ ), col, col,
                                 string_format( _( "<color_white>[%s]</color> %s %s: Moves to fire: "
-                                                  "<color_light_blue>%d</color>" ),
-                                               hotkey, label, aim_l, moves_to_fire ) );
+                                                  "<color_light_blue>%d</color>%s" ),
+                                               hotkey, label, aim_l, moves_to_fire, advance_text ) );
         }
 
         double confidence = confidence_estimate( range, target_size, current_dispersion );
@@ -2399,10 +2423,21 @@ static int print_aim( const Character &p, const catacurses::window &w, int line_
         return ranged::gun_engagement_moves( p, weapon, at_recoil, p.recoil ) +
                ranged::time_to_attack( p, weapon, load_loc );
     };
+    const auto advance_fun = [&]( const ranged::aim_type & at ) {
+        const Creature *const target = g->critter_at<Creature>( pos, true );
+        if( target == nullptr || !p.sees( *target ) ) {
+            return 0;
+        }
+        const int at_recoil = at.has_threshold ? at.threshold : static_cast<int>( predicted_recoil );
+        const int aim_moves = ranged::gun_engagement_moves( p, weapon, at_recoil, p.recoil );
+        // One tile costs a creature 100 moves; it recovers its speed in moves each turn.
+        return aim_moves * target->get_speed() / 10000;
+    };
     const double range = rl_dist( p.bub_pos(), pos );
     line_number = print_steadiness( w, line_number, steadiness );
     return print_ranged_chance( w, line_number, ctxt, weapon, ranged::get_aim_types( p, weapon ),
-                                dispersion_fun, cost_fun, confidence_config, range, target_size );
+                                dispersion_fun, cost_fun, advance_fun, confidence_config, range,
+                                target_size );
 }
 
 static int draw_throw_aim( const player &p, const catacurses::window &w, int line_number,
@@ -2440,7 +2475,8 @@ static int draw_throw_aim( const player &p, const catacurses::window &w, int lin
         return ranged::throw_cost( p, weapon );
     };
     return print_ranged_chance( w, line_number, ctxt, weapon, get_default_aim_type(),
-                                dispersion_fun, cost_fun, confidence_config, range, target_size );
+                                dispersion_fun, cost_fun, nullptr, confidence_config, range,
+                                target_size );
 }
 
 std::vector<ranged::aim_type> ranged::get_aim_types( const Character &who, const item &gun )
@@ -3108,7 +3144,13 @@ target_handler::trajectory target_ui::run()
     }
 
     avatar &player_character = *you;
-    on_out_of_scope cleanup( [&here, &player_character]() {
+    on_out_of_scope cleanup( [this, &here, &player_character]() {
+        shot_preview::clear();
+        if( preview_liveview_at ) {
+            g->liveview.hide();
+            preview_liveview_at.reset();
+        }
+        test_state::refresh_overlays( player_character );
         here.invalidate_map_cache( player_character.bub_pos().z() + player_character.view_offset.z() );
     } );
 
@@ -3124,6 +3166,10 @@ target_handler::trajectory target_ui::run()
         ui.position_from_window( w_target );
     } );
     ui.mark_resize();
+
+    // The resize callback normally creates these on the first redraw; the shot preview
+    // needs the aim types on that same frame, before the map is drawn.
+    init_window_and_input();
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
         draw_ui_window();
@@ -3211,6 +3257,7 @@ target_handler::trajectory target_ui::run()
     bool skip_redraw = false;
     for( ;; action.clear() ) {
         if( !skip_redraw ) {
+            refresh_shot_preview();
             g->invalidate_main_ui_adaptor();
             ui_manager::redraw();
         }
@@ -3220,6 +3267,14 @@ target_handler::trajectory target_ui::run()
         if( action.empty() ) {
             int timeout = get_option<int>( "EDGE_SCROLL" );
             action = ctxt.handle_input( timeout );
+        }
+
+        // A click already on the current target fires; any other click retargets through
+        // handle_cursor_movement. The chosen aim mode's action keeps its usual move cost.
+        if( action == "SELECT" && mode == TargetMode::Fire && dst_critter != nullptr && dst != src ) {
+            if( const auto clicked = clicked_tile(); clicked && *clicked == dst ) {
+                action = aim_mode->has_threshold ? aim_mode->action : "FIRE";
+            }
         }
 
         // If an aiming mode is selected, use "*_SHOT" instead of "FIRE"
@@ -3872,6 +3927,214 @@ void target_ui::panel_ally_warning( int &text_y )
     }
 }
 
+auto target_ui::clicked_tile() const -> std::optional<tripoint_bub_ms>
+{
+    auto clicked = ctxt.get_coordinates( g->w_terrain );
+    if( !clicked ) {
+        return std::nullopt;
+    }
+    clicked->z() = you->bub_pos().z() + you->view_offset.z();
+    return clicked;
+}
+
+void target_ui::refresh_shot_preview()
+{
+    shot_preview::state next;
+    shot_preview_lines.clear();
+    const auto finish = [this, &next]() {
+        const bool show_live = next.aim_label.has_value() && !is_draw_tiles_mode();
+        if( show_live ) {
+            if( preview_liveview_at != next.aim_label->pos ) {
+                g->liveview.show( next.aim_label->pos );
+                preview_liveview_at = next.aim_label->pos;
+            }
+        } else if( preview_liveview_at ) {
+            g->liveview.hide();
+            preview_liveview_at.reset();
+        }
+        shot_preview::set( std::move( next ) );
+        test_state::refresh_overlays( *you );
+    };
+
+    if( !get_option<bool>( "SHOT_PREVIEW" ) || mode != TargetMode::Fire || relevant == nullptr ||
+        !relevant->is_gun() || dst == src || range <= 0 ) {
+        finish();
+        return;
+    }
+
+    map &here = get_map();
+    next.active = true;
+
+    // The first tile on the line that can stop or slow the shot.
+    const auto blocker_text = [&]( const tripoint_bub_ms & p )
+        -> std::optional<std::tuple<std::string, std::string, int>> {
+        const auto cover = [&]( const std::string & name, const ranged_bash_info & info ) {
+            const int chance = static_cast<int>( info.block_unaimed_chance / 1_pct );
+            if( info.block_unaimed_chance < 100_pct && rl_dist( src, p ) <= 1 ) {
+                return std::make_tuple(
+                           string_format( _( "<color_yellow>You shoot over %s</color>" ), name ),
+                           name, chance );
+            }
+            return std::make_tuple(
+                       string_format( _( "<color_red>Cover: %s, may block %d%%</color>" ), name, chance ),
+                       name, chance );
+        };
+        if( here.has_furn( p ) ) {
+            const furn_t &furn = here.furn( p ).obj();
+            if( furn.bash.ranged ) {
+                return cover( here.furnname( p ), *furn.bash.ranged );
+            }
+        }
+        if( !here.passable( p ) && !here.has_flag_ter( TFLAG_TRANSPARENT, p ) ) {
+            const std::string name = here.tername( p );
+            return std::make_tuple(
+                       string_format( _( "<color_red>Blocked: %s</color>" ), name ), name, 100 );
+        }
+        const ter_t &ter = here.ter( p ).obj();
+        if( ter.bash.ranged ) {
+            return cover( here.tername( p ), *ter.bash.ranged );
+        }
+        return std::nullopt;
+    };
+
+    for( const tripoint_bub_ms &p : traj ) {
+        if( p == src || p == dst ) {
+            continue;
+        }
+        if( const auto found = blocker_text( p ); found ) {
+            next.blocker = shot_preview::mark{
+                .pos = p,
+                .severity = std::get<2>( *found ),
+                .label = std::get<1>( *found ),
+            };
+            shot_preview_lines.push_back( std::get<0>( *found ) );
+            break;
+        }
+    }
+
+    const auto join_names = []( const std::vector<std::string> &names ) {
+        std::string out;
+        for( const std::string &name : names ) {
+            if( !out.empty() ) {
+                out += _( ", " );
+            }
+            out += name;
+        }
+        return out;
+    };
+
+    std::set<const Creature *> on_line;
+    std::vector<std::string> in_way;
+    for( const tripoint_bub_ms &p : traj ) {
+        if( p == src || p == dst ) {
+            continue;
+        }
+        Creature *const cr = g->critter_at<Creature>( p, true );
+        if( cr == nullptr || cr == you || !you->sees( *cr ) ) {
+            continue;
+        }
+        on_line.insert( cr );
+        in_way.push_back( cr->disp_name() );
+    }
+    if( !in_way.empty() ) {
+        shot_preview_lines.push_back( string_format( _( "<color_yellow>In the way: %s</color>" ),
+                                     join_names( in_way ) ) );
+    }
+
+    std::vector<std::string> behind;
+    for( const tripoint_bub_ms &p : continue_line( traj, range ) ) {
+        if( p == dst || p == src ) {
+            continue;
+        }
+        Creature *const cr = g->critter_at<Creature>( p, true );
+        if( cr == nullptr || cr == you || cr == dst_critter || !you->sees( *cr ) ||
+            on_line.contains( cr ) ) {
+            continue;
+        }
+        behind.push_back( cr->disp_name() );
+        break;
+    }
+    if( !behind.empty() ) {
+        shot_preview_lines.push_back( string_format( _( "<color_light_gray>Behind: %s</color>" ),
+                                     join_names( behind ) ) );
+    }
+
+    const int shots = std::max( 1, relevant->gun_current_mode().qty );
+    const int at_recoil = aim_mode->has_threshold ? aim_mode->threshold :
+                          static_cast<int>( predicted_recoil );
+    const dispersion_sources selected_dispersion = calculate_dispersion(
+                here, *you, *relevant->gun_current_mode(), at_recoil, shots > 1 );
+    const double cap = units::to_radians( ranged_rules::capped_miss_angle(
+                           units::from_arcmin( selected_dispersion.max() ) ) );
+    const double base_angle = std::atan2( static_cast<double>( dst.y() - src.y() ),
+                                          static_cast<double>( dst.x() - src.x() ) );
+
+    std::set<const Creature *> on_line_targets = on_line;
+    if( dst_critter != nullptr ) {
+        on_line_targets.insert( dst_critter );
+    }
+    std::vector<std::string> strays;
+    for( const Creature &cr : g->all_creatures() ) {
+        const tripoint_bub_ms p = cr.bub_pos();
+        if( p == src || &cr == you || on_line_targets.contains( &cr ) || p.z() != src.z() ||
+            !you->sees( cr ) ) {
+            continue;
+        }
+        const int dist = rl_dist( src, p );
+        if( dist <= 0 || dist > range ) {
+            continue;
+        }
+        const double angle = std::atan2( static_cast<double>( p.y() - src.y() ),
+                                         static_cast<double>( p.x() - src.x() ) );
+        if( std::abs( std::remainder( angle - base_angle, 2 * M_PI ) ) <= cap ) {
+            strays.push_back( cr.disp_name() );
+        }
+    }
+    if( !strays.empty() ) {
+        shot_preview_lines.push_back( string_format( _( "<color_cyan>Strays may hit: %s</color>" ),
+                                     join_names( strays ) ) );
+    }
+
+    for( const tripoint_bub_ms &p : closest_points_first<tripoint_bub_ms>( src, range ) ) {
+        if( p == src || p.z() != src.z() || rl_dist( src, p ) > range || !you->sees( p ) ) {
+            continue;
+        }
+        const double angle = std::atan2( static_cast<double>( p.y() - src.y() ),
+                                         static_cast<double>( p.x() - src.x() ) );
+        if( std::abs( std::remainder( angle - base_angle, 2 * M_PI ) ) <= cap ) {
+            next.strays.push_back( p );
+        }
+    }
+
+    if( dst_critter != nullptr ) {
+        const double target_size = dst_critter->ranged_target_size();
+        const double confidence = confidence_estimate( rl_dist( src, dst ), target_size,
+                                   selected_dispersion );
+        const int chance = std::min<int>( 100, 100.0 * accuracy_grazing * confidence );
+        const std::string mode_name = aim_mode->name.empty() ? _( "Immediate" ) : aim_mode->name;
+        const item &weapon = *relevant->gun_current_mode();
+        item *load_loc = activity->reload_loc ? &*activity->reload_loc : nullptr;
+        const int moves = ranged::gun_engagement_moves( *you, weapon, at_recoil,
+                          static_cast<int>( predicted_recoil ) ) +
+                          ranged::time_to_attack( *you, weapon, load_loc );
+        next.aim_label = shot_preview::mark{
+            .pos = dst,
+            .severity = chance,
+            .label = string_format( _( "%s: %d%% hit, %d moves" ), mode_name, chance, moves ),
+        };
+    }
+
+    finish();
+}
+
+void target_ui::panel_shot_preview( int &text_y )
+{
+    for( const std::string &line : shot_preview_lines ) {
+        text_y += fold_and_print( w_target, point( 1, text_y ), getmaxx( w_target ) - 2,
+                                  c_light_gray, line );
+    }
+}
+
 void target_ui::cycle_targets( int direction )
 {
     if( targets.empty() ) {
@@ -4265,6 +4528,10 @@ void target_ui::draw_ui_window()
     panel_target_info( text_y, fill_with_blank_if_no_target );
     text_y += compact ? 0 : 1;
 
+    if( !tiny ) {
+        panel_shot_preview( text_y );
+    }
+
     panel_ally_warning( text_y );
 
     if( mode == TargetMode::Turrets ) {
@@ -4499,6 +4766,21 @@ void target_ui::panel_gun_info( int &text_y )
                              colorize( ammo->nname( std::max( m->ammo_remaining(), 1 ) ), ammo->color ), m->ammo_remaining(),
                              m->ammo_capacity() );
         print_colored_text( w_target, point( 1, text_y++ ), clr, clr, str );
+
+        const damage_instance gun_damage = m->gun_damage( false );
+        const damage_instance ammo_damage = ammo->ammo->damage;
+        if( !gun_damage.damage_units.empty() && !ammo_damage.damage_units.empty() ) {
+            const damage_unit &gun_du = gun_damage.damage_units.front();
+            const damage_unit &ammo_du = ammo_damage.damage_units.front();
+            int damage = static_cast<int>( gun_du.amount + ammo_du.amount );
+            // Same enchantment bonus the item info screen adds to the displayed damage.
+            damage += static_cast<int>( you->bonus_from_enchantments( damage,
+                      enchantment_value_id( "RANGED_DAMAGE_" + gun_du.get_internal_name() ), true ) );
+            const int pierce = static_cast<int>( gun_du.res_pen + ammo_du.res_pen );
+            str = string_format( _( "Damage: <color_light_red>%d</color>  "
+                                    "Armor-pierce: <color_light_blue>%d</color>" ), damage, pierce );
+            print_colored_text( w_target, point( 1, text_y++ ), clr, clr, str );
+        }
     } else {
         // Weapon doesn't use ammunition
         text_y++;
@@ -4520,7 +4802,7 @@ void target_ui::panel_recoil( int &text_y )
     } else {
         str = pgettext( "amount of backward momentum", "<color_cyan>None</color>" );
     }
-    str = string_format( _( "Recoil: %s" ), str );
+    str = string_format( _( "Recoil: %s (%d)" ), str, val );
     nc_color clr = c_light_gray;
     print_colored_text( w_target, point( 1, text_y++ ), clr, clr, str );
 }

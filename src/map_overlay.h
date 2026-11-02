@@ -16,6 +16,9 @@ enum class overlay_kind {
     reticle,
     known_lock,
     health_bar,
+    shot_blocker,
+    stray_tile,
+    aim_label,
 };
 
 /// The kind of event a sound marker stands for; the terminal renderer colors by it.

@@ -5500,8 +5500,22 @@ void game::draw_ter( const tripoint_bub_ms &center, const bool looking, const bo
 
     // Keep selection visible after the mouse leaves.
     for( const auto &overlay : overlays ) {
-        if( overlay.kind == map_overlay::overlay_kind::reticle && !looking ) {
-            m.drawsq( w_terrain, overlay.pos, drawsq_params().highlight( true ).center( center ) );
+        switch( overlay.kind ) {
+            case map_overlay::overlay_kind::reticle:
+                if( !looking ) {
+                    m.drawsq( w_terrain, overlay.pos, drawsq_params().highlight( true ).center( center ) );
+                }
+                break;
+            case map_overlay::overlay_kind::stray_tile:
+                m.drawsq( w_terrain, overlay.pos, drawsq_params().highlight( true ).center( center ) );
+                break;
+            case map_overlay::overlay_kind::shot_blocker:
+                m.drawsq( w_terrain, overlay.pos, drawsq_params().color( c_red ).center( center ) );
+                break;
+            case map_overlay::overlay_kind::aim_label:
+                break;
+            default:
+                break;
         }
     }
 

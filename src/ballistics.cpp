@@ -37,6 +37,7 @@
 #include "mtype.h"
 #include "options.h"
 #include "projectile.h"
+#include "ranged_rules.h"
 #include "rng.h"
 #include "sounds.h"
 #include "translations.h"
@@ -399,7 +400,7 @@ auto projectile_attack( const projectile &proj_arg, const tripoint_bub_ms &sourc
 
         // cap wild misses at +/- 30 degrees
         const auto dispersion_angle =
-            std::min( units::from_arcmin( aim.dispersion ), 30_degrees );
+            ranged_rules::capped_miss_angle( units::from_arcmin( aim.dispersion ) );
         rad += ( one_in( 2 ) ? 1 : -1 ) * dispersion_angle;
 
         // TODO: This should also represent the miss on z axis
