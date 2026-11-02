@@ -1,12 +1,18 @@
 #include "action_preview.h" // IWYU pragma: associated
 
+#include "avatar.h"
+#include "avatar_functions.h"
 #include "bodypart.h"
+#include "calendar.h"
 #include "character.h"
 #include "character_encumbrance.h"
 #include "color.h"
+#include "game_constants.h"
 #include "item.h"
 #include "output.h"
 #include "ranged.h"
+#include "recipe.h"
+#include "recipe_dictionary.h"
 #include "string_formatter.h"
 #include "string_utils.h"
 #include "translations.h"
@@ -15,6 +21,7 @@
 #include <algorithm>
 #include <ranges>
 #include <string>
+#include <string_view>
 #include <vector>
 
 static const skill_id skill_swimming( "swimming" );
@@ -212,4 +219,138 @@ auto describe( const Character &who, const wear_preview &preview ) -> std::vecto
     }
 
     return lines;
+}
+
+namespace
+{
+
+auto action_time_text( int moves ) -> std::string
+{
+    if( moves >= to_moves<int>( 1_minutes ) ) {
+        return to_string_approx( time_duration::from_turns( moves / to_moves<int>( 1_turns ) ), false );
+    }
+    return string_format( _( "%d s" ), std::max( 1, moves / to_moves<int>( 1_turns ) ) );
+}
+
+auto wear_cost( const Character &who, const item &it ) -> std::string
+{
+    const auto preview = preview_wear( who, it );
+    auto parts = std::vector<std::string>();
+    if( preview.moves > 0 ) {
+        parts.push_back( action_time_text( preview.moves ) );
+    }
+    const auto worst = std::ranges::max_element( preview.parts, {},
+    []( const body_change &part ) {
+        return part.after - part.before;
+    } );
+    if( worst != preview.parts.end() && worst->after > worst->before ) {
+        parts.push_back( string_format( _( "%s %+d" ),
+                                        to_lower_case( body_part_name_as_heading( worst->part, 1 ) ),
+                                        worst->after - worst->before ) );
+    }
+    return join( parts, " · " );
+}
+
+auto put_away_text( const avatar &who, const item &weapon ) -> std::string
+{
+    if( !who.can_unwield( weapon ).success() ) {
+        return std::string();
+    }
+    for( const item * const &worn : who.worn ) {
+        if( worn->can_holster( weapon ) ) {
+            return string_format( _( "%1$s → %2$s" ), weapon.tname(), worn->tname() );
+        }
+    }
+    if( who.volume_carried() + weapon.volume() <= who.volume_capacity() ) {
+        return string_format( _( "%1$s → %2$s" ), weapon.tname(), _( "inventory" ) );
+    }
+    return colorize( string_format( _( "%s drops" ), weapon.tname() ), c_light_red );
+}
+
+auto wield_cost( const avatar &who, const item &it ) -> std::string
+{
+    if( who.is_wielding( it ) ) {
+        return std::string();
+    }
+    const int base = who.is_worn( it ) ? INVENTORY_HANDLING_PENALTY / 2 : INVENTORY_HANDLING_PENALTY;
+    auto text = action_time_text( who.item_handling_cost( it, true, base ) );
+    if( who.is_armed() ) {
+        const auto destination = put_away_text( who, who.primary_weapon() );
+        if( !destination.empty() ) {
+            text += " · " + destination;
+        }
+    }
+    return text;
+}
+
+auto eat_cost( const avatar &who, const item &it ) -> std::string
+{
+    item &food = who.get_consumable_from( const_cast<item &>( it ) );
+    if( food.is_null() || !food.is_comestible() ) {
+        return std::string();
+    }
+    auto readings = std::vector<std::string>();
+    readings.push_back( action_time_text( who.consume_moves( food ) ) );
+    const int kcal = who.compute_effective_nutrients( food ).kcal;
+    if( kcal != 0 ) {
+        readings.push_back( string_format( _( "%d kcal" ), kcal ) );
+    }
+    const int quench = who.can_eat( food ).success() ? food.get_comestible()->quench : 0;
+    if( quench != 0 ) {
+        readings.push_back( string_format( _( "quench %+d" ), quench ) );
+    }
+    const int joy = who.fun_for( food ).first;
+    if( joy != 0 ) {
+        readings.push_back( string_format( _( "joy %+d" ), joy ) );
+    }
+    return join( readings, " · " );
+}
+
+auto read_cost( const avatar &who, const item &it ) -> std::string
+{
+    if( !it.is_book() ) {
+        return std::string();
+    }
+    const int moves = who.time_to_read( it, who );
+    return moves > 0 ? action_time_text( moves ) : std::string();
+}
+
+auto disassemble_cost( const item &it ) -> std::string
+{
+    const recipe &r = recipe_dictionary::get_uncraft( it.typeId() );
+    if( !r ) {
+        return std::string();
+    }
+    auto parts = std::vector<std::string>();
+    if( r.time > 0 ) {
+        parts.push_back( action_time_text( r.time ) );
+    }
+    parts.push_back( _( "can't undo" ) );
+    return join( parts, " · " );
+}
+
+} // namespace
+
+auto action_cost( const avatar &who, const item &it, std::string_view action ) -> std::string
+{
+    if( action == "WEAR" ) {
+        return wear_cost( who, it );
+    }
+    if( action == "WIELD" ) {
+        return wield_cost( who, it );
+    }
+    if( action == "EAT" ) {
+        return eat_cost( who, it );
+    }
+    if( action == "READ" ) {
+        return read_cost( who, it );
+    }
+    if( action == "UNLOAD" ) {
+        const int moves = avatar_funcs::unload_moves( who, it );
+        return moves > 0 ? action_time_text( moves ) : std::string();
+    }
+    if( action == "DISASSEMBLE" ) {
+        return disassemble_cost( it );
+    }
+    return std::string();
 }

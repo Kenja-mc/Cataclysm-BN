@@ -830,6 +830,44 @@ ret_val<edible_rating> Character::will_eat( const item &food, bool interactive )
     return ret_val<edible_rating>::make_success();
 }
 
+int Character::consume_moves( const item &food ) const
+{
+    const bool chew = food.get_comestible()->comesttype == comesttype_FOOD ||
+                      food.has_flag( flag_USE_EAT_VERB );
+    const bool drinkable = !chew && food.get_comestible()->comesttype == comesttype_DRINK;
+
+    int mealtime = 250;
+    if( drinkable || chew ) {
+        // Those bonuses/penalties only apply to food
+        // Not to smoking weed or applying bandages!
+        if( has_trait( trait_MOUTH_TENTACLES )  || has_trait( trait_MANDIBLES ) ||
+            has_trait( trait_FANGS_SPIDER ) ) {
+            mealtime /= 2;
+        } else if( has_trait( trait_SHARKTEETH ) ) {
+            // SHARKBAIT! HOO HA HA!
+            mealtime /= 3;
+        } else if( has_trait( trait_GOURMAND ) ) {
+            // Don't stack those two - that would be 25 moves per item
+            mealtime -= 100;
+        }
+
+        if( has_trait( trait_BEAK_HUM ) && !drinkable ) {
+            // Much better than PROBOSCIS but still optimized for fluids
+            mealtime += 200;
+        } else if( has_trait( trait_SABER_TEETH ) ) {
+            // They get In The Way
+            mealtime += 250;
+        }
+
+        if( has_trait( trait_AMORPHOUS ) ) {
+            mealtime *= 1.1;
+            // Minor speed penalty for having to flow around it
+            // rather than just grab & munch
+        }
+    }
+    return mealtime;
+}
+
 bool Character::eat( item &food, bool force )
 {
     if( !food.is_food() ) {
@@ -892,37 +930,7 @@ bool Character::eat( item &food, bool force )
     food.mod_charges( -1 );
 
     const bool amorphous = has_trait( trait_AMORPHOUS );
-    int mealtime = 250;
-    if( drinkable || chew ) {
-        // Those bonuses/penalties only apply to food
-        // Not to smoking weed or applying bandages!
-        if( has_trait( trait_MOUTH_TENTACLES )  || has_trait( trait_MANDIBLES ) ||
-            has_trait( trait_FANGS_SPIDER ) ) {
-            mealtime /= 2;
-        } else if( has_trait( trait_SHARKTEETH ) ) {
-            // SHARKBAIT! HOO HA HA!
-            mealtime /= 3;
-        } else if( has_trait( trait_GOURMAND ) ) {
-            // Don't stack those two - that would be 25 moves per item
-            mealtime -= 100;
-        }
-
-        if( has_trait( trait_BEAK_HUM ) && !drinkable ) {
-            // Much better than PROBOSCIS but still optimized for fluids
-            mealtime += 200;
-        } else if( has_trait( trait_SABER_TEETH ) ) {
-            // They get In The Way
-            mealtime += 250;
-        }
-
-        if( amorphous ) {
-            mealtime *= 1.1;
-            // Minor speed penalty for having to flow around it
-            // rather than just grab & munch
-        }
-    }
-
-    moves -= mealtime;
+    moves -= consume_moves( food );
 
     consume_poison( *this, food );
 

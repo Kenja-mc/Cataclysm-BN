@@ -97,6 +97,7 @@ bool run(
 
     const bool has_pickup_rule = get_auto_pickup().has_rule( &itm );
     const bool is_wielded = you.is_wielding( itm );
+    const bool show_action_costs = get_option<bool>( "ACTION_COSTS" );
     const bool cant_unwield_if_weapon = is_wielded && !you.can_unwield( itm ).success();
     const bool cant_unwield_existing_weapon = you.is_armed() &&
             !you.can_unwield( you.primary_weapon() ).success();
@@ -142,12 +143,16 @@ bool run(
             bound_key_i = actions.size() == 10 ? '0' : '0' + static_cast<int>( actions.size() );
         }
         std::string act_name = ctxt.get_action_name( act );
-        if( number == INT_MIN ) {
-            action_list.addentry( actions.size(), true, bound_key_i, act_name );
-        } else {
-            action_list.addentry( actions.size(), true, bound_key_i,
-                                  act_name + " (" + std::to_string( number ) + ")" );
+        if( number != INT_MIN ) {
+            act_name += " (" + std::to_string( number ) + ")";
         }
+        if( show_action_costs && hint != hint_rating::cant ) {
+            const auto cost = action_cost( you, itm, act );
+            if( !cost.empty() ) {
+                act_name += "  <color_dark_gray>" + cost + "</color>";
+            }
+        }
+        action_list.addentry( actions.size(), true, bound_key_i, act_name );
 
         auto &list_entry = action_list.entries.back();
         switch( hint ) {

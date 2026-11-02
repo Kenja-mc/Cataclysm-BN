@@ -3,11 +3,13 @@
 #define CATA_SRC_ACTION_PREVIEW_H
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "bodypart.h"
 #include "units_volume.h"
 
+class avatar;
 class Character;
 class item;
 class nc_color;
@@ -65,5 +67,9 @@ auto preview_wear( const Character &who, const item &it ) -> wear_preview;
 
 /// Lines describing @p preview, ready to print: changes first, then the summary.
 auto describe( const Character &who, const wear_preview &preview ) -> std::vector<std::string>;
+
+/// Short cost annotation the item-action menu prints after an action's label, such as
+/// "30 s · torso +13" for WEAR. Empty when the action has no computable cost.
+auto action_cost( const avatar &who, const item &it, std::string_view action ) -> std::string;
 
 #endif // CATA_SRC_ACTION_PREVIEW_H

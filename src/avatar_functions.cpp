@@ -648,6 +648,33 @@ static detached_ptr<item> add_or_drop_with_msg( avatar &you, detached_ptr<item> 
     return detached_ptr<item>();
 }
 
+int unload_moves( const Character &you, const item &target )
+{
+    if( target.is_magazine() ) {
+        int mv = 0;
+        for( const item *contained : target.contents.all_items_top() ) {
+            mv += you.item_reload_cost( target, const_cast<item &>( *contained ),
+                                        contained->charges ) / 2;
+        }
+        return std::min( 200, mv );
+    }
+    if( const item *mag = target.magazine_current() ) {
+        return you.item_reload_cost( target, const_cast<item &>( *mag ), -1 ) / 2;
+    }
+    if( target.ammo_remaining() > 0 && !target.ammo_current().is_null() ) {
+        int qty = target.ammo_remaining();
+        if( target.ammo_current() == itype_plut_cell ) {
+            qty /= PLUTONIUM_CHARGES;
+        }
+        if( qty <= 0 ) {
+            return 0;
+        }
+        item ammo( target.ammo_current(), calendar::turn, qty );
+        return you.item_reload_cost( target, ammo, qty ) / 2;
+    }
+    return 0;
+}
+
 bool unload_item( avatar &you, item &loc )
 {
     item &it = loc;
@@ -750,10 +777,9 @@ bool unload_item( avatar &you, item &loc )
 
     if( target->is_magazine() ) {
         // Calculate the time to remove the contained ammo (consuming half as much time as required to load the magazine)
-        int mv = 0;
+        const int mv = unload_moves( you, *target );
         int qty = 0;
         it.contents.remove_top_items_with( [&]( detached_ptr<item> &&contained ) {
-            mv += you.item_reload_cost( it, *contained, contained->charges ) / 2;
             qty += contained->charges;
             return add_or_drop_with_msg( you, std::move( contained ), true );
         } );
@@ -775,6 +801,7 @@ bool unload_item( avatar &you, item &loc )
         }
         return true;
     } else if( item *mag = target->magazine_current() ) {
+        const int mv = unload_moves( you, *target );
         bool unloaded = false;
         target->contents.remove_top_items_with( [&]( detached_ptr<item> &&it ) {
             if( &*it == mag ) {
@@ -787,7 +814,7 @@ bool unload_item( avatar &you, item &loc )
         } );
         if( unloaded ) {
             // Eject magazine consuming half as much time as required to insert it
-            you.moves -= you.item_reload_cost( *target, *mag, -1 ) / 2;
+            you.moves -= mv;
         }
 
     } else if( target->ammo_remaining() ) {
