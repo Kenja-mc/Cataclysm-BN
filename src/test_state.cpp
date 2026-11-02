@@ -320,6 +320,15 @@ void on_turn( const avatar &you )
     flush();
 }
 
+void refresh_overlays( const avatar &you )
+{
+    if( !path_set ) {
+        return;
+    }
+    state.map_overlays = map_overlay::collect( you );
+    flush();
+}
+
 void input_wait( bool waiting )
 {
     if( !path_set || state.input_wait == waiting ) {

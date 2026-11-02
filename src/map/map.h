@@ -3,6 +3,7 @@
 #include "bodypart.h"
 #include "calendar.h"
 #include "cata_dynamic_bitset.h"
+#include "color.h"
 #include "coordinates.h"
 #include "dimension_info.h"
 #include "enums.h"
@@ -222,9 +223,11 @@ private:
     bool do_bright_light = false;
     bool do_memorize = false;
     bool do_output = true;
+    nc_color forced_color;
+    bool do_force_color = false;
 
 public:
-    constexpr drawsq_params() = default;
+    drawsq_params() = default;
 
     /**
      * Highlight the tile. On TILES, draws an overlay; on CURSES, inverts color.
@@ -297,6 +300,20 @@ public:
         return *this;
     }
     constexpr auto output() const -> bool { return do_output; }
+    //@}
+
+    /**
+     * Override the tile's color. On TILES, ignored; on CURSES, forces the glyph color.
+     * Default: the tile's own color.
+     */
+    //@{
+    auto color( const nc_color &v ) -> drawsq_params& {
+        forced_color = v;
+        do_force_color = true;
+        return *this;
+    }
+    auto has_color() const -> bool { return do_force_color; }
+    auto color() const -> const nc_color& { return forced_color; } // *NOPAD*
     //@}
 
     /**

@@ -187,6 +187,7 @@ auto scheme_companions( const bool classic ) -> std::vector<scheme_companion>
         { .id = "YN_HOTKEYS", .value = classic }, { .id = "MOUSE_TILE_SELECTION", .value = !classic },
         { .id = "MOUSE_MOVE", .value = classic },
         { .id = "ARROW_KEY_AIM", .value = !classic },
+        { .id = "SHOT_PREVIEW", .value = !classic },
         { .id = "CONTEXTUAL_INTERACT", .value = !classic },
         { .id = "MODERN_LIST_MOUSE", .value = !classic },
         { .id = "KNOWN_LOCKED_DOOR_ICONS", .value = !classic } };
@@ -2153,6 +2154,11 @@ void options_manager::add_options_interface()
 
     add( "ARROW_KEY_AIM", interface, translate_marker( "Arrow keys aim" ),
          translate_marker( "Sword of the Stars: The Pit style.  If true, the arrow keys move a targeting reticle over the map instead of walking, without spending a turn.  In Modern, the fire command attacks a selected hostile within your melee weapon's reach, or aims at it with a firearm.  With a melee weapon and no hostile selected, it attacks the nearest hostile in reach.  With a firearm and no hostile selected, it opens normal gun aiming.  Esc, walking or any other action that takes a turn takes the reticle away.  Turn it off to walk with the arrow keys." ),
+         true
+       );
+
+    add( "SHOT_PREVIEW", interface, translate_marker( "Shot preview" ),
+         translate_marker( "On in Modern, off in Classic.  The aiming window marks the first cover on the line of fire in red and names it, lists the creatures in the way, behind the target and inside the stray cone, adds the tiles the target may advance during each aim mode, and shows the aiming mode's hit chance beside the target.  A click on another creature retargets, and a click on the current target fires." ),
          true
        );
 

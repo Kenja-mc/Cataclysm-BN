@@ -3875,6 +3875,26 @@ void cata_tiles::draw( point dest, const tripoint_bub_ms &center, int width, int
             }
         }
 
+        for( const auto &overlay : frame_overlays ) {
+            switch( overlay.kind ) {
+                case map_overlay::overlay_kind::stray_tile:
+                    init_draw_highlight( overlay.pos );
+                    break;
+                case map_overlay::overlay_kind::shot_blocker:
+                    overlay_strings.emplace(
+                        player_to_screen( overlay.pos.xy() ) + point( tile_width / 2, 0 ),
+                        formatted_text( "!", catacurses::red, direction::NORTH ) );
+                    break;
+                case map_overlay::overlay_kind::aim_label:
+                    overlay_strings.emplace(
+                        player_to_screen( overlay.pos.xy() ) + point( tile_width / 2, 0 ),
+                        formatted_text( overlay.label, catacurses::light_green, direction::NORTH ) );
+                    break;
+                default:
+                    break;
+            }
+        }
+
         // display number of monsters to spawn in mapgen preview
         for( const tile_render_info &p : draw_points ) {
             const auto mon_override = monster_override.find( p.pos );

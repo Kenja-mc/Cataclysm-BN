@@ -9,6 +9,7 @@
 #include "output.h"
 #include "tile_selection.h"
 #include "panels.h"
+#include "shot_preview.h"
 #include "translations.h"
 #include "ui_manager.h"
 
@@ -53,6 +54,9 @@ void live_view::show( const tripoint_bub_ms &p )
             // HACK: using dummy window to get the window height without refreshing.
             win = catacurses::newwin( 1, width, point_zero );
             g->pre_print_all_tile_info( mouse_position, win, line_out, line_limit, cache );
+            if( !shot_preview::label_at( mouse_position ).empty() ) {
+                line_out++;
+            }
             const int live_view_box_height = std::min( max_height, std::max( line_out + 2, MIN_BOX_HEIGHT ) );
 
             // The box sits in the top-left corner whatever side the sidebar takes.
@@ -64,6 +68,11 @@ void live_view::show( const tripoint_bub_ms &p )
             const visibility_variables &cache = get_map().get_visibility_variables_cache();
             int line_out = START_LINE;
             g->pre_print_all_tile_info( mouse_position, win, line_out, getmaxy( win ) - 2, cache );
+            const std::string aim_label = shot_preview::label_at( mouse_position );
+            if( !aim_label.empty() ) {
+                trim_and_print( win, point( 1, line_out ), getmaxx( win ) - 2,
+                                c_light_green, aim_label );
+            }
             draw_border( win );
             center_print( win, 0, c_white, _( "< <color_green>Mouse View</color> >" ) );
             if( const auto hint = tile_selection::hint(); !hint.empty() ) {
