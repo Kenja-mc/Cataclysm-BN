@@ -3888,7 +3888,7 @@ void cata_tiles::draw( point dest, const tripoint_bub_ms &center, int width, int
                 case map_overlay::overlay_kind::aim_label:
                     overlay_strings.emplace(
                         player_to_screen( overlay.pos.xy() ) + point( tile_width / 2, 0 ),
-                        formatted_text( overlay.label, catacurses::light_green, direction::NORTH ) );
+                        formatted_text( overlay.label, 8 + catacurses::green, direction::NORTH ) );
                     break;
                 default:
                     break;
