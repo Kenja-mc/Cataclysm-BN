@@ -59,7 +59,7 @@ The crafting menu opens on a tab with recipes to make. The parts chain shows wha
 
 ![Look around and tile selection](images/features/look.png)
 
-Shift and a direction inspects the adjacent tile without spending a turn. The tile inspector shows what it holds, and Space interacts with the selected tile.
+A right click selects and inspects the adjacent tile without spending a turn. The tile inspector shows what it holds, and Space interacts with the selected tile.
 
 ## Map and minimap
 
