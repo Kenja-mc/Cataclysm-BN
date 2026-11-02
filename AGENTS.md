@@ -166,6 +166,8 @@ Do all three tests before you push. All results must be good.
    `CATA_TEST_COMPUTE_ACCELERATION=cpu` and a Catch2 filter. Running every test in one process is
    not supported: some tests leave the map shifted for the next one.
 
+   Known failing unit tests are listed in docs/fork/known-failures.md.
+
 3. Fork end-to-end tests, in proportion to the change:
 
    | Change                                 | Run                                                     |
