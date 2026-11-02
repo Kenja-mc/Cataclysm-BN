@@ -10,6 +10,7 @@
 #include "color.h"
 #include "game_constants.h"
 #include "item.h"
+#include "itype.h"
 #include "output.h"
 #include "ranged.h"
 #include "recipe.h"
