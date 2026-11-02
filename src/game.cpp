@@ -170,6 +170,7 @@
 #include "string_id.h"
 #include "string_input_popup.h"
 #include "string_utils.h"
+#include "test_state.h"
 #include "thread_pool.h"
 #include "tileray.h"
 #include "tile_selection.h"
@@ -2600,6 +2601,8 @@ bool game::do_turn()
         ZoneScopedN( "do_turn_clear_pathfinding" );
         Pathfinding::clear_d_maps();
     }
+
+    test_state::on_turn( u );
 
     return false;
 }

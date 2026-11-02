@@ -34,6 +34,7 @@
 #include "string_formatter.h"
 #include "string_input_popup.h"
 #include "string_utils.h"
+#include "test_state.h"
 #include "translations.h"
 #include "ui_manager.h"
 #include "color.h"
@@ -1103,7 +1104,9 @@ const std::string &input_context::handle_input( const int timeout )
     while( true ) {
         {
             ZoneScopedN( "input_context_get_input_event" );
+            test_state::input_wait( true );
             next_action = inp_mngr.get_input_event();
+            test_state::input_wait( false );
         }
         if( next_action.type == input_event_t::timeout ) {
             result = &TIMEOUT;

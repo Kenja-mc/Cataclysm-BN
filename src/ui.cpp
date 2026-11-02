@@ -24,6 +24,7 @@
 #include "player.h"
 #include "string_input_popup.h"
 #include "string_utils.h"
+#include "test_state.h"
 #include "ui_manager.h"
 #if defined(TILES)
 #include "sdltiles.h"
@@ -43,6 +44,27 @@ auto left_button_held() -> bool
 #else
     return false;
 #endif
+}
+
+auto state_id( const uilist &menu ) -> const std::string &
+{
+    return menu.state_id.empty() ? menu.title : menu.state_id;
+}
+
+auto state_rows( const uilist &menu ) -> std::vector<test_state::row>
+{
+    std::vector<test_state::row> rows;
+    rows.reserve( menu.get_filtered().size() );
+    for( const int entry_index : menu.get_filtered() ) {
+        const uilist_entry &entry = menu.entries[entry_index];
+        std::string hotkey;
+        if( entry.hotkey > 0 ) {
+            hotkey = utf32_to_utf8( static_cast<uint32_t>( entry.hotkey ) );
+        }
+        rows.push_back( { .text = remove_color_tags( entry.txt ), .hotkey = hotkey,
+                          .enabled = entry.enabled } );
+    }
+    return rows;
 }
 
 } // namespace
@@ -151,6 +173,7 @@ uilist::~uilist()
     if( current_ui ) {
         current_ui->reset();
     }
+    test_state::ui_close( state_id( *this ) );
 }
 
 void uilist::color_error( const bool report )
@@ -1053,6 +1076,11 @@ void uilist::show( ui_adaptor &ui )
         wmove( window, cursor_pos.value() );
         wnoutrefresh( window );
     }
+
+    if( test_state::enabled() ) {
+        test_state::ui_show( state_id( *this ), title, state_rows( *this ),
+                             fentries.empty() ? -1 : fselected );
+    }
 }
 
 int uilist::scroll_amount_from_action( const std::string &action )
@@ -1371,6 +1399,8 @@ void uilist::query( bool loop, int timeout )
 
         ui_manager::redraw();
     } while( loop && ret == UILIST_WAIT_INPUT );
+
+    test_state::ui_close( state_id( *this ) );
 }
 
 ///@}

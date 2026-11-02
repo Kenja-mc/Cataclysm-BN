@@ -23,6 +23,7 @@ Usage:
   python3 tests/e2e/tiles.py numbered_rows [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py numbered_menu [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py numbered_viewport [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
+  python3 tests/e2e/tiles.py state_channel [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
 
 --root is the game tree (data and the curses build); --binary is the tiles executable.
 Artifacts (window captures, marker crops, logs, fixture asserts, result.json) stay in --out.
@@ -560,6 +561,7 @@ class RunningGame:
     proc: subprocess.Popen
     run: Path
     frame: Path
+    state_path: Path | None = None
 
 
 class Session:
@@ -611,7 +613,7 @@ class Session:
         self.world = saves[0].name
 
     @contextmanager
-    def running_game(self, label, tiles_options, fresh=True):
+    def running_game(self, label, tiles_options, fresh=True, state_out=False):
         """Keeps a fixture copy running for real input and captures; owns process cleanup.
 
         ``fresh=False`` reuses the label's own directories, so a relaunch sees the config a
@@ -648,14 +650,17 @@ class Session:
                 env[key] = os.environ[key]
         unit = f"bn-tiles-e2e-{os.getpid()}-{label}"
         log = (run / "tiles.log").open("w")
+        state_path = run / "state.json" if state_out else None
         cmd = ["systemd-run", "--user", "--scope", "--quiet", f"--unit={unit}",
                "-p", MEMORY_CAP, "-p", SWAP_CAP,
                str(self.tiles_binary), "--basepath", f"{self.root}/", "--userdir", f"{userdir}/",
                "--world", self.world]
+        if state_path:
+            cmd.append(f"--state-out={state_path}")
         proc = subprocess.Popen(cmd, cwd=self.root, env=env, stdout=log, stderr=log)
         try:
             shot = wait_for_frame(self, proc, run, self.timeout)
-            yield RunningGame(proc=proc, run=run, frame=shot)
+            yield RunningGame(proc=proc, run=run, frame=shot, state_path=state_path)
         finally:
             subprocess.run(["systemctl", "--user", "stop", unit + ".scope"], check=False, capture_output=True)
             try:
@@ -1512,6 +1517,59 @@ def case_menu_drag(session):
     return [], {"scrollbar": {"column": column, "rows": [first, last]}}
 
 
+def case_state_channel(session):
+    """The state file names the open inventory, clears it, and advances the turn counter."""
+    observations = {}
+    with session.running_game("state-channel", {"CONTROL_SCHEME": "modern"},
+                              state_out=True) as live:
+        x11 = X11(session.display)
+        try:
+            win = x11.find_window(WINDOW_TITLE_PREFIX)
+            require(win is not None, "state channel: game window disappeared")
+            x11.focus_local(win, 40, 40)
+
+            def state():
+                try:
+                    return json.loads(live.state_path.read_text())
+                except (FileNotFoundError, json.JSONDecodeError):
+                    return None
+
+            def inventory_top():
+                top = (state() or {}).get("ui", {}).get("top")
+                if not top or "inventory" not in str(top.get("id", "")).lower():
+                    return None
+                return top
+
+            def wait_for_state(check, timeout=20):
+                deadline = time.monotonic() + timeout
+                while time.monotonic() < deadline:
+                    if check():
+                        return True
+                    time.sleep(0.1)
+                return False
+
+            x11.key("i", delay=0.8)
+            require(wait_for_state(lambda: bool(inventory_top() and inventory_top()["rows"])),
+                    "the state file never reported the open inventory")
+            top = inventory_top()
+            require(top["selected"] >= 0, "the open inventory must name a selected row")
+            observations["inventory"] = {"id": top["id"], "rows": len(top["rows"])}
+            capture(session.display, win, session.artifacts / "state-channel-inventory.png")
+
+            x11.key("Escape", delay=0.8)
+            require(wait_for_state(lambda: inventory_top() is None),
+                    "the inventory entry stayed in the state file after Escape")
+
+            before = (state() or {}).get("turn", -1)
+            x11.key("x", delay=0.8)
+            require(wait_for_state(lambda: (state() or {}).get("turn", -1) > before),
+                    "the wait key did not advance the state file's turn")
+            observations["turn"] = {"before": before, "after": (state() or {}).get("turn")}
+        finally:
+            x11.close()
+    return [], observations
+
+
 from vehicle_rotation import case_vehicle_rotation  # noqa: E402
 
 
@@ -1520,7 +1578,7 @@ CASES = {"minimap": case_minimap, "mouse": case_mouse, "side_buttons": case_side
          "known_locks": case_known_locks, "menu_drag": case_menu_drag,
          "vehicle_rotation": case_vehicle_rotation,
          "numbered_rows": case_numbered_rows, "numbered_menu": case_numbered_menu,
-         "numbered_viewport": case_numbered_viewport}
+         "numbered_viewport": case_numbered_viewport, "state_channel": case_state_channel}
 
 
 def main(argv=None):

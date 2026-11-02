@@ -3,15 +3,17 @@
 ``dump_state`` returns one :class:`StateDump` per turn: compact text the model reads, the closed
 action list for the screen it is on, the screen name, and (tiles) the frame as PNG bytes.
 
-Exact reads go through the in-game Lua console (``Game.lua``), which is the same channel the
-existing e2e tests use.  The open menu is the one thing the Lua API cannot report, so ``menu``
-comes from classifying the pane text: see ``agent_actions.classify_screen``.
+Exact reads go through the in-game Lua console (``Game.lua``) in curses; the tiles build reads
+the same fields from the JSON file the game writes with ``--state-out``.  The open menu is the one
+thing the Lua API cannot report, so ``menu`` comes from classifying the pane text: see
+``agent_actions.classify_screen``.
 
 ``send_action`` is the only place that knows how a key reaches the game: tmux for the curses
 build, X11 keysyms for the tiles build, reusing ``tiles.py``.
 """
 from __future__ import annotations
 
+import json
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -114,6 +116,42 @@ def read_lua_state(game) -> list[str]:
 
 def _dump_lines(game) -> list[str]:
     return game.lua("AGS_DUMP()")
+
+
+def read_state_fields(handle) -> list[str]:
+    """The same ``key=value`` fields, read from the JSON file the game writes with --state-out.
+
+    The tiles build has no Lua console and no text screen; the state file is its text channel.
+    """
+    path = None
+    for source in (handle, getattr(handle, "game", None), getattr(handle, "tiles", None)):
+        value = getattr(source, "state_path", None)
+        if value:
+            path = Path(value)
+            break
+    if path is None:
+        return []
+    try:
+        state = json.loads(path.read_text())
+    except (OSError, ValueError) as error:
+        return [f"state_error={type(error).__name__}: {error}"]
+    player = state.get("player") or {}
+    pos = player.get("pos") or [0, 0, 0]
+    wielded = player.get("wielded") or ""
+    worn = player.get("worn") or []
+    fields = [
+        f"turn={state.get('turn', -1)} input_wait={str(bool(state.get('input_wait'))).lower()}",
+        f"name={player.get('name', '')} hp={player.get('hp', 0)}",
+        "pos=" + ",".join(str(value) for value in pos),
+        f"sta={player.get('stamina', 0)} pain={player.get('pain', 0)} "
+        f"morale={player.get('morale', 0)}",
+        f"wielding({1 if wielded else 0})={wielded}",
+        f"worn({len(worn)})=" + "; ".join(worn),
+    ]
+    top = (state.get("ui") or {}).get("top")
+    if top:
+        fields.append(f"ui={top.get('id', '')} selected={top.get('selected', -1)}")
+    return fields
 
 
 # ---------------------------------------------------------------- text
@@ -273,15 +311,19 @@ def dump_state(handle, *, mode: str, capture_image: bool = False, scheme: str = 
 
     ``handle`` is the ``playtest.start_scenario`` handle in both modes; a bare ``tmux_game.Game``
     also works.  ``scheme`` and ``mouse`` pick the action list (default: the fork's modern layout,
-    keyboard only).  The tiles build has no text channel, so it needs ``capture_image=True``.
+    keyboard only).  The tiles build reads its exact fields from the ``--state-out`` file; pass
+    ``capture_image=True`` as well for the frame.
     """
     if mode == "tiles":
-        if not capture_image:
-            raise RuntimeError("the tiles build has no text state: call dump_state(..., "
-                               "mode='tiles', capture_image=True) and read the image")
-        image = capture_tiles(handle)
-        text = build_text(mode, None, [], "",
-                          note="tiles build: no text channel, decide from the image", budget=budget)
+        fields = read_state_fields(handle)
+        if not fields and not capture_image:
+            raise RuntimeError("the tiles build has no text state: start it with --state-out, or "
+                               "call dump_state(..., mode='tiles', capture_image=True) and read "
+                               "the image")
+        image = capture_tiles(handle) if capture_image else None
+        note = ("tiles build: text fields come from the game's state file; decide from the image"
+                if fields else "tiles build: no text channel, decide from the image")
+        text = build_text(mode, None, fields, "", note=note, budget=budget)
         return StateDump(text, actions_for("game", mode=mode, scheme=scheme, mouse=False),
                          None, image)
     game = _game_of(handle)

@@ -314,6 +314,7 @@ class TilesRun:
     frame: object  # Path of the drawn-world capture, or None
     log: object
     xvfb_log: object = None
+    state_path: Path | None = None
 
     @property
     def window(self):
@@ -497,7 +498,9 @@ def start_tiles(userdir, save_name, seed=None, timeout=180):
         "LC_ALL": "C.UTF-8",
         "VK_DRIVER_FILES": str(icd),
     }
-    cmd = [str(tiles_binary()), "--basepath", f"{ROOT}/", "--userdir", f"{userdir}/", "--world", save_name]
+    state_path = (run / "state.json").resolve()
+    cmd = [str(tiles_binary()), "--basepath", f"{ROOT}/", "--userdir", f"{userdir}/", "--world",
+           save_name, f"--state-out={state_path}"]
     if seed:
         cmd += ["--seed", seed]
     log = (run / "tiles.log").open("w")
@@ -520,7 +523,7 @@ def start_tiles(userdir, save_name, seed=None, timeout=180):
         log.close()
         raise
     return TilesRun(proc=proc, xvfb=xvfb, x11=x11, window_id=window, display=display, run=run,
-                    frame=frame, log=log, xvfb_log=xvfb_log)
+                    frame=frame, log=log, xvfb_log=xvfb_log, state_path=state_path)
 
 
 class _Display:
