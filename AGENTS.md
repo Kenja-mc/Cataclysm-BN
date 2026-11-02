@@ -184,6 +184,9 @@ Do all three tests before you push. All results must be good.
    `bin/playtest-container.sh playtest <scenario>` hands a playtest scenario to you there. Building
    inside the box needs root, so build on the host first.
 
+   `tests/e2e/tiles.py`, `rendering.py`, `lighting.py` and `hud_tiles.py` are standalone tiles checks
+   run as their own commands (see OVERHAUL.md), not modules registered in `run.py`.
+
 Write one end-to-end test for each new fork feature, in its own module under `tests/e2e/` with a
 `TESTS` list registered in `run.py`. Reuse a game per option profile through `fixtures.py` instead
 of starting a new one. Do not write unit tests for fork features.
