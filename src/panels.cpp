@@ -1022,15 +1022,8 @@ static int get_int_digits( const int &digits )
 // panels code
 // ===============================
 
-static void draw_limb_health( avatar &u, const catacurses::window &w, const bodypart_str_id &bp )
+auto limb_health_text( const avatar &u, const bodypart_str_id &bp ) -> limb_health
 {
-    static auto print_symbol_num = []( const catacurses::window & w, int num, const std::string & sym,
-    const nc_color & color ) {
-        while( num-- > 0 ) {
-            wprintz( w, color, sym );
-        }
-    };
-
     const int hp_cur = u.get_part_hp_cur( bp );
     const int hp_max = u.get_part_hp_max( bp );
 
@@ -1039,33 +1032,38 @@ static void draw_limb_health( avatar &u, const catacurses::window &w, const body
     if( u.is_limb_broken( bp.id() ) && !bp->essential ) {
         //Limb is broken
         const int mend_perc =  100 * hp_cur / hp_max;
-        bool splinted = u.worn_with_flag( json_flag_SPLINT, bp ) ||
-                        ( u.mutation_value( "mending_modifier" ) >= 1.0f );
-        nc_color color = splinted ? c_blue : c_dark_gray;
+        const bool splinted = u.worn_with_flag( json_flag_SPLINT, bp ) ||
+                              ( u.mutation_value( "mending_modifier" ) >= 1.0f );
+        const nc_color color = splinted ? c_blue : c_dark_gray;
 
         if( get_option<std::string>( "HEALTH_STYLE" ) == "number" || u.has_effect( effect_got_checked ) ) {
             color_override = color;
         } else {
-            const int num = mend_perc / 20;
-            print_symbol_num( w, num, "#", color );
-            print_symbol_num( w, 5 - num, "=", color );
-            return;
+            const int num = std::clamp( mend_perc / 20, 0, 5 );
+            return { .text = std::string( static_cast<size_t>( num ), '#' ) +
+                             std::string( static_cast<size_t>( 5 - num ), '=' ), .color = color };
         }
     }
 
-
-    std::pair<std::string, nc_color> hp = get_hp_bar( hp_cur, hp_max );
+    auto hp = get_hp_bar( hp_cur, hp_max );
     if( color_override ) {
         hp.second = *color_override;
     }
 
     if( get_option<std::string>( "HEALTH_STYLE" ) == "number" || u.has_effect( effect_got_checked ) ) {
-        wprintz( w, hp.second, "%3d  ", hp_cur );
-    } else {
-        wprintz( w, hp.second, hp.first );
+        return { .text = string_format( "%3d  ", hp_cur ), .color = hp.second };
+    }
+    //Trailing dots fill the bar out to the five cells the limbs panel reserves for it
+    const auto pad = std::max( 0, 5 - utf8_width( hp.first ) );
+    return { .text = std::move( hp.first ), .color = hp.second, .pad = pad };
+}
 
-        //Add the trailing symbols for a not-quite-full health bar
-        print_symbol_num( w, 5 - utf8_width( hp.first ), ".", c_white );
+static void draw_limb_health( avatar &u, const catacurses::window &w, const bodypart_str_id &bp )
+{
+    const auto hp = limb_health_text( u, bp );
+    wprintz( w, hp.color, hp.text );
+    for( auto i = 0; i < hp.pad; ++i ) {
+        wprintz( w, c_white, "." );
     }
 }
 
@@ -2806,12 +2804,17 @@ auto initialize_grouped_panels() -> std::vector<window_panel>
     return ret;
 }
 
-/// The fusion sidebar: status, map, body, surroundings and log, each opened by a section rule.
-/// The ribbon and the loadout deck draw over the map (hud_fusion).
+/// The fusion sidebar: status, surroundings, loadout, map and log, each opened by a section rule.
+/// The ribbon, the key bar and the VEHICLE card draw over the map (hud_fusion).
 auto initialize_fusion_panels() -> std::vector<window_panel>
 {
     auto ret = std::vector<window_panel>();
     ret.emplace_back( hud_fusion::draw_status, translate_marker( "Status" ), hud_fusion::status_rows,
+                      44, true );
+    ret.emplace_back( hud_fusion::draw_around, translate_marker( "Around" ), 5, 44, true,
+                      compass_panel );
+    ret.back().set_height_override( []() { return hud_fusion::around_rows( get_avatar() ); } );
+    ret.emplace_back( hud_fusion::draw_loadout, translate_marker( "Loadout" ), hud_fusion::loadout_rows,
                       44, true );
 #if defined(TILES)
     ret.emplace_back( hud_fusion::draw_map_rule, translate_marker( "Map title" ), 1, 44, true,
@@ -2820,13 +2823,6 @@ auto initialize_fusion_panels() -> std::vector<window_panel>
                       44, true, default_render, true );
     ret.back().set_height_override( hud_fusion::minimap_rows );
 #endif
-    ret.emplace_back( hud_fusion::draw_body, translate_marker( "Body" ), 7, 44, true, limbs_panel );
-    ret.back().set_height_override( []() { return hud_fusion::body_rows( get_avatar() ); } );
-    ret.emplace_back( hud_fusion::draw_around, translate_marker( "Around" ), 5, 44, true,
-                      compass_panel );
-    ret.back().set_height_override( []() { return hud_fusion::around_rows( get_avatar() ); } );
-    ret.emplace_back( hud_fusion::draw_loadout, translate_marker( "Loadout" ), hud_fusion::loadout_rows,
-                      44, true );
     ret.emplace_back( hud_fusion::draw_log, translate_marker( "Log" ), -2, 44, true, log_panel );
     return ret;
 }

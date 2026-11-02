@@ -32,9 +32,9 @@ SHOTS = [
     dict(id="hud-fusion", title="Fusion HUD",
          keys=[], layout="fusion",
          options={"CONTROL_SCHEME": "modern", "TERMINAL_X": "160", "TERMINAL_Y": "45"},
-         body="The default layout on screens of at least 140 by 36 cells. A status card, a one-line "
-              "ribbon and a loadout deck sit over the map; the sidebar stacks the minimap, body, "
-              "surroundings and log under section rules."),
+         body="The default layout on screens of at least 140 by 36 cells. A one-line ribbon runs "
+              "along the top, a context key bar along the bottom, and the sidebar stacks status "
+              "(limb bars above stamina), surroundings, loadout, map and log under section rules."),
     dict(id="hud-modern", title="Modern HUD",
          keys=[], options={"CONTROL_SCHEME": "modern", "HUD_WEATHER_BOX": "top_left",
                            "HUD_COMBAT_BOX": "top_left"},

@@ -9,16 +9,17 @@ namespace catacurses
 class window;
 } // namespace catacurses
 
-/// The fusion HUD: a one-line ribbon at the top left and a LOADOUT deck over the map, beside the
-/// "fusion" sidebar layout whose sections (status, map, body, around, log) open with a rule.
+/// The fusion HUD: a one-line ribbon at the top left and a key bar along the bottom of the map,
+/// beside the "fusion" sidebar layout whose sections (status, around, loadout, map, log) open
+/// with a rule.
 namespace hud_fusion
 {
 
-/// Rows the STATUS section needs, and the BODY and AROUND sections now: every limb is listed, and
+/// Rows the STATUS section needs: its rule, the two limb rows, Stamina and the needs line.
+inline constexpr int status_rows = 5;
+/// Rows the LOADOUT section needs: its rule, the weapon and two hotbar rows.
+inline constexpr int loadout_rows = 4;
 /// AROUND grows with what is in sight.
-inline constexpr int status_rows = 8;
-inline constexpr int loadout_rows = 9;
-auto body_rows( const avatar &you ) -> int;
 auto around_rows( const avatar &you ) -> int;
 
 /// Rows the pixel minimap takes: none when it is turned off, the player's own height when set,
@@ -41,7 +42,6 @@ auto draw_minimap( avatar &you, const catacurses::window &w ) -> void;
 auto draw_map_rule( avatar &you, const catacurses::window &w ) -> void;
 auto draw_status( avatar &you, const catacurses::window &w ) -> void;
 auto draw_loadout( avatar &you, const catacurses::window &w ) -> void;
-auto draw_body( avatar &you, const catacurses::window &w ) -> void;
 auto draw_around( avatar &you, const catacurses::window &w ) -> void;
 auto draw_log( avatar &you, const catacurses::window &w ) -> void;
 

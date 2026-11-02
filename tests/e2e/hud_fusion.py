@@ -1,8 +1,8 @@
-"""The fusion HUD: status card, ribbon and loadout deck over the map, ruled sidebar beside it."""
+"""The fusion HUD: ribbon and key bar over the map, ruled sections beside it."""
 import re
 
 from fixtures import shared_game
-from helpers import HELPERS, arena, bub_pos, empty_inventory, give
+from helpers import HELPERS, arena, bub_pos, empty_inventory, give, wait_until
 from hud_status import healthy
 from tmux_game import Game, start_new_game
 
@@ -25,16 +25,18 @@ def rule_rows(screen, title):
 
 
 def assert_fusion(screen):
-    for title in ("STATUS", "BODY", "AROUND", "LOADOUT", "LOG"):
+    for title in ("STATUS", "AROUND", "LOADOUT", "LOG"):
         assert len(rule_rows(screen, title)) == 1, f"one {title} rule expected:\n{screen}"
     first = screen.splitlines()[0]
     assert re.search(r"(Spring|Summer|Autumn|Winter) \d+", first), \
         f"the date and time belong at the top left:\n{screen}"
-    # Every limb keeps its own bar, healthy or not.
-    for limb in ("HEAD", "TORSO", "L ARM", "R ARM", "L LEG", "R LEG"):
+    # The limbs panel's own grid stands in for an aggregate health bar and the BODY section.
+    for limb in ("L ARM", "HEAD", "R ARM", "L LEG", "TORSO", "R LEG"):
         assert limb in screen, f"the {limb} bar is missing:\n{screen}"
-    assert "bleeding" in screen, "the wound word belongs in BODY:\n" + screen
-    assert "all keys" in screen, "the deck carries the key hints:\n" + screen
+    assert "Stamina" in screen, f"the stamina bar is missing:\n{screen}"
+    assert "Health " not in screen, "there is no aggregate health bar:\n" + screen
+    assert not rule_rows(screen, "BODY"), "the limbs live in STATUS now:\n" + screen
+    assert "Needs met" in screen, "a fresh character never shows a needs row:\n" + screen
     # The floating windows and the old sidebar panels are gone.
     for old in ("Compass", "Movement", "Stats ", "Weight"):
         assert old not in screen, f"{old!r} belongs to another layout:\n{screen}"
@@ -59,7 +61,7 @@ def test_fusion_is_the_fresh_default_and_small_screens_fall_back(_g):
         game.resize(100, 30)
         game.settle_screen()
         small = game.screen()
-        assert "LOADOUT" not in small and not rule_rows(small, "BODY"), \
+        assert "LOADOUT" not in small and not rule_rows(small, "STATUS"), \
             "below 140x36 the grouped layout must replace fusion:\n" + small
         game.resize(160, 45)
         game.settle_screen()
@@ -160,10 +162,68 @@ def test_around_names_who_is_in_sight(_g):
         game.keys("x", delay=0.8)
 
 
+def last_line(screen):
+    return screen.splitlines()[-1]
+
+
+def test_status_draws_the_limb_grid_above_stamina_and_no_body_rule(_g):
+    with shared_game("bn-e2e-fusion", options=OPTIONS, layout="fusion", cols=160, rows=45,
+                     define=HELPERS, setup=fusion_setup) as game:
+        game.settle_screen()
+        screen = game.screen()
+        lines = screen.splitlines()
+        top = next(line for line in lines if all(n in line for n in ("L ARM", "HEAD", "R ARM")))
+        bottom = next(line for line in lines if all(n in line for n in ("L LEG", "TORSO", "R LEG")))
+        rule_row = next(i for i, line in enumerate(lines) if "STATUS" in line)
+        stamina_row = next(i for i, line in enumerate(lines) if "Stamina" in line)
+        assert rule_row < lines.index(top) < lines.index(bottom) < stamina_row, screen
+        assert re.search(r"L ARM\s+\S{2,}", top), "every limb keeps its own bar:\n" + top
+        assert not rule_rows(screen, "BODY"), "the body section is gone:\n" + screen
+        assert "Health " not in screen, "no aggregate health bar:\n" + screen
+
+
+def test_key_bar_switches_to_combat_keys_with_a_hostile_in_sight(_g):
+    with shared_game("bn-e2e-fusion", options=OPTIONS, layout="fusion", cols=160, rows=45,
+                     define=HELPERS, setup=fusion_setup) as game:
+        game.settle_screen()
+        calm = last_line(game.screen())
+        assert "interact" in calm and "inventory" in calm, "the calm key bar:\n" + calm
+        assert "next target" not in calm, calm
+        assert game.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'),here(4,-3)) out('ok')") == ["ok"]
+        game.keys("x", delay=0.8)
+        game.settle_screen()
+        assert wait_until(lambda: "next target" in last_line(game.screen()), timeout=15), \
+            "a hostile in sight switches the bar to combat keys:\n" + game.screen()
+        combat = last_line(game.screen())
+        assert re.search(r"attack|fire", combat), "the combat bar offers fire/attack:\n" + combat
+        assert "interact" not in combat, combat
+        assert game.lua("for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) park(m) end out('ok')") == ["ok"]
+        game.keys("x", delay=0.8)
+        game.keys("x", delay=0.8)
+        assert wait_until(lambda: "interact" in last_line(game.screen()), timeout=15), \
+            "the bar returns to the calm keys:\n" + game.screen()
+
+
+def test_needs_collapse_to_one_needs_met_line(_g):
+    with shared_game("bn-e2e-fusion", options=OPTIONS, layout="fusion", cols=160, rows=45,
+                     define=HELPERS, setup=fusion_setup) as game:
+        game.settle_screen()
+        screen = game.screen()
+        assert "Needs met" in screen, "a character with nothing wrong collapses its needs:\n" + screen
+        assert re.search(r"Focus \d+", screen), "focus joins the needs line:\n" + screen
+        assert re.search(r"Mood [+-]\d+", screen), "mood joins the needs line:\n" + screen
+        for old in ("Str ", "Dex ", "Int ", "Per ", "Noise", "Speed 100"):
+            assert old not in screen, f"{old!r} is on the @ sheet or is the normal state:\n" + screen
+
+
 TESTS = [test_around_names_who_is_in_sight,
          test_vehicle_card_replaces_the_floating_vehicle_window_while_aboard,
          test_clicking_a_hotbar_slot_uses_it_and_overlay_clicks_stay_off_the_map,
          test_hotbar_slot_wields_its_item_and_empty_slot_is_inert,
          test_hotbar_assign_menu_stores_the_chosen_item,
          test_fusion_layout_draws_overlays_and_ruled_sidebar,
+         test_status_draws_the_limb_grid_above_stamina_and_no_body_rule,
+         test_key_bar_switches_to_combat_keys_with_a_hostile_in_sight,
+         test_needs_collapse_to_one_needs_met_line,
          test_fusion_is_the_fresh_default_and_small_screens_fall_back]
+

@@ -10,6 +10,7 @@
 
 #include "action.h"
 #include "avatar.h"
+#include "bodypart.h"
 #include "cached_options.h"
 #include "catacharset.h"
 #include "cursesdef.h"
@@ -48,15 +49,14 @@ auto loadout_hits = std::vector<hit_area>();
 auto edge( const catacurses::window &w ) -> void;
 
 auto need( const catacurses::window &w, const point at, const char *icon, const nc_color icon_color,
-           const hud_snapshot::need &n ) -> void
+           const hud_snapshot::need &n ) -> int
 {
     auto x = text( w, at, icon_color, icon );
     if( n.fine ) {
         x = text( w, point( x + 1, at.y ), pal::muted(), n.label + " " );
-        text( w, point( x, at.y ), pal::muted(), _( "ok" ) );
-    } else {
-        text( w, point( x + 1, at.y ), n.color, n.text );
+        return text( w, point( x, at.y ), pal::muted(), _( "ok" ) );
     }
+    return text( w, point( x + 1, at.y ), n.color, n.text );
 }
 
 struct vital_options {
@@ -92,59 +92,79 @@ auto draw_ribbon( const canvas &area, const hud_snapshot::snapshot &s ) -> void
     }
 }
 
-/// The first key bound to `act` on the map, empty when unbound.
-auto key_for( const action_id act ) -> std::string
+/// The first key bound to `id` on the map, empty when unbound.
+auto key_id( const std::string &id ) -> std::string
 {
     const auto ctxt = input_context( "DEFAULTMODE" );
-    if( ctxt.key_bound_to( action_ident( act ), 0, false ).empty() ) {
+    if( ctxt.key_bound_to( id, 0, false ).empty() ) {
         return {};
     }
-    const auto desc = ctxt.get_desc( action_ident( act ), 1 );
+    const auto desc = ctxt.get_desc( id, 1 );
     return desc == inp_mngr.get_keyname( ' ', input_event_t::keyboard ) ? std::string( _( "spc" ) ) : desc;
 }
 
-/// The handful of keys a player needs most, with their live bindings, wrapped over `rows` rows.
-auto draw_hints( const catacurses::window &w, const point at, const int room, const int rows = 1 ) -> void
+auto key_for( const action_id act ) -> std::string
 {
-    struct entry {
-        std::vector<action_id> acts;
-        const char *label;
-        /// Join the first and last key as "1-6" instead of running them together.
-        bool range = false;
-    };
-    static const auto entries = std::array<entry, 11> { {
-            { { ACTION_MOVE_FORTH, ACTION_MOVE_LEFT, ACTION_MOVE_BACK, ACTION_MOVE_RIGHT }, translate_marker( "move" ) },
-            { { ACTION_HOTBAR_1, ACTION_HOTBAR_6 }, translate_marker( "hotbar" ), true },
-            { { ACTION_EXAMINE }, translate_marker( "interact" ) },
-            { { ACTION_INVENTORY }, translate_marker( "inventory" ) },
-            { { ACTION_ACTIONMENU }, translate_marker( "menus" ) },
-            { { ACTION_KEYBINDINGS }, translate_marker( "all keys" ) },
-            { { ACTION_FIRE }, translate_marker( "attack" ) },
-            { { ACTION_PICKUP }, translate_marker( "pick up" ) },
-            { { ACTION_HOTBAR_ASSIGN }, translate_marker( "assign slot" ) },
-            { { ACTION_PAUSE }, translate_marker( "wait" ) },
-            { { ACTION_MAP }, translate_marker( "map" ) },
-        }
-    };
-    auto x = at.x;
-    auto y = at.y;
-    for( const auto &e : entries ) {
+    return key_id( action_ident( act ) );
+}
+
+struct key_entry {
+    std::string keys;
+    std::string label;
+};
+
+/// The keys the current situation needs, centred on one row along the bottom of the map: combat
+/// keys while a hostile is in sight, the everyday ones otherwise.
+auto draw_keys( const canvas &area, const hud_snapshot::snapshot &s ) -> void
+{
+    const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
+    const auto hostile = std::ranges::any_of( s.seen, []( const auto & c ) {
+        return c.hostile;
+    } );
+    const auto joined = []( const auto & acts ) {
         auto keys = std::string();
-        for( const auto act : e.acts ) {
-            keys += ( e.range && !keys.empty() ? "-" : "" ) + key_for( act );
+        for( const auto act : acts ) {
+            keys += key_for( act );
         }
-        if( keys.empty() ) {
-            continue;
+        return keys;
+    };
+    static const auto moves = std::array{
+        ACTION_MOVE_FORTH, ACTION_MOVE_LEFT, ACTION_MOVE_BACK, ACTION_MOVE_RIGHT
+    };
+    auto entries = std::array<key_entry, 5> {};
+    auto count = 0;
+    const auto add = [&]( std::string keys, const char *label ) {
+        if( !keys.empty() ) {
+            entries[static_cast<size_t>( count++ )] = { std::move( keys ), _( label ) };
         }
-        if( x + width( keys ) + 1 + utf8_width( _( e.label ) ) > at.x + room ) {
-            if( y + 1 >= at.y + rows ) {
-                break;
-            }
-            ++y;
-            x = at.x;
-        }
-        x = text( w, point( x, y ), pal::heading(), keys );
-        x = text( w, point( x + 1, y ), pal::muted(), _( e.label ) ) + 3;
+    };
+    if( hostile ) {
+        add( key_for( ACTION_FIRE ), modern ? _( "attack" ) : _( "fire" ) );
+        add( key_for( ACTION_RELOAD_ITEM ), _( "reload" ) );
+        add( key_id( "NEXT_TARGET" ), _( "next target" ) );
+        add( key_for( ACTION_OPEN_MOVEMENT ), _( "run" ) );
+    } else {
+        add( joined( moves ), _( "move" ) );
+        add( key_for( ACTION_EXAMINE ), _( "interact" ) );
+        add( key_for( ACTION_INVENTORY ), _( "inventory" ) );
+        add( key_for( ACTION_ACTIONMENU ), _( "menus" ) );
+    }
+    add( key_for( ACTION_KEYBINDINGS ), _( "all keys" ) );
+    if( count == 0 ) {
+        return;
+    }
+    auto total = 3 * ( count - 1 );
+    for( auto i = 0; i < count; ++i ) {
+        total += width( entries[static_cast<size_t>( i )].keys ) + 1 +
+                 utf8_width( entries[static_cast<size_t>( i )].label );
+    }
+    hits.push_back( { .at = { .at = point( 0, area.height - 1 ), .width = area.width, .height = 1 } } );
+    const auto w = panel( area, { .at = point( 0, area.height - 1 ), .width = area.width, .height = 1 } );
+    auto x = std::max( 1, ( area.width - total ) / 2 );
+    for( auto i = 0; i < count; ++i ) {
+        const auto &e = entries[static_cast<size_t>( i )];
+        x = text( w, point( x, 0 ), pal::heading(), e.keys );
+        x = text( w, point( x + 1, 0 ), pal::muted(), e.label ) + 3;
     }
 }
 
@@ -152,9 +172,11 @@ auto vehicle_card( const canvas &area, const int rows,
                    std::string summary = {} ) -> catacurses::window
 {
     const auto height = rows + 2;
-    hits.push_back( { .at = { .at = point( 0, area.height - height ), .width = 32, .height = height } } );
+    // One row up from the bottom edge, so the key bar keeps the last row of the map.
+    const auto at = point( 0, area.height - height - 1 );
+    hits.push_back( { .at = { .at = at, .width = 32, .height = height } } );
     auto w = panel( area, {
-        .at = point( 0, area.height - height ), .width = 32, .height = height
+        .at = at, .width = 32, .height = height
     } );
     card( w, { .title = _( "VEHICLE" ), .summary = std::move( summary ),
                .summary_color = pal::accent() } );
@@ -190,7 +212,7 @@ auto draw_vehicle( const avatar &you, const canvas &area ) -> void
     }
 }
 
-/// The LOADOUT section: the held weapon, the hotbar and the keys most used, in the column.
+/// The LOADOUT section: the held weapon and the hotbar, in the column.
 auto loadout_section( const catacurses::window &w, const avatar &you, const hud_snapshot::snapshot &s ) -> void
 {
     edge( w );
@@ -207,7 +229,6 @@ auto loadout_section( const catacurses::window &w, const avatar &you, const hud_
     if( s.armed ) {
         text( w, point( x + 1, 1 ), pal::text(), glyph::weapon );
     }
-    text( w, point( 4, 2 ), pal::muted(), utf8_truncate( s.style.empty() ? s.stance : s.style, 36 ) );
 
     // Hotbar: three cells per row, the digit that uses the slot first. Empty slots still draw, so
     // the row shows what there is to fill and where.
@@ -215,7 +236,7 @@ auto loadout_section( const catacurses::window &w, const avatar &you, const hud_
     for( auto i = 0; i < hotbar::slots; ++i ) {
         const auto v = hotbar::view( you, i );
         const auto sx = 2 + ( i % 3 ) * cell_w;
-        const auto sy = 3 + i / 3;
+        const auto sy = 2 + i / 3;
         loadout_hits.push_back( { .at = { .at = point( getbegx( w ) + sx, getbegy( w ) + sy ),
                                          .width = cell_w, .height = 1 }, .slot = i } );
         const auto ready = v.assigned && v.count > 0;
@@ -228,9 +249,6 @@ auto loadout_section( const catacurses::window &w, const avatar &you, const hud_
         const auto label = v.name + ( v.count > 1 ? " x" + std::to_string( v.count ) : std::string() );
         text( w, point( cx + 1, sy ), ready ? pal::title() : pal::muted(), utf8_truncate( label, cell_w - 6 ) );
     }
-
-    hline( w, point( 2, 5 ), getmaxx( w ) - 4, pal::border() );
-    draw_hints( w, point( 2, 6 ), getmaxx( w ) - 4, 3 );
 }
 
 /// Read once per map frame by the overlays and reused by the sidebar sections drawn after them.
@@ -254,39 +272,79 @@ auto edge( const catacurses::window &w ) -> void
     vline( w, point_zero, getmaxy( w ), pal::border() );
 }
 
-/// The STATUS section: the bars, the needs, and what the old Movement panel read. It sits in the
-/// column so nothing covers the map.
-auto status_section( const catacurses::window &w, const hud_snapshot::snapshot &s ) -> void
+/// The needs line: one row that only names what needs action, and says so when nothing does.
+auto needs_line( const catacurses::window &w, const hud_snapshot::snapshot &s ) -> void
+{
+    constexpr auto y = 4;
+    struct chip {
+        const hud_snapshot::need *reading;
+        const char *icon;
+        nc_color icon_color;
+    };
+    const auto chips = std::array{
+        chip{ .reading = &s.thirst, .icon = glyph::thirst, .icon_color = pal::thirst() },
+        chip{ .reading = &s.hunger, .icon = glyph::hunger, .icon_color = pal::hunger() },
+        chip{ .reading = &s.rest, .icon = glyph::rest, .icon_color = pal::rest() },
+        chip{ .reading = &s.heat, .icon = glyph::heat, .icon_color = pal::heat() },
+    };
+    auto x = 2;
+    const auto all_fine = std::ranges::all_of( chips, []( const auto & c ) {
+        return c.reading->fine;
+    } );
+    if( s.pain_level == 0 && all_fine ) {
+        x = text( w, point( x, y ), pal::muted(),
+                  std::string( glyph::check ) + " " + _( "Needs met" ) ) + 2;
+        x = text( w, point( x, y ), pal::muted(), string_format( _( "Focus %d" ), s.focus ) );
+        x = dot( w, point( x, y ) );
+        text( w, point( x, y ), s.morale < -10 ? pal::danger() :
+              s.morale > 10 ? c_light_green : pal::muted(),
+              string_format( _( "Mood %+d" ), s.morale ) );
+        return;
+    }
+    for( const auto &c : chips ) {
+        if( !c.reading->fine ) {
+            x = need( w, point( x, y ), c.icon, c.icon_color, *c.reading ) + 2;
+        }
+    }
+    if( s.pain_level > 0 ) {
+        text( w, point( x, y ), s.pain.color, string_format( _( "Pain %d" ), s.pain_level ) );
+    }
+}
+
+/// The STATUS section: the original BN limb grid, Stamina, and the needs that need action. It sits
+/// in the column so nothing covers the map.
+auto status_section( const catacurses::window &w, const avatar &you, const hud_snapshot::snapshot &s ) -> void
 {
     edge( w );
     rule( w, { .title = _( "STATUS" ), .summary = s.stance, .summary_color = s.stance_color } );
+    // Two rows of three, the limbs laid out as they sit on the body: every limb keeps its own bar
+    // and the limbs panel's colours, so the one that was hit stands out.
+    constexpr auto column_step = 14;
+    static const auto grid = std::array{
+        bodypart_str_id( "arm_l" ), bodypart_str_id( "head" ), bodypart_str_id( "arm_r" ),
+        bodypart_str_id( "leg_l" ), bodypart_str_id( "torso" ), bodypart_str_id( "leg_r" ),
+    };
+    for( auto i = 0; i < static_cast<int>( grid.size() ); ++i ) {
+        const auto &bp = grid[static_cast<size_t>( i )];
+        const auto at = point( 2 + ( i % 3 ) * column_step, 1 + i / 3 );
+        auto x = text( w, at, you.limb_color( bp, true, true, true ), body_part_hp_bar_ui_text( bp ) );
+        const auto hp = limb_health_text( you, bp );
+        x = text( w, point( x + 1, at.y ), hp.color, hp.text );
+        if( hp.pad > 0 ) {
+            text( w, point( x, at.y ), c_white, std::string( static_cast<size_t>( hp.pad ), '.' ) );
+        }
+    }
     const auto stamina = s.stamina_max > 0 ? s.stamina * 100 / s.stamina_max : 0;
-    vital( w, { .y = 1, .icon = glyph::hp, .color = s.hp_color, .value = s.hp_percent, .max = 100,
-                .label = string_format( _( "Health %d%%" ), s.hp_percent ) } );
-    vital( w, { .y = 2, .icon = glyph::stamina, .color = pal::stamina(), .value = s.stamina,
+    vital( w, { .y = 3, .icon = glyph::stamina, .color = pal::stamina(), .value = s.stamina,
                 .max = s.stamina_max, .label = string_format( _( "Stamina %d%%" ), stamina ) } );
-    vital( w, { .y = 3, .icon = glyph::focus, .color = pal::focus(), .value = s.focus, .max = 100,
-                .label = string_format( _( "Focus %d" ), s.focus ) } );
-    // Mood changes how fast you learn and whether you can craft, so it sits beside the bars.
-    text( w, point( 32, 3 ), s.morale < -10 ? pal::danger() : s.morale > 10 ? c_light_green : pal::muted(),
-          string_format( _( "Mood %+d" ), s.morale ) );
-    text( w, point( 2, 4 ), s.pain_level > 0 ? pal::danger() : pal::muted(),
-          string_format( _( "%s Pain %d" ), glyph::pain, s.pain_level ) );
-    text( w, point( 12, 4 ), pal::muted(), string_format( _( "Speed %d  Noise %s" ), s.speed, s.sound ) );
-    need( w, point( 2, 5 ), glyph::thirst, pal::thirst(), s.thirst );
-    need( w, point( 20, 5 ), glyph::rest, pal::rest(), s.rest );
-    need( w, point( 2, 6 ), glyph::hunger, pal::hunger(), s.hunger );
-    need( w, point( 20, 6 ), glyph::heat, pal::heat(), s.heat );
-    text( w, point( 2, 7 ), pal::muted(), string_format( "Str %d  Dex %d  Int %d  Per %d", s.str, s.dex, s.intel, s.per ) );
+    // Walking is the normal reading, so only a slowed turn is worth the cells.
+    if( s.speed != 100 ) {
+        text( w, point( 34, 3 ), pal::muted(), string_format( _( "Speed %d" ), s.speed ) );
+    }
+    needs_line( w, s );
 }
 
 } // namespace
-
-auto body_rows( const avatar &you ) -> int
-{
-    // Every limb keeps its own bar: a single "no wounds" line hides the one that just got hit.
-    return 1 + static_cast<int>( current( you ).limbs.size() );
-}
 
 auto around_rows( const avatar &you ) -> int
 {
@@ -301,7 +359,7 @@ auto minimap_rows() -> int
     }
     const auto chosen = get_option<int>( "PIXEL_MINIMAP_HEIGHT" );
     // The minimap gives way first, so every section below it still fits on the screen.
-    const auto rest = 1 + status_rows + loadout_rows + body_rows( get_avatar() ) +
+    const auto rest = 1 + status_rows + loadout_rows +
                       around_rows( get_avatar() ) + sidebar::log_min_rows;
     return std::clamp( chosen > 0 ? chosen : 12, 6, std::max( 6, TERMY - rest ) );
 #else
@@ -331,6 +389,7 @@ auto draw( const avatar &you, const catacurses::window &w_terrain ) -> void
     loadout_hits.clear();
     begin_frame();
     draw_ribbon( area, s );
+    draw_keys( area, s );
     draw_vehicle( you, area );
     end_frame();
 }
@@ -397,34 +456,13 @@ auto draw_map_rule( avatar &you, const catacurses::window &w ) -> void
 
 auto draw_status( avatar &you, const catacurses::window &w ) -> void
 {
-    status_section( w, current( you ) );
+    status_section( w, you, current( you ) );
     wnoutrefresh( w );
 }
 
 auto draw_loadout( avatar &you, const catacurses::window &w ) -> void
 {
     loadout_section( w, you, current( you ) );
-    wnoutrefresh( w );
-}
-
-auto draw_body( avatar &you, const catacurses::window &w ) -> void
-{
-    edge( w );
-    const auto &s = current( you );
-    const auto wounded = std::ranges::count_if( s.limbs, []( const auto & l ) { return !l.wound.empty(); } );
-    rule( w, {
-        .title = _( "BODY" ),
-        .summary = wounded > 0 ? string_format( _( "%d wounded" ), wounded ) : std::string( _( "no wounds" ) ),
-        .summary_color = wounded > 0 ? pal::danger() : pal::muted()
-    } );
-    for( auto i = 0; i < static_cast<int>( s.limbs.size() ); ++i ) {
-        const auto &limb = s.limbs[static_cast<size_t>( i )];
-        const auto hurt = !limb.wound.empty() || limb.hp < limb.hp_max;
-        text( w, point( 2, 1 + i ), hurt ? pal::title() : pal::muted(), limb.name );
-        bar( w, { .at = point( 9, 1 + i ), .width = 10, .value = limb.hp, .max = limb.hp_max,
-                  .fill = limb.wound.empty() ? limb.color : limb.wound_color } );
-        text( w, point( 21, 1 + i ), limb.wound_color, limb.wound );
-    }
     wnoutrefresh( w );
 }
 

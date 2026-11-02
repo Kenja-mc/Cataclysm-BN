@@ -313,7 +313,7 @@ def in_game(screen):
     return (("X,Y,Z" in screen and (" move " in screen or "Place :" in screen))
             or ("Location:" in screen and "Stm" in screen)
             or ("HEAD" in screen and "TORSO" in screen)
-            # The fusion HUD folds healthy limbs to one line.
+            # The fusion HUD always shows its ruled sections.
             or ("STATUS" in screen and "LOADOUT" in screen))
 
 

@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "bodypart.h"
+#include "color.h"
 #include "coordinates.h"
 
 class JsonIn;
@@ -34,6 +36,15 @@ void draw_overmap_chunk( const catacurses::window &w_minimap, const avatar &you,
 } // namespace overmap_ui
 
 bool default_render();
+
+/// One limb's health as the limbs panel prints it: the bar or its broken marker, the colour it
+/// takes, and the white dots that pad a short bar so every limb fills the same cells.
+struct limb_health {
+    std::string text;
+    nc_color color = c_light_gray;
+    int pad = 0;
+};
+auto limb_health_text( const avatar &u, const bodypart_str_id &bp ) -> limb_health;
 
 namespace sidebar
 {

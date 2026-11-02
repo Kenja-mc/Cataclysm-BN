@@ -25,16 +25,13 @@ struct rect {
 
 namespace glyph
 {
-inline constexpr auto hp = "♥";
+inline constexpr auto check = "✓";
 inline constexpr auto stamina = "⚡";
-inline constexpr auto focus = "◎";
-inline constexpr auto pain = "†";
 inline constexpr auto thirst = "○";
 inline constexpr auto hunger = "↓";
 inline constexpr auto rest = "⏾";
 inline constexpr auto heat = "▲";
 inline constexpr auto weapon = "◆";
-inline constexpr auto place = "⌂";
 inline constexpr auto safe = "⚠";
 inline constexpr auto log = "»";
 inline constexpr auto dot = "·";
@@ -44,13 +41,12 @@ namespace pal
 {
 inline auto border() -> nc_color { return c_dark_gray; }
 inline auto text() -> nc_color { return c_light_gray; }
-inline auto muted() -> nc_color { return c_dark_gray; }
+inline auto muted() -> nc_color { return c_light_gray; }
 inline auto title() -> nc_color { return c_white; }
 inline auto heading() -> nc_color { return c_light_cyan; }
 inline auto accent() -> nc_color { return c_yellow; }
 inline auto danger() -> nc_color { return c_light_red; }
 inline auto stamina() -> nc_color { return c_yellow; }
-inline auto focus() -> nc_color { return c_light_cyan; }
 inline auto thirst() -> nc_color { return c_light_blue; }
 inline auto hunger() -> nc_color { return c_brown; }
 inline auto rest() -> nc_color { return c_pink; }

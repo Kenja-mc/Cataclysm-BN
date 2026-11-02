@@ -541,15 +541,20 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   Both the terminal and tiles builds draw the windows.
 - **Fusion HUD** is the layout new configurations start with, on screens of at least 140×36
   cells; smaller screens draw grouped instead. A one-line ribbon (date and time, weather, light,
-  wind, safe mode) runs along the top left, and the right sidebar stacks **STATUS** (health,
-  stamina and focus gauges with mood, pain, speed, noise, needs and the four stats), **MAP** (the
-  pixel minimap: turn *Pixel minimap* off to clear it, and it gives way when the column is full),
-  **BODY** (a bar for every limb, wounded or not), **AROUND** (each creature in sight by name,
-  direction and distance, hostiles first), **LOADOUT** (the held weapon with its ammo, the style
-  or stance, six hotbar cells and the key hints, wrapped) and **LOG** (messages in the log's own
-  colours); the log takes every row the sections above leave. The map keeps only the ribbon row
-  and the VEHICLE card, and the character stays centred. Select fusion, grouped or another layout
+  wind, safe mode) runs along the top left, one key bar runs along the bottom of the map, and the
+  right sidebar stacks **STATUS** (the original limb bars in two rows of three — `L ARM`, `HEAD`,
+  `R ARM` over `L LEG`, `TORSO`, `R LEG` — then Stamina, then one line naming only the needs that
+  need action, or `✓ Needs met` with focus and mood), **AROUND** (each creature in sight by name,
+  direction and distance, hostiles first), **LOADOUT** (the held weapon with its ammo and six
+  numbered hotbar cells), **MAP** (the pixel minimap: turn *Pixel minimap* off to clear it, and it
+  gives way when the column is full) and **LOG** (messages in the log's own colours); the log takes
+  every row the sections above leave. The map keeps only the ribbon row, the key bar and the
+  VEHICLE card, and the character stays centred. Select fusion, grouped or another layout
   in **Enter → Misc → Sidebar Options**.
+- **Fusion key bar.** A centred row of the keys the moment needs: `move`, `interact`, `inventory`,
+  `menus` and `all keys` normally; `fire`/`attack`, `reload`, `next target`, `run` and `all keys`
+  while a hostile is in sight. Every key is the player's live binding, and an unbound one is left
+  out. It shares the bottom row of the map with nothing: the VEHICLE card sits one row above it.
 - **Hotbar** (Modern, fusion LOADOUT section): six quick slots on `1`–`6`. **Ctrl+T** opens *Assign
   a hotbar slot*: pick a slot, then an item (Esc clears it). A slot remembers the item type, not the
   stack; its key does what the Use menu does with the first matching carried item (read, eat, wield,
@@ -558,7 +563,7 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   LOADOUT section draws them, and clicking a cell uses it. A slot with nothing assigned uses the item
   whose inventory letter is that digit. Classic has no default hotbar keys; bind *Hotbar slot N* if
   you want them. Aboard or remote-controlling a vehicle, a **VEHICLE** card (azimuth, speed, cruise,
-  engine, fuel, battery) sits at the bottom left of the map.
+  engine, fuel, battery) sits at the bottom left of the map, one row above the key bar.
 - **Inventory item menu** numbers its rows `1`–`9`, `0` in Modern; the old letters still work.
 - **Grouped right sidebar**, based on the Opus HUD proposal: its HUD groups are the windows above,
   so the sidebar keeps Location, Controls and the optional Map. The Location group keeps its 5×5
