@@ -20,6 +20,7 @@
 #include "calendar.h"
 #include "catacharset.h"
 #include "cata_utility.h"
+#include "character_display.h"
 #include "character_functions.h"
 #include "character_martial_arts.h"
 #include "color.h"
@@ -2143,8 +2144,9 @@ auto read( const avatar &you ) -> snapshot
     for( const auto &bp : you.get_all_body_parts( true ) ) {
         hp += you.get_part_hp_cur( bp );
         hp_max += you.get_part_hp_max( bp );
+        const auto name = body_part_hp_bar_ui_text( bp );
         auto entry = limb{
-            .name = body_part_hp_bar_ui_text( bp ), .hp = you.get_part_hp_cur( bp ),
+            .name = name, .hp = you.get_part_hp_cur( bp ),
             .hp_max = you.get_part_hp_max( bp ),
             .color = get_hp_bar( you.get_part_hp_cur( bp ), you.get_part_hp_max( bp ) ).second
         };
@@ -2153,7 +2155,15 @@ auto read( const avatar &you ) -> snapshot
             entry.wound_color = wound->second;
         }
         out.limbs.push_back( std::move( entry ) );
+        const auto encumbrance = you.encumb( bp.id() );
+        if( encumbrance >= character_display::encumb_notice ) {
+            out.encumbered.push_back( { .name = name, .level = encumbrance,
+                                        .color = character_display::encumb_color( encumbrance ) } );
+        }
     }
+    std::ranges::stable_sort( out.encumbered, []( const encumbered & a, const encumbered & b ) {
+        return a.level > b.level;
+    } );
     out.hp_percent = hp_max > 0 ? hp * 100 / hp_max : 0;
     out.hp_color = get_hp_bar( hp, hp_max ).second;
     out.stamina = you.get_stamina();

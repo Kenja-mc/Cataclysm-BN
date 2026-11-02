@@ -28,6 +28,10 @@ Upstream's own changes are in `docs/en/game/changelog`.
   fuel and battery readings retain remote-control status and aircraft takeoff/lift information.
   Leaving it off keeps the compact reading; Classic and compact panels are unchanged. Driving
   controls, selected speed units and action time costs are unchanged.
+- Fusion HUD: the STATUS needs line flags heavy encumbrance as `Encumbered TORSO` in the colour
+  the character sheet gives that body part, worst parts first, the third and later folded into
+  `+N`. Clicking the entry opens the armor layers screen, and `✓ Needs met` stays for characters
+  with nothing listed.
 
 ### Changed
 

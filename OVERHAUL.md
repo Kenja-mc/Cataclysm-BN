@@ -545,13 +545,15 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   right sidebar stacks **STATUS** (the original limb bars in two rows of three — `L ARM`, `HEAD`,
   `R ARM` over `L LEG`, `TORSO`, `R LEG` — then Stamina, then one line naming only the needs that
   need action, each wound with the limb that carries it in the wound's colour (`Pain 1  Bleeding
-  L ARM`), or `✓ Needs met` with focus and mood when nothing is wrong), **AROUND** (each creature
-  in sight by name, direction and distance, hostiles first), **LOADOUT** (the held weapon with its
-  ammo and six numbered hotbar cells), **MAP** (the pixel minimap: turn *Pixel minimap* off to
-  clear it, and it gives way when the column is full) and **LOG** (messages in the log's own
-  colours); the log takes every row the sections above leave. The map keeps only the ribbon row,
-  the key bar and the VEHICLE card, and the character stays centred. Select fusion, grouped or
-  another layout in **Enter → Misc → Sidebar Options**.
+  L ARM`) and each heavily encumbered part as `Encumbered TORSO` in the character sheet's own
+  encumbrance colour, worst part first and a third folded into `+N`; clicking the encumbrance
+  entries opens the armor layers screen, and nothing wrong reads `✓ Needs met` with focus and
+  mood), **AROUND** (each creature in sight by name, direction and distance, hostiles first),
+  **LOADOUT** (the held weapon with its ammo and six numbered hotbar cells), **MAP** (the pixel
+  minimap: turn *Pixel minimap* off to clear it, and it gives way when the column is full) and
+  **LOG** (messages in the log's own colours); the log takes every row the sections above leave.
+  The map keeps only the ribbon row, the key bar and the VEHICLE card, and the character stays
+  centred. Select fusion, grouped or another layout in **Enter → Misc → Sidebar Options**.
 - **Fusion key bar.** A centred row of the keys the moment needs: `move`, `interact`, `inventory`,
   `menus` and `all keys` normally; `fire`/`attack`, `reload`, `next target`, `run` and `all keys`
   while a hostile is in sight. Every key is the player's live binding, and an unbound one is left

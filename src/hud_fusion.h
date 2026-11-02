@@ -34,7 +34,8 @@ auto active() -> bool;
 auto draw( const avatar &you, const catacurses::window &w_terrain ) -> void;
 
 /// Sidebar sections; each draws its rule on its first row.
-/// A left click at a map-window cell: runs a hotbar slot, or is swallowed by an overlay.
+/// A left click at a map-window cell: runs a hotbar slot, opens the armor screen from the
+/// encumbrance entries, or is swallowed by an overlay.
 auto clicked( avatar &you, const point &cell ) -> bool;
 
 /// The pixel minimap, inset one column from the sidebar edge.

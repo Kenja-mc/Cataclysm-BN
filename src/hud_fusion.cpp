@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "action.h"
+#include "armor_layers.h"
 #include "avatar.h"
 #include "bodypart.h"
 #include "cached_options.h"
@@ -45,6 +46,8 @@ struct hit_area {
 auto hits = std::vector<hit_area>();
 /// Where the LOADOUT section drew its hotbar cells, in sidebar cells, for click handling.
 auto loadout_hits = std::vector<hit_area>();
+/// Where the STATUS needs line drew the encumbrance entries, in screen cells.
+auto encumbered_hits = std::vector<hit_area>();
 
 auto edge( const catacurses::window &w ) -> void;
 
@@ -303,7 +306,7 @@ auto needs_line( const catacurses::window &w, const hud_snapshot::snapshot &s ) 
     const auto wounded = std::ranges::any_of( s.limbs, []( const auto & l ) {
         return !l.wound.empty();
     } );
-    if( s.pain_level == 0 && all_fine && !wounded ) {
+    if( s.pain_level == 0 && all_fine && !wounded && s.encumbered.empty() ) {
         x = text( w, point( x, y ), pal::muted(),
                   std::string( glyph::check ) + " " + _( "Needs met" ) ) + 2;
         x = text( w, point( x, y ), pal::muted(), string_format( _( "Focus %d" ), s.focus ) );
@@ -330,6 +333,23 @@ auto needs_line( const catacurses::window &w, const hud_snapshot::snapshot &s ) 
         x = text( w, point( x, y ), limb.wound_color, sentence( limb.wound ) );
         x = text( w, point( x + 1, y ), pal::text(), limb.name ) + 2;
     }
+    // The worst encumbered parts come first, in the colour the character sheet gives them; a long
+    // list folds into a count so the row never pushes the log off the section.
+    if( s.encumbered.empty() ) {
+        return;
+    }
+    constexpr auto named = 2;
+    const auto start = x;
+    for( auto i = 0; i < static_cast<int>( s.encumbered.size() ) && i < named; ++i ) {
+        const auto &e = s.encumbered[static_cast<size_t>( i )];
+        x = text( w, point( x, y ), e.color, string_format( _( "Encumbered %s" ), e.name ) ) + 2;
+    }
+    if( static_cast<int>( s.encumbered.size() ) > named ) {
+        x = text( w, point( x, y ), s.encumbered[static_cast<size_t>( named )].color,
+                  string_format( "+%d", static_cast<int>( s.encumbered.size() ) - named ) );
+    }
+    encumbered_hits.push_back( { .at = { .at = point( getbegx( w ) + start, getbegy( w ) + y ),
+                                        .width = std::max( 1, x - start ), .height = 1 } } );
 }
 
 /// The STATUS section: the original BN limb grid, Stamina, and the needs that need action. It sits
@@ -408,6 +428,7 @@ auto draw( const avatar &you, const catacurses::window &w_terrain ) -> void
     const auto &s = refresh( you );
     hits.clear();
     loadout_hits.clear();
+    encumbered_hits.clear();
     begin_frame();
     draw_ribbon( area, s );
     draw_keys( area, s );
@@ -437,11 +458,20 @@ auto clicked( avatar &you, const point &cell ) -> bool
     if( !active() ) {
         return false;
     }
-    // The hotbar lives in the column now: a click there uses a slot, and any other click on the
-    // column stops here instead of reaching the map behind it.
+    // The hotbar lives in the column now: a click there uses a slot, a click on the encumbrance
+    // entries opens the armor screen, and any other click on the column stops here instead of
+    // reaching the map behind it.
     if( get_option<std::string>( "SIDEBAR_POSITION" ) == "right" ) {
         const auto sidebar_x = TERMX - panel_manager::get_manager().get_width_right();
         if( cell.x >= sidebar_x ) {
+            for( const auto &hit : encumbered_hits ) {
+                const auto &r = hit.at;
+                if( cell.x >= r.at.x && cell.x < r.at.x + r.width && cell.y >= r.at.y &&
+                    cell.y < r.at.y + r.height ) {
+                    show_armor_layers_ui( you );
+                    return true;
+                }
+            }
             for( const auto &hit : loadout_hits ) {
                 const auto &r = hit.at;
                 if( cell.x >= r.at.x && cell.x < r.at.x + r.width && cell.y >= r.at.y &&
