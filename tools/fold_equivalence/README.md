@@ -44,12 +44,14 @@ Re-record the baseline after merging upstream and after any intentional fold cha
 
 ```sh
 git -C /path/to/mainline worktree add /tmp/mainline-base <merge-base>
-# in that tree, apply the fold dump support from this repo's src/fold_dump.*, src/dump.cpp and
-# src/init.* hook, then:
-cmake -S /tmp/mainline-base -B /tmp/mainline-base/build -DCMAKE_BUILD_TYPE=Release
-cmake --build /tmp/mainline-base/build --target cataclysm-bn -j
-/tmp/mainline-base/build/src/cataclysm-bn --basepath /tmp/mainline-base/ --dump-stats FOLDED \
-  /tmp/fold_requests.json > tests/fold_equivalence/baseline.json
+# in that tree, copy src/fold_dump.* from this repo and apply the src/dump.cpp and src/init.* hooks,
+# then build and dump from the tree's root. Mainline's --dump-stats reads a mode before the
+# options, so pass TSV ahead of the request file:
+cmake -S /tmp/mainline-base -B /tmp/mainline-base/build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DTILES=OFF -DSOUND=OFF -DTESTS=OFF
+cmake --build /tmp/mainline-base/build --target cataclysm-bn
+(cd /tmp/mainline-base && build/src/cataclysm-bn --basepath ./ --datadir ./data/ --userdir /tmp/fold-dump/ \
+  --dump-stats FOLDED TSV /tmp/fold_requests.json) > tests/fold_equivalence/baseline.json
 ```
 
 Accepted balance changes stay visible in the report; classify them in the commit message instead
