@@ -5,7 +5,8 @@ make the game easier to pick up. The simulation, content and tone stay the same:
 items, same zombies. The changes are to the controls, the look of the interface and the busywork
 around managing items.
 
-Branched from `cataclysmbn/Cataclysm-BN@d14e047`; last merged upstream `main`: `631956df27`.
+Branched from `cataclysmbn/Cataclysm-BN@d14e047`; for the last merged upstream commit, run
+`git merge-base main upstream/main`.
 
 Screenshots: [docs/fork/visual-changes.md](docs/fork/visual-changes.md). Changes by date:
 [CHANGELOG-OVERHAUL.md](CHANGELOG-OVERHAUL.md).
@@ -15,7 +16,8 @@ Screenshots: [docs/fork/visual-changes.md](docs/fork/visual-changes.md). Changes
 Modern uses a few control families instead of a separate primary key for every menu. **WASD**
 walks, with **Q E Z C** for diagonals; the numpad also walks. Walk into an enemy to attack it.
 The same direction keys move cursors in look mode, targeting and the overmap, and answer
-direction prompts. Top-row numbers do not move you on the map.
+direction prompts. Modern opens look mode from **Enter → Look**. Top-row numbers do not move you on
+the map.
 
 - **Enter — general actions.** All existing action categories remain available here, including
   construction, storage, talking and equipment. **Info** holds body status, missions, morale and
@@ -451,6 +453,9 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 - **Cliff edge shading** (orthographic tiles): a narrow dark edge marks a visible drop into open
   air without covering the ground texture. Hidden openings are not revealed. Options → Graphics →
   Cliff edge shading restores the original view.
+- **Lock icons on doors you found locked** (tiles, on in Modern): a small lock icon marks every
+  door you personally found locked, including remembered doors outside your sight. It never marks
+  a door you have not tried. Options → Graphics → Lock icons on doors you found locked turns it off.
 - **Item thumbnails in UI** (tiles): inventory, the wield/wear/read/eat pickers, the pickup menu and
   the other item lists that share their row layout show the item's real sprite, including jewelry
   variants and corpses. Filtering clears old thumbnails, and sprites stay inside their list window.
@@ -1125,8 +1130,9 @@ menu audits.
 ## Fork guide
 
 The [fork guide](https://kenja-mc.github.io/Cataclysm-BN/guide/) uses this repository's item,
-recipe, terrain, monster and mod data, rather than upstream's database. `J` opens it in the modern
-scheme; Options → Interface → Hitchhiker's Guide URL can still point to another guide.
+recipe, terrain, monster and mod data, rather than upstream's database. In the modern scheme an
+item's menu opens the guide with `J`; the map has no guide key in Modern. Options → Interface →
+Hitchhiker's Guide URL can still point to another guide.
 The documentation workflow rebuilds the guide when game data, tiles or guide scripts change.
 Each dataset identifies its source commit; local exports with modified game data are marked
 `-dirty`. `stable`, `nightly` and `latest` resolve to the same current fork snapshot, not three
