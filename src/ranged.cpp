@@ -3147,7 +3147,7 @@ target_handler::trajectory target_ui::run()
     on_out_of_scope cleanup( [this, &here, &player_character]() {
         shot_preview::clear();
         if( preview_liveview_at ) {
-            g->liveview.hide();
+            g->hide_tile_preview();
             preview_liveview_at.reset();
         }
         test_state::refresh_overlays( player_character );
@@ -3945,11 +3945,11 @@ void target_ui::refresh_shot_preview()
         const bool show_live = next.aim_label.has_value() && !is_draw_tiles_mode();
         if( show_live ) {
             if( preview_liveview_at != next.aim_label->pos ) {
-                g->liveview.show( next.aim_label->pos );
+                g->show_tile_preview( next.aim_label->pos );
                 preview_liveview_at = next.aim_label->pos;
             }
         } else if( preview_liveview_at ) {
-            g->liveview.hide();
+            g->hide_tile_preview();
             preview_liveview_at.reset();
         }
         shot_preview::set( std::move( next ) );
