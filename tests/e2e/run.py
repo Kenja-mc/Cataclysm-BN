@@ -75,6 +75,7 @@ from map_mouse import TESTS as MAP_MOUSE_TESTS
 from mouse_prompts import TESTS as MOUSE_PROMPTS_TESTS
 from inventory_mouse import TESTS as INVENTORY_MOUSE_TESTS
 from pickup_flow import TESTS as PICKUP_FLOW_TESTS
+from overload_notice import TESTS as OVERLOAD_NOTICE_TESTS
 from numbered_rows_terminal import TESTS as NUMBERED_ROWS_TERMINAL_TESTS
 from modern_map_controls import TESTS as MODERN_MAP_CONTROLS_TESTS
 from options_menu import TESTS as OPTIONS_MENU_TESTS
@@ -161,6 +162,7 @@ MODULES = [
     ("mouse_prompts", MOUSE_PROMPTS_TESTS),
     ("inventory_mouse", INVENTORY_MOUSE_TESTS),
     ("pickup_flow", PICKUP_FLOW_TESTS),
+    ("overload_notice", OVERLOAD_NOTICE_TESTS),
     ("numbered_rows_terminal", NUMBERED_ROWS_TERMINAL_TESTS),
     ("modern_map_controls", MODERN_MAP_CONTROLS_TESTS),
     ("options_menu", OPTIONS_MENU_TESTS),

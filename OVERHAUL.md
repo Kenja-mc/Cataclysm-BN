@@ -297,7 +297,11 @@ Classic and unnumbered lists keep typing the amount with the digits.
 With the mouse, hover highlights a row, left click marks or unmarks it, a double click picks like
 Enter (with Modern list mouse off, a double click only marks and unmarks), and the wheel moves
 through the list. Right click lists Pick up, Wield and Wear; each acts on that item alone. The
-footer shows the bound keys. Classic keeps the upstream menu, including Enter doing nothing with no marked items.
+footer shows the bound keys. When the marked items would exceed your carrying capacity, a red line
+under the totals states the consequence: over weight it gives the extra mass and how much faster
+stamina drains while moving (the same overburden percentage movement uses), and over volume it
+notes that items that do not fit must be worn, wielded or left.
+Classic keeps the upstream menu, including Enter doing nothing with no marked items.
 
 **Options menu.** A two-row key guide keeps navigation, help and exit visible at 80×25. In Modern,
 `r` resets the highlighted option to its default and `R` resets the whole page after a Yes/No
