@@ -14,6 +14,7 @@ fixtures.py, which keeps one game per profile for the whole process.
   python3 tests/e2e/run.py --serial            one process (same as --parallel=1)
   python3 tests/e2e/run.py --shard=I/N         CI: shard I of N, balanced by durations.json
   python3 tests/e2e/run.py --durations=PATH    record per-test seconds for the shard split
+  python3 tests/e2e/run.py --check-durations   exit 1 when a test has no recorded duration
   python3 tests/e2e/run.py --serial --keep     leave the main game running for inspection
 """
 import json
@@ -286,6 +287,22 @@ def recorded_durations():
         return {}
 
 
+def missing_durations():
+    """Registered tests the shard split has to price at the median, so CI keeps recording."""
+    durations = recorded_durations()
+    return [test.__name__ for test in TESTS if test.__name__ not in durations]
+
+
+def report_missing_durations():
+    """Names the tests without a recorded duration on stderr; the run keeps going."""
+    missing = missing_durations()
+    if not missing:
+        return
+    print(f"{len(missing)} registered tests have no recorded duration:", file=sys.stderr)
+    for name in missing:
+        print(f"  {name}", file=sys.stderr)
+
+
 def shard_of(tests, index, count):
     """Assigns a whole test to one shard, longest first into the lightest bin.
 
@@ -319,7 +336,8 @@ def run_parallel(count, forward):
         durations = logs / f"shard-{index}.json"
         process = subprocess.Popen(
             [sys.executable, __file__, f"--shard={index}/{count}", f"--durations={durations}", *forward],
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1,
+            env={**os.environ, "BN_E2E_SHARD_CHILD": "1"})
         processes[index] = (process, durations)
 
         def pump(shard, stream=process.stdout):
@@ -369,10 +387,14 @@ def main():
         return 0
     if any(a in ("--parallel", "--shard", "--durations", "--tier") for a in args):
         sys.exit("use --parallel=N, --shard=I/N, --durations=PATH and --tier=smoke|full")
-    known = ("--keep", "--list", "--serial", "--tier=", "--parallel=", "--shard=", "--durations=")
+    known = ("--keep", "--list", "--serial", "--tier=", "--parallel=", "--shard=", "--durations=",
+             "--check-durations")
     unknown = [a for a in args if a.startswith("-") and not a.startswith(known)]
     if unknown:
         sys.exit(f"unknown option {unknown[0]}; see --help")
+    if "--check-durations" in args:
+        report_missing_durations()
+        return 1 if missing_durations() else 0
     if "--list" in args:
         list_tests()
         return 0
@@ -401,6 +423,7 @@ def main():
             forward = [a for a in forward if not a.startswith("--parallel=")]
             if keep:
                 sys.exit("--keep needs --serial, because the parallel parent exits with its shards")
+            report_missing_durations()
             return run_parallel(count, forward)
         forward = [a for a in forward if not a.startswith("--parallel=")]
     # --shard=<index>/<count> splits the suite for parallel jobs, balanced by the recorded
@@ -410,6 +433,8 @@ def main():
         index, count = (int(v) for v in shard.split("=", 1)[1].split("/"))
         if not 0 <= index < count:
             sys.exit(f"{shard}: the index must be below the shard count")
+        if not os.environ.get("BN_E2E_SHARD_CHILD"):
+            report_missing_durations()
     else:
         index, count = 0, 1
     # --durations=<path> records this run's per-test seconds, for the next shard split.
