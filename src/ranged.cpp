@@ -4056,7 +4056,11 @@ void target_ui::refresh_shot_preview()
     }
 
     std::vector<std::string> behind;
-    for( const tripoint_bub_ms &p : continue_line( traj, range ) ) {
+    auto from_shooter = traj;
+    if( from_shooter.empty() || from_shooter.front() != src ) {
+        from_shooter.insert( from_shooter.begin(), src );
+    }
+    for( const tripoint_bub_ms &p : continue_line( from_shooter, range ) ) {
         if( p == dst || p == src ) {
             continue;
         }
