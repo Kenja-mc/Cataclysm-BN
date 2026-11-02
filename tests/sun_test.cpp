@@ -125,7 +125,7 @@ TEST_CASE("daily solar cycle", "[sun][night][dawn][day][dusk]") {
 }
 
 // The calendar `sunlight` function returns light level for both sun and moon.
-TEST_CASE("sunlight and moonlight", "[sun][sunlight][moonlight][.]") {
+TEST_CASE("sunlight and moonlight", "[sun][sunlight][moonlight][!mayfail]") {
     clear_all_state();
     // Use sunrise/sunset on the first day (spring equinox)
     static const time_point midnight = calendar::turn_zero;
