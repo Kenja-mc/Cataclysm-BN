@@ -18,6 +18,11 @@ enum class attack_mode {
     fire_command
 };
 
+struct attack_options {
+    attack_mode mode = attack_mode::fire_command;
+    bool force_melee = false;
+};
+
 auto enabled() -> bool;
 
 auto active() -> bool;
@@ -36,10 +41,11 @@ auto arrow_move( const action_id act, input_context &ctxt ) -> bool;
 /// Start at the nearest visible hostile, otherwise the player.
 auto move( avatar &you, map &m, const point_rel_ms &delta ) -> void;
 
-/// Keyboard fire with no selection attacks the nearest hostile in the weapon's reach, in
-/// place. Firearms fall back to their aiming screen. Direct clicks never retarget.
+/// Keyboard fire prioritizes an aimed target, then nearby hostiles, a loaded gun and faced terrain.
+/// A loaded gun and a selected corpse offer a choice; cancel keeps the selection unchanged.
+/// Empty-ground shots start the normal firing UI at the selected tile.
 /// ACTION_FIRE: aim; ACTION_NULL: handled; nullopt: no selection.
-auto attack( avatar &you, map &m, attack_mode mode ) -> std::optional<action_id>;
+auto attack( avatar &you, map &m, const attack_options &opts ) -> std::optional<action_id>;
 
 /// Return whether a selection was cleared.
 auto clear() -> bool;

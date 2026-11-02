@@ -63,6 +63,11 @@ auto interact_nearby( avatar &you, const tile_actions &actions ) -> bool;
 auto primary_choice( const avatar &you, const tripoint_bub_ms &p ) -> std::optional<choice>;
 /// A visible hostile stands on the tile.
 auto has_hostile( const avatar &you, const tripoint_bub_ms &p ) -> bool;
+/// A tile with something worth smashing on purpose: a real object or closed door, a bashable
+/// field, or a corpse that can still get up. Bare floor is not an object.
+auto smashable_at( const avatar &you, const tripoint_bub_ms &p ) -> bool;
+/// A corpse lies on the tile, reviving or not.
+auto corpse_at( const tripoint_bub_ms &p ) -> bool;
 /// The tile of the last attempted step, when there is one.
 auto facing_tile( const avatar &you ) -> std::optional<tripoint_bub_ms>;
 

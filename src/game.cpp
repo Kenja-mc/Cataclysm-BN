@@ -3994,6 +3994,7 @@ input_context get_default_mode_input_context()
     ctxt.register_action( "unload_all" );
     ctxt.register_action( "throw" );
     ctxt.register_action( "fire" );
+    ctxt.register_action( "force_melee" );
     ctxt.register_action( "cast_spell" );
     ctxt.register_action( "cast_last_spell" );
     ctxt.register_action( "fire_burst" );

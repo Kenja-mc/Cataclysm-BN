@@ -222,9 +222,14 @@ Long-form write-ups should follow
 ## What to pay attention to
 
 - **Controls:** WASD + Q E Z C walk and bump-attack; arrow keys aim. Tab/Shift+Tab cycle visible
-  hostiles freely in distance/position order with wraparound; `f` attacks the selection using
-  normal gun aiming. Enter groups all actions (Info for character/status screens). Ctrl+X opens
-  wait/rest; Shift+X opens the walk/run/crouch/prone menu, with F2/F3/F4 unbound.
+  hostiles freely in distance/position order with wraparound; `f` attacks an aimed hostile within
+  weapon reach, smashes an aimed object or pulps a reachable corpse that can still get up.
+  With a loaded gun, any selected corpse opens **Attack the selected tile**: **Fire** is always
+  offered, and **Pulp** is added only if the corpse is reachable and can still get up. Canceling
+  spends no time; empty aimed ground opens normal gun aiming directly. `F` forces a melee attack;
+  fire mode lives in Enter → Combat. Enter groups all actions (Info for character/status screens).
+  Ctrl+X opens wait/rest; Shift+X opens the walk/run/crouch/prone menu,
+  with F2/F3/F4 unbound.
 - **Inventory:** `i`, then select an item for Wield/Wear/Eat/Use/Read and other context actions.
   `v` uses an item from the map by its kind. F5 crafts even when inventory is empty; Tab or `I`
   opens advanced inventory, and Shift+Tab switches category selection. The advanced-inventory
@@ -265,8 +270,9 @@ Long-form write-ups should follow
   Try Text only, Unicode and Icon font. Make sure that urgent needs, limb health and controls
   survive resizing to 80×25. A watch reveals exact time and a thermometer reveals temperature.
   `h` opens body details (also Enter → Info → Body status). `@` opens the character sheet and `P` the log.
-  `F` opens fire-mode selection. While an activity runs, the log's top row names it, its progress
-  and the time left; Options → Interface → Activity line in the log turns that off.
+  `F` forces a melee attack; Enter → Combat changes the fire mode. While an activity runs, the
+  log's top row names it, its progress and the time left; Options → Interface → Activity line in
+  the log turns that off.
   Check vehicle/readout fallbacks at 80×25, driving hints (`ws`/`ad`), and their return to
   `wasd` on release. The new bundled typeface should show readable labels and complete glyphs.
 - **Targeting:** gun aiming starts on the reachable hostile and warns about allies in the line of

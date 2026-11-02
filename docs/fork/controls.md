@@ -109,7 +109,8 @@ reticle. Top-row <kbd>1</kbd>–<kbd>6</kbd> use the hotbar slots, never move yo
 | Action | Modern | Classic |
 | --- | --- | --- |
 | Fire Wielded Item | <kbd>F</kbd> | <kbd>F</kbd> |
-| Toggle attack mode of Wielded Item | <kbd>Shift</kbd>+<kbd>F</kbd> | <kbd>Shift</kbd>+<kbd>F</kbd> |
+| Force a Melee Attack | <kbd>Shift</kbd>+<kbd>F</kbd> | — |
+| Toggle attack mode of Wielded Item | — | <kbd>Shift</kbd>+<kbd>F</kbd> |
 | Toggle Safe Mode | <kbd>!</kbd> | <kbd>!</kbd> |
 | Ignore Nearby Enemy | <kbd>'</kbd> | <kbd>'</kbd> |
 

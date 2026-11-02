@@ -107,6 +107,8 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Added
 
+- A **Force a Melee Attack** action, bound to `F` in Modern, attacks an aimed or nearby hostile
+  with the wielded weapon even while a firearm is in a firing mode.
 - **Modern list mouse** (Options → Interface, on by default): one click selects a list row,
   a double click runs the row's Enter action and its confirmation prompt, and right click keeps
   the row's existing action menu. Help topics, pickup and single-item inventory lists follow it.
@@ -140,6 +142,16 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Changed
 
+- Modern `f` follows what is aimed: a hostile is attacked first according to weapon reach,
+  a bashable aimed object is smashed, and a reachable corpse that can still get up is pulped.
+  With a loaded gun, any selected corpse opens **Attack the selected tile**, offering **Fire**
+  and adding **Pulp** only when the corpse is reachable and can still get up. Empty aimed ground
+  opens normal gun aiming directly. Canceled choices and rejections spend no time.
+  Without a reticle, a hostile in reach is attacked first (a firearm in a firing mode
+  only at arm's length), never replaced by a smash; otherwise a gun opens normal aiming before
+  falling back to smashing the object you last faced.
+- Modern's fire-mode key moved into **Enter → Combat**; Classic keeps `f` for fire and `F` for
+  the fire mode. The tutorial's Modern gun lesson names the new route.
 - Space confirms a list row only when the menu has not already bound Space to another action.
 - Sound markers shrink to a dot as they age, so a fresh noise reads differently from a stale one;
   the first marker in a game explains the glyphs once (with Show first-time tips on), and going

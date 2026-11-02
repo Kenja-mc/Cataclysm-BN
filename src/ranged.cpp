@@ -7,6 +7,7 @@
 #include "bodypart.h"
 #include "cached_options.h"
 #include "calendar.h"
+#include "aim_reticle.h"
 #include "cata_utility.h"
 #include "catacharset.h"
 #include "catalua_coord.h"
@@ -734,6 +735,10 @@ target_handler::trajectory target_handler::mode_fire( avatar &you, aim_activity_
     ui.mode = target_ui::TargetMode::Fire;
     ui.activity = &activity;
     ui.relevant = activity.get_weapon();
+    if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+        ui.initial_target = aim_reticle::pos();
+        aim_reticle::clear();
+    }
     if( ui.relevant != nullptr ) {
         ui.shape_gen = ranged::get_target_shape_factory( *ui.relevant );
     }
@@ -3170,7 +3175,7 @@ target_handler::trajectory target_ui::run()
             attack_was_confirmed = false;
         }
     } else {
-        initial_dst = initial_target.value_or( choose_initial_target() );
+        initial_dst = initial_target ? *initial_target : choose_initial_target();
     }
     set_cursor_pos( initial_dst );
     if( dst != initial_dst ) {

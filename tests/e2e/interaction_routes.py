@@ -4,7 +4,7 @@ import re
 from aim_reticle import action_clock
 from contextual_hub import contextual_game, doors, door_state, interact_menu, select_tile
 from fixtures import retire
-from helpers import bub_pos, count_at, count_carried, give, settle, spawn, wait_until
+from helpers import action_menu, bub_pos, count_at, count_carried, give, settle, spawn, wait_until
 from map_mouse import assert_no_map_context, mouse_view
 
 
@@ -171,7 +171,7 @@ def test_modern_use_at_p_reach_their_screens(_g):
         assert action_clock(game) > clock, "wielding must retain its normal move cost"
 
 
-def test_modern_f_changes_fire_mode_without_firing(_g):
+def test_modern_shift_f_forces_melee_and_fire_mode_is_in_the_menu(_g):
     with contextual_game("bn-e2e-fire-mode", HUD_ICONS="ascii") as game:
         assert game.lua("local a=gapi.get_avatar() ROUTE_GUN=a:create_item(ItypeId.new('m4a1'),-1) "
                         "out(a:wield(ROUTE_GUN))") == ["true"]
@@ -182,7 +182,16 @@ def test_modern_f_changes_fire_mode_without_firing(_g):
         before = mode()
         position, clock = bub_pos(game), action_clock(game)
         ammo = game.lua("out(ROUTE_GUN:ammo_remaining())")
-        game.keys("F", delay=0.2)
+        assert game.lua("for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end out('ok')") == ["ok"]
+        game.keys("F", delay=0.4)
+        assert mode() == before, "F is the forced-melee key, not the fire-mode key"
+        assert "No hostile creature is within your weapon's reach." in game.lua(
+            "local t=gapi.get_messages(1) out(t[1] and t[1].text or '')")[0], \
+            "F must reach the forced-melee action:\n" + game.screen()
+        assert game.lua("out(ROUTE_GUN:ammo_remaining())") == ammo, "F must not fire"
+        assert (bub_pos(game), action_clock(game)) == (position, clock)
+
+        action_menu(game, "Combat", "Toggle attack mode of Wielded Item")
         assert wait_until(lambda: mode() != before), game.screen()
         assert game.lua("out(ROUTE_GUN:ammo_remaining())") == ammo, "changing mode must not fire"
         assert (bub_pos(game), action_clock(game)) == (position, clock)
@@ -195,4 +204,4 @@ TESTS = [test_contextual_left_click_opens_and_closes_without_walking,
          test_space_and_b_reach_butchery_for_own_corpse,
          test_butchery_follows_a_corpse_in_reach,
          test_modern_use_at_p_reach_their_screens,
-         test_modern_f_changes_fire_mode_without_firing]
+         test_modern_shift_f_forces_melee_and_fire_mode_is_in_the_menu]

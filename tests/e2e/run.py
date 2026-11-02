@@ -65,6 +65,7 @@ from context_keyhints import TESTS as CONTEXT_KEYHINTS_TESTS
 from safe_mode_sleep import TESTS as SAFE_MODE_SLEEP_TESTS
 from vehicle_memory import TESTS as VEHICLE_MEMORY_TESTS
 from aim_reticle import TESTS as AIM_RETICLE_TESTS
+from aimed_attack import TESTS as AIMED_ATTACK_TESTS
 from safe_click import TESTS as SAFE_CLICK_TESTS
 from map_mouse import TESTS as MAP_MOUSE_TESTS
 from mouse_prompts import TESTS as MOUSE_PROMPTS_TESTS
@@ -143,6 +144,7 @@ MODULES = [
     ("safe_mode_sleep", SAFE_MODE_SLEEP_TESTS),
     ("vehicle_memory", VEHICLE_MEMORY_TESTS),
     ("aim_reticle", AIM_RETICLE_TESTS),
+    ("aimed_attack", AIMED_ATTACK_TESTS),
     ("safe_click", SAFE_CLICK_TESTS),
     ("map_mouse", MAP_MOUSE_TESTS),
     ("mouse_prompts", MOUSE_PROMPTS_TESTS),

@@ -85,6 +85,7 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
         { ACTION_ACTIONMENU, _( "menus" ) }, { ACTION_USE_CONTEXTUAL, _( "use" ) },
         { ACTION_USE, _( "use" ) }, { ACTION_WIELD, _( "wield" ) },
         { ACTION_FIRE, modern ? _( "attack" ) : _( "fire" ) }, { ACTION_AUTOATTACK, _( "attack" ) },
+        { ACTION_FORCE_MELEE, _( "melee" ) },
         { ACTION_PICKUP, _( "pick up" ) }, { ACTION_PAUSE, _( "wait" ) }, { ACTION_MAP, _( "map" ) },
         { ACTION_WORLD_HUB, _( "world" ) }, { ACTION_BODY_STATUS, _( "health" ) },
         { ACTION_QUICK_PICKUP, _( "take all" ) }, { ACTION_PICKUP_ALL, _( "nearby items" ) }, { ACTION_RELOAD_ITEM, _( "reload" ) },

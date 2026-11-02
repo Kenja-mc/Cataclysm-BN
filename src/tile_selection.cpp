@@ -70,6 +70,21 @@ auto hostile_at( const avatar &you, const tripoint_bub_ms &p ) -> Creature * // 
     return critter->attitude_to( you ) == Attitude::A_HOSTILE ? critter : nullptr;
 }
 
+auto pulpable_corpse_at( const tripoint_bub_ms &p ) -> bool
+{
+    return std::ranges::any_of( get_map().i_at( p ), []( const item * it ) {
+        return it->is_corpse() && it->damage() < it->max_damage() &&
+               ( it->can_revive() || it->get_mtype()->zombify_into );
+    } );
+}
+
+auto bashable_field_at( const tripoint_bub_ms &p ) -> bool
+{
+    return std::ranges::any_of( get_map().field_at( p ), []( const auto & fd ) {
+        return fd.first->bash_info.str_min != -1;
+    } );
+}
+
 auto route_to( avatar &you, map &m, const tripoint_bub_ms &p ) -> std::vector<tripoint_bub_ms>
 {
     return m.route( you.bub_pos(), p, you.get_legacy_pathfinding_settings(),
@@ -267,13 +282,8 @@ auto interact_choices( const avatar &you, const tripoint_bub_ms &p,
             out.push_back( { .act = ACTION_JUMP, .label = string_format( _( "jump over the %s" ), m.name( p ) ) } );
         }
     }
-    const auto pulpable = std::ranges::any_of( m.i_at( p ), []( const item * it ) {
-        return it->is_corpse() && it->damage() < it->max_damage() &&
-               ( it->can_revive() || it->get_mtype()->zombify_into );
-    } );
-    const auto bashable_field = std::ranges::any_of( m.field_at( p ), []( const auto & fd ) {
-        return fd.first->bash_info.str_min != -1;
-    } );
+    const auto pulpable = pulpable_corpse_at( p );
+    const auto bashable_field = bashable_field_at( p );
     // Every floor and wall is bashable, so a scan of the surroundings only offers the smashing
     // a player is likely to want; a tile the player picked offers it for anything.
     if( pulpable || bashable_field || ( explicit_tile && m.is_bashable( p ) ) ) {
@@ -395,15 +405,10 @@ auto clicked_choices_at( const avatar &you, const tripoint_bub_ms &p ) -> std::v
 {
     auto &m = get_map();
     auto out = interact_choices( you, p, false );
-    const auto inside = !m.is_outside( you.bub_pos() );
-    // Open doors count as flat ground, so name them with furniture as real objects.
-    const auto door = m.can_open_door( &you, p, inside ) || m.close_door( p, inside, true );
-    const auto solid = door || m.has_furn( p ) ||
-                       ( m.is_bashable( p ) && !m.has_flag( "FLAT", p ) );
     const auto smashable = std::ranges::any_of( out, []( const choice & c ) {
         return c.act == ACTION_SMASH;
     } );
-    if( solid && !smashable ) {
+    if( !smashable && smashable_at( you, p ) ) {
         add_choice( out, { .act = ACTION_SMASH,
                            .label = string_format( _( "smash the %s" ), m.name( p ) )
                          } );
@@ -682,6 +687,23 @@ return found == choices.end() ? std::nullopt : std::optional<choice>( *found );
 auto has_hostile( const avatar &you, const tripoint_bub_ms &p ) -> bool
 {
     return hostile_at( you, p ) != nullptr;
+}
+
+auto corpse_at( const tripoint_bub_ms &p ) -> bool
+{
+    return std::ranges::any_of( get_map().i_at( p ), []( const item * it ) {
+        return it->is_corpse();
+    } );
+}
+
+auto smashable_at( const avatar &you, const tripoint_bub_ms &p ) -> bool
+{
+    auto &m = get_map();
+    const auto inside = !m.is_outside( you.bub_pos() );
+    // Open doors count as flat ground, so name them with furniture as real objects.
+    const auto door = m.can_open_door( &you, p, inside ) || m.close_door( p, inside, true );
+    return door || m.has_furn( p ) || ( m.is_bashable( p ) && !m.has_flag( "FLAT", p ) ) ||
+           bashable_field_at( p ) || pulpable_corpse_at( p );
 }
 
 auto facing_tile( const avatar &you ) -> std::optional<tripoint_bub_ms>

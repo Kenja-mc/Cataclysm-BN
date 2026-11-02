@@ -37,7 +37,8 @@ KEY_ROWS = (
     ("physical peek (normal 200-move cost)", ("PEEK_N", "PEEK_W", "PEEK_S", "PEEK_E")),
     ("next / previous visible hostile", ("NEXT_TARGET", "PREV_TARGET")),
     ("movement mode menu: run, walk, crouch, prone", ("open_movement",)),
-    ("attack selected target / reload / throw", ("fire", "reload_item", "throw")),
+    ("attack aimed tile / force melee / reload / throw",
+     ("fire", "force_melee", "reload_item", "throw")),
     ("bionics", ("bionics",)),
     ("nearby or selected-tile actions, including explicit Jump and Smash", ("examine",)),
     ("toggle a selected vehicle curtain, or choose one nearby", ("toggle_curtain",)),
@@ -68,7 +69,7 @@ FAMILIES = (
         "examine", "toggle_curtain", "inventory", "advinv", "use_contextual", "pickup",
         "quick_pickup", "pickup_all", "reload_item", "throw", "butcher", "horn",
         "hotbar_1", "hotbar_2", "hotbar_3", "hotbar_4", "hotbar_5", "hotbar_6", "hotbar_assign")),
-    ("Combat", "#c53030", ("fire", "select_fire_mode", "safemode", "ignore_enemy")),
+    ("Combat", "#c53030", ("fire", "force_melee", "select_fire_mode", "safemode", "ignore_enemy")),
     ("Character", "#b7791f", (
         "player_data", "body_status", "bionics", "mutations", "perks", "messages", "diary")),
     ("Menus and system", "#4a5568", (
@@ -89,7 +90,8 @@ SHORT = {
     "inventory": "inventory", "advinv": "adv. inventory", "use_contextual": "use by kind",
     "pickup": "pick up", "quick_pickup": "take all beside", "pickup_all": "pick up nearby",
     "reload_item": "reload", "throw": "throw", "butcher": "butcher", "horn": "horn",
-    "hotbar_assign": "assign hotbar", "fire": "attack", "select_fire_mode": "fire mode",
+    "hotbar_assign": "assign hotbar", "fire": "attack", "force_melee": "force melee",
+    "select_fire_mode": "fire mode",
     "safemode": "safe mode", "ignore_enemy": "ignore foe", "player_data": "character",
     "body_status": "body", "bionics": "bionics", "mutations": "mutations", "perks": "perks",
     "messages": "messages", "diary": "diary", "action_menu": "all actions",

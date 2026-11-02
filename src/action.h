@@ -198,6 +198,8 @@ enum action_id : int {
     ACTION_THROW,
     /** Fire the wielded weapon, or open fire menu if none */
     ACTION_FIRE,
+    /** Attack in melee even while a firearm is in a firing mode */
+    ACTION_FORCE_MELEE,
     /** Burst-fire the current weapon */
     ACTION_FIRE_BURST,
     /** Change fire mode of the current weapon */

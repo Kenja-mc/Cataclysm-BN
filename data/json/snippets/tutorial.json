@@ -243,7 +243,7 @@
       },
       {
         "id": "LESSON_GUN_FIRE_MODERN",
-        "text": "Once you have a loaded gun wielded, you can fire it.  Select a monster with <press_NEXT_TARGET> or by right-clicking it to lock it, then press <press_fire> to aim at it, or left-click the monster.  With many guns, you can change the fire mode with <press_select_fire_mode>.  While aiming, <press_NEXT_TARGET:TARGET> cycles through monsters; press <press_FIRE:TARGET> to shoot or <press_QUIT:TARGET> to cancel."
+        "text": "Once you have a loaded gun wielded, you can fire it.  Select a monster with <press_NEXT_TARGET> or by right-clicking it to lock it, then press <press_fire> to aim at it, or left-click the monster.  Press <press_force_melee> to attack in melee even while the gun is in a firing mode.  With many guns, open Enter and then Combat to change the fire mode.  While aiming, <press_NEXT_TARGET:TARGET> cycles through monsters; press <press_FIRE:TARGET> to shoot or <press_QUIT:TARGET> to cancel."
       },
       {
         "id": "LESSON_DARK_MODERN",

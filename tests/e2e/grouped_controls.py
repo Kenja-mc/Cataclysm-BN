@@ -111,7 +111,7 @@ def grouped_gun_state(game):
     return mouse_state(game), game.lua("out(GROUPED_GUN:ammo_remaining())")
 
 
-def test_grouped_fire_from_empty_inspection_aims_at_hostile(_game):
+def test_grouped_fire_from_empty_inspection_aims_at_selected_floor(_game):
     with no_mouse_movement_game("bn-e2e-grouped-empty-gun-aim") as game:
         loaded_gun_and_east_hostile(game)
         before = grouped_gun_state(game)
@@ -126,9 +126,12 @@ def test_grouped_fire_from_empty_inspection_aims_at_hostile(_game):
             assert grouped_gun_state(game) == before, "inspection must be free"
             game.keys("f", delay=1)
             panel = firing_target_panel(game)
-            assert "decayed zombie" in panel, "f must aim at the actual hostile:\n" + panel
+            assert "decayed zombie" not in panel, "f must not redirect empty selection to a hostile:\n" + panel
+            assert re.search(r"Range:\s*1/", panel), "aim must start at the selected northern floor:\n" + panel
+            game.keys("Up", delay=0.5)
+            panel = firing_target_panel(game)
+            assert re.search(r"Range:\s*2/", panel), "aim must start north, not at another tile:\n" + panel
             game.keys("Escape", delay=0.6)
-            assert "Mouse View" not in game.screen(), "normal gun aiming must clear inspection"
             assert grouped_gun_state(game) == before, "cancel must preserve ammo, health, position and time"
 
 
@@ -236,7 +239,7 @@ TESTS = [test_grouped_look_selects_the_space_interaction_tile,
          test_grouped_ctrl_direction_peeks_and_restores_position,
          test_grouped_shift_x_opens_the_stance_menu_for_every_mode,
          test_grouped_tab_cycles_visible_hostiles_and_wraps,
-         test_grouped_fire_from_empty_inspection_aims_at_hostile,
+         test_grouped_fire_from_empty_inspection_aims_at_selected_floor,
          test_grouped_distant_melee_selection_never_redirects_or_walks,
          test_grouped_direct_empty_or_friendly_gun_click_never_retargets,
          test_grouped_live_classic_switch_clears_inspection_before_fire]
