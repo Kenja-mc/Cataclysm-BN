@@ -8631,15 +8631,22 @@ void Character::mod_stamina( int mod )
     return mod_stamina( mod, true );
 }
 
+auto Character::overburden_percentage( const units::mass carried ) const -> int
+{
+    // Make it at least 1 gram to avoid divide-by-zero warning
+    const units::mass max_weight = std::max( weight_capacity(), 1_gram );
+    if( carried <= max_weight ) {
+        return 0;
+    }
+    return static_cast<int>( ( carried - max_weight ) * 100 / max_weight );
+}
+
 void Character::burn_move_stamina( int moves )
 {
-    int overburden_percentage = 0;
-    units::mass current_weight = weight_carried();
+    const units::mass current_weight = weight_carried();
     // Make it at least 1 gram to avoid divide-by-zero warning
-    units::mass max_weight = std::max( weight_capacity(), 1_gram );
-    if( current_weight > max_weight ) {
-        overburden_percentage = ( current_weight - max_weight ) * 100 / max_weight;
-    }
+    const units::mass max_weight = std::max( weight_capacity(), 1_gram );
+    const int overburden = overburden_percentage( current_weight );
 
     int burn_ratio = get_option<int>( "PLAYER_BASE_STAMINA_BURN_RATE" );
     for( const bionic_id &bid : get_bionic_fueled_with( *item::spawn_temporary( "muscle" ) ) ) {
@@ -8647,7 +8654,7 @@ void Character::burn_move_stamina( int moves )
             burn_ratio = burn_ratio * 2 - 3;
         }
     }
-    burn_ratio += overburden_percentage;
+    burn_ratio += overburden;
     if( move_mode == CMM_RUN ) {
         burn_ratio = burn_ratio * 7;
     }

@@ -685,11 +685,17 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
         int start = 0;
         int selected = 0;
         int maxitems = 0;
+        int notice_rows = 0;
         int pickupH = 0;
         int pickupW = 44;
         int pickupX = 0;
         catacurses::window w_pickup;
         catacurses::window w_item_info;
+
+        units::mass weight_predict = 0_gram;
+        units::volume volume_predict = 0_ml;
+        std::string weight_overload_notice;
+        std::string volume_overload_notice;
 
         // Row numbers take the digits, so typed counts move behind SET_COUNT.
         auto numbered_rows = false;
@@ -706,14 +712,14 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
 
             // The pickup list may consume the entire terminal, minus space needed for its
             // header/footer and the item info window.
-            const int minleftover = itemsH + pickupBorderRows;
+            const int minleftover = itemsH + pickupBorderRows + notice_rows;
             const int maxmaxitems = TERMY - minleftover;
             const int minmaxitems = 9;
             maxitems = clamp<int>( stacked_here.size(), minmaxitems, maxmaxitems );
 
             start = selected - selected % maxitems;
 
-            pickupH = maxitems + pickupBorderRows;
+            pickupH = maxitems + pickupBorderRows + notice_rows;
 
 #if defined(TILES)
             const auto icon_cells = item_thumbnail_gutter_cells();
@@ -726,6 +732,12 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
                 const int item_len = utf8_width( remove_color_tags( this_item.display_name() ) ) + 10 + icon_cells + number_cells;
                 if( item_len > pickupW && item_len < TERMX ) {
                     pickupW = item_len;
+                }
+            }
+            for( const std::string &notice : { weight_overload_notice, volume_overload_notice } ) {
+                const int notice_len = utf8_width( remove_color_tags( notice ) );
+                if( notice_len > pickupW && notice_len < TERMX ) {
+                    pickupW = notice_len;
                 }
             }
 
@@ -793,9 +805,6 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
         std::vector<int> matches;
         bool filter_changed = true;
 
-        units::mass weight_predict = 0_gram;
-        units::volume volume_predict = 0_ml;
-
         const std::string all_pickup_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:;";
         list_mouse::click_state click;
 
@@ -833,6 +842,7 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
 #endif
 
             werase( w_pickup );
+            const int items_top = 1 + notice_rows;
             for( int cur_it = start; cur_it < start + maxitems; cur_it++ ) {
                 if( cur_it < static_cast<int>( matches.size() ) ) {
                     int true_it = matches[cur_it];
@@ -847,12 +857,12 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
                         if( visible_row <= 10 ) {
                             const char digit = visible_row == 10 ? '0' :
                                                static_cast<char>( '0' + visible_row );
-                            mvwputch( w_pickup, point( 0, 1 + ( cur_it % maxitems ) ), icolor, digit );
+                            mvwputch( w_pickup, point( 0, items_top + ( cur_it % maxitems ) ), icolor, digit );
                         }
                     }
 
                     if( cur_it < static_cast<int>( pickup_chars.size() ) ) {
-                        mvwputch( w_pickup, point( number_cells + icon_cells, 1 + ( cur_it % maxitems ) ), icolor,
+                        mvwputch( w_pickup, point( number_cells + icon_cells, items_top + ( cur_it % maxitems ) ), icolor,
                                   static_cast<char>( pickup_chars[cur_it] ) );
                     } else if( cur_it < static_cast<int>( pickup_chars.size() ) + static_cast<int>
                                ( pickup_chars.size() ) *
@@ -860,11 +870,11 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
                         int p = cur_it - pickup_chars.size();
                         int p1 = p / pickup_chars.size();
                         int p2 = p % pickup_chars.size();
-                        mvwprintz( w_pickup, point( number_cells + icon_cells, 1 + ( cur_it % maxitems ) ), icolor,
+                        mvwprintz( w_pickup, point( number_cells + icon_cells, items_top + ( cur_it % maxitems ) ), icolor,
                                    "`%c%c",
                                    static_cast<char>( pickup_chars[p1] ), static_cast<char>( pickup_chars[p2] ) );
                     } else {
-                        mvwputch( w_pickup, point( number_cells + icon_cells, 1 + ( cur_it % maxitems ) ),
+                        mvwputch( w_pickup, point( number_cells + icon_cells, items_top + ( cur_it % maxitems ) ),
                                   icolor, ' ' );
                     }
                     if( getitem[true_it].parent ) {
@@ -925,32 +935,32 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
                         item_name = string_format( "<color_light_red>!</color> %s", item_name );
                     }
 
-                    trim_and_print( w_pickup, point( 6 + icon_cells + number_cells, 1 + ( cur_it % maxitems ) ),
+                    trim_and_print( w_pickup, point( 6 + icon_cells + number_cells, items_top + ( cur_it % maxitems ) ),
                                     pickupW - 4 - icon_cells - number_cells, icolor, item_name );
 #if defined(TILES)
                     register_item_thumbnail( w_pickup, this_item, {
-                        .cell = point( number_cells, 1 + ( cur_it % maxitems ) ), .size = point( icon_cells, 1 )
+                        .cell = point( number_cells, items_top + ( cur_it % maxitems ) ), .size = point( icon_cells, 1 )
                     } );
 #endif
                 }
             }
 
-            mvwprintw( w_pickup, point( 0, maxitems + 1 ), _( "[%s] Unmark" ),
+            mvwprintw( w_pickup, point( 0, maxitems + 1 + notice_rows ), _( "[%s] Unmark" ),
                        ctxt.get_desc( "LEFT", 1 ) );
 
-            center_print( w_pickup, maxitems + 1, c_light_gray, string_format( _( "[%s] Help" ),
+            center_print( w_pickup, maxitems + 1 + notice_rows, c_light_gray, string_format( _( "[%s] Help" ),
                     ctxt.get_desc( "HELP_KEYBINDINGS", 1 ) ) );
 
-            right_print( w_pickup, maxitems + 1, 0, c_light_gray, string_format( _( "[%s] Mark" ),
+            right_print( w_pickup, maxitems + 1 + notice_rows, 0, c_light_gray, string_format( _( "[%s] Mark" ),
                     ctxt.get_desc( "RIGHT", 1 ) ) );
 
-            mvwprintw( w_pickup, point( 0, maxitems + 2 ), _( "[%s] Prev" ),
+            mvwprintw( w_pickup, point( 0, maxitems + 2 + notice_rows ), _( "[%s] Prev" ),
                        ctxt.get_desc( "PREV_TAB", 1 ) );
 
-            center_print( w_pickup, maxitems + 2, c_light_gray, string_format( _( "[%s] All" ),
+            center_print( w_pickup, maxitems + 2 + notice_rows, c_light_gray, string_format( _( "[%s] All" ),
                     ctxt.get_desc( "SELECT_ALL", 1 ) ) );
 
-            right_print( w_pickup, maxitems + 2, 0, c_light_gray, string_format( _( "[%s] Next" ),
+            right_print( w_pickup, maxitems + 2 + notice_rows, 0, c_light_gray, string_format( _( "[%s] Next" ),
                     ctxt.get_desc( "NEXT_TAB", 1 ) ) );
 
             if( numbered_rows ) {
@@ -965,15 +975,15 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
                     const auto left = pickupW * i / columns;
                     const auto width = pickupW * ( i + 1 ) / columns - left -
                                        ( i + 1 < columns ? 1 : 0 );
-                    trim_and_print( w_pickup, point( left, maxitems + 3 ), width, c_light_gray,
+                    trim_and_print( w_pickup, point( left, maxitems + 3 + notice_rows ), width, c_light_gray,
                                     hints[i] );
                 }
             } else {
-                trim_and_print( w_pickup, point( 0, maxitems + 3 ), pickupW / 2 - 2, c_light_gray,
+                trim_and_print( w_pickup, point( 0, maxitems + 3 + notice_rows ), pickupW / 2 - 2, c_light_gray,
                                 string_format( _( "[%s] Wield  [%s] Wear" ), ctxt.get_desc( "WIELD", 1 ),
                                                ctxt.get_desc( "WEAR", 1 ) ) );
 
-                right_print( w_pickup, maxitems + 3, 0, c_light_gray, string_format( _( "[%s] Pick up" ),
+                right_print( w_pickup, maxitems + 3 + notice_rows, 0, c_light_gray, string_format( _( "[%s] Pick up" ),
                              ctxt.get_desc( "CONFIRM", 1 ) ) );
             }
 
@@ -991,6 +1001,13 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
                             string_format( _( "<color_light_cyan>Pick up</color>  Weight %1$s/%2$s  Volume %3$s/%4$s" ),
                                            fmted_weight_predict, fmted_weight_capacity,
                                            fmted_volume_predict, fmted_volume_capacity ) );
+
+            auto notice_row = 1;
+            for( const std::string &notice : { weight_overload_notice, volume_overload_notice } ) {
+                if( !notice.empty() ) {
+                    trim_and_print( w_pickup, point( 0, notice_row++ ), pickupW, c_red, notice );
+                }
+            }
 
             wnoutrefresh( w_pickup );
         } );
@@ -1145,7 +1162,7 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
                 const auto mouse = ctxt.get_coordinates( w_pickup );
                 if( mouse ) {
                     const auto cell = mouse->xy().raw() + point( getmaxx( w_pickup ), getmaxy( w_pickup ) ) / 2;
-                    const int row = cell.y - 1;
+                    const int row = cell.y - 1 - notice_rows;
                     if( row >= 0 && row < maxitems ) {
                         const int item_idx = start + row;
                         if( item_idx >= 0 && item_idx < static_cast<int>( matches.size() ) ) {
@@ -1352,6 +1369,27 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
 
                 weight_predict = g->u.weight_carried() + weight_picked_up;
                 volume_predict = g->u.volume_carried() + volume_picked_up;
+
+                weight_overload_notice.clear();
+                if( weight_predict > g->u.weight_capacity() ) {
+                    const units::mass overweight = weight_predict - g->u.weight_capacity();
+                    weight_overload_notice = string_format(
+                                                 _( "Over by %1$.1f %2$s: stamina drains %3$d%% faster while moving" ),
+                                                 round_up( convert_weight( overweight ), 1 ), weight_units(),
+                                                 g->u.overburden_percentage( weight_predict ) );
+                }
+                volume_overload_notice.clear();
+                if( volume_predict > g->u.volume_capacity() ) {
+                    volume_overload_notice =
+                        _( "Over volume: items that do not fit must be worn, wielded or left" );
+                }
+
+                const int new_notice_rows = ( weight_overload_notice.empty() ? 0 : 1 ) +
+                                            ( volume_overload_notice.empty() ? 0 : 1 );
+                if( new_notice_rows != notice_rows ) {
+                    notice_rows = new_notice_rows;
+                    ui.mark_resize();
+                }
             }
 
             ui_manager::redraw();

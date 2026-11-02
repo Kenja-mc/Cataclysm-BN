@@ -8,6 +8,10 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ### Added
 
+- **Pickup overload notice**: the pickup list now states what being over capacity means. Over
+  weight it prints `Over by 2.3 kg: stamina drains 18% faster while moving`, using the same
+  overburden percentage as movement, and over volume it warns that items that do not fit must be
+  worn, wielded or left. Both lines disappear when the marked items fit again.
 - **Numbered list rows** (Options → Graphics, off by default): opt in to `1`–`9` beside the first
   nine visible rows and `0` beside the tenth in the tiles build with Modern controls.
   A digit moves the highlight; Enter confirms, and scrolling renumbers. Inventory and other item

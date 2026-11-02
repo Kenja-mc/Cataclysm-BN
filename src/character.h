@@ -1973,6 +1973,7 @@ class Character : public Creature, public location_visitable<Character>
         void mod_stamina( int mod );
         void mod_stamina( int mod, bool skill );
         void burn_move_stamina( int moves );
+        auto overburden_percentage( units::mass carried ) const -> int;
         float stamina_burn_cost_modifier() const;
         float running_move_cost_modifier() const;
         /** Regenerates stamina */
