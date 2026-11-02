@@ -386,6 +386,12 @@ class uilist // NOLINT(cata-xy)
         // and unhandled by callback, default false.
         bool allow_additional = false;
         bool hilight_disabled = false;
+        /// Positional 1-9/0 row numbers; set false for menus that already type digits.
+        bool row_numbers_allowed = true;
+        /// Whether this menu currently prints and accepts positional row numbers.
+        auto row_numbers_active() const -> bool {
+            return row_numbers;
+        }
 
     private:
         std::string hotkeys;
@@ -429,6 +435,11 @@ class uilist // NOLINT(cata-xy)
         int max_column_len;
 
         int vmax = 0;
+
+        /// Whether the visible rows are numbered 1-9/0 (computed in setup()).
+        bool row_numbers = false;
+        /// Row numbers (1-9, 0 for the tenth) for eligible list menus, false when unavailable.
+        auto rows_are_numbered() const -> bool;
 
         int desc_lines;
 

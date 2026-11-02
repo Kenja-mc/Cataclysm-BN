@@ -934,7 +934,10 @@ size_t inventory_column::get_entry_indent( const inventory_entry &entry ) const
 
     size_t res = 2;
 #if defined(TILES)
-    // Item rows start with the thumbnail gutter, so the invlet and names shift together.
+    // Item rows start with the row number and thumbnail gutters, so the invlet and names shift together.
+    if( rows_are_numbered() ) {
+        res += static_cast<size_t>( list_row_number_gutter_cells() );
+    }
     res += static_cast<size_t>( item_thumbnail_gutter_cells() );
 #endif
     if( get_option<bool>( "ITEM_SYMBOLS" ) ) {
@@ -971,7 +974,16 @@ void inventory_column::draw( const catacurses::window &win, point pos ) const
         return displayed_width > real_width ? displayed_width - real_width : 0;
     };
 
+    const bool numbered = rows_are_numbered();
+    auto number_cells = 0;
+#if defined(TILES)
+    if( numbered ) {
+        number_cells = list_row_number_gutter_cells();
+    }
+#endif
+
     // Do the actual drawing
+    int row_number = 0;
     for( size_t index = page_offset, line = 0; index < entries.size() &&
          line < entries_per_page; ++index, ++line ) {
         const auto &entry = entries[index];
@@ -986,6 +998,14 @@ void inventory_column::draw( const catacurses::window &win, point pos ) const
         int yy = pos.y + line;
 
         const bool selected = active && is_selected( entry );
+
+        if( numbered && entry.is_selectable() ) {
+            ++row_number;
+            if( active && row_number <= 10 ) {
+                const char digit = row_number == 10 ? '0' : static_cast<char>( '0' + row_number );
+                mvwputch( win, point( pos.x, yy ), selected ? h_white : c_light_gray, digit );
+            }
+        }
 
         if( selected && visible_cells() > 1 ) {
             for( int hx = x1, hx_max = pos.x + get_width(); hx < hx_max; ++hx ) {
@@ -1052,7 +1072,7 @@ void inventory_column::draw( const catacurses::window &win, point pos ) const
 #if defined(TILES)
             icon_cells = item_thumbnail_gutter_cells();
 #endif
-            auto xx = pos.x + icon_cells;
+            auto xx = pos.x + number_cells + icon_cells;
             if( entry.get_invlet() != '\0' ) {
                 mvwputch( win, point( xx, yy ), entry.get_invlet_color(), entry.get_invlet() );
             } else if( entry.invlet_hint ) {
@@ -1079,7 +1099,7 @@ void inventory_column::draw( const catacurses::window &win, point pos ) const
 #if defined(TILES)
             if( const auto *any_item = entry.any_item() ) {
                 register_item_thumbnail( win, *any_item, {
-                    .cell = point( pos.x, yy ), .size = point( icon_cells, 1 )
+                    .cell = point( pos.x + number_cells, yy ), .size = point( icon_cells, 1 )
                 } );
             }
 #endif
@@ -1103,6 +1123,33 @@ auto inventory_column::entry_index_at( point origin, point cell ) const -> std::
         return std::nullopt;
     }
     return index;
+}
+
+auto inventory_column::numbered_row_index( int number ) const -> std::optional<size_t>
+{
+    if( !rows_are_numbered() || number < 1 || number > 10 ) {
+        return std::nullopt;
+    }
+    int counted = 0;
+    for( size_t index = page_offset, line = 0; index < entries.size() &&
+         line < entries_per_page; ++index, ++line ) {
+        if( !entries[index].is_selectable() ) {
+            continue;
+        }
+        if( ++counted == number ) {
+            return index;
+        }
+    }
+    return std::nullopt;
+}
+
+auto inventory_column::rows_are_numbered() const -> bool
+{
+#if defined(TILES)
+    return row_numbers_allowed && list_row_numbers_enabled();
+#else
+    return false;
+#endif
 }
 
 size_t inventory_column::visible_cells() const
@@ -1555,6 +1602,23 @@ inventory_entry *inventory_selector::find_entry_by_invlet( int invlet ) const
     return nullptr;
 }
 
+auto inventory_selector::rows_are_numbered() const -> bool
+{
+#if defined(TILES)
+    return row_numbers_allowed && list_row_numbers_enabled();
+#else
+    return false;
+#endif
+}
+
+void inventory_selector::set_row_numbers_allowed( bool allowed )
+{
+    row_numbers_allowed = allowed;
+    for( inventory_column *column : columns ) {
+        column->set_row_numbers_allowed( allowed );
+    }
+}
+
 // FIXME: if columns are merged due to low screen width, they will not be splitted
 // once screen width becomes enough for the columns.
 void inventory_selector::rearrange_columns( size_t client_width )
@@ -1599,8 +1663,11 @@ void inventory_selector::prepare_layout( size_t client_width, size_t client_heig
             allowed[static_cast<unsigned char>( letter )] = true;
         }
         // Only digits not bound to any action may keep their numeric invlet.
-        for( const auto digit : ctxt.get_available_single_char_hotkeys( "0123456789" ) ) {
-            allowed[static_cast<unsigned char>( digit )] = true;
+        // Row numbers own the digits when they are on, so those entries shift to letters below.
+        if( !rows_are_numbered() ) {
+            for( const auto digit : ctxt.get_available_single_char_hotkeys( "0123456789" ) ) {
+                allowed[static_cast<unsigned char>( digit )] = true;
+            }
         }
         for( const auto column : columns ) {
             for( const auto entries : { &column->entries, &column->entries_hidden } ) {
@@ -2180,6 +2247,24 @@ inventory_input inventory_selector::get_input()
     }
     mouse_click.reset();
     const auto bound_action = modern && res.action != "ANY_INPUT";
+    res.entry = nullptr;
+    const bool keyboard_digit = rows_are_numbered() &&
+                                ctxt.get_raw_input().type == input_event_t::keyboard &&
+                                res.ch >= '0' && res.ch <= '9';
+    if( keyboard_digit ) {
+        const int number = res.ch == '0' ? 10 : res.ch - '0';
+        inventory_column &column = get_active_column();
+        if( column.visible() ) {
+            if( const auto index = column.numbered_row_index( number ) ) {
+                // A number only moves the highlight to its row; Enter then acts on it.
+                column.select( *index, scroll_direction::FORWARD );
+            }
+        }
+        // The digits belong to the rows, so the raw key never reaches quantity entry.
+        res.action.clear();
+        res.ch = 0;
+        return res;
+    }
     res.entry = bound_action ? nullptr : find_entry_by_invlet( res.ch );
 
     if( res.entry != nullptr && !res.entry->is_selectable() ) {
@@ -2321,6 +2406,8 @@ void inventory_selector::toggle_navigation_mode()
 void inventory_selector::append_column( inventory_column &column )
 {
     column.on_mode_change( mode );
+    // A read-only list never prints numbers, so it must not reserve their gutter.
+    column.set_row_numbers_allowed( column.allows_selecting() && row_numbers_allowed );
 
     if( columns.empty() ) {
         column.on_activate();
@@ -2421,7 +2508,7 @@ void inventory_multiselector::rearrange_columns( size_t client_width )
     selection_col->set_visibility( !is_overflown( client_width ) );
 }
 
-size_t inventory_multiselector::query_count( size_t count = 0 )
+auto inventory_multiselector::query_count( size_t count ) -> std::optional<size_t>
 {
     std::string count_str;
     if( count == 0 ) {
@@ -2444,17 +2531,20 @@ size_t inventory_multiselector::query_count( size_t count = 0 )
         spopup->query_string( /*loop=*/false );
     } while( !spopup->confirmed() && !spopup->canceled() );
 
-    if( spopup->confirmed() ) {
-        count_str = spopup->text();
-        try {
-            count = std::stoull( count_str );
-        } catch( const std::exception &e ) {
-            count = 0;
-        }
+    if( !spopup->confirmed() ) {
+        spopup.reset();
+        return std::nullopt;
+    }
 
-        if( current_ui ) {
-            current_ui->mark_resize();
-        }
+    count_str = spopup->text();
+    try {
+        count = std::stoull( count_str );
+    } catch( const std::exception &e ) {
+        count = 0;
+    }
+
+    if( current_ui ) {
+        current_ui->mark_resize();
     }
 
     spopup.reset();
@@ -2549,7 +2639,10 @@ inventory_iuse_selector::inventory_iuse_selector(
 ) :
     inventory_multiselector( p, preset, selector_title ),
     get_stats( get_st )
-{}
+{
+    // Digits type the amount to use, so they cannot also select rows.
+    set_row_numbers_allowed( false );
+}
 
 std::vector<iuse_location> inventory_iuse_selector::execute()
 {
@@ -2660,6 +2753,8 @@ inventory_drop_selector::inventory_drop_selector( player &p,
         const inventory_selector_preset &preset ) :
     inventory_multiselector( p, preset, _( "ITEMS TO DROP" ) )
 {
+    // Digits type the amount to drop, so they cannot also select rows.
+    set_row_numbers_allowed( false );
 #if defined(__ANDROID__)
     // allow user to type a drop number without dismissing virtual keyboard after each keypress
     ctxt.allow_text_entry = true;
@@ -2726,10 +2821,12 @@ drop_locations inventory_drop_selector::execute()
         if( input.ch >= '0' && input.ch <= '9' ) {
             const auto selected( get_active_column().get_all_selected() );
 
-            count = query_count( input.ch - '0' );
-            count = std::min( count, max_chosen_count );
-            for( const auto &elem : selected ) {
-                set_chosen_count( *elem, count );
+            if( const auto asked = query_count( input.ch - '0' ) ) {
+                const size_t asked_count = std::min( *asked,
+                                                     static_cast<size_t>( max_chosen_count ) );
+                for( const auto &elem : selected ) {
+                    set_chosen_count( *elem, asked_count );
+                }
             }
 
             count = 0;
@@ -2879,7 +2976,13 @@ inventory_selector::stats inventory_drop_selector::get_raw_stats() const
 
 inventory_pickup_selector::inventory_pickup_selector( player &p,
         const inventory_selector_preset &preset ) :
-    inventory_multiselector( p, preset, "ITEMS TO PICKUP" ) {}
+    inventory_multiselector( p, preset, "ITEMS TO PICKUP" )
+{
+    // Numbered rows own the digits, so amounts move to the count prompt.
+    if( rows_are_numbered() ) {
+        ctxt.register_action( "SET_COUNT", to_translation( "Set pickup count" ) );
+    }
+}
 
 std::vector<pickup::pick_drop_selection> inventory_pickup_selector::execute()
 {
@@ -2890,12 +2993,20 @@ std::vector<pickup::pick_drop_selection> inventory_pickup_selector::execute()
 
         const inventory_input input = get_input();
 
-        if( input.ch >= '0' && input.ch <= '9' ) {
+        if( input.action == "SET_COUNT" ) {
+            const auto selected( get_active_column().get_all_selected() );
+            if( const auto asked = query_count( 0 ) ) {
+                for( const auto &elem : selected ) {
+                    set_chosen_count( *elem, *asked );
+                }
+            }
+        } else if( input.ch >= '0' && input.ch <= '9' ) {
             const auto selected( get_active_column().get_all_selected() );
 
-            size_t count = query_count( input.ch - '0' );
-            for( const auto &elem : selected ) {
-                set_chosen_count( *elem, count );
+            if( const auto asked = query_count( input.ch - '0' ) ) {
+                for( const auto &elem : selected ) {
+                    set_chosen_count( *elem, *asked );
+                }
             }
         } else if( input.entry != nullptr ) {
             select( input.entry->any_item() );
@@ -2932,6 +3043,20 @@ std::vector<pickup::pick_drop_selection> inventory_pickup_selector::execute()
             std::vector<pickup::pick_drop_selection> result;
             std::vector<item *> locations;
             std::vector<int> counts;
+
+            // With numbered rows, Enter on a highlighted row takes it, as in the classic list.
+            const bool take_highlight = rows_are_numbered();
+            const auto pickup_entries = map_column.get_all_entries();
+            const bool any_chosen = std::any_of( pickup_entries.begin(), pickup_entries.end(),
+            []( const inventory_entry * entry ) {
+                return entry->chosen_count > 0;
+            } );
+            if( take_highlight && !any_chosen ) {
+                inventory_entry &selected = const_cast<inventory_entry &>( get_selected() );
+                if( selected ) {
+                    set_chosen_count( selected, max_chosen_count );
+                }
+            }
 
             for( auto entry_ptr : map_column.get_all_entries() ) {
                 int count = 0;

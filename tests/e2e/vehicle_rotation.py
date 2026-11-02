@@ -110,6 +110,10 @@ def build_vehicle_rotation_world(session):
             "local cr=gapi.get_creature_at(p) if cr and not cr:is_avatar() then park(cr) end "
             "end end out('clear') end")
         arena(game)
+        tiles.require(game.lua(
+            "gapi.get_avatar():set_mutation(MutationBranchId.new('DEBUG_NIGHTVISION')) "
+            "out(gapi.get_avatar():has_trait(MutationBranchId.new('DEBUG_NIGHTVISION')))")
+            == ["true"], "could not pin fixture sight across save/reload")
         tiles.require(game.lua("rotation_clear()") == ["clear"], "courtyard setup failed")
         settle(game)  # Activate queued creatures before the final cleanup.
         # Movement/set_pos can recenter the reality bubble. Persistent anchors must

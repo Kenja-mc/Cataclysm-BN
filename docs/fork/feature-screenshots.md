@@ -39,6 +39,16 @@ Enter, then Interact, opens this menu. Quick stack moves carried items into near
 
 One line holds one kind of thing. Rings, novels and other folded families list as a single entry with a count, and selecting a line opens the item's actions.
 
+With **Numbered list rows** enabled, a digit highlights its visible item row and Enter confirms.
+The option is off by default and applies only to Modern tiles menus; letters still work.
+Terminal and Classic controls stay unchanged.
+
+## Pickup with numbered rows
+
+![Pickup with numbered rows](images/features/pickup-numbered.png)
+
+Ctrl+G opens the area pickup list. Digits highlight rows, Enter picks up, and `#` sets a quantity.
+
 ## Crafting with the parts chain
 
 ![Crafting with the parts chain](images/features/crafting.png)

@@ -27,6 +27,9 @@
 #include "utils/url.h"
 #include "options.h"
 #include "ui.h"
+#if defined(TILES)
+#include "sdltiles.h"
+#endif
 
 struct action_entry {
     std::string action;
@@ -103,6 +106,10 @@ bool run(
 
     std::vector<action_entry> actions;
     uilist action_list;
+    auto numbered_rows = false;
+#if defined(TILES)
+    numbered_rows = list_row_numbers_enabled();
+#endif
 
     /**
     Add a menu entry
@@ -123,9 +130,8 @@ bool run(
 
         std::string bound_key = ctxt.key_bound_to( act );
         int bound_key_i = bound_key.size() == 1 ? bound_key[0] : '?';
-        // Modern numbers the rows 1-9 then 0, and the number runs the row; the old letter keys
-        // keep working but are no longer drawn.
-        if( modern && actions.size() <= 10 ) {
+        // Keep immediate numeric shortcuts when positional numbering is off.
+        if( modern && !numbered_rows && actions.size() <= 10 ) {
             bound_key_i = actions.size() == 10 ? '0' : '0' + static_cast<int>( actions.size() );
         }
         std::string act_name = ctxt.get_action_name( act );
@@ -377,6 +383,27 @@ bool run(
         ui_manager::redraw();
 
         const std::string &action = ctxt.handle_input();
+
+        // This menu runs its own loop, so positional row digits are applied here.
+#if defined(TILES)
+        if( action_list.row_numbers_active() &&
+            ctxt.get_raw_input().type == input_event_t::keyboard ) {
+            const int key = ctxt.get_raw_input().get_first_input();
+            if( key >= '0' && key <= '9' ) {
+                const int row = key == '0' ? 9 : key - '1';
+                const int index = action_list.vshift + row;
+                if( index >= 0 && index < num_actions ) {
+                    const uilist_entry &row_entry = action_list.entries[index];
+                    if( row_entry.drawn_rect && ( row_entry.enabled || action_list.allow_disabled ||
+                                                 action_list.hilight_disabled ) ) {
+                        selected_action = index;
+                        action_list.set_selected( selected_action );
+                    }
+                }
+                continue;
+            }
+        }
+#endif
 
         if( modern && action == "SELECT" ) {
             if( const auto mouse = ctxt.get_coordinates( action_list.window ) ) {

@@ -64,7 +64,7 @@ def test_existing_space_and_user_rebind_stay_in_the_list(_g):
         spawn(game, 0, 0, "rock")
         spawn(game, 0, 0, "stick")
 
-        game.keys("G", delay=0.8)
+        game.keys("C-g", delay=0.8)
         game.wait_for("Pick up")
         game.keys("Space", delay=1.2)
         assert "Pick up" not in game.screen(), "Space must still confirm a pickup row\n" + game.screen()
@@ -74,7 +74,7 @@ def test_existing_space_and_user_rebind_stay_in_the_list(_g):
         arena(game)
         spawn(game, 0, 0, "rock")
         spawn(game, 0, 0, "stick")
-        game.keys("G", delay=0.8)
+        game.keys("C-g", delay=0.8)
         game.wait_for("Pick up")
         previous = _selected_pickup_item(game.screen())
         game.keys("?", delay=0.5)

@@ -117,9 +117,15 @@ def menu_rows(screen, label):
         for match in pattern.finditer(line):
             left = line.rfind("│", 0, match.start())
             right = line.find("│", match.end())
-            if left < 0 or right < 0 or len(line[left + 1:match.start()]) > 6:
+            if left < 0 or right < 0:
                 continue
-            rows.append((match.start(), y, line[left + 1:match.start()].strip()))
+            prefix = line[left + 1:match.start()]
+            has_hotkey = re.fullmatch(r"\s+\S\s+", prefix) is not None
+            blank_shortcut = (3 <= len(prefix) <= 6 and prefix.isspace()
+                              and not line[match.end():right].strip())
+            if len(prefix) > 6 or not (has_hotkey or blank_shortcut):
+                continue
+            rows.append((match.start(), y, prefix.strip()))
     return rows
 
 
@@ -128,8 +134,10 @@ def choose_menu_entry(g, label, timeout=10):
 
     The message log and the sidebar repeat menu wording ("open the…", "Wield", "Debug…"), so
     only text inside a bordered row counts: the characters between the nearest `│` left of the
-    match and the next `│` after it must be the row's hotkey prefix, not prose. A slow machine
-    may still be drawing the menu, so wait for the row instead of sampling once.
+    match and the next `│` after it must be a hotkey gutter, not prose. Blank shortcut
+    gutters also count when the complete label ends at the border.
+    Labels match whole words, so fragments such as "examine the" still work but "Wielded"
+    cannot match "Wield". A slow machine may still be drawing the menu, so wait for the row.
     """
     deadline = time.time() + timeout
     while True:

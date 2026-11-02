@@ -44,6 +44,9 @@
 #include "requirements.h"
 #include "rng.h"
 #include "scrollbar_input.h"
+#if defined(TILES)
+#include "sdltiles.h"
+#endif
 #include "skill.h"
 #include "string_formatter.h"
 #include "string_id.h"
@@ -414,6 +417,15 @@ static void favorite_remove( const construction_group_str_id &c )
     uistate.favorite_construct_recipes.erase( c );
 }
 
+static auto construction_row_numbers() -> bool
+{
+#if defined(TILES)
+    return list_row_numbers_enabled();
+#else
+    return false;
+#endif
+}
+
 std::optional<construction_id> construction_menu( const bool blueprint )
 {
     if( !all_constructions.is_finalized() ) {
@@ -478,6 +490,7 @@ std::optional<construction_id> construction_menu( const bool blueprint )
     int current_category_total = 0;
 
     input_context ctxt( "CONSTRUCTION" );
+    ctxt.register_action( "ANY_INPUT" ); // positional row digits
     ctxt.register_action( "UP", to_translation( "Move cursor up" ) );
     ctxt.register_action( "DOWN", to_translation( "Move cursor down" ) );
     ctxt.register_action( "RIGHT", to_translation( "Move tab right" ) );
@@ -1052,6 +1065,7 @@ std::optional<construction_id> construction_menu( const bool blueprint )
         }
         // Determine where in the master list to start printing
         calcStartPos( offset, select, w_list_height, constructs.size() );
+        const bool numbered_rows = construction_row_numbers();
         // Print the constructions between offset and max (or how many will fit)
         for( size_t i = 0; static_cast<int>( i ) < w_list_height &&
              ( i + offset ) < constructs.size(); i++ ) {
@@ -1064,7 +1078,12 @@ std::optional<construction_id> construction_menu( const bool blueprint )
             }
             const std::string group_name = is_favorite( group ) ? "* " + group->name() : group->name();
             const nc_color final_col = construction_color( group, highlight );
-            trim_and_print( w_list, print_from, w_list_width, final_col, group_name );
+            if( numbered_rows && i < 10 ) {
+                const char digit = i == 9 ? '0' : static_cast<char>( '1' + i );
+                mvwputch( w_list, point( 0, i ), final_col, digit );
+            }
+            trim_and_print( w_list, point( numbered_rows ? 2 : 0, i ),
+                            w_list_width - ( numbered_rows ? 2 : 0 ), final_col, group_name );
         }
 
         // Clear out lines for tools & materials
@@ -1398,6 +1417,21 @@ std::optional<construction_id> construction_menu( const bool blueprint )
         ui_manager::redraw();
 
         std::string action = ctxt.handle_input();
+        if( construction_row_numbers() &&
+            ctxt.get_raw_input().type == input_event_t::keyboard ) {
+            const int key = ctxt.get_raw_input().get_first_input();
+            if( key >= '0' && key <= '9' ) {
+                last_clicked_row = -1;
+                const int row = key == '0' ? 9 : key - '1';
+                const int index = offset + row;
+                if( row < w_list_height && index >= 0 &&
+                    index < static_cast<int>( constructs.size() ) ) {
+                    select = index;
+                    update_info = true;
+                }
+                continue;
+            }
+        }
         const bool mouse_select = modern && action == "SELECT";
         if( mouse_select ) {
             // get_coordinates() is relative to the window centre.

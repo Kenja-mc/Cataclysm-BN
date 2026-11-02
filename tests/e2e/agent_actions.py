@@ -201,15 +201,10 @@ def menu_rows(screen: str, limit: int = MAX_MENU_ROWS, colored: str = "") -> tup
     seen: set[str] = set()
     colored_lines = colored.splitlines()
     lines = screen.splitlines()
-    frame = next(((y, match) for y, line in enumerate(lines)
-                  if (match := _UILIST_TITLE_RE.search(line))), None)
+    frame = _uilist_frame(lines)
     left, right, top, bottom = 0, None, -1, len(lines)
     if frame:
-        top, title = frame
-        left, right = title.start(), title.end() + 1
-        bottom = next((y for y in range(top + 1, len(lines))
-                       if lines[y][left:left + 1] in ("╰", "└", "+")
-                       and lines[y][right - 1:right] in ("╯", "┘", "+")), len(lines))
+        left, right, top, bottom, _title = frame
     for y in range(top + 1, bottom):
         line = lines[y]
         match = _ROW_RE.match(line[left:right])
@@ -261,21 +256,59 @@ _MAIN_MENU_MARKERS = ("[New Game]", "[MOTD]", "Tip of the day", "Cataclysm: Brig
 _NEW_GAME_MARKERS = ("Custom Character", "Preset Character", "Defence mode", "Play Now!")
 _FRAME_TITLE_RE = re.compile(r"[─-]{4,}\s*([^│|┃─-┤├┌┐└┘]{1,60}?)\s*[─-]{4,}")
 _UILIST_TITLE_RE = re.compile(r"[╭┌+][─-]*<\s*([^<>│|┃]{1,60}?)\s*>[─-]{2,}")
+_UILIST_TOP_RE = re.compile(r"[╭┌+][─-]{2,}[╮┐+]")
+_UILIST_SEPARATOR_RE = re.compile(r"[├+][─-]{2,}[┤+]")
+
+
+def _uilist_frame(lines: list[str]) -> tuple[int, int, int, int, str] | None:
+    """A titled UiList's (left, right-exclusive, top, bottom, title) rectangle.
+
+    Classic puts ``< title >`` in the top border. Modern puts its title between
+    the top border and a full-width separator; that geometry distinguishes it
+    from floating HUD boxes, even when map glyphs touch the menu's outside edge.
+    """
+    for top, line in enumerate(lines):
+        classic = _UILIST_TITLE_RE.search(line)
+        candidates = [(classic.start(), classic.end() + 1, classic.group(1).strip())] \
+            if classic else []
+        if top + 2 < len(lines):
+            for border in _UILIST_TOP_RE.finditer(line):
+                left, right = border.span()
+                header = lines[top + 1][left:right]
+                separator = lines[top + 2][left:right]
+                if (len(header) != right - left or header[0] not in "│|┃"
+                        or header[-1] not in "│|┃"
+                        or not _UILIST_SEPARATOR_RE.fullmatch(separator)):
+                    continue
+                title = header[1:-1].strip()
+                if title.startswith("<") and title.endswith(">"):
+                    title = title[1:-1].strip()
+                if title:
+                    candidates.append((left, right, title))
+        for left, right, title in candidates:
+            bottom = next((y for y in range(top + 1, len(lines))
+                           if lines[y][left:left + 1] in ("╰", "└", "+")
+                           and lines[y][right - 1:right] in ("╯", "┘", "+")), None)
+            if bottom is not None:
+                return left, right, top, bottom, title
+            if classic:
+                return left, right, top, len(lines), title
+    return None
 
 
 def framed_title(screen: str) -> str:
     """Title of a menu frame, including top-aligned uilists.
 
-    Explicit uilist title brackets distinguish menus from corner HUD boxes. Other frame titles
+    Explicit uilist headers distinguish menus from corner HUD boxes. Other frame titles
     still need to be in the middle band so ordinary corner readings do not become menus.
     """
     lines = screen.splitlines()
     if not lines:
         return ""
+    frame = _uilist_frame(lines)
+    if frame:
+        return frame[4]
     for y, line in enumerate(lines):
-        match = _UILIST_TITLE_RE.search(line)
-        if match:
-            return match.group(1).strip()
         if not 0.25 * len(lines) <= y <= 0.75 * len(lines):
             continue
         match = _FRAME_TITLE_RE.search(line)
@@ -459,7 +492,7 @@ def _menu_actions(scheme: str, text: str, mouse: bool, menu: str, colored: str =
     # These screens are uilist-drawn, so their rows now confirm on the second click. Other
     # generic framed menus include custom lists that still act on one click.
     double = menu in ("inventory", "item_actions", "action_menu", "ingame_menu") or (
-        menu == "menu" and bool(_UILIST_TITLE_RE.search(text or "")))
+        menu == "menu" and _uilist_frame(text.splitlines()) is not None)
     for row in rows:
         actions.append(_spec(f"press_{row.hotkey}", f"press {row.hotkey}: {row.label}",
                              (row.hotkey,)))

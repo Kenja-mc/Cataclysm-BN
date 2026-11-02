@@ -389,15 +389,20 @@ def test_window_order_raises_and_persists(_g):
         screen = game.screen()
         wy, wline = title_row(screen, "Weather")
         assert (title_column(wline, "Weather"), wy) == (12, 4), wline
+        weather_right = wline.index("│", control(wline, "Weather")[0] + 3)
+        # Hide Combat's name behind Weather while leaving its summary/header
+        # exposed, even when the rolled weather or carried clock changes width.
+        combat_target_x = weather_right - len("Combat") + 1
+        combat_name_end = combat_target_x + len("Combat")
 
         cy, cline = title_row(screen, "Combat")
         game.click(title_column(cline, "Combat"), cy)
-        game.hover(32, 7)
-        game.click(32, 7)
+        game.hover(combat_target_x, 7)
+        game.click(combat_target_x, 7)
         screen = game.screen()
         cy, cline = title_row(screen, "Combat")
-        assert (title_column(cline, "Combat"), cy) == (32, 7), cline
-        assert "Combat" in row_slice(screen, 7, 30, 41), \
+        assert (title_column(cline, "Combat"), cy) == (combat_target_x, 7), cline
+        assert "Combat" in row_slice(screen, cy, combat_target_x, combat_name_end), \
             "the last raised window must be drawn on top:\n" + screen
 
         # Enter on a HUD row brings that window to the front without a mouse.
@@ -407,24 +412,52 @@ def test_window_order_raises_and_persists(_g):
         game.keys("Enter", delay=0.4)
         game.keys("Escape", delay=0.8)
         settle(game)
+        before_clock = action_clock(game)
+        before_pos = bub_pos(game)
         screen = game.screen()
-        assert "Combat" not in row_slice(screen, 7, 30, 41), \
+        assert "Combat" not in row_slice(screen, cy, combat_target_x, combat_name_end), \
             "raising Weather must hide the overlapping Combat title:\n" + screen
 
-        # A click on the visible part of the lower window raises that one.
-        game.click(45, 7)
-        assert "Combat" in row_slice(game.screen(), 7, 30, 41), \
-            "clicking Combat must bring it to the front:\n" + game.screen()
-        game.click(12, 4)
-        assert "Combat" not in row_slice(game.screen(), 7, 30, 41), \
-            "clicking Weather must bring it back to the front:\n" + game.screen()
-        game.click(12, 4)  # drop the grab without changing order again
+        # Weather's live summary changes its width.  Find the exposed Combat
+        # header after Weather's right border, but before Combat's control,
+        # using this same capture rather than a weather/state-dependent cell.
+        wy, wline = title_row(screen, "Weather")
+        weather_right = wline.index("│", control(wline, "Weather")[0] + 3)
+        combat_header = screen.splitlines()[cy]
+        exposed_start = weather_right + 1
+        combat_control = combat_header.find("[-]", exposed_start)
+        assert combat_header[weather_right] == "│" and combat_control > exposed_start, \
+            "Combat must expose a non-control header region beyond Weather:\n" + screen
+        assert "│" not in combat_header[exposed_start:combat_control], \
+            "the exposed header must belong to the overlapping Combat window:\n" + screen
+        combat_x = (exposed_start + combat_control) // 2
+        game.click(combat_x, cy)
+        screen = game.screen()
+        assert "Combat" in row_slice(screen, cy, combat_target_x, combat_name_end), \
+            "clicking Combat must bring it to the front:\n" + screen
+        raised_y, raised = title_row(screen, "Combat")
+        assert (title_column(raised, "Combat"), raised_y) == (combat_target_x, 7), \
+            "raising Combat must not move it:\n" + screen
+        assert control(raised, "Combat")[1] == "[-]", \
+            "the exposed header click must not collapse Combat:\n" + screen
+        game.click(combat_x, cy)  # drop the grab at the same cell
+        wy, wline = title_row(game.screen(), "Weather")
+        game.click(title_column(wline, "Weather"), wy)
+        screen = game.screen()
+        assert "Combat" not in row_slice(screen, cy, combat_target_x, combat_name_end), \
+            "clicking Weather must bring it back to the front:\n" + screen
+        raised_y, raised = title_row(screen, "Weather")
+        assert (title_column(raised, "Weather"), raised_y) == (12, 4), \
+            "raising Weather must not move it:\n" + screen
+        game.click(title_column(raised, "Weather"), raised_y)  # drop the grab
+        assert bub_pos(game) == before_pos, "raising windows must not move the avatar"
+        assert action_clock(game) == before_clock, "raising windows must not act on the map"
 
         save_and_quit(game)
         load_first_save(game)
         settle(game)
         screen = game.screen()
-        assert "Combat" not in row_slice(screen, 7, 30, 41), \
+        assert "Combat" not in row_slice(screen, cy, combat_target_x, combat_name_end), \
             "the window order must survive the reload:\n" + screen
 
         action_menu(game, "Misc", "Sidebar Options")
@@ -433,8 +466,9 @@ def test_window_order_raises_and_persists(_g):
         game.keys("Enter", delay=0.4)
         game.keys("Escape", delay=0.8)
         settle(game)
-        assert "Combat" in row_slice(game.screen(), 7, 30, 41), \
-            "raising Combat again must restore it on top:\n" + game.screen()
+        screen = game.screen()
+        assert "Combat" in row_slice(screen, cy, combat_target_x, combat_name_end), \
+            "raising Combat again must restore it on top:\n" + screen
     finally:
         game.close()
 

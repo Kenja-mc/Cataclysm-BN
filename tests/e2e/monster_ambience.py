@@ -4,7 +4,8 @@ These tests observe the sound markers the normal sound pipeline paints, not audi
 curses binary, whose `has_asset()` reports every id as present because a marker is that build's
 only sound cue. A sound build additionally requires the loaded pack to provide the clip: without it
 there is no cue and no marker, so nothing is silent-but-visible (issue #32). No shipped monster
-declares `idle_sound`, so the fixture installs a mod that does.
+declares `idle_sound`, so the fixture installs a mod that does. A closed curtain ring blocks sight
+without soundproofing the avatar; private world options exclude unrelated NPCs and world spawns.
 """
 import json
 import math
@@ -22,7 +23,7 @@ SILENT = "e2e_silent_zombie"
 
 
 def ambience_game(name, **options):
-    """A dark, sealed room so every idle sound is heard but never seen."""
+    """An underground curtain enclosure makes every source heard but physically unseen."""
     userdir = Path(tempfile.mkdtemp(prefix=f"bn-e2e-{name}-"))
     mod_dir = userdir / "mods" / MOD_ID
     mod_dir.mkdir(parents=True)
@@ -48,7 +49,10 @@ def ambience_game(name, **options):
     (userdir / "config/default_mods.json").write_text(json.dumps([*defaults, MOD_ID]))
     game = Game(name=f"bn-e2e-{name}", userdir=userdir,
                 options={"SAFEMODE": "false", "SHOW_TIPS": "false", "SHOW_WELCOME": "false",
-                         "ANIMATIONS": "false", "SOUND_MARKER_TURNS": "1", **options})
+                         "ANIMATIONS": "false", "SOUND_MARKER_TURNS": "1",
+                         "STATIC_NPC": "false", "STARTING_NPC": "never", "RANDOM_NPC": "false",
+                         "SPAWN_DENSITY": "0", "SPAWN_ANIMAL_DENSITY": "0",
+                         "WANDER_SPAWNS": "false", "VEHICLE_SPAWNRATE": "0", **options})
     try:
         start_new_game(game)
         game.define_lua(HELPERS)
@@ -62,7 +66,14 @@ def ambience_game(name, **options):
             "M:set_ter_at(q, TerId.new('t_floor'):int_id()) "
             "M:set_furn_at(q, FurnId.new('f_null'):int_id()) M:clear_items_at(q) "
             "for _,fid in ipairs(M:get_field_ids_at(q)) do M:remove_field_at(q,fid) end "
-            "end end out('ok')") == ["ok"]
+            "end end "
+            # Darkness alone is not isolation: rolled perception can reveal the inner rings.
+            # Curtains are opaque but lack BLOCK_WIND, unlike soundproof residential walls.
+            "for dx=-1,1 do for dy=-1,1 do if dx~=0 or dy~=0 then "
+            "M:set_ter_at(here(dx,dy), TerId.new('t_door_curtain_c'):int_id()) end end end "
+            "assert(not a:is_deaf(),'ambience listener must be able to hear') "
+            "assert(#gapi.get_all_npcs()==0,'ambience world must not contain unrelated NPCs') "
+            "out('ok')") == ["ok"]
         settle(game)
     except Exception:
         game.close()
@@ -84,7 +95,9 @@ def ring_positions(count):
 def spawn(game, type_id, positions):
     code = " ".join(
         f"local m=gapi.place_monster_at(MonsterTypeId.new('{type_id}'),here({dx},{dy})) "
-        "if not m then error('place_monster_at failed') end"
+        "if not m then error('place_monster_at failed') end "
+        f"assert(not gapi.get_avatar():sees(here({dx},{dy})),"
+        f"'ambience source at ({dx},{dy}) must be unseen')"
         for dx, dy in positions)
     assert game.lua(code + " out('ok')") == ["ok"]
 

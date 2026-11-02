@@ -2,6 +2,8 @@
 from helpers import HELPERS, action_menu, arena, settle
 from tmux_game import Game, start_new_game
 
+NPC_WORLD_OPTIONS = {"STATIC_NPC": "false", "STARTING_NPC": "never", "RANDOM_NPC": "false"}
+
 # A new farmer follower, placed within hearing range of the player.
 FOLLOWER = ("FOLLOWER=M:place_npc(here(2,0),'farmer') "
             "FOLLOWER.name='Palette One' "
@@ -49,10 +51,13 @@ def choose_palette(g, name):
 
 def test_follower_palette_changes_the_follower_rules(g):
     """Palette changes are stored in the follower's rules, so they show again when the palette reopens."""
-    palette = Game(name="bn-e2e-npc-palette", options={"SAFEMODE": "false"})
+    palette = Game(name="bn-e2e-npc-palette",
+                   options={"SAFEMODE": "false", **NPC_WORLD_OPTIONS})
     try:
         start_new_game(palette)
         palette.define_lua(HELPERS)
+        assert palette.lua("out(#gapi.get_all_npcs())") == ["0"], \
+            "only the fixture's own followers may populate the palette"
         arena(palette)
         settle(palette)
         # Without a follower the chat menu has no palette entry.
@@ -136,10 +141,13 @@ def test_follower_palette_changes_the_follower_rules(g):
 
 def test_follower_palette_option_off_keeps_the_old_menu(g):
     """With NPC_UI off the chat menu has no palette entry but keeps the team commands."""
-    legacy = Game(name="bn-e2e-npc-palette-off", options={"SAFEMODE": "false", "NPC_UI": "false"})
+    legacy = Game(name="bn-e2e-npc-palette-off",
+                  options={"SAFEMODE": "false", "NPC_UI": "false", **NPC_WORLD_OPTIONS})
     try:
         start_new_game(legacy)
         legacy.define_lua(HELPERS)
+        assert legacy.lua("out(#gapi.get_all_npcs())") == ["0"], \
+            "only the fixture's own followers may populate the legacy menu"
         arena(legacy)
         assert legacy.lua(FOLLOWER) == ["ok"]
         settle(legacy)

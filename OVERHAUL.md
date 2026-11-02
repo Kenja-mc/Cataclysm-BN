@@ -41,6 +41,24 @@ direction prompts. Top-row numbers do not move you on the map.
   **Tab** or **`I`** opens advanced inventory from this screen; **Shift+Tab** switches category
   selection.
   The footer's advanced-inventory hint is clickable in both schemes; Classic keeps its keys.
+- **Numbered rows** (tiles build, Modern; off by default). Enable Options → Graphics →
+  **Numbered list rows** to print `1`–`9` beside the first nine visible rows and `0`
+  beside the tenth in menus that do not use digits for input. A number moves the highlight to
+  the row printed with it;
+  **Enter** confirms. That covers inventory and the other item pickers, both pickup lists, Enter's
+  action groups, the item-action menu, help and the other uilist screens, plus the construction
+  and options lists. Inventory and pickup item rows show thumbnails beside the numbers.
+  Scrolling renumbers, so the numbers always name visible rows; rows past ten remain reachable
+  by their letters, navigation keys and the mouse wheel. Existing letter shortcuts keep working.
+  Lists where digits already choose something keep those digits: the use and drop amount lists,
+  trade, menus that assign a digit to an entry (reading and training choices), advanced inventory,
+  where digits pick the source area, and missions on the World page, where digits switch tabs.
+  With numbered rows enabled, the pickup amount prompt moves to **`#`** in both pickup menus.
+  Numeric inventory shortcuts yield to row numbers
+  in numbered lists, which show a free letter instead; the Reassign prompt asks for a letter and
+  Swap Inventory Letters omits digits in this mode. Turning the option off removes the numbers
+  and restores digit shortcuts and typed pickup counts. Classic and the terminal build get no
+  row numbers or new digit keys.
 - **Space — the obvious action.** With a tile selected (mouse hover or click, arrow aim, or a
   Select tile key), Space runs that tile's most obvious action without asking, in this order:
   **open or close a door**, **talk to a neighbouring NPC**, **pick up a pile**, **use stairs**, **loot a vehicle cargo part**,
@@ -269,6 +287,8 @@ item on your tile and the eight around it. Drop is in the inventory. Inside the 
 if none are marked.
 Escape cancels.
 Inside pickup, local shortcuts act on the highlighted item: `h` wields it and `W` wears it.
+With numbered rows enabled, `1`–`9` and `0` move the highlight and `#` sets how many to take;
+Classic and unnumbered lists keep typing the amount with the digits.
 With the mouse, hover highlights a row, left click marks or unmarks it, a double click picks like
 Enter (with Modern list mouse off, a double click only marks and unmarks), and the wheel moves
 through the list. Right click lists Pick up, Wield and Wear; each acts on that item alone. The
@@ -431,9 +451,10 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 - **Cliff edge shading** (orthographic tiles): a narrow dark edge marks a visible drop into open
   air without covering the ground texture. Hidden openings are not revealed. Options → Graphics →
   Cliff edge shading restores the original view.
-- **Item thumbnails in UI** (tiles): inventory and pickup rows show the item's real sprite,
-  including jewelry variants and corpses. Filtering clears old thumbnails, and sprites stay inside
-  their list window. Options → Graphics → Item thumbnails in UI turns them off.
+- **Item thumbnails in UI** (tiles): inventory, the wield/wear/read/eat pickers, the pickup menu and
+  the other item lists that share their row layout show the item's real sprite, including jewelry
+  variants and corpses. Filtering clears old thumbnails, and sprites stay inside their list window.
+  Options → Graphics → Item thumbnails in UI turns them off.
 - **Mood lighting** (tiles): atomic lamps cast green light, blue glowsticks cast blue light, and
   candles and fuel lanterns cast warm light. Other colored emitters use the same native lighting
   path. Brightness, range, fuel use and game rules are unchanged. Options → Graphics → Colored

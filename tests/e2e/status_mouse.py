@@ -14,9 +14,20 @@ from helpers import HELPERS, Game, arena, start_new_game
 from tmux_game import ROOT
 
 # Enough mutations to overflow the traits panel; preserve any the character already has.
-TRAITS = ("FLEET", "GOODHEARING", "INATTENTIVE", "PARKOUR", "QUICK",
-          "OPTIMISTIC", "OUTDOORSMAN", "BIOLUM1", "FEYHEARING",
-          "GOODCARDIO", "GOODCARDIO2", "FASTLEARNER")
+TRAITS = {
+    "FLEET": ("Fleet-Footed", "You can move more quickly than most"),
+    "GOODHEARING": ("Good Hearing", "Your hearing is better than average"),
+    "INATTENTIVE": ("Inattentive", "You never paid attention to your surroundings"),
+    "PARKOUR": ("Parkour Expert", "You're skilled at clearing obstacles"),
+    "QUICK": ("Quick", "You're just generally quick!"),
+    "OPTIMISTIC": ("Optimist", "Nothing gets you down!"),
+    "OUTDOORSMAN": ("Outdoorsman", "You are accustomed to being exposed to the elements"),
+    "BIOLUM1": ("Weak Photophore", "A photophore has grown under the skin of your cheeks"),
+    "FEYHEARING": ("Fey Hearing", "You're not sure the shape of your ears is helping you any"),
+    "GOODCARDIO": ("Indefatigable", "Whether due to exercise and good diet"),
+    "GOODCARDIO2": ("Hyperactive", "Your body's efficiency is like that of a tiny furnace"),
+    "FASTLEARNER": ("Fast Learner", "You have a flexible mind"),
+}
 
 # Wounds used by the body report fixture.
 WOUNDS = (("bleed", "arm_l"), ("bleed", "arm_r"), ("bleed", "leg_l"),
@@ -71,6 +82,25 @@ def find_in(g, text, x_max=None, y_min=0, y_max=None):
         if x >= 0 and (x_max is None or x < x_max):
             return x, y
     raise AssertionError(f"no cell for {text!r} in band\n{g.screen()}")
+
+
+def trait_panel(screen):
+    """Read the selected description, visible rows and track bounds from one capture."""
+    rows = screen.splitlines()
+    title_y = next(y for y, row in enumerate(rows) if "TRAITS" in row)
+    title_x = rows[title_y].index("TRAITS")
+    left = rows[title_y].rfind("│", 0, title_x)
+    right = rows[title_y].find("│", title_x)
+    assert 0 <= left < right, "no traits panel borders\n" + screen
+    bottom = next(y for y in range(title_y + 1, len(rows))
+                  if rows[y][left:left + 1] in ("├", "└", "╰"))
+    visible = {rows[y][left + 1:right - 1].strip(): (left + 1, y)
+               for y in range(title_y + 1, bottom)
+               if rows[y][left + 1:right - 1].strip()}
+    info_top = next(y for y, row in enumerate(rows) if row.startswith("─") and "┴" in row)
+    info = " ".join(" ".join(row.split("│", 1)[0]
+                            for row in rows[info_top + 1:title_y - 1]).split())
+    return info, visible, (right - 1, title_y + 1, bottom - 1)
 
 
 def scrollbar_column(g):
@@ -245,29 +275,50 @@ def test_character_info_trait_scrollbar_jump_and_resize_click(g):
     g.resize(100, 30)
     arena(g)
     before = moves(g)
-    set_traits(g)
     try:
+        set_traits(g)
         open_info(g)
         tx, ty = find_in(g, "TRAITS", x_max=55, y_min=17, y_max=19)
         g.click(tx, ty)
-        g.wait_for("Fleet")
-        # The traits scrollbar column is the one before the panel's right border.
-        first_info = g.screen()
-        g.click(52, 25)
-        assert g.screen() != first_info, "the track click must move the selection"
+        g.settle_screen()
+        first_frame = g.screen()
+        first_info, first_rows, (sx, top, bottom) = trait_panel(first_frame)
+        assert first_info.partition(":")[0] in first_rows, first_frame
+        rows = first_frame.splitlines()
+        assert rows[top][sx] == "^" and rows[bottom][sx] == "v", \
+            "the overflowing traits list must draw a scrollbar\n" + first_frame
+        # A track cell near the bottom must scroll the list and select another trait.
+        g.click(sx, bottom - 1)
+        jumped_frame = g.screen()
+        jumped_info, jumped_rows, _ = trait_panel(jumped_frame)
+        assert jumped_info.partition(":")[0] != first_info.partition(":")[0], \
+            "the track click must select another trait\n" + jumped_frame
+        assert tuple(jumped_rows) != tuple(first_rows), \
+            "the track click must move the visible list\n" + jumped_frame
         g.resize(120, 38)
         g.settle_screen()
-        # After the resize the list is drawn at new positions; click a trait
-        # that only became visible through the track jump.
-        gx, gy = find_in(g, "Good Hearing", x_max=53, y_min=19)
-        g.click(gx, gy)
-        g.wait_for("Good Hearing:")
+        resized_frame = g.screen()
+        resized_info, visible, _ = trait_panel(resized_frame)
+        selected = resized_info.partition(":")[0]
+        # Rolled traits change ordering and the resized viewport. Use a fixture row
+        # actually drawn in this capture, not a trait assumed to stay on screen.
+        choices = [(name, description) for name, description in TRAITS.values()
+                   if name in visible and name != selected]
+        assert choices, "no unselected fixture trait is visible after resize\n" + resized_frame
+        name, description = choices[0]
+        g.click(*visible[name])
+        g.wait_for(name + ":")
+        clicked_frame = g.screen()
+        clicked_info, _, _ = trait_panel(clicked_frame)
+        assert clicked_info.startswith(name + ":"), clicked_frame
+        assert description in clicked_info, clicked_frame
+        close_info(g)
         assert moves(g) == before, "the info screen must not spend moves"
     finally:
         close_info(g)
         clear_traits(g)
-    arena(g)
-    g.resize(140, 45)
+        arena(g)
+        g.resize(140, 45)
 
 
 TESTS = [test_body_report_close_button, test_body_report_wheel_and_scrollbar,

@@ -215,7 +215,7 @@ def test_parts_list_hint_and_wheel_scroll(_g):
 
 
 def test_overview_wheel_and_hint_scroll(_g):
-    g = vehicle_mouse_game("bn-e2e-vehicle-mouse-overview-scroll", cols=80, rows=24)
+    g = vehicle_mouse_game("bn-e2e-vehicle-mouse-overview-scroll", cols=80, rows=25)
     try:
         screen = g.screen()
         assert "'{' to scroll up" not in screen, screen

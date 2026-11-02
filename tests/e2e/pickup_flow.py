@@ -176,6 +176,33 @@ def test_classic_empty_pickup_confirmation_takes_nothing(_g):
         g.close()
 
 
+def test_classic_new_pickup_enter_takes_nothing(_g):
+    """Classic keeps the new pickup's upstream confirmation: nothing marked means nothing taken."""
+    g = Game(name="bn-e2e-pickup-new-classic", options={
+        "CONTROL_SCHEME": "classic", "SAFEMODE": "false", "NEW_PICKUP_MENU": "true",
+        "NUMBERED_LIST_ROWS": "true"})
+    try:
+        start_new_game(g)
+        g.define_lua(HELPERS)
+        arena(g)
+        empty_inventory(g)
+        arena(g)
+        spawn(g, 0, 0, "rock")
+        spawn(g, 0, 0, "stick")
+        g.keys("g", delay=0.8)
+        g.wait_for("Multipickup", timeout=20)
+        g.keys("Enter", delay=1.0)
+        g.wait_for("No items were selected", timeout=20)
+        g.keys("Escape", delay=0.3)
+        g.wait_gone("No items were selected", timeout=20)
+        g.keys("Escape", delay=0.3)
+        g.wait_gone("Multipickup", timeout=20)
+        assert count_carried(g, "rock") + count_carried(g, "stick") == 0, \
+            "Classic must not take the highlighted row"
+    finally:
+        g.close()
+
+
 def test_classic_space_still_cancels_pickup(_g):
     g = Game(name="bn-e2e-pickup-classic-space", options={"CONTROL_SCHEME": "classic", "SAFEMODE": "false"})
     try:
@@ -195,7 +222,8 @@ def test_classic_space_still_cancels_pickup(_g):
         g.close()
 
 
-TESTS = [test_g_again_picks_up_the_highlighted_item, test_h_wields_from_pickup,
+TESTS = [test_classic_new_pickup_enter_takes_nothing,
+         test_g_again_picks_up_the_highlighted_item, test_h_wields_from_pickup,
          test_mouse_marks_pickup_rows, test_double_click_picks_a_pickup_row,
          test_option_off_double_click_only_marks, test_pickup_context_action_takes_only_that_item,
          test_classic_empty_pickup_confirmation_takes_nothing, test_wheel_selects_pickup_row,

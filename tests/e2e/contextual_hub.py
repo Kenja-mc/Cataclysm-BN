@@ -48,6 +48,18 @@ def doors(game, selected_dx=1):
     ) == ["ok"]
 
 
+def nearby_doors(game):
+    """Keep both doors off the faced tile so Space must offer the nearby list."""
+    # Shared games retain the last attempted step even after arena() and a wait.
+    # A real step clears any selection and pins facing to the arena's empty north tile.
+    before = bub_pos(game)
+    game.keys("w", delay=0.6)
+    assert bub_pos(game) == (before[0], before[1] - 1, before[2]), \
+        "the nearby-menu fixture must face empty floor:\n" + game.screen()
+    # Do not advance a turn after placing the doors: Space must discover the new objects.
+    doors(game)
+
+
 def door_state(game, selected_dx=1):
     return game.lua(
         f"out(M:get_ter_at(here({selected_dx},0)):str_id():str(),"
@@ -163,7 +175,7 @@ def colored_cells(line):
 
 def test_contextual_no_selection_lists_nearby_actions(_game):
     with contextual_game("bn-e2e-context-direction") as game:
-        doors(game)
+        nearby_doors(game)
         before = bub_pos(game)
         game.keys("space", delay=0.2)
         rows, screen = interact_menu(game)
@@ -188,7 +200,7 @@ def test_contextual_no_selection_lists_nearby_actions(_game):
 
 def test_contextual_nearby_row_highlights_its_tile(_game):
     with contextual_game("bn-e2e-context-highlight") as game:
-        doors(game)
+        nearby_doors(game)
         position, clock = bub_pos(game), action_clock(game)
         x, y = game.find("@")
 

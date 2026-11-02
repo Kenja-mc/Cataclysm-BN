@@ -60,13 +60,24 @@ SHOTS = [
          body="In the sidebar layouts the same page lives in the HUD column: the arrows switch tabs, "
               "the list fills the column, and Enter opens the full page when the details need room."),
     dict(id="interact-menu", title="Interact menu: quick stack and sort pile",
-         keys=[("Return",), ("2",)], options={"CONTROL_SCHEME": "modern"},
+         keys=[("Return",), ("2",), ("Return",)], options={"CONTROL_SCHEME": "modern"},
          body="Enter, then Interact, opens this menu. Quick stack moves carried items into nearby storage "
               "that already holds them, and sort pile sorts the player's pile without sorting zones."),
-    dict(id="inventory", title="Inventory with item variants",
-         keys=[("i",)], options={"CONTROL_SCHEME": "modern"},
-         body="One line holds one kind of thing. Rings, novels and other folded families list as a "
-              "single entry with a count, and selecting a line opens the item's actions."),
+    dict(id="inventory", title="Inventory with numbered item rows",
+         keys=[("i",)], options={"CONTROL_SCHEME": "modern", "NUMBERED_LIST_ROWS": "true",
+                                "ITEM_THUMBNAILS": "true"},
+         body="Each visible item row prints its number (1-9, 0 for the tenth) beside the item's "
+              "thumbnail. A number moves the highlight and Enter opens that item's actions. One line "
+              "holds one kind of thing; rings, novels and other folded families list as a single entry "
+              "with a count."),
+    dict(id="pickup-numbered", title="Pickup with numbered rows",
+         keys=[("Control_L", "g")], options={"CONTROL_SCHEME": "modern", "NUMBERED_LIST_ROWS": "true",
+                                         "ITEM_THUMBNAILS": "true"},
+         setup="for _, id in ipairs({'rock','pipe','stick'}) do "
+               "gapi.get_map():create_item_at(gapi.get_avatar():get_pos_ms(), ItypeId.new(id), -1) "
+               "end out('ok')",
+         body="The pickup list numbers its visible rows and shows each item's thumbnail. A digit moves "
+              "the highlight, Enter takes the row, and # sets how many to take."),
     dict(id="crafting", title="Crafting with the parts chain",
          keys=[("i",), ("F5",)], options={"CONTROL_SCHEME": "modern"},
          body="The crafting menu opens on a tab with recipes to make. The parts chain shows what a "
@@ -81,7 +92,8 @@ SHOTS = [
          keys=[("m",)], options={"CONTROL_SCHEME": "modern"},
          body="The map opens on the local area with the pixel minimap the fork keeps on by default."),
     dict(id="sidebar-options", title="Sidebar options from the Enter menu",
-         keys=[("Return",), ("7",), ("9",)], options={"CONTROL_SCHEME": "modern"},
+         keys=[("Return",), ("7",), ("Return",), ("9",), ("Return",)],
+         options={"CONTROL_SCHEME": "modern"},
          body="Modern leaves the panel key unbound. Enter, then Misc, then Sidebar Options opens the "
               "editor, where the panels can be moved, hidden and reordered."),
     dict(id="body-panel", title="Body panel and limb details",

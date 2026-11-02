@@ -20,6 +20,9 @@ Usage:
   python3 tests/e2e/tiles.py overmap [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py known_locks [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py vehicle_rotation [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
+  python3 tests/e2e/tiles.py numbered_rows [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
+  python3 tests/e2e/tiles.py numbered_menu [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
+  python3 tests/e2e/tiles.py numbered_viewport [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
 
 --root is the game tree (data and the curses build); --binary is the tiles executable.
 Artifacts (window captures, marker crops, logs, fixture asserts, result.json) stay in --out.
@@ -1326,6 +1329,27 @@ def case_known_locks(session):
     return failures, observations
 
 
+def case_numbered_rows(session):
+    """Digits 1-9/0 select visible item rows; Enter confirms; the option gates the gutter."""
+    from numbered_rows import run_numbered_rows
+
+    return run_numbered_rows(session)
+
+
+def case_numbered_menu(session):
+    """Digits select visible options and construction rows; scrolling renumbers them."""
+    from numbered_menu_cases import run_numbered_menu
+
+    return run_numbered_menu(session)
+
+
+def case_numbered_viewport(session):
+    """Invisible item rows cannot be selected through positional digits."""
+    from numbered_rows import run_numbered_viewport
+
+    return run_numbered_viewport(session)
+
+
 def case_sound_menu(session):
     """Drive the tiles menu; check saved settings, not audible output or OCR."""
     bindings = session.curses_userdir / "config" / "keybindings.json"
@@ -1494,7 +1518,9 @@ from vehicle_rotation import case_vehicle_rotation  # noqa: E402
 CASES = {"minimap": case_minimap, "mouse": case_mouse, "side_buttons": case_side_buttons,
          "sound_menu": case_sound_menu, "zoom": case_zoom, "overmap": case_overmap,
          "known_locks": case_known_locks, "menu_drag": case_menu_drag,
-         "vehicle_rotation": case_vehicle_rotation}
+         "vehicle_rotation": case_vehicle_rotation,
+         "numbered_rows": case_numbered_rows, "numbered_menu": case_numbered_menu,
+         "numbered_viewport": case_numbered_viewport}
 
 
 def main(argv=None):
@@ -1521,6 +1547,9 @@ def main(argv=None):
         elif args.case == "vehicle_rotation":
             from vehicle_rotation import build_vehicle_rotation_world
             build_vehicle_rotation_world(session)
+        elif args.case in ("numbered_rows", "numbered_viewport"):
+            from numbered_rows import build_numbered_rows_world
+            build_numbered_rows_world(session)
         else:
             session.build_world(zoom_ruler=args.case == "zoom")
         failures, report = CASES[args.case](session)
