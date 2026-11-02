@@ -517,7 +517,7 @@ auto music_playlist_playing( const std::string &playlist ) -> bool
     return current_playlist == playlist && music_playing();
 }
 
-static auto has_music_playlist( const std::string &playlist ) -> bool
+auto music_has_playlist( const std::string &playlist ) -> bool
 {
     const auto iter = playlists.find( playlist );
     return iter != playlists.end() && !iter->second.entries.empty();
@@ -726,7 +726,7 @@ auto play_music_context( const music::context ctx ) -> void
     if( test_mode || !get_option<bool>( "MUSIC_ENABLED" ) ) {
         return;
     }
-    const std::string playlist = music::resolve_playlist( ctx, has_music_playlist );
+    const std::string playlist = music::resolve_playlist( ctx, music_has_playlist );
     if( play_playlist( playlist, MUSIC_CROSSFADE_MS ) ) {
         return;
     }

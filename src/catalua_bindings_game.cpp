@@ -822,6 +822,14 @@ void cata::detail::reg_game_api( sol::state &lua )
         return music::context_id( music::current_context() );
     } );
 
+    DOC( "The playlist the soundpack supplies for the current dynamic music context. A "
+         "soundpack without a playlist for that context falls back to title, which is what "
+         "plays; this reports the same selection without starting or changing any track." );
+    DOC_PARAMS( "returns: string - The resolved playlist id, either the context id or title." );
+    luna::set_fx( lib, "music_playlist", []() -> std::string {
+        return music::current_playlist();
+    } );
+
     luna::set_fx( lib, "add_npc_follower", []( npc & p ) { g->add_npc_follower( p.getID() ); } );
     luna::set_fx( lib, "remove_npc_follower", []( npc & p ) { g->remove_npc_follower( p.getID() ); } );
 

@@ -240,4 +240,9 @@ auto current_context() -> context
     return game_scheduler.current();
 }
 
+auto current_playlist() -> std::string
+{
+    return resolve_playlist( current_context(), music_has_playlist );
+}
+
 } // namespace music

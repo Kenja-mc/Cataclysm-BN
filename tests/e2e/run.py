@@ -49,6 +49,7 @@ from monster_ambience import TESTS as MONSTER_AMBIENCE_TESTS
 from activity_line import TESTS as ACTIVITY_LINE_TESTS
 from sound_menu import TESTS as SOUND_MENU_TESTS
 from dynamic_music import TESTS as DYNAMIC_MUSIC_TESTS
+from music_fallback import TESTS as MUSIC_FALLBACK_TESTS
 from safemode import TESTS as SAFEMODE_TESTS
 from char_creation import TESTS as CHAR_CREATION_TESTS
 from fluid_grid import TESTS as FLUID_GRID_TESTS
@@ -133,6 +134,7 @@ MODULES = [
     ("activity_line", ACTIVITY_LINE_TESTS),
     ("sound_menu", SOUND_MENU_TESTS),
     ("dynamic_music", DYNAMIC_MUSIC_TESTS),
+    ("music_fallback", MUSIC_FALLBACK_TESTS),
     ("safemode", SAFEMODE_TESTS),
     ("char_creation", CHAR_CREATION_TESTS),
     ("fluid_grid", FLUID_GRID_TESTS),
