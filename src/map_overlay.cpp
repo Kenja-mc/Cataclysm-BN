@@ -6,7 +6,7 @@
 #include "avatar.h"
 #include "coordinates.h"
 #include "game.h"
-#include "map.h"
+#include "map/map.h"
 #include "map_memory.h"
 #include "monster.h"
 #include "options.h"

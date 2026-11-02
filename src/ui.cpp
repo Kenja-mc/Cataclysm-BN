@@ -46,7 +46,7 @@ auto left_button_held() -> bool
 #endif
 }
 
-auto state_id( const uilist &menu ) -> const std::string &
+auto state_name( const uilist &menu ) -> const std::string & // *NOPAD*
 {
     return menu.state_id.empty() ? menu.title : menu.state_id;
 }
@@ -173,7 +173,7 @@ uilist::~uilist()
     if( current_ui ) {
         current_ui->reset();
     }
-    test_state::ui_close( state_id( *this ) );
+    test_state::ui_close( state_name( *this ) );
 }
 
 void uilist::color_error( const bool report )
@@ -1078,7 +1078,7 @@ void uilist::show( ui_adaptor &ui )
     }
 
     if( test_state::enabled() ) {
-        test_state::ui_show( state_id( *this ), title, state_rows( *this ),
+        test_state::ui_show( state_name( *this ), title, state_rows( *this ),
                              fentries.empty() ? -1 : fselected );
     }
 }
@@ -1400,7 +1400,7 @@ void uilist::query( bool loop, int timeout )
         ui_manager::redraw();
     } while( loop && ret == UILIST_WAIT_INPUT );
 
-    test_state::ui_close( state_id( *this ) );
+    test_state::ui_close( state_name( *this ) );
 }
 
 ///@}
