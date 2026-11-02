@@ -52,9 +52,9 @@ for them.
   it off keeps the old fixed corner boxes; the weather, status and vehicle box corner options still
   seed each window's first position and visibility. **Compact corner bars** also keeps the old
   layout, and Classic and compact layouts always keep their combined panels.
-- The vehicle reading is a replaceable provider
-  (`hud_windows::set_vehicle_provider`) so the driving-dashboard work can take that window over
-  without changing its id, placement, collapse or save state.
+- **Driving dashboard** is a separate, off-by-default option. It expands Fusion's Vehicle card
+  and the legacy floating Vehicle window without changing that window's identity, placement,
+  collapse or save state. With the option off, the compact reading remains.
 - Clicking or dragging a window brings it to the front, and **Enter** on its row in Sidebar
   Options does the same from the keyboard. The stacking order saves per character with the
   positions. A dragged window keeps its top-left through a collapse; an untouched default window
@@ -78,6 +78,62 @@ glyphs and the map boxes turned off. The fork's sidebar panels stay; each can be
 sidebar options.
 
 ![Classic controls and colours: vi-keys in the Controls strip, trees drawn as 7, 4 and 1](images/classic_game.png)
+
+## Driving dashboard
+
+**Driving dashboard** (`DRIVING_DASHBOARD`, Options → Interface) is opt-in and off by default in
+terminal and tiles builds. It expands Fusion's existing 32-column Vehicle card and the floating
+Vehicle window in legacy labels/grouped layouts. Off keeps the compact reading; Classic and
+compact layouts keep their old panels either way. It uses Fusion's existing glyph/text vocabulary,
+not a separate art style.
+
+**Compact reading — option off**
+
+![Compact Fusion vehicle card while driving](images/features/driving-dashboard-off.png)
+
+**Expanded instruments — option on**
+
+![Expanded Fusion driving dashboard](images/features/driving-dashboard-on.png)
+
+Both captures use the same saved car and driving inputs. Exhaust and the weather ribbon can
+differ between runs; the dashboard option does not change the saved driving state.
+
+- The title row carries speed, unit and compass letter; body rows carry the speed bar,
+  azimuth, cruise state and target, engine state, fuel, battery and aircraft takeoff state.
+- Fusion uses its existing 32-column lower-left card at 140×36 or larger. At 80×25, selecting
+  Fusion falls back to grouped. The legacy floating window keeps its placement, collapse and
+  visibility controls; check that the fallback leaves the avatar and vital readings visible.
+  The heading, fuel and battery rows use existing HUD glyphs; **Text only** leaves the labels
+  without an icon column.
+- Palette: the speed row uses the compact readout's strain colours, the engine row uses green,
+  yellow and red for strain, fuel is grey/yellow/red, battery is cyan/yellow/red, cruise-on is
+  green, `lift` is green and `no lift` is red, and remote control is cyan.
+- Every colour has a text or shape cue: `On`/`Off`, `low`/`low!`/`empty`, `!`/`!!`/`!!!` strain marks, a
+  bar of `#` and `-`, `lift`/`no lift`, and a signed speed for reverse. A monochrome terminal keeps
+  all of the information. The speed bar fills toward the safe speed; above it the row first turns
+  yellow and gains a marker.
+- `Remote control` appears only while a remote vehicle is under control. The aircraft row keeps
+  the takeoff speed in the configured unit and reports whether the current speed reaches it; a wing
+  that cannot lift reports `no lift`.
+- No new images, sprites or glyph art are added: the icons come from the fork's existing HUD set.
+  There is no copied Zomboid asset and no generated artwork. Project Zomboid is a layout
+  reference only.
+
+The option changes presentation only, not driving controls, selected speed units or action time
+costs. Remote-control status and aircraft takeoff/lift information remain available.
+
+Reproduce the native comparisons, including the 80×25 fallback and 1×/2× scaling:
+
+```sh
+python3 tests/e2e/tiles.py driving_dashboard --out /tmp/bn-driving-dashboard-proof
+```
+
+The case retains captures, input traces and saved driving states. The terminal scenarios also
+exercise remote control, aircraft takeoff/lift, warning thresholds and the off/legacy paths:
+
+```sh
+python3 tests/e2e/run.py --serial dashboard
+```
 
 ## Mouse tile selection
 

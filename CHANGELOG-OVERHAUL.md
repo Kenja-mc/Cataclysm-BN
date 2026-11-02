@@ -18,6 +18,12 @@ Upstream's own changes are in `docs/en/game/changelog`.
   amount lists, menus with digit-bound entries and advanced inventory's source-area keys keep
   their numeric input instead of using numbered rows. Missions on the World page keep digits for
   switching tabs. Classic and terminal builds are unchanged.
+- **Driving dashboard** (`DRIVING_DASHBOARD`, Options → Interface, off by default): optional
+  instruments in Fusion's existing 32-column Vehicle card and the floating Vehicle window in
+  legacy labels/grouped layouts, in terminal and tiles builds. Speed, heading, cruise, engine,
+  fuel and battery readings retain remote-control status and aircraft takeoff/lift information.
+  Leaving it off keeps the compact reading; Classic and compact panels are unchanged. Driving
+  controls, selected speed units and action time costs are unchanged.
 
 ### Changed
 
@@ -161,8 +167,6 @@ Upstream's own changes are in `docs/en/game/changelog`.
   position, collapse and visibility.
 - Sidebar Options lists every window so the whole layout is reachable without a mouse; a disabled
   or unfittable window hands its reading back to the sidebar. Both terminal and tiles build it.
-- The vehicle window is a replaceable provider (`hud_windows::set_vehicle_provider`) for the
-  driving-dashboard work.
 - Clicking or dragging a window, or pressing Enter on it in Sidebar Options, raises it to the
   front; the stacking order is saved with the character.
 

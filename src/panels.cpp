@@ -27,6 +27,7 @@
 #include "item.h"
 #include "json.h"
 #include "body_panel.h"
+#include "driving_dashboard.h"
 #include "hud_boxes.h"
 #include "hud_fusion.h"
 #include "hud_sidebar.h"
@@ -2889,6 +2890,7 @@ int panel_manager::get_width_left()
 
 void panel_manager::init()
 {
+    driving_dashboard::install();
     load();
     update_offsets( get_current_layout().begin()->get_width() );
 }

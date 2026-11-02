@@ -21,6 +21,7 @@ Usage:
   python3 tests/e2e/tiles.py known_locks [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py vehicle_rotation [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py numbered_rows [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
+  python3 tests/e2e/tiles.py driving_dashboard [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py numbered_menu [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py numbered_viewport [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
 
@@ -1513,12 +1514,14 @@ def case_menu_drag(session):
 
 
 from vehicle_rotation import case_vehicle_rotation  # noqa: E402
+from driving_dashboard_native import case_driving_dashboard  # noqa: E402
 
 
 CASES = {"minimap": case_minimap, "mouse": case_mouse, "side_buttons": case_side_buttons,
          "sound_menu": case_sound_menu, "zoom": case_zoom, "overmap": case_overmap,
          "known_locks": case_known_locks, "menu_drag": case_menu_drag,
          "vehicle_rotation": case_vehicle_rotation,
+         "driving_dashboard": case_driving_dashboard,
          "numbered_rows": case_numbered_rows, "numbered_menu": case_numbered_menu,
          "numbered_viewport": case_numbered_viewport}
 
@@ -1547,6 +1550,9 @@ def main(argv=None):
         elif args.case == "vehicle_rotation":
             from vehicle_rotation import build_vehicle_rotation_world
             build_vehicle_rotation_world(session)
+        elif args.case == "driving_dashboard":
+            from driving_dashboard_native import build_driving_dashboard_world
+            build_driving_dashboard_world(session)
         elif args.case in ("numbered_rows", "numbered_viewport"):
             from numbered_rows import build_numbered_rows_world
             build_numbered_rows_world(session)

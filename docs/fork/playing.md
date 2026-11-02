@@ -274,7 +274,19 @@ Long-form write-ups should follow
   log's top row names it, its progress and the time left; Options → Interface → Activity line in
   the log turns that off.
   Check vehicle/readout fallbacks at 80×25, driving hints (`ws`/`ad`), and their return to
-  `wasd` on release. The new bundled typeface should show readable labels and complete glyphs.
+  `wasd` on release. **Driving dashboard** (`DRIVING_DASHBOARD`, Options → Interface) is off by
+  default in terminal and tiles builds: first check the compact reading with it off, then enable
+  it in Fusion's existing 32-column Vehicle card and in the floating Vehicle window of a legacy
+  labels/grouped layout. The summary keeps speed, unit and compass letter; the body adds a speed
+  bar, azimuth, cruise state and target, engine state and strain marks, fuel and battery bars
+  with `low`/`empty` words, remote-control status, and aircraft takeoff speed with `lift`/`no lift`.
+  Check Fusion at 140×36 or larger; at 80×25, selecting Fusion falls back to grouped. Check that
+  the fallback leaves the avatar and vital readings visible. Collapse and move the legacy
+  floating window, then disable **Floating HUD windows** to check its fixed-readout fallback.
+  Classic and compact layouts retain their old panels with either dashboard setting.
+  Compare actual driving, remote control and aircraft with the option off and on: controls,
+  configured speed units and action time costs must not change. Check warnings without colour,
+  readable labels and complete glyphs with the bundled typeface.
 - **Targeting:** gun aiming starts on the reachable hostile and warns about allies in the line of
   fire; check loudness. Map target cycling is selection, not an attack.
 - **Crafting:** `i`, then F5; opens on recent recipes, "Missing: …", part producer hints (`p`).

@@ -5,6 +5,7 @@
 #include <optional>
 #include <ranges>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "action.h"
@@ -12,6 +13,7 @@
 #include "cached_options.h"
 #include "catacharset.h"
 #include "cursesdef.h"
+#include "driving_dashboard.h"
 #include "hud_draw.h"
 #include "game.h"
 #include "hotbar.h"
@@ -146,18 +148,43 @@ auto draw_hints( const catacurses::window &w, const point at, const int room, co
     }
 }
 
+auto vehicle_card( const canvas &area, const int rows,
+                   std::string summary = {} ) -> catacurses::window
+{
+    const auto height = rows + 2;
+    hits.push_back( { .at = { .at = point( 0, area.height - height ), .width = 32, .height = height } } );
+    auto w = panel( area, {
+        .at = point( 0, area.height - height ), .width = 32, .height = height
+    } );
+    card( w, { .title = _( "VEHICLE" ), .summary = std::move( summary ),
+               .summary_color = pal::accent() } );
+    return w;
+}
+
 auto draw_vehicle( const avatar &you, const canvas &area ) -> void
 {
+    if( get_option<bool>( "DRIVING_DASHBOARD" ) ) {
+        auto dash = driving_dashboard::read( you );
+        if( !dash.applicable ) {
+            return;
+        }
+        const auto w = vehicle_card( area, static_cast<int>( dash.body.size() ),
+                                    std::move( dash.summary ) );
+        auto y = 1;
+        for( const auto &row : dash.body ) {
+            if( !row.icon.empty() ) {
+                text( w, point( 2, y ), row.icon_color, row.icon );
+            }
+            text( w, point( 2 + dash.icon_width, y ), row.text_color, row.text );
+            ++y;
+        }
+        return;
+    }
     const auto rows = hud_boxes::vehicle_rows( you );
     if( rows.empty() ) {
         return;
     }
-    const auto height = static_cast<int>( rows.size() ) + 2;
-    hits.push_back( { .at = { .at = point( 0, area.height - height ), .width = 32, .height = height } } );
-    const auto w = panel( area, {
-        .at = point( 0, area.height - height ), .width = 32, .height = height
-    } );
-    card( w, { .title = _( "VEHICLE" ) } );
+    const auto w = vehicle_card( area, static_cast<int>( rows.size() ) );
     for( auto i = 0; i < static_cast<int>( rows.size() ); ++i ) {
         text( w, point( 2, 1 + i ), rows[static_cast<size_t>( i )].color, rows[static_cast<size_t>( i )].text );
     }

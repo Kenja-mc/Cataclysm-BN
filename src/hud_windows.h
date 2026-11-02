@@ -29,12 +29,14 @@ struct state {
     int order = 0;
 };
 
-/// One body row a provider returns.
+/// Shared row for HUD readings and dashboard providers.
 struct window_line {
     std::string icon;
-    nc_color icon_color = c_light_gray;
+    int icon_w;
+    nc_color icon_color;
     std::string text;
-    nc_color text_color = c_light_gray;
+    nc_color text_color;
+    std::string label;
 };
 
 /// Reading shown in the vehicle window.

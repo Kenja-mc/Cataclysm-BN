@@ -317,6 +317,41 @@ letters used to start moved to Shift: `W` crew, `A` label, `S` siphon, `D` unloa
 Clicks select vehicle parts and overview rows or use the displayed action and tab labels. The
 existing hints and mouse wheel scroll the descriptions and parts list.
 
+**Driving dashboard** (Options → Interface → Driving dashboard, `DRIVING_DASHBOARD`; issue #21)
+is off by default in both terminal and tiles builds. Turning it on expands Fusion's existing
+32-column **Vehicle** card, or the floating **Vehicle** window in the legacy labels/grouped
+layouts, while driving or remote-controlling. Leaving it off preserves the compact reading.
+Classic and compact layouts keep their existing panels regardless of this option.
+The [native capture comparison](docs/fork/visual-changes.md#driving-dashboard) shows the compact
+and expanded readings on the same car.
+
+The title row owns the speed, its unit and the compass letter; the body owns the speed bar, the
+azimuth, the cruise state and target, the engine state, both tanks and the aircraft row, so no
+value is printed twice. A remote-controlled vehicle adds a **Remote control** row. Vehicles with
+a `WING` part add `Takeoff  55 mph no lift`; it becomes `lift` once the current speed reaches the
+number, using the speed unit from Options. A wing that cannot lift the vehicle reports `no lift`
+at any speed.
+
+Every state is a word or shape as well as a colour: the cruise line says `On`/`Off` and names its
+target, the engine line says `On`/`Off` and marks strain with `!`, `!!` or `!!!`, fuel and battery
+rows say `low` or `empty` beside a filled bar, and the takeoff row says `lift`/`no lift`. The speed
+bar fills toward the vehicle's safe speed; above it the row turns yellow and gains the `!`
+marker. A
+collapsed window keeps the one-line reading `<speed> <unit> <compass>`.
+
+Fusion keeps these instruments in its existing 32-column lower-left card, using the same
+glyphs, labels and palette as its other cards. Fusion is active at 140×36 or larger; at 80×25,
+selecting Fusion falls back to grouped. The legacy floating window remains movable,
+collapsible and hideable in Sidebar Options; its collapsed title keeps the compact summary.
+**Floating HUD windows** controls that legacy window, not Fusion's card. Disabling the floating
+window or losing room restores the existing fixed readout rather than covering other windows.
+At 80×25 check the grouped fallback, leaving the avatar and vital readings visible.
+
+This is a presentation option only: driving controls, configured speed units and action time
+costs do not change. Remote-control and aircraft readings remain available. Bar glyphs and words
+carry the meaning with colours off, in terminal and tiles builds. The dashboard adds no artwork:
+it uses the existing HUD compass, fuel and battery glyphs and text, not copied or generated art.
+
 A **Controls** strip at the bottom of the sidebar shows the most used keys. `? all keys` stays
 near the movement hints, and up to three rows keep the other hints visible. It reads live keybindings,
 so action hints stay correct if you rebind them. On a terminal too short for three rows the strip
@@ -566,8 +601,8 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   is the bottom-right window (the `HUD_VEHICLE_BOX` option seeds the corner and visibility); when
   the layout is off or a fixed layout is selected it is the old map box or sidebar panel. The
   Vehicle sidebar panel steps aside only when the window/box fits; disabling it or losing room
-  restores that panel. The window's reading is a replaceable provider so a future driving
-  dashboard can take it over. Native tiles readouts are unchanged.
+  restores that panel. The optional **Driving dashboard** expands Fusion's Vehicle card and the
+  legacy floating window; with it off, this compact reading remains available.
   Speed, azimuth and fuel values stay readable at the minimum supported 80 × 25 terminal size.
 - **Smooth vehicle rotation** (Options → Graphics, tiles only): a vehicle that faces a direction
   other than north, south, east or west is drawn as one rotated vehicle. Each of its parts is

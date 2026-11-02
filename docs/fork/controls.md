@@ -340,6 +340,7 @@ The `i` inventory and the action menu of a selected item.
 | Previous column | <kbd>A</kbd>, <kbd>←</kbd>, <kbd>Numpad 4</kbd> | <kbd>H</kbd>, <kbd>←</kbd>, <kbd>4</kbd>, <kbd>Numpad 4</kbd> |
 | Craft | <kbd>F5</kbd> | — |
 | Advanced inventory | <kbd>Tab</kbd> | — |
+| Set pickup count | <kbd>#</kbd> | — |
 
 ### Picking up
 
@@ -357,6 +358,7 @@ The pickup list (`g` on a pile, `Ctrl+G`).
 | Wear selected item | <kbd>Shift</kbd>+<kbd>W</kbd> | <kbd>Shift</kbd>+<kbd>W</kbd> |
 | Wield selected item | <kbd>H</kbd> | <kbd>W</kbd> |
 | Confirm Choice | <kbd>G</kbd>, <kbd>Enter</kbd>, <kbd>Space</kbd> | <kbd>Enter</kbd> |
+| Set pickup count | <kbd>#</kbd> | — |
 
 ### Advanced inventory
 

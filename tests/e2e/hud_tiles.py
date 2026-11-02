@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Verify native HUD overlay placement and full weather facts at both sidebar origins."""
+"""Verify native HUD overlay placement, full weather facts and the driving dashboard."""
 import argparse
 import json
 import shutil
 import tempfile
 from pathlib import Path
 
+from driving_dashboard_native import build_driving_dashboard_world, case_driving_dashboard
 from tiles import ROOT, Session, frame_rgb, require
 
 
@@ -30,10 +31,16 @@ def check_hud(session):
     config.write_text(json.dumps([{"current_layout_id": "classic", "layouts": []}]))
     observations = {}
     for side in ("right", "left"):
-        origin = 0 if side == "right" else 44 * 8
-        edge = origin + (132 - 44) * 8
         opts = {**options, "SIDEBAR_POSITION": side}
         off = session.launch(f"{side}-off", opts)
+        # Read the terminal size from the capture: TERMINAL_X/Y are physical font cells and the
+        # window size has changed before (60-row runs made a hardcoded height lie).
+        width, height, _ = frame_rgb(off)
+        require(width % 8 == 0 and height % 16 == 0,
+                f"{side}: unexpected capture size {width}x{height}")
+        cols = width // 8
+        origin = 0 if side == "right" else 44 * 8
+        edge = origin + (cols - 44) * 8
         for corner in ("top_left", "bottom_right"):
             label = f"{side}-{corner}"
             on = session.launch(label, {**opts, "HUD_WEATHER_BOX": corner})
@@ -44,10 +51,23 @@ def check_hud(session):
             if corner == "top_left":
                 require((x0, y0) == (origin, 0), f"{label}: wrong terrain origin: {(x0, y0)}")
             else:
-                require((x1, y1) == (edge - 1, 60 * 16 - 1),
+                require((x1, y1) == (edge - 1, height - 1),
                         f"{label}: wrong bottom-right position: {(x1, y1)}")
             require(x1 - x0 < (edge - origin) // 2 + 32, f"{label}: HUD covered too much map")
             observations[label] = [x0, y0, x1, y1]
+    return observations
+
+
+class DashboardSession(Session):
+    """Use the same real saved-car fixture as the registered native dashboard case."""
+
+    def build_world(self):
+        build_driving_dashboard_world(self)
+
+
+def check_dashboard(session):
+    failures, observations = case_driving_dashboard(session)
+    require(not failures, "\n".join(failures))
     return observations
 
 
@@ -63,13 +83,24 @@ def main():
     artifacts.mkdir(parents=True, exist_ok=True)
     work = Path(tempfile.mkdtemp(prefix="bn-hud-tiles-"))
     session = Session(args, work, artifacts)
+    dashboard = DashboardSession(args, work / "dashboard", artifacts / "dashboard")
+    dashboard.artifacts.mkdir(parents=True, exist_ok=True)
     try:
         session.start()
         session.build_world()
         observations = check_hud(session)
+        # Close the first session before the second replaces TMUX_TMPDIR, so each tmux server is
+        # stopped from its own environment.  The saved world stays on disk.
+        session.close()
+        # A second fixture starts with the avatar in a spawned car; its world is separate so the
+        # weather captures keep their clear map.
+        dashboard.start()
+        dashboard.build_world()
+        observations["dashboard"] = check_dashboard(dashboard)
         (artifacts / "result.json").write_text(json.dumps(observations, indent=2))
-        print(f"PASS tiles HUD corners and weather facts: {artifacts}")
+        print(f"PASS tiles HUD corners, weather facts and driving dashboard: {artifacts}")
     finally:
+        dashboard.close()
         session.close()
         shutil.rmtree(work)
 

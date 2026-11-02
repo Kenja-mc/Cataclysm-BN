@@ -14,8 +14,11 @@ def open_action_menu(game, category, action):
         action_menu(game, category, action)
 
 
-def remote_vehicle_game(name, **options):
-    game = Game(name=name, options={"SAFEMODE": "false", **options})
+def remote_vehicle_game(name: str, *, layout: str = "labels", cols: int = 140,
+                        rows: int = 45, **options: str) -> Game:
+    # Dashboard callers opt in without changing this compact regression fixture.
+    game = Game(name=name, layout=layout, cols=cols, rows=rows,
+                options={"SAFEMODE": "false", "HUD_WINDOWS": "false", **options})
     try:
         start_new_game(game)
         game.define_lua(HELPERS)

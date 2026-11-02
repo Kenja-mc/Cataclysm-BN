@@ -226,14 +226,7 @@ auto weather_icon( const std::string &id ) -> icon
     return is_night( calendar::turn ) ? icon::moon : icon::sun;
 }
 
-struct line {
-    std::string icon;
-    int icon_w;
-    nc_color icon_color;
-    std::string text;
-    nc_color text_color;
-    std::string label;
-};
+using line = hud_windows::window_line;
 
 auto time_text( const avatar &you ) -> std::string
 {
@@ -1097,21 +1090,15 @@ auto vehicle_content( const avatar &you, const std::string &icons ) -> content
     auto out = content{
         .id = vehicle_id, .name = _( "Vehicle" )
     };
-    if( vehicle_body_provider ) {
-        const auto reading = vehicle_body_provider( you );
+    if( vehicle_body_provider && get_option<bool>( "DRIVING_DASHBOARD" ) ) {
+        auto reading = vehicle_body_provider( you );
         out.applicable = reading.applicable;
         if( !out.applicable ) {
             return out;
         }
-        out.summary = reading.summary;
+        out.summary = std::move( reading.summary );
         out.icon_width = reading.icon_width;
-        for( const auto &row : reading.body ) {
-            out.body.push_back( {
-                .icon = row.icon, .icon_w = utf8_width( row.icon ),
-                .icon_color = row.icon_color, .text = row.text,
-                .text_color = row.text_color
-            } );
-        }
+        out.body = std::move( reading.body );
         return out;
     }
     const auto state = current_vehicle( you );
