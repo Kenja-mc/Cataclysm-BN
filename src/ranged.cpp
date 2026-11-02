@@ -2163,6 +2163,15 @@ static double confidence_estimate( int range, double target_size,
     return 1 / ( max_lateral_offset / target_size );
 }
 
+/// The same number the aim row prints for @p aim_level; the cursor label reuses it.
+static auto hit_chance_percent( const int range, const double target_size,
+                                const dispersion_sources &dispersion,
+                                const double aim_level ) -> int
+{
+    return std::min<int>( 100, 100.0 * aim_level * confidence_estimate( range, target_size,
+                         dispersion ) );
+}
+
 static std::vector<ranged::aim_type> get_default_aim_type()
 {
     std::vector<ranged::aim_type> aim_types;
@@ -2280,7 +2289,10 @@ static int print_ranged_chance( const catacurses::window &w, int line_number,
         int moves_to_fire = cost_fun( type );
         const int advance = advance_fun ? advance_fun( type ) : 0;
         const std::string advance_text = advance > 0
-                                         ? string_format( _( " <color_yellow>(~%d tiles)</color>" ), advance )
+                                         ? " <color_yellow>" +
+                                           string_format( vgettext( "(~%d tile)", "(~%d tiles)",
+                                                   static_cast<size_t>( advance ) ), advance ) +
+                                           "</color>"
                                          : std::string();
 
         auto hotkey = front_or( type.action.empty() ? "FIRE" : type.action, ' ' );
@@ -2307,7 +2319,8 @@ static int print_ranged_chance( const catacurses::window &w, int line_number,
             if( panel_type == "compact" || panel_type == "labels-narrow" ) {
                 int last_chance = 0;
                 for( const confidence_rating &cr : confidence_config ) {
-                    int chance = std::min<int>( 100, 100.0 * ( cr.aim_level ) * confidence ) - last_chance;
+                    int chance = hit_chance_percent( range, target_size, current_dispersion,
+                                                     cr.aim_level ) - last_chance;
                     last_chance += chance;
                     t_confidence[conf_iter] = string_format( "<color_%s>%3d%%</color>", cr.color, chance );
                     conf_iter++;
@@ -2321,7 +2334,8 @@ static int print_ranged_chance( const catacurses::window &w, int line_number,
                 std::string confidence_s = enumerate_as_string( confidence_config.begin(), confidence_config.end(),
                 [&]( const confidence_rating & config ) {
                     // TODO: Consider not printing 0 chances, but only if you can print something (at least miss 100% or so)
-                    int chance = std::min<int>( 100, 100.0 * ( config.aim_level * confidence ) ) - last_chance;
+                    int chance = hit_chance_percent( range, target_size, current_dispersion,
+                                                     config.aim_level ) - last_chance;
                     last_chance += chance;
                     return string_format( "%s: <color_%s>%3d%%</color>", pgettext( "aim_confidence",
                             config.label.c_str() ), config.color, chance );
@@ -4059,11 +4073,12 @@ void target_ui::refresh_shot_preview()
                                      join_names( behind ) ) );
     }
 
-    const int shots = std::max( 1, relevant->gun_current_mode().qty );
+    const item &selected_weapon = *relevant->gun_current_mode();
+    const int shots = std::max( 1, selected_weapon.gun_current_mode().qty );
     const int at_recoil = aim_mode->has_threshold ? aim_mode->threshold :
                           static_cast<int>( predicted_recoil );
     const dispersion_sources selected_dispersion = calculate_dispersion(
-                here, *you, *relevant->gun_current_mode(), at_recoil, shots > 1 );
+                here, *you, selected_weapon, at_recoil, shots > 1 );
     const double cap = units::to_radians( ranged_rules::capped_miss_angle(
                            units::from_arcmin( selected_dispersion.max() ) ) );
     const double base_angle = std::atan2( static_cast<double>( dst.y() - src.y() ),
@@ -4108,15 +4123,23 @@ void target_ui::refresh_shot_preview()
 
     if( dst_critter != nullptr ) {
         const double target_size = dst_critter->ranged_target_size();
-        const double confidence = confidence_estimate( rl_dist( src, dst ), target_size,
-                                   selected_dispersion );
-        const int chance = std::min<int>( 100, 100.0 * accuracy_grazing * confidence );
+        const int chance = hit_chance_percent( rl_dist( src, dst ), target_size,
+                                               selected_dispersion, accuracy_grazing );
         const std::string mode_name = aim_mode->name.empty() ? _( "Immediate" ) : aim_mode->name;
-        const item &weapon = *relevant->gun_current_mode();
+        // The aim row is priced from the recoil left after aiming to its threshold.
+        double row_recoil = predicted_recoil;
+        if( aim_mode->has_threshold && aim_mode->threshold < row_recoil ) {
+            do {
+                const double aim_amount = ranged::aim_per_move( *you, *relevant, row_recoil );
+                if( aim_amount > 0 ) {
+                    row_recoil = std::max( row_recoil - aim_amount, 0.0 );
+                }
+            } while( row_recoil > aim_mode->threshold && row_recoil - sight_dispersion > 0 );
+        }
         item *load_loc = activity->reload_loc ? &*activity->reload_loc : nullptr;
-        const int moves = ranged::gun_engagement_moves( *you, weapon, at_recoil,
-                          static_cast<int>( predicted_recoil ) ) +
-                          ranged::time_to_attack( *you, weapon, load_loc );
+        const int moves = ranged::gun_engagement_moves( *you, selected_weapon, at_recoil,
+                          static_cast<int>( row_recoil ) ) +
+                          ranged::time_to_attack( *you, selected_weapon, load_loc );
         next.aim_label = shot_preview::mark{
             .pos = dst,
             .severity = chance,

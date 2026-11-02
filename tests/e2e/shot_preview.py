@@ -5,7 +5,7 @@ from pathlib import Path
 
 from aim_reticle import action_clock
 from fixtures import shared_game
-from helpers import HELPERS, arena, bub_pos, settle, wait_until
+from helpers import HELPERS, arena, bub_pos, choose_menu_entry, settle, wait_until
 from map_mouse import firing_target_panel, mouse_view
 
 BASE = {
@@ -13,10 +13,17 @@ BASE = {
     "CONTROL_SCHEME": "modern",
     "ARROW_KEY_AIM": "true",
     "SHOT_PREVIEW": "true",
+    "ACCURACY_DISPLAY": "numbers",
 }
 GUN = ("GUN=gapi.get_avatar():create_item(ItypeId.new('model_10_revolver'),-1) "
        "GUN:ammo_set(ItypeId.new('38_special'),6) out(gapi.get_avatar():wield(GUN))")
 WIPE = ("for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end out('ok')")
+NIGHTVISION = ("gapi.get_avatar():set_mutation(MutationBranchId.new('DEBUG_NIGHTVISION')) "
+               "out('ok')")
+# A straight, lit lane east of the player: the targets must be seen for the reticle to pick them.
+LANE = ("for dx=0,7 do for dy=-2,2 do local p=here(dx,dy) "
+        "M:set_ter_at(p,TerId.new('t_floor'):int_id()) "
+        "M:set_furn_at(p,FurnId.new('f_null'):int_id()) M:clear_items_at(p) end end out('ok')")
 
 
 def profile(**extra):
@@ -26,6 +33,9 @@ def profile(**extra):
 def scene(game):
     arena(game)
     assert game.lua(WIPE) == ["ok"]
+    settle(game)
+    assert game.lua(NIGHTVISION) == ["ok"]
+    assert game.lua(LANE) == ["ok"]
     settle(game)
     assert game.lua(GUN) == ["true"]
     settle(game)
@@ -40,10 +50,18 @@ def clear_furniture(game):
                     "M:set_furn_at(here(dx,dy),FurnId.new('f_null'):int_id()) end end out('ok')") == ["ok"]
 
 
-def spawn(game, dx, dy, monster="mon_zombie"):
-    assert game.lua(f"local m=gapi.place_monster_at(MonsterTypeId.new('{monster}'),here({dx},{dy})) "
-                    f"m:set_hp(1000) out(m ~= nil)") == ["true"]
+def spawn(game, name, dx, dy, monster="mon_zombie"):
+    assert game.lua(
+        f"{name}=gapi.place_monster_at(MonsterTypeId.new('{monster}'),here({dx},{dy})) "
+        f"{name}:set_hp(1000) {name}:set_moves(-1000000) out({name} ~= nil)") == ["true"]
     settle(game)
+
+
+def pin(game, *placements):
+    """Put creatures back on their tiles, unable to act, right before aiming."""
+    code = " ".join(f"{name}:set_pos_ms(here({dx},{dy})) {name}:set_moves(-1000000)"
+                    for name, dx, dy in placements)
+    assert game.lua(code + " out('ok')") == ["ok"]
 
 
 def overlays(game, kind):
@@ -52,6 +70,52 @@ def overlays(game, kind):
     except (OSError, ValueError):
         return []
     return [entry for entry in state.get("map_overlays", []) if entry.get("kind") == kind]
+
+
+def panel_until(game, pattern, timeout=20):
+    """Read the firing window until it shows @p pattern; the window may lag the key."""
+    last = {"panel": ""}
+
+    def check():
+        try:
+            last["panel"] = firing_target_panel(game)
+        except AssertionError:
+            return False
+        return re.search(pattern, last["panel"]) is not None
+
+    if not wait_until(check, timeout=timeout):
+        raise AssertionError(f"the firing window never showed {pattern!r}:\n"
+                             + last["panel"] + "\n" + game.screen())
+    return last["panel"]
+
+
+def panel_gone(game, pattern, timeout=20):
+    """Wait until the firing window no longer shows @p pattern."""
+    def check():
+        try:
+            return re.search(pattern, firing_target_panel(game)) is None
+        except AssertionError:
+            return True
+
+    assert wait_until(check, timeout=timeout), \
+        f"the firing window kept showing {pattern!r}\n" + game.screen()
+
+
+def mouse_view_until(game, pattern, timeout=20):
+    """Read the Mouse View box until it shows @p pattern."""
+    last = {"view": ""}
+
+    def check():
+        try:
+            last["view"] = mouse_view(game)
+        except AssertionError:
+            return False
+        return re.search(pattern, last["view"]) is not None
+
+    if not wait_until(check, timeout=timeout):
+        raise AssertionError(f"the Mouse View box never showed {pattern!r}:\n"
+                             + last["view"] + "\n" + game.screen())
+    return last["view"]
 
 
 def open_aim_on_empty(game, dx):
@@ -68,6 +132,7 @@ def open_aim_on_nearest(game):
     game.keys("Right", delay=0.6)
     game.keys("f", delay=1.0)
     game.wait_for("< Firing ", timeout=30)
+    panel_until(game, r"Targets: [1-9]")
 
 
 def aim_rows(panel):
@@ -119,18 +184,15 @@ def test_creatures_in_the_way_and_behind(_g):
     with shared_game("bn-e2e-shot-line", options=profile(), define=HELPERS,
                      userdir=userdir, state_path=userdir / "state.json") as game:
         scene(game)
-        spawn(game, 2, 0)
-        spawn(game, 3, 0)
+        spawn(game, "A", 4, 0)
+        spawn(game, "B", 5, 0)
+        pin(game, ("A", 4, 0), ("B", 5, 0))
         open_aim_on_nearest(game)
-        panel = firing_target_panel(game)
-        assert "Behind: zombie" in panel, \
-            "the far hostile must be listed behind the near target:\n" + panel
+        panel = panel_until(game, r"Behind: (?:the |a )?zombie")
 
         game.keys("Right", delay=0.6)
-        panel = firing_target_panel(game)
-        assert "In the way: zombie" in panel, \
-            "the near hostile must be listed in the way of a shot past it:\n" + panel
-        assert "Behind:" not in panel, "no hostile stands past the far target:\n" + panel
+        panel = panel_until(game, r"In the way: (?:the |a )?zombie")
+        panel_gone(game, r"Behind:")
         game.keys("Escape", delay=0.6)
 
 
@@ -139,23 +201,19 @@ def test_stray_cone_narrows_with_the_aim_mode(_g):
     with shared_game("bn-e2e-shot-strays", options=profile(), define=HELPERS,
                      userdir=userdir, state_path=userdir / "state.json") as game:
         scene(game)
-        spawn(game, 3, 0)
-        spawn(game, 3, 1)
+        spawn(game, "A", 5, 0)
+        spawn(game, "B", 5, 2)
+        pin(game, ("A", 5, 0), ("B", 5, 2))
         open_aim_on_nearest(game)
-        panel = firing_target_panel(game)
-        assert "Strays may hit: zombie" in panel, \
-            "the hostile beside the target must be a stray at Immediate aim:\n" + panel
+        panel_until(game, r"Strays may hit:.*(?:the |a )?zombie")
         assert overlays(game, "stray_tile"), "the stray cone left no map tiles\n" + game.screen()
 
-        game.keys("s", delay=0.8)
+        # Modern binds the aim mode menu to m; s moves the cursor south.
+        game.keys("m", delay=0.8)
         game.wait_for("Select preferences", timeout=20)
-        for _ in range(4):
-            game.keys("Down", delay=0.2)
-        game.keys("Enter", delay=0.8)
-        panel = firing_target_panel(game)
-        assert "Precise" in panel, "the aim window came back without the Precise row:\n" + panel
-        assert "Strays may hit" not in panel, \
-            "a Precise cone must drop the hostile beside the target:\n" + panel
+        choose_menu_entry(game, "Precise")
+        panel = panel_until(game, r"Precise Aim:")
+        panel_gone(game, r"Strays may hit")
         game.keys("Escape", delay=0.6)
 
 
@@ -164,17 +222,18 @@ def test_advance_estimate_on_the_aim_rows(_g):
     with shared_game("bn-e2e-shot-advance", options=profile(), define=HELPERS,
                      userdir=userdir, state_path=userdir / "state.json") as game:
         scene(game)
-        spawn(game, 4, 0, "mon_zombie_dancer")
+        spawn(game, "A", 5, 0, "mon_zeer")
+        pin(game, ("A", 5, 0))
         open_aim_on_nearest(game)
-        panel = firing_target_panel(game)
+        panel = panel_until(game, r"Precise Aim:")
         precise = next((line for line in panel.splitlines() if "Precise Aim:" in line), None)
         current = next((line for line in panel.splitlines() if "Current Aim:" in line), None)
         assert precise, "the aim window has no Precise row:\n" + panel
         assert current, "the aim window has no Immediate row:\n" + panel
-        advance = re.search(r"\(~(\d+) tiles\)", precise)
+        advance = re.search(r"\(~(\d+) tiles?\)", precise)
         assert advance and int(advance.group(1)) >= 1, \
             "the fast target must cross at least a tile while aiming precisely:\n" + panel
-        assert "tiles)" not in current, \
+        assert not re.search(r"\(~\d+ tiles?\)", current), \
             "an Immediate shot takes no aiming time to advance during:\n" + panel
         game.keys("Escape", delay=0.6)
 
@@ -184,14 +243,15 @@ def test_hit_label_matches_the_selected_row(_g):
     with shared_game("bn-e2e-shot-label", options=profile(), define=HELPERS,
                      userdir=userdir, state_path=userdir / "state.json") as game:
         scene(game)
-        spawn(game, 3, 0)
+        spawn(game, "A", 4, 0)
+        pin(game, ("A", 4, 0))
         open_aim_on_nearest(game)
-        panel = firing_target_panel(game)
+        panel = panel_until(game, r"Current Aim: Moves to fire: \d+")
         rows = aim_rows(panel)
         assert "Current" in rows, "the selected Immediate row is missing:\n" + panel
         moves, chance = rows["Current"]
 
-        view = mouse_view(game)
+        view = mouse_view_until(game, r"Immediate: \d+% hit, \d+ moves")
         label = re.search(r"Immediate: (\d+)% hit, (\d+) moves", view)
         assert label, "the Mouse View box lacks the aim label:\n" + view
         assert int(label.group(1)) == chance, \
@@ -200,7 +260,7 @@ def test_hit_label_matches_the_selected_row(_g):
             f"the label's {label.group(2)} moves must equal the row's {moves}\n{view}"
 
         labelled = overlays(game, "aim_label")
-        assert labelled and str(chance) in labelled[0]["label"], \
+        assert labelled and re.search(rf"\b{chance}% hit", labelled[0]["label"]), \
             "the state file does not carry the aim label\n" + game.screen()
         game.keys("Escape", delay=0.6)
 
@@ -210,24 +270,25 @@ def test_click_retargets_then_fires(_g):
     with shared_game("bn-e2e-shot-click", options=profile(), define=HELPERS,
                      userdir=userdir, state_path=userdir / "state.json") as game:
         scene(game)
-        spawn(game, 3, 0)
-        spawn(game, 4, 0)
+        spawn(game, "A", 4, 0)
+        spawn(game, "B", 5, 0)
+        pin(game, ("A", 4, 0), ("B", 5, 0))
         open_aim_on_nearest(game)
-        assert "Range: 3/" in firing_target_panel(game), game.screen()
+        panel_until(game, r"Range: 4/")
 
         player = bub_pos(game)
         origin = game.find("@")
         assert origin, game.screen()
         clock = action_clock(game)
-        game.click(origin[0] + 4, origin[1])
+        # Modern binds the target button to the right mouse button.
+        game.click(origin[0] + 5, origin[1], button=2)
         assert bub_pos(game) == player, "retargeting must not move the player"
         assert action_clock(game) == clock, "retargeting must spend no moves"
-        assert "Range: 4/" in firing_target_panel(game), \
-            "the click must move the cursor to the other hostile:\n" + game.screen()
+        panel_until(game, r"Range: 5/")
 
-        game.click(origin[0] + 4, origin[1])
+        game.click(origin[0] + 5, origin[1])
         assert wait_until(lambda: action_clock(game) > clock, timeout=20), \
-            "a second click on the current target must fire\n" + game.screen()
+            "a click on the current target must fire\n" + game.screen()
         assert game.lua("out(GUN:ammo_remaining())") == ["5"], "the shot did not spend ammo"
 
 
@@ -236,7 +297,8 @@ def test_damage_and_ap_match_the_item_info(_g):
     with shared_game("bn-e2e-shot-damage", options=profile(), define=HELPERS,
                      userdir=userdir, state_path=userdir / "state.json") as game:
         scene(game)
-        spawn(game, 3, 0)
+        spawn(game, "A", 4, 0)
+        pin(game, ("A", 4, 0))
         open_aim_on_nearest(game)
         panel = firing_target_panel(game)
         shown = re.search(r"Damage: (\d+)\s+Armor-pierce: (\d+)", panel)
