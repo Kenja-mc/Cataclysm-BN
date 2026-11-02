@@ -151,6 +151,28 @@ static const std::array<std::string, 14> TILE_CATEGORY_IDS = {{
 namespace
 {
 
+/// Exact clockwise rotation, in degrees from north, for a single sprite whose heading is
+/// `heading` degrees clockwise from east.  Nullopt for headings that are a multiple of 90
+/// degrees, where the rotation the tileset authored is already exact.
+auto exact_sprite_rotation( const int heading ) -> std::optional<int>
+{
+    const auto degrees = ( ( heading % 360 ) + 360 ) % 360;
+    if( degrees % 90 == 0 ) {
+        return std::nullopt;
+    }
+    return ( degrees + 90 ) % 360;
+}
+
+/// Scale for a single sprite drawn rotated by an exact angle.  The parts of a vehicle that
+/// faces a diagonal direction sit on a sheared grid, so the sprite is enlarged just enough
+/// to reach the neighbouring part and close the gap between them.
+auto exact_rotation_scale( const int degrees ) -> float
+{
+    const auto angle = units::from_degrees( degrees );
+    const auto reach = std::max( std::abs( units::cos( angle ) ), std::abs( units::sin( angle ) ) );
+    return reach > 0.0 ? static_cast<float>( 1.0 / reach ) : 1.0f;
+}
+
 std::string get_ascii_tile_id( const uint32_t sym, const int FG, const int BG )
 {
     return std::string( { 'A', 'S', 'C', 'I', 'I', '_', static_cast<char>( sym ), static_cast<char>( FG ), static_cast<char>( BG ) } );
@@ -415,6 +437,7 @@ cata_tiles::~cata_tiles() = default;
 void cata_tiles::on_options_changed()
 {
     memory_map_mode = get_option <std::string>( "MEMORY_MAP_MODE" );
+    vehicle_smooth_rotation = get_option<bool>( "VEHICLE_SMOOTH_ROTATION" );
 
     pixel_minimap_settings settings;
 
@@ -4610,6 +4633,7 @@ bool cata_tiles::draw_from_id_string(
     bool seed_for_animation = has_variations && variations_enabled && display_tile.animated;
     bool seed_from_map_coords = false;
     int true_rota = tile.rota;
+    std::optional<int> exact_rota;
 
     // seed the PRNG to get a reproducible random int
     // TODO: faster solution here
@@ -4658,6 +4682,13 @@ bool cata_tiles::draw_from_id_string(
             // rotation (0=N,1=W,etc)
             tileray face = tileray( units::from_degrees( true_rota ) );
             true_rota = 3 - face.dir4();
+
+            // A vehicle that faces a diagonal direction is drawn as a staircase of axis-aligned
+            // parts.  Rotating each part by the exact heading, which only single sprites can do,
+            // makes it read as one vehicle instead.
+            if( vehicle_smooth_rotation && !tile_iso && display_tile.rotates ) {
+                exact_rota = exact_sprite_rotation( tile.rota );
+            }
 
         }
         break;
@@ -4780,6 +4811,7 @@ bool cata_tiles::draw_from_id_string(
             .loc_rand = loc_rand,
             .is_fg = true,
             .rota = true_rota,
+            .exact_rota = exact_rota,
             .tint = fg_tint,
             .ll = ll,
             .apply_visual_effects = apply_visual_effects,
@@ -4799,6 +4831,7 @@ bool cata_tiles::draw_from_id_string(
         .loc_rand = loc_rand,
         .is_fg = true,
         .rota = true_rota,
+        .exact_rota = exact_rota,
         .tint = fg_tint,
         .ll = ll,
         .apply_visual_effects = apply_visual_effects,
@@ -4839,7 +4872,7 @@ void cata_tiles::draw_om_tile_recursively( const tripoint_abs_omt omp, const std
 
 auto cata_tiles::draw_sprite_at( const sprite_draw_options &params ) -> bool
 {
-    const auto &[tile, p, loc_rand, is_fg, rota, tint, ll, apply_visual_effects,
+    const auto &[tile, p, loc_rand, is_fg, rota, exact_rota, tint, ll, apply_visual_effects,
                  overlay_count, height_3d, retract, warp_hash, light_tint] = params;
 
 
@@ -4954,6 +4987,18 @@ auto cata_tiles::draw_sprite_at( const sprite_draw_options &params ) -> bool
         tileset_ptr->get_tile_width() ) + warp_offset_screen_y;
     destination.w = width * tile_width * tile.pixelscale / tileset_ptr->get_tile_width();
     destination.h = height * tile_height * tile.pixelscale / tileset_ptr->get_tile_height();
+
+    // A sprite drawn at an angle keeps its own size, so a part of a diagonal vehicle is grown
+    // just enough to reach the neighbouring part instead of leaving a gap.
+    if( rotate_sprite && exact_rota.has_value() ) {
+        const auto scale = exact_rotation_scale( *exact_rota );
+        const auto grow_x = static_cast<int>( ( destination.w * scale - destination.w ) / 2.0f );
+        const auto grow_y = static_cast<int>( ( destination.h * scale - destination.h ) / 2.0f );
+        destination.x -= grow_x;
+        destination.y -= grow_y;
+        destination.w += 2 * grow_x;
+        destination.h += 2 * grow_y;
+    }
     const auto should_apply_light_tint = light_tint.has_value() &&
                                          ( fx_type == tileset_fx_type::none ||
                                            fx_type == tileset_fx_type::shadow );
@@ -5005,7 +5050,10 @@ auto cata_tiles::draw_sprite_at( const sprite_draw_options &params ) -> bool
     };
 
     int ret = 0;
-    if( rotate_sprite ) {
+    if( rotate_sprite && exact_rota.has_value() ) {
+        // Drawn at the exact heading instead of the closest angle the tileset authored.
+        ret = render( *exact_rota, SDL_FLIP_NONE );
+    } else if( rotate_sprite ) {
         switch( rota ) {
             default:
             case 0:
@@ -5103,6 +5151,7 @@ auto cata_tiles::draw_tile_at( const sprite_draw_options &params,
         .loc_rand = params.loc_rand,
         .is_fg = false,
         .rota = params.rota,
+        .exact_rota = params.exact_rota,
         .tint = bg_tint,
         .ll = params.ll,
         .apply_visual_effects = params.apply_visual_effects,

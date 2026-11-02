@@ -6,6 +6,14 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 ## 2026-11-01
 
+### Added
+
+- **Smooth vehicle rotation** (Options → Graphics, tiles only): a vehicle that drives at a
+  direction other than north, south, east or west is drawn as one rotated vehicle. Each of its
+  parts is turned by the exact heading and grown just enough to reach the part next to it, which
+  replaces the staircase of axis-aligned sprites. Tilesets that draw their own directional
+  sprites keep them and isometric tilesets are unchanged.
+
 ### Changed
 
 - Fusion HUD: the STATUS card and the LOADOUT deck moved into the sidebar column, so the map keeps

@@ -19,6 +19,7 @@ Usage:
   python3 tests/e2e/tiles.py zoom [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py overmap [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py known_locks [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
+  python3 tests/e2e/tiles.py vehicle_rotation [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
 
 --root is the game tree (data and the curses build); --binary is the tiles executable.
 Artifacts (window captures, marker crops, logs, fixture asserts, result.json) stay in --out.
@@ -1487,9 +1488,13 @@ def case_menu_drag(session):
     return [], {"scrollbar": {"column": column, "rows": [first, last]}}
 
 
+from vehicle_rotation import case_vehicle_rotation  # noqa: E402
+
+
 CASES = {"minimap": case_minimap, "mouse": case_mouse, "side_buttons": case_side_buttons,
          "sound_menu": case_sound_menu, "zoom": case_zoom, "overmap": case_overmap,
-         "known_locks": case_known_locks, "menu_drag": case_menu_drag}
+         "known_locks": case_known_locks, "menu_drag": case_menu_drag,
+         "vehicle_rotation": case_vehicle_rotation}
 
 
 def main(argv=None):
@@ -1513,6 +1518,9 @@ def main(argv=None):
         if args.case == "known_locks":
             from known_locks import build_known_lock_world
             build_known_lock_world(session)
+        elif args.case == "vehicle_rotation":
+            from vehicle_rotation import build_vehicle_rotation_world
+            build_vehicle_rotation_world(session)
         else:
             session.build_world(zoom_ruler=args.case == "zoom")
         failures, report = CASES[args.case](session)

@@ -816,6 +816,9 @@ class cata_tiles
             unsigned int loc_rand;
             bool is_fg;
             int rota;
+            /// Exact clockwise rotation from north in degrees, when a single sprite is drawn
+            /// rotated by the vehicle's own heading instead of the nearest cardinal one.
+            std::optional<int> exact_rota;
             const tint_config &tint;
             lit_level ll;
             bool apply_visual_effects;
@@ -1216,6 +1219,8 @@ class cata_tiles
          */
         bool nv_goggles_activated = false;
         bool env_goggles_activated = false;
+        /// Draw single-sprite vehicle parts rotated by the exact heading of their vehicle.
+        bool vehicle_smooth_rotation = false;
 
         // Active warp hash for character rendering (0 if none)
         size_t active_warp_hash = TILESET_NO_WARP;

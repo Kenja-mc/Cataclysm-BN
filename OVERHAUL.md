@@ -535,6 +535,11 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   restores that panel. The window's reading is a replaceable provider so a future driving
   dashboard can take it over. Native tiles readouts are unchanged.
   Speed, azimuth and fuel values stay readable at the minimum supported 80 × 25 terminal size.
+- **Smooth vehicle rotation** (Options → Graphics, tiles only): a vehicle that faces a direction
+  other than north, south, east or west is drawn as one rotated vehicle. Each of its parts is
+  turned by the exact heading and grown just enough to reach the next part, so the staircase of
+  axis-aligned sprites disappears. Tilesets that draw their own directional sprites keep them,
+  and isometric tilesets are unchanged. Turn it off to get the old axis-aligned drawing.
 - **Body panel** (inspired by Project Zomboid's health screen): the sidebar lists every hurt limb
   and what is wrong with it (bleeding, infected, bitten, broken, bandaged, disinfected).
   **`h`** in Modern, or **Enter → Info → Body status**, opens the full view with every limb's health and what to do
