@@ -43,4 +43,8 @@ playtest *args:
 dev *args:
     bin/dev-iterate.sh "$@"
 
+# Download the latest .po files from Transifex (needs `tx` and TX_TOKEN): just pull-po [LANG,...].
+pull-po *LANGS:
+    tx pull --force --all {{ if LANGS == '' { '' } else { '--languages ' + replace(LANGS, ' ', ',') } }}
+
 check: lint

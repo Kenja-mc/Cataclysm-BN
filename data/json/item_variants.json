@@ -2089,6 +2089,17 @@
         "color": "yellow"
       },
       {
+        "id": "gold_chain",
+        "name": { "str": "gold chain necklace" },
+        "description": "A shiny, small chain made of tiny links of gold, worn around the neck as jewelery.  You can wear it if you like, but it won't provide any effects.",
+        "weight": 233,
+        "price_multiplier": 1.67,
+        "looks_like": "gold_necklace",
+        "material": [ "gold" ],
+        "components": [ [ "gold_small", 1 ] ],
+        "color": "yellow"
+      },
+      {
         "id": "opal_gold_pendant_necklace",
         "name": { "str": "opal and gold pendant necklace" },
         "description": "A shiny, gold necklace adorned with an opal pendant.  You can wear it if you like, but it won't provide any effects.",

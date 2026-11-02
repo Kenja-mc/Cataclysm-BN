@@ -162,6 +162,7 @@
     "flags": [ "SUPER_FANCY" ]
   },
   {
+
     "id": "gold_watch",
     "type": "ARMOR",
     "name": { "str": "gold watch", "str_pl": "gold watches" },

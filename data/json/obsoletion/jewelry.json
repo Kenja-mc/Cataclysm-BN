@@ -996,6 +996,12 @@
     "variant": "gold_necklace"
   },
   {
+    "id": "gold_chain",
+    "type": "MIGRATION",
+    "replace": "jewelry_necklace",
+    "variant": "gold_chain"
+  },
+  {
     "id": "gold_ring",
     "type": "MIGRATION",
     "replace": "jewelry_ring",

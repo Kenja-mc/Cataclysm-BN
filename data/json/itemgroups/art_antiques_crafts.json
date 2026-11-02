@@ -14,6 +14,7 @@
       { "item": "tricorne", "prob": 3 },
       { "item": "jewelry_bracelet", "prob": 8, "variant": "gold_bracelet" },
       { "item": "jewelry_necklace", "prob": 8, "variant": "gold_necklace" },
+      { "item": "jewelry_necklace", "prob": 8, "variant": "gold_chain" },
       { "item": "jewelry_locket", "prob": 3, "variant": "gold_locket" },
       { "item": "jewelry_ring", "prob": 8, "variant": "gold_ring" },
       { "item": "jewelry_earrings", "prob": 8, "variant": "gold_ear" },
