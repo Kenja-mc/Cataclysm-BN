@@ -3795,6 +3795,8 @@ void cata_tiles::draw( point dest, const tripoint_bub_ms &center, int width, int
         }
     };
 
+    frame_overlays = map_overlay::collect( g->u );
+
     {
         ZoneScopedN( "cata_tiles_draw_queued_points" );
         if( !draw_points.empty() ) {
@@ -3850,16 +3852,26 @@ void cata_tiles::draw( point dest, const tripoint_bub_ms &center, int width, int
     {
         ZoneScopedN( "cata_tiles_draw_final_layers" );
         const auto show_known_lock_icons = get_option<bool>( "KNOWN_LOCKED_DOOR_ICONS" );
+        std::unordered_map<tripoint_bub_ms, locked_door_kind> known_locks;
+        if( show_known_lock_icons ) {
+            for( const auto &overlay : frame_overlays ) {
+                if( overlay.kind == map_overlay::overlay_kind::known_lock ) {
+                    known_locks.emplace( overlay.pos,
+                                         static_cast<locked_door_kind>( overlay.severity ) );
+                }
+            }
+        }
         for( tile_render_info &p : draw_points ) {
             for( const auto f : final_drawing_layers ) {
                 ( this->*f )( p.pos, p.ll, p.height_3d, p.invisible, 0 );
             }
-            // Remembered tiles only report knowledge; visible tiles are validated first.
-            const auto known = p.invisible[0]
-                               ? get_avatar().get_known_locked_door( bub_to_abs( p.pos ) )
-                               : refresh_known_locked_door( p.pos );
-            if( show_known_lock_icons && known != locked_door_kind::none ) {
-                draw_known_locked_door( p.pos, known, overlay_strings );
+            const auto lock = known_locks.find( p.pos );
+            if( lock != known_locks.end() ) {
+                // Remembered tiles only report knowledge; visible tiles are validated first.
+                const auto known = p.invisible[0] ? lock->second : refresh_known_locked_door( p.pos );
+                if( known != locked_door_kind::none ) {
+                    draw_known_locked_door( p.pos, known, overlay_strings );
+                }
             }
         }
 
@@ -4158,7 +4170,7 @@ void cata_tiles::draw( point dest, const tripoint_bub_ms &center, int width, int
                    do_draw_cursor || do_draw_highlight || do_draw_weather ||
                    do_draw_sct || do_draw_zones || do_draw_cone_aoe;
 
-    draw_footsteps_frame( center );
+    draw_footsteps_frame( frame_overlays );
     if( in_animation ) {
         if( do_draw_explosion ) {
             draw_explosion_frame();
@@ -6330,7 +6342,12 @@ bool cata_tiles::draw_critter_at( const tripoint_bub_ms &p, lit_level ll, int &h
                     result = draw_from_id_string(
                                  tile, p, bgCol, fgCol,
                                  ll, false, z_drop, false, height_3d );
-                    draw_monster_health_bar( *m, p );
+                    for( const auto &bar : frame_overlays ) {
+                        if( bar.kind == map_overlay::overlay_kind::health_bar && bar.pos == p ) {
+                            draw_health_bar( bar );
+                            break;
+                        }
+                    }
                     sees_player = m->sees( g->u );
                     attitude = m->attitude_to( g-> u );
                 }
@@ -6387,31 +6404,18 @@ bool cata_tiles::draw_critter_at( const tripoint_bub_ms &p, lit_level ll, int &h
 
 }
 
-void cata_tiles::draw_monster_health_bar( const monster &mon, const tripoint_bub_ms &p )
+void cata_tiles::draw_health_bar( const map_overlay::overlay &bar )
 {
-    // Only the same information the look-around list gives: no bar at all for an
-    // unwounded monster, and no bar while the player cannot judge health.
-    if( !get_option<bool>( "MONSTER_HEALTH_BARS" ) || g->u.has_trait( trait_INATTENTIVE ) ) {
-        return;
-    }
-    const auto hp = mon.get_hp();
-    const auto max_hp = mon.get_hp_max();
-    if( hp <= 0 || hp >= max_hp ) {
-        return;
-    }
+    const auto bar_color = get_hp_bar( bar.value, bar.max_value, true ).second;
 
-    auto bar_color = c_white;
-    auto bar_text = std::string();
-    mon.get_HP_Bar( bar_color, bar_text );
-
-    const auto screen = player_to_screen( p.xy() );
+    const auto screen = player_to_screen( bar.pos.xy() );
     // A short bar at the bottom of the tile, so the sprite stays readable.
     const auto bar_width = tile_iso ? tile_width * 3 / 4 : tile_width;
     const auto bar_left = screen.x + ( tile_width - bar_width ) / 2;
     const auto bar_height = std::max( 2, tile_height / 16 );
     const auto bar_top = screen.y + tile_height - bar_height - std::max( 1, tile_height / 16 );
-    const auto filled = std::clamp<int>( static_cast<int>( bar_width * static_cast<float>( hp ) /
-        static_cast<float>( max_hp ) ), 1, bar_width );
+    const auto filled = std::clamp<int>( static_cast<int>( bar_width * static_cast<float>(
+            bar.value ) / static_cast<float>( bar.max_value ) ), 1, bar_width );
 
     geometry->rect( renderer, point( bar_left, bar_top ), bar_width, bar_height,
                     SDL_Color{ 0, 0, 0, 255 } );
@@ -7539,17 +7543,21 @@ void cata_tiles::draw_zones_frame( std::multimap<point, formatted_text> &overlay
     } );
 }
 
-void cata_tiles::draw_footsteps_frame( const tripoint_bub_ms &center )
+void cata_tiles::draw_footsteps_frame( const std::vector<map_overlay::overlay> &overlays )
 {
     static const std::string id_footstep = "footstep";
     static const std::string id_footstep_above = "footstep_above";
     static const std::string id_footstep_below = "footstep_below";
 
-    for( const auto &mark : sounds::get_footstep_markers() ) {
-        const auto &id = mark.pos.z() == center.z() ? id_footstep :
-                         mark.pos.z() > center.z() ? id_footstep_above : id_footstep_below;
-        // Older markers fade into the shadows.
-        const auto light = mark.age == 0 ? lit_level::LIT : lit_level::LOW;
+    for( const auto &mark : overlays ) {
+        if( mark.kind != map_overlay::overlay_kind::sound_marker ) {
+            continue;
+        }
+        const auto &id = mark.z_offset == 0 ? id_footstep :
+                         mark.z_offset > 0 ? id_footstep_above : id_footstep_below;
+        // Fresh markers keep their color; older ones turn gray, stale ones turn off the shadow.
+        const auto light = mark.stale ? lit_level::DARK :
+                           mark.age == 0 ? lit_level::LIT : lit_level::LOW;
         draw_from_id_string( {id, C_NONE, empty_string, 0, 0}, mark.pos, std::nullopt, std::nullopt,
                              light, false, 0, false );
     }

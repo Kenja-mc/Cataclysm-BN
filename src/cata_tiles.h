@@ -8,6 +8,7 @@
 #include "line.h"
 #include "map/lightmap.h"
 #include "map_memory.h"
+#include "map_overlay.h"
 #include "options.h"
 #include "overmap/overmapbuffer.h"
 #include "pimpl.h"
@@ -944,8 +945,8 @@ class cata_tiles
                          const bool ( &invisible )[5], int z_drop );
         bool draw_critter_at( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
                               const bool ( &invisible )[5], int z_drop );
-        /** Draws a health bar under a hurt monster, as fuzzy as the look-around list. */
-        void draw_monster_health_bar( const monster &mon, const tripoint_bub_ms &p );
+        /** Draws a health bar from a collect() entry that the frame already decided on. */
+        void draw_health_bar( const map_overlay::overlay &bar );
         /** Draws the looping status effect overlays (bleeding, burning, ...) of one creature. */
         void draw_status_effects( const Creature &critter, const tripoint_bub_ms &p,
                                   lit_level ll, int z_drop );
@@ -995,7 +996,7 @@ class cata_tiles
         void draw_hit_frame();
         void void_hit();
 
-        void draw_footsteps_frame( const tripoint_bub_ms &center );
+        void draw_footsteps_frame( const std::vector<map_overlay::overlay> &overlays );
 
         // pseudo-animated layer, not really though.
         void init_draw_line( const tripoint_bub_ms &p, std::vector<tripoint_bub_ms> trajectory,
@@ -1141,6 +1142,9 @@ class cata_tiles
         float tile_ratioy = 0.0f;
 
         idle_animation_manager idle_animations;
+
+        /// Overlays collect() decided for the frame being drawn.
+        std::vector<map_overlay::overlay> frame_overlays;
 
         bool in_animation = false;
 

@@ -1573,12 +1573,45 @@ def case_state_channel(session):
 from vehicle_rotation import case_vehicle_rotation  # noqa: E402
 
 
+def case_map_overlays(session):
+    """The tiles build reports the memorized locked door in the state file."""
+    observations = {}
+    with session.running_game("map-overlays", {"CONTROL_SCHEME": "modern"},
+                              state_out=True) as live:
+        x11 = X11(session.display)
+        try:
+            win = x11.find_window(WINDOW_TITLE_PREFIX)
+            require(win is not None, "map overlays: game window disappeared")
+            x11.focus_local(win, 40, 40)
+            x11.key("x", delay=0.8)
+
+            def state():
+                try:
+                    return json.loads(live.state_path.read_text())
+                except (FileNotFoundError, json.JSONDecodeError):
+                    return None
+
+            def known_locks():
+                return [entry for entry in (state() or {}).get("map_overlays", [])
+                        if entry.get("kind") == "known_lock"]
+
+            deadline = time.monotonic() + 30
+            while time.monotonic() < deadline and not known_locks():
+                time.sleep(0.2)
+            require(known_locks(), "the state file never listed the attempted locked door")
+            observations["known_lock"] = known_locks()[0]
+        finally:
+            x11.close()
+    return [], observations
+
+
 CASES = {"minimap": case_minimap, "mouse": case_mouse, "side_buttons": case_side_buttons,
          "sound_menu": case_sound_menu, "zoom": case_zoom, "overmap": case_overmap,
          "known_locks": case_known_locks, "menu_drag": case_menu_drag,
          "vehicle_rotation": case_vehicle_rotation,
          "numbered_rows": case_numbered_rows, "numbered_menu": case_numbered_menu,
-         "numbered_viewport": case_numbered_viewport, "state_channel": case_state_channel}
+         "numbered_viewport": case_numbered_viewport, "state_channel": case_state_channel,
+         "map_overlays": case_map_overlays}
 
 
 def main(argv=None):
@@ -1600,6 +1633,9 @@ def main(argv=None):
     try:
         session.start()
         if args.case == "known_locks":
+            from known_locks import build_known_lock_world
+            build_known_lock_world(session)
+        elif args.case == "map_overlays":
             from known_locks import build_known_lock_world
             build_known_lock_world(session)
         elif args.case == "vehicle_rotation":

@@ -12,6 +12,7 @@
 #include "hud_snapshot.h"
 #include "item.h"
 #include "json.h"
+#include "map_overlay.h"
 
 namespace
 {
@@ -38,6 +39,7 @@ struct state_data {
     int pain = 0;
     int morale = 0;
     std::optional<hud_snapshot::snapshot> hud;
+    std::vector<map_overlay::overlay> map_overlays;
 };
 
 std::string state_path;
@@ -245,6 +247,24 @@ auto write_state( std::ostream &stream ) -> void
         out.start_object();
         out.end_object();
     }
+
+    out.member( "map_overlays" );
+    out.start_array();
+    for( const auto &overlay : state.map_overlays ) {
+        out.start_object();
+        out.member( "pos" );
+        out.start_array();
+        out.write( overlay.pos.x() );
+        out.write( overlay.pos.y() );
+        out.write( overlay.pos.z() );
+        out.end_array();
+        out.member( "kind", map_overlay::kind_name( overlay.kind ) );
+        out.member( "age", overlay.age );
+        out.member( "severity", overlay.severity );
+        out.member( "label", overlay.label );
+        out.end_object();
+    }
+    out.end_array();
     out.end_object();
 }
 
@@ -296,6 +316,7 @@ void on_turn( const avatar &you )
     state.pain = you.get_pain();
     state.morale = you.get_morale_level();
     state.hud = hud_snapshot::read( you );
+    state.map_overlays = map_overlay::collect( you );
     flush();
 }
 

@@ -76,6 +76,7 @@ from modern_map_controls import TESTS as MODERN_MAP_CONTROLS_TESTS
 from options_menu import TESTS as OPTIONS_MENU_TESTS
 from inventory_hub import TESTS as INVENTORY_HUB_TESTS
 from state_channel import TESTS as STATE_CHANNEL_TESTS
+from map_overlays import TESTS as MAP_OVERLAYS_TESTS
 from contextual_hub import TESTS as CONTEXTUAL_HUB_TESTS
 from grouped_controls import TESTS as GROUPED_CONTROLS_TESTS
 from hud_status import TESTS as HUD_STATUS_TESTS
@@ -157,6 +158,7 @@ MODULES = [
     ("options_menu", OPTIONS_MENU_TESTS),
     ("inventory_hub", INVENTORY_HUB_TESTS),
     ("state_channel", STATE_CHANNEL_TESTS),
+    ("map_overlays", MAP_OVERLAYS_TESTS),
     ("contextual_hub", CONTEXTUAL_HUB_TESTS),
     ("grouped_controls", GROUPED_CONTROLS_TESTS),
     ("hud_status", HUD_STATUS_TESTS),

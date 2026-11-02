@@ -134,6 +134,26 @@ auto map_memory::clear_locked_door( const tripoint_abs_ms &pos ) -> void
     set_locked_door( pos, locked_door_kind::none );
 }
 
+auto map_memory::locked_door_positions() const -> std::vector<tripoint_abs_ms>
+{
+    std::vector<tripoint_abs_ms> ret;
+    for( const auto &entry : submaps ) {
+        const shared_ptr_fast<mm_submap> &sm = entry.second;
+        if( !sm || !sm->has_locked_doors() ) {
+            continue;
+        }
+        for( int y = 0; y < SEEY; y++ ) {
+            for( int x = 0; x < SEEX; x++ ) {
+                const point_sm_ms p( x, y );
+                if( sm->locked_door( p ) != locked_door_kind::none ) {
+                    ret.push_back( project_combine( entry.first, p ) );
+                }
+            }
+        }
+    }
+    return ret;
+}
+
 auto map_memory::memorized_tiles( const tripoint_abs_sm &min, const tripoint_abs_sm &max ) const
 -> std::vector<memorized_tile>
 {

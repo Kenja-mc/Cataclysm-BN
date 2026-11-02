@@ -158,6 +158,8 @@ class avatar : public player
         void clear_memorized_tile( const tripoint_abs_ms &pos );
         /** Returns what the avatar learned about a locked door here, or none when untried. */
         auto get_known_locked_door( const tripoint_abs_ms &p ) const -> locked_door_kind;
+        /// Every door the loaded map memory still records as locked.
+        auto known_locked_door_positions() const -> std::vector<tripoint_abs_ms>;
         /** Records that the avatar's own open attempt found this door locked. */
         auto remember_locked_door( const tripoint_abs_ms &p, bool vehicle ) -> void;
         /** Forgets a known locked door, e.g. after opening it. */
