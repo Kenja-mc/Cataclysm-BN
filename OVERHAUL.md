@@ -660,7 +660,9 @@ menu and saves them. The terminal build instead shows “Sound is unavailable in
 **Music follows the game state** (on by default) selects a soundpack's `danger`, `vehicle`,
 `underground`, `night`, `shelter` or `explore` playlist, in that priority. A missing, empty or
 unplayable context playlist falls back to `title`, which remains required for the main menu and
-single-playlist mode. Danger starts at once; sleep releases it at once. Other changes wait for the
+single-playlist mode. That resolved playlist is observable as `gapi.music_playlist()`, which reads
+the context id, or `title` when the pack has no playlist for it.
+Danger starts at once; sleep releases it at once. Other changes wait for the
 new context to remain the best choice for 4 seconds and the current context to have been active for
 20 seconds. Danger clears after 5 seconds without a hostile and at least 20 seconds of play. Changes
 crossfade over 2 seconds; while the `danger` playlist plays, older danger ambience themes stay quiet.
@@ -1108,7 +1110,8 @@ outside the repo:
 5. Delete the scratch pack.
 
 The deterministic e2e checks still cover the context ids and fallback through
-`tests/e2e/dynamic_music.py`; this smoke is only for the audible mixer behaviour.
+`tests/e2e/dynamic_music.py` and `tests/e2e/music_fallback.py`; this smoke is only for the audible
+mixer behaviour.
 
 The hidden `[benchmark][smart_safemode]` cases measure 12 blocked route searches and the
 over-budget conservative stop separately. Monster-list timings are steady-state scans; they do
@@ -1170,9 +1173,14 @@ so earlier weapons, automatic over-capacity drops and wind-masked footsteps do n
 The targeting fixture starts with a real bound, loaded gun; the separate reload check drives
 the reload UI. Lua setup refuses to type into the game if its console did not open.
 The dynamic-music checks park every monster, record the baseline
-`gapi.music_context()`, and then observe `danger` as soon as a hostile is in the bubble and the
-baseline playlist again after the hysteresis delay; a second game with the option off stays on
-`title` even with a hostile present.
+`gapi.music_context()` and `gapi.music_playlist()`, and then observe `danger` as soon as a hostile
+is in the bubble and the baseline playlist again after the hysteresis delay; a second game with
+the option off stays on `title` even with a hostile present. `tests/e2e/music_fallback.py`
+installs a soundpack with only a `title` playlist and forces the danger context, so
+`gapi.music_context()` reads `danger` while `gapi.music_playlist()` reads `title`; the curses
+build loads no playlists, so the same check pins that a missing context playlist resolves to
+`title`. `gapi.music_context()` only reports the requested context, so the fallback is observable
+through `gapi.music_playlist()`.
 
 ## Performance checks
 
