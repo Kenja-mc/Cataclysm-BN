@@ -592,7 +592,6 @@ void use_item( avatar &you, item &used )
 
     you.last_item = used.typeId();
 
-    // medication has special logic in consume, so it shouldn't be passed to invoke even though it has an iuse
     if( used.has_use() && !used.is_medication() ) {
         if( used.has_flag( flag_TEMPORARY_ITEM ) ) {
             you.invoke_item( &used );

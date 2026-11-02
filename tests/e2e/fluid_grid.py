@@ -1,4 +1,3 @@
-"""Fluid grid feedback: liquid that does not fit in the grid stays in its container."""
 import json
 import re
 import tempfile
@@ -11,7 +10,6 @@ TANK = "f_e2e_small_tank"
 
 
 def pause(game):
-    # Classic vi-keys: x is Look Around, so wait with the pause key.
     game.keys(".", delay=0.6)
 
 
@@ -45,8 +43,6 @@ def fluid_grid_game(name):
         pause(game)
         game.define_lua(HELPERS)
         arena(game)
-        # The shelter special spans a multi-tile fluid grid, so work in open field instead:
-        # there the one placed tank is the whole grid and holds one litre.
         assert game.lua(
             "local p=M:bub_to_abs(here(0,0)):to_omt() "
             "gapi.place_player_overmap_at(TripointAbsOmt.new(p.x+6,p.y+6,p.z)) "
@@ -60,7 +56,6 @@ def fluid_grid_game(name):
 
 
 def press_menu_row(game, label):
-    """Choose a menu row by the hotkey shown next to it."""
     for line in game.screen().splitlines():
         match = re.search(r"│\s*(\w)\s+" + label + r"\b", line)
         if match:
@@ -70,10 +65,8 @@ def press_menu_row(game, label):
 
 
 def test_partial_grid_transfer_keeps_the_rest(_game):
-    """5 L poured into the 1 L grid leaves 4 L in the container."""
     game = fluid_grid_game("bn-e2e-fluid-grid")
     try:
-        # The tank holds the liquid: a bare floor would turn the item into a water field.
         assert game.lua(
             f"M:set_furn_at(here(1,0), FurnId.new('{TANK}'):int_id()) "
             "M:create_item_at(here(1,0), ItypeId.new('water_clean'), 20) out('ok')") == ["ok"]

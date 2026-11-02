@@ -26,7 +26,6 @@ struct tip {
     const char *id;
     std::function<bool( const avatar & )> applies;
     std::function<std::string()> text;
-    /// The avatar value that records this tip as seen, derived from `id`.
     std::string seen_key;
 
     tip( const char *id_in, std::function<bool( const avatar & )> applies_in,
@@ -45,8 +44,8 @@ auto key( const action_id act ) -> std::string
 
 auto hurt( const avatar &you ) -> bool
 {
-for( const auto &bp : you.get_all_body_parts() ) {
-    if( you.get_part_hp_cur( bp ) < you.get_part_hp_max( bp ) * 3 / 4 ) {
+    for( const auto &bp : you.get_all_body_parts() ) {
+        if( you.get_part_hp_cur( bp ) < you.get_part_hp_max( bp ) * 3 / 4 ) {
             return true;
         }
     }
@@ -59,23 +58,22 @@ auto tips() -> const std::vector<tip> & // *NOPAD*
         {
             "hostile", []( const avatar & you ) { return !you.get_hostile_creatures( 15 ).empty(); },
             [] {
-                if( get_option<bool>( "BUMP_ATTACK" ) )
-            {
-                return std::string(
-                    _( "Something hostile is in sight.  Walk into an adjacent enemy to attack; walking away works too." ) );
+                if( get_option<bool>( "BUMP_ATTACK" ) ) {
+                    return std::string(
+                        _( "Something hostile is in sight.  Walk into an adjacent enemy to attack; walking away works too." ) );
                 }
                 if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" )
-            {
-                const auto ctxt = input_context( "DEFAULTMODE" );
+                {
+                    const auto ctxt = input_context( "DEFAULTMODE" );
                     return string_format(
                         _( "Something hostile is in sight.  Select it with %1$s, then attack with %2$s; walking away works too." ),
                         ctxt.get_desc( "NEXT_TARGET" ), key( ACTION_FIRE ) );
                 }
                 const auto attack = press_x( ACTION_ATTACK, "", "", "" );
                 if( !attack.empty() )
-            {
-                return string_format(
-                    _( "Something hostile is in sight.  %s attacks in a direction; walking away works too." ), attack );
+                {
+                    return string_format(
+                        _( "Something hostile is in sight.  %s attacks in a direction; walking away works too." ), attack );
                 }
                 return std::string( _( "Something hostile is in sight.  Bump attacks are disabled; bind the directional attack command or keep your distance." ) );
             }
@@ -140,7 +138,7 @@ auto tips() -> const std::vector<tip> & // *NOPAD*
     return all;
 }
 
-} // namespace
+}
 
 namespace first_tips
 {
@@ -148,10 +146,10 @@ namespace first_tips
 auto check( avatar &you ) -> void
 {
     if( !get_option<bool>( "SHOW_TIPS" ) ) {
-    return;
-}
-for( const auto &t : tips() ) {
-    if( you.get_value( t.seen_key ).empty() && t.applies( you ) ) {
+        return;
+    }
+    for( const auto &t : tips() ) {
+        if( you.get_value( t.seen_key ).empty() && t.applies( you ) ) {
             you.set_value( t.seen_key, "1" );
             add_msg( game_message_params{ m_info, gmf_bypass_cooldown }, _( "Tip: %s" ), t.text() );
             return;
@@ -159,4 +157,4 @@ for( const auto &t : tips() ) {
     }
 }
 
-} // namespace first_tips
+}

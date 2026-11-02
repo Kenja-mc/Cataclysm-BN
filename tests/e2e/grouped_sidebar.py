@@ -1,4 +1,3 @@
-"""Right-sidebar HUD groups stay readable without covering the world map."""
 import re
 from contextlib import contextmanager
 
@@ -49,7 +48,6 @@ def assert_hud_on_right(screen, cols=140):
 
 
 def test_grouped_sidebar_layout_has_no_map_overlays(_g):
-    # Fusion is the fresh default on large screens (hud_fusion.py); grouped is chosen explicitly.
     game = Game("bn-e2e-grouped-default", options=OPTIONS, layout="grouped")
     try:
         start_new_game(game)
@@ -77,7 +75,6 @@ def test_grouped_sidebar_resize_keeps_urgent_needs_and_controls(_g):
         for cols, rows in ((140, 45), (100, 41), (100, 40), (100, 39), (100, 30),
                            (80, 25), (140, 45)):
             game.resize(cols, rows)
-            # Narrow groups fold the needs summary, so a label may break at its space.
             screen = resized_frame(game, cols, rows, lambda s: all(
                 word in regions(s, cols)[1] for word in ("Thirst", "Hunger", "all keys")) and
                 re.search(r"Body\s+temp", regions(s, cols)[1]))

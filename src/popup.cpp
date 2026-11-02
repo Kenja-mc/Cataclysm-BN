@@ -99,7 +99,6 @@ std::vector<std::vector<std::string>> query_popup::fold_query(
     int query_width = 0;
     for( const auto &opt : options ) {
         const auto &name = ctxt.get_action_name( opt.action );
-        // A button no key can trigger (Yes/No without hotkeys) shows its plain name, not "[n/a]".
         const auto keyed = std::ranges::any_of( inp_mngr.get_input_for_action( opt.action, category ), opt.filter );
         const auto desc = keyed ? ctxt.get_desc( opt.action, name, opt.filter ) : name;
         const int this_query_width = utf8_width( desc, true ) + horz_padding;
@@ -322,7 +321,6 @@ query_popup::result query_popup::query_once()
         res.action = ctxt.handle_input();
         res.evt = ctxt.get_raw_input();
         if( res.action == "MOUSE_MOVE" ) {
-            // Modern: the button under the pointer takes the highlight.
             if( const auto ind = button_at( res.evt.mouse_pos ); ind && *ind != cur ) {
                 cur = *ind;
                 ui_manager::redraw();
@@ -355,7 +353,6 @@ query_popup::result query_popup::query_once()
             res.action = options[cur].action;
         }
     } else if( res.action == "SELECT" ) {
-        // Clicking a button picks it.
         if( const auto ind = button_at( res.evt.mouse_pos ) ) {
             cur = *ind;
             res.wait_input = false;

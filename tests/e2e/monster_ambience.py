@@ -1,12 +1,3 @@
-"""Monster idle ambience is data-driven, jittered per creature and crowd-capped.
-
-These tests observe the sound markers the normal sound pipeline paints, not audio. They run the
-curses binary, whose `has_asset()` reports every id as present because a marker is that build's
-only sound cue. A sound build additionally requires the loaded pack to provide the clip: without it
-there is no cue and no marker, so nothing is silent-but-visible (issue #32). No shipped monster
-declares `idle_sound`, so the fixture installs a mod that does. A closed curtain ring blocks sight
-without soundproofing the avatar; private world options exclude unrelated NPCs and world spawns.
-"""
 import json
 import math
 import time
@@ -23,7 +14,6 @@ SILENT = "e2e_silent_zombie"
 
 
 def ambience_game(name, **options):
-    """An underground curtain enclosure makes every source heard but physically unseen."""
     userdir = Path(tempfile.mkdtemp(prefix=f"bn-e2e-{name}-"))
     mod_dir = userdir / "mods" / MOD_ID
     mod_dir.mkdir(parents=True)
@@ -67,8 +57,6 @@ def ambience_game(name, **options):
             "M:set_furn_at(q, FurnId.new('f_null'):int_id()) M:clear_items_at(q) "
             "for _,fid in ipairs(M:get_field_ids_at(q)) do M:remove_field_at(q,fid) end "
             "end end "
-            # Darkness alone is not isolation: rolled perception can reveal the inner rings.
-            # Curtains are opaque but lack BLOCK_WIND, unlike soundproof residential walls.
             "for dx=-1,1 do for dy=-1,1 do if dx~=0 or dy~=0 then "
             "M:set_ter_at(here(dx,dy), TerId.new('t_door_curtain_c'):int_id()) end end end "
             "assert(not a:is_deaf(),'ambience listener must be able to hear') "
@@ -82,7 +70,6 @@ def ambience_game(name, **options):
 
 
 def ring_positions(count):
-    """Cells ordered by Chebyshev ring, inner rings first, so a crowd surrounds the player."""
     out = []
     for radius in range(2, 8):
         for dx in range(-radius, radius + 1):
@@ -103,12 +90,10 @@ def spawn(game, type_id, positions):
 
 
 def marker_count(game):
-    """Sound markers in the map area, using the glyph bounds the marker tests already define."""
     return len(glyph_cells(game, "?"))
 
 
 def turn(game):
-    """One turn, then wait until it is processed and drawn: a one-turn marker sampled early is lost."""
     settle(game)
     assert game.lua("out('ok')") == ["ok"]
     game.settle_screen(minimum=0.3, timeout=3.0)
@@ -123,7 +108,6 @@ def wait_for_marker(game, turns=26):
 
 
 def test_idle_sound_needs_the_data_field_and_rerolls_its_cooldown(_g):
-    """A monster without `idle_sound` is silent; one with it emits again after 8-20 s."""
     game = ambience_game("ambience-cooldown", MONSTER_AMBIENCE="true")
     try:
         spawn(game, SILENT, ring_positions(6))
@@ -149,16 +133,12 @@ def test_idle_sound_needs_the_data_field_and_rerolls_its_cooldown(_g):
 
 
 def test_crowd_cap_drops_the_excess(_g):
-    """Sixty idle creatures stay within the code's own four-per-250 ms budget."""
     game = ambience_game("ambience-crowd", MONSTER_AMBIENCE="true")
     try:
         spawn(game, NOISY, ring_positions(60))
         peak = 0
         total = 0
         for _ in range(30):
-            # The cap is a wall-clock window, so derive the allowance from the turn's measured
-            # duration instead of assuming one turn fits in one window. A slow CI runner that
-            # spends longer than 250 ms in a turn legitimately opens another window.
             started = time.monotonic()
             settle(game)
             windows = max(1, math.ceil((time.monotonic() - started) / 0.25))
@@ -174,7 +154,6 @@ def test_crowd_cap_drops_the_excess(_g):
 
 
 def test_option_off_silences_the_crowd(_g):
-    """The asset-blocked toggle defaults off, and off means no sound and no marker."""
     game = ambience_game("ambience-off", MONSTER_AMBIENCE="false")
     try:
         spawn(game, NOISY, ring_positions(40))

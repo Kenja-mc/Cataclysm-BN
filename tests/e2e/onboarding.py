@@ -1,7 +1,3 @@
-"""First-run welcome card, the death-mode choice and the onboarding tips.
-
-These run first on the runner's main game: they read what its first start recorded.
-"""
 from helpers import arena, settle
 
 
@@ -9,13 +5,11 @@ def test_welcome_card(g):
     assert getattr(g, "saw_welcome", False), "first new game should show the welcome card"
     card = g.welcome_screen
     assert "Unsupported" not in card and "%" not in card, "the card text must be formatted:\n" + card
-    # Modern unbinds many classic keys; the card must name a real key or route for every command.
     assert "(unbound)" not in card and "Unbound" not in card, "the card names an unbound key:\n" + card
     assert "RETURN" not in card and "BACKTAB" not in card, "keys must use readable names:\n" + card
 
 
 def test_death_mode_choice(g):
-    """Caves of Qud style: the first game asks Permadeath or Roleplay; the harness picks Roleplay."""
     import json
     assert getattr(g, "saw_death_choice", False), "welcome should ask how death works"
     opts = {o["name"]: o["value"] for o in json.loads((g.userdir / "config" / "options.json").read_text())}
@@ -26,7 +20,6 @@ def test_first_time_tip(g):
     arena(g)
     nightvision = g.lua("out(gapi.get_avatar():has_trait(MutationBranchId.new('DEBUG_NIGHTVISION')))") == ["true"]
     try:
-        # The shelter can be very dark even at 08:00. Pin sight, not the rolled weather.
         assert g.lua("TIP_HOSTILE=nil "
                      "gapi.get_avatar():set_mutation(MutationBranchId.new('DEBUG_NIGHTVISION')) "
                      "out('ok')") == ["ok"]
@@ -47,7 +40,6 @@ def test_first_time_tip(g):
 
 
 def test_first_time_tips_stairs_and_save(g):
-    """The two onboarding gaps a new player hits: how stairs work and whether progress is safe."""
     arena(g)
     for tip in ("hostile", "hungry", "thirsty", "tired", "hurt", "heavy", "night", "goal"):
         assert g.lua(f"gapi.get_avatar():set_value('tip_seen_{tip}','1') out('ok')") == ["ok"]
@@ -67,7 +59,6 @@ def test_first_time_tips_stairs_and_save(g):
 
 
 def test_help_opens_with_a_quickstart(_g):
-    """The in-game manual must start with the commands a first hour needs, in the player's keys."""
     from fixtures import shared_game
     from helpers import HELPERS
 

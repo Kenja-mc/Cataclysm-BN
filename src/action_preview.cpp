@@ -26,7 +26,12 @@
 #include <string_view>
 #include <vector>
 
-static const skill_id skill_swimming( "swimming" );
+namespace
+{
+
+const auto skill_swimming = skill_id( "swimming" );
+
+}
 
 auto encumbrance_numbers( const Character &who, const bodypart_str_id &bp, int value )
 -> encumbrance_effect_numbers
@@ -163,7 +168,7 @@ auto part_line( const Character &who, const body_change &change ) -> std::string
     return line;
 }
 
-} // namespace
+}
 
 auto describe( const Character &who, const wear_preview &preview ) -> std::vector<std::string>
 {
@@ -225,7 +230,7 @@ auto wear_cost( const Character &who, const item &it ) -> std::string
         parts.push_back( action_time_text( preview.moves ) );
     }
     const auto worst = std::ranges::max_element( preview.parts, {},
-    []( const body_change &part ) {
+    []( const body_change & part ) {
         return part.after - part.before;
     } );
     if( worst != preview.parts.end() && worst->after > worst->before ) {
@@ -314,7 +319,7 @@ auto disassemble_cost( const item &it ) -> std::string
     return join( parts, " · " );
 }
 
-} // namespace
+}
 
 auto action_cost( const avatar &who, const item &it, std::string_view action ) -> std::string
 {

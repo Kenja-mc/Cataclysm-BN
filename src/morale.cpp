@@ -850,7 +850,6 @@ void player_morale::display( int focus_eq, int pain_penalty, int fatigue_cap )
             } else if( action == "SCROLL_DOWN" ) {
                 action = "DOWN";
             } else if( action == "SELECT" || action == "SEC_SELECT" ) {
-                // The morale readout is informational: a click only scrolls.
                 if( const auto mouse = ctxt.get_coordinates( w ) ) {
                     const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
                     const auto hit = scrollbar_input::click( {

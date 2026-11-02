@@ -42,7 +42,6 @@ struct advanced_inv_save_state {
         bool active_left = true;
         int last_popup_dest = 0;
 
-        // Surroundings beside your inventory (AIM_ALL = 13, AIM_INVENTORY = 0).
         int saved_area = 13;
         int saved_area_right = 0;
         advanced_inv_pane_save_state pane{ .area_idx = 13 };

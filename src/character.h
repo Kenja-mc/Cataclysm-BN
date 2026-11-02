@@ -1289,7 +1289,6 @@ class Character : public Creature, public location_visitable<Character>
         /** Calculate (but do not deduct) the number of moves required to wear an item */
         int item_wear_cost( const item &it ) const;
 
-        /** Calculate (but do not deduct) the moves eating or drinking @p food takes */
         int consume_moves( const item &food ) const;
 
         /** Returns the amount of item `type' that is currently worn */
@@ -2302,8 +2301,6 @@ class Character : public Creature, public location_visitable<Character>
         int get_morale( const morale_type &type ) const;
         void rem_morale( const morale_type &type );
         void clear_morale();
-        /// Permanent morale derived from the character's current worn items, mutations,
-        /// effects and stats, without any temporary points.
         auto morale_from_current_state() const -> player_morale; // *NOPAD*
         bool has_morale_to_read() const;
         bool has_morale_to_craft() const;

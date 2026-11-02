@@ -32,13 +32,10 @@
 namespace
 {
 
-/// The World page's Zones tab. The zone manager keeps the map; this tab shows the same zones,
-/// their details and every zone action on one page.
 class zones_panel : public world_hub::panel
 {
     public:
         zones_panel() {
-            // The page binds none of these; the zone screen's own context carries their keys.
             zones_ctxt.register_action( "ADD_ZONE" );
             zones_ctxt.register_action( "REMOVE_ZONE" );
             zones_ctxt.register_action( "MOVE_ZONE_UP" );
@@ -48,20 +45,18 @@ class zones_panel : public world_hub::panel
             zones_ctxt.register_action( "DISABLE_ZONE" );
             zones_ctxt.register_action( "SHOW_ALL_ZONES" );
             zones_ctxt.register_action( "TOGGLE_ZONE_OVERLAY" );
-            // debug_submap_grid lives in DEFAULTMODE, so resolve it from that context.
             debug_ctxt.register_action( "debug_submap_grid" );
-            // The zone tile overlays follow the same flag the standalone manager uses.
             g->set_zones_manager_open( true );
         }
 
         auto name() const -> std::string override {
             return _( "Zones" );
         }
-        void refresh() override;
-        void draw( const catacurses::window &body, input_context &ctxt ) override;
-        void handle( const std::string &action, input_context &ctxt,
-                     const catacurses::window &body, world_hub::host &page ) override;
-        void close() override;
+        auto refresh() -> void override;
+        auto draw( const catacurses::window &body, input_context &ctxt ) -> void override;
+        auto handle( const std::string &action, input_context &ctxt,
+                     const catacurses::window &body, world_hub::host &page ) -> void override;
+        auto close() -> void override;
 
     private:
         auto visible_zones() -> std::vector<zone_manager::ref_zone_data>;
@@ -98,7 +93,7 @@ auto zones_panel::visible_zones() -> std::vector<zone_manager::ref_zone_data>
     return result;
 }
 
-void zones_panel::refresh()
+auto zones_panel::refresh() -> void
 {
     zones = visible_zones();
     if( zones.empty() ) {
@@ -110,7 +105,7 @@ void zones_panel::refresh()
     }
 }
 
-void zones_panel::draw( const catacurses::window &body, input_context & )
+auto zones_panel::draw( const catacurses::window &body, input_context & ) -> void
 {
     werase( body );
     const int height = getmaxy( body );
@@ -118,8 +113,6 @@ void zones_panel::draw( const catacurses::window &body, input_context & )
 
     const std::string title = string_format( _( "Zones (%d)" ), static_cast<int>( zones.size() ) );
     mvwprintz( body, point( 2, 0 ), c_white, title );
-    // The sidebar page is only as wide as the HUD column: names fill it and the details move to
-    // the full page, which Enter opens.
     const bool wide = getmaxx( body ) >= 60;
     if( wide ) {
         mvwprintz( body, point( 2 + utf8_width( title ) + 2, 0 ), c_dark_gray,
@@ -167,7 +160,6 @@ void zones_panel::draw( const catacurses::window &body, input_context & )
         }
 
         if( !wide ) {
-            // Details and edits need the whole page; the list is what fits here.
             wnoutrefresh( body );
             return;
         }
@@ -194,7 +186,6 @@ void zones_panel::draw( const catacurses::window &body, input_context & )
         }
     }
 
-    // Keys come from the zone screen's own context, so renamed bindings stay truthful.
     const auto key = [this]( const std::string & action ) {
         return zones_ctxt.get_desc( action, 1 );
     };
@@ -212,7 +203,6 @@ void zones_panel::draw( const catacurses::window &body, input_context & )
 auto zones_panel::query_position( world_hub::host &page )
 -> std::optional<std::pair<tripoint_abs_ms, tripoint_abs_ms>>
 {
-    // The map must be visible while the corners are picked.
     page.hide();
     on_out_of_scope restore_page( [&page]() {
         page.restore();
@@ -224,26 +214,26 @@ auto zones_panel::query_position( world_hub::host &page )
 
     tripoint_bub_ms center = get_avatar().bub_pos() + get_avatar().view_offset;
     const look_around_result first = g->look_around( /*show_window=*/false, center, center, false,
-        true, false );
+                                     true, false );
     if( !first.position ) {
-    return std::nullopt;
-}
-popup.message( "%s", _( "Select second point." ) );
-const look_around_result second = g->look_around( /*show_window=*/false, center, *first.position,
-    true, true, false );
-if( !second.position ) {
-    return std::nullopt;
-}
-const tripoint_bub_ms start( std::min( first.position->x(), second.position->x() ),
-                             std::min( first.position->y(), second.position->y() ),
-                             std::min( first.position->z(), second.position->z() ) );
-const tripoint_bub_ms end( std::max( first.position->x(), second.position->x() ),
-                           std::max( first.position->y(), second.position->y() ),
-                           std::max( first.position->z(), second.position->z() ) );
-return std::pair<tripoint_abs_ms, tripoint_abs_ms>( bub_to_abs( start ), bub_to_abs( end ) );
+        return std::nullopt;
+    }
+    popup.message( "%s", _( "Select second point." ) );
+    const look_around_result second = g->look_around( /*show_window=*/false, center, *first.position,
+                                      true, true, false );
+    if( !second.position ) {
+        return std::nullopt;
+    }
+    const tripoint_bub_ms start( std::min( first.position->x(), second.position->x() ),
+                                 std::min( first.position->y(), second.position->y() ),
+                                 std::min( first.position->z(), second.position->z() ) );
+    const tripoint_bub_ms end( std::max( first.position->x(), second.position->x() ),
+                               std::max( first.position->y(), second.position->y() ),
+                               std::max( first.position->z(), second.position->z() ) );
+    return std::pair<tripoint_abs_ms, tripoint_abs_ms>( bub_to_abs( start ), bub_to_abs( end ) );
 }
 
-void zones_panel::add_zone( world_hub::host &page )
+auto zones_panel::add_zone( world_hub::host &page ) -> void
 {
     auto &mgr = zone_manager::get_manager();
     const std::optional<zone_type_id> zone_type = mgr.query_type();
@@ -269,12 +259,11 @@ void zones_panel::add_zone( world_hub::host &page )
     mgr.add( name.value(), zone_type.value(), get_avatar().get_faction()->id, false, true,
              position->first, position->second, options );
     dirty = true;
-    // Select the zone that was just added, as the standalone manager does.
     zones = visible_zones();
     active_index = zones.empty() ? 0 : static_cast<int>( zones.size() ) - 1;
 }
 
-void zones_panel::edit_selected( world_hub::host &page )
+auto zones_panel::edit_selected( world_hub::host &page ) -> void
 {
     if( zones.empty() ) {
         return;
@@ -289,7 +278,6 @@ void zones_panel::edit_selected( world_hub::host &page )
                                zone.get_type() == zone_type_id( "LOOT_CUSTOM" ) ?
                                _( "Edit filter" ) : _( "Edit options" ) );
     as_m.entries.emplace_back( 4, !zone.get_is_vehicle(), '4', _( "Edit position" ) );
-    // TODO: Enable moving vzone after vehicle zone can be bigger than 1*1
     as_m.entries.emplace_back( 5, !zone.get_is_vehicle(), '5', _( "Move position" ) );
     as_m.query();
 
@@ -319,7 +307,6 @@ void zones_panel::edit_selected( world_hub::host &page )
             break;
         }
         case 5: {
-            // The map must be visible while the zone is moved.
             page.hide();
             on_out_of_scope restore_page( [&page]() {
                 page.restore();
@@ -330,17 +317,17 @@ void zones_panel::edit_selected( world_hub::host &page )
             const tripoint_bub_ms zone_local_start_point = abs_to_bub( zone.get_start_point() );
             tripoint_bub_ms view_center = abs_to_bub( zone.get_center_point() );
             const look_around_result result_local = g->look_around( false, view_center,
-                zone_local_start_point, false, false, false, true,
-                abs_to_bub( zone.get_end_point() ) );
+                                                    zone_local_start_point, false, false, false, true,
+                                                    abs_to_bub( zone.get_end_point() ) );
             if( result_local.position ) {
                 const tripoint_abs_ms new_start_point = bub_to_abs( *result_local.position );
                 if( new_start_point == zone.get_start_point() ) {
-                    break; // Nothing changed, don't save
+                    break;
                 }
                 const tripoint_abs_ms new_end_point = zone.get_end_point() - zone.get_start_point() +
                                                       new_start_point;
                 zone.set_position( std::pair<tripoint_abs_ms, tripoint_abs_ms>( new_start_point,
-                        new_end_point ) );
+                                   new_end_point ) );
                 dirty = true;
             }
             break;
@@ -350,8 +337,8 @@ void zones_panel::edit_selected( world_hub::host &page )
     }
 }
 
-void zones_panel::handle( const std::string &action, input_context &ctxt,
-                          const catacurses::window &body, world_hub::host &page )
+auto zones_panel::handle( const std::string &action, input_context &ctxt,
+                          const catacurses::window &body, world_hub::host &page ) -> void
 {
     std::string act = action;
     const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
@@ -365,11 +352,11 @@ void zones_panel::handle( const std::string &action, input_context &ctxt,
                 const point cell = mouse->xy().raw() + point( getmaxx( body ), getmaxy( body ) ) / 2;
                 if( const auto hit = scrollbar_input::click( {
                 .offset = point( 0, 2 ),
-                    .viewport_size = rows_visible,
-                    .content_size = static_cast<int>( zones.size() ),
-                    .viewport_pos = active_index,
-                    .scroll_to_last = true,
-                }, cell ) ) {
+                .viewport_size = rows_visible,
+                .content_size = static_cast<int>( zones.size() ),
+                .viewport_pos = active_index,
+                .scroll_to_last = true,
+            }, cell ) ) {
                     active_index = hit->viewport_pos;
                     mouse_row.reset();
                 } else if( cell.x >= 1 && cell.x < 28 && cell.y >= 2 &&
@@ -377,7 +364,6 @@ void zones_panel::handle( const std::string &action, input_context &ctxt,
                     const int idx = top_index + cell.y - 2;
                     if( idx >= 0 && idx < static_cast<int>( zones.size() ) ) {
                         if( mouse_row && *mouse_row == static_cast<size_t>( idx ) ) {
-                            // A second click on the same row opens its edit menu.
                             active_index = idx;
                             act = "CONFIRM";
                             confirmed_row = true;
@@ -389,7 +375,6 @@ void zones_panel::handle( const std::string &action, input_context &ctxt,
                     }
                 }
             }
-            // Only a row double-click falls through to the action below.
             if( !confirmed_row ) {
                 return;
             }
@@ -397,14 +382,11 @@ void zones_panel::handle( const std::string &action, input_context &ctxt,
             return;
         }
     } else {
-        // Keyboard navigation and content changes forget the pending row click.
         mouse_row.reset();
     }
     if( act == "ANY_INPUT" ) {
-        // The page binds no zone action; its key comes from the zone screen's own context.
         act = zones_ctxt.input_to_action( ctxt.get_raw_input() );
         if( act == "ERROR" ) {
-            // debug_submap_grid lives in DEFAULTMODE instead of the zone context.
             act = debug_ctxt.input_to_action( ctxt.get_raw_input() );
         }
     }
@@ -461,7 +443,6 @@ void zones_panel::handle( const std::string &action, input_context &ctxt,
         }
     } else if( act == "SHOW_ZONE_ON_MAP" ) {
         const zone_data &zone = zones[active_index].get();
-        // display_zones indexes the manager's full list, not this tab's filtered list.
         int full_index = active_index;
         const std::vector<zone_manager::ref_zone_data> all = mgr.get_zones();
         for( size_t i = 0; i < all.size(); ++i ) {
@@ -478,9 +459,8 @@ void zones_panel::handle( const std::string &action, input_context &ctxt,
     }
 }
 
-void zones_panel::close()
+auto zones_panel::close() -> void
 {
-    // The tile overlays follow the standalone manager's flag, so clear it on the way out.
     g->set_zones_manager_open( false );
     if( !dirty ) {
         return;
@@ -491,12 +471,11 @@ void zones_panel::close()
     } else {
         mgr.load_zones();
     }
-    // Rebuild the cached zone sets so loot sorting and marking see this result immediately.
     mgr.cache_data();
     dirty = false;
 }
 
-} // namespace
+}
 
 auto world_hub::zones_screen() -> panel_ptr
 {

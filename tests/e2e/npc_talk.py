@@ -1,5 +1,3 @@
-"""Modern NPC contact: Space talks to a neighbour instead of examining the floor, replies are
-numbered, and W/S move the highlighted reply."""
 from helpers import HELPERS, arena, settle
 from tmux_game import Game, start_new_game
 

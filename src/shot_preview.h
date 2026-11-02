@@ -6,7 +6,6 @@
 
 #include "coordinates.h"
 
-/// Map marks published by the aim window for the renderers and the state file.
 namespace shot_preview
 {
 
@@ -27,7 +26,6 @@ auto set( state next ) -> void;
 auto clear() -> void;
 auto active() -> bool;
 auto current() -> const state &; // *NOPAD*
-/// The aim text shown beside @p p, or an empty string.
 auto label_at( const tripoint_bub_ms &p ) -> std::string;
 
-} // namespace shot_preview
+}

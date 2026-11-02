@@ -1002,7 +1002,6 @@ void iexamine::vending( player &p, const tripoint_bub_ms &examp )
     }
 
     int cur_pos = 0;
-    // First visible list row for the centered selector, shared by draw and clicks.
     const auto page_begin = [&]( int num_items ) -> int {
         if( cur_pos < num_items - cur_pos ) {
             return std::max( 0, cur_pos - lines_above );
@@ -1086,7 +1085,6 @@ void iexamine::vending( player &p, const tripoint_bub_ms &examp )
 
         std::string action = ctxt.handle_input();
         if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
-            // Buying keeps its Enter confirmation: clicks only select rows.
             if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
                 action = action == "SCROLL_UP" ? "UP" : "DOWN";
             } else if( action == "SELECT" || action == "SEC_SELECT" ) {

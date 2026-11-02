@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""Extract folded item ids and static mismatches between mainline and the fork.
-
-Usage:
-  tools/fold_equivalence/extract.py --mainline /path/to/mainline --fork /path/to/fork \
-      --requests /tmp/fold_requests.json --report /tmp/fold_static.json
-"""
-
 import argparse
 import json
 import os
@@ -17,7 +10,6 @@ import fold_data  # noqa: E402
 
 UNIT_FIELDS = fold_data.UNIT_FIELDS
 
-# Play-breaking fields: a fresh spawn no longer has the same charge/ammo state.
 SPAWN_STATE_FIELDS = {
     "count", "capacity", "charges", "def_charges", "max_charges", "stack_size",
     "rand_charges", "default_ammo", "energy", "max_capacity", "ammo_type",
@@ -117,8 +109,6 @@ def severity_for(field):
     return "BALANCE CHANGE"
 
 
-# Variant components are represented additively; the uncraft comparison checks the
-# resulting yields, so the raw field itself is not a difference.
 REPRESENTATION_ONLY_FIELDS = {"variant_components"}
 
 
@@ -144,7 +134,6 @@ def diff_defs(old, new):
 
 
 def build_groups(ctx):
-    """item_group id -> list of entries (modern and legacy shapes)."""
     groups = {}
     for _path, data in ctx.docs:
         for obj in data:
@@ -171,7 +160,6 @@ def build_groups(ctx):
 
 
 def reference_entry(node):
-    """Copy an entry and normalise schema aliases used by the fork."""
     entry = dict(node)
     if "item_variant" in entry and "variant" not in entry:
         entry["variant"] = entry.pop("item_variant")
@@ -181,7 +169,6 @@ def reference_entry(node):
 
 
 def singleton_group_entry(groups, ident, depth, seen):
-    """Return the single item entry of a group that is a pure indirection, else None."""
     if depth > 8 or ident in seen or ident not in groups:
         return None
     seen.add(ident)
@@ -197,7 +184,6 @@ def singleton_group_entry(groups, ident, depth, seen):
 
 
 def iter_entries(node, path, owner, sink, groups=None, depth=0):
-    """Find spawn entries that mention an item id."""
     groups = groups or {}
     if depth > 8:
         return
@@ -265,7 +251,6 @@ def entry_key(entry):
 
 
 def collect_all_refs(contexts, ids):
-    """collect refs for many ids in one pass over every context."""
     by_id = {ident: [] for ident in ids}
     for context_name, ctx in contexts:
         groups = build_groups(ctx)
@@ -282,7 +267,6 @@ def collect_all_refs(contexts, ids):
 
 
 def compare_refs(old_id, mapping, baseline_refs, fork_refs):
-    """Check every baseline spawn entry has an equivalent fork spawn entry."""
     variant = mapping.get("variant")
     modifier = mapping.get("stack_modifier")
     problems = []
@@ -349,7 +333,6 @@ def spawn_capacity(new_def):
 
 
 def magazine_acceptance(ctx):
-    """tool/gun id -> set of magazine ids it accepts, including reloads_like expansion."""
     reloads = {}
     for ident in ctx.defs:
         raw = ctx.raw(ident) or {}
@@ -504,7 +487,6 @@ def main():
         new_def = normalise_def(target_ctx, replacement, variant, active_modifiers)
 
         changes = diff_defs(old_def or {}, new_def or {})
-        # Uncraft/disassembly: base recipe plus variant extras in the fork.
         old_uncraft = uncraft_of(old_ctx, ident)
         new_uncraft = uncraft_of(target_ctx, replacement)
         if old_uncraft or new_uncraft:
@@ -517,7 +499,6 @@ def main():
                 changes.append({"field": "uncraft", "old": old_uncraft, "new": new_uncraft,
                                 "severity": "BALANCE CHANGE"})
 
-        # Item group / spawn references (core and every mod referencing the old id).
         old_refs = old_refs_by_id.get(ident, [])
         fork_refs = fork_refs_by_id.get(replacement, [])
         mapping = {"replace": replacement, "variant": migration.get("variant"),
@@ -583,7 +564,6 @@ def main():
         with open(args.markdown, "w", encoding="utf-8") as handle:
             handle.write("\n".join(lines) + "\n")
 
-    # Human-readable summary.
     families = {}
     for record in report["records"]:
         families.setdefault(record["family"], []).append(record)

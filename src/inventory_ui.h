@@ -177,14 +177,9 @@ class inventory_selector_preset
         /** Color that will be used to display the entry string. */
         virtual nc_color get_color( const inventory_entry &entry ) const;
 
-        /**
-         * Lines describing the highlighted entry, drawn above the footer.
-         * Empty by default; get_preview_height() must cover them.
-         */
         virtual auto get_preview( const item * ) const -> std::vector<std::string> {
             return {};
         }
-        /** Rows to keep free above the footer for get_preview(). Zero hides the block. */
         virtual auto get_preview_height() const -> size_t {
             return 0;
         }
@@ -316,14 +311,10 @@ class inventory_column
 
         void draw( const catacurses::window &win, point pos ) const;
 
-        /// Index of the selectable entry drawn at `cell` when the column is drawn at `origin`.
         auto entry_index_at( point origin, point cell ) const -> std::optional<size_t>;
 
-        /// Index of the selectable row printed with `number` on the current page, if any.
         auto numbered_row_index( int number ) const -> std::optional<size_t>;
-        /// Whether this column prints 1-9/0 row numbers and binds them to the visible rows.
         auto rows_are_numbered() const -> bool;
-        /// False for lists whose digit keys already type a quantity.
         void set_row_numbers_allowed( bool allowed ) {
             row_numbers_allowed = allowed;
         }
@@ -436,7 +427,6 @@ class inventory_column
         bool active = false;
         bool multiselect = false;
         bool visibility = true;
-        /// False for lists whose digit keys already type a quantity.
         bool row_numbers_allowed = true;
 
         size_t selected_index = 0;
@@ -501,7 +491,6 @@ class inventory_selector
         virtual ~inventory_selector();
         /** These functions add items from map / vehicles. */
         void add_character_items( Character &character );
-        /// Clears and re-adds the character's worn, wielded and carried items.
         auto refresh_own_items( Character &character ) -> void;
         void add_map_items( const tripoint_bub_ms &target );
         void add_vehicle_items( const tripoint_bub_ms &target );
@@ -517,7 +506,6 @@ class inventory_selector
         void set_hint( const std::string &hint ) {
             this->hint = hint;
         }
-        /** Marks a trailing segment of the hint as a label a left click activates as `action`. */
         auto set_clickable_hint( std::string suffix, std::string action ) -> void {
             clickable_hint_suffix = std::move( suffix );
             clickable_hint_action = std::move( action );
@@ -613,9 +601,7 @@ class inventory_selector
         /** @return an entry from all entries by its invlet */
         inventory_entry *find_entry_by_invlet( int invlet ) const;
 
-        /** False for lists whose digit keys already type a quantity. */
         auto rows_are_numbered() const -> bool;
-        /** Turns 1-9/0 row selection off for lists that type quantities with digits. */
         void set_row_numbers_allowed( bool allowed );
         bool row_numbers_allowed = true;
 
@@ -714,21 +700,16 @@ class inventory_selector
 
     private:
         catacurses::window w_inv;
-        /// Where draw_columns() put each column, for mouse hit tests.
         mutable std::vector<point> column_origins;
 
-        /// Modern scheme: turns hover, clicks and the wheel into selection and actions.
         auto mouse_input( inventory_input res ) -> inventory_input;
 
-        /// True when a left click on a row should follow Enter instead of acting at once.
         virtual auto click_confirms() const -> bool {
             return false;
         }
 
-        /// Pairs the two clicks of a double-click on one list row.
         list_mouse::click_state mouse_click;
 
-        /// True when cell lies on the clickable hint suffix drawn in the header.
         auto hint_hotspot_at( point cell ) const -> bool;
 
 

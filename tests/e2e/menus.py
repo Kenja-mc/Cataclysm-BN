@@ -1,7 +1,3 @@
-"""List menus, the action menu and the inventory window frame.
-
-Tests that take `g` run on the runner's main game.
-"""
 import re
 
 from aim_reticle import action_clock
@@ -9,7 +5,6 @@ from helpers import action_menu, arena, bub_pos, count_carried, settle, spawn
 
 
 def test_wasd_menu_navigation(g):
-    """Letter shortcuts must not steal WASD from a real list menu."""
     from concurrent.futures import ThreadPoolExecutor
 
     with ThreadPoolExecutor(max_workers=1) as executor:

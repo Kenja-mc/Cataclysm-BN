@@ -1,13 +1,8 @@
-"""The corner boxes, body panel and map glyphs that replace sidebar rows.
-
-Tests that take `g` run on the runner's main game; box layouts start their own.
-"""
 import re
 
 from helpers import HELPERS, action_menu, arena, bub_pos, settle
 from tmux_game import Game, start_new_game
 
-# The date row contains nine sky cells, exactly one occupied by a sun or moon.
 SKY_BODIES = "☼○☽◑◕●◐☾"
 SKY_TRACK = re.compile("[" + re.escape("-*o)]DOC[(") + r"]{9}|[·" + SKY_BODIES + r"]{9}")
 
@@ -22,7 +17,6 @@ def sky_track(row):
 
 
 def test_hud_box_options(g):
-    """Each box moves to any corner or turns off; the ASCII choice renders labels, not icons."""
     other = Game(name="bn-e2e-hud", options={"SAFEMODE": "false", "HUD_WEATHER_BOX": "off",
                                              "HUD_COMBAT_BOX": "bottom_left", "HUD_ICONS": "ascii",
                                              "HUD_WINDOWS": "false"})
@@ -44,7 +38,6 @@ def test_hud_box_options(g):
 
 
 def test_boxes_replace_sidebar_rows(_g):
-    """What the weather and weapon boxes show leaves the sidebar; turning the boxes off brings it back."""
     spend_mana = "local a=gapi.get_avatar() a:get_magic():set_mana(1) out('ok')"
     game = Game(name="bn-e2e-hud-rows", options={"SAFEMODE": "false", "HUD_WINDOWS": "false"})
     try:
@@ -58,7 +51,6 @@ def test_boxes_replace_sidebar_rows(_g):
         assert any(icon in boxes for icon in ("☼", "☾", "☁", "☂", "↯", "❄", "◎", "▼")), "weather icon: " + boxes
         for fact in ("Light:", "Wind:"):
             assert fact in boxes, f"{fact} belongs in a box:\n" + boxes
-        # Unicode icons name the status rows, so the Weapon and Mana labels are gone.
         assert re.search(r"│ [✶⚔⌖➶]\s+\S", boxes), "the status box must show the weapon row:\n" + boxes
         assert "No style" not in boxes, "an unset martial style must not take a HUD row:\n" + boxes
         assert re.search(r"│ ✦\s+1/\d+", boxes), "the status box must show mana as current/max:\n" + boxes
@@ -70,7 +62,6 @@ def test_boxes_replace_sidebar_rows(_g):
             "the moon phase name is gone from the box:\n" + boxes
         assert re.search(r"(Spring|Summer|Autumn|Winter) \d+", boxes), \
             "box should show the season and day: " + boxes
-        # tmux drops trailing blanks, so a short line is all map; the sidebar starts at column 96.
         sidebar = "\n".join(l[96:] for l in lines)
         assert re.search(r"Place\s*:", sidebar) and re.search(r"X,Y,Z\s*:", sidebar), s
         for label in ("Sky", "Light", "Date", "Time", "Wield", "Style", "Mana"):
@@ -95,8 +86,6 @@ def test_boxes_replace_sidebar_rows(_g):
 
 
 def test_corner_bars_keep_sidebar_panels(g):
-    """HUD_CORNER_BARS puts each box on one row and leaves the sidebar panels in place."""
-    # The single-row readings must fit before we can check their sidebar ownership.
     cols = 180
     bars = Game(name="bn-e2e-corner-bars", cols=cols,
                 options={"SAFEMODE": "false", "HUD_CORNER_BARS": "true", "HUD_ICONS": "ascii",
@@ -118,7 +107,6 @@ def test_corner_bars_keep_sidebar_panels(g):
             "\n".join(lines[weather - 1:weather + 2])
         assert lines[weather + 1].startswith("╰"), "the weather bar is one row:\n" + \
             "\n".join(lines[weather - 1:weather + 2])
-        # The starting loadout varies (fists or a weapon), so the bar is found by its frame and stance.
         combat = next((i for i, l in enumerate(lines) if l.startswith("│") and "Walking" in l), None)
         assert combat is not None, "the status bar is missing:\n" + s
         row = lines[combat]
@@ -134,7 +122,6 @@ def test_corner_bars_keep_sidebar_panels(g):
 
 
 def test_body_panel(_g):
-    # The sidebar body panel is the subject, so this profile keeps the retained layout.
     game = Game(name="bn-e2e-body-panel", options={"SAFEMODE": "false",
                                                    "HUD_WINDOWS": "false"})
     try:
@@ -146,7 +133,6 @@ def test_body_panel(_g):
         assert "No wounds" in s, s
         body = next(l for l in s.splitlines() if "No wounds" in l)
         coord = next(l for l in s.splitlines() if "X,Y,Z" in l)
-        # The wound list starts on the same label grid as the Location panel, with no figure beside it.
         assert body.index("No wounds") == coord.index("X,Y,Z"), body + "\n" + coord
         game.lua("gapi.get_avatar():add_effect(EffectTypeId.new('bleed'), TimeDuration.from_minutes(30), BodyPartTypeId.new('arm_l'), 1) out('ok')")
         settle(game)
@@ -163,26 +149,21 @@ def test_body_panel(_g):
 
 
 def test_readable_map_glyphs(g):
-    """Trees and saplings draw as ♣ and τ instead of digits."""
     arena(g)
-    # Right next to the character, so even a dark start can see them.
     g.lua("M:set_ter_at(here(-1,-1), TerId.new('t_tree'):int_id()) M:set_ter_at(here(1,-1), TerId.new('t_tree_young'):int_id()) out('ok')")
     settle(g)
     s = g.screen()
     g.lua("M:set_ter_at(here(-1,-1), TerId.new('t_floor'):int_id()) M:set_ter_at(here(1,-1), TerId.new('t_floor'):int_id()) out('ok')")
-    # Read the row from the same capture: a fresh screen can have scrolled by a line.
     y = next(i for i, line in enumerate(s.splitlines()) if "@" in line)
     row = s.splitlines()[y - 1]
     assert "♣" in row and "τ" in row, "\n".join(s.splitlines()[y - 2:y + 2])
 
 
 def test_stance_toggle(g):
-    """The stance key cycles every mode, refreshes the Status box and never moves the player."""
     arena(g)
     g.lua("gapi.get_avatar():set_movement_mode(CharacterMoveMode.walk) out('ok')")
     settle(g)
     before = bub_pos(g)
-    # Crouching and standing back up spend moves upstream; only the cycle itself is asserted here.
     for mode, label, key in (("run", "Running", "r"), ("crouch", "Crouching", "c"),
                              ("prone", "Prone", "p"), ("walk", "Walking", "W")):
         g.keys("X", key, delay=0.8)

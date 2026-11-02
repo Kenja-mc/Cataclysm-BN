@@ -1014,8 +1014,6 @@ void hacking_activity_actor::finish( player_activity &act, Character &who )
                 who.add_msg_if_player( _( "You activate the panel!" ) );
                 who.add_msg_if_player( m_good, _( "The nearby doors unlock." ) );
                 here.ter_set( examp, t_card_reader_broken );
-                // Upstream #10117: open the whole door line like an ID card does, not just the
-                // tiles within reach of the reader.
                 const auto is_door = [&here]( const tripoint_bub_ms & pos ) {
                     return here.ter( pos ) == t_door_metal_locked;
                 };

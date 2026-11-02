@@ -547,8 +547,6 @@ void string_editor_window::cursor_to_line( const int line )
     if( !ustr.empty() && is_linebreak( ustr.at( ustr.size() - 1 ) ) ) {
         ustr = ustr.substr( 0, ustr.size() - 1 );
     }
-    // put cursor at the largest x coordinate in the line less or equal to
-    // the desired position.
     const int offset = ustr.substr_display( 0, _cursor_desired_x ).size();
     _position = new_line.cpts_start + offset;
 }
@@ -571,7 +569,6 @@ auto string_editor_window::view_top_line( const int focus_y ) const -> int
 auto string_editor_window::scrollbar_geometry( const int focus_y ) const -> scrollbar_input::geometry
 {
     return scrollbar_input::geometry{
-        // The scrollbar uses the scrollbar() default offset, point_zero.
         .offset = point_zero,
         .viewport_size = _max.y,
         .content_size = static_cast<int>( _folded->get_lines().size() ),
@@ -667,11 +664,8 @@ std::pair<bool, std::string> string_editor_window::query_string()
             // ctrl-s: confirm
             return { true, _utext.str() };
         } else if( modern && action == "MOUSE_MOVE" ) {
-            // Hovering never scrolls or edits.
         } else if( modern && action == "SEC_SELECT" ) {
-            // The secondary click is inert, so it never reaches text entry.
         } else if( modern && action == "SELECT" ) {
-            // A click only scrolls the view; it never injects characters or runs commands.
             if( edit.empty() ) {
                 const auto mouse = ctxt->get_coordinates( _win );
                 if( mouse ) {
@@ -688,7 +682,6 @@ std::pair<bool, std::string> string_editor_window::query_string()
                                 reposition = true;
                                 break;
                             case scrollbar_input::click_part::track:
-                                // The view keeps the cursor near the middle of the window.
                                 cursor_to_line( hit->viewport_pos + _max.y / 2 );
                                 reposition = true;
                                 break;

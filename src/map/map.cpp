@@ -178,8 +178,6 @@ static const std::string str_OPENCLOSE_INSIDE("OPENCLOSE_INSIDE");
 
 namespace {
 
-/// Prints one map glyph. A curses chtype holds only a byte of text, so code points beyond ASCII
-/// (readable tree glyphs, Unicode symbols from JSON) go out as UTF-8 instead.
 auto put_glyph(const catacurses::window& w, const nc_color col, const int sym) -> void {
     if (sym >= 0x80 && sym < 0x110000) {
         wprintz(w, col, utf32_to_utf8(static_cast<uint32_t>(sym)));
@@ -188,8 +186,6 @@ auto put_glyph(const catacurses::window& w, const nc_color col, const int sym) -
     }
 }
 
-// Map glyphs keep square corners; the curses frontend rounds the plain corner glyphs used by
-// windows.
 auto square_corner(const int sym) -> int {
     switch (sym) {
         case LINE_OXXO:
@@ -2113,14 +2109,11 @@ auto map::displace_vehicle(vehicle& veh, const tripoint_rel_ms& dp) -> bool {
     smzs = veh.advance_precalc_mounts(src);
     veh.sm_ms_pos = dest_proj.remainder;
 
-    // Restore only previously seen ground; an unseen NPC vehicle must not reveal its footprint.
-    // advance_precalc_mounts has removed the old vehicle cache entries before this redraw.
     {
         const auto mm_params = drawsq_params().memorize(true).output(false).show_items(false);
         for (const auto& abs_pos : vacated_tiles) {
             const auto p = abs_to_bub(abs_pos);
             if (!inbounds(p) || !check_seen_cache(p)) { continue; }
-            // The window stays unused: output() is off, only the memory write matters.
             draw_maptile({}, p, maptile_at_internal(p), mm_params);
         }
     }
@@ -4700,7 +4693,6 @@ auto map::can_open_door(
 namespace
 {
 
-/// Tells the avatar's map memory that its own open attempt found a door locked or unlocked.
 struct locked_door_record {
     const map &here;
     const map::interacting_entity &who;
@@ -4723,7 +4715,7 @@ auto record_locked_door( const locked_door_record &params ) -> void
     }
 }
 
-} // namespace
+}
 
 auto map::open_door(const interacting_entity& who, const tripoint_bub_ms& p, const bool inside)
     -> bool {
@@ -6419,7 +6411,6 @@ auto map::update_visibility_cache(const int zlev, const std::function<void()>& w
             }
         };
 
-        // Dirty flags cover rebuilt inputs; the GPU token also rejects residency mutations.
         if (!rebuild_seen_cache && previous.work_id != 0 && !visibility_caches_dirty()
             && previous.player_pos == next_visibility.player_pos
             && previous.view_offset == next_visibility.view_offset
@@ -6448,7 +6439,6 @@ auto map::update_visibility_cache(const int zlev, const std::function<void()>& w
             && cata_gpu::
                 can_reuse_gpu_visibility(gpu_device, {.id = previous.work_id}, visibility_params)) {
             if (while_gpu_pending) { while_gpu_pending(); }
-            // Replay discovery writes, including after an external overmap visibility reset.
             mark_overmap_seen();
             return;
         }
@@ -6811,12 +6801,11 @@ auto map::draw_maptile(
     } else {
         terrain_sym = curr_ter.symbol();
     }
-    // Digits read as numbers to newcomers; trees and saplings get picture glyphs instead.
     if (readable_map_glyphs) {
         if (curr_ter.has_flag(TFLAG_TREE)) {
-            terrain_sym = terrain_sym == '4' ? 0x2660 : 0x2663; // ♠ for pines, ♣ for the rest
+            terrain_sym = terrain_sym == '4' ? 0x2660 : 0x2663;
         } else if (curr_ter.has_flag(TFLAG_YOUNG)) {
-            terrain_sym = 0x03C4; // τ
+            terrain_sym = 0x03C4;
         }
     }
 
@@ -6935,7 +6924,6 @@ auto map::draw_maptile(
 
         if (!veh->forward_velocity() && !veh->player_in_control(g->u)) { memory_sym = sym; }
     } else if (has_rope_at(p)) {
-        // Upstream #10353: the rope hanging below a vehicle ladder, as the tiles view draws it.
         const auto [rope_veh, rope_part] = get_rope_at(p);
         sym = rope_veh->part_sym(rope_part, true);
         tercol = rope_veh->part_color(rope_part, true);
@@ -8736,7 +8724,6 @@ void map::build_map_cache(const int zlev, bool skip_lightmap) {
     auto vehicle_obscured_cache_rebuilt = false;
 #if defined(CATA_SDL)
     if (!use_sdl_gpu_compute && m_seen_cache_gpu_only) {
-        // GPU seen results are resident only; a backend change must rebuild the CPU arrays.
         seen_cache_dirty = true;
         m_seen_cache_gpu_only = false;
         m_completed_gpu_visibility.work_id = 0;
@@ -9016,8 +9003,6 @@ void map::build_map_cache(const int zlev, bool skip_lightmap) {
     }
 
     seen_cache_dirty |= build_vision_transparency_cache(get_player_character());
-    // Cached sight lines in map::sees are keyed on transparency, vehicle-obscured,
-    // and floor caches, so retiring the epoch on any of their rebuilds is required.
     const auto sight_lines_stale =
         seen_cache_dirty || vehicle_obscured_cache_rebuilt
         || !gpu_transparency_dirty_levels.empty();

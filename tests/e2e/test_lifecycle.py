@@ -1,4 +1,3 @@
-"""Harness lifecycle contracts against real curses games and a private tmux server."""
 import io
 import os
 import tempfile
@@ -45,7 +44,6 @@ class LifecycleTests(unittest.TestCase):
                 with shared_game("bn-e2e-lifecycle-borrower", options=PROFILE) as inner:
                     self.assertIs(inner, outer)
                     raise AssertionError("nested borrower failed")
-            # Failure must propagate, but the outer caller can still inspect its game.
             self.assertEqual(outer.lua("out(LIFECYCLE)"), ["1"])
             with self.assertRaises(RuntimeError):
                 with shared_game("bn-e2e-lifecycle-invalid", options=PROFILE):
@@ -103,7 +101,6 @@ class LifecycleTests(unittest.TestCase):
             self.assertEqual(result, 1, output.getvalue())
         finally:
             game.close()
-        # Missing panes must raise from tmux I/O, not become empty screens and Lua timeouts.
         for operation in (game.screen, game.screen_colors, lambda: game.keys("x"),
                           lambda: game.lua("out('dead')")):
             with self.subTest(operation=operation):

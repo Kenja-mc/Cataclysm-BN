@@ -59,14 +59,11 @@ static std::array<pairs, 100> colorpairs;
 namespace
 {
 
-// When the terminal has 16 colors, bright variants get their own pairs instead of relying on
-// bold-is-bright, which modern terminals no longer do by default.
 auto bright_pair_offset = 0;
 auto default_background = static_cast<short>( COLOR_BLACK );
 auto rounded_corners = false;
 auto unicode_lines = false;
 
-/// A built-in theme redefined terminal colors this session; they are reset on exit.
 auto palette_changed = false;
 
 auto modern_input_mode = std::optional<bool>();
@@ -77,7 +74,6 @@ auto update_control_input_mode() -> void
     if( modern_input_mode == modern ) {
         return;
     }
-    // Ctrl+C/Z are Modern peek chords.
     if( modern ) {
         raw();
     } else {
@@ -101,7 +97,6 @@ auto translate_attrs( const int attrs ) -> int
                 pair + bright_pair_offset ) );
 }
 
-/// Box drawing as real Unicode in UTF-8 terminals; many of them mangle the DEC line-drawing charset.
 auto unicode_line( const catacurses::chtype ch ) -> const char * // *NOPAD*
 {
     if( !unicode_lines ) {
@@ -183,7 +178,7 @@ auto apply_theme( std::array<RGBColor, color_loader<RGBColor>::COLOR_NAMES_COUNT
     rounded_corners = get_option<bool>( "UI_ROUNDED_BORDERS" );
 }
 
-} // namespace
+}
 
 auto ncurses::color_to_RGB( const nc_color &color ) -> RGBColor
 {
@@ -321,8 +316,6 @@ void catacurses::endwin()
 #endif
     const auto result = ::endwin();
     if( palette_changed ) {
-        // ncurses cannot read the terminal's real palette back, so ask the terminal to reset
-        // the colors a built-in theme overrode (OSC 104), instead of leaving them in the shell.
         std::fputs( "\033]104\007", stdout );
         std::fflush( stdout );
     }
@@ -503,12 +496,10 @@ void catacurses::init_interface()
 #if defined(BUTTON5_PRESSED)
     mouse_events |= BUTTON5_PRESSED;
 #endif
-    // ncurses defines button 8 only with the extended mouse protocol; terminals report back as 8.
 #if defined(BUTTON8_PRESSED)
     mouse_events |= BUTTON8_PRESSED;
 #endif
     mousemask( mouse_events, nullptr );
-    // Ask the terminal for motion events too, so hovering the map works (any-event tracking).
     std::fputs( "\033[?1003h", stdout );
     std::fflush( stdout );
 #endif
@@ -516,7 +507,6 @@ void catacurses::init_interface()
     // behave exactly like the wrapper, therefor:
     noecho();  // Don't echo keypresses
     cbreak();  // C-style breaks (e.g. ^C to SIGINT)
-    // Without this Ctrl+S freezes the terminal instead of reaching the game.
     if( auto tio = termios{}; tcgetattr( STDIN_FILENO, &tio ) == 0 ) {
         tio.c_iflag &= ~( IXON | IXOFF );
         tcsetattr( STDIN_FILENO, TCSANOW, &tio );
@@ -533,15 +523,11 @@ void catacurses::init_interface()
 namespace
 {
 
-/// Terminals with the kitty/xterm extended-key protocol report Shift+Space as this sequence.
-/// The game never asks for the protocol, so it only arrives from terminals configured to always
-/// send it (and from tests); bytes that do not match are pushed back and handled as before.
 constexpr char shift_space_tail[] = { '[', '3', '2', ';', '2', 'u' };
 
-/// ncurses folds two quick clicks into one double-click event; its second click is replayed here.
 auto pending_click = std::optional<point>();
 
-} // namespace
+}
 
 void input_manager::pump_events()
 {
@@ -587,7 +573,6 @@ input_event input_manager::get_input_event()
         catacurses::doupdate();
         key = getch();
         if( key == KEY_ESCAPE ) {
-            // Peek for the Shift+Space sequence after Escape; anything else goes back untouched.
             auto peeked = std::array<int, std::size( shift_space_tail )> {};
             auto peeked_count = 0;
             auto matched = true;
@@ -630,7 +615,6 @@ input_event input_manager::get_input_event()
         }
         rval = input_event();
         if( key == 0 ) {
-            // Terminals send Ctrl+Space as NUL; keycode 0 means "no key" everywhere else.
             previously_pressed_key = KEY_CTRL_SPACE;
             return input_event( KEY_CTRL_SPACE, input_event_t::keyboard );
         }

@@ -1,8 +1,3 @@
-"""Scrollbar clicks in list menus, options and the keybindings editor.
-
-The bars are drawn over a border, so the tests find the real '^'/'v' pair on the
-screen instead of assuming a terminal size, then click cells inside that bar.
-"""
 import time
 from concurrent.futures import ThreadPoolExecutor
 
@@ -14,7 +9,6 @@ from tmux_game import Game, start_new_game
 
 
 def find_scrollbar(screen, title=None):
-    """Locate a vertical scrollbar, optionally on a titled menu's left border."""
     lines = screen.splitlines()
     menu_left = None
     if title is not None:
@@ -55,7 +49,6 @@ def open_main_menu(g):
     while "MAIN MENU" not in g.screen():
         assert time.time() < deadline, "Escape should open the main menu\n" + g.screen()
         g.keys("Escape", delay=0.4)
-    # The frame title draws before the entries, so wait for the list itself.
     g.wait_for("Keybindings", timeout=15)
     g.settle_screen()
 
@@ -140,7 +133,6 @@ def test_options_and_keybindings_scrollbars(_g):
     try:
         start_new_game(g)
         open_main_menu(g)
-        # Pick the row by label: the menu's auto-assigned hotkeys shift with the scheme.
         options = None
         for _ in range(3):
             rows = {row.label: row.hotkey for row in menu_rows(g.screen())}

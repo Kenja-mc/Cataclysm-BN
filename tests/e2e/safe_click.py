@@ -1,4 +1,3 @@
-"""Safe click-to-walk: far clicks need a second click, and a hostile in view limits a click to one step."""
 from contextlib import contextmanager
 
 from fixtures import shared_game
@@ -20,7 +19,6 @@ def click_walk_setup(game):
 
 @contextmanager
 def click_walk_game(name, **options):
-    """Keep legacy travel opt-in and isolated."""
     with shared_game(name, define=HELPERS, setup=click_walk_setup,
                      options={"CONTROL_SCHEME": "modern", "SAFEMODE": "false",
                               "MOUSE_TILE_SELECTION": "true", "MOUSE_MOVE": "true",
@@ -33,7 +31,6 @@ def test_safe_click_preview(_g):
         start = bub_pos(g)
         x, y = g.find("@")
         g.click(x + 3, y)
-        # Lua cancels the pending confirmation.
         assert bub_pos(g) == start, "the first far click must only preview travel"
         g.click(x + 3, y)
         g.click(x + 3, y)
@@ -72,7 +69,6 @@ def test_safe_click_hostile_npc_and_danger(_g):
         game.click(x - 3, y)
         assert bub_pos(game) == (start[0] - 1, start[1], start[2])
 
-        # A visible hostile must not bypass confirmation for a dangerous destination.
         assert game.lua("out(M:add_field_at(here(-3,0),FieldTypeId.new('fd_acid'):int_id(),"
                         "3,TimeDuration.from_turns(0)))") == ["true"]
         start = bub_pos(game)

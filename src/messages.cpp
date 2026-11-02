@@ -730,7 +730,6 @@ void Messages::dialog::input( const ui_adaptor &ui )
         std::string action = ctxt.handle_input();
         if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" &&
             ctxt.get_raw_input().type == input_event_t::mouse ) {
-            // Text scrolls three lines per notch.
             if( action == "SCROLL_UP" ) {
                 offset = offset > 3 ? offset - 3 : 0;
                 action.clear();
@@ -740,7 +739,6 @@ void Messages::dialog::input( const ui_adaptor &ui )
                 offset = std::min( last_offset, offset + 3 );
                 action.clear();
             } else if( action == "SELECT" || action == "SEC_SELECT" ) {
-                // Messages are informational: a click only scrolls.
                 if( const auto mouse = ctxt.get_coordinates( w ) ) {
                     const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
                     const auto hit = scrollbar_input::click( {

@@ -1,20 +1,15 @@
-"""A heard but unseen source fades after the configured turns in an isolated game."""
 from contextual_hub import colored_cells
 from helpers import HELPERS, Game, arena, settle, start_new_game, wait_until
 
-# map_area reads the map's screen region; floating HUD windows would draw ? and · there.
 PROFILE = {"SAFEMODE": "false", "SOUND_MARKER_TURNS": "3", "HUD_WINDOWS": "false"}
-# A longer ceiling leaves the stale dot on screen for more than one capture.
 AGING_PROFILE = {"SAFEMODE": "false", "SOUND_MARKER_TURNS": "5", "HUD_WINDOWS": "false"}
 LEGEND = "? = a sound you heard, · = an older one."
 
 
 def start_sound_scene(g):
-    """Start a fresh game in a sealed underground arena with one unseen NPC."""
     start_new_game(g)
     g.define_lua(HELPERS)
     arena(g)
-    # Underground ambient noise is fixed; surface wind can mask the shout.
     assert g.lua("local a=gapi.get_avatar() local p=a:get_pos_ms() "
                  "a:clear_bionics() a:clear_mutations() a:clear_morale() a:drop_all_items() "
                  "a:set_pos_ms(TripointBubMs.new(p.x,p.y,p.z-1)) arena() "
@@ -25,7 +20,6 @@ def start_sound_scene(g):
                  "SOUND_NPC:clear_bionics() SOUND_NPC:clear_mutations() "
                  "SOUND_NPC:clear_morale() SOUND_NPC:drop_all_items() SOUND_NPC:clear_morale() "
                  "SOUND_NPC:set_attitude(NpcAttitude.NPCATT_WAIT) out('ok')") == ["ok", "ok"]
-    # Apply terrain and equipment changes before generating the sound.
     settle(g)
 
 
@@ -34,7 +28,6 @@ def map_area(g):
 
 
 def glyph_cells(g, glyph):
-    """Map-area cells with `glyph`, as (x, y, (foreground SGR, bold))."""
     found = []
     for y, line in enumerate(g.screen_colors().splitlines()[4:], start=4):
         for x, (ch, state) in enumerate(colored_cells(line)):
@@ -44,7 +37,6 @@ def glyph_cells(g, glyph):
 
 
 def test_sound_marker_fading(_g):
-    """A genuinely heard but unseen sound persists, then fades without a new source."""
     g = Game(name="bn-e2e-sound", options=PROFILE)
     try:
         start_sound_scene(g)
@@ -64,7 +56,6 @@ def test_sound_marker_fading(_g):
 
 
 def test_sound_marker_aging_and_legend(_g):
-    """A stale marker shrinks and dims, the legend shows once, and deafness clears cues."""
     g = Game(name="bn-e2e-sound-aging", options=AGING_PROFILE)
     try:
         start_sound_scene(g)
@@ -79,7 +70,6 @@ def test_sound_marker_aging_and_legend(_g):
         assert fresh, "the fresh marker should be a '?':\n" + g.screen()
         x, y, fresh_color = fresh[0]
 
-        # A second marker must not print the legend again while the first line is still visible.
         assert g.lua("SOUND_NPC:shout('marker aging check again',false) out('ok')") == ["ok"]
         settle(g)
         assert g.screen().count(LEGEND) == 1, \
@@ -98,7 +88,6 @@ def test_sound_marker_aging_and_legend(_g):
         assert dot[2] != fresh_color, \
             f"the stale marker should dim: fresh {fresh_color}, stale {dot[2]}\n" + g.screen()
 
-        # Hearing loss invalidates the cues already on the map.
         assert g.lua("local a=gapi.get_avatar() "
                      "a:set_mutation(MutationBranchId.new('DEAF')) out(a:is_deaf())") == ["true"]
         settle(g)

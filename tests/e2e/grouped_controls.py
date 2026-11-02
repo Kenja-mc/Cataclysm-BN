@@ -32,7 +32,6 @@ def test_grouped_look_selects_the_space_interaction_tile(_game):
         game.wait_for("Interact with the")
         game.keys("Escape", delay=0.3)
         game.wait_gone("Interact with the")
-        # Space runs the selected door's obvious action, so no menu stands in the way.
         game.keys("space", delay=0.8)
         assert game.lua("out(M:get_ter_at(here(1,0)):str_id():str(),"
                         "M:get_ter_at(here(-1,0)):str_id():str())") == ["t_door_o,t_door_c"]
@@ -120,7 +119,6 @@ def test_grouped_fire_from_empty_inspection_aims_at_selected_floor(_game):
                 x, y = game.find("@")
                 game.click(x, y - 1, button=2)
             else:
-                # First arrow snaps to the eastern hostile.
                 game.keys("Up", "Left", "Left", "Left", "Up", delay=0.5)
             assert "zombie" not in mouse_view(game), "the inspection tile must be empty"
             assert grouped_gun_state(game) == before, "inspection must be free"
@@ -163,7 +161,6 @@ def test_grouped_direct_empty_or_friendly_gun_click_never_retargets(_game):
 
 
 def change_grouped_control_scheme(game, save):
-    # Esc clears inspection; use an options hotkey.
     game.keys("F6", delay=0.8)
     game.wait_for(" OPTIONS ")
     header = next(((line.index("[Interface]") + 2, y)
@@ -217,7 +214,6 @@ def test_grouped_live_classic_switch_clears_inspection_before_fire(_game):
             game.click(x, y - 1, button=2)
             assert "zombie" not in mouse_view(game)
             change_grouped_control_scheme(game, save=False)
-            # Esc proves the canceled switch kept inspection.
             game.keys("Escape", delay=0.7)
             assert "MAIN MENU" not in game.screen(), "canceling options must preserve inspection"
             assert grouped_gun_state(game) == before

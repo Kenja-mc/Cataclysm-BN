@@ -1,16 +1,3 @@
-"""Game state for the agentic playtest: exact where the Lua API can answer, pane text otherwise.
-
-``dump_state`` returns one :class:`StateDump` per turn: compact text the model reads, the closed
-action list for the screen it is on, the screen name, and (tiles) the frame as PNG bytes.
-
-Exact reads go through the in-game Lua console (``Game.lua``) in curses; the tiles build reads
-the same fields from the JSON file the game writes with ``--state-out``.  The open menu is the one
-thing the Lua API cannot report, so ``menu`` comes from classifying the pane text: see
-``agent_actions.classify_screen``.
-
-``send_action`` is the only place that knows how a key reaches the game: tmux for the curses
-build, X11 keysyms for the tiles build, reusing ``tiles.py``.
-"""
 from __future__ import annotations
 
 import json
@@ -27,9 +14,9 @@ from agent_actions import (  # noqa: F401  (ActionSpec is re-exported for caller
     x11_keys,
 )
 
-MAX_TEXT = 6000        # characters; the shared 32k-token window also holds the questions
-MAX_SCREEN_LINES = 45  # pane lines kept under the exact state (a 140x45 pane is the default)
-TUTORIAL_NAME = "John Smith"  # gamemode_tutorial names its avatar this
+MAX_TEXT = 6000
+MAX_SCREEN_LINES = 45
+TUTORIAL_NAME = "John Smith"
 
 
 @dataclass(frozen=True)
@@ -40,12 +27,7 @@ class StateDump:
     image: bytes | None
 
 
-# ---------------------------------------------------------------- exact Lua reads
-
 _STATE_LUA = (
-    # Self-contained: positions are built here, so this does not depend on the HELPERS prelude.
-    # Every line stays under the console's 76-column fold, so one dump is a short block of
-    # physical lines and the console viewport keeps all of it.
     "function AGS_P(dx,dy) local c=gapi.get_avatar():get_pos_ms() "
     "return TripointBubMs.new(c.x+dx,c.y+dy,c.z) end "
     "function AGS_T(s,n) s=(s or ''):gsub('<[^>]*>',''):gsub('%s+',' ') "
@@ -80,7 +62,6 @@ _STATE_LUA = (
 
 
 def _ensure_lua(game) -> bool:
-    """Define the dump function once per game; a short call per turn keeps the console quick."""
     if getattr(game, "_agent_state_lua", False):
         return True
     game.define_lua(_STATE_LUA)
@@ -89,11 +70,6 @@ def _ensure_lua(game) -> bool:
 
 
 def read_lua_state(game) -> list[str]:
-    """The exact fields, one ``key=value`` line each, as the Lua dump prints them.
-
-    The console shows the newest log lines, so a full log can push the first fields off screen.
-    When the dump is cut, clear the Lua log and take one more reading.
-    """
     if not hasattr(game, "lua"):
         return []
     try:
@@ -102,7 +78,7 @@ def read_lua_state(game) -> list[str]:
         if "done" not in lines:
             game.lua("gdebug.clear_lua_log() out('ok')")
             lines = _dump_lines(game)
-    except Exception as error:  # a broken read must not lose the pane text that still works
+    except Exception as error:
         return [f"lua_error={type(error).__name__}: {error}"]
     out = []
     for line in lines:
@@ -119,10 +95,6 @@ def _dump_lines(game) -> list[str]:
 
 
 def read_state_fields(handle) -> list[str]:
-    """The same ``key=value`` fields, read from the JSON file the game writes with --state-out.
-
-    The tiles build has no Lua console and no text screen; the state file is its text channel.
-    """
     path = None
     for source in (handle, getattr(handle, "game", None), getattr(handle, "tiles", None)):
         value = getattr(source, "state_path", None)
@@ -154,13 +126,7 @@ def read_state_fields(handle) -> list[str]:
     return fields
 
 
-# ---------------------------------------------------------------- text
-
 def _trim_screen(screen: str) -> tuple[str, int]:
-    """Newest-first: keep the most recent pane lines and count the ones dropped.
-
-    Trailing blanks go, leading blank lines do not: a click target's row must keep its index.
-    """
     lines = [line.rstrip() for line in screen.rstrip("\n").splitlines()]
     if len(lines) <= MAX_SCREEN_LINES:
         return "\n".join(lines), 0
@@ -169,7 +135,6 @@ def _trim_screen(screen: str) -> tuple[str, int]:
 
 def build_text(mode: str, menu: str | None, fields: list[str], screen: str, note: str = "",
                budget: int = MAX_TEXT) -> str:
-    """Header first, exact fields next, then the newest pane lines; oldest lines go first."""
     head = [f"mode={mode}", f"menu={menu or 'unknown'}"]
     if note:
         head.append(note)
@@ -180,14 +145,11 @@ def build_text(mode: str, menu: str | None, fields: list[str], screen: str, note
         body += ["-- screen --"] + ([marker] if marker else []) + kept.splitlines()
     room = budget - sum(len(line) + 1 for line in head)
     while body and sum(len(line) + 1 for line in body) > room:
-        body.pop(0)  # drop the oldest line first
+        body.pop(0)
     return "\n".join(head + body)
 
 
-# ---------------------------------------------------------------- handles
-
 def _game_of(handle):
-    """The curses tmux Game behind a start_scenario handle, or a bare Game."""
     game = getattr(handle, "game", None)
     if game is not None:
         return game
@@ -226,11 +188,6 @@ def _tiles_window(handle):
 
 
 def _tiles_x11(handle):
-    """The X11 connection to drive and capture through: the handle's own, or one made here.
-
-    A connection made here is cached on ``handle.tiles`` so repeated turns reuse it and
-    :func:`close_tiles` can close it before Xvfb stops.
-    """
     tiles = _tiles_of(handle)
     x11 = getattr(tiles, "x11", None) or getattr(getattr(tiles, "session", None), "x11", None)
     if x11 is not None:
@@ -244,11 +201,6 @@ def _tiles_x11(handle):
 
 
 def close_tiles(handle) -> None:
-    """Close the X11 connection this module opened, before the display's Xvfb is stopped.
-
-    Xvfb dying under an open Xlib connection aborts the calling process, so the driver closes
-    this (or ``handle.tiles.x11`` itself) first, then stops the display.
-    """
     tiles = getattr(handle, "tiles", None)
     own = getattr(tiles, "_agent_state_x11", None)
     if own is not None:
@@ -257,7 +209,6 @@ def close_tiles(handle) -> None:
 
 
 def capture_tiles(handle) -> bytes:
-    """One frame of the tiles window as PNG bytes, through tiles.py's capture path."""
     tiles = _tiles_of(handle)
     capture = getattr(tiles, "capture", None)
     if callable(capture):
@@ -273,12 +224,10 @@ def capture_tiles(handle) -> bytes:
 
 
 def _button(action: ActionSpec) -> int:
-    """Left clicks confirm a list row; the secondary_* actions right click, as the mouse tests do."""
     return 2 if action.id.startswith("secondary_") else 0
 
 
 def send_action(handle, action: ActionSpec, *, mode: str) -> None:
-    """Send one ActionSpec: keys through tmux (curses) or X11 keysyms (tiles), plus its click."""
     if mode == "tiles":
         tiles = _tiles_of(handle)
         if action.click is not None:
@@ -303,17 +252,8 @@ def send_action(handle, action: ActionSpec, *, mode: str) -> None:
             game.click(*action.click, button=_button(action), settle=i == action.clicks - 1)
 
 
-# ---------------------------------------------------------------- the dump
-
 def dump_state(handle, *, mode: str, capture_image: bool = False, scheme: str = "modern",
                mouse: bool = False, budget: int = MAX_TEXT) -> StateDump:
-    """One turn of state: exact text, the closed action list, the screen name, the frame.
-
-    ``handle`` is the ``playtest.start_scenario`` handle in both modes; a bare ``tmux_game.Game``
-    also works.  ``scheme`` and ``mouse`` pick the action list (default: the fork's modern layout,
-    keyboard only).  The tiles build reads its exact fields from the ``--state-out`` file; pass
-    ``capture_image=True`` as well for the frame.
-    """
     if mode == "tiles":
         fields = read_state_fields(handle)
         if not fields and not capture_image:
@@ -336,8 +276,6 @@ def dump_state(handle, *, mode: str, capture_image: bool = False, scheme: str = 
         if fields and not fields[0].startswith("lua_error"):
             game._agent_state_fields = fields
     else:
-        # Opening the Lua console presses Escape and backtick, which would close this menu, so
-        # the exact fields stay at the last gameplay turn and the pane carries the rest.
         fields = list(getattr(game, "_agent_state_fields", []))
         if fields:
             note = "exact fields are from the last gameplay turn: reading them would close this menu"

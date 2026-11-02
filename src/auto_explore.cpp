@@ -19,8 +19,6 @@ namespace auto_explore
 namespace
 {
 
-/// Tiles auto-explore will not step on: impassable (walls, closed doors), dangerous fields and
-/// traps the player knows about.
 auto blocked( map &here, const avatar &you, const tripoint_bub_ms &p ) -> bool
 {
     if( !here.passable( p ) || here.dangerous_field_at( p ) ) {
@@ -35,7 +33,7 @@ auto default_known( const avatar &you, const tripoint_bub_ms &p ) -> bool
     return you.sees( p ) || you.has_memorized_tile_for_autodrive( bub_to_abs( p ) );
 }
 
-} // namespace
+}
 
 auto frontiers( const frontier_options &opts, const size_t count ) -> std::vector<tripoint_bub_ms>
 {
@@ -48,7 +46,6 @@ auto frontiers( const frontier_options &opts, const size_t count ) -> std::vecto
     auto visited = std::vector<bool>( static_cast<size_t>( side * side ), false );
     const auto index = [&]( const tripoint_bub_ms & p ) { return static_cast<size_t>( ( p.y() - start.y() + opts.max_dist ) * side + ( p.x() - start.x() + opts.max_dist ) ); };
 
-    // Plain BFS: with uniform step cost frontiers come out nearest first.
     auto found = std::vector<tripoint_bub_ms>();
     auto queue = std::vector<tripoint_bub_ms> { start };
     visited[index( start )] = true;
@@ -84,14 +81,11 @@ auto nearest_frontier( const frontier_options &opts ) -> std::optional<tripoint_
 auto set_route_to_frontier( const frontier_options &opts ) -> bool
 {
     auto &you = opts.you;
-    // The pathfinder can refuse a frontier the flood fill reached (e.g. a tile it avoids), so
-    // fall back to the next nearest ones.
     constexpr auto attempts = size_t{ 8 };
     for( const auto &target : frontiers( opts, attempts ) ) {
         const auto route = opts.here.route( you.bub_pos(), target, you.get_legacy_pathfinding_settings(),
                                             you.get_legacy_path_avoid() );
         if( !route.empty() ) {
-            // The main loop takes the steps; consuming one here would desync next_expected_position.
             you.set_destination( route );
             return true;
         }
@@ -115,4 +109,4 @@ auto handle( avatar &you ) -> void
     }
 }
 
-} // namespace auto_explore
+}

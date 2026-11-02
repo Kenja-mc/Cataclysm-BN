@@ -1,0 +1,46 @@
+name: fork-comments
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "build-scripts/**"
+      - "tools/**"
+      - "scripts/**"
+      - "bin/**"
+      - ".githooks/**"
+      - "data/mods/**/*.lua"
+      - ".github/workflows/fork-comments.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "build-scripts/**"
+      - "tools/**"
+      - "scripts/**"
+      - "bin/**"
+      - ".githooks/**"
+      - "data/mods/**/*.lua"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch upstream main
+        run: git fetch --no-tags https://github.com/cataclysmbn/Cataclysm-BN.git main:refs/remotes/upstream/main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Checker recognizes every comment form
+        run: python3 build-scripts/check_fork_comments.py --self-check
+      - name: Fork-owned code has no comments
+        run: python3 build-scripts/check_fork_comments.py

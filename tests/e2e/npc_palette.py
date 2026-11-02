@@ -1,10 +1,8 @@
-"""Follower command palette: chat menu entry, rule changes that stick, and the NPC_UI option."""
 from helpers import HELPERS, action_menu, arena, settle
 from tmux_game import Game, start_new_game
 
 NPC_WORLD_OPTIONS = {"STATIC_NPC": "false", "STARTING_NPC": "never", "RANDOM_NPC": "false"}
 
-# A new farmer follower, placed within hearing range of the player.
 FOLLOWER = ("FOLLOWER=M:place_npc(here(2,0),'farmer') "
             "FOLLOWER.name='Palette One' "
             "FOLLOWER:set_attitude(NpcAttitude.NPCATT_WAIT) "
@@ -50,7 +48,6 @@ def choose_palette(g, name):
 
 
 def test_follower_palette_changes_the_follower_rules(g):
-    """Palette changes are stored in the follower's rules, so they show again when the palette reopens."""
     palette = Game(name="bn-e2e-npc-palette",
                    options={"SAFEMODE": "false", **NPC_WORLD_OPTIONS})
     try:
@@ -60,7 +57,6 @@ def test_follower_palette_changes_the_follower_rules(g):
             "only the fixture's own followers may populate the palette"
         arena(palette)
         settle(palette)
-        # Without a follower the chat menu has no palette entry.
         action_menu(palette, "Interact", "Chat with NPC")
         assert "Follower command palette" not in palette.screen(), palette.screen()
         palette.keys("Escape", delay=0.5)
@@ -84,7 +80,6 @@ def test_follower_palette_changes_the_follower_rules(g):
         assert "Aim rule: Spray" in palette.screen(), palette.screen()
         palette.keys("c", delay=0.5)
         assert "CBM recharge: Little (25%)" in palette.screen(), palette.screen()
-        # Reserve steps All, Most, Some, Little, None, so three steps from Some arrive back at All.
         for label in ("CBM reserve: Little (25%)", "CBM reserve: None", "CBM reserve: All (100%)"):
             palette.keys("r", delay=0.5)
             assert label in palette.screen(), palette.screen()
@@ -96,7 +91,6 @@ def test_follower_palette_changes_the_follower_rules(g):
             assert label in screen, "change did not stick: " + label + "\n" + screen
         palette.keys("D", delay=0.5)
 
-        # A temporary order from the team menu holds the rule; flipping it in the palette takes effect.
         action_menu(palette, "Interact", "Chat with NPC")
         palette.keys("o", delay=1)
         assert "Hold off on pulping zombies for a while" in palette.screen(), palette.screen()
@@ -108,7 +102,6 @@ def test_follower_palette_changes_the_follower_rules(g):
         assert "Allow pulp: ON" in palette.screen(), "flip hidden by temporary order:\n" + palette.screen()
         palette.keys("D", delay=0.5)
 
-        # With two followers the palette first asks whose rules to show.
         assert palette.lua(SECOND_FOLLOWER) == ["ok"]
         settle(palette)
         action_menu(palette, "Interact", "Chat with NPC")
@@ -140,7 +133,6 @@ def test_follower_palette_changes_the_follower_rules(g):
 
 
 def test_follower_palette_option_off_keeps_the_old_menu(g):
-    """With NPC_UI off the chat menu has no palette entry but keeps the team commands."""
     legacy = Game(name="bn-e2e-npc-palette-off",
                   options={"SAFEMODE": "false", "NPC_UI": "false", **NPC_WORLD_OPTIONS})
     try:

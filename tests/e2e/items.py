@@ -1,7 +1,3 @@
-"""Folded item families, black powder, jewelry and item interaction.
-
-Tests that take `g` run on the runner's main game; each sets up the items it needs.
-"""
 import re
 
 from agent_actions import menu_rows
@@ -9,7 +5,6 @@ from helpers import action_menu, arena, count_carried, empty_inventory, give, se
 
 
 def test_use_key_resolves_by_item_kind(g):
-    """`v` uses whatever you pick: a melee weapon is wielded, an armor piece is worn."""
     def use_picked(name):
         g.keys("v", delay=0.5)
         g.wait_for("Use which item?")
@@ -33,14 +28,12 @@ def test_use_key_resolves_by_item_kind(g):
 
 
 def test_unified_batteries(g):
-    """Battery variants merged into light/medium/heavy cells plus atomic ones."""
     out = g.lua("out(ItypeId.new('light_minus_battery_cell'):is_valid(), ItypeId.new('heavy_disposable_cell'):is_valid(), "
                 "ItypeId.new('light_battery_cell'):is_valid(), ItypeId.new('light_atomic_battery_cell'):is_valid())")
     assert out == ["false,false,true,true"], out
 
 
 def test_black_powder_rounds_stack(g):
-    """Black powder handloads are a stack modifier, so they merge into the factory 9mm stack."""
     arena(g)
     out = g.lua("local p=here(1,0) M:create_item_at(p, ItypeId.new('9mm'), 20) "
                 "local it=gapi.create_item(ItypeId.new('9mm'), 10) it:set_var_str('stack_mod:black_powder','10') M:add_item(p, it) "
@@ -52,7 +45,6 @@ def test_black_powder_rounds_stack(g):
 
 
 def test_black_powder_loot_keeps_its_modifier(g):
-    """Loot retains either native black-powder ballistics or the full stack modifier."""
     arena(g)
     g.lua("M:clear_items_at(here(2,0)) for i=1,5 do M:place_items('ammo_rifle_blackpowder_handloads', 100, here(2,0), here(2,0), false) end out('ok')")
     rows = g.lua("for _,it in pairs(M:get_items_at(here(2,0))) do "
@@ -62,17 +54,14 @@ def test_black_powder_loot_keeps_its_modifier(g):
     for row in rows:
         item_id, charges, modifier, blackpowder = row.split(",")
         if int(blackpowder):
-            # A modifier would apply the native round's black-powder penalty twice.
             assert int(float(modifier)) == 0, f"{item_id} is black powder already: {row}"
         else:
             assert int(float(modifier)) == int(charges), f"every spawned round is black powder: {rows}"
 
 
 def test_jewelry_is_one_item_per_form(g):
-    """Rings, bracelets and the like are one item each; metal and gem are a variant the item remembers."""
     empty_inventory(g)
     arena(g)
-    # Prior wounds and returning hostiles must not interrupt this disassembly fixture.
     assert g.lua("local u=gapi.get_avatar() u:clear_effects() u:set_all_parts_hp_to_max() "
                  "u:set_pain(0) for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end out('ok')") == ["ok"]
     settle(g)
@@ -98,7 +87,6 @@ def test_jewelry_is_one_item_per_form(g):
     g.type("ruby")
     g.keys("Enter", delay=1)
     assert "gold (2) and 1 ruby" in g.screen(), "the yield lists the ring's gold and ruby\n" + g.screen()
-    # A second Enter straight after the first is swallowed, so move the cursor in between.
     g.keys("Down", "Up", "Enter", delay=0.5)
     g.wait_gone("disassembly:", timeout=60)
     assert g.lua("count_at(0,0,'ruby')") == ["1"]
@@ -107,7 +95,6 @@ def test_jewelry_is_one_item_per_form(g):
 
 
 def test_mixed_jewelry_stacks(g):
-    """Different rings stack like Don't Starve items; each still keeps its own gem, metal and price."""
     out = g.lua("local u=gapi.get_avatar() local p=0 for _,v in ipairs({'ruby_gold_ring','copper_ring'}) do "
                 "local r=gapi.create_item(ItypeId.new('jewelry_ring'), -1) r:set_var_str('variant',v) p=p+r:price(false) u:add_item(r) end "
                 "out(p)")
@@ -119,7 +106,6 @@ def test_mixed_jewelry_stacks(g):
 
 
 def test_folded_families(g):
-    """Novels, board games and judo belts are one item each, with the old items as variants."""
     out = g.lua("local b=gapi.create_item(ItypeId.new('paperback'), -1) b:set_var_str('variant','novel_western') "
                 "local j=gapi.create_item(ItypeId.new('judo_belt'), -1) j:set_var_str('variant','judo_belt_black') "
                 "out(b:display_name(1), j:display_name(1), ItypeId.new('novel_western'):is_valid())")
@@ -128,7 +114,6 @@ def test_folded_families(g):
 
 
 def test_mre_unpacks_its_entree(g):
-    """MRE boxes are one item; the entree is a variant and unpacking yields it."""
     arena(g)
     out = g.lua("local m=gapi.create_item(ItypeId.new('mre_ration'), -1) m:set_var_str('variant','mre_lemontuna') "
                 "gapi.get_avatar():add_item(m) out(m:display_name(1))")
@@ -139,13 +124,11 @@ def test_mre_unpacks_its_entree(g):
     g.keys("Enter", "Down", "Up", delay=0.5)
     assert "Lemon Pepper Tuna" in g.screen(), g.screen()
     g.keys("Enter", delay=1)
-    # The YIELD preview menu disassembles without a query; the entree lands on the floor.
     assert wait_until(lambda: g.lua("count_at(0,0,'mre_lemontuna')") == ["1"], 60), g.screen()
     assert count_carried(g, "mre_ration") == 0
 
 
 def test_gun_loudness_in_item_info(g):
-    """A gun's item info says how loud a shot is, from the same noise the game makes when firing."""
     arena(g)
     give(g, "m9")
     g.keys("i", "/", delay=1)
@@ -164,7 +147,6 @@ def test_gun_loudness_in_item_info(g):
 
 
 def test_combine_partly_used_tools(g):
-    """Partly used tools that nothing refills pour into one, keeping every charge."""
     empty_inventory(g)
     arena(g)
     g.lua("local u=gapi.get_avatar() u:create_item(ItypeId.new('matches'),1):set_charges(5) "
@@ -186,7 +168,6 @@ def test_combine_partly_used_tools(g):
 def test_black_powder_survives_reloading(g):
     empty_inventory(g)
     arena(g)
-    # Earlier fixtures can leave wounds that interrupt reloading.
     assert g.lua("local u=gapi.get_avatar() u:clear_effects() u:set_all_parts_hp_to_max() "
                  "local w=u:create_item(ItypeId.new('model_10_revolver'), -1) "
                  "local a=u:create_item(ItypeId.new('38_special'), 6) a:set_var_str('stack_mod:black_powder','3') "
@@ -216,8 +197,6 @@ REVOLVER = ("local w=nil for _,it in ipairs(gapi.get_avatar():all_items(false)) 
 
 
 def test_modern_wield_nearby_rows_keep_their_shortcut(g):
-    """A nearby item's displayed shortcut must wield that item, not move the cursor."""
-    # Three nearby rows force a collision with the cursor digit 2 before remapping.
     arena(g)
     g.lua("gapi.get_avatar():drop_all_items() out('ok')")
     arena(g)
@@ -248,7 +227,6 @@ def test_modern_wield_nearby_rows_keep_their_shortcut(g):
 
 
 def item_picker_rows(screen, names):
-    """Read each fixture item's displayed shortcut from its picker row."""
     rows = []
     for line in screen.splitlines():
         if "│" not in line:

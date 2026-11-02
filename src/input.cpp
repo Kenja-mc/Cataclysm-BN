@@ -48,8 +48,6 @@ static const std::string default_context_id( "default" );
 namespace
 {
 
-/// Display names for keys whose portable names read as code ("RETURN", "PPAGE").
-/// Used only when the language has no translation of the portable name.
 auto readable_key_name( const std::string &raw ) -> std::optional<std::string>
 {
     static const auto names = std::array{
@@ -81,7 +79,7 @@ auto readable_key_name( const std::string &raw ) -> std::optional<std::string>
     return std::nullopt;
 }
 
-} // namespace
+}
 
 template <class T1, class T2>
 struct ContainsPredicate {
@@ -170,7 +168,6 @@ void input_manager::init()
         }
     }
     upstream_contexts = action_contexts;
-    // The control scheme rebinds part of the defaults (WASD and friends for "modern").
     const auto scheme = PATH_INFO::datadir() + "raw/control_schemes/" +
                         get_option<std::string>( "CONTROL_SCHEME" ) + ".json";
     if( file_exist( scheme ) ) {
@@ -251,7 +248,6 @@ void input_manager::load( const std::string &file_name, bool is_user_preferences
 
     JsonIn jsin( data_file, file_name );
 
-    // Files saved before the "keybindings_format" marker existed may repeat upstream defaults.
     auto format_version = 1;
 
     //Crawl through once and create an entry for every definition
@@ -316,9 +312,6 @@ void input_manager::load( const std::string &file_name, bool is_user_preferences
             events.push_back( new_event );
         }
 
-        // Files without the format marker saved every binding, so an entry repeating upstream's
-        // default is no preference and must not undo the control scheme. Marked files hold only
-        // changed keys; there only an entry equal to the scheme's own default is redundant.
         if( is_user_preferences && !action.get_bool( "is_deleted", false ) &&
             !action.get_bool( "is_user_created", false ) ) {
             const auto &cmp = format_version >= 2 ? default_contexts : upstream_contexts;
@@ -376,7 +369,6 @@ void input_manager::save()
 
         jsout.start_array();
 
-        // Marks a file that holds only changed keys; see the format_version check in load().
         jsout.start_object();
         jsout.member( "type", "keybindings_format" );
         jsout.member( "version", 2 );
@@ -387,7 +379,6 @@ void input_manager::save()
             const t_actions &actions = a->second;
             for( const auto &action : actions ) {
                 const t_input_event_list &events = action.second.input_events;
-                // Only the user's own changes are saved, so switching control schemes still works.
                 if( !action.second.is_user_created && !action.second.is_deleted ) {
                     const auto ctx = default_contexts.find( a->first );
                     if( ctx != default_contexts.end() ) {
@@ -593,7 +584,6 @@ std::string input_manager::get_keyname( int ch, input_event_t inp_type, bool por
         } else if( ch == MOUSE_MOVE ) {
             raw = translate_marker_context( "key name", "MOUSE_MOVE" );
         } else if( ch == MOUSE_BUTTON_BACK ) {
-            // The portable token stays stable for keybinding files; hints read the readable name.
             if( portable ) {
                 return "MOUSE_BACK";
             }
@@ -802,8 +792,6 @@ const std::string TIMEOUT = "TIMEOUT";
 
 const std::string &input_context::input_to_action( const input_event &inp ) const
 {
-    // Modern lists opt in: a Space binding of their own wins over the shared CONFIRM,
-    // even when CONFIRM was registered first. Classic and other contexts are unchanged.
     const bool space = space_action_priority &&
                        get_option<std::string>( "CONTROL_SCHEME" ) == "modern" &&
                        inp.type == input_event_t::keyboard && inp.get_first_input() == ' ';
@@ -1139,14 +1127,12 @@ const std::string &input_context::handle_input( const int timeout )
             coordinate_input_received = false;
         }
 
-        // The map's search key opens the palette on any screen that leaves the key unbound.
         if( action == CATA_ERROR && global_search::opens_here( next_action, *this ) ) {
             ZoneScopedN( "input_context_global_search" );
             inp_mngr.reset_timeout();
             static auto palette_action = std::string();
             palette_action = global_search::run( *this );
             inp_mngr.set_timeout( timeout );
-            // The caller may block on the next key without drawing, so repaint what the palette covered.
             ui_manager::redraw();
             if( palette_action.empty() ) {
                 continue;
@@ -1634,7 +1620,6 @@ action_id input_context::display_menu( const bool permit_execute_action )
                     if( status == s_add_global ) {
                         category_to_access = default_context_id;
                         if( is_local ) {
-                            // An empty local override still masks the global bindings.
                             inp_mngr.remove_input_for_action( action_id, category );
                         }
                     }

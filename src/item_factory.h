@@ -51,9 +51,7 @@ class migration
         std::set<std::string> flags;
         int charges = 0;
         std::set<itype_id> contents;
-        /** Stack modifier the migrated units carry, e.g. black powder when bp_9mm becomes 9mm. */
         std::string stack_modifier;
-        /** Variant the migrated item takes, e.g. ruby_gold_ring when that item becomes jewelry_ring. */
         std::string variant;
 };
 
@@ -196,8 +194,6 @@ class Item_factory
          * @see Item_factory::migrate_id
          */
         void migrate_item( const itype_id &id, item &obj );
-        /// Applies only the stack modifier of `id`'s migration to `count` units of `obj`, e.g. rounds
-        /// loaded in an integral magazine under an old ammo id. Ignores the migration's other fields.
         auto migrate_stack_modifier( const itype_id &id, item &obj, int count ) -> void;
 
     private:

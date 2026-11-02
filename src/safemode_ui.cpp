@@ -136,7 +136,6 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
         ctxt.register_action( "SCROLL_DOWN" );
     }
 
-    // Matches the draw_scrollbar() call in on_redraw below.
     const auto scrollbar_geometry = [&]() {
         return scrollbar_input::geometry{
             .offset = point( 0, 5 ),
@@ -146,7 +145,6 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
             .scroll_to_last = true,
         };
     };
-    // Header rectangles of the tab titles and the shortcut labels.
     struct tab_box {
         int x0 = 0;
         int x1 = 0;
@@ -160,9 +158,7 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
     };
     auto tab_labels = std::vector<tab_box>{};
     auto header_labels = std::vector<click_label>{};
-    // Row of the last plain click, -1 when the next click starts a new pair.
     auto last_click_row = -1;
-    // A row click leaves the view where it is, so a second click hits the same row.
     auto preserve_view = false;
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
@@ -182,7 +178,6 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
                 { translate_marker( "<A>dd" ), "ADD_RULE" },
                 { translate_marker( "<R>emove" ), "REMOVE_RULE" },
                 { translate_marker( "<C>opy" ), "COPY_RULE" },
-                // "<M>ove" depends on a direction key, so it is not a click target.
                 { translate_marker( "<M>ove" ), "" },
                 { translate_marker( "<E>nable" ), "ENABLE_RULE" },
                 { translate_marker( "<D>isable" ), "DISABLE_RULE" },
@@ -333,7 +328,6 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
 
         auto action = ctxt.handle_input();
 
-        // get_coordinates() is relative to the window centre.
         const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
             const auto mouse = ctxt.get_coordinates( win );
             if( !mouse ) {
@@ -349,7 +343,6 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
         auto mouse_hover = false;
         auto mouse_handled = false;
         if( modern && action == "MOUSE_MOVE" ) {
-            // Hover never changes the selection.
             action.clear();
             mouse_hover = true;
         } else if( modern && action == "SELECT" ) {
@@ -392,7 +385,6 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
                     const auto row = start_pos + cell->y;
                     if( !( tab == CHARACTER_TAB && g->u.name.empty() ) && cell->y < content_height &&
                         row < static_cast<int>( current_tab.size() ) ) {
-                        // Cells of a column start two past its separator position.
                         int clicked_column = COLUMN_RULE;
                         for( const auto &pos : column_pos ) {
                             if( cell->x >= pos.second + 2 ) {
@@ -400,7 +392,6 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
                             }
                         }
                         if( row == last_click_row ) {
-                            // The second click on the same row runs Enter.
                             column = clicked_column;
                             action = "CONFIRM";
                             last_click_row = -1;
@@ -416,14 +407,12 @@ void safemode::show( const std::string &custom_name_in, bool is_safemode_in )
                 }
             }
             if( !consumed ) {
-                // A click outside the drawn controls does nothing.
                 action.clear();
                 last_click_row = -1;
                 preserve_view = false;
             }
         }
         if( !mouse_handled && !mouse_hover ) {
-            // Keyboard and wheel input end a click pair.
             last_click_row = -1;
             preserve_view = false;
         }

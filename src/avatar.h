@@ -66,17 +66,10 @@ struct monster_visible_info {
     // would still be loaded after the bubble shrinks are counted.
     int combat_hostile_count = 0;
 
-    // Hostiles the player sees that are outside the map window, one entry per
-    // compass direction (0-7, same as unique_types and visible_count_by_dir).
-    // The map-edge arrows read these.
     struct offscreen_hostile {
         int count = 0;
-        // A hostile survivor among them is within safe-mode distance.
         bool threatening = false;
-        // One of them is hunting the player rather than trailing or wandering.
         bool hunting = false;
-        // The nearest monster among them; the arrow asks whether it can reach the player only
-        // when it is drawn, because that runs a route search.
         weak_ptr_fast<monster> nearest_monster;
     };
     std::array<offscreen_hostile, 8> offscreen_hostiles = {};
@@ -148,7 +141,6 @@ class avatar : public player
                                     int rotation );
         /** Returns memorized base terrain tile in given location */
         memorized_terrain_tile get_terrain_tile( const tripoint_abs_ms &p ) const;
-        /** Read-only map memory, for enumerating what the avatar remembers nearby. */
         const map_memory &map_memory_data() const;
         /** Memorizes a given tile in curses mode; finalize_terrain_memory_curses needs to be called after it */
         void memorize_symbol( const tripoint_abs_ms &pos, int symbol );
@@ -156,13 +148,9 @@ class avatar : public player
         int get_memorized_symbol( const tripoint_abs_ms &p ) const;
         void clear_memorized_overlay( const tripoint_abs_ms &pos );
         void clear_memorized_tile( const tripoint_abs_ms &pos );
-        /** Returns what the avatar learned about a locked door here, or none when untried. */
         auto get_known_locked_door( const tripoint_abs_ms &p ) const -> locked_door_kind;
-        /// Every door the loaded map memory still records as locked.
         auto known_locked_door_positions() const -> std::vector<tripoint_abs_ms>;
-        /** Records that the avatar's own open attempt found this door locked. */
         auto remember_locked_door( const tripoint_abs_ms &p, bool vehicle ) -> void;
-        /** Forgets a known locked door, e.g. after opening it. */
         auto forget_locked_door( const tripoint_abs_ms &p ) -> void;
         /** Returns last stored map tile in given location in tiles mode */
         bool has_memorized_tile_for_autodrive( const tripoint_abs_ms &p ) const;
@@ -303,7 +291,6 @@ class avatar : public player
             return mon_visible;
         }
 
-        /// Placement, collapse and visibility of the floating HUD windows.
         auto hud_layout() -> std::map<std::string, hud_windows::state>& {
             return hud_window_layout;
         }
@@ -368,7 +355,6 @@ class avatar : public player
     public:
         // ---------------VALUES-----------------
         tripoint_rel_ms view_offset;
-        /// The direction of the last attempted step; Space acts on that tile when nothing is aimed.
         tripoint_rel_ms last_move_dir;
 
         // Snippets the player has seen

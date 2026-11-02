@@ -1,10 +1,3 @@
-"""One tmux game per option profile, reused by the tests that ask for it.
-
-Starting a game runs world generation and character creation, about twelve seconds.
-Most tests differ only in what they set up inside the world, so a profile's game is
-started by the first test that needs it and later tests rerun that profile's setup.
-Every game is closed when the process ends.
-"""
 import atexit
 import json
 import os
@@ -35,11 +28,6 @@ def _key(options, cols, rows, keybindings, userdir, layout, state_path):
 
 
 def retire(game):
-    """Retire a profile, closing its game after the last active borrower exits.
-
-    A test that changed an option in-game, or failed half-way through a menu, leaves state the
-    profile's setup cannot undo; handing that game to the next borrower makes test order matter.
-    """
     if _borrowers.get(game, 0):
         _retired.add(game)
         return
@@ -52,7 +40,6 @@ def retire(game):
 @contextmanager
 def shared_game(name, options=None, cols=140, rows=45, keybindings=None, userdir=None,
                 define="", setup=None, layout="labels", retries=1, state_path=None):
-    """Borrows a profile. `retries` re-creates a game whose setup failed (a bad game state)."""
     for attempt in range(retries + 1):
         cm = _shared_game_once(name, options, cols, rows, keybindings, userdir,
                                define, setup, layout, state_path)
@@ -75,7 +62,6 @@ def shared_game(name, options=None, cols=140, rows=45, keybindings=None, userdir
 @contextmanager
 def _shared_game_once(name, options, cols, rows, keybindings, userdir, define, setup, layout,
                       state_path):
-    """Borrow a profile; nested failures cannot close another caller's active game."""
     key = _key(options, cols, rows, keybindings, userdir, layout, state_path)
     game = _games.get(key)
     if game in _retired:

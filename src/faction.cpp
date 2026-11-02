@@ -616,8 +616,6 @@ int npc::faction_display( const catacurses::window &fac_w, const int width ) con
 namespace
 {
 
-/// The factions screen's lists, details and input, shared by the standalone screen and the
-/// World page's Factions tab.
 class faction_view
 {
     public:
@@ -649,7 +647,6 @@ class faction_view
 
         void refresh();
         void draw( const catacurses::window &w );
-        /// Returns true when the screen should close.
         auto handle( std::string action, input_context &ctxt, const catacurses::window &w,
                      bool modern ) -> bool;
 
@@ -665,17 +662,17 @@ class faction_view
         };
 
         std::vector<npc *> followers;
-        std::vector<const faction *> valfac; // Factions that we know of.
+        std::vector<const faction *> valfac;
         npc *guy = nullptr;
         const faction *cur_fac = nullptr;
         bool interactable = false;
         bool radio_interactable = false;
         size_t active_vec_size = 0;
 
-        std::vector<std::pair<snippet_id, std::string>> lore; // Lore we have seen
+        std::vector<std::pair<snippet_id, std::string>> lore;
         std::pair<snippet_id, std::string> *snippet = nullptr;
 
-        std::vector<mtype_id> creatures; // Creatures we've recorded
+        std::vector<mtype_id> creatures;
         mtype_id cur_creature = mtype_id::NULL_ID();
 
         tab_mode tab = tab_mode::FIRST_TAB;
@@ -685,7 +682,6 @@ class faction_view
 
 void faction_view::refresh()
 {
-    // create a list of NPCs, visible and the ones on overmapbuffer
     followers.clear();
     for( auto &elem : g->get_follower_list() ) {
         shared_ptr_fast<npc> npc_to_get = nullptr;
@@ -745,8 +741,6 @@ void faction_view::draw( const catacurses::window &w_missions )
 {
     const int entries_per_page = getmaxy( w_missions ) - 4;
     werase( w_missions );
-    // The sidebar page is only as wide as the HUD column: names fill it and the details move to
-    // the full page, which Enter opens.
     const bool wide = getmaxx( w_missions ) >= 60;
 
     if( wide ) {
@@ -766,16 +760,15 @@ void faction_view::draw( const catacurses::window &w_missions )
         draw_border_below_tabs( w_missions );
 
         mvwputch( w_missions, point( 30, 2 ), BORDER_COLOR,
-                  tab == tab_mode::TAB_FOLLOWERS ? ' ' : LINE_OXXX ); // ^|^
+                  tab == tab_mode::TAB_FOLLOWERS ? ' ' : LINE_OXXX );
         mvwputch( w_missions, point( 30, getmaxy( w_missions ) - 1 ), BORDER_COLOR,
-                  LINE_XXOX ); // _|_
+                  LINE_XXOX );
     } else {
         draw_narrow_tabs( w_missions, { _( "Followers" ), _( "Others" ), _( "Lore" ), _( "Creatures" ) },
                           static_cast<size_t>( tab ) );
     }
     const nc_color col = c_white;
 
-    // entries_per_page * page number
     const size_t top_of_page = entries_per_page * ( selection / entries_per_page );
 
     switch( tab ) {
@@ -868,7 +861,6 @@ void faction_view::draw( const catacurses::window &w_missions )
                                                    creatures[i]->nname() ) );
                 }
                 if( wide && !cur_creature.is_null() ) {
-                    // mtype's display takes a mutable window; the copy points at the same window.
                     catacurses::window w_creatures = w_missions;
                     cur_creature->faction_display( w_creatures, point( 31, 3 ), w );
                 } else {
@@ -929,8 +921,6 @@ auto faction_view::handle( std::string action, input_context &ctxt,
                                        cell.y - 3;
                     if( idx < active_vec_size ) {
                         if( mouse_row && *mouse_row == idx ) {
-                            // A second click on the same row runs the row's Enter
-                            // action; talking keeps its usual prompts.
                             action = "CONFIRM";
                             mouse_row.reset();
                         } else {
@@ -944,7 +934,6 @@ auto faction_view::handle( std::string action, input_context &ctxt,
             action.clear();
         }
     } else {
-        // Keyboard navigation and content changes forget the pending row click.
         mouse_row.reset();
     }
     if( action == "NEXT_TAB" || action == "RIGHT" ) {
@@ -991,7 +980,6 @@ class factions_panel : public world_hub::panel
 {
     public:
         factions_panel() {
-            // The page does not bind this; resolve it with the screen's own context.
             faction_ctxt.register_action( "SWAPTONPC" );
         }
 
@@ -1019,7 +1007,7 @@ class factions_panel : public world_hub::panel
         faction_view view;
 };
 
-} // namespace
+}
 
 auto world_hub::factions_screen() -> panel_ptr
 {

@@ -896,7 +896,6 @@ auto remove_tank_storage( fluid_grid::liquid_storage_state &state,
     return removed;
 }
 
-/// Rounds up, because the whole volume was already removed from storage.
 auto spilled_charges( const itype_id &liquid, units::volume volume ) -> int
 {
     const auto &type = liquid.obj();
@@ -2062,7 +2061,6 @@ auto split_storage_state( const liquid_storage_state &state,
         if( liquid_ml <= 0 ) {
             return;
         }
-        // Integer split: the remainder always goes to rhs, so no liquid is rounded away.
         const auto lhs_liquid_ml = total_capacity_ml <= 0
                                    ? liquid_ml
                                    : liquid_ml * lhs_capacity_ml / total_capacity_ml;
@@ -2178,7 +2176,6 @@ auto remove_grid_connection( const tripoint_abs_omt &lhs, const tripoint_abs_omt
         const auto lhs_anchor = anchor_for_grid( lhs_grid );
         const auto rhs_anchor = anchor_for_grid( rhs_grid );
         if( lhs_capacity + rhs_capacity <= 0_ml ) {
-            // No tank is left to hold it, so spill instead of dropping the liquid.
             spill_liquid_at( project_to<coords::ms>( lhs ), old_state, mbuf );
             storage[fluid_omb().get_om_global( lhs_anchor ).local] =
                 liquid_storage_state{ .capacity = lhs_capacity };

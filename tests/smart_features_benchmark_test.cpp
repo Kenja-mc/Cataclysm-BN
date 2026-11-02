@@ -19,7 +19,6 @@
 
 namespace {
 
-/// A horde on every side of the player, from just outside melee range to the edge of sight.
 auto spawn_horde(const tripoint_bub_ms& center, const int count) -> std::vector<monster*> {
     auto horde = std::vector<monster*>();
     for (auto ring = 6; static_cast<int>(horde.size()) < count; ring += 3) {
@@ -35,8 +34,6 @@ auto spawn_horde(const tripoint_bub_ms& center, const int count) -> std::vector<
     return horde;
 }
 
-/// A wall two tiles out that no zombie can break, so every route search fails after exploring
-/// all it may.
 auto wall_in(const tripoint_bub_ms& center, const ter_id& wall) -> void {
     auto& here = get_map();
     for (auto dx = -2; dx <= 2; dx++) {
@@ -48,7 +45,6 @@ auto wall_in(const tripoint_bub_ms& center, const ter_id& wall) -> void {
     }
 }
 
-/// Each call is a new turn, so the per-turn answer cache does not hide the route searches.
 auto reachable_count(const std::vector<monster*>& horde, avatar& you) -> int {
     calendar::turn += 1_turns;
     return static_cast<int>(std::ranges::count_if(horde, [&](const monster* mon) {
@@ -66,7 +62,7 @@ auto prepare_daylight_field() -> tripoint_bub_ms {
     return center;
 }
 
-} // namespace
+}
 
 TEST_CASE("smart safe mode reach test with a horde", "[.][benchmark][smart_safemode]") {
     const auto restore_turn = restore_on_out_of_scope<time_point>(calendar::turn);
@@ -109,7 +105,6 @@ TEST_CASE("monster info update with a horde in sight", "[.][benchmark][smart_saf
     const auto cleanup = on_out_of_scope([] { clear_all_state(); });
     const auto center = prepare_daylight_field();
     spawn_horde(center, 100);
-    // Reinforced glass: the horde stays in sight but has no route, the slowest case.
     wall_in(center, ter_id("t_reinforced_glass"));
     auto& here = get_map();
     here.build_map_cache(center.z());

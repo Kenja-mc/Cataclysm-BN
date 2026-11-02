@@ -1,15 +1,4 @@
 #!/usr/bin/env python3
-"""Generate the Modern controls keyboard and the key tables of docs/fork/controls.md.
-
-    python3 build-scripts/gen_controls_guide.py [--check]
-
-Both outputs come from data/raw/keybindings/*.json (Classic) with
-data/raw/control_schemes/modern.json laid over it, which is how the game resolves Modern. The
-guide's hand-written text lives in controls.md itself; only the blocks between
-`<!-- BEGIN generated:NAME -->` and `<!-- END generated:NAME -->` are rewritten. `--check` exits
-non-zero when either file is out of date.
-"""
-
 from __future__ import annotations
 
 import json
@@ -26,8 +15,6 @@ SVG_OUT = ROOT / "docs" / "fork" / "images" / "controls-modern.svg"
 GUIDE = ROOT / "docs" / "fork" / "controls.md"
 OVERHAUL = ROOT / "OVERHAUL.md"
 
-# The quick key table in OVERHAUL.md: each row's wording, and the action ids whose live keys fill
-# its first cell. No key is written here, so a doc can never name a key the data does not bind.
 KEY_ROWS = (
     ("move; bump an enemy to melee attack (the keypad moves too, and Numpad 5 waits a turn)",
      ("UP", "LEFT", "DOWN", "RIGHT")),
@@ -56,7 +43,6 @@ KEY_ROWS = (
     ("map / auto-explore", ("map", "auto_explore")),
 )
 
-# Map actions by family: (heading, keycap colour, action ids in table order).
 FAMILIES = (
     ("Moving", "#2b6cb0", (
         "UP", "LEFT", "DOWN", "RIGHT", "LEFTUP", "RIGHTUP", "LEFTDOWN", "RIGHTDOWN", "pause",
@@ -78,7 +64,6 @@ FAMILIES = (
 )
 OTHER = ("Other", "#319795")
 
-# Keycap labels; the tables use the game's own action names.
 SHORT = {
     "UP": "move N", "DOWN": "move S", "LEFT": "move W", "RIGHT": "move E",
     "LEFTUP": "move NW", "RIGHTUP": "move NE", "LEFTDOWN": "move SW", "RIGHTDOWN": "move SE",
@@ -105,7 +90,6 @@ for _d, _label in DIRECTIONS.items():
     SHORT[f"shift_{_d}"] = f"select {_label}"
     SHORT[f"PEEK_{_d.upper()}"] = f"peek {_label}"
 
-# Screens with their own keys: (heading, binding categories, one-line description, optional ids).
 GLOBAL_IDS = ("CONFIRM", "QUIT", "HELP_KEYBINDINGS", "FILTER", "RESET_FILTER", "PAGE_UP", "PAGE_DOWN",
               "SCROLL_UP", "SCROLL_DOWN", "NEXT_TAB", "PREV_TAB", "DESC_UP", "DESC_DOWN", "SELECT",
               "SEC_SELECT")
@@ -139,7 +123,6 @@ def read_entries(path):
 
 
 def load():
-    """Returns (classic, modern): {(category, id): entry}, Modern laid over Classic."""
     classic = {}
     for path in sorted(CLASSIC_DIR.glob("*.json")):
         for entry in read_entries(path):
@@ -166,7 +149,6 @@ def bindings(entry, methods=("keyboard", "mouse")):
 
 
 def key_tokens(key):
-    """Display tokens for one binding: 'CTRL+F' -> ['Ctrl', 'F'], 'W' -> ['Shift', 'W']."""
     if key in KEY_NAMES:
         return KEY_NAMES[key].split("+") if "+" in KEY_NAMES[key] else [KEY_NAMES[key]]
     if key.startswith("CTRL+"):
@@ -181,7 +163,6 @@ def key_tokens(key):
 
 
 def resolve(table, category, action):
-    """The entry a screen uses: its own, else the global one, as input_context looks them up."""
     for key in ((category, action), (None, action), ("default", action)):
         if key in table:
             return table[key]
@@ -252,7 +233,6 @@ def replace_block(text, name, lines):
 
 
 def id_keys(classic, modern):
-    """Map-screen bindings for each action id; another screen's binding never stands in."""
     on_map, elsewhere = {}, {}
     for table in (classic, modern):
         for (category, action), entry in table.items():
@@ -261,7 +241,6 @@ def id_keys(classic, modern):
 
 
 def row_cell(keys_by_id, ids):
-    """One key per action; a numbered run such as the hotbar folds to its first and last key."""
     parts, run = [], []
     for action in ids:
         keys = keys_by_id.get(action, [])
@@ -290,8 +269,6 @@ def key_table(keys_by_id):
         lines.append(f"| {row_cell(keys_by_id, ids)} | {prose} |")
     return lines
 
-
-# ---------------------------------------------------------------- keyboard
 
 @dataclass(frozen=True)
 class Key:
@@ -323,7 +300,7 @@ ROWS = (
 )
 PITCH_X, PITCH_Y, GAP, MARGIN = 76, 98, 5, 24
 INK, MUTED, FAINT = "#1a202c", "#4a5568", "#a0aec0"
-CHAR_W = 0.56  # average glyph width of the sans-serif face, in ems
+CHAR_WIDTH_EM = 0.56
 
 
 def esc(text):
@@ -331,22 +308,20 @@ def esc(text):
 
 
 def fit(text, width, largest=13.0, smallest=9.0):
-    """Lines and font size that fit text into width: one line if possible, else two."""
     size = largest
     while size >= 11:
-        if len(text) * CHAR_W * size <= width:
+        if len(text) * CHAR_WIDTH_EM * size <= width:
             return [text], size
         size -= 0.5
     size = largest
     while size > smallest:
-        rows = wrap(text, max(4, int(width / (CHAR_W * size))), break_long_words=False)
-        if len(rows) <= 2 and all(len(row) * CHAR_W * size <= width for row in rows):
+        rows = wrap(text, max(4, int(width / (CHAR_WIDTH_EM * size))), break_long_words=False)
+        if len(rows) <= 2 and all(len(row) * CHAR_WIDTH_EM * size <= width for row in rows):
             return rows, size
         size -= 0.5
-    return wrap(text, max(4, int(width / (CHAR_W * smallest))))[:2], smallest
+    return wrap(text, max(4, int(width / (CHAR_WIDTH_EM * smallest))))[:2], smallest
 
 
-# One keyboard per modifier: (file suffix, title, Key field, modifier keycaps to highlight).
 LAYERS = (
     ("", "Keys alone", "plain", ()),
     ("-shift", "Hold Shift", "shift", ("Shift",)),
@@ -398,7 +373,7 @@ class Keyboard:
         label = key.label
         if field == "shift" and key.shift and len(key.shift) == 1 and not key.shift.isalpha():
             label = key.shift
-        label_size = min(16, (width - 12) / max(len(label) * CHAR_W, 1))
+        label_size = min(16, (width - 12) / max(len(label) * CHAR_WIDTH_EM, 1))
         self.add(f'<text x="{x + 8}" y="{y + 21}" font-size="{label_size:.1f}" font-weight="700" '
                  f'fill="{INK if actions else MUTED}">{esc(label)}</text>')
         if actions:
@@ -424,7 +399,7 @@ class Keyboard:
             self.add(f'<rect x="{x}" y="{top}" width="18" height="18" rx="4" fill="{colour}" '
                      f'fill-opacity="0.25" stroke="{colour}" stroke-width="1.8"/>')
             self.add(f'<text x="{x + 26}" y="{top + 14}" font-size="13" fill="{INK}">{esc(heading)}</text>')
-            x += 26 + len(heading) * CHAR_W * 13 + 28
+            x += 26 + len(heading) * CHAR_WIDTH_EM * 13 + 28
 
     def main_rows(self, top, field, held):
         for row_index, row in enumerate(ROWS):
@@ -486,7 +461,6 @@ class Keyboard:
         return "\n".join(self.lines) + "\n"
 
     def draw_mouse(self, x, y):
-        """The map's mouse behaviour lives in code rather than bindings, so it is drawn by hand."""
         body_w, body_h = 104, 176
         self.add(f'<rect x="{x}" y="{y + 8}" width="{body_w}" height="{body_h}" rx="50" fill="none" '
                  f'stroke="{INK}" stroke-width="1.8"/>')
@@ -513,7 +487,6 @@ def render_guide(classic, modern, current):
 
 
 def first_diff(was, now):
-    """The line a generated file first disagrees with the data on."""
     for number, (old, new) in enumerate(zip(was.splitlines(), now.splitlines()), 1):
         if old != new:
             return number

@@ -181,7 +181,6 @@ auto try_shove_grabbed_vehicle( avatar &you ) -> bool
     return true;
 }
 
-/// Set while an explicit attack command drives avatar_action::move.
 auto attack_requested = false;
 
 auto explicit_attack_hint() -> std::string
@@ -196,7 +195,6 @@ auto explicit_attack_hint() -> std::string
                           press_x( ACTION_AUTOATTACK, "", "", "" ) : directional );
 }
 
-/// Walking into a hostile only attacks when the player asked for it or opted into bump attacks.
 auto refuse_bump_attack( const Creature &target ) -> bool
 {
     if( attack_requested || get_option<bool>( "BUMP_ATTACK" ) ) {
@@ -412,7 +410,6 @@ bool avatar_action::move( avatar &you, map &m, const tripoint_rel_ms &d )
         // Well that sure was easy
         return true;
     }
-    // Remembered even when the step is blocked: pressing into a door and then Space opens it.
     if( std::abs( dest_loc.x() - you.bub_pos().x() ) <= 1 &&
         std::abs( dest_loc.y() - you.bub_pos().y() ) <= 1 &&
         dest_loc.z() == you.bub_pos().z() ) {
@@ -823,7 +820,6 @@ bool avatar_action::move( avatar &you, map &m, const tripoint_rel_ms &d )
         add_msg( _( "You rattle the bars but the door is locked!" ) );
     } else if( !you.is_auto_moving() && !m.passable( dest_loc ) &&
                get_option<std::string>( "CONTROL_SCHEME" ) != "classic" ) {
-        // Say what stopped you, so a blocked step never looks like the game ignoring the key.
         add_msg( m_info, _( "The %s is in the way." ), m.obstacle_name( dest_loc ) );
     }
     return false;
@@ -1059,7 +1055,6 @@ auto avatar_action::attack_at( avatar &you, map &m, const tripoint_rel_ms &dir )
 {
     const auto *target = g->critter_at<Creature>( you.bub_pos() + dir, true );
     const auto *guy = dynamic_cast<const npc *>( target );
-    // Moving into a pet swaps places and into a friendly NPC talks; neither is an attack.
     if( target == nullptr || ( guy != nullptr && !guy->is_enemy() ) ||
         ( guy == nullptr && target->attitude_to( you ) == Attitude::A_FRIENDLY ) ) {
         add_msg( m_info, _( "There's nothing there to attack." ) );

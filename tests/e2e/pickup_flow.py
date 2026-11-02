@@ -1,4 +1,3 @@
-"""Modern area pickup: g confirms, local keys act, and the mouse marks rows."""
 from helpers import HELPERS, arena, count_carried, empty_inventory, spawn, start_new_game
 from inventory_mouse import display_name, row_of, wielded
 from tmux_game import Game
@@ -11,9 +10,7 @@ def open_pickup(g, *items):
     names = {item: display_name(g, item) for item in items}
     for item in items:
         spawn(g, 0, 0, item)
-    # Ctrl+G always lists; g takes a lone item without one.
     g.keys("C-g", delay=0.2)
-    # "Pick up" is the menu's own label; Weight is now also a HUD window title.
     g.wait_for("Pick up")
     return names
 
@@ -48,7 +45,6 @@ def test_h_wields_from_pickup(g):
 def test_mouse_marks_pickup_rows(g):
     names = open_pickup(g, "rock", "stick")
     rock = names["rock"]
-    # Row layout: letter, parent marker, then '-' unmarked or '+' marked, then the name.
     mark = lambda: g.screen().splitlines()[y][2]
     try:
         x, y = row_of(g, rock)
@@ -84,7 +80,6 @@ def test_option_off_double_click_only_marks(_g):
         names = open_pickup(g, "rock")
         g.double_click(*row_of(g, names["rock"]))
         assert "Pick up" in g.screen(), "the pickup menu must stay open\n" + g.screen()
-        # A lua read closes an open list with its console Escape, so leave the menu first.
         g.keys("Escape", delay=0.5)
         g.wait_gone("Pick up", timeout=10)
         assert count_carried(g, "rock") == 0, "with the option off a double click only marks"
@@ -177,7 +172,6 @@ def test_classic_empty_pickup_confirmation_takes_nothing(_g):
 
 
 def test_classic_new_pickup_enter_takes_nothing(_g):
-    """Classic keeps the new pickup's upstream confirmation: nothing marked means nothing taken."""
     g = Game(name="bn-e2e-pickup-new-classic", options={
         "CONTROL_SCHEME": "classic", "SAFEMODE": "false", "NEW_PICKUP_MENU": "true",
         "NUMBERED_LIST_ROWS": "true"})

@@ -28,7 +28,6 @@ struct special_game {
     virtual void pre_action( action_id & ) { }
     // Run after the game handles the action
     virtual void post_action( action_id ) { }
-    /// Run after a successful pickup; partial charge transfers may pass the source remainder.
     virtual auto on_pickup( const item &/*it*/ ) -> void {}
     // Run when the player dies (or the game otherwise ends)
     virtual void game_over() { }

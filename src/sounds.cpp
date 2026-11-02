@@ -1869,8 +1869,6 @@ static std::unordered_map<tripoint_bub_ms, sound_event> sound_markers;
 namespace
 {
 
-/// Smart safe mode: a noise does not interrupt an activity when the monster making it is not
-/// hostile or cannot reach you soon.
 auto harmless_noise( const sound_event &noise, Character &who ) -> bool
 {
     if( !get_option<bool>( "SMART_SAFEMODE" ) || !who.is_avatar() ) {
@@ -1881,16 +1879,11 @@ auto harmless_noise( const sound_event &noise, Character &who ) -> bool
                                !smart_safemode::can_reach_soon( *mon, *who.as_avatar() ) );
 }
 
-/// True when the player cannot hear at all, so no marker may be shown.
 auto hears_nothing( const Character &who ) -> bool
 {
-    // Full protection mirrors hearing_ability()'s zero point; that function rolls PER_SLIME rng.
     return who.is_deaf() || who.get_char_hearing_protection() > 190;
 }
 
-// Four new creature ambience sounds per 250 ms keep a pack of idle monsters from
-// turning into a wall of overlapping clips. Excess events are dropped before propagation,
-// so they cost no floodfill and reach neither the player's markers nor NPC hearing.
 constexpr auto creature_ambience_window = std::chrono::milliseconds( 250 );
 constexpr auto creature_ambience_burst = 4;
 auto creature_ambience_window_start = std::chrono::steady_clock::now();
@@ -1910,7 +1903,7 @@ auto creature_ambience_allowed() -> bool
     return true;
 }
 
-} // namespace
+}
 
 auto sounds::monster_ambience_allowed( const std::string &id, const std::string &variant ) -> bool
 {
@@ -2636,12 +2629,9 @@ void sounds::process_sounds_npc()
 void sounds::process_sound_markers( Character *who )
 {
 
-    // hears_nothing() is the same gate reset_markers() and get_footstep_markers() use, so
-    // "cannot hear" has one definition; hearing_ability() also zeroes at that boundary.
     const float volume_multiplier = who->hearing_ability();
     bool is_deaf = hears_nothing( *who ) || volume_multiplier <= 0.0f;
     if( is_deaf ) {
-        // Hearing loss invalidates cues the player already has on the map.
         sound_markers.clear();
     }
     const auto &loc = who->bub_pos();
@@ -2810,8 +2800,6 @@ void sounds::process_sound_markers( Character *who )
             // Noise past +40 dB should automatically wake up heavy sleepers.
             // Noise past +60 dB will cause pain and should automatically wake up heavy sleeper 2.
             if( who->has_effect( effect_sleep ) ) {
-                // Idle ambience never wakes a sleeper, and like any other sound too quiet to
-                // wake them it stays out of the log and off the map.
                 if( element.sound.monster_ambience ) {
                     continue;
                 }
@@ -2834,7 +2822,6 @@ void sounds::process_sound_markers( Character *who )
                 if( ( element.sound.from_monster || element.sound.from_npc ) &&
                     ( element.sound.origin != who->bub_pos() ) &&
                     !get_map().pl_sees( element.sound.origin, distance_to_sound ) ) {
-                    // Idle ambience is scenery, not a threat: it must not cancel an activity.
                     if( !who->activity->is_distraction_ignored( distraction_type::noise ) &&
                         !element.sound.monster_ambience &&
                         !get_safemode().is_sound_safe( element.sound.description, distance_to_sound ) &&
@@ -2894,10 +2881,6 @@ void sounds::process_sound_markers( Character *who )
                 auto heard = sfx::get_heard_volume( element.sound.origin, element.sound.volume );
                 if( element.sound.monster_ambience ) {
                     heard = heard * get_option<int>( "MONSTER_AMBIENCE_VOLUME" ) / 100;
-                    // Creature chatter is the lowest voice priority, so it is
-                    // evicted first when the pool is full. It stacks (the
-                    // per-creature cooldown and the 4-per-250 ms burst cap
-                    // throttle it) and pans to its origin.
                     cue_played = sfx::play_variant_sound(
                                      sfx_id, sfx_variant, heard,
                                      sfx::get_heard_angle( element.sound.origin ),
@@ -2908,10 +2891,6 @@ void sounds::process_sound_markers( Character *who )
                                      !NO_STACK_SOUND_TYPES.contains( element.sound.category ) );
                 }
             }
-            // A marker promises that creature chatter was actually voiced. A
-            // missing asset, muted volume or failed playback must not leave one.
-            // The voice pool always evicts rather than dropping a cue, and other
-            // categories keep their historical marker behaviour.
             if( element.sound.monster_ambience && !cue_played ) {
                 continue;
             }
@@ -3085,7 +3064,6 @@ void sounds::reset_markers()
         sound_markers.clear();
         return;
     }
-    // A setting of 1 keeps upstream's behaviour: markers last until the player's next action.
     const auto keep = get_option<int>( "SOUND_MARKER_TURNS" );
     std::erase_if( sound_markers, [&]( const auto & mark ) {
         return keep <= 1 || calendar::turn - mark.second.created_at >= time_duration::from_turns( keep - 1 );
@@ -3670,8 +3648,6 @@ void sfx::do_danger_music()
     }
     audio_muted = false;
     const int hostiles = player_character.get_mon_visible().combat_hostile_count;
-    // The dynamic danger playlist owns the danger bed when it is actually
-    // playing; the old danger_low/medium/high/extreme themes would stack.
     if( music::danger_music_active() ) {
         fade_audio_group( group::context_themes, 1000 );
         return;
@@ -4017,14 +3993,10 @@ void sfx::end_activity_sounds()
 
 /** Dummy implementations for builds without sound */
 /*@{*/
-// Markers are the only sound cue in this build, so treat every id as available.
 auto sounds::has_asset( const std::string &, const std::string & ) -> bool { return true; }
 void sfx::load_sound_effects( const JsonObject & ) { }
 void sfx::load_sound_effect_preload( const JsonObject & ) { }
 void sfx::load_playlist( const JsonObject & ) { }
-// A build without an audio device cannot run out of voices: every audible
-// request reports success, because the sound marker is its only cue. A muted
-// zero-volume request still reports false so it leaves no marker.
 bool sfx::play_variant_sound( const std::string &, const std::string &, const int volume,
                               units::angle, double, double, const bool, const sound_priority )
 {

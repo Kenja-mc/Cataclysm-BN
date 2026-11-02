@@ -792,7 +792,6 @@ void show_armor_layers_ui( Character &who )
             continue;
         }
 
-        // get_coordinates() is relative to the window centre.
         const auto click_cell = []( input_context &ctxt, const catacurses::window &w ) -> std::optional<point> {
             const auto mouse = ctxt.get_coordinates( w );
             if( !mouse ) {
@@ -806,7 +805,6 @@ void show_armor_layers_ui( Character &who )
         };
 
         if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
-            // The wheel repeats the keys that scroll the pane under the cursor, one row per notch.
             if( click_cell( ctxt, w_sort_left ) ) {
                 action = action == "SCROLL_UP" ? "UP" : "DOWN";
             } else if( click_cell( ctxt, w_sort_right ) ) {
@@ -819,10 +817,8 @@ void show_armor_layers_ui( Character &who )
             if( const auto cell = click_cell( ctxt, w_sort_left ) ) {
                 if( cell->y == cont_h - 1 && cell->x >= left_w - utf8_width( _( "<more>" ) ) &&
                     leftListOffset + leftListLines < leftListSize ) {
-                    // The <more> hint repeats its existing scroll action.
                     action = "DOWN";
                 } else {
-                    // Clicking a worn row only moves the cursor; reordering stays on the keyboard.
                     const auto itemindex = leftListOffset + cell->y - 1;
                     if( cell->y >= 1 && cell->y <= leftListLines && itemindex >= 0 &&
                         itemindex < leftListSize ) {
@@ -830,7 +826,6 @@ void show_armor_layers_ui( Character &who )
                     }
                 }
             } else if( const auto cell = click_cell( ctxt, w_sort_cat ) ) {
-                // The arrows around the body part name switch tabs, like LEFT/RIGHT.
                 const auto prefix = utf8_width( _( "Sort Armor" ) );
                 const auto name_width = utf8_width(
                     bp.id() ? body_part_name_as_heading( bp, 1 ) : _( "All" ) );
@@ -841,10 +836,8 @@ void show_armor_layers_ui( Character &who )
                 }
             } else if( const auto cell = click_cell( ctxt, w_sort_right ) ) {
                 if( cell->y == cont_h - 1 && cell->x >= right_w - utf8_width( _( "<more>" ) ) ) {
-                    // The <more> hint repeats its existing scroll action.
                     action = "NEXT_TAB";
                 } else {
-                    // Clicking a body part name shows that part; the list itself stays read-only.
                     const auto combine_bp = [&who]( const bodypart_id & cover ) -> bool {
                         const bodypart_id opposite = cover.obj().opposite_part;
                         return cover != opposite &&

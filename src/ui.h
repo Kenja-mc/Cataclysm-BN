@@ -179,7 +179,6 @@ class uilist_callback
                           uilist * ) {
             return false;
         }
-        /// Mouse click at a window-relative cell, after list rows and the list scrollbar.
         virtual auto mouse( uilist * /*menu*/, point /*cell*/ ) -> bool { return false; }
         virtual void refresh( uilist * ) {}
         virtual ~uilist_callback() = default;
@@ -387,9 +386,7 @@ class uilist // NOLINT(cata-xy)
         // and unhandled by callback, default false.
         bool allow_additional = false;
         bool hilight_disabled = false;
-        /// Positional 1-9/0 row numbers; set false for menus that already type digits.
         bool row_numbers_allowed = true;
-        /// Whether this menu currently prints and accepts positional row numbers.
         auto row_numbers_active() const -> bool {
             return row_numbers;
         }
@@ -437,17 +434,13 @@ class uilist // NOLINT(cata-xy)
 
         int vmax = 0;
 
-        /// Whether the visible rows are numbered 1-9/0 (computed in setup()).
         bool row_numbers = false;
-        /// Row numbers (1-9, 0 for the tenth) for eligible list menus, false when unavailable.
         auto rows_are_numbered() const -> bool;
 
         int desc_lines;
 
         bool started = false;
 
-        // A mouse scrollbar click moved the viewport without moving the selection.
-        // Keep that offset until the selection moves again.
         bool viewport_held = false;
 
     public:

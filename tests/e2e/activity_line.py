@@ -1,4 +1,3 @@
-"""A running activity gets one line in the existing Log panel."""
 import re
 
 from fixtures import shared_game
@@ -6,18 +5,11 @@ from helpers import HELPERS, settle
 
 MARK = "E2E activity row marker"
 
-# A non-calendar activity settles while the game waits for input, unlike ACT_WAIT, which skips
-# time and finishes before a redraw. The halved progress rate keeps the displayed estimate away
-# from plain calendar time; the rate choice itself is locked by the Catch2 activity test.
 BASE = {"SAFEMODE": "false", "SHOW_TIPS": "false", "SHOW_WELCOME": "false", "ANIMATIONS": "false",
         "ACTIVITY_PROGRESS_SCALE": "50", "LOG_FLOW": "new_top"}
 
 
 def assign_activity(game, half=False):
-    """Assign ACT_HEATING in the Lua console; the console must close before it can settle.
-
-    `out` joins every argument into one comma-separated value, so return a parsed status pair.
-    """
     script = ("local a=gapi.get_avatar() "
               "a:assign_lua_activity({type=ActivityTypeId.new('ACT_HEATING'), "
               "duration=TimeDuration.from_minutes(2), name='activity line check'}) "
@@ -37,7 +29,6 @@ def log_row(screen, text):
 
 
 def force_redraw(game):
-    """Resizing redraws the panels without a turn or an activity-cancelling keypress."""
     game.resize(141, 45)
     game.settle_screen(minimum=0.2, timeout=2)
     game.resize(140, 45)
@@ -45,7 +36,6 @@ def force_redraw(game):
 
 
 def test_activity_line_names_progress_and_time_left(_g):
-    """The settled log shows one line whose percentage and time left follow the activity."""
     with shared_game("bn-e2e-activity-line", define=HELPERS, options=BASE,
                      layout="classic") as game:
         settle(game)
@@ -63,7 +53,6 @@ def test_activity_line_names_progress_and_time_left(_g):
 
 
 def test_activity_line_option_off_keeps_the_upstream_log(_g):
-    """Turning the line off leaves the message rows exactly where upstream puts them."""
     with shared_game("bn-e2e-activity-line-off", define=HELPERS,
                      options={**BASE, "ACTIVITY_LINE": "false"}, layout="classic") as game:
         settle(game)

@@ -35,4 +35,4 @@ TEST_CASE( "effect_overlay_frame_survives_negative_idle_counter", "[tiles][tile_
     }
 }
 
-#endif // TILES
+#endif

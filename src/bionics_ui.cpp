@@ -34,7 +34,6 @@ static const flag_id flag_MULTIINSTALL( "MULTIINSTALL" );
 
 namespace
 {
-// '!', '-' and '=' are used as default bindings in the menu.
 auto get_bionic_chars() -> const invlet_wrapper &
 {
     static const auto classic_chars = invlet_wrapper(
@@ -605,7 +604,6 @@ void show_bionics_ui( Character &who )
                     !bionic_by_invlet( bionics, shifted ) ) {
                     bio.invlet = shifted;
                 } else {
-                    // Keep the CBM even when there are no usable shortcuts left.
                     bio.invlet = ' ';
                     for( const auto letter : bionic_chars ) {
                         if( !bionic_by_invlet( bionics, letter ) ) {
@@ -692,10 +690,7 @@ void show_bionics_ui( Character &who )
     int scroll_position = 0;
     int cursor = 0;
 
-    // Row the mouse most recently clicked in the visible list; a second click on
-    // it runs the row's Enter action. Reset by any keyboard or scroll event.
     std::optional<int> mouse_row;
-    // Keep the cursor row inside the visible list after a click jump.
     const auto scroll_to_cursor = [&]() {
         if( cursor < scroll_position ) {
             scroll_position = cursor;
@@ -857,8 +852,6 @@ void show_bionics_ui( Character &who )
                         const int idx = scroll_position + cell.y - list_start_y;
                         if( idx >= 0 && idx < list_size ) {
                             if( mouse_row && *mouse_row == idx ) {
-                                // A second click on the same row runs its Enter action;
-                                // activation keeps its usual prompts.
                                 action = "CONFIRM";
                                 mouse_row.reset();
                             } else {

@@ -236,7 +236,6 @@ void auto_note_manager_gui::show()
     }
     ctx.set_space_action_priority( true );
 
-    // Matches the draw_scrollbar() call in on_redraw below.
     const auto scrollbar_geometry = [&]() {
         return scrollbar_input::geometry{
             .offset = point( 0, 4 ),
@@ -246,16 +245,13 @@ void auto_note_manager_gui::show()
             .scroll_to_last = true,
         };
     };
-    // Header rectangles of the drawn shortcut labels.
     struct click_label {
         int x0 = 0;
         int x1 = 0;
         std::string action;
     };
     auto header_labels = std::vector<click_label>{};
-    // Row of the last plain click, -1 when the next click starts a new pair.
     auto last_click_row = -1;
-    // A row click leaves the view where it is, so a second click hits the same row.
     auto preserve_view = false;
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
@@ -383,7 +379,6 @@ void auto_note_manager_gui::show()
 
         auto currentAction = ctx.handle_input();
 
-        // get_coordinates() is relative to the window centre.
         const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
             const auto mouse = ctx.get_coordinates( win );
             if( !mouse ) {
@@ -399,7 +394,6 @@ void auto_note_manager_gui::show()
         auto mouse_hover = false;
         auto mouse_handled = false;
         if( modern && currentAction == "MOUSE_MOVE" ) {
-            // Hover never changes the selection.
             currentAction.clear();
             mouse_hover = true;
         } else if( modern && currentAction == "SELECT" ) {
@@ -431,7 +425,6 @@ void auto_note_manager_gui::show()
                         const auto row = startPosition + cell->y;
                         if( cell->y < iContentHeight && row < cacheSize ) {
                             if( row == last_click_row ) {
-                                // The second click on the same row runs Enter.
                                 currentAction = "CONFIRM";
                                 last_click_row = -1;
                                 preserve_view = false;
@@ -446,14 +439,12 @@ void auto_note_manager_gui::show()
                 }
             }
             if( !consumed ) {
-                // A click outside the drawn controls does nothing.
                 currentAction.clear();
                 last_click_row = -1;
                 preserve_view = false;
             }
         }
         if( !mouse_handled && !mouse_hover ) {
-            // Keyboard and wheel input end a click pair.
             last_click_row = -1;
             preserve_view = false;
         }

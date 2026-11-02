@@ -1002,8 +1002,6 @@ bool advanced_inventory::show_sort_menu( advanced_inventory_pane &pane )
 input_context advanced_inventory::register_ctxt() const
 {
     input_context ctxt( "ADVANCED_INVENTORY" );
-    // Top-row digits choose the source area here (ITEMS_NW/N/E/.../INVENTORY), so this menu is a
-    // digit-input exception and does not get positional row numbers.
     ctxt.register_action( "HELP_KEYBINDINGS" );
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "UP" );
@@ -1422,7 +1420,6 @@ void advanced_inventory::display()
     }
 
     const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
-    // get_coordinates() is relative to the window centre.
     auto click_cell = []( input_context &ctxt, const catacurses::window &w ) -> std::optional<point> {
         const auto mouse = ctxt.get_coordinates( w );
         if( !mouse ) {
@@ -1434,7 +1431,6 @@ void advanced_inventory::display()
         }
         return cell;
     };
-    // print_items() draws page rows starting six rows down the pane window.
     auto select_clicked_row = [&]( advanced_inventory_pane &pane, int cell_y ) -> void {
         const auto row = cell_y - 6;
         if( itemsPerPage <= 0 || row < 0 || row >= itemsPerPage ) {
@@ -1588,7 +1584,6 @@ void advanced_inventory::display()
         } else if( action == "TOGGLE_TAB" ) {
             src = dest;
         } else if( modern && action == "SELECT" ) {
-            // A click focuses the clicked pane and selects the clicked row; it never moves items.
             for( const side p : { left, right } ) {
                 const auto cell = click_cell( ctxt, panes[p].window );
                 if( !cell ) {
@@ -1599,7 +1594,6 @@ void advanced_inventory::display()
                 break;
             }
         } else if( modern && ( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) ) {
-            // The wheel scrolls whichever pane the cursor is over, one row per notch.
             const auto delta = action == "SCROLL_DOWN" ? +1 : -1;
             for( const side p : { left, right } ) {
                 if( click_cell( ctxt, panes[p].window ) ) {

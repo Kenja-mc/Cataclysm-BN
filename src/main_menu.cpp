@@ -141,7 +141,6 @@ auto menu_hotkeys( std::string &item ) -> std::vector<std::string>
         return hotkeys;
     }
 
-    // Keep the translated label and its shortcut hint in sync with the Shift-only aliases.
     auto changed = false;
     for( auto &key : hotkeys ) {
         if( key.size() == 1 && std::string_view( "wasd" ).find( key[0] ) != std::string_view::npos ) {
@@ -172,7 +171,7 @@ auto menu_hotkeys( std::string &item ) -> std::vector<std::string>
     item.replace( start, end - start + 1, marker );
     return hotkeys;
 }
-} // namespace
+}
 
 std::vector<int> main_menu::print_menu_items( const catacurses::window &w_in,
         const std::vector<std::string> &vItems,
@@ -674,8 +673,6 @@ bool main_menu::opening_screen()
     current_holiday = get_holiday_from_time();
 
     // Play title music, whoo!
-    // Round trip through the title screen clears the in-game context, so the
-    // next game starts from its own state instead of the last game's.
     music::reset();
     play_music( "title" );
 
@@ -746,7 +743,6 @@ bool main_menu::opening_screen()
     ctxt.register_action( "QUIT" );
     const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
     if( modern ) {
-        // The drawn button hitboxes react only in Modern; Classic keeps its keyboard-only title.
         ctxt.register_action( "COORDINATE" );
         ctxt.register_action( "MOUSE_MOVE" );
         ctxt.register_action( "SELECT" );
@@ -788,7 +784,6 @@ bool main_menu::opening_screen()
         std::string action = ctxt.handle_input();
         input_event sInput = ctxt.get_raw_input();
 
-        // Classic retains its raw-letter precedence; Modern lets navigation win.
         if( get_option<std::string>( "CONTROL_SCHEME" ) == "classic" || action == "ANY_INPUT" ) {
             for( int i = 0; static_cast<size_t>( i ) < vMenuHotkeys.size(); ++i ) {
                 for( const std::string &hotkey : vMenuHotkeys[i] ) {
@@ -826,8 +821,6 @@ bool main_menu::opening_screen()
             }
         }
 
-        // Hovering moves the same highlight the keyboard moves; a click selects and
-        // confirms, exactly like Space on the highlighted entry.
         if( modern && sInput.type == input_event_t::mouse &&
             ( action == "SELECT" || action == "MOUSE_MOVE" ) ) {
             const auto mouse = ctxt.get_coordinates( w_open );
@@ -936,8 +929,6 @@ bool main_menu::opening_screen()
                     get_help().display_help();
                     break;
                 case main_menu_opts::QUIT:
-                    // Modern confirms the highlighted entry, so quitting from Space or Enter
-                    // asks here; Classic still quits from Enter without a prompt.
                     if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
                         ui_manager::redraw();
                         if( !query_yn( _( "Really quit?" ) ) ) {

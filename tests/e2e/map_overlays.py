@@ -1,11 +1,9 @@
-"""The state file lists the map overlays both renderers draw, at their real ages."""
 import tempfile
 from pathlib import Path
 
 from fixtures import shared_game
 from helpers import HELPERS, settle, wait_until
 
-# Markers last long enough to observe several turns without fading.
 PROFILE = {"SAFEMODE": "false", "SOUND_MARKER_TURNS": "10"}
 
 
@@ -22,7 +20,6 @@ def _sound_markers(game):
 
 
 def _build_sound_scene(game):
-    """Seal the player in an underground arena with one NPC behind a wall."""
     assert game.lua(
         "local a=gapi.get_avatar() local p=a:get_pos_ms() "
         "a:clear_bionics() a:clear_mutations() a:clear_morale() a:drop_all_items() "

@@ -112,8 +112,6 @@ static auto sfx_group_to_tag( const sfx::group group ) -> const char *
 
 static MIX_Mixer *g_mixer = nullptr;
 
-// Two persistent tracks for music, so a context change can crossfade: the
-// outgoing track fades out while the incoming one fades in on the other track.
 struct music_track_state {
     MIX_Track *track = nullptr;
     MIX_Audio *audio = nullptr;
@@ -122,11 +120,8 @@ struct music_track_state {
 static constexpr int MUSIC_TRACK_COUNT = 2;
 static constexpr int MUSIC_CROSSFADE_MS = 2000;
 static std::array<music_track_state, MUSIC_TRACK_COUNT> music_tracks{};
-// The mixer thread only raises this flag; every other field below is owned by
-// the main thread and is serviced by process_music_events().
 static std::atomic<bool> music_event_pending{ false };
 static int active_music_track = -1;
-// Playlists whose files all failed to load are not retried on every call.
 static std::set<std::string> failed_playlists;
 
 static std::string current_playlist;
@@ -142,27 +137,21 @@ static constexpr int MAX_CHANNEL_COUNT = static_cast<int>( sfx::channel::MAX_CHA
 static std::array<MIX_Track *, MAX_CHANNEL_COUNT> channel_tracks{};
 
 // Pre-allocated pool for fire-and-forget one-shot effects (channel::any).
-// Tracks are reused once they finish playing. Only these tracks are world
-// voices: music has its own track and every named sfx::channel keeps a reserved
-// track, so neither music nor ambience beds ever count toward or lose a voice.
-// One track per possible voice: the pool never starts a 25th, it evicts.
 static constexpr int WORLD_VOICE_CEILING = 24;
 static std::array<MIX_Track *, WORLD_VOICE_CEILING> temp_tracks{};
 
-// Bookkeeping for one pool track. Main thread only.
 struct voice_slot {
     bool playing = false;
     int priority = 0;
-    float gain = 0.0f;        // Cue volume x SOUND_EFFECT_VOLUME, before bus gains.
-    std::uint64_t serial = 0; // Monotonic start order; lower is older.
+    float gain = 0.0f;
+    std::uint64_t serial = 0;
 };
 static std::array<voice_slot, WORLD_VOICE_CEILING> voice_slots{};
 static std::uint64_t next_voice_serial = 1;
 
-// The slot handed to the mixer for a new cue.
 struct voice_reservation {
     std::size_t slot = 0;
-    bool evicted = false; // a voice was playing there and must be stopped first
+    bool evicted = false;
 };
 
 struct ambient_parameters {
@@ -191,8 +180,6 @@ static inline auto check_sound( const int volume = 1 ) -> bool
     return sound_init_success && sounds::sound_enabled && volume > 0;
 }
 
-// Mirror the mixer's view of the pool. A track that finished since the last
-// request is free again.
 static auto refresh_voice_slots() -> void
 {
     for( int i = 0; i < WORLD_VOICE_CEILING; ++i ) {
@@ -200,8 +187,6 @@ static auto refresh_voice_slots() -> void
     }
 }
 
-// True when lhs should be evicted before rhs: lower priority, then quieter,
-// then older.
 static auto worse_voice( const voice_slot &lhs, const voice_slot &rhs ) -> bool
 {
     if( lhs.priority != rhs.priority ) {
@@ -213,9 +198,6 @@ static auto worse_voice( const voice_slot &lhs, const voice_slot &rhs ) -> bool
     return lhs.serial < rhs.serial;
 }
 
-// Pick the slot a new voice goes into: the first free slot, or at the ceiling
-// the eviction target. The fixed array has one track per possible voice, so a
-// slot always exists.
 static auto choose_voice_slot() -> std::size_t
 {
     int free_slot = WORLD_VOICE_CEILING;
@@ -239,8 +221,6 @@ static auto choose_voice_slot() -> std::size_t
     return static_cast<std::size_t>( free_slot < WORLD_VOICE_CEILING ? free_slot : victim );
 }
 
-// Reserve a world voice for a cue, stopping the evicted track if the pool was
-// full. The caller owns releasing the slot if MIX_PlayTrack fails.
 static auto acquire_voice( const sfx::sound_priority priority, const float gain )
     -> voice_reservation
 {
@@ -437,9 +417,6 @@ if( g_mixer ) {
 void musicFinished();
 
 // MIX_TrackStoppedCallback signature: userdata first, then track.
-// Runs on the mixer thread, so it only raises a flag. The main thread owns
-// the tracks, their MIX_Audio handles and the playlist cursors, and decides
-// which track actually ended by asking MIX_TrackPlaying().
 static auto music_stopped_cb( void * /*userdata*/, MIX_Track * /*track*/ ) -> void
 {
     music_event_pending.store( true, std::memory_order_release );
@@ -450,15 +427,12 @@ static auto music_gain( const int entry_volume ) -> float
     return volume_to_gain( entry_volume * get_option<int>( "MUSIC_VOLUME" ) / 100 );
 }
 
-// Stop one slot immediately. Only the main thread calls this.
 static auto stop_music_slot( const int index ) -> void
 {
     music_track_state &state = music_tracks[index];
     if( !state.track ) {
         return;
     }
-    // Clear the callback before stopping, so a stopped track cannot raise a
-    // stale event after its audio handle is released.
     MIX_SetTrackStoppedCallback( state.track, nullptr, nullptr );
     MIX_StopTrack( state.track, 0 );
     if( state.audio ) {
@@ -471,8 +445,6 @@ static auto stop_music_slot( const int index ) -> void
     }
 }
 
-// Main-thread event pump: clean up finished tracks and, when the selected
-// track ended, advance the playlist.
 auto process_music_events() -> void
 {
     if( test_mode || !sound_init_success ) {
@@ -485,8 +457,6 @@ auto process_music_events() -> void
     bool active_ended = false;
     for( int i = 0; i < MUSIC_TRACK_COUNT; ++i ) {
         music_track_state &state = music_tracks[i];
-        // A NULL handle means the slot was already stopped and released by the
-        // main thread; never attribute a stale mixer event to a fresh track.
         if( !state.audio || !state.track || MIX_TrackPlaying( state.track ) ) {
             continue;
         }
@@ -523,9 +493,6 @@ auto music_has_playlist( const std::string &playlist ) -> bool
     return iter != playlists.end() && !iter->second.entries.empty();
 }
 
-// Start one track. With a positive fade_ms the new track fades in on one
-// track while the previously selected one fades out on the other, so the two
-// overlap: a real crossfade, not a cut through silence.
 static auto start_music_entry( const music_playlist::entry &entry, const int fade_ms ) -> bool
 {
     if( test_mode || !get_option<bool>( "MUSIC_ENABLED" ) ) {
@@ -546,8 +513,6 @@ static auto start_music_entry( const music_playlist::entry &entry, const int fad
     const int previous = active_music_track;
     const int index = previous >= 0 ? ( previous + 1 ) % MUSIC_TRACK_COUNT : 0;
     music_track_state &state = music_tracks[index];
-    // A third switch inside one crossfade reuses the slot that is still fading
-    // out; cut it instead of leaving a stale track playing underneath.
     if( state.audio || MIX_TrackPlaying( state.track ) ) {
         stop_music_slot( index );
     }
@@ -556,7 +521,6 @@ static auto start_music_entry( const music_playlist::entry &entry, const int fad
     MIX_SetTrackAudio( state.track, audio );
     MIX_SetTrackLoops( state.track, 0 );
 
-    // Publish ownership before a very short track can fire its callback.
     state.audio = audio;
     state.entry_volume = entry.volume;
     active_music_track = index;
@@ -593,8 +557,6 @@ static auto start_music_entry( const music_playlist::entry &entry, const int fad
     return true;
 }
 
-// Play from the current position in playlist_indexes, skipping entries whose
-// file is missing. Playlists shipped without music simply fail here.
 static auto start_playlist( const music_playlist &list, const int fade_ms ) -> bool
 {
     if( list.entries.empty() || playlist_indexes.empty() ) {
@@ -644,8 +606,6 @@ static auto play_playlist( const std::string &playlist, const int fade_ms ) -> b
     if( test_mode || !get_option<bool>( "MUSIC_ENABLED" ) ) {
         return false;
     }
-    // Service a track that ended while the mixer thread was working before
-    // deciding whether this playlist is already current.
     process_music_events();
 
     const auto iter = playlists.find( playlist );
@@ -656,14 +616,10 @@ static auto play_playlist( const std::string &playlist, const int fade_ms ) -> b
     if( list.entries.empty() ) {
         return false;
     }
-    // Name-only: process_music_events() above advanced a finished track, and
-    // stop_music() clears the name when music is switched off.
     if( playlist == current_playlist ) {
         if( active_music_track >= 0 ) {
             return true;
         }
-        // No track is selected; the last advance could not play the next file.
-        // Retry from the current cursor instead of restarting the playlist.
         if( failed_playlists.contains( playlist ) || !start_playlist( list, fade_ms ) ) {
             failed_playlists.insert( playlist );
             return false;
@@ -677,8 +633,6 @@ static auto play_playlist( const std::string &playlist, const int fade_ms ) -> b
 
     dbg( DL::Info ) << "Music playlist: " << playlist;
 
-    // Rebuild the order for this playlist; a stale order from the previous
-    // playlist would index past its end and skip or repeat tracks.
     const std::string previous_playlist = current_playlist;
     const std::vector<std::size_t> previous_order = playlist_indexes;
     const std::size_t previous_position = absolute_playlist_at;
@@ -700,9 +654,6 @@ static auto play_playlist( const std::string &playlist, const int fade_ms ) -> b
     absolute_playlist_at = 0;
     current_playlist_at = playlist_indexes.front();
     if( !start_playlist( list, fade_ms ) ) {
-        // Nothing in the new playlist could be played; keep the old one so a
-        // later track end does not advance a playlist that is not playing.
-        // Remember the failure so a per-turn request does not reopen every file.
         dbg( DL::Warn ) << "No playable file in music playlist " << playlist;
         failed_playlists.insert( playlist );
         current_playlist = previous_playlist;
@@ -730,8 +681,6 @@ auto play_music_context( const music::context ctx ) -> void
     if( play_playlist( playlist, MUSIC_CROSSFADE_MS ) ) {
         return;
     }
-    // A context playlist exists but none of its files could be played; use
-    // the title fallback instead of leaving the previous context running.
     if( playlist != "title" ) {
         play_playlist( "title", MUSIC_CROSSFADE_MS );
     }
@@ -772,8 +721,6 @@ auto update_volumes() -> void
                 MIX_SetTrackGain( state.track, music_gain( state.entry_volume ) );
             }
         }
-        // Re-evaluate the context on every options change, so toggling
-        // DYNAMIC_MUSIC or MUSIC_ENABLED takes effect without waiting a turn.
         music::resume();
     }
 
@@ -904,7 +851,7 @@ bool valid_last_time_played( MIX_Audio *audio, const int res_id, const std::stri
     double sound_duration;
     if( !sound_durations.contains( res_id ) ) {
         sound_duration = static_cast<double>( MIX_AudioFramesToMS( audio,
-            MIX_GetAudioDuration( audio ) ) ) / 1000; // Conversion from MS
+            MIX_GetAudioDuration( audio ) ) ) / 1000;
         sound_durations[res_id] = sound_duration;
     } else {
         sound_duration = sound_durations[res_id];
@@ -933,17 +880,13 @@ auto sfx::play_variant_sound( const std::string &id, const std::string &variant,
                               const sound_priority priority ) -> bool
 {
     if( test_mode ) {
-        // Tests never open an audio device; the sound marker is the only cue,
-        // and a muted cue stays silent.
         return volume > 0;
     }
     add_msg( m_debug, "sound id: %s, variant: %s, volume: %d ", id, variant, volume );
     if( volume <= 0 ) {
-        // A muted cue is not audible, so it must not leave a marker either.
         return false;
     }
     if( !check_sound( volume ) ) {
-        // Audio is off or unavailable, so markers stay the player's cue.
         return true;
     }
 
@@ -955,7 +898,6 @@ auto sfx::play_variant_sound( const std::string &id, const std::string &variant,
     const auto res_id = eff->resource_id;
     const int vol = eff->volume * get_option<int>( "SOUND_EFFECT_VOLUME" ) * volume / ( 100 * 100 );
     if( vol <= 0 ) {
-        // Muted sound effects are not audible, so no cue and no marker.
         return false;
     }
     auto *audio = get_sfx_resource( res_id );
@@ -968,8 +910,6 @@ auto sfx::play_variant_sound( const std::string &id, const std::string &variant,
     const voice_reservation reservation = acquire_voice( priority, volume_to_gain( vol ) );
 
     auto *track = temp_tracks[reservation.slot];
-    // A reused track keeps the 3D position of its previous cue; clear it so a
-    // non-positional sound is not panned at the old angle.
     MIX_SetTrack3DPosition( track, nullptr );
     MIX_SetTrackGain( track, volume_to_gain( vol ) );
     MIX_SetTrackAudio( track, audio );
@@ -988,17 +928,13 @@ auto sfx::play_variant_sound( const std::string &id, const std::string &variant,
                               const sound_priority priority ) -> bool
 {
     if( test_mode ) {
-        // Tests never open an audio device; the sound marker is the only cue,
-        // and a muted cue stays silent.
         return volume > 0;
     }
     add_msg( m_debug, "sound id: %s, variant: %s, volume: %d ", id, variant, volume );
     if( volume <= 0 ) {
-        // A muted cue is not audible, so it must not leave a marker either.
         return false;
     }
     if( !check_sound( volume ) ) {
-        // Audio is off or unavailable, so markers stay the player's cue.
         return true;
     }
 
@@ -1010,7 +946,6 @@ auto sfx::play_variant_sound( const std::string &id, const std::string &variant,
     const auto res_id = eff->resource_id;
     const int vol = eff->volume * get_option<int>( "SOUND_EFFECT_VOLUME" ) * volume / ( 100 * 100 );
     if( vol <= 0 ) {
-        // Muted sound effects are not audible, so no cue and no marker.
         return false;
     }
     auto *audio = get_sfx_resource( res_id );
@@ -1230,7 +1165,6 @@ auto sfx::get_channel_volume( const channel channel ) -> int
 
 auto load_soundset() -> void
 {
-    // A reloaded soundpack may have fixed previously unplayable playlists.
     failed_playlists.clear();
     const std::string default_path     = PATH_INFO::defaultsounddir();
     const std::string default_soundpack = "basic";

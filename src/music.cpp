@@ -18,8 +18,6 @@ namespace
 
 auto highest_priority_context( const signals &state ) -> context
 {
-    // A sleeping avatar must not wake up the tension track just because a
-    // hostile wandered into the bubble.
     if( state.danger && !state.sleeping ) {
         return context::danger;
     }
@@ -54,7 +52,7 @@ auto read_signals() -> signals
     return state;
 }
 
-} // namespace
+}
 
 auto context_id( const context ctx ) -> const char *
 {
@@ -108,19 +106,16 @@ auto scheduler::update( const signals &state, const std::chrono::steady_clock::t
     }
 
     if( wanted == current_ ) {
-        // The selected context is still the best one; drop pending countdowns.
         danger_clearing_ = false;
         candidate_ = current_;
         return current_;
     }
 
-    // Falling asleep releases the tension track at once, like a threat does.
     if( state.sleeping && current_ == context::danger ) {
         switch_to( wanted, now );
         return current_;
     }
 
-    // Danger overrides the minimum play time; a threat must be audible at once.
     if( wanted == context::danger ) {
         danger_clearing_ = false;
         if( current_ != context::danger ) {
@@ -134,7 +129,6 @@ auto scheduler::update( const signals &state, const std::chrono::steady_clock::t
             danger_clearing_ = true;
             danger_clear_since_ = now;
         }
-        // Stay in danger for a while after the last hostile leaves the bubble.
         if( now - danger_clear_since_ < timing_.danger_release ) {
             return current_;
         }
@@ -142,8 +136,6 @@ auto scheduler::update( const signals &state, const std::chrono::steady_clock::t
         danger_clearing_ = false;
     }
 
-    // Non-danger contexts must be stable and the current context must have been
-    // active long enough, so flickering state does not cut a track short.
     if( candidate_ != wanted ) {
         candidate_ = wanted;
         candidate_since_ = now;
@@ -155,7 +147,7 @@ auto scheduler::update( const signals &state, const std::chrono::steady_clock::t
     return current_;
 }
 
-void scheduler::reset()
+auto scheduler::reset() -> void
 {
     current_ = context::title;
     candidate_ = context::title;
@@ -177,7 +169,7 @@ auto resolve_playlist( const context ctx,
     return has_playlist( id ) ? id : std::string( "title" );
 }
 
-void pump()
+auto pump() -> void
 {
     process_music_events();
 }
@@ -191,17 +183,15 @@ auto danger_music_active() -> bool
            music_playlist_playing( "danger" );
 }
 
-void update( const bool force )
+auto update( const bool force ) -> void
 {
     if( test_mode || !g ) {
         return;
     }
-    // Finish any track the mixer thread reported before choosing a context.
     pump();
     in_game = true;
 
     if( !get_option<bool>( "DYNAMIC_MUSIC" ) ) {
-        // Old behavior: one playlist for the whole game.
         play_music( "title" );
         return;
     }
@@ -213,7 +203,7 @@ void update( const bool force )
     }
 }
 
-void resume()
+auto resume() -> void
 {
     if( test_mode ) {
         return;
@@ -226,7 +216,7 @@ void resume()
     }
 }
 
-void reset()
+auto reset() -> void
 {
     game_scheduler.reset();
     in_game = false;
@@ -245,4 +235,4 @@ auto current_playlist() -> std::string
     return resolve_playlist( current_context(), music_has_playlist );
 }
 
-} // namespace music
+}

@@ -23,22 +23,19 @@
 
 namespace
 {
-/// The digits 1-9 on the tab strip limit how many tabs one page can number.
 constexpr int max_numbered_tabs = 9;
-/// Rows above the panel body used by the numbered tab strip (see draw_tabs).
 constexpr int strip_height = 3;
 
-/// Lets a panel hide the page while a look_around-style modal needs the map.
 class page_host : public world_hub::host
 {
     public:
         page_host( bool &visible, ui_adaptor &ui ) : visible_( visible ), ui_( ui ) {}
 
-        void hide() override {
+        auto hide() -> void override {
             visible_ = false;
             ui_.mark_resize();
         }
-        void restore() override {
+        auto restore() -> void override {
             visible_ = true;
             ui_.mark_resize();
         }
@@ -47,16 +44,16 @@ class page_host : public world_hub::host
         bool &visible_;
         ui_adaptor &ui_;
 };
-} // namespace
+}
 
 auto world_hub::show( std::vector<panel_ptr> screens, const size_t start_tab ) -> void
 {
     if( screens.empty() ) {
-    return;
-}
-if( screens.size() > static_cast<size_t>( max_numbered_tabs ) ) {
-    debugmsg( "The World page can number only %d tabs; %d are hidden.",
-              max_numbered_tabs, static_cast<int>( screens.size() ) );
+        return;
+    }
+    if( screens.size() > static_cast<size_t>( max_numbered_tabs ) ) {
+        debugmsg( "The World page can number only %d tabs; %d are hidden.",
+                  max_numbered_tabs, static_cast<int>( screens.size() ) );
     }
     const int count = std::min( static_cast<int>( screens.size() ), max_numbered_tabs );
     screens.resize( static_cast<size_t>( count ) );
@@ -72,11 +69,9 @@ if( screens.size() > static_cast<size_t>( max_numbered_tabs ) ) {
     ctxt.register_action( "PAGE_UP" );
     ctxt.register_action( "PAGE_DOWN" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
-    // Panel-only keys (the zone actions, SWAPTONPC) arrive as ANY_INPUT here; the panel that
-    // owns them translates them with its own screen's context.
     ctxt.register_action( "ANY_INPUT" );
     if( modern ) {
-    ctxt.register_action( "COORDINATE" );
+        ctxt.register_action( "COORDINATE" );
         ctxt.register_action( "MOUSE_MOVE" );
         ctxt.register_action( "SELECT" );
         ctxt.register_action( "SEC_SELECT" );
@@ -87,7 +82,7 @@ if( screens.size() > static_cast<size_t>( max_numbered_tabs ) ) {
     std::vector<std::string> labels;
     labels.reserve( static_cast<size_t>( count ) );
     for( int i = 0; i < count; ++i ) {
-    labels.push_back( string_format( "%d %s", i + 1, screens[i]->name() ) );
+        labels.push_back( string_format( "%d %s", i + 1, screens[i]->name() ) );
     }
 
     size_t current = std::min( start_tab, static_cast<size_t>( count ) - 1 );
@@ -102,11 +97,10 @@ if( screens.size() > static_cast<size_t>( max_numbered_tabs ) ) {
             ui.position( point_zero, point_zero );
             return;
         }
-        // Leave the screen's last row to the menu keyhints, as the other full-screen pages do.
         const int page_height = std::min( strip_height + FULL_SCREEN_HEIGHT + 1, TERMY - 2 );
         page = new_centered_win( page_height, FULL_SCREEN_WIDTH );
         const int body_height = std::max( 5, std::min( FULL_SCREEN_HEIGHT,
-            getmaxy( page ) - strip_height - 1 ) );
+                                          getmaxy( page ) - strip_height - 1 ) );
         body = catacurses::newwin( body_height, std::min( FULL_SCREEN_WIDTH, getmaxx( page ) ),
                                    point( getbegx( page ), getbegy( page ) + strip_height ) );
         ui.position_from_window( page );
@@ -132,12 +126,11 @@ if( screens.size() > static_cast<size_t>( max_numbered_tabs ) ) {
 
     bool done = false;
     while( !done ) {
-    screens[current]->refresh();
+        screens[current]->refresh();
         ui_manager::redraw();
         const std::string action = ctxt.handle_input();
         const input_event event = ctxt.get_raw_input();
 
-        // Number keys choose a tab even where the scheme also uses that digit to move.
         if( event.type == input_event_t::keyboard && event.sequence.size() == 1 ) {
             const int key = event.get_first_input();
             if( key >= '1' && key - '1' < count ) {
@@ -163,14 +156,13 @@ if( screens.size() > static_cast<size_t>( max_numbered_tabs ) ) {
         if( modern && action == "SELECT" ) {
             if( const auto mouse = ctxt.get_coordinates( page ) ) {
                 const point cell = mouse->xy().raw() + point( getmaxx( page ), getmaxy( page ) ) / 2;
-                // Only the strip is the page's; every click below it belongs to the panel.
                 if( cell.y < strip_height ) {
                     if( const auto clicked = tab_input::index_at( {
                     .texts = labels,
                     .current = current,
                     .max_width = getmaxx( page ),
-                        .x = cell.x,
-                    } ) ) {
+                    .x = cell.x,
+                } ) ) {
                         current = static_cast<size_t>( *clicked );
                     }
                     continue;
@@ -183,7 +175,6 @@ if( screens.size() > static_cast<size_t>( max_numbered_tabs ) ) {
 
 namespace
 {
-/// The sidebar strip: two rows of two, so four numbered tabs fit a 36-cell column.
 auto draw_sidebar_strip( const catacurses::window &w, const std::vector<std::string> &labels,
                          const size_t current ) -> void
 {
@@ -200,24 +191,23 @@ auto draw_sidebar_strip( const catacurses::window &w, const std::vector<std::str
         at.x += utf8_width( label ) + 1;
     }
 }
-} // namespace
+}
 
 auto world_hub::show_in_sidebar( std::vector<panel_ptr> screens ) -> void
 {
     if( screens.empty() ) {
-    return;
-}
-auto &mgr = panel_manager::get_manager();
-const bool right = get_option<std::string>( "SIDEBAR_POSITION" ) == "right";
-const int width = right ? mgr.get_width_right() : mgr.get_width_left();
-if( width < 24 ) {
-    show( std::move( screens ) );
+        return;
+    }
+    auto &mgr = panel_manager::get_manager();
+    const bool right = get_option<std::string>( "SIDEBAR_POSITION" ) == "right";
+    const int width = right ? mgr.get_width_right() : mgr.get_width_left();
+    if( width < 24 ) {
+        show( std::move( screens ) );
         return;
     }
     const int count = std::min( static_cast<int>( screens.size() ), max_numbered_tabs );
     screens.resize( static_cast<size_t>( count ) );
 
-    // The tab you left the page on, so reopening puts you back where you were.
     static auto remembered = size_t( 0 );
     auto current = std::min( remembered, static_cast<size_t>( count ) - 1 );
 
@@ -234,13 +224,12 @@ if( width < 24 ) {
 
     auto labels = std::vector<std::string>();
     for( int i = 0; i < count; ++i ) {
-    labels.push_back( string_format( "%d %s", i + 1, screens[i]->name() ) );
+        labels.push_back( string_format( "%d %s", i + 1, screens[i]->name() ) );
     }
 
     auto details = std::optional<size_t>();
     constexpr int side_strip = 2;
     const auto origin = point( right ? TERMX - width : 0, 0 );
-    // The adaptor must die before show() moves the screens away: its redraw refers to them.
     {
         catacurses::window page;
         catacurses::window body;
@@ -291,7 +280,6 @@ if( width < 24 ) {
                 continue;
             }
             if( action == "CONFIRM" ) {
-                // Lists fit the column; the details need the whole page.
                 details = current;
                 done = true;
                 continue;
@@ -306,14 +294,14 @@ if( width < 24 ) {
             }
             screens[current]->handle( action, ctxt, body, host );
         }
-    } // the sidebar adaptor ends here
+    }
 
     remembered = current;
     if( details ) {
-    show( std::move( screens ), *details );
+        show( std::move( screens ), *details );
         return;
     }
-for( panel_ptr &screen : screens ) {
-    screen->close();
+    for( panel_ptr &screen : screens ) {
+        screen->close();
     }
 }

@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""Report duplicate keys in `data/**/*.json`.
-
-A merge that adds the same key on both sides resolves cleanly in git and still produces a file the
-loader rejects, one file at a time. This scan reports every such file in one pass.
-"""
 import json
 import sys
 from pathlib import Path

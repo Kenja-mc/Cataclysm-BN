@@ -7,13 +7,9 @@
 
 #include "point.h"
 
-/// Pure geometry and hit testing for the one-column vertical scrollbar drawn by
-/// scrollbar::apply() and draw_scrollbar(). Screens keep their own meaning for the
-/// returned position (selected row, first visible row, scroll offset).
 namespace scrollbar_input
 {
 
-/// A drawn scrollbar. offset is window-relative, viewport_size includes both arrows.
 struct geometry {
     point offset = point_zero;
     int viewport_size = 0;
@@ -22,7 +18,6 @@ struct geometry {
     bool scroll_to_last = false;
 };
 
-/// Row geometry shared with the drawing code.
 struct layout {
     int slot_size = 0;
     int bar_size = 0;
@@ -37,24 +32,20 @@ enum class click_part {
 
 struct click_result {
     click_part part = click_part::track;
-    /// Already clamped to the valid viewport range.
     int viewport_pos = 0;
 };
 
-/// True when apply() draws arrows and a bar rather than a plain border.
 inline auto is_drawn( const geometry &g ) -> bool
 {
     return g.content_size > 0 && g.viewport_size >= 2 && g.content_size > g.viewport_size;
 }
 
-/// Largest viewport position apply() can represent.
 inline auto max_viewport_pos( const geometry &g ) -> int
 {
     return g.scroll_to_last ? std::max( 0, g.content_size - 1 )
            : std::max( 0, g.content_size - g.viewport_size );
 }
 
-/// Reproduces scrollbar::apply() bar placement.
 inline auto layout_for( const geometry &g ) -> layout
 {
     auto result = layout{};
@@ -73,7 +64,6 @@ inline auto layout_for( const geometry &g ) -> layout
     return result;
 }
 
-/// Hit test a window-relative cell. Returns nullopt off a drawn scrollbar.
 inline auto click( const geometry &g, point mouse ) -> std::optional<click_result>
 {
     if( !is_drawn( g ) || mouse.x != g.offset.x ) {
@@ -112,7 +102,6 @@ inline auto click( const geometry &g, point mouse ) -> std::optional<click_resul
     return click_result{ .part = click_part::track, .viewport_pos = std::clamp( target, 0, max_pos ) };
 }
 
-/// Viewport position for the thumb dragged to window-relative row y; rows past either end clamp to it.
 inline auto drag( const geometry &g, int y ) -> std::optional<int>
 {
     if( !is_drawn( g ) || g.viewport_size < 3 ) {
@@ -123,6 +112,6 @@ inline auto drag( const geometry &g, int y ) -> std::optional<int>
     return hit ? std::optional<int>( hit->viewport_pos ) : std::nullopt;
 }
 
-} // namespace scrollbar_input
+}
 
-#endif // CATA_SRC_SCROLLBAR_INPUT_H
+#endif

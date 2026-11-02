@@ -25,14 +25,11 @@ class trading_window
         auto perform_trade( npc &np, const std::string &deal ) -> bool;
 
     private:
-        /// A drawn label that runs one existing action when clicked.
         struct click_target {
             point min;
-            point max; // exclusive
+            point max;
             std::string action;
-            /// For pane scoped targets: true when drawn in the "them" pane.
             bool target_them = false;
-            /// True when the label is drawn in a pane rather than the header.
             bool in_pane = false;
         };
 
@@ -70,12 +67,9 @@ class trading_window
         bool filter_edit_theirs = false;
         bool show_item_info = false;
         std::unique_ptr<string_input_popup> filter_popup;
-        /// Filled by update_win(): clickable labels and pane row positions.
         std::vector<click_target> click_targets;
         std::map<int, size_t> them_row_at;
         std::map<int, size_t> you_row_at;
-        /// Row the mouse most recently clicked in each pane; a second click on it
-        /// marks/unmarks the item. Reset by keyboard, wheel and content changes.
         std::optional<size_t> mouse_row_them;
         std::optional<size_t> mouse_row_you;
 };

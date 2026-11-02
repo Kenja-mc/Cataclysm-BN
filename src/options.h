@@ -128,7 +128,6 @@ class options_manager
                     return { "bool", "string", "string_select", "string_input" };
                 }
 
-                /// Whether `value` is a value this option would keep, given its type and range.
                 auto accepts_value( const std::string &value ) const -> bool;
 
                 void setPrerequisites( const std::string &sOption, const std::vector<std::string> &sAllowedValues );
@@ -196,7 +195,6 @@ class options_manager
 
         using options_container = std::unordered_map<std::string, cOpt>;
 
-        /// A named set of world option values, loaded from `WORLD_PRESET` JSON.
         struct world_preset {
             std::string id;
             translation name;
@@ -350,7 +348,6 @@ class options_manager
         };
 
         auto insert_page_item( Page &page, const PageItem &item ) -> void;
-        /// Sets every option on `page` to its built-in default.
         auto reset_page_to_defaults( const Page &page ) -> void;
 
         std::vector<Page> pages_;

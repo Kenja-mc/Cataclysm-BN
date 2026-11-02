@@ -785,8 +785,6 @@ auto technique_unavailable_reason( Character &self, Creature &target,
         return _( "human target only" );
     }
 
-    // Upstream #10388: armed/unarmed is left to character_requirement_reason below, which knows
-    // styles like Taekwondo that keep kicking with a weapon in hand (as automatic mode does).
     if( !tec.aoe.empty() && !aoe_technique_is_valid( self, target, tec ) ) {
         return technique_aoe_reason( self, target, tec );
     }
@@ -856,7 +854,6 @@ auto show_technique_reference_popup( const std::string &text ) -> void
         auto action = ict.handle_input();
 
         if( modern && ict.get_raw_input().type == input_event_t::mouse ) {
-            // Text scrolls three lines per notch.
             if( action == "SCROLL_UP" ) {
                 selected -= 3;
                 action.clear();
@@ -3156,7 +3153,6 @@ void Character::perform_special_attacks( Creature &t, dealt_damage_instance &dea
                 practiced = true;
                 as_player()->practice( skill_unarmed, rng( 0, 10 ) );
             }
-            // Upstream #1287: only a hit reports damage; a miss used to reprint the previous hit.
             if( const int dam = dealt_dam.total_damage(); dam > 0 ) {
                 player_hit_message( this, att.text, t, dam );
             }

@@ -1,10 +1,3 @@
-"""Mouse back side button in the real controls UI: Modern binds it to Cancel, Classic does not.
-
-The terminal cannot deliver X1 to the game unless ncurses was built with the extended mouse
-protocol, so these checks read what the player sees in the in-game Controls screen: Modern's
-Cancel offers the back button, while Classic keeps its Escape-only Cancel. Real X1 presses are
-covered by the tiles harness, `tiles.py side_buttons`.
-"""
 from concurrent.futures import ThreadPoolExecutor
 
 from fixtures import shared_game
@@ -25,7 +18,6 @@ def close_controls(game):
 
 
 def action_row(game, name):
-    """The Controls row of `name`, matched on the action label rather than key spelling."""
     prefix = name + ":"
     line = next((line for line in game.screen().splitlines() if prefix in line), None)
     assert line, f"the controls screen must list {name!r}\n" + game.screen()
@@ -40,7 +32,6 @@ def search_row(game, phrase, name):
 
 
 def in_list_menu(game, check):
-    """Runs `check` while a real list menu is open, and always leaves that menu."""
     with ThreadPoolExecutor(max_workers=1) as executor:
         query = executor.submit(
             game.lua,
@@ -83,7 +74,6 @@ def test_classic_cancel_has_no_side_button(_g):
             screen = game.screen()
             assert MOUSE_BACK not in row, (
                 "Classic's Cancel must keep upstream's keys only\n" + screen)
-            # Compare key names case-insensitively: the UI writes "ESC", not "Esc".
             assert "esc" in row, "Classic's Cancel still cancels with Escape\n" + screen
             assert "unbound" not in row, "Classic's Cancel must stay bound\n" + screen
             close_controls(game)

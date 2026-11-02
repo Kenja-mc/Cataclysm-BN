@@ -311,7 +311,6 @@ static auto pick_one_up( const pick_one_up_options &opts ) -> bool
         // Ammo can sometimes be picked up into containers
         if( !opts.preferred_option && newloc->is_ammo() ) {
             const auto original_charges = newloc->charges;
-            // A full merge redirects this reference to the retained container ammo.
             const auto ammo = safe_reference<item> { *newloc };
             newloc = u.i_add_to_container( std::move( newloc ), false );
             if( original_charges > 0 && ( !newloc || newloc->charges < original_charges ) &&
@@ -653,7 +652,6 @@ auto pick_up_from_items( const std::vector<item_stack::iterator> &here, const in
     return;
 }
 
-// Not many items, just grab them
 if( static_cast<int>( here.size() ) <= min && min != -1 ) {
         g->u.assign_activity( std::make_unique<player_activity>( std::make_unique<pickup_activity_actor>(
         std::vector<pickup::pick_drop_selection> { { *here.front(), std::nullopt, {} } },
@@ -697,7 +695,6 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
         std::string weight_overload_notice;
         std::string volume_overload_notice;
 
-        // Row numbers take the digits, so typed counts move behind SET_COUNT.
         auto numbered_rows = false;
         auto number_cells = 0;
 #if defined(TILES)
@@ -1078,7 +1075,6 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
             if( action == "ANY_INPUT" &&
                 raw_input_char >= '0' && raw_input_char <= '9' ) {
                 if( numbered_rows ) {
-                    // A number selects the visible row with that number; it types no count.
                     const int row = raw_input_char == '0' ? 9 : raw_input_char - '1';
                     const int item_idx = start + row;
                     if( row < maxitems && item_idx >= 0 &&
@@ -1173,8 +1169,6 @@ if( static_cast<int>( here.size() ) <= min && min != -1 ) {
                                 selected = item_idx;
                                 start = ( item_idx / maxitems ) * maxitems;
                                 if( list_mouse::enabled() && click.second( item_idx ) ) {
-                                    // The second click follows Enter, including its prompts. Leave at
-                                    // once: the loop's trailing handle_input() would block and drop it.
                                     action = "CONFIRM";
                                     idx = -1;
                                     break;
@@ -1474,7 +1468,6 @@ for( std::pair<item_stack::iterator, int> &iter_qty : pick_values ) {
         ( targets,
           starting_pos ) ) );
     if( min == -1 ) {
-    // Auto pickup will need to auto resume since there can be several of them on the stack.
     g->u.activity->auto_resume = true;
 }
 

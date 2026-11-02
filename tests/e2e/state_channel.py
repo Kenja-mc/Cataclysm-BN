@@ -1,4 +1,3 @@
-"""The --state-out file reports the open inventory and advances its turn counter."""
 import tempfile
 from pathlib import Path
 

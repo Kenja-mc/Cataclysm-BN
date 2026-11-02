@@ -8,7 +8,7 @@ namespace list_mouse
 namespace
 {
 constexpr auto double_click_window = std::chrono::milliseconds( 500 );
-} // namespace
+}
 
 auto enabled() -> bool
 {
@@ -39,9 +39,9 @@ auto click_state::second( const void *row ) -> bool
     return second_token( reinterpret_cast<std::uintptr_t>( row ) );
 }
 
-void click_state::reset()
+auto click_state::reset() -> void
 {
     armed = false;
 }
 
-} // namespace list_mouse
+}

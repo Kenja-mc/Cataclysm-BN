@@ -2077,9 +2077,7 @@ static auto display(const tripoint_abs_omt& orig, const draw_data_t& data = draw
 #if defined(TILES)
     std::optional<point> drag_anchor;
     point drag_remainder{};
-    // Set once a held-button drag has moved the map, until the release that ends it.
     bool dragged = false;
-    // Buttons held at the last pointer event, and where the pointer last was.
     Uint32 drag_buttons = 0;
     std::optional<point> last_pointer;
 #endif
@@ -2110,14 +2108,10 @@ static auto display(const tripoint_abs_omt& orig, const draw_data_t& data = draw
             curs += vec->xy().raw() * scroll_d;
         } else if (action == "MOUSE_MOVE" || action == "TIMEOUT") {
 #if defined(TILES)
-            // Dragging with either button pans: the map follows the pointer one overmap cell per
-            // cell of travel, measured in the overmap window's own cells (tiles or text).
             const auto raw = ictxt.get_raw_input();
             const auto buttons = SDL_GetMouseState(nullptr, nullptr) & (SDL_BUTTON_RMASK | SDL_BUTTON_LMASK);
             const bool held = action == "MOUSE_MOVE" && raw.type == input_event_t::mouse && buttons != 0;
             if (held && buttons != drag_buttons) {
-                // A new stroke: no event reports the press, so it starts where the pointer last
-                // rested with the buttons up (or here, if a different button took over).
                 drag_anchor = drag_buttons == 0 && last_pointer ? last_pointer : std::optional<point>(raw.mouse_pos);
                 drag_remainder = point_zero;
             }
@@ -2155,7 +2149,6 @@ static auto display(const tripoint_abs_omt& orig, const draw_data_t& data = draw
 #endif
         } else if (action == "SELECT" && (mouse_pos = ictxt.get_coordinates(g->w_overmap))) {
 #if defined(TILES)
-            // Buttons report on release, so the release that ends a drag must not also select.
             drag_anchor.reset();
             drag_buttons = 0;
             last_pointer = ictxt.get_raw_input().mouse_pos;

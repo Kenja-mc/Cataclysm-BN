@@ -5461,7 +5461,6 @@ void traverse(StartPoint& start, VehFunc veh_action, GridFunc grid_action) {
     auto process_grid = [&](const tripoint_abs_ms& target_pos) {
         auto& grid = grid_tracker.grid_at(target_pos);
         if (!grid) {
-            // The neighbour's submap unloaded after it was queued, taking its grid with it.
             return tvr::continue_further;
         }
 

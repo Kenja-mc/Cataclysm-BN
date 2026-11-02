@@ -1,4 +1,3 @@
-"""Modern action routes exercised through the real game, not binding-file assertions."""
 import re
 
 from aim_reticle import action_clock
@@ -56,7 +55,6 @@ def test_contextual_empty_and_distant_clicks_only_select(_g):
 def test_ctrl_peek_keeps_selected_interaction(_g):
     with contextual_game("bn-e2e-peek-selection") as game:
         doors(game)
-        # Keep enough moves to measure the physical peek's exact cost without turn rollover.
         assert game.lua("gapi.get_avatar():set_moves(100000) out('ok')") == ["ok"]
         position, clock = bub_pos(game), action_clock(game)
         select_tile(game, -1, 0)
@@ -87,7 +85,6 @@ def test_space_and_b_reach_butchery_for_own_corpse(_g):
         with contextual_game("bn-e2e-corpse-route") as game:
             give(game, "knife_butcher")
             assert game.lua("M:create_corpse_at(here(0,0),MonsterTypeId.new('mon_zombie')) out('ok')") == ["ok"]
-            # A shared game can carry an aim reticle from an earlier test; a turn clears it.
             game.keys("x", delay=0.4)
             settle(game)
             position, clock = bub_pos(game), action_clock(game)
@@ -122,7 +119,6 @@ def test_butchery_follows_a_corpse_in_reach(_g):
         game.keys(rows[corpse[0]], delay=0.8)
         game.wait_for("Choose corpse to butcher")
         game.keys("Escape", delay=0.4)
-        # Without a tool the row must not appear at all.
         game.keys("Escape", delay=0.3)
         assert game.lua("local u=gapi.get_avatar() u:drop_all_items() out('ok')") == ["ok"]
         settle(game)
@@ -158,7 +154,6 @@ def test_modern_use_at_p_reach_their_screens(_g):
         game.keys("Escape", delay=0.2)
         game.wait_gone("to filter")
         assert (bub_pos(game), action_clock(game)) == (position, clock), "browsing these screens must be free"
-        # Actually wield through the advertised direct route, not just open its picker.
         game.keys("v", delay=0.2)
         game.wait_for("Use which item?")
         game.wait_for("pipe (1)")

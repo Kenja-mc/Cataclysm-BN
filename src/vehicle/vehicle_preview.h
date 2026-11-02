@@ -49,10 +49,6 @@ public:
     /** Get current zoom level */
     auto get_zoom() const -> int { return zoom; }
 
-    /**
-     * Map a window-relative terminal cell to the mount delta drawn there.
-     * @return Mount relative to the displayed cursor, or nullopt outside the preview.
-     */
     auto mount_delta_at(point cell) const -> std::optional<point_rel_veh>;
 
 private:

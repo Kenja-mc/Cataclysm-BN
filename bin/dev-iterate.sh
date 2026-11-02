@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Quick-iterate launcher: rebuild only the game with an unoptimized preset and optionally launch it
-# straight into a development save. Run with --help for options and caveats.
 set -euo pipefail
 
 script=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)/$(basename -- "${BASH_SOURCE[0]}")
@@ -82,11 +80,9 @@ lock=out/build/$preset.lock
 mkdir -p out/build
 
 if ((build)); then
-    # Warnings belong in the build log too: a green build here proves nothing about tests.
     echo "warning: $preset is -O0 -g1 -DNDEBUG: assert() is disabled, RELEASE=1, and tests are not built." >&2
     echo "warning: use this build to iterate, never as the test gate or for performance numbers." >&2
     start=$SECONDS
-    # One lock per tree: a parallel configure or build of the same tree corrupts it.
     flock "$lock" sh -eu -c '
         # mise.toml pins the build tools when mise is installed; otherwise use the PATH ones.
         if command -v mise >/dev/null 2>&1; then
@@ -116,7 +112,6 @@ if [[ ! -x $binary ]]; then
     exit 1
 fi
 
-# Trailing slashes are dropped so path building below stays uniform; "/" needs no suffix.
 while [[ $userdir == */ && $userdir != / ]]; do userdir=${userdir%/}; done
 userdir_prefix=${userdir%/}
 

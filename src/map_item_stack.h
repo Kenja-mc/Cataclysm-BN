@@ -15,7 +15,6 @@ class map_item_stack
             public:
                 tripoint_rel_ms pos;
                 int count;
-                /** The first item of this group, so each group shows its own stats. */
                 const item *example = nullptr;
 
                 //only expected to be used for things like lists and vectors

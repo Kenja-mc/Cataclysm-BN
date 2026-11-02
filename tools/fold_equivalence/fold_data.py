@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""Shared JSON loading, copy-from resolution and field normalisation for fold checks.
-
-This is a static approximation of the game loaders: it resolves copy-from, extend,
-delete, relative and proportional the way generic_factory/assign do for the fields
-that the fold checks compare.  Runtime truth still comes from `--dump-stats FOLDED`.
-"""
-
 import copy
 import json
 import os
@@ -26,7 +19,6 @@ PRESENTATION_KEYS = {
     "relative", "proportional", "conditional_names",
 }
 
-# Field -> unit table used by the normaliser.
 UNIT_FIELDS = {
     "weight": MASS_UNITS, "integral_weight": MASS_UNITS,
     "weight_capacity_bonus": MASS_UNITS,
@@ -74,18 +66,16 @@ ITEM_TYPES = {
 
 
 class Context:
-    """One load context: a JSON tree (core or a mod)."""
-
     def __init__(self, root, subdir, label):
         self.root = root
         self.subdir = subdir
         self.label = label
-        self.defs = {}        # id -> list of objects in load order
-        self.types = {}       # id -> type
-        self.abstracts = {}   # id -> object
-        self.migrations = {}  # id -> migration object
+        self.defs = {}
+        self.types = {}
+        self.abstracts = {}
+        self.migrations = {}
         self.docs = load_documents(root, subdir)
-        self.uncraft = {}     # result id -> list of uncraft objects
+        self.uncraft = {}
         self._resolved = {}
         for _path, data in self.docs:
             for obj in data:
@@ -223,7 +213,6 @@ def add_value(value, delta):
 
 
 def merge_damage(base, extra, proportional=False, relative=False):
-    """Apply a damage object/array on top of another the way assign() does."""
     def units_of(value):
         if isinstance(value, dict):
             if "values" in value:
@@ -325,7 +314,6 @@ def apply_inheritance(parent, child):
 
 
 def merge_objects(base, child):
-    """Merge repeated same-type definitions the way the loaders do."""
     out = copy.deepcopy(base)
     out.update(copy.deepcopy(child))
     return out

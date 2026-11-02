@@ -10,13 +10,9 @@
 #include "catacharset.h"
 #include "output.h"
 
-/// Hit testing for the horizontal tab strip drawn by draw_tabs(). A tab box
-/// spans rows 0-2 of the strip window, so only the horizontal position matters.
 namespace tab_input
 {
 
-/// A strip to hit-test; texts, current and max_width must match the
-/// draw_tabs( w, texts, current, max_width ) call that drew the strip.
 struct query {
     const std::vector<std::string> &texts;
     size_t current = 0;
@@ -24,8 +20,6 @@ struct query {
     int x = 0;
 };
 
-/// Index of the drawn tab whose box contains the queried column, or nullopt
-/// between tabs.
 inline auto index_at( const query &q ) -> std::optional<int>
 {
     constexpr auto tab_step = 3;
@@ -58,7 +52,6 @@ inline auto index_at( const query &q ) -> std::optional<int>
         if( newx > q.max_width ) {
             break;
         }
-        // The box plus the selected tab's '<' and '>' markers.
         if( q.x >= tab_x - 1 && q.x <= tab_x + tab_width + 1 ) {
             return i;
         }
@@ -67,6 +60,6 @@ inline auto index_at( const query &q ) -> std::optional<int>
     return std::nullopt;
 }
 
-} // namespace tab_input
+}
 
-#endif // CATA_SRC_TAB_INPUT_H
+#endif

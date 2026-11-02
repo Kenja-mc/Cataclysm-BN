@@ -1,7 +1,3 @@
-"""The crafting screen: opening on content, part chains and recrafting after a reload.
-
-Tests that take `g` run on the runner's main game; the part chain needs its own option.
-"""
 import re
 import time
 
@@ -20,7 +16,6 @@ def craft_by_name(g, name):
 
 
 def load_first_save(g, timeout=120):
-    """After save-and-quit the main menu reopens on Load; Enter picks the world, then the character."""
     deadline = time.time() + timeout
     while time.time() < deadline:
         s = g.screen()
@@ -41,13 +36,10 @@ def test_crafting_opens_on_content(g):
 
 
 def test_recraft_after_reload(g):
-    """Upstream #10083: recraft crashed after save, quit to menu and reload in one session."""
-    # Materials on the floor nearby also exercise the larger crafting reach.
     arena(g)
     spawn(g, 3, 0, "glass_shard", 3)
     settle(g)
     craft_by_name(g, "glass shard trap")
-    # A heavily loaded character puts the result on the ground; either way it was crafted.
     made = lambda: count_carried(g, "glass_shard_trap") + count_at(g, 0, 0, "glass_shard_trap")
     assert wait_until(lambda: made() == 1), g.screen()
     save_and_quit(g)
@@ -67,7 +59,6 @@ def flat_text(g):
 
 
 def test_craft_parts_chain(_g):
-    """Known blockers, charged part quantities and producer timing stay consistent."""
     g = Game(name="bn-e2e-craft-parts",
              options={"SAFEMODE": "false", "CRAFTING_PART_CHAINS": "true"})
     try:
@@ -95,7 +86,6 @@ def test_craft_parts_chain(_g):
             g.keys("Escape", delay=0.8)
 
         def recipe_summary():
-            """Join wrapped recipe text without neighboring list and item columns."""
             g.wait_for("Time to complete:", timeout=10)
             lines = g.screen().splitlines()
             column = next(line.index("Time to complete:") for line in lines if "Time to complete:" in line)

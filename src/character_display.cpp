@@ -77,7 +77,7 @@ auto encumb_color( const int level ) -> nc_color
     return c_red;
 }
 
-} // namespace character_display
+}
 static auto get_temp_conv( const Character &c, const bodypart_str_id &bp ) -> units::temperature
 {
     auto iter = c.get_body().find( bp );
@@ -180,13 +180,11 @@ static std::pair<int, int> subindex_around_cursor(
     return std::make_pair( slice_start, slice_start + available_space );
 }
 
-/// First bodypart row printed by print_encumbrance, shared with its mouse hit-testing.
 static auto encumb_firstline( const int line, const int height, const size_t count ) -> int
 {
     return clamp( line - height / 2, 0, std::max( 0, static_cast<int>( count ) - height ) );
 }
 
-/// How draw_skills_tab lays out the skill list, shared with mouse hit-testing.
 struct skills_layout {
     size_t count = 0;
     size_t win_size_y = 0;
@@ -194,7 +192,6 @@ struct skills_layout {
     bool focused = false;
 };
 
-/// First skill row drawn by draw_skills_tab.
 static auto skills_first_drawn( const skills_layout &layout ) -> size_t
 {
     const auto half_y = ( layout.win_size_y - 1 ) / 2;
@@ -1146,10 +1143,6 @@ static void draw_tip( const catacurses::window &w_tip, const Character &you,
     wnoutrefresh( w_tip );
 }
 
-/// The @ screen's list panels, so mouse clicks can be hit-tested at the
-/// positions the panels were actually drawn at.  The members reference the
-/// screen's windows because the resize callbacks recreate those windows when
-/// the terminal changes size, and input can wait across such a resize.
 struct status_windows {
     const catacurses::window &stats;
     const catacurses::window &encumb;
@@ -1160,15 +1153,11 @@ struct status_windows {
     const unsigned &skill_win_size_y;
 };
 
-/// Remembers the row the last mouse click picked.  The first click on a row
-/// only selects it; clicking the same row again performs the same action as
-/// pressing Enter.  Any other navigation clears it.
 struct status_click {
     player_display_tab tab = player_display_tab::stats;
     int row = -1;
 };
 
-/// What a scrollbar click means for the list it belongs to.
 struct scrollbar_click {
     scrollbar_input::geometry geometry;
     int center_offset = 0;
@@ -1263,7 +1252,6 @@ static bool handle_player_display_action( Character &you, unsigned int &line,
     std::string action = ctxt.handle_input();
 
     if( modern && ( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) ) {
-        // The wheel moves the selection one row, like the arrow keys.
         action = action == "SCROLL_UP" ? "UP" : "DOWN";
         clicked.row = -1;
     } else if( modern && action == "SELECT" ) {
@@ -1272,7 +1260,6 @@ static bool handle_player_display_action( Character &you, unsigned int &line,
             if( !mouse ) {
                 return std::nullopt;
             }
-            // get_coordinates() is relative to the window centre.
             const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
             if( cell.x < 0 || cell.y < 0 || cell.x >= getmaxx( w ) || cell.y >= getmaxy( w ) ) {
                 return std::nullopt;
@@ -1293,17 +1280,12 @@ static bool handle_player_display_action( Character &you, unsigned int &line,
             focus( tab );
             if( line != static_cast<unsigned int>( row ) ) {
                 line = static_cast<unsigned int>( row );
-                // A selection change breaks the previous click pair.
                 clicked.row = -1;
                 invalidate_tab( tab );
                 ui_info.invalidate_ui();
             }
         };
         auto cell = std::optional<point>{};
-        // The scrollbar column belongs to the scrollbar: arrows move one row,
-        // the track jumps to the clicked position.  Consumes the click so it
-        // cannot also select the row under the column.  Returns true when the
-        // point is in the column.
         const auto scrollbar_pick = [&]( const scrollbar_click & click ) -> bool {
             const auto &geo = click.geometry;
             if( cell->x != geo.offset.x || !scrollbar_input::is_drawn( geo ) ) {
@@ -1329,7 +1311,6 @@ static bool handle_player_display_action( Character &you, unsigned int &line,
                 pick( player_display_tab::stats, cell->y - 1 );
                 if( clicked.tab == player_display_tab::stats &&
                     clicked.row == cell->y - 1 ) {
-                    // Same row again: the same action as Enter, including its prompt.
                     if( line < 4 && get_option<bool>( "STATS_THROUGH_KILLS" ) && you.is_avatar() ) {
                         character_display::upgrade_stat_prompt( *you.as_avatar(),
                                                                 static_cast<character_stat>( line ) );
@@ -1342,7 +1323,6 @@ static bool handle_player_display_action( Character &you, unsigned int &line,
         } else if( ( cell = cell_in( wins.encumb ) ) ) {
             const auto bps = list_and_combine_bps( you, nullptr );
             const auto height = getmaxy( wins.encumb ) - 1;
-            // An unfocused encumbrance panel is drawn from the first limb.
             const auto first = curtab == player_display_tab::encumbrance
                                ? encumb_firstline( static_cast<int>( line ), height, bps.size() ) : 0;
             if( cell->y == 0 ) {
@@ -1360,7 +1340,6 @@ static bool handle_player_display_action( Character &you, unsigned int &line,
             .line_end = static_cast<int>( bps.size() ) - 1,
             .tab = player_display_tab::encumbrance,
         } ) ) {
-                // consumed by the scrollbar column
             } else {
                 const auto row = first + cell->y - 1;
                 if( row >= 0 && row < static_cast<int>( bps.size() ) ) {
@@ -1394,13 +1373,11 @@ static bool handle_player_display_action( Character &you, unsigned int &line,
             .line_end = static_cast<int>( count ) - 1,
             .tab = player_display_tab::skills,
         } ) ) {
-                // consumed by the scrollbar column
             } else {
                 const auto row = static_cast<int>( first ) + cell->y - 1;
                 if( row >= 1 && static_cast<size_t>( row ) < count && !skillslist[row].is_header ) {
                     pick( player_display_tab::skills, row );
                     if( clicked.tab == player_display_tab::skills && clicked.row == row ) {
-                        // Same row again: toggle training, exactly like Enter.
                         toggle_skill_training( you, *skillslist[row].skill );
                         invalidate_tab( curtab );
                     }
@@ -1428,7 +1405,6 @@ static bool handle_player_display_action( Character &you, unsigned int &line,
             .line_end = static_cast<int>( traitslist.size() ) - 1,
             .tab = player_display_tab::traits,
         } ) ) {
-                // consumed by the scrollbar column
             } else {
                 const auto row = range.first + cell->y - 1;
                 if( row >= 0 && row < static_cast<int>( traitslist.size() ) ) {
@@ -1457,7 +1433,6 @@ static bool handle_player_display_action( Character &you, unsigned int &line,
             .line_end = static_cast<int>( bionicslist.size() ) - 1,
             .tab = player_display_tab::bionics,
         } ) ) {
-                // consumed by the scrollbar column
             } else if( cell->y >= 2 ) {
                 const auto row = range.first + cell->y - 2;
                 if( row >= 0 && row < static_cast<int>( bionicslist.size() ) ) {
@@ -1487,7 +1462,6 @@ static bool handle_player_display_action( Character &you, unsigned int &line,
             .line_end = static_cast<int>( effect_name_and_text.size() ) - 1,
             .tab = player_display_tab::effects,
         } ) ) {
-                // consumed by the scrollbar column
             } else {
                 const auto row = range.first + cell->y - 1;
                 if( row >= 0 && row < static_cast<int>( effect_name_and_text.size() ) ) {
@@ -1497,7 +1471,6 @@ static bool handle_player_display_action( Character &you, unsigned int &line,
                 }
             }
         }
-        // Clicks on the name bar, the speed panel and the info panel do nothing.
         return false;
     }
 

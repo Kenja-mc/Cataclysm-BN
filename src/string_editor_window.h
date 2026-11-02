@@ -78,12 +78,9 @@ class string_editor_window
         /*move the cursor*/
         void cursor_leftright( const int diff );
         void cursor_updown( const int diff );
-        /// Moves the cursor to a display line, keeping its desired x coordinate.
         void cursor_to_line( const int line );
 
-        /// First display line of the view for a cursor or IME focus row.
         auto view_top_line( int focus_y ) const -> int;
-        /// Geometry of the scrollbar print_editor draws.
         auto scrollbar_geometry( int focus_y ) const -> scrollbar_input::geometry;
 
         /*returns line and position in folded text for position in text*/

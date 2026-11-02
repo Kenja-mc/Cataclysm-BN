@@ -1,4 +1,3 @@
-"""Shared Lua helpers and Python wrappers for e2e tests and the playtest harness."""
 import json
 import re
 import time
@@ -7,7 +6,6 @@ from tmux_game import Game, start_new_game  # noqa: F401  (re-exported for conve
 
 
 def wait_until(check, timeout=30, poll=0.3):
-    """Poll a predicate until it holds; returns False on timeout."""
     deadline = time.time() + timeout
     while time.time() < deadline:
         if check():
@@ -17,7 +15,6 @@ def wait_until(check, timeout=30, poll=0.3):
 
 HELPERS = (
     "M=gapi.get_map() function here(dx,dy) local c=gapi.get_avatar():get_pos_ms() return TripointBubMs.new(c.x+dx,c.y+dy,c.z) end "
-    # Bubble coordinates do not load a destination; park on a free tile in the loaded map.
     "---@param cr Creature\n"
     "function park(cr) local map=gapi.get_map() local c=gapi.get_avatar():get_pos_ms() "
     "local size=map:get_map_size() local x0=c.x<size/2 and size-16 or 1 "
@@ -50,7 +47,6 @@ def arena(g):
 
 
 def exploration_arena(g):
-    """Open routes to unseen ground without rolled creatures blocking auto-exploration."""
     settle(g)
     assert g.lua("for dx=-30,30 do for dy=-30,30 do local p=here(dx,dy) "
                  "if dx==0 or dy==0 then M:set_ter_at(p, TerId.new('t_floor'):int_id()) "
@@ -82,14 +78,12 @@ def give(g, item, n=1):
 
 
 def empty_inventory(g):
-    """Strip random equipment and trait-dependent morale before item interaction fixtures."""
     assert g.lua("local a=gapi.get_avatar() a:clear_bionics() a:clear_mutations() "
                  "a:clear_morale() a:drop_all_items() a:clear_morale() "
                  "a:set_mutation(MutationBranchId.new('DEBUG_STORAGE')) out('ok')") == ["ok"]
 
 
 def option_value(g, name, default=None):
-    """Read one option from the game's saved config, or the default when it is unset."""
     path = g.userdir / "config" / "options.json"
     try:
         entries = json.loads(path.read_text())
@@ -102,15 +96,10 @@ def option_value(g, name, default=None):
 
 
 def settle(g):
-    """Advance one turn with the scheme's wait key.
-
-    Classic binds `x` to look-around, so one scheme's wait key opens a screen in the other.
-    """
     g.keys("." if option_value(g, "CONTROL_SCHEME") == "classic" else "x", delay=0.6)
 
 
 def menu_rows(screen, label):
-    """(x, y, hotkey) of each bordered menu row showing `label`."""
     pattern = re.compile(r"(?<!\w)" + re.escape(label) + r"(?!\w)", re.IGNORECASE)
     rows = []
     for y, line in enumerate(screen.splitlines()):
@@ -130,15 +119,6 @@ def menu_rows(screen, label):
 
 
 def choose_menu_entry(g, label, timeout=10):
-    """Select a menu row using Modern mouse controls or its Classic hotkey.
-
-    The message log and the sidebar repeat menu wording ("open the…", "Wield", "Debug…"), so
-    only text inside a bordered row counts: the characters between the nearest `│` left of the
-    match and the next `│` after it must be a hotkey gutter, not prose. Blank shortcut
-    gutters also count when the complete label ends at the border.
-    Labels match whole words, so fragments such as "examine the" still work but "Wielded"
-    cannot match "Wield". A slow machine may still be drawing the menu, so wait for the row.
-    """
     deadline = time.time() + timeout
     while True:
         screen = g.screen()
@@ -158,9 +138,6 @@ def choose_menu_entry(g, label, timeout=10):
 
 
 def save_and_quit(g):
-    """Quit to the title screen. Modern leaves Save and Quit unbound, so pick the menu row."""
-    # The model can leave a menu open, and Escape then only closes that menu, so keep sending it
-    # until the main menu is actually on screen.
     for _ in range(6):
         if "Save and Quit" in g.screen():
             break

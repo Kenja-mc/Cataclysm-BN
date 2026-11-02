@@ -98,7 +98,6 @@ void load_item_group( const JsonObject &jsobj, const item_group_id &group_id,
 item_group_id load_item_group( const JsonValue &value, const std::string &default_subtype );
 } // namespace item_group
 
-/// Where a migrated item id goes, with the variant or stack modifier the migration gives it.
 struct item_replacement {
     std::string id;
     std::string variant;
@@ -147,7 +146,6 @@ class Item_spawn_data
         virtual bool remove_item( const itype_id &itemid ) = 0;
         virtual bool replace_item( const itype_id &itemid, const itype_id &replacementid,
                                    const std::string &context ) = 0;
-        /** Applies every migration at once to this group's own entries (not to groups it links to). */
         virtual void replace_items( const item_replacements &replacements ) = 0;
         virtual bool has_item( const itype_id &itemid ) const = 0;
 
@@ -206,9 +204,7 @@ class Item_modifier
          */
         std::vector<flag_id> custom_flags;
 
-        /** Item variant to spawn, e.g. a gold ring rather than any ring. */
         std::string variant;
-        /** Stack modifier carried by every spawned unit, e.g. black powder handloads. */
         std::string stack_modifier;
 
         /**

@@ -1172,7 +1172,6 @@ void avatar::store( JsonOut &json ) const
     }
     json.end_array();
 
-    // Floating HUD window placement, collapse and visibility are per character.
     if( !hud_layout().empty() ) {
         json.member( "hud_windows" );
         json.start_array();
@@ -1271,7 +1270,6 @@ void avatar::load( const JsonObject &data )
 
     items_identified.clear();
     data.read( "items_identified", items_identified );
-    // Books folded into one type (paperbacks) are known under their new id.
     for( const auto &id : std::vector<itype_id>( items_identified.begin(), items_identified.end() ) ) {
         items_identified.insert( item_controller->migrate_id( id ) );
     }
@@ -2987,7 +2985,6 @@ void item::deserialize( JsonIn &jsin )
     } else {
         data.read( "contents", contents );
     }
-    // A magazine migrated to a smaller type (the unified batteries) keeps no more than it now holds.
     if( is_magazine() && !contents.empty() && ammo_remaining() > ammo_capacity() ) {
         item &rounds = contents.front();
         rounds.charges = std::max( 0, rounds.charges - ( ammo_remaining() - ammo_capacity() ) );
@@ -3979,8 +3976,6 @@ void mm_submap::serialize( JsonOut &jsout ) const
 {
     jsout.start_array();
 
-    // Optional leading metadata object. Legacy saves start directly with the RLE element array;
-    // this build reads both layouts and always writes the metadata object when locks are known.
     if( has_locked_doors() ) {
         jsout.start_object();
         for( const auto kind : { locked_door_kind::terrain, locked_door_kind::vehicle } ) {

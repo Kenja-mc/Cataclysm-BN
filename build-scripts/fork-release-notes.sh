@@ -1,11 +1,4 @@
 #!/usr/bin/env bash
-# Print the release notes for a fork release from CHANGELOG-OVERHAUL.md.
-#
-# Usage: build-scripts/fork-release-notes.sh <changelog> [since-date]
-#
-# Prints every dated section ("## YYYY-MM-DD") on or after since-date (YYYY-MM-DD, normally the
-# day the previous release was published). Including that day avoids losing same-day fixes.
-# Without since-date, or when no section is newer, prints the newest dated section only.
 set -euo pipefail
 
 changelog=${1:?usage: fork-release-notes.sh <changelog> [since-date]}

@@ -1,23 +1,15 @@
-"""Safe mode decides when travel keeps running and when a reachable hostile stops it.
-
-The two option profiles differ, so each test starts its own game.
-"""
 from helpers import HELPERS, arena, bub_pos, exploration_arena, settle, start_new_game, wait_until
 from tmux_game import Game
 
 
 def test_smart_safe_mode(g):
-    """A hostile you can see but that has no way to reach you does not block auto-explore."""
     smart = Game(name="bn-e2e-smart-safe", options={"SAFEMODE": "true"})
     try:
         start_new_game(smart)
         smart.define_lua(HELPERS)
         exploration_arena(smart)
-        # Rolled wildlife would count as reachable enemies and block travel; only the
-        # glass-celled zombie below stays hostile.
         assert smart.lua("for _,cr in ipairs(gapi.get_all_monsters()) do "
                          "cr:make_friendly() end out('ok')") == ["ok"]
-        # A glass cell keeps the zombie in sight but without a route to the player.
         smart.lua("for dx=-1,1 do for dy=-1,1 do if dx ~= 0 or dy ~= 0 then "
                   "M:set_ter_at(here(6+dx,dy), TerId.new('t_reinforced_glass'):int_id()) end end end "
                   "M:set_ter_at(here(6,0), TerId.new('t_floor'):int_id()) "
@@ -29,7 +21,6 @@ def test_smart_safe_mode(g):
         assert wait_until(lambda: bub_pos(smart) != start, timeout=60), \
             "auto-explore should run with a zombie locked in a glass cell:\n" + smart.screen()
         smart.keys("Escape", delay=0.3)
-        # A zombie with a clear route still stops it.
         arena(smart)
         smart.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(3,0)) out('ok')")
         smart.keys("x", delay=0.6)
@@ -41,7 +32,6 @@ def test_smart_safe_mode(g):
 
 
 def test_smart_safe_mode_horde(g):
-    """Twelve blocked routes are harmless; an unchecked thirteenth still stops travel."""
     smart = Game(name="bn-e2e-smart-horde", options={"SAFEMODE": "false"})
     try:
         start_new_game(smart)

@@ -14,15 +14,12 @@
 namespace
 {
 
-/// Compass direction to a unit step, in the screen's x/y axes. Index 0 is north,
-/// turning clockwise, like the compass in the sidebar.
 constexpr auto octant_steps = std::array<point, 8> {{
         point( 0, -1 ), point( 1, -1 ), point( 1, 0 ), point( 1, 1 ),
         point( 0, 1 ), point( -1, 1 ), point( -1, 0 ), point( -1, -1 )
     }
 };
 
-/// Unicode arrows need a UTF-8 locale; plain ASCII terminals get the fallbacks.
 auto unicode_arrows() -> bool
 {
 #if defined( TILES )
@@ -49,7 +46,6 @@ auto arrow_glyphs() -> const std::array<std::string, 8> &
     return arrows;
 }
 
-/// How many cells fit between the player and the window edge along one axis.
 auto steps_to_edge( const int step, const int half, const int size ) -> int
 {
     if( step == 0 ) {
@@ -58,7 +54,7 @@ auto steps_to_edge( const int step, const int half, const int size ) -> int
     return step > 0 ? size - 1 - half : half;
 }
 
-} // namespace
+}
 
 namespace enemy_indicators
 {
@@ -99,4 +95,4 @@ auto map_arrows( avatar &you, int width, int height ) -> std::vector<edge_arrow>
     return arrows;
 }
 
-} // namespace enemy_indicators
+}

@@ -7,7 +7,6 @@
 
 class avatar;
 
-/// Every reading the HUD shows, read once per frame so a layout only arranges text.
 namespace hud_snapshot
 {
 
@@ -15,7 +14,6 @@ struct need {
     std::string label;
     std::string text;
     nc_color color = c_light_gray;
-    /// No action needed.
     bool fine = true;
 };
 
@@ -24,12 +22,10 @@ struct limb {
     int hp = 0;
     int hp_max = 0;
     nc_color color = c_light_gray;
-    /// Worst problem, empty when healthy.
     std::string wound;
     nc_color wound_color = c_light_gray;
 };
 
-/// A body part whose encumbrance the character sheet no longer shows as normal.
 struct encumbered {
     std::string name;
     int level = 0;
@@ -40,7 +36,6 @@ struct sighting {
     std::string name;
     std::string symbol;
     nc_color color = c_light_gray;
-    /// Compass direction from the player, e.g. "NE"; empty when adjacent and level.
     std::string direction;
     int distance = 0;
     bool hostile = false;
@@ -50,7 +45,6 @@ struct carried {
     std::string name;
     std::string symbol;
     nc_color color = c_light_gray;
-    /// Charges or ammo, empty when the item has none.
     std::string detail;
 };
 
@@ -88,7 +82,6 @@ struct snapshot {
     std::string weapon;
     bool armed = false;
     bool gun = false;
-    /// "loaded/capacity" for a gun, otherwise empty.
     std::string ammo;
     std::string weapon_symbol;
     nc_color weapon_color = c_light_gray;
@@ -110,16 +103,12 @@ struct snapshot {
     int per = 0;
 
     std::vector<limb> limbs;
-    /// Body parts with noticeable encumbrance, worst first.
     std::vector<encumbered> encumbered;
-    /// Newest last; colour tags kept for print_colored_text.
     std::vector<std::string> log;
-    /// Creatures in sight, nearest hostiles first.
     std::vector<sighting> seen;
-    /// Wielded item first, then the first few carried items.
     std::vector<carried> loadout;
 };
 
 auto read( const avatar &you ) -> snapshot;
 
-} // namespace hud_snapshot
+}

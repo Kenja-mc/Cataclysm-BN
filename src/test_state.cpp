@@ -1,5 +1,6 @@
 #include "test_state.h"
 
+#include <algorithm>
 #include <iterator>
 #include <optional>
 #include <string>
@@ -278,12 +279,12 @@ auto flush() -> void
     }, "" );
 }
 
-} // namespace
+}
 
 namespace test_state
 {
 
-void set_path( const std::string &path )
+auto set_path( const std::string &path ) -> void
 {
     state_path = path;
     path_set = !path.empty();
@@ -294,7 +295,7 @@ auto enabled() -> bool
     return path_set;
 }
 
-void on_turn( const avatar &you )
+auto on_turn( const avatar &you ) -> void
 {
     if( !path_set ) {
         return;
@@ -320,7 +321,7 @@ void on_turn( const avatar &you )
     flush();
 }
 
-void refresh_overlays( const avatar &you )
+auto refresh_overlays( const avatar &you ) -> void
 {
     if( !path_set ) {
         return;
@@ -329,7 +330,7 @@ void refresh_overlays( const avatar &you )
     flush();
 }
 
-void input_wait( bool waiting )
+auto input_wait( bool waiting ) -> void
 {
     if( !path_set || state.input_wait == waiting ) {
         return;
@@ -338,8 +339,8 @@ void input_wait( bool waiting )
     flush();
 }
 
-void ui_show( const std::string &id, const std::string &title,
-              const std::vector<row> &rows, int selected )
+auto ui_show( const std::string &id, const std::string &title,
+              const std::vector<row> &rows, int selected ) -> void
 {
     if( !path_set ) {
         return;
@@ -354,18 +355,20 @@ void ui_show( const std::string &id, const std::string &title,
     flush();
 }
 
-void ui_close( const std::string &id )
+auto ui_close( const std::string &id ) -> void
 {
     if( !path_set ) {
         return;
     }
-    for( auto it = state.stack.rbegin(); it != state.stack.rend(); ++it ) {
-        if( it->id == id ) {
-            state.stack.erase( std::next( it ).base() );
-            flush();
-            return;
-        }
+    const auto found = std::find_if( state.stack.rbegin(), state.stack.rend(),
+    [&id]( const ui_entry & entry ) {
+        return entry.id == id;
+    } );
+    if( found == state.stack.rend() ) {
+        return;
     }
+    state.stack.erase( std::next( found ).base() );
+    flush();
 }
 
-} // namespace test_state
+}

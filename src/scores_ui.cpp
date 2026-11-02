@@ -73,12 +73,8 @@ static std::string get_scores_text( stats_tracker &stats )
 
 namespace
 {
-/// Number of text lines one mouse wheel notch scrolls in these text panes.
 constexpr auto wheel_text_lines = 3;
 
-/// x start of each drawn tab, -1 when a tab is scrolled off. Mirrors the placement loop of
-/// draw_tabs() so click targets cover exactly the rendered tab labels, including its
-/// three-column spacing after each label.
 auto tab_positions( const catacurses::window &w, const std::vector<std::string> &tab_texts,
                     size_t current_tab ) -> std::vector<int>
 {
@@ -120,7 +116,6 @@ auto tab_positions( const catacurses::window &w, const std::vector<std::string> 
     return xs;
 }
 
-/// Registers the mouse actions the modern control scheme answers in these screens.
 auto register_modern_mouse( input_context &ctxt ) -> void
 {
     ctxt.register_action( "COORDINATE" );
@@ -130,8 +125,6 @@ auto register_modern_mouse( input_context &ctxt ) -> void
     ctxt.register_action( "SCROLL_DOWN" );
 }
 
-/// A scrollbar click on the shared scrolling text pane. Returns true when the click was on the
-/// drawn scrollbar and moved the view.
 auto handle_text_view_mouse( scrolling_text_view &view, const input_context &ctxt,
                              const catacurses::window &w_view ) -> bool
 {
@@ -154,8 +147,6 @@ auto handle_text_view_mouse( scrolling_text_view &view, const input_context &ctx
     return true;
 }
 
-/// The achievements/scores/kills text screen, shared by the standalone screen and the World
-/// page's Scores tab. It owns the inner tab strip and the scrolling pane.
 class scores_view
 {
     public:
@@ -164,7 +155,6 @@ class scores_view
             : achievements_( achievements ), stats_( stats ), kills_( kills ) {}
 
         void draw( const catacurses::window &w );
-        /// Returns true when the screen should close.
         auto handle( std::string action, input_context &ctxt, const catacurses::window &w,
                      bool modern ) -> bool;
 
@@ -206,7 +196,6 @@ auto scores_view::tab_texts() const -> std::vector<std::string>
 
 void scores_view::prepare_view( const catacurses::window &w )
 {
-    // The sidebar page is narrow: one tab row and a separator, instead of the three-row strip.
     const bool wide = getmaxx( w ) >= 60;
     const int height = getmaxy( w ) - ( wide ? 4 : 3 );
     const int width = getmaxx( w ) - 1;
@@ -214,7 +203,6 @@ void scores_view::prepare_view( const catacurses::window &w )
     if( !w_view || getmaxy( w_view ) != height || getmaxx( w_view ) != width ||
         getbegx( w_view ) != origin.x || getbegy( w_view ) != origin.y ) {
         w_view = catacurses::newwin( height, width, origin );
-        // The pane below the tabs moved, so the wrapped text has to be built again.
         new_tab = true;
     }
 }
@@ -264,7 +252,6 @@ auto scores_view::handle( std::string action, input_context &ctxt, const catacur
         if( const auto mouse = ctxt.get_coordinates( w ) ) {
             const auto cell = mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2;
             if( cell.y >= 0 && cell.y <= 1 ) {
-                // The tab labels are the only clickable part of the tab strip.
                 const auto texts = tab_texts();
                 const auto xs = tab_positions( w, texts, static_cast<size_t>( tab ) );
                 for( size_t i = 0; i < tabs.size(); ++i ) {
@@ -281,7 +268,6 @@ auto scores_view::handle( std::string action, input_context &ctxt, const catacur
         }
         return false;
     }
-    // The World page owns Left/Right for its outer tabs; inside it the panel uses Tab keys.
     if( action == "NEXT_TAB" ) {
         action = "RIGHT";
     } else if( action == "PREV_TAB" ) {
@@ -340,7 +326,7 @@ class scores_panel : public world_hub::panel
         scores_view view;
 };
 
-} // namespace
+}
 
 auto world_hub::scores_screen( const achievements_tracker &achievements, stats_tracker &stats,
                                const kill_tracker &kills ) -> panel_ptr
@@ -373,7 +359,6 @@ void show_scores_ui( const achievements_tracker &achievements, stats_tracker &st
         ui.position_from_window( w );
     };
     ui.on_screen_resize( init_windows );
-    // initialize explicitly here since the view's window is created from this one
     init_windows( ui );
 
     ui.on_redraw( [&]( const ui_adaptor & ) {

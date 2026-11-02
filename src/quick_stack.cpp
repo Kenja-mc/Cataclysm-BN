@@ -50,21 +50,19 @@ auto record( spot &s, const item &it ) -> void
 
 auto dominant_category( const spot &s ) -> std::optional<item_category_id>
 {
-    const auto best = std::ranges::max_element( s.categories, {}, &std::pair<const item_category_id, int>::second );
+    const auto best = std::ranges::max_element( s.categories, {},
+                      &std::pair<const item_category_id, int>::second );
     if( best == s.categories.end() || best->second * 2 <= s.total ) {
         return std::nullopt;
     }
     return best->first;
 }
 
-/// Every tile within reach (a walkable straight line) and crafting range that already holds items or is furniture/vehicle storage.
 auto gather_spots( avatar &you, const std::optional<tripoint_bub_ms> &skip ) -> std::vector<spot>
 {
     auto &here = get_map();
     auto spots = std::vector<spot>();
     for( const auto &p : here.points_in_radius( you.bub_pos(), PICKUP_RANGE ) ) {
-        // A walkable straight line, like crafting's nearby items: works in the dark, but not through
-        // windows, bars or fences.
         if( p == skip || here.has_flag( "SEALED", p ) ||
             ( p != you.bub_pos() && !here.clear_path( you.bub_pos(), p, PICKUP_RANGE, 1, 100 ) ) ) {
             continue;
@@ -91,9 +89,8 @@ auto gather_spots( avatar &you, const std::optional<tripoint_bub_ms> &skip ) -> 
     return spots;
 }
 
-/// Same item beats same category, storage beats loose piles, closer beats farther.
-/// Loose piles only ever take exact matches, and only when `allow_piles` is set.
-auto pick_spot( const std::vector<spot> &spots, const item &it, const bool allow_piles ) -> std::optional<size_t>
+auto pick_spot( const std::vector<spot> &spots, const item &it,
+                const bool allow_piles ) -> std::optional<size_t>
 {
     auto best = std::optional<size_t>();
     auto best_score = 0;
@@ -148,7 +145,6 @@ auto execute( avatar &you, const std::vector<spot> &spots, const std::vector<mov
             continue;
         }
         visited++;
-        // Walking over and back, minus the step we would be adjacent anyway.
         moves += std::max( 0, spots[i].dist - 1 ) * 2 * 100;
         put_into_vehicle_or_drop( you, item_drop_reason::deliberate, incoming[i], spots[i].pos );
     }
@@ -160,16 +156,17 @@ auto execute( avatar &you, const std::vector<spot> &spots, const std::vector<mov
              to_string( time_duration::from_turns( moves / 100 + 1 ) ) );
 }
 
-} // namespace
+}
 
 auto stash_inventory( avatar &you ) -> void
 {
     auto carried = you.inv_dump()
-                   | std::views::filter( [&]( const item * it ) { return !you.is_worn( *it ) && !you.is_wielding( *it ); } )
-                   | std::views::filter( []( const item * it ) { return !it->is_favorite; } )
-                   | std::ranges::to<std::vector>();
+    | std::views::filter( [&]( const item * it ) { return !you.is_worn( *it ) && !you.is_wielding( *it ); } )
+    | std::views::filter( []( const item * it ) { return !it->is_favorite; } )
+    | std::ranges::to<std::vector>();
     if( carried.empty() ) {
-        add_msg( m_info, _( "Nothing to stash.  Worn, wielded and favorite (*) items always stay with you." ) );
+        add_msg( m_info,
+                 _( "Nothing to stash.  Worn, wielded and favorite (*) items always stay with you." ) );
         return;
     }
     auto spots = gather_spots( you, std::nullopt );
@@ -204,10 +201,11 @@ auto sort_pile( avatar &you ) -> void
     auto spots = gather_spots( you, feet );
     const auto plan = plan_moves( spots, pile, true );
     if( plan.empty() ) {
-        add_msg( m_info, _( "Nothing nearby matches this pile.  Put one of each kind of thing where you want it to live." ) );
+        add_msg( m_info,
+                 _( "Nothing nearby matches this pile.  Put one of each kind of thing where you want it to live." ) );
         return;
     }
     execute( you, spots, plan, [&]( item * it ) { return here.i_at( feet ).remove( it ); } );
 }
 
-} // namespace quick_stack
+}

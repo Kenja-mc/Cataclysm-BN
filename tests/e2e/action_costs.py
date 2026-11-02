@@ -1,4 +1,3 @@
-"""The item action menu shows each action's time and main effect after its label."""
 import re
 
 from fixtures import shared_game
@@ -51,7 +50,6 @@ def plain_name(game, item):
     return re.sub(r"</?color[^>]*>", "", out[0])
 
 
-# A menu row is "│ <hotkey> <label>"; the key bar's "h Wield  W Wear" must not count.
 def annotated_row(screen, label):
     match = re.search(rf"│ \S {label}\s{{2,}}[^\s│][^│]*│", screen)
     assert match, f"the {label} row must show its cost:\n{screen}"

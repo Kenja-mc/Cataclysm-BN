@@ -43,8 +43,6 @@ auto contains_key(const std::vector<char>& keys, const char key) -> bool {
     return std::ranges::find(keys, key) != keys.end();
 }
 
-/// Keyboard inputs that trigger more than one action registered in the main game, each with
-/// the actions it triggers.
 auto main_game_key_clashes() -> std::map<std::vector<int>, std::vector<std::string>> {
     auto ctxt = get_default_mode_input_context();
     auto actions_by_key = std::map<std::vector<int>, std::vector<std::string>>();
@@ -72,8 +70,6 @@ auto describe(const std::map<std::vector<int>, std::vector<std::string>>& clashe
 
 } // namespace
 
-// The classic scheme keeps upstream's bindings, clashes included (h and w also open the guide
-// and the wiki there), so only the modern scheme is held to this.
 TEST_CASE("no key triggers two main game actions in the modern scheme", "[input][keybindings]") {
     auto restore_keybindings = user_keybindings_file_guard();
     auto modern = override_option("CONTROL_SCHEME", "modern");
@@ -162,7 +158,6 @@ TEST_CASE(
 
     SECTION("older files that repeat the upstream default follow the scheme") {
         inp_mngr.init();
-        // The scheme decides the key, so read its default instead of naming one.
         const auto scheme_default = pickup_keys();
         write_user_keybindings(user_pickup_comma);
         inp_mngr.init();

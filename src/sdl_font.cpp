@@ -348,7 +348,6 @@ SDL_Texture_Ptr CachedTTFFont::create_glyph( const SDL_Renderer_Ptr &renderer,
     const auto cell_width = width * static_cast<int>( utf8_wrapper( ch ).display_width() );
     auto surface = SDL_Surface_Ptr( SDL_CreateSurface( cell_width, height, SDL_PIXELFORMAT_RGBA32 ) );
     const auto scaled = sglyph->w > cell_width || sglyph->h > height;
-    // Shrink oversized glyphs by one factor so icons keep their shape.
     const auto scale = scaled ? std::min( static_cast<float>( cell_width ) / sglyph->w,
                                           static_cast<float>( height ) / sglyph->h ) : 1.0f;
     const auto glyph_width = std::min( static_cast<int>( std::lround( sglyph->w * scale ) ),

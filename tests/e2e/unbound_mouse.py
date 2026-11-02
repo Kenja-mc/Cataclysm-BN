@@ -1,4 +1,3 @@
-"""Unbound mouse input is idle input, not an unknown keyboard command."""
 from aim_reticle import action_clock
 from fixtures import shared_game
 from helpers import HELPERS, arena, bub_pos, settle

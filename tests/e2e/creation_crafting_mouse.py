@@ -1,9 +1,3 @@
-"""Modern mouse clicks in crafting, construction and character creation.
-
-Covers the shared scrollbar geometry (track jumps, arrows step one row), the
-click-then-confirm rule for action rows, and that Classic keeps its keyboard-only
-menus.  The creation test also clicks the world mod list on the way in.
-"""
 import re
 import time
 
@@ -27,7 +21,6 @@ def _crafted(g):
 
 
 def _row_of(g, text, max_x=32):
-    """First screen row where `text` starts inside a menu's left list column."""
     for y, line in enumerate(g.screen().splitlines()):
         index = line.find(text)
         if y >= 5 and 0 <= index < max_x:
@@ -36,7 +29,6 @@ def _row_of(g, text, max_x=32):
 
 
 def _click_creation_tab(g, name):
-    """Click a visible top tab and wait for its page."""
     row = g.screen().splitlines()[1]
     match = re.search(r"│" + re.escape(name) + r"│", row)
     assert match, f"no {name} tab in:\\n{row}"
@@ -45,8 +37,6 @@ def _click_creation_tab(g, name):
 
 
 def _points_line(screen):
-    # The same row also describes the highlighted trait's cost; selection changes that
-    # description without spending points.
     match = re.search(r"Points left:\s*([-+\d=]+)", screen)
     return match.group(1) if match else ""
 
@@ -62,7 +52,6 @@ def _open_filtered_recipe(g, name):
 
 
 def _modern_crafting():
-    # Few rows keep the default recipe list longer than its viewport, so the scrollbar is drawn.
     return shared_game("bn-e2e-creation-crafting-modern", cols=80, rows=24,
                        define=HELPERS, setup=_fresh,
                        options={"CONTROL_SCHEME": "modern", "SAFEMODE": "false"})
@@ -87,7 +76,6 @@ def _open_construction(g):
 
 
 def _window_left(screen):
-    """Screen column of the construction window's left border."""
     top = next((line for line in screen.splitlines() if "┴" in line), None)
     assert top is not None, screen
     return top.index("╭")
@@ -96,7 +84,6 @@ def _window_left(screen):
 def test_modern_crafting_row_click_selects_then_crafts(_g):
     with _modern_crafting() as g:
         _fresh(g)
-        # Lua opens the console and dismisses menus, so count only outside the recipe UI.
         before = _crafted(g)
         _open_filtered_recipe(g, "glass shard trap")
         x, y = _row_of(g, "glass shard trap")
@@ -110,7 +97,6 @@ def test_modern_crafting_row_click_selects_then_crafts(_g):
 
 
 def test_modern_crafting_row_double_click_crafts(_g):
-    """A real double-click is two clicks; ncurses used to fold it into one ignored event."""
     with _modern_crafting() as g:
         _fresh(g)
         before = _crafted(g)
@@ -159,16 +145,13 @@ def test_modern_construction_scrollbar_and_tab_click(_g):
         assert "Construction speed" in moved, "a scrollbar click must keep the menu open\n" + moved
         assert moved != before, "a construction scrollbar click must move the list"
 
-        # The first list row click only selects; it must not start a construction.
         g.click(left + 5, 8)
         after_row = g.screen()
         assert "Construction speed" in after_row, (
             "the first list row click must only select\n" + after_row)
-        # A wheel notch moves the cursor one row, with no release packet.
         g.type(f"\x1b[<65;{left + 6};9M", delay=1)
         assert g.screen() != after_row, "a wheel notch must move the construction cursor"
 
-        # Click a category tab that is not the selected one (it may be empty).
         row = g.screen().splitlines()[1]
         tabs = [(m.start() + left, m.group(1))
                 for m in re.finditer(r"│([^│]+)│", row[left:])]
@@ -204,7 +187,6 @@ def test_classic_crafting_and_construction_ignore_mouse(_g):
 
 
 def _reach_custom_character(g):
-    """Follow the fork's default menu flow to the character-creation scenario page."""
     for _ in range(240):
         s = g.screen()
         if "Select your language" in s:
@@ -228,7 +210,6 @@ def _reach_custom_character(g):
         elif not s.strip():
             g.keys("F5", delay=1)
         elif "World Mods" in s and "Mod List" in s:
-            # The available-mod list starts at screen column 30 in the centred 80-column dialog.
             g.click(30, 14)
             assert "Mod List" in g.screen(), "a world mod scrollbar click must keep the dialog\n" + g.screen()
             row_four = g.screen().splitlines()[4]
@@ -259,7 +240,6 @@ def test_modern_creation_traits_scrollbar_and_first_click_are_safe(_g):
         points_before = _points_line(screen)
         assert points_before, screen
 
-        # First trait column scrollbar: arrows and track must not spend points.
         g.click(0, 10)
         g.click(0, 5)
         screen = g.screen()
@@ -267,14 +247,12 @@ def test_modern_creation_traits_scrollbar_and_first_click_are_safe(_g):
         assert _points_line(screen) == points_before, (
             "scrollbar clicks must not toggle traits or spend points\n" + screen)
 
-        # A row click only selects; it must not toggle the initially selected trait.
         g.click(5, 10)
         screen = g.screen()
         assert "<│TRAITS│>" in screen, screen
         assert _points_line(screen) == points_before, (
             "the first row click must not toggle a trait\n" + screen)
 
-        # Top tabs navigate through the existing pages; they never spend points.
         _click_creation_tab(g, "STATS")
         g.click(5, 6)
         assert "<│STATS│>" in g.screen(), g.screen()

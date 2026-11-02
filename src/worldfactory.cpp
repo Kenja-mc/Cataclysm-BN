@@ -485,7 +485,6 @@ WORLDINFO *worldfactory::pick_world( bool show_prompt, bool empty_only )
                     if( cell->y >= 0 && cell->y < static_cast<int>( world_pages[selpage].size() ) ) {
                         const auto row = static_cast<size_t>( cell->y );
                         if( row == sel && last_clicked_world == static_cast<int>( row ) ) {
-                            // Second click on the same row performs the keyboard action.
                             action = "CONFIRM";
                             last_clicked_world = -1;
                         } else {
@@ -628,7 +627,6 @@ static auto mod_category_name( const mod_id &id ) -> std::string
     return id.is_valid() ? _( id->category.second ) : _( "MISSING MODS" );
 }
 
-/// Draw line occupied by the mod at `index`, category headers included.
 static auto mod_line_at_index( const std::vector<mod_id> &mods, size_t index ) -> int
 {
     int line = 0;
@@ -647,7 +645,6 @@ static auto mod_line_at_index( const std::vector<mod_id> &mods, size_t index ) -
     return line;
 }
 
-/// Total drawn lines in a mod list, category headers included.
 static auto mod_line_count( const std::vector<mod_id> &mods ) -> int
 {
     int line = 0;
@@ -668,7 +665,6 @@ static auto mod_first_line_is_category( const std::vector<mod_id> &mods ) -> boo
     return !mods.empty() && !mod_category_name( mods.front() ).empty();
 }
 
-/// Mod drawn exactly on `line`, if that line is not a category header.
 static auto mod_index_at_line( const std::vector<mod_id> &mods, int target ) -> std::optional<size_t>
 {
     int line = 0;
@@ -687,7 +683,6 @@ static auto mod_index_at_line( const std::vector<mod_id> &mods, int target ) -> 
     return std::nullopt;
 }
 
-/// Nearest selectable mod at or after `target`, falling back to the one before.
 static auto mod_index_for_line( const std::vector<mod_id> &mods, int target ) -> std::optional<size_t>
 {
     int line = 0;
@@ -698,7 +693,6 @@ static auto mod_index_for_line( const std::vector<mod_id> &mods, int target ) ->
         if( category != last ) {
             last = category;
             if( line == target ) {
-                // Category header: the next selectable row is this mod.
                 return i;
             }
             ++line;
@@ -712,7 +706,6 @@ static auto mod_index_for_line( const std::vector<mod_id> &mods, int target ) ->
     return before;
 }
 
-/// Category index drawn on `line`, when that line is a category header.
 static auto mod_category_at_line( const std::vector<mod_id> &mods, int target )
 -> std::optional<int>
 {
@@ -1377,7 +1370,6 @@ int worldfactory::show_modselection_window( const catacurses::window &win,
         std::string action = ctxt.handle_input();
         const bool mouse_select = modern && action == "SELECT";
         if( mouse_select ) {
-            // get_coordinates() is relative to the window centre.
             const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
                 const auto mouse = ctxt.get_coordinates( win );
                 if( !mouse )
@@ -1463,7 +1455,6 @@ int worldfactory::show_modselection_window( const catacurses::window &win,
                         const int clicked = static_cast<int>( *index );
                         if( header == active_header && clicked == cur &&
                             last_clicked_mod[header] == clicked ) {
-                            // Second click on the same row performs the keyboard action.
                             action = "CONFIRM";
                             last_clicked_mod[0] = last_clicked_mod[1] = -1;
                         } else {
@@ -1495,7 +1486,6 @@ int worldfactory::show_modselection_window( const catacurses::window &win,
                 }
             }
         } else {
-            // Keyboard navigation, filters and tab changes invalidate the click pair.
             last_clicked_mod[0] = last_clicked_mod[1] = -1;
         }
         if( action == "SCROLL_UP" ) {

@@ -1,14 +1,4 @@
 #!/usr/bin/env bash
-# Runs the fork's end-to-end tests inside an unprivileged container (bubblewrap user namespace).
-#
-#   bin/playtest-container.sh e2e [test-name ...]   run the curses end-to-end suite in the box
-#   bin/playtest-container.sh playtest <scenario>  set up a playtest scenario and hand it to you
-#   bin/playtest-container.sh shell                 interactive shell inside the box
-#
-# The box gets a private HOME, private /tmp and no network.  The repository is mounted read-only,
-# so the game, its data and the prebuilt binary come from the host tree; only the box's own HOME
-# and /tmp are writable.  Building inside the box needs root (the host lacks ccache, mold and
-# astyle and sudo asks for a password), so run `cmake --build` on the host first.
 set -euo pipefail
 
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -21,7 +11,18 @@ case "${1:-}" in
     playtest) shift; set -- python3 tests/e2e/playtest.py "$@" ;;
     shell) set -- bash ;;
     *)
-        sed -n '2,11p' "${BASH_SOURCE[0]}" | cut -c3-
+        cat <<'EOF'
+Runs the fork's end-to-end tests inside an unprivileged container (bubblewrap user namespace).
+
+  bin/playtest-container.sh e2e [test-name ...]   run the curses end-to-end suite in the box
+  bin/playtest-container.sh playtest <scenario>  set up a playtest scenario and hand it to you
+  bin/playtest-container.sh shell                 interactive shell inside the box
+
+The box gets a private HOME, private /tmp and no network.  The repository is mounted read-only,
+so the game, its data and the prebuilt binary come from the host tree; only the box's own HOME
+and /tmp are writable.  Building inside the box needs root (the host lacks ccache, mold and
+astyle and sudo asks for a password), so run `cmake --build` on the host first.
+EOF
         exit 2
         ;;
 esac

@@ -490,7 +490,7 @@ std::optional<construction_id> construction_menu( const bool blueprint )
     int current_category_total = 0;
 
     input_context ctxt( "CONSTRUCTION" );
-    ctxt.register_action( "ANY_INPUT" ); // positional row digits
+    ctxt.register_action( "ANY_INPUT" );
     ctxt.register_action( "UP", to_translation( "Move cursor up" ) );
     ctxt.register_action( "DOWN", to_translation( "Move cursor down" ) );
     ctxt.register_action( "RIGHT", to_translation( "Move tab right" ) );
@@ -555,7 +555,6 @@ std::optional<construction_id> construction_menu( const bool blueprint )
     std::string filter;
     auto filter_mode = false;
     auto saved_tabindex = tabindex;
-    // Set when the menu opened past an empty Favorite tab.
     auto favorite_fallback = false;
     const auto set_filter_mode = [&]( const bool active ) {
         if( active == filter_mode ) {
@@ -1176,7 +1175,6 @@ std::optional<construction_id> construction_menu( const bool blueprint )
             } else if( select >= 0 && static_cast<size_t>( select ) < constructs.size() ) {
                 last_construction = constructs[select];
             }
-            // Open on something useful rather than an empty favorites tab.
             if( isnew && filter.empty() && tabindex == favorite_index && favorite_tab_empty() ) {
                 tabindex = all_index >= 0 ? all_index : ( tabindex + 1 ) % normal_tabcount;
                 favorite_fallback = true;
@@ -1434,7 +1432,6 @@ std::optional<construction_id> construction_menu( const bool blueprint )
         }
         const bool mouse_select = modern && action == "SELECT";
         if( mouse_select ) {
-            // get_coordinates() is relative to the window centre.
             const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
                 const auto mouse = ctxt.get_coordinates( win );
                 if( !mouse )
@@ -1468,7 +1465,6 @@ std::optional<construction_id> construction_menu( const bool blueprint )
                 }
             }
             if( on_scrollbar ) {
-                // A scrollbar click never builds or selects the row underneath.
                 last_clicked_row = -1;
             } else {
                 bool on_tab = false;
@@ -1491,7 +1487,6 @@ std::optional<construction_id> construction_menu( const bool blueprint )
                     const int row = offset + cell->y;
                     if( row >= 0 && row < static_cast<int>( constructs.size() ) ) {
                         if( row == select && last_clicked_row == row ) {
-                            // Second click on the same row performs the keyboard action.
                             action = "CONFIRM";
                             last_clicked_row = -1;
                         } else {
@@ -1507,7 +1502,6 @@ std::optional<construction_id> construction_menu( const bool blueprint )
                 }
             }
         } else {
-            // Keyboard navigation, filters and tab changes invalidate the click pair.
             last_clicked_row = -1;
         }
         if( action == "SCROLL_UP" ) {
@@ -1670,8 +1664,6 @@ std::optional<construction_id> construction_menu( const bool blueprint )
         }
     } while( !exit );
 
-    // A fallback tab is not the player's choice: keep remembering Favorite so it opens
-    // there once it has entries.
     const auto tab_to_store = favorite_fallback && favorite_index >= 0 ? favorite_index
                               : filter_mode ? saved_tabindex : tabindex;
     uistate.construction_tab = int_id<construction_category>( construct_cat_order[tab_to_store] ).id();

@@ -16,7 +16,7 @@ namespace
 
 generic_factory<stack_modifier> all_stack_modifiers( "stack modifiers" );
 
-} // namespace
+}
 
 IMPLEMENT_STRING_ID( stack_modifier, all_stack_modifiers );
 
@@ -47,11 +47,8 @@ auto transferred_count( const int count, const int qty, const int total ) -> int
 auto consume_counts( item &source, const int qty, const int total ) -> void
 {
     auto &vars = source.item_vars();
-    for( auto iter = vars.begin(); iter != vars.end(); ) {
-        // Advance before the current count is potentially erased.
-        const auto current = iter;
-        iter = std::next( iter );
-        const auto &key = current->first;
+    auto emptied = std::vector<std::string>();
+    for( const auto &[key, value] : vars ) {
         if( !stack_modifiers::is_count_var( key ) ) {
             continue;
         }
@@ -64,14 +61,16 @@ auto consume_counts( item &source, const int qty, const int total ) -> void
         if( remaining > 0 ) {
             vars.set( key, remaining );
         } else {
-            vars.erase( current );
+            emptied.push_back( key );
         }
     }
+    for( const auto &key : emptied ) {
+        vars.erase( key );
+    }
+}
 }
 
-} // namespace
-
-void stack_modifier::load( const JsonObject &jo, const std::string & )
+auto stack_modifier::load( const JsonObject &jo, const std::string & ) -> void
 {
     mandatory( jo, was_loaded, "name", name );
     optional( jo, was_loaded, "damage", damage, 1.0f );
@@ -95,18 +94,18 @@ auto stack_modifier::apply_ammo_effects( std::set<ammo_effect_str_id> &effects )
 namespace stack_modifiers
 {
 
-void load( const JsonObject &jo, const std::string &src ) { all_stack_modifiers.load( jo, src ); }
+auto load( const JsonObject &jo, const std::string &src ) -> void { all_stack_modifiers.load( jo, src ); }
 
-void reset() { all_stack_modifiers.reset(); }
+auto reset() -> void { all_stack_modifiers.reset(); }
 
-void check_consistency() { all_stack_modifiers.check(); }
+auto check_consistency() -> void { all_stack_modifiers.check(); }
 
 auto count( const item &it, const stack_modifier_id &mod ) -> int { return it.get_var( var_name( mod ), 0 ); }
 
 auto set_count( item &it, const stack_modifier_id &mod, const int n ) -> void
 {
     if( n > 0 ) {
-    it.set_var( var_name( mod ), n );
+        it.set_var( var_name( mod ), n );
     } else {
         it.erase_var( var_name( mod ) );
     }
@@ -130,19 +129,18 @@ auto is_count_var( const std::string &key ) -> bool { return key.starts_with( va
 
 auto merge( item &into, const item &from ) -> void
 {
-for( const auto &m : on( from ) ) {
-    set_count( into, m.id, count( into, m.id ) + m.count );
+    for( const auto &m : on( from ) ) {
+        set_count( into, m.id, count( into, m.id ) + m.count );
     }
 }
 
 auto transfer( item &from, item &to, const int qty ) -> void
 {
     if( from.charges > 0 ) {
-    clamp( from, from.charges );
+        clamp( from, from.charges );
     }
     const auto total = std::max( from.charges, 1 );
-for( const auto &m : on( from ) ) {
-        // Proportional share, with the remainder rounded at random so small splits stay fair.
+    for( const auto &m : on( from ) ) {
         const auto moved = transferred_count( m.count, qty, total );
         set_count( from, m.id, m.count - moved );
         set_count( to, m.id, count( to, m.id ) + moved );
@@ -151,8 +149,8 @@ for( const auto &m : on( from ) ) {
 
 auto split( item &from, item &part, const int qty ) -> void
 {
-for( const auto &m : on( part ) ) {
-    set_count( part, m.id, 0 );
+    for( const auto &m : on( part ) ) {
+        set_count( part, m.id, 0 );
     }
     transfer( from, part, qty );
 }
@@ -264,4 +262,4 @@ auto describe( const item &it ) -> std::string
     return out;
 }
 
-} // namespace stack_modifiers
+}

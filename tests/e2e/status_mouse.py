@@ -1,10 +1,3 @@
-"""Modern scheme mouse support in the status screens: the h body report scrolls
-and closes with the mouse, and the @ character screen clicks tabs, rows and
-scrollbars like the keyboard does. Classic keeps the plain popups.
-
-The first click on a row only selects it. Clicking the same row again runs the
-same action as pressing Enter, so no initially selected row can fire by accident.
-"""
 
 import json
 import tempfile
@@ -13,7 +6,6 @@ from pathlib import Path
 from helpers import HELPERS, Game, arena, start_new_game
 from tmux_game import ROOT
 
-# Enough mutations to overflow the traits panel; preserve any the character already has.
 TRAITS = {
     "FLEET": ("Fleet-Footed", "You can move more quickly than most"),
     "GOODHEARING": ("Good Hearing", "Your hearing is better than average"),
@@ -29,7 +21,6 @@ TRAITS = {
     "FASTLEARNER": ("Fast Learner", "You have a flexible mind"),
 }
 
-# Wounds used by the body report fixture.
 WOUNDS = (("bleed", "arm_l"), ("bleed", "arm_r"), ("bleed", "leg_l"),
           ("bleed", "leg_r"), ("bite", "torso"), ("bandaged", "head"),
           ("infected", "foot_l"), ("bite", "hand_r"), ("disinfected", "hand_l"))
@@ -72,8 +63,6 @@ def clear_traits(g):
 
 
 def find_in(g, text, x_max=None, y_min=0, y_max=None):
-    """First cell holding `text`, searched only in a screen band so sidebar or
-    info-panel copies of the same word cannot win."""
     lines = g.screen().splitlines()
     for y, line in enumerate(lines):
         if y < y_min or (y_max is not None and y > y_max):
@@ -85,7 +74,6 @@ def find_in(g, text, x_max=None, y_min=0, y_max=None):
 
 
 def trait_panel(screen):
-    """Read the selected description, visible rows and track bounds from one capture."""
     rows = screen.splitlines()
     title_y = next(y for y, row in enumerate(rows) if "TRAITS" in row)
     title_x = rows[title_y].index("TRAITS")
@@ -104,8 +92,6 @@ def trait_panel(screen):
 
 
 def scrollbar_column(g):
-    """Screen column and row of the top scrollbar arrow, found from the '^' that
-    has its paired 'v' below it in the same column."""
     rows = g.screen().splitlines()
     for y, line in enumerate(rows):
         for x, ch in enumerate(line):
@@ -115,7 +101,6 @@ def scrollbar_column(g):
 
 
 def popup_width(g):
-    """Width of the report measured from the borders beside its Close button."""
     cx, cy = find_in(g, "Close")
     row = g.screen().splitlines()[cy]
     left = row.rfind("│", 0, cx)
@@ -136,7 +121,6 @@ def close_info(g):
 
 
 def test_body_report_close_button(g):
-    """A left click on Close leaves the report; no move is spent."""
     g.resize(100, 25)
     arena(g)
     before = moves(g)
@@ -155,7 +139,6 @@ def test_body_report_close_button(g):
 
 
 def long_body_report_game():
-    """Exercise mod-provided headings through the real body report renderer."""
     userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-body-report-"))
     mod_id = "e2e_body_report_headings"
     mod_dir = userdir / "mods" / mod_id
@@ -192,7 +175,6 @@ def long_body_report_game():
 
 
 def test_body_report_wheel_and_scrollbar(_g):
-    """The wheel turns a long report and the scrollbar track jumps back up."""
     g = long_body_report_game()
     try:
         add_wounds(g)
@@ -201,7 +183,6 @@ def test_body_report_wheel_and_scrollbar(_g):
         g.wait_for("Close")
         assert "Bandages stop bleeding" not in g.screen(), g.screen()
         first = g.screen().splitlines()[1]
-        # The wheel turns three lines per notch in a text view.
         g.type(f"\x1b[<65;{popup_width(g) // 2 + 1};7M", delay=1)
         assert g.screen().splitlines()[1] != first, \
             "the wheel must turn the report\n" + g.screen()
@@ -210,7 +191,6 @@ def test_body_report_wheel_and_scrollbar(_g):
         bottom = next(y for y in range(sy + 1, len(rows)) if rows[y][sx:sx + 1] == "v")
         g.click(sx, bottom - 1)
         g.wait_for("Bandages stop bleeding")
-        # A track cell above the slider returns to the first part of the report.
         g.click(sx, sy + 2)
         g.wait_gone("Bandages stop bleeding")
         cx, cy = find_in(g, "Close")
@@ -222,8 +202,6 @@ def test_body_report_wheel_and_scrollbar(_g):
 
 
 def test_character_info_stat_click_selects_without_changes(g):
-    """Clicking a stat row shows its info. Clicking it again runs the same code
-    as Enter, which without stats-through-kills changes nothing."""
     g.resize(140, 45)
     arena(g)
     before = (moves(g), stat(g, "str"), stat(g, "per"))
@@ -233,7 +211,6 @@ def test_character_info_stat_click_selects_without_changes(g):
         px, py = find_in(g, "Perception:", x_max=26, y_min=2, y_max=7)
         g.click(px, py)
         g.wait_for("Perception is the most important")
-        # Same row again: the Enter action, a no-op while the upgrade option is off.
         g.click(px, py)
         g.settle_screen()
         assert "Perception is the most important" in g.screen(), g.screen()
@@ -245,14 +222,11 @@ def test_character_info_stat_click_selects_without_changes(g):
 
 
 def test_character_info_skill_click_toggles_training(g):
-    """The first click on a skill selects it; clicking the same skill again
-    toggles training exactly like Enter."""
     g.resize(140, 45)
     arena(g)
     before = moves(g)
     was_training = training(g, "melee")
     try:
-        # Opening Lua from this screen dismisses it, so query only after closing.
         for clicks, expected in ((1, was_training), (2, not was_training), (2, was_training)):
             open_info(g)
             sx, sy = find_in(g, "SKILLS", x_max=26, y_min=17, y_max=19)
@@ -270,8 +244,6 @@ def test_character_info_skill_click_toggles_training(g):
 
 
 def test_character_info_trait_scrollbar_jump_and_resize_click(g):
-    """The traits scrollbar track jumps, and a click after a resize hits the row
-    at its new drawn position."""
     g.resize(100, 30)
     arena(g)
     before = moves(g)
@@ -287,7 +259,6 @@ def test_character_info_trait_scrollbar_jump_and_resize_click(g):
         rows = first_frame.splitlines()
         assert rows[top][sx] == "^" and rows[bottom][sx] == "v", \
             "the overflowing traits list must draw a scrollbar\n" + first_frame
-        # A track cell near the bottom must scroll the list and select another trait.
         g.click(sx, bottom - 1)
         jumped_frame = g.screen()
         jumped_info, jumped_rows, _ = trait_panel(jumped_frame)
@@ -300,8 +271,6 @@ def test_character_info_trait_scrollbar_jump_and_resize_click(g):
         resized_frame = g.screen()
         resized_info, visible, _ = trait_panel(resized_frame)
         selected = resized_info.partition(":")[0]
-        # Rolled traits change ordering and the resized viewport. Use a fixture row
-        # actually drawn in this capture, not a trait assumed to stay on screen.
         choices = [(name, description) for name, description in TRAITS.values()
                    if name in visible and name != selected]
         assert choices, "no unselected fixture trait is visible after resize\n" + resized_frame

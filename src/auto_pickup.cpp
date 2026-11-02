@@ -94,7 +94,6 @@ void user_interface::show()
     int iColumn = 1;
     int iStartPos = 0;
 
-    // Matches the draw_scrollbar() call in on_redraw below.
     const auto scrollbar_geometry = [&]() {
         return scrollbar_input::geometry{
             .offset = point( 0, 5 ),
@@ -104,7 +103,6 @@ void user_interface::show()
             .scroll_to_last = true,
         };
     };
-    // Header rectangles of the tab titles and the shortcut labels.
     struct tab_box {
         int x0 = 0;
         int x1 = 0;
@@ -118,9 +116,7 @@ void user_interface::show()
     };
     auto tab_labels = std::vector<tab_box>{};
     auto header_labels = std::vector<click_label>{};
-    // Row of the last plain click, -1 when the next click starts a new pair.
     auto last_click_row = -1;
-    // A row click leaves the view where it is, so a second click hits the same row.
     auto preserve_view = false;
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
@@ -151,7 +147,6 @@ void user_interface::show()
         draw_label( 0, _( "<A>dd" ), "ADD_RULE" );
         draw_label( 0, _( "<R>emove" ), "REMOVE_RULE" );
         draw_label( 0, _( "<C>opy" ), "COPY_RULE" );
-        // "<M>ove" depends on a direction key, so it is not a click target.
         draw_label( 0, _( "<M>ove" ), std::string() );
         draw_label( 0, _( "<E>nable" ), "ENABLE_RULE" );
         draw_label( 0, _( "<D>isable" ), "DISABLE_RULE" );
@@ -304,7 +299,6 @@ void user_interface::show()
 
         auto action = ctxt.handle_input();
 
-        // get_coordinates() is relative to the window centre.
         const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
             const auto mouse = ctxt.get_coordinates( win );
             if( !mouse ) {
@@ -320,7 +314,6 @@ void user_interface::show()
         auto mouse_hover = false;
         auto mouse_handled = false;
         if( modern && action == "MOUSE_MOVE" ) {
-            // Hover never changes the selection.
             action.clear();
             mouse_hover = true;
         } else if( modern && action == "SELECT" ) {
@@ -365,10 +358,8 @@ void user_interface::show()
                 } else if( const auto cell = cell_in( w ) ) {
                     const auto row = iStartPos + cell->y;
                     if( cell->y < iContentHeight && row < static_cast<int>( cur_rules.size() ) ) {
-                        // The I/E text starts two cells past the w separator at x = 50.
                         const auto clicked_column = cell->x >= 52 ? 2 : 1;
                         if( row == last_click_row ) {
-                            // The second click on the same row runs Enter.
                             iColumn = clicked_column;
                             action = "CONFIRM";
                             last_click_row = -1;
@@ -384,14 +375,12 @@ void user_interface::show()
                 }
             }
             if( !consumed ) {
-                // A click outside the drawn controls does nothing.
                 action.clear();
                 last_click_row = -1;
                 preserve_view = false;
             }
         }
         if( !mouse_handled && !mouse_hover ) {
-            // Keyboard and wheel input end a click pair.
             last_click_row = -1;
             preserve_view = false;
         }

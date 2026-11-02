@@ -67,7 +67,7 @@ auto state_rows( const uilist &menu ) -> std::vector<test_state::row>
     return rows;
 }
 
-} // namespace
+}
 
 catacurses::window new_centered_win( int nlines, int ncols )
 {
@@ -132,7 +132,6 @@ uilist::uilist( const std::string &hotkeys_override )
     init();
     if( !hotkeys_override.empty() ) {
         hotkeys = hotkeys_override;
-        // A caller that reserves digits as entry shortcuts uses digits as input.
         row_numbers_allowed = std::none_of( hotkeys.begin(), hotkeys.end(), []( const char key ) {
             return key >= '0' && key <= '9';
         } );
@@ -218,7 +217,7 @@ void uilist::init()
     keypress = 0;          // last keypress from (int)getch()
     window = catacurses::window();         // our window
     keymap.clear();        // keymap[int] == index, for entries[index]
-    row_numbers = false;   // recomputed in setup() from the entries and the options
+    row_numbers = false;
     selected = 0;          // current highlight, for entries[index]
     entries.clear();       // uilist_entry(int returnval, bool enabled, int keycode, std::string text, ... TODO: submenu stuff)
     started = false;       // set to true when width and key calculations are done, and window is generated.
@@ -628,7 +627,6 @@ void uilist::setup()
     pad_left = pad_left_setup.fun ? pad_left_setup.fun() : 0;
     pad_right = pad_right_setup.fun ? pad_right_setup.fun() : 0;
 
-    // A menu that gives an entry a digit hotkey uses digits as input; keep them as hotkeys there.
     const bool explicit_digit_hotkeys = std::any_of( entries.begin(), entries.end(),
     []( const uilist_entry & entry ) {
         return entry.enabled && entry.hotkey >= '0' && entry.hotkey <= '9';
@@ -674,7 +672,6 @@ void uilist::setup()
         std::erase_if( hotkeys, [navigation_keys]( const auto key ) { return navigation_keys.contains( key ); } );
     }
     if( row_numbers ) {
-        // The positional numbers own the digits, so auto-assigned shortcuts start at letters.
         std::erase_if( hotkeys, []( const char key ) {
             return key >= '0' && key <= '9';
         } );
@@ -1209,7 +1206,6 @@ void uilist::query( bool loop, int timeout )
     list_mouse::click_state click;
 
     shared_ptr_fast<ui_adaptor> ui = create_or_get_ui_adaptor();
-    // Set while a held left button drags the scrollbar thumb, until the release that ends it.
     auto scrollbar_drag = false;
 
     ui_manager::redraw();
@@ -1235,7 +1231,6 @@ void uilist::query( bool loop, int timeout )
         const bool digit_key = event.type == input_event_t::keyboard &&
                                keypress >= '0' && keypress <= '9';
         if( row_numbers && digit_key && !caller_handles_action( ret_act ) ) {
-            // Positional row numbers: a digit selects the visible row; Enter confirms it.
             const int row = keypress == '0' ? 9 : keypress - '1';
             const int filtered_index = vshift + row;
             if( row < vmax && filtered_index >= 0 &&
@@ -1349,7 +1344,6 @@ void uilist::query( bool loop, int timeout )
         } else if( ( ret_act == "ANY_INPUT" ||
                      ( modern && ( ret_act == "LEFT" || ret_act == "RIGHT" ) &&
                        !caller_handles_action( ret_act ) ) ) && iter != keymap.end() ) {
-            // Caller actions and category navigation take precedence over numeric hotkeys.
             const auto it = std::find( fentries.begin(), fentries.end(), iter->second );
             if( it != fentries.end() ) {
                 const bool enabled = entries[*it].enabled;
@@ -1369,7 +1363,6 @@ void uilist::query( bool loop, int timeout )
             }
         } else if( modern && ( ret_act == "LEFT" || ret_act == "RIGHT" ) &&
                    !caller_handles_action( ret_act ) ) {
-            /* A list without categories has no horizontal navigation. */
         } else if( !fentries.empty() && ret_act == "CONFIRM" ) {
             if( entries[ selected ].enabled ) {
                 ret = entries[ selected ].retval; // valid

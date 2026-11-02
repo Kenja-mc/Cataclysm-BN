@@ -1,5 +1,4 @@
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-run=git,pnpm,tar --allow-env
-/** @module Build the pinned GPL guide against this fork and publish its corresponding source. */
 import { copy, ensureDir, exists } from "@std/fs"
 import { join, resolve } from "@std/path"
 
@@ -77,7 +76,6 @@ async function main(): Promise<void> {
   if (unrelated.length) {
     throw new Error(`Refusing to publish unrelated tracked clone changes: ${unrelated.join(", ")}`)
   }
-  // Restore only owned patches, never another branch or unrelated clone changes.
   await run(["git", "checkout", GUIDE_COMMIT, "--", ...PATCHED_FILES], guide)
   await patch(join(guide, "vite.config.ts"), [
     [/base:\s*"\/"/, `base: "${BASE_PATH}"`],

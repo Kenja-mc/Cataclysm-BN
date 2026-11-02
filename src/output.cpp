@@ -752,8 +752,6 @@ bool query_yn( const std::string &text )
     // TODO: Queries are often opened in test_mode, shouldn't it be an error?
     const bool force_uc = get_option<bool>( "FORCE_CAPITAL_YN" );
     const bool modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
-    // Without Y/N hotkeys, y and n only move the highlight; Enter confirms and Esc still cancels.
-    // Modern binds the mouse back button to No, so it cancels the same way.
     const input_context::input_event_filter select_only = [modern]( const input_event & evt ) {
         return evt.get_first_input() == KEY_ESCAPE ||
                ( modern && evt.type == input_event_t::mouse &&

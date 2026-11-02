@@ -62,7 +62,6 @@ def test_modern_inventory_crafts_with_empty_or_carried_inventory(_game):
 
 
 def exercise_inventory_wield(game, key):
-    # Leave enough moves to compare exact wield costs.
     result = game.lua(
         "local a=gapi.get_avatar() local it=a:create_item(ItypeId.new('pipe'),-1) "
         "a:set_moves(100000) local before=a:get_moves() "

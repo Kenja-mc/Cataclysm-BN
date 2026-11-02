@@ -37,8 +37,6 @@ void draw_overmap_chunk( const catacurses::window &w_minimap, const avatar &you,
 
 bool default_render();
 
-/// One limb's health as the limbs panel prints it: the bar or its broken marker, the colour it
-/// takes, and the white dots that pad a short bar so every limb fills the same cells.
 struct limb_health {
     std::string text;
     nc_color color = c_light_gray;
@@ -49,7 +47,7 @@ auto limb_health_text( const avatar &u, const bodypart_str_id &bp ) -> limb_heal
 namespace sidebar
 {
 constexpr auto log_min_rows = 8;
-} // namespace sidebar
+}
 
 class window_panel
 {

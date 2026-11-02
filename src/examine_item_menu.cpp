@@ -67,8 +67,6 @@ bool run(
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "HELP_KEYBINDINGS" );
 
-    // The list is driven by hand below, so uilist's built-in mouse handling never runs; answer
-    // the modern scheme's mouse here instead. Classic keeps keyboard-only navigation.
     const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
     if( modern ) {
         ctxt.register_action( "ANY_INPUT" );
@@ -138,7 +136,6 @@ bool run(
 
         std::string bound_key = ctxt.key_bound_to( act );
         int bound_key_i = bound_key.size() == 1 ? bound_key[0] : '?';
-        // Keep immediate numeric shortcuts when positional numbering is off.
         if( modern && !numbered_rows && actions.size() <= 10 ) {
             bound_key_i = actions.size() == 10 ? '0' : '0' + static_cast<int>( actions.size() );
         }
@@ -396,7 +393,6 @@ bool run(
 
         const std::string &action = ctxt.handle_input();
 
-        // This menu runs its own loop, so positional row digits are applied here.
 #if defined(TILES)
         if( action_list.row_numbers_active() &&
             ctxt.get_raw_input().type == input_event_t::keyboard ) {
@@ -421,8 +417,6 @@ bool run(
             if( const auto mouse = ctxt.get_coordinates( action_list.window ) ) {
                 const auto cell = mouse->xy().raw() + point( getmaxx( action_list.window ),
                                   getmaxy( action_list.window ) ) / 2;
-                // Drop, throw and friends are destructive, so the first click on a row only
-                // selects it; clicking the already selected row again runs its action.
                 for( size_t i = 0; i < action_list.entries.size(); ++i ) {
                     const auto &entry = action_list.entries[i];
                     if( !entry.drawn_rect || !entry.drawn_rect->contains( cell ) ||

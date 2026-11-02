@@ -1,4 +1,3 @@
-"""Unpacking opens one take list; counts, marking and the option match what is moved."""
 from fixtures import shared_game
 from helpers import (HELPERS, arena, count_at, count_carried, empty_inventory, give,
                      wait_until)
@@ -10,7 +9,6 @@ def activate_kit(g, filter_text, item_text, key="v", title="Use which item?"):
     g.wait_for(title)
     g.keys("/", delay=0.3)
     g.type(filter_text)
-    # The first Enter applies the filter; a second one picks the highlighted kit.
     g.keys("Enter", delay=0.6)
     g.wait_for(item_text)
     g.settle_screen(minimum=0.3, timeout=2.0)
@@ -24,10 +22,10 @@ def open_unpack(g, filter_text, item_text):
 
 def filter_take_list(g, text):
     g.keys("/", delay=0.3)
-    g.keys("C-u", delay=0.2)  # clear a filter left by an earlier phase
+    g.keys("C-u", delay=0.2)
     g.type(text)
     g.keys("Enter", delay=0.6)
-    g.keys("Down", delay=0.3)  # the only matching row
+    g.keys("Down", delay=0.3)
 
 
 def prepare_kit(g, kit):
@@ -96,14 +94,12 @@ def test_unchecked_first_aid_contents_stay_on_the_floor(g):
 def test_right_marks_only_the_highlighted_row(g):
     prepare_kit(g, "1st_aid")
     open_unpack(g, "compact first aid", "compact first aid kit")
-    # Filter to one identifiable item, so the cursor choice does not depend on list ordering.
     filter_take_list(g, "bandage")
     g.keys("Right", delay=0.5)
     g.keys("Enter", delay=1)
 
     assert wait_until(lambda: count_at(g, 0, 0, "bandages") == 6), g.screen()
     assert count_carried(g, "bandages") == 0, "Right must affect only the highlighted row"
-    # The filter hid these rows; Right must not have unmarked them.
     for hidden in ("medical_tape", "medical_gauze", "booklet_firstaid"):
         assert wait_until(lambda item=hidden: count_carried(g, item) > 0), g.screen()
 
@@ -130,7 +126,6 @@ def test_full_inventory_leaves_what_does_not_fit(g):
     arena(g)
     empty_inventory(g)
     arena(g)
-    # A 500 ml jacket caps volume, so the 1 L kit's contents cannot all be carried.
     assert g.lua("local a=gapi.get_avatar() a:clear_mutations() "
                  "local h=a:create_item(ItypeId.new('jacket_evac'),-1) assert(a:wear(h,false)) "
                  "out('ok')") == ["ok"]
@@ -159,7 +154,6 @@ def test_wearing_from_the_list_prompts_when_the_slot_is_filled(g):
     give(g, "1st_aid_deluxe")
     open_unpack(g, "aid kit", "first aid kit")
 
-    # Drive both dialogs without Lua reads: a read closes the open menu.
     filter_take_list(g, "medical gloves")
     g.keys("W", delay=1.0)
     g.wait_for("You are already wearing")

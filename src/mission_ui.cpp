@@ -42,8 +42,6 @@ enum class mission_result {
     close,
 };
 
-/// The missions screen's list, details and keyboard/mouse handling, shared by the standalone
-/// screen and the World page's Missions tab.
 class missions_view
 {
     public:
@@ -90,11 +88,8 @@ void missions_view::refresh()
 void missions_view::draw( const catacurses::window &w, int entries_per_page )
 {
     werase( w );
-    // The sidebar page is only as wide as the HUD column: the list fills it and the details
-    // move to the full page, which Enter opens.
     const bool wide = getmaxx( w ) >= 60;
     const int list_top = wide ? 3 : 2;
-    // entries_per_page * page number
     const int top_of_page = entries_per_page * ( selection / entries_per_page );
     const int bottom_of_page =
         std::min( top_of_page + entries_per_page - 1, static_cast<int>( umissions.size() ) - 1 );
@@ -114,8 +109,8 @@ void missions_view::draw( const catacurses::window &w, int entries_per_page )
         draw_tabs( w, tabs, tab );
         draw_border_below_tabs( w );
         mvwputch( w, point( 30, 2 ), BORDER_COLOR,
-                  tab == mission_tab::TAB_COMPLETED ? ' ' : LINE_OXXX ); // ^|^
-        mvwputch( w, point( 30, getmaxy( w ) - 1 ), BORDER_COLOR, LINE_XXOX ); // _|_
+                  tab == mission_tab::TAB_COMPLETED ? ' ' : LINE_OXXX );
+        mvwputch( w, point( 30, getmaxy( w ) - 1 ), BORDER_COLOR, LINE_XXOX );
     } else {
         draw_narrow_tabs( w, { _( "Active" ), _( "Completed" ), _( "Failed" ) },
                           static_cast<size_t>( tab ) );
@@ -176,8 +171,6 @@ void missions_view::draw( const catacurses::window &w, int entries_per_page )
             mvwprintz( w, point( 31, ++y ), c_white, _( "Deadline: %s" ), to_string( deadline ) );
 
             if( tab != mission_tab::TAB_COMPLETED ) {
-                // There's no point in displaying this for a completed mission.
-                // @ TODO: But displaying when you completed it would be useful.
                 const time_duration remaining = deadline - calendar::turn;
                 std::string remaining_time;
 
@@ -194,7 +187,6 @@ void missions_view::draw( const catacurses::window &w, int entries_per_page )
         }
         if( miss->has_target() ) {
             const tripoint_abs_omt pos = get_avatar().abs_omt_pos();
-            // TODO: target does not contain a z-component, targets are assumed to be on z=0
             mvwprintz( w, point( 31, ++y ), c_white, _( "Target: %s   You: %s" ),
                        miss->get_target().to_string(), pos.to_string() );
         }
@@ -254,8 +246,6 @@ auto missions_view::handle( std::string action, input_context &ctxt,
                                        cell.y - 3;
                     if( idx < umissions.size() ) {
                         if( mouse_row && *mouse_row == idx ) {
-                            // A second click on the same row runs the row's Enter
-                            // action; confirming a mission keeps its usual flow.
                             action = "CONFIRM";
                             mouse_row.reset();
                         } else {
@@ -269,10 +259,8 @@ auto missions_view::handle( std::string action, input_context &ctxt,
             action.clear();
         }
     } else {
-        // Keyboard navigation and content changes forget the pending row click.
         mouse_row.reset();
     }
-    // The World page owns Left/Right for its outer tabs; inside it the panel uses Tab keys.
     if( action == "NEXT_TAB" ) {
         action = "RIGHT";
     } else if( action == "PREV_TAB" ) {
@@ -326,7 +314,6 @@ class missions_panel : public world_hub::panel
         }
         void handle( const std::string &action, input_context &ctxt,
                      const catacurses::window &body, world_hub::host & ) override {
-            // Confirming a mission only tracks it here; the page stays open.
             view.handle( action, ctxt, body, getmaxy( body ) - 4,
                          get_option<std::string>( "CONTROL_SCHEME" ) == "modern" );
         }
@@ -335,7 +322,7 @@ class missions_panel : public world_hub::panel
         missions_view view;
 };
 
-} // namespace
+}
 
 auto world_hub::missions_screen() -> panel_ptr
 {
@@ -368,7 +355,6 @@ void game::list_missions()
     ui.on_screen_resize( [&]( ui_adaptor & ui ) {
         w_missions = new_centered_win( FULL_SCREEN_HEIGHT, FULL_SCREEN_WIDTH );
 
-        // content ranges from y=3 to the window's last row but one
         entries_per_page = getmaxy( w_missions ) - 4;
 
         ui.position_from_window( w_missions );

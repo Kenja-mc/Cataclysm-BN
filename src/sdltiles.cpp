@@ -570,7 +570,6 @@ void reinitialize_framebuffer( const bool force_invalidate )
     //Re-initialize the framebuffer with new values.
     const int new_height = std::max( { TERMY, OVERMAP_WINDOW_HEIGHT, TERRAIN_WINDOW_HEIGHT } );
     const int new_width = std::max( { TERMX, OVERMAP_WINDOW_WIDTH, TERRAIN_WINDOW_WIDTH } );
-    // Loading screens can close before the terminal size is known; keep the buffers init sized.
     if( new_height <= 0 || new_width <= 0 ) {
         return;
     }
@@ -1623,7 +1622,7 @@ struct pending_item_thumbnail {
 auto pending_item_thumbnails = std::vector<pending_item_thumbnail> {};
 constexpr auto item_thumbnail_cells = 2;
 
-} // namespace
+}
 
 auto item_thumbnail_gutter_cells() -> int
 {
@@ -1692,7 +1691,6 @@ auto draw_pending_item_thumbnails( const catacurses::window &w ) -> void
             return false;
         }
         tilecontext->draw_item_thumbnail( entry.tile_idx, entry.dest );
-        // Graphical overlays must not leave cached blank cells hiding stale sprites.
         const auto y0 = std::max( 0, entry.cache_pos.y );
         const auto y1 = std::min( entry.cache_pos.y + entry.cache_size.y,
                                   static_cast<int>( terminal_framebuffer.size() ) );
@@ -1710,7 +1708,7 @@ auto draw_pending_item_thumbnails( const catacurses::window &w ) -> void
     } );
 }
 
-} // namespace
+}
 
 void cata_cursesport::curses_drawwindow( const catacurses::window &w )
 {
@@ -2139,7 +2137,6 @@ static int sdl_keysym_to_curses( const SDL_Keycode sym, const SDL_Keymod mod )
         return sym - 'a' + '\1';
     }
     if( mod & SDL_KMOD_CTRL && sym == SDLK_SPACE ) {
-        // Where this reaches us as a key at all it is NUL; 0 is the invalid-key sentinel.
         return KEY_CTRL_SPACE;
     }
     switch( sym ) {
@@ -2414,7 +2411,7 @@ bool ignore_action_for_quick_shortcuts( const std::string &action )
              || action == "MOVE_ARMOR" // maps to ENTER
              || action == "ANY_INPUT"
              || action ==
-                       "DELETE_TEMPLATE" // strictly we shouldn't have this one, but I don't like seeing the "d" on the main menu by default. :)
+                       "DELETE_TEMPLATE"
            );
 }
 
@@ -2690,7 +2687,7 @@ void draw_quick_shortcuts()
         std::string text = event.text;
         int key = event.get_first_input();
         float default_text_scale = std::floor( 0.75f * ( height /
-            font->height ) ); // default for single character strings
+            font->height ) );
         float text_scale = default_text_scale;
         if( text.empty() || text == " " ) {
             text = inp_mngr.get_keyname( key, event.type );
@@ -2791,7 +2788,7 @@ void draw_quick_shortcuts()
                 int hint_length = utf8_width( hint_text );
                 if( WindowWidth * safe_margin < font->width * text_scale * hint_length ) {
                     text_scale *= ( WindowWidth * safe_margin ) / ( font->width * text_scale *
-                        hint_length );    // scale to fit comfortably
+                        hint_length );
                 }
                 SDL_SetRenderScale( renderer.get(), text_scale, text_scale );
                 text_x = ( WindowWidth - ( ( font->width  * hint_length ) * text_scale ) ) * 0.5f / text_scale;
@@ -3016,7 +3013,6 @@ void android_vibrate()
 //Check for any window messages (keypress, paint, mousemove, etc)
 static void CheckMessages()
 {
-    // Text events have no modifiers; global state may already reflect key-up.
     static auto pending_shifted_space = false;
     static auto pending_ctrl_space = false;
     SDL_Event ev;
@@ -3452,7 +3448,6 @@ static void CheckMessages()
 #endif
                 is_repeat = ev.key.repeat;
                 if( ev.key.key == SDLK_SPACE ) {
-                    // A later, unrelated space must not be read as Ctrl+Space.
                     pending_ctrl_space = false;
                 }
                 if( ev.key.key == SDLK_LALT || ev.key.key == SDLK_RALT ) {
@@ -3471,10 +3466,8 @@ static void CheckMessages()
                     if( strlen( ev.text.text ) > 0 ) {
                         const unsigned lc = UTF8_getch( ev.text.text );
                         if( lc == ' ' && ctrl_space ) {
-                            // The key-down already reported Ctrl+Space; its text twin is not a space.
                             break;
                         }
-                        // Keep literal text below for editors.
                         const auto code = lc == ' ' && shifted_space ? KEY_SHIFT_SPACE : static_cast<int>( lc );
                         last_input = input_event( code, input_event_t::keyboard );
 #if defined(SDL_PLATFORM_ANDROID)
@@ -3548,7 +3541,6 @@ static void CheckMessages()
                         last_input = input_event( MOUSE_BUTTON_RIGHT, input_event_t::mouse );
                         break;
                     case SDL_BUTTON_X1:
-                        // The browser-style back side button. Only a screen that binds it reacts.
                         last_input = input_event( MOUSE_BUTTON_BACK, input_event_t::mouse );
                         break;
                 }
@@ -4031,7 +4023,6 @@ void load_tileset()
         }
     }
     if( g != nullptr && tilecontext ) {
-        // The tileset loads at its own scale; put back the zoom the player left last session.
         rescale_tileset( g->get_zoom() );
     }
 }
@@ -4102,8 +4093,6 @@ input_event input_manager::get_input_event()
             if( last_input.type != input_event_t::error ) {
                 break;
             }
-            // No turn or redraw happens while idle; service a finished track
-            // on this main thread instead of the mixer callback.
             music::pump();
             SDL_Delay( 1 );
         } while( last_input.type == input_event_t::error );
@@ -4199,7 +4188,6 @@ static window_dimensions get_window_dimensions( const catacurses::window &win,
         dim.window_size_cell = size;
     }
 
-    // Window positions use the standard font, in the same scaled pixels as mouse input.
     dim.window_pos_pixel = point( dim.window_pos_cell.x * fontwidth,
                                   dim.window_pos_cell.y * fontheight ) * get_scaling_factor();
     // But the size of the window is in the font dimensions of the window.
@@ -4267,7 +4255,6 @@ std::optional<tripoint_bub_ms> input_context::get_coordinates( const catacurses:
     const catacurses::window &capture_win = capture_win_ ? capture_win_ : g->w_terrain;
     auto dim = get_window_dimensions( capture_win );
     if( use_tiles && use_tiles_overmap && capture_win == g->w_overmap ) {
-        // The overmap draws partial edge tiles that its curses window rounds away.
         const auto pixels = point( OVERMAP_WINDOW_TERM_WIDTH * font->width,
                                    OVERMAP_WINDOW_TERM_HEIGHT * font->height );
         overmap_tilecontext->get_window_tile_counts( pixels.x, pixels.y,

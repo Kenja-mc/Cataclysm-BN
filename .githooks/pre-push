@@ -1,9 +1,4 @@
 #!/bin/sh
-# Refuses to push anything to the upstream repository.
-#
-# The upstream is a source to merge from and nothing else. Enable this hook in a clone with:
-#
-#   git config core.hooksPath .githooks
 
 remote="$1"
 url="$2"

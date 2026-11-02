@@ -39,7 +39,6 @@ const auto trait_SHELL2 = trait_id( "SHELL2" );
 
 auto hovered_tile = std::optional<tripoint_bub_ms>();
 auto hovered_route = std::vector<tripoint_bub_ms>();
-/// Turn the hover was computed on; a new turn can change what a click does.
 auto hovered_turn = std::optional<time_point>();
 auto hovered_mouse_move = false;
 auto hovered_hint = std::string();
@@ -88,22 +87,22 @@ auto bashable_field_at( const tripoint_bub_ms &p ) -> bool
 auto route_to( avatar &you, map &m, const tripoint_bub_ms &p ) -> std::vector<tripoint_bub_ms>
 {
     return m.route( you.bub_pos(), p, you.get_legacy_pathfinding_settings(),
-    you.get_legacy_path_avoid() );
+                    you.get_legacy_path_avoid() );
 }
 
 auto confirm_hint( const size_t n ) -> std::string
 {
     return string_format( vgettext( "click again to walk here (%d step)",
-           "click again to walk here (%d steps)", n ), n );
+                                    "click again to walk here (%d steps)", n ), n );
 }
 
 auto dangerous_dest( map &m, const avatar &you, const tripoint_bub_ms &p ) -> bool
 {
     if( m.dangerous_field_at( p ) ) {
-    return true;
-}
-const auto &tr = m.tr_at( p );
-return !tr.is_null() && !tr.is_benign() && ( you.knows_trap( p ) || tr.can_see( p, you ) );
+        return true;
+    }
+    const auto &tr = m.tr_at( p );
+    return !tr.is_null() && !tr.is_benign() && ( you.knows_trap( p ) || tr.can_see( p, you ) );
 }
 
 auto bound_key_suffix( const action_id act ) -> std::string
@@ -131,32 +130,31 @@ auto bound_key_suffix( const action_id act ) -> std::string
 auto hotkey_for( const action_id act ) -> int
 {
     switch( act ) {
-    case ACTION_OPEN:
-        return 'o';
-    case ACTION_CLOSE:
-        return 'c';
-    case ACTION_EXAMINE:
-        return 'e';
-    case ACTION_PICKUP:
-        return 'g';
-    case ACTION_JUMP:
-        return 'j';
-    case ACTION_SMASH:
-        return 'S';
-    case ACTION_BUTCHER:
-        return 'B';
-    case ACTION_CHAT:
-        return 't';
-    default:
-        return MENU_AUTOASSIGN;
-}
+        case ACTION_OPEN:
+            return 'o';
+        case ACTION_CLOSE:
+            return 'c';
+        case ACTION_EXAMINE:
+            return 'e';
+        case ACTION_PICKUP:
+            return 'g';
+        case ACTION_JUMP:
+            return 'j';
+        case ACTION_SMASH:
+            return 'S';
+        case ACTION_BUTCHER:
+            return 'B';
+        case ACTION_CHAT:
+            return 't';
+        default:
+            return MENU_AUTOASSIGN;
+    }
 }
 
-/// Lights up the tile of the highlighted menu row on the map.
 class tile_highlight : public uilist_callback
 {
-public:
-    explicit tile_highlight( const std::vector<tripoint_bub_ms> &tiles ) : tiles( tiles ) {
+    public:
+        explicit tile_highlight( const std::vector<tripoint_bub_ms> &tiles ) : tiles( tiles ) {
             draw = make_shared_fast<game::draw_callback_t>( [this]() {
                 if( shown >= 0 && static_cast<size_t>( shown ) < this->tiles.size() ) {
                     get_map().drawsq( g->w_terrain, this->tiles[shown], drawsq_params().highlight( true ) );
@@ -176,7 +174,7 @@ public:
         int shown = -1;
 };
 
-} // namespace
+}
 
 namespace tile_selection
 {
@@ -216,15 +214,13 @@ auto choices_at( const avatar &you, const tripoint_bub_ms &p ) -> std::vector<ch
     if( dist <= 1 && m.has_items( p ) && m.sees_some_items( p, you ) ) {
         out.push_back( { .act = ACTION_PICKUP, .label = _( "pick up items" ) } );
     } else if( dist <= 1 ) {
-        // Like the door rules above, a cargo part with items is offered by its own presence; the
-        // first part on the tile is the one pickup loots.
         if( const auto vp = m.veh_at( p ) ) {
             auto *const veh = veh_pointer_or_null( vp );
             const int cargo = veh ? veh->part_with_feature( vp->part_index(), "CARGO", false ) : -1;
             if( cargo >= 0 && !veh->get_items( cargo ).empty() ) {
                 out.push_back( { .act = ACTION_PICKUP,
                                  .label = string_format( _( "get items from the %s" ),
-                                     veh->part( cargo ).name() ),
+                                          veh->part( cargo ).name() ),
                                  .vehicle_cargo = true } );
             }
         }
@@ -259,19 +255,17 @@ auto interact_choices( const avatar &you, const tripoint_bub_ms &p,
     if( p == you.bub_pos() && can_examine_at( p ) ) {
         out.push_back( { .act = ACTION_EXAMINE, .label = string_format( _( "examine the %s" ), m.name( p ) ) } );
     }
-    // Somebody standing next to you is talked to, not examined like the floor under them.
     if( const auto *guy = g->critter_at<npc>( p ); guy != nullptr && p != you.bub_pos() &&
         square_dist( p.xy(), you.bub_pos().xy() ) == 1 && you.sees( *guy ) ) {
         std::erase_if( out, []( const choice & c ) { return c.act == ACTION_EXAMINE; } );
         out.push_back( { .act = ACTION_CHAT, .label = string_format( _( "talk to %s" ), guy->disp_name() ) } );
     }
-    // Butchery follows the corpse, not a key: it appears wherever a body lies in reach.
     const auto has_butcher_tool = [&you] {
         return you.max_quality( quality_id( "BUTCHER" ) ) > INT_MIN ||
-               you.max_quality( quality_id( "CUT_FINE" ) ) > INT_MIN;
+                  you.max_quality( quality_id( "CUT_FINE" ) ) > INT_MIN;
     };
     if( !you.is_mounted() && has_butcher_tool() &&
-        std::ranges::any_of( m.i_at( p ), []( const item * it ) { return it->is_corpse(); } ) ) {
+    std::ranges::any_of( m.i_at( p ), []( const item * it ) { return it->is_corpse(); } ) ) {
         out.push_back( { .act = ACTION_BUTCHER, .label = _( "butcher a corpse" ) } );
     }
     if( p != you.bub_pos() ) {
@@ -284,8 +278,6 @@ auto interact_choices( const avatar &you, const tripoint_bub_ms &p,
     }
     const auto pulpable = pulpable_corpse_at( p );
     const auto bashable_field = bashable_field_at( p );
-    // Every floor and wall is bashable, so a scan of the surroundings only offers the smashing
-    // a player is likely to want; a tile the player picked offers it for anything.
     if( pulpable || bashable_field || ( explicit_tile && m.is_bashable( p ) ) ) {
         out.push_back( { .act = ACTION_SMASH, .label = string_format( _( "smash the %s" ), m.name( p ) ) } );
     }
@@ -351,15 +343,11 @@ auto run_interaction( avatar &you, const interaction &what ) -> void
     }
 }
 
-/// Smashing and jumping are never done without asking.
 auto runs_unasked( const choice &c ) -> bool
 {
     return c.act != ACTION_SMASH && c.act != ACTION_JUMP;
 }
 
-/// How obviously a tile offers an action. Space runs the best rank and lists the rest, so the
-/// order is the design: door, pickup, stairs, vehicle cargo, butcher, vault, examine, smash.
-/// A vault only outranks an examine when there is an obstacle to vault over; bare floor is not one.
 auto choice_rank( const choice &c, const bool obstacle ) -> int
 {
     if( c.travel ) {
@@ -399,8 +387,6 @@ auto add_choice( std::vector<choice> &out, choice c ) -> void
     }
 }
 
-/// The actions a right click lists for a tile in reach. Unlike an explicit Space click, bare
-/// ground is left alone: every floor is bashable, but right-clicking open ground must only select.
 auto clicked_choices_at( const avatar &you, const tripoint_bub_ms &p ) -> std::vector<choice>
 {
     auto &m = get_map();
@@ -416,7 +402,6 @@ auto clicked_choices_at( const avatar &you, const tripoint_bub_ms &p ) -> std::v
     return out;
 }
 
-/// Actions worth listing for a tile the player cannot reach: the reason is shown, not acted on.
 auto distant_choices_at( const avatar &you, const tripoint_bub_ms &p ) -> std::vector<choice>
 {
     auto &m = get_map();
@@ -441,7 +426,6 @@ auto distant_choices_at( const avatar &you, const tripoint_bub_ms &p ) -> std::v
     return out;
 }
 
-/// Displays the tile's actions and runs the picked one. Returns true when one ran.
 auto show_interaction_menu( avatar &you, const tripoint_bub_ms &p, const tile_actions &actions,
                             std::vector<choice> choices, const bool in_reach ) -> bool
 {
@@ -461,17 +445,17 @@ auto show_interaction_menu( avatar &you, const tripoint_bub_ms &p, const tile_ac
     return false;
 }
 
-} // namespace
+}
 
 auto interact_at( avatar &you, const tripoint_bub_ms &p, const tile_actions &actions ) -> void
 {
     if( !reachable( you, p ) ) {
-    add_msg( _( "You can't reach that tile." ) );
+        add_msg( _( "You can't reach that tile." ) );
         return;
     }
     auto choices = interact_choices( you, p, true );
     if( choices.empty() ) {
-    add_msg( _( "There is nothing to interact with on that tile." ) );
+        add_msg( _( "There is nothing to interact with on that tile." ) );
         return;
     }
     const auto obstacle = get_map().impassable( p ) || get_map().has_furn( p ) ||
@@ -483,13 +467,10 @@ auto interact_at( avatar &you, const tripoint_bub_ms &p, const tile_actions &act
     const auto tied = std::ranges::count_if( choices, [&best, obstacle]( const choice & c ) {
         return choice_rank( c, obstacle ) == choice_rank( best, obstacle );
     } );
-    // One obvious action runs. Everything else, a tie included, stays in the list.
     if( tied == 1 && runs_unasked( best ) ) {
         run_interaction( you, { .c = best, .pos = p, .actions = actions } );
         return;
     }
-    // A lone vault over a real obstacle runs at once: the aim names the target, and the confirm
-    // popup this replaced defaulted to No and answered to an uppercase Y only.
     if( tied == 1 && best.act == ACTION_JUMP && obstacle ) {
         run_interaction( you, { .c = best, .pos = p, .actions = actions } );
         return;
@@ -500,7 +481,6 @@ auto interact_at( avatar &you, const tripoint_bub_ms &p, const tile_actions &act
 namespace
 {
 
-/// The first curtain part on a tile, with the vehicle it belongs to.
 struct curtain_spot {
     vehicle *veh = nullptr;
     int part = -1;
@@ -517,8 +497,6 @@ auto curtain_at( map &m, const tripoint_bub_ms &p ) -> curtain_spot
     return spot;
 }
 
-/// The state-aware toggle one chord press runs, with the same checks, wording and move costs as
-/// walking into a vehicle door and closing it.
 auto toggle_curtain( avatar &you, const curtain_spot &spot ) -> void
 {
     const auto part_name = spot.veh->part( spot.part ).name();
@@ -549,17 +527,17 @@ auto toggle_curtain( avatar &you, const curtain_spot &spot ) -> void
     you.moves -= 90;
 }
 
-} // namespace
+}
 
 auto toggle_curtain_at( avatar &you, const tripoint_bub_ms &p ) -> void
 {
     if( !reachable( you, p ) ) {
-    add_msg( _( "You can't reach that tile." ) );
+        add_msg( _( "You can't reach that tile." ) );
         return;
     }
     const auto spot = curtain_at( get_map(), p );
     if( spot.part < 0 ) {
-    add_msg( m_info, _( "There is no curtain there." ) );
+        add_msg( m_info, _( "There is no curtain there." ) );
         return;
     }
     toggle_curtain( you, spot );
@@ -594,7 +572,6 @@ auto toggle_curtain_nearby( avatar &you ) -> bool
     auto highlight = tile_highlight( tiles );
     auto menu = uilist();
     menu.title = _( "Toggle which curtain?" );
-    // The menu sits at the top so the highlighted tile next to the avatar stays visible.
     menu.w_y_setup = 0;
     menu.callback = &highlight;
     for( auto index = 0; const auto &option : spots ) {
@@ -616,8 +593,6 @@ auto toggle_curtain_nearby( avatar &you ) -> bool
 
 auto interact_menu_at( avatar &you, const tripoint_bub_ms &p, const tile_actions &actions ) -> bool
 {
-    // Right click never runs a lone action. A tile out of reach still lists what it offers,
-    // disabled, so the player sees why the click did nothing else.
     const auto in_reach = reachable( you, p );
     if( !in_reach && ( p.z() != you.bub_pos().z() || !you.sees( p ) ) ) {
         return false;
@@ -656,7 +631,6 @@ auto interact_nearby( avatar &you, const tile_actions &actions ) -> bool
     auto highlight = tile_highlight( tiles );
     auto menu = uilist();
     menu.title = _( "Interact with what?" );
-    // The menu sits at the top so the highlighted tile next to the avatar stays visible.
     menu.w_y_setup = 0;
     menu.callback = &highlight;
     for( auto index = 0; const auto &dc : options ) {
@@ -664,7 +638,7 @@ auto interact_nearby( avatar &you, const tile_actions &actions ) -> bool
                            direction_name( direction_from( you.bub_pos().xy(), dc.pos.xy() ) );
         //~ An action on a nearby tile and where it is, e.g. "open the door (north)".
         menu.addentry( index++, true, MENU_AUTOASSIGN, string_format( _( "%1$s (%2$s)" ), dc.c.label,
-                where ) );
+                       where ) );
     }
     menu.query();
     if( menu.ret >= 0 && static_cast<size_t>( menu.ret ) < options.size() ) {
@@ -677,11 +651,11 @@ auto interact_nearby( avatar &you, const tile_actions &actions ) -> bool
 auto primary_choice( const avatar &you, const tripoint_bub_ms &p ) -> std::optional<choice>
 {
     if( !reachable( you, p ) || has_hostile( you, p ) ) {
-    return std::nullopt;
-}
-const auto choices = interact_choices( you, p, false );
-const auto found = std::ranges::find_if( choices, runs_unasked );
-return found == choices.end() ? std::nullopt : std::optional<choice>( *found );
+        return std::nullopt;
+    }
+    const auto choices = interact_choices( you, p, false );
+    const auto found = std::ranges::find_if( choices, runs_unasked );
+    return found == choices.end() ? std::nullopt : std::optional<choice>( *found );
 }
 
 auto has_hostile( const avatar &you, const tripoint_bub_ms &p ) -> bool
@@ -700,7 +674,6 @@ auto smashable_at( const avatar &you, const tripoint_bub_ms &p ) -> bool
 {
     auto &m = get_map();
     const auto inside = !m.is_outside( you.bub_pos() );
-    // Open doors count as flat ground, so name them with furniture as real objects.
     const auto door = m.can_open_door( &you, p, inside ) || m.close_door( p, inside, true );
     return door || m.has_furn( p ) || ( m.is_bashable( p ) && !m.has_flag( "FLAT", p ) ) ||
            bashable_field_at( p ) || pulpable_corpse_at( p );
@@ -717,24 +690,22 @@ auto facing_tile( const avatar &you ) -> std::optional<tripoint_bub_ms>
 auto resolve( avatar &you, map &m, const choice &c, const tripoint_bub_ms &p ) -> action_id
 {
     if( !c.travel ) {
-    pending_click.reset();
+        pending_click.reset();
     }
 
     if( c.act == ACTION_OPEN ) {
-    // Walking into a closed door opens it.
-    return get_movement_action_from_delta( p - you.bub_pos(), iso_rotate::yes );
+        return get_movement_action_from_delta( p - you.bub_pos(), iso_rotate::yes );
     }
     if( c.act == ACTION_FIRE ) {
-    // Aim at the creature the hint named, not whichever hostile is nearest.
-    if( auto *target = hostile_at( you, p ) ) {
+        if( auto *target = hostile_at( you, p ) ) {
             you.last_target = g->shared_from( *target );
         }
         return c.act;
     }
     if( !c.travel ) {
-    return c.act;
-}
-if( !get_option<bool>( "MOUSE_MOVE" ) ) {
+        return c.act;
+    }
+    if( !get_option<bool>( "MOUSE_MOVE" ) ) {
         pending_click.reset();
         return ACTION_NULL;
     }
@@ -748,7 +719,7 @@ if( !get_option<bool>( "MOUSE_MOVE" ) ) {
         return ACTION_NULL;
     }
     if( safe && ( dist > 1 || dangerous ) && pending_click != p &&
-            ( dangerous || !hostiles ) ) {
+        ( dangerous || !hostiles ) ) {
         pending_click = p;
         hovered_route = route;
         hovered_hint = dangerous ? std::string( _( "click again: walk into danger" ) ) :
@@ -759,7 +730,7 @@ if( !get_option<bool>( "MOUSE_MOVE" ) ) {
     you.set_destination( route );
     const auto step = you.get_next_auto_move_direction();
     if( hostiles || step == ACTION_NULL ) {
-    you.clear_destination();
+        you.clear_destination();
     }
     return step;
 }
@@ -792,8 +763,6 @@ auto hover( avatar &you, map &m, const std::optional<tripoint_bub_ms> &p ) -> vo
         } else if( has_hostile( you, *p ) ) {
             hovered_hint = _( "left: attack; right: lock" );
         } else {
-            // Reachable objects run their actions from the right click. Distant ones still list
-            // them, disabled, so the hint must promise a menu rather than a plain selection.
             const auto actions = reachable( you, *p ) ? clicked_choices_at( you, *p ) :
                                  distant_choices_at( you, *p );
             const auto right = actions.empty() ? std::string( _( "right: select" ) ) :
@@ -830,7 +799,6 @@ auto hover( avatar &you, map &m, const std::optional<tripoint_bub_ms> &p ) -> vo
             hovered_hint = base;
         }
     } else {
-        // Name the key too, so the mouse teaches the keyboard.
         const auto act = choices.front().act;
         const auto key = act == ACTION_NULL ? std::string() : bound_key_suffix( act );
         hovered_hint = string_format( _( "click: %s" ), choices.front().label ) + key;
@@ -854,4 +822,4 @@ auto hover_path() -> const std::vector<tripoint_bub_ms> & { return hovered_route
 
 auto hint() -> std::string { return hovered_hint; }
 
-} // namespace tile_selection
+}

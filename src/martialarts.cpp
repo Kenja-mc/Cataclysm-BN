@@ -1727,7 +1727,6 @@ bool ma_style_callback::key( const input_context &ctxt, const input_event &event
             std::string action = ict.handle_input();
 
             if( modern && ict.get_raw_input().type == input_event_t::mouse ) {
-                // Text scrolls three lines per notch.
                 if( action == "SCROLL_UP" ) {
                     selected -= 3;
                     action.clear();

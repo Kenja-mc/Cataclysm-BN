@@ -454,7 +454,6 @@ class json_flag
             return taste_mod_;
         }
 
-        /** The use method this flag injects when present on a mod but not the base item */
         std::string use_method() const {
             return use_method_;
         }

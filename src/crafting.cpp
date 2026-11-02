@@ -401,7 +401,6 @@ void Character::recraft( const tripoint_bub_ms &loc )
         popup( _( "Craft something first" ) );
         return;
     }
-    // Reloading a world in the same session reloads recipes, leaving the remembered command dangling.
     if( last_craft->get_recipe() != &lastrecipe.obj() ) {
         *last_craft = craft_command( &lastrecipe.obj(), last_batch, last_craft->is_long(), this, loc );
     }
@@ -2395,7 +2394,6 @@ void crafting::complete_disassemble( Character &who, const iuse_location &target
                 components.push_back( item::spawn( *newit ) );
             }
         }
-        // The variant's own parts, such as the metal and gem of a ring.
         for( const auto &extra : item_variants::disassembly_extras( dis_item ) ) {
             auto part = item::spawn( extra.id, calendar::turn );
             if( part->count_by_charges() ) {

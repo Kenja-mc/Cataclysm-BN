@@ -1926,7 +1926,6 @@ public:
         return false;
     }
 
-    /// Clicks on the custom spell-description scrollbar drawn by draw_spell_info().
     auto mouse(uilist* menu, point cell) -> bool override {
         if (menu->pad_right < 8 || menu->pad_right >= menu->w_width) { return false; }
         const int h_offset = menu->w_width - menu->pad_right + 1;
@@ -1943,8 +1942,6 @@ public:
                 cell)) {
             const int max_start = std::max(0, info_scroll_total_lines - menu->w_height);
             const int target = std::clamp(hit->viewport_pos, 0, max_start);
-            // calcStartPos() centres the viewport when MENU_SCROLL is on; undo that here
-            // so the redrawn bar stays where the click landed.
             info_scroll = target + (get_option<bool>("MENU_SCROLL") ? (menu->w_height - 1) / 2 : 0);
             return true;
         }

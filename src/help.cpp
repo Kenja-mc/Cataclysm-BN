@@ -41,7 +41,6 @@ std::string expand_key_tags( const std::string &text )
             break;
         }
         const auto tag = out.substr( pos + 7, end - pos - 7 );
-        // `<press_ID:CONTEXT>` asks for that context's binding, e.g. the aiming screen's keys.
         const auto context_sep = tag.find( ':' );
         const auto route = context_sep == std::string::npos
                            ? action_route( tag )

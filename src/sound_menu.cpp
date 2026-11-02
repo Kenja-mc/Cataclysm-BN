@@ -35,10 +35,11 @@ const auto sound_rows = std::array<sound_row, 8> { {
         { "AMBIENT_SOUND_VOLUME", translate_marker( "Ambient volume" ), false },
         { "MONSTER_AMBIENCE", translate_marker( "Monster ambience" ), true },
         { "MONSTER_AMBIENCE_VOLUME", translate_marker( "Monster ambience volume" ), false },
-    } };
+    }
+};
 constexpr auto volume_step = 8;
 constexpr auto volume_max = 128;
-} // namespace
+}
 #endif
 
 auto show_sound_menu() -> void
@@ -104,10 +105,9 @@ auto show_sound_menu() -> void
     }
     get_options().save();
 #else
-    // One modal teaches the player their build has no sound; repeating it steals input.
-    static auto announced = false;
-    if( !announced ) {
-        announced = true;
+    static auto sound_warning_shown = false;
+    if( !sound_warning_shown ) {
+        sound_warning_shown = true;
         popup( _( "Sound is unavailable in this build." ) );
     } else if( g && g->w_terrain ) {
         add_msg( m_info, _( "Sound is unavailable in this build." ) );

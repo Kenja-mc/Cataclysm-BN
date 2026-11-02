@@ -1,17 +1,3 @@
-"""Closed action lists for the agentic playtest: one screen, one set of real actions.
-
-The decision model may only choose from these lists, so every action here is one the screen
-really accepts:
-
-* keys come from the shipped binding data, ``data/raw/keybindings/*.json`` overridden by
-  ``data/raw/control_schemes/<scheme>.json``.  This fork ships only ``modern.json``; the base
-  files are the classic layout, so an unbound action in a scheme is dropped instead of guessed.
-* menu hotkeys and click targets are read out of the pane the game is showing right now, because
-  uilist assigns those letters at draw time (``MENU_AUTOASSIGN`` in ``src/ui.cpp``).
-
-``keys`` holds tmux key names (``k``, ``Escape``, ``C-x``, ``Space``).  ``agent_state.send_action``
-translates them to X11 keysyms for the tiles build, so callers never translate anything.
-"""
 from __future__ import annotations
 
 import json
@@ -23,21 +9,19 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 KEYBINDING_DIR = ROOT / "data" / "raw" / "keybindings"
 SCHEME_DIR = ROOT / "data" / "raw" / "control_schemes"
-GLOBAL_CONTEXT = "default"  # the data files write the global context as "default" or omit it
+GLOBAL_CONTEXT = "default"
 MAX_MENU_ROWS = 14
 MAX_LABEL = 72
 
 
 @dataclass(frozen=True)
 class ActionSpec:
-    id: str                                  # stable id sent to the model, e.g. "move_north"
-    label: str                               # one line the model reads
-    keys: tuple[str, ...] = ()               # keys to send, e.g. ("k",) or ("Shift_L", "bracketright")
-    click: tuple[int, int] | None = None     # mouse action for the tiles build
-    clicks: int = 1                          # repeated at the same cell, inside the double-click window
+    id: str
+    label: str
+    keys: tuple[str, ...] = ()
+    click: tuple[int, int] | None = None
+    clicks: int = 1
 
-
-# ---------------------------------------------------------------- binding data
 
 _TMUX_NAMES = {
     "RETURN": "Enter", "SPACE": "Space", "ESC": "Escape", "BACKTAB": "BTab", "TAB": "Tab",
@@ -53,7 +37,6 @@ _X11_NAMES = {
 
 
 def tmux_key(key: str) -> str:
-    """A data-file key name as tmux sends it (``CTRL+P`` -> ``C-p``, ``SPACE`` -> ``Space``)."""
     if len(key) == 1:
         return key
     if key.startswith("CTRL+"):
@@ -68,7 +51,6 @@ def tmux_key(key: str) -> str:
 
 
 def x11_keys(keys: tuple[str, ...]) -> tuple[str, ...]:
-    """The same keys as X11 keysyms; an uppercase letter becomes Shift plus the letter."""
     out: list[str] = []
     for key in keys:
         if len(key) == 1:
@@ -91,7 +73,6 @@ def _context(row: dict) -> str:
 
 @lru_cache(maxsize=None)
 def _table(scheme: str) -> dict[tuple[str, str], tuple[tuple[str, ...], str]]:
-    """(context, action id) -> (keys, name), with the control scheme applied over the base data."""
     table: dict[tuple[str, str], tuple[tuple[str, ...], str]] = {}
     for path in sorted(KEYBINDING_DIR.glob("*.json")):
         for row in json.loads(path.read_text()):
@@ -110,7 +91,6 @@ def _table(scheme: str) -> dict[tuple[str, str], tuple[tuple[str, ...], str]]:
 
 
 def bound_keys(scheme: str, context: str, action: str) -> tuple[str, ...]:
-    """Keys for one action in one context, falling back to the global context like input_context."""
     table = _table(scheme)
     for key in ((context, action), (GLOBAL_CONTEXT, action)):
         if key in table:
@@ -127,15 +107,12 @@ def bound_name(scheme: str, context: str, action: str) -> str:
 
 
 def _arrow(keys: tuple[str, ...], name: str) -> tuple[str, ...]:
-    """Prefer the arrow keysym: menus keep it in every scheme, scheme letters do not."""
     return (name,) if name in keys else keys[:1]
 
 
 def _spec(action_id: str, label: str, keys: tuple[str, ...]) -> ActionSpec:
     return ActionSpec(action_id, label[:MAX_LABEL], keys)
 
-
-# ---------------------------------------------------------------- screen text
 
 _ROW_RE = re.compile(r"^[^\w]*[│|┃]\s*([0-9A-Za-z])\s+(\S.*?)\s*[│|┃]?\s*$")
 _BRACKET_RE = re.compile(r"\[([^\[\]]+)\]")
@@ -151,7 +128,6 @@ class Row:
 
 
 def _colored_chars(line: str) -> list[tuple[str, str]]:
-    """Characters of one pane line with the ANSI color sequence that was active on each."""
     chars: list[tuple[str, str]] = []
     code = ""
     index = 0
@@ -167,11 +143,6 @@ def _colored_chars(line: str) -> list[tuple[str, str]]:
 
 
 def colored_hotkey(colored_line: str, label: str) -> str:
-    """The hotkey of a ``[New Game]`` style main-menu entry, read from its color.
-
-    The main menu prints ``<N|n>ew Game`` as the whole label inside brackets with only the
-    shortcut letter colorized, so a plain capture cannot show which letter it is.
-    """
     chars = _colored_chars(colored_line)
     text = "".join(char for char, _code in chars)
     for match in _BRACKET_RE.finditer(text):
@@ -192,11 +163,6 @@ def colored_hotkey(colored_line: str, label: str) -> str:
 
 
 def menu_rows(screen: str, limit: int = MAX_MENU_ROWS, colored: str = "") -> tuple[Row, ...]:
-    """Hotkey rows of the menu on screen: uilist rows and the main menu's ``[New Game]`` form.
-
-    ``colored`` is the same pane captured with ``capture-pane -e``; it is what makes the main
-    menu's shortcut letters readable.
-    """
     rows: list[Row] = []
     seen: set[str] = set()
     colored_lines = colored.splitlines()
@@ -212,10 +178,8 @@ def menu_rows(screen: str, limit: int = MAX_MENU_ROWS, colored: str = "") -> tup
             candidates = [(left + match.start(2), match.group(1),
                            re.split(r"[│|┃]", match.group(2))[0].strip())]
         else:
-            # A titled menu owns its rectangle; background HUD/log text is not a menu row.
             if frame:
                 continue
-            # The main menu puts every entry on one line, each in its own bracket.
             candidates = [(bracketed.start(), colored_hotkey(colored_lines[y], bracketed.group(1))
                            if y < len(colored_lines) else "", bracketed.group(1).strip())
                           for bracketed in _BRACKET_RE.finditer(line)]
@@ -248,8 +212,6 @@ _SCREEN_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("action_menu", ("Interact…", "Inventory…")),
 )
 
-# Screens whose uilist title is the reliable marker, so a menu row that repeats the words
-# ("Active World Mods" in the in-game main menu) cannot be mistaken for the screen itself.
 _TITLE_RULES = (("world_mods", "World Mods"), ("ingame_menu", "MAIN MENU"))
 
 _MAIN_MENU_MARKERS = ("[New Game]", "[MOTD]", "Tip of the day", "Cataclysm: Bright Nights")
@@ -261,12 +223,6 @@ _UILIST_SEPARATOR_RE = re.compile(r"[├+][─-]{2,}[┤+]")
 
 
 def _uilist_frame(lines: list[str]) -> tuple[int, int, int, int, str] | None:
-    """A titled UiList's (left, right-exclusive, top, bottom, title) rectangle.
-
-    Classic puts ``< title >`` in the top border. Modern puts its title between
-    the top border and a full-width separator; that geometry distinguishes it
-    from floating HUD boxes, even when map glyphs touch the menu's outside edge.
-    """
     for top, line in enumerate(lines):
         classic = _UILIST_TITLE_RE.search(line)
         candidates = [(classic.start(), classic.end() + 1, classic.group(1).strip())] \
@@ -297,11 +253,6 @@ def _uilist_frame(lines: list[str]) -> tuple[int, int, int, int, str] | None:
 
 
 def framed_title(screen: str) -> str:
-    """Title of a menu frame, including top-aligned uilists.
-
-    Explicit uilist headers distinguish menus from corner HUD boxes. Other frame titles
-    still need to be in the middle band so ordinary corner readings do not become menus.
-    """
     lines = screen.splitlines()
     if not lines:
         return ""
@@ -318,7 +269,6 @@ def framed_title(screen: str) -> str:
 
 
 def classify_screen(screen: str) -> str:
-    """Name the screen the pane is showing: a state label, an open menu id, or "unknown"."""
     if not screen or not screen.strip():
         return "unknown"
     if _NEW_GAME_MARKERS[2] in screen or "Play Now!  (Default Scenario)" in screen:
@@ -336,13 +286,10 @@ def classify_screen(screen: str) -> str:
             return menu
     if any(marker in screen for marker in _MAIN_MENU_MARKERS):
         return "new_game_menu" if any(m in screen for m in _NEW_GAME_MARKERS) else "main_menu"
-    from tmux_game import in_game  # local: keeps this module importable without the harness
+    from tmux_game import in_game
     return "game" if in_game(screen) else "unknown"
 
 
-# ---------------------------------------------------------------- action lists
-
-# (action id, label, context, data action ids to try in order)
 _GAME_ACTIONS: tuple[tuple[str, str, str, tuple[str, ...]], ...] = (
     ("move_north", "step north", "DEFAULTMODE", ("UP",)),
     ("move_south", "step south", "DEFAULTMODE", ("DOWN",)),
@@ -360,7 +307,6 @@ _GAME_ACTIONS: tuple[tuple[str, str, str, tuple[str, ...]], ...] = (
     ("pickup", "pick up items", "DEFAULTMODE", ("quick_pickup", "pickup", "pickup_all")),
     ("pickup_all", "pick up from all nearby tiles", "DEFAULTMODE", ("pickup_all",)),
     ("look", "look around", "DEFAULTMODE", ("look",)),
-    # Select-tile keys: Shift+WASD in modern; classic keeps the vi-keys.
     ("look_north", "look north", "DEFAULTMODE", ("shift_n",)),
     ("look_east", "look east", "DEFAULTMODE", ("shift_e",)),
     ("look_south", "look south", "DEFAULTMODE", ("shift_s",)),
@@ -396,7 +342,7 @@ _GAME_ACTIONS: tuple[tuple[str, str, str, tuple[str, ...]], ...] = (
     ("main_menu", "open the main menu", "DEFAULTMODE", ("main_menu",)),
 )
 
-_CRAFT_FALLBACK = ("i", "F5")  # modern: inventory, then the Craft hub command (INVENTORY/CRAFT)
+_CRAFT_FALLBACK = ("i", "F5")
 
 
 def _game_actions(scheme: str) -> list[ActionSpec]:
@@ -404,7 +350,7 @@ def _game_actions(scheme: str) -> list[ActionSpec]:
     used: set[tuple[str, ...]] = set()
     for action_id, label, context, candidates in _GAME_ACTIONS:
         for candidate in candidates:
-            keys = bound_keys(scheme, context, candidate)[:1]  # one key: aliases are alternatives
+            keys = bound_keys(scheme, context, candidate)[:1]
             if keys:
                 if keys not in used:
                     actions.append(_spec(action_id, label, keys))
@@ -416,15 +362,10 @@ def _game_actions(scheme: str) -> list[ActionSpec]:
     return actions
 
 
-_BORDER_CHARS = "│┃"  # box drawing only: ASCII art full of "|" must not read as a frame
+_BORDER_CHARS = "│┃"
 
 
 def _frames(screen: str) -> list[tuple[int, int, int, set[int]]]:
-    """Bordered frames as (row count, left column, right column, rows), innermost left border.
-
-    A menu can overlap the sidebar (the inventory panel starts inside it), so each right border
-    pairs with the nearest border column on its left: that is the frame's own left edge.
-    """
     lines = screen.splitlines()
     columns: dict[int, set[int]] = {}
     for y, line in enumerate(lines):
@@ -442,12 +383,6 @@ def _frames(screen: str) -> list[tuple[int, int, int, set[int]]]:
 
 
 def list_rows(screen: str, limit: int = MAX_MENU_ROWS) -> tuple[Row, ...]:
-    """Content rows of the biggest bordered list on screen, hotkey or not.
-
-    Clicks need these: the modern inventory assigns no invlets, so its rows carry no hotkey and
-    the only way to pick one is to click it.  Keeping the frame with the most rows leaves the
-    sidebar's rows out.
-    """
     frames = _frames(screen)
     if not frames:
         return ()
@@ -457,11 +392,11 @@ def list_rows(screen: str, limit: int = MAX_MENU_ROWS) -> tuple[Row, ...]:
     for y in sorted(rows):
         line = lines[y]
         inner = line[left + 1:right]
-        text = re.split(r"\s{3,}", inner.strip())[0].strip()  # two-column lists: first cell only
+        text = re.split(r"\s{3,}", inner.strip())[0].strip()
         if len(text) < 3 or set(text) <= set("─-=_ "):
             continue
         if text.isupper() and len(text) <= 24:
-            continue  # column heading, not a row the game accepts a click on
+            continue
         x = left + 1 + (len(inner) - len(inner.lstrip()))
         found.append(Row(y, x, "", text[:MAX_LABEL]))
         if len(found) >= limit:
@@ -469,9 +404,6 @@ def list_rows(screen: str, limit: int = MAX_MENU_ROWS) -> tuple[Row, ...]:
     return tuple(found)
 
 
-# Screens whose mouse handling is verified: uilist rows (src/ui.cpp selects the row under the
-# cursor in the modern scheme) and the fork's inventory (tests/e2e/inventory_mouse.py).  The title
-# screen builds button rectangles but never reads them, so it gets keys only.
 _CLICK_MENUS = frozenset({"ingame_menu", "action_menu", "inventory", "item_actions", "menu"})
 
 
@@ -489,8 +421,6 @@ def _menu_actions(scheme: str, text: str, mouse: bool, menu: str, colored: str =
     ]
     rows = menu_rows(text, colored=colored) if text and "\n" in text else ()
     hotkey_rows = {row.y for row in rows}
-    # These screens are uilist-drawn, so their rows now confirm on the second click. Other
-    # generic framed menus include custom lists that still act on one click.
     double = menu in ("inventory", "item_actions", "action_menu", "ingame_menu") or (
         menu == "menu" and _uilist_frame(text.splitlines()) is not None)
     for row in rows:
@@ -511,7 +441,6 @@ def _menu_actions(scheme: str, text: str, mouse: bool, menu: str, colored: str =
                 actions.append(ActionSpec(f"secondary_click_row_{row.y}",
                                           f"right click the row for its item actions: {row.label}",
                                           (), (row.x, row.y)))
-        # The tested way out of an item screen without a key: a right click on empty ground.
         actions.append(ActionSpec("secondary_click_outside", "right click outside the menu to close",
                                   (), (0, 0)))
     return [a for a in actions if a.keys or a.click]
@@ -519,14 +448,6 @@ def _menu_actions(scheme: str, text: str, mouse: bool, menu: str, colored: str =
 
 def actions_for(screen: str, *, mode: str, scheme: str = "modern", mouse: bool = False,
                 text: str | None = None, colored: str = "") -> tuple[ActionSpec, ...]:
-    """The closed action list for one screen.
-
-    ``screen`` is either a menu id from :func:`classify_screen` or the raw pane text, which is
-    classified first.  ``text`` (defaults to ``screen`` when it looks like a pane) supplies the
-    menu rows whose hotkeys and click targets exist only at draw time; ``colored`` is the same
-    pane captured with colors, which the main menu needs for its shortcut letters.  The tiles
-    build has no text channel, so it gets the gameplay keys only: no invented clicks.
-    """
     menu = screen if screen in _KNOWN_MENUS else classify_screen(screen)
     pane = text if text is not None else (screen if "\n" in (screen or "") else "")
     if mode == "tiles":

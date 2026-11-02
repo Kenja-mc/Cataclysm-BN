@@ -8634,7 +8634,6 @@ void Character::mod_stamina( int mod )
 
 auto Character::overburden_percentage( const units::mass carried ) const -> int
 {
-    // Make it at least 1 gram to avoid divide-by-zero warning
     const units::mass max_weight = std::max( weight_capacity(), 1_gram );
     if( carried <= max_weight ) {
         return 0;
@@ -10710,8 +10709,6 @@ std::vector<detached_ptr<item>> Character::inv_dump_remove()
     for( auto it = worn.begin(); it != worn.end(); ) {
         detached_ptr<item> t;
         it = worn.erase( it, &t );
-        // A destroyed location leaves `t` empty; dropped clothing still sheds its worn
-        // mutations and morale contributions.
         if( !t ) {
             continue;
         }

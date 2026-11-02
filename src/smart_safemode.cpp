@@ -25,18 +25,14 @@
 namespace
 {
 
-/// Built-in special attacks that only hit an adjacent target.
 constexpr auto adjacent_only = std::array<std::string_view, 2> { "GRAB", "GRAB_DRAG" };
 
-/// Whether the attack can hurt someone it has no walking route to: turrets, spitters, leaps.
 auto reaches_without_route( const mtype_special_attack &atk ) -> bool
 {
     return dynamic_cast<const melee_actor *>( atk.get() ) == nullptr &&
            !std::ranges::contains( adjacent_only, std::string_view( atk->id ) );
 }
 
-/// One answer per monster and turn: the monster list, safe mode and the edge arrows ask
-/// about the same monster within a turn, and a failed route search is slow.
 struct reach_cache {
     time_point turn;
     std::map<std::tuple<const monster *, tripoint_bub_ms, tripoint_bub_ms,
@@ -61,7 +57,6 @@ auto route_reaches( const monster &mon, const avatar &you, const int proximity )
     if( const auto found = answers.find( key ); found != answers.end() ) {
         return found->second;
     }
-    // The monster's own settings, so a zombie that can smash or open your door can reach you.
     auto settings = source_settings;
     settings.max_dist = 2 * proximity;
     settings.max_length = 4 * proximity;
@@ -75,7 +70,6 @@ auto proximity() -> int
     return safe_mode_proximity <= 0 ? g_max_view_distance : safe_mode_proximity;
 }
 
-/// The answer when no route search is needed, nullopt when only a route can tell.
 auto answer_without_route( const monster &mon, avatar &you ) -> std::optional<bool>
 {
     if( mon.is_fleeing( you ) ) {
@@ -90,14 +84,12 @@ auto answer_without_route( const monster &mon, avatar &you ) -> std::optional<bo
     if( mon.type->has_flag( MF_IMMOBILE ) || mon.type->speed <= 0 ) {
         return false;
     }
-    // map::route returns a clear straight line at any distance, so the distance cap goes first.
     if( rl_dist( you.bub_pos(), mon.bub_pos() ) > 2 * proximity() ) {
         return false;
     }
     return std::nullopt;
 }
 
-/// Bound route work without treating unexamined monsters as harmless.
 constexpr auto max_route_searches = 12;
 
 auto group_threatens( const auto &mons, avatar &you ) -> bool
@@ -126,7 +118,7 @@ auto group_threatens( const auto &mons, avatar &you ) -> bool
     } );
 }
 
-} // namespace
+}
 
 namespace smart_safemode
 {
@@ -158,4 +150,4 @@ auto any_threatens( const std::vector<shared_ptr_fast<monster>> &mons, avatar &y
     return group_threatens( pointers, you );
 }
 
-} // namespace smart_safemode
+}

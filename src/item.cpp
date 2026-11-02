@@ -1228,14 +1228,12 @@ bool item::stacks_with( const item &rhs, bool check_components, bool skip_type_c
             if( item_vars_ == rhs.item_vars_ || !item_variants::cosmetic( *type ) ) {
                 return item_vars_ == rhs.item_vars_;
             }
-            // Cosmetic variants (which gem, which metal) stack like Don't Starve items; each keeps its own.
             auto mine = item_vars_;
             auto theirs = rhs.item_vars_;
             mine.erase( "variant" );
             theirs.erase( "variant" );
             return mine == theirs;
         }
-        // Stack modifier counts describe some of the units; they never keep stacks apart.
         if( item_vars_ == rhs.item_vars_ ) {
             return true;
         }
@@ -1297,7 +1295,6 @@ bool item::stacks_with( const item &rhs, bool check_components, bool skip_type_c
             }
             [[fallthrough]];
             default:
-                // Fresh and stale food stack with their rot averaged, but rotten food never joins fresh.
                 if( rotten() != rhs.rotten() ) {
                     return false;
                 }
@@ -2286,7 +2283,6 @@ void item::magazine_info( std::vector<iteminfo> &info, const iteminfo_query *par
 
 namespace
 {
-/// @brief Classify gun/ammo loudness volume into a plain-language hint, matching the sound-text bands used by @ref item::gun_noise.
 auto loudness_hint( int volume ) -> std::string
 {
     if( volume <= 0 ) {
@@ -2301,7 +2297,7 @@ auto loudness_hint( int volume ) -> std::string
     return _( "deafening" );
 }
 
-} // namespace
+}
 
 void item::ammo_info( std::vector<iteminfo> &info, const iteminfo_query *parts, int /* batch */,
                       bool /* debug */ ) const
@@ -5678,7 +5674,6 @@ std::string item::display_name( unsigned int quantity ) const
         }
     }
     if( !ammotext.empty() ) {
-        // Loaded rounds may carry stack modifiers (black powder handloads and so on).
         const item *mag = is_magazine() ? this : magazine_current();
         const item *rounds = mag ? ( mag->contents.empty() ? nullptr : &mag->contents.front() ) : this;
         if( rounds ) {
@@ -6720,8 +6715,6 @@ auto get_hourly_rotpoints_at_temp( const units::temperature temp ) -> int
 if( temp > 40_c ) {
     return 21240;
 }
-// HACK: due to frequent fahrenheit <-> celsius conversion, 18C is actually 17.777C
-// remove rounding after most of temperatures passed around are in `units::temperature`
 const float temp_c = static_cast<float>( units::to_millidegree_celsius( temp ) ) / 1000;
     return rot_chart[std::round( temp_c )];
 }
@@ -9322,9 +9315,6 @@ auto item::get_flag_injected_use_methods() const -> std::map<std::string, use_fu
     auto candidate_flags = item_tags;
     auto mods = is_gun() ? gunmods() : toolmods();
 
-    // There's similar logic in has_flag, but it uses scary recursion and a nested function. Also,
-    // it checks if a specific flag exists on an item, where this method GETS all the flags on
-    // an item
     for( const item *mod : mods ) {
         for( const flag_id &f : mod->type->item_tags ) {
             if( f->inherit() ) {
@@ -11709,7 +11699,6 @@ std::string item::type_name( unsigned int quantity ) const
         return iter->second;
     } else if( const auto *variant = item_variants::of( *this );
                variant != nullptr && ( quantity <= 1 || !item_variants::cosmetic( *type ) ) ) {
-        // A stack of cosmetic variants may mix several, so it goes by the plain type name.
         ret_name = variant->name.translated( quantity );
     } else {
         ret_name = type->nname( quantity );

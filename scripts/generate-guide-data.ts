@@ -51,7 +51,6 @@ async function readObjects(path: string, repoRoot: string): Promise<GameObject[]
   const text = await Deno.readTextFile(path)
   const root = v.parse(ObjectsSchema, JSON.parse(text))
   const objects = Array.isArray(root) ? root : [root]
-  // Preserve the upstream guide's source-line anchors, after validating the entire JSON document.
   let depth = 0
   let line = 1
   let startLine = 1
@@ -93,7 +92,6 @@ async function copyNotices(source: string, destination: string): Promise<void> {
 async function copyAsset(source: string, destination: string): Promise<void> {
   await ensureDir(dirname(destination))
   if (/\.png$/i.test(source)) {
-    // ImageMagick's portable CLI is also available in Ubuntu's ImageMagick 6 package.
     await run("convert", [
       source,
       "-define",
@@ -236,7 +234,6 @@ async function generate(output: string): Promise<void> {
     images++
   }
   await copyNotices(external, join(buildDir, "gfx/external_tileset"))
-  // ponytail: one current fork snapshot, split aliases when stable and nightly fork datasets are published separately.
   for (const alias of ["stable", "nightly", "latest"]) {
     await copy(buildDir, join(resolve(output), alias), { overwrite: true })
   }

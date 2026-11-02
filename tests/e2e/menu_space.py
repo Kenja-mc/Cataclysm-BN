@@ -1,12 +1,3 @@
-"""Space in Modern menus: selects the highlighted entry, exactly like Enter.
-
-Modern puts Space on the shared CONFIRM default, so every menu that registers
-CONFIRM gets it (a Lua UiList, the title menu, the Yes/No highlight) without a
-binding per context, and Space leaves the shared QUIT so it can no longer cancel
-those menus. The string inputs named in the handoff (uilist filter, keybinding
-search, world naming, the Lua console) keep their spaces as text. Classic keeps
-its own bindings (covered in pickup_flow).
-"""
 import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -18,13 +9,6 @@ from tmux_game import Game
 
 
 def boot_to_title(g, timeout=240):
-    """Fresh user dir: answer the language prompt, close the welcome popup, reach the title.
-
-    A cold boot can sit on an unpainted blocking popup; F5 is unbound on every screen
-    on the way to the title, so it nudges the first frame without ever answering or
-    confirming an unseen prompt. Once real content is drawn, only the known prompts
-    are answered.
-    """
     deadline = time.time() + timeout
     nudges = 0
     while time.time() < deadline:
@@ -49,7 +33,6 @@ def boot_to_title(g, timeout=240):
 
 
 def cell_of(g, text, screen=None):
-    """First screen cell holding `text`, searched across the whole width."""
     s = screen if screen is not None else g.screen()
     for y, line in enumerate(s.splitlines()):
         x = line.find(text)
@@ -59,7 +42,6 @@ def cell_of(g, text, screen=None):
 
 
 def tab_cell(g, label):
-    """A cell inside the `[label]` hitbox on the title's tab strip."""
     s = g.screen()
     strip = next(l for l in s.splitlines() if "[MOTD]" in l)
     y = s.splitlines().index(strip)
@@ -67,7 +49,6 @@ def tab_cell(g, label):
 
 
 def query_uilist(g, title, adds, drive):
-    """Opens a Lua UiList, lets `drive` interact with it, returns the chosen retval."""
     body = f"local menu=UiList.new() menu:title('{title}') {' '.join(adds)} out(menu:query())"
     with ThreadPoolExecutor(max_workers=1) as executor:
         result = executor.submit(g.lua, body)
@@ -102,12 +83,10 @@ def test_space_stays_text_in_menu_filter(g):
 
 
 def test_lua_console_keeps_spaces(g):
-    """The console's EDIT editor is a string editor: its spaces must arrive as text."""
     assert g.lua("out('two words')") == ["two words"], g.screen()
 
 
 def test_keybinding_search_keeps_spaces(g):
-    """The keybindings search shares its context with QUIT; spaces must still type."""
     open_main_menu(g)
     g.keys("4", delay=0.6)
     g.wait_for("Keybindings", timeout=15)
@@ -133,7 +112,6 @@ def test_space_opens_selected_title_entries(_g):
     g = Game(name="bn-e2e-title-space", options={"SAFEMODE": "false"})
     try:
         boot_to_title(g)
-        # Settings tab: the entry list must be open before Space picks Options.
         g.keys("T", delay=0.6)
         g.wait_for("Autopickup")
         g.keys("Space", delay=1.0)
@@ -148,10 +126,9 @@ def test_space_opens_selected_title_entries(_g):
         assert value_at(g, y) == before, "a second Space must restore the boolean option"
         g.keys("Escape", delay=0.8)
         g.wait_gone("Interface")
-        # New Game tab: Space enters character creation on the highlighted entry.
         g.keys("N", delay=0.6)
         g.wait_for("Custom Character")
-        g.keys("Up", delay=0.6)  # boot highlights Preset; move to Custom Character first
+        g.keys("Up", delay=0.6)
         g.keys("Space", delay=1.0)
         g.wait_for("Points left:")
     finally:
@@ -167,11 +144,9 @@ def test_title_space_quits_only_from_quit_selection(_g):
             g.keys("Right", delay=0.3)
         g.keys("Space", delay=0.8)
         g.wait_for("Really quit?")
-        # The highlight rests on No: Space answers No and returns to the title.
         g.keys("Space", delay=0.8)
         g.wait_gone("Really quit?")
         assert "[MOTD]" in g.screen(), "answering No must stay on the title\n" + g.screen()
-        # No closed the prompt without leaving Quit, so Space asks again; move to Yes.
         g.keys("Space", delay=0.4)
         g.wait_for("Really quit?")
         g.keys("Left", delay=0.4)
@@ -192,23 +167,20 @@ def test_title_mouse_hover_and_click(_g):
     g = Game(name="bn-e2e-title-mouse", options={"SAFEMODE": "false"})
     try:
         boot_to_title(g)
-        # Hovering a tab moves the highlight only: the settings list appears, nothing opens.
         x, y = tab_cell(g, "Settings")
         g.hover(x + 2, y)
         g.wait_for("Autopickup")
         assert "Unbound keys" not in g.screen(), "hover must highlight, not activate\n" + g.screen()
-        # A click on a sub-menu row selects and confirms it, like Space on that row.
         kx, ky = cell_of(g, "Keybindings")
         assert kx is not None, "the settings sub menu must be drawn\n" + g.screen()
         g.click(kx + 2, ky)
         g.wait_for("Unbound keys", timeout=15)
         g.keys("Escape", delay=0.5)
         g.wait_gone("Unbound keys")
-        # A click on the Quit tab activates Quit, which asks before it exits.
         qx, qy = tab_cell(g, "Quit")
         g.click(qx + 2, qy)
         g.wait_for("Really quit?")
-        g.keys("Space", delay=0.8)  # the highlight rests on No
+        g.keys("Space", delay=0.8)
         g.wait_gone("Really quit?")
         assert "[MOTD]" in g.screen(), "answering No must stay on the title\n" + g.screen()
     finally:
@@ -216,7 +188,6 @@ def test_title_mouse_hover_and_click(_g):
 
 
 def test_worldgen_name_keeps_spaces(_g):
-    """The world-name field shares its context with dialog keys; spaces must stay text."""
     g = Game(name="bn-e2e-worldname-space", options={"SAFEMODE": "false"})
     try:
         boot_to_title(g)

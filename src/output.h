@@ -365,8 +365,6 @@ void draw_border( const catacurses::window &w, nc_color border_color = BORDER_CO
                   const std::string &title = "", nc_color title_color = c_light_red );
 void draw_border_below_tabs( const catacurses::window &w, nc_color border_color = BORDER_COLOR );
 
-/// A single row of short tab names for narrow windows, such as the HUD sidebar; the current one
-/// is highlighted. Wraps nothing: tabs that do not fit are left out.
 auto draw_narrow_tabs( const catacurses::window &w, const std::vector<std::string> &labels,
                        size_t current ) -> void;
 

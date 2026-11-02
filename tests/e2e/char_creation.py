@@ -1,4 +1,3 @@
-"""Character creation on the smallest supported terminal."""
 import re
 import time
 
@@ -6,7 +5,6 @@ from tmux_game import Game
 
 
 def test_char_creation_overview_fits_small_terminal(_g):
-    """Upstream #10427: the OVERVIEW tab must show Scenario:/Profession: on an 80x24 terminal."""
     g = Game(name="bn-e2e-cc-overview", cols=80, rows=24, options={"SAFEMODE": "false"})
 
     def selected(word, name):

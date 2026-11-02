@@ -1,7 +1,3 @@
-"""Quick stack and sort pile: what moves into nearby storage and what stays.
-
-Tests that take `g` run on the runner's main game.
-"""
 import re
 
 from helpers import action_menu, arena, count_at, count_carried, give, settle, spawn
@@ -18,7 +14,6 @@ def test_quick_stack(g):
     assert count_at(g, 2, 0, "usb_drive") == 4, "drives should join the rack"
     assert count_carried(g, "usb_drive") == 0
     assert count_carried(g, "plastic_six_dice") == 1, "nothing nearby holds dice, so they stay"
-    # The random starting profession may carry something of the drives' category, which also goes.
     assert re.search(r"Stashed \d+ items into 1 spot", g.screen()), g.screen()
 
 

@@ -10,7 +10,6 @@ constexpr auto hex( const std::uint32_t v ) -> rgb
     return { .r = static_cast<std::uint8_t>( v >> 16 ), .g = static_cast<std::uint8_t>( v >> 8 ), .b = static_cast<std::uint8_t>( v ) };
 }
 
-// Dark and bright variants are kept visibly distinct because the game encodes meaning in them.
 constexpr auto tokyo_night = palette{ {
         hex( 0x1a1b26 ), hex( 0xc53b53 ), hex( 0x5f8a3a ), hex( 0xb5833a ),
         hex( 0x3d59a1 ), hex( 0x9d7cd8 ), hex( 0x0f94b0 ), hex( 0xa9b1d6 ),
@@ -39,7 +38,7 @@ constexpr auto everforest = palette{ {
         hex( 0x7fbbb3 ), hex( 0xd699b6 ), hex( 0x83c092 ), hex( 0xd3c6aa )
     } };
 
-} // namespace
+}
 
 auto builtin_palette( const std::string &theme ) -> std::optional<palette>
 {
@@ -57,4 +56,4 @@ auto builtin_palette( const std::string &theme ) -> std::optional<palette>
 
 auto inherits_terminal( const std::string &theme ) -> bool { return theme == "terminal"; }
 
-} // namespace ui_theme
+}

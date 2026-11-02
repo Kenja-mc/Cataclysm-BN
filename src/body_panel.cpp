@@ -35,14 +35,12 @@ struct wound {
     nc_color color;
 };
 
-/// Walks one limb's conditions worst first, visiting each wound.  Returning false
-/// from `visit` stops the walk, so the compact "worst one only" case stays cheap.
 template<typename Visit>
 auto for_each_wound( const avatar &you, const bodypart_id &bp, Visit visit ) -> void
 {
     if( you.get_part_hp_cur( bp ) <= 0 ) {
         const auto text = you.has_effect( effect_mending, bp.id() ) ? _( "mending" )
-                                                                    : _( "broken" );
+                          : _( "broken" );
         if( !visit( wound{ text, c_magenta } ) ) {
             return;
         }
@@ -74,7 +72,6 @@ auto for_each_wound( const avatar &you, const bodypart_id &bp, Visit visit ) -> 
     }
 }
 
-/// Only the first (worst) wound for compact display.
 auto first_wound_of( const avatar &you, const bodypart_id &bp ) -> std::optional<wound>
 {
     auto out = std::optional<wound>();
@@ -85,7 +82,6 @@ auto first_wound_of( const avatar &you, const bodypart_id &bp ) -> std::optional
     return out;
 }
 
-/// What is wrong with one limb, worst first; treated conditions come last.
 auto wounds_of( const avatar &you, const bodypart_id &bp ) -> std::vector<wound>
 {
     auto out = std::vector<wound>();
@@ -96,7 +92,7 @@ auto wounds_of( const avatar &you, const bodypart_id &bp ) -> std::vector<wound>
     return out;
 }
 
-} // namespace
+}
 
 namespace body_panel
 {
@@ -104,7 +100,6 @@ namespace body_panel
 auto draw( avatar &you, const catacurses::window &w ) -> void
 {
     werase( w );
-    // The worst problem of each hurt limb, then a hint for the full view.
     auto lines = std::vector<wound>();
     for( const auto &bp : you.get_all_body_parts( true ) ) {
         if( const auto found = first_wound_of( you, bp ) ) {
@@ -124,26 +119,23 @@ auto draw( avatar &you, const catacurses::window &w ) -> void
     for( int i = 0; i < static_cast<int>( lines.size() ) && i < rows; i++ ) {
         trim_and_print( w, point( 0, i ), width, lines[i].color, lines[i].text );
     }
-    // Looking the key up walks every binding, so only redo it when bindings change.
-    static auto key = std::string();
-    static auto key_version = -1;
-    if( key_version != inp_mngr.bindings_version() ) {
-        key = press_x( ACTION_BODY_STATUS, "", "", "" );
-        if( key.empty() && get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
-            key = string_format( _( "%s → Info" ), press_x( ACTION_ACTIONMENU, "", "", "" ) );
+    static auto cached_key = std::string();
+    static auto cached_key_version = -1;
+    if( cached_key_version != inp_mngr.bindings_version() ) {
+        cached_key = press_x( ACTION_BODY_STATUS, "", "", "" );
+        if( cached_key.empty() && get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
+            cached_key = string_format( _( "%s → Info" ), press_x( ACTION_ACTIONMENU, "", "", "" ) );
         }
-        key_version = inp_mngr.bindings_version();
+        cached_key_version = inp_mngr.bindings_version();
     }
-    if( !key.empty() ) {
-        // Right under the wounds, so a short list leaves no gap where the figure was.
+    if( !cached_key.empty() ) {
         const auto row = std::min( rows, static_cast<int>( lines.size() ) );
         trim_and_print( w, point( 0, row ), width, c_dark_gray,
-                        string_format( _( "%s: details" ), key ) );
+                        string_format( _( "%s: details" ), cached_key ) );
     }
     wnoutrefresh( w );
 }
 
-/// The full per-limb report shown by the h key.
 auto report_text( avatar &you ) -> std::string
 {
     auto text = std::string();
@@ -161,20 +153,18 @@ auto report_text( avatar &you ) -> std::string
     if( you.get_perceived_pain() > 0 ) {
         text += "\n" + string_format( _( "Pain: %d" ), you.get_perceived_pain() ) + "\n";
     }
-    text += "\n" + colorize( _( "Bandages stop bleeding, disinfectant prevents infection, splints help broken limbs mend." ),
-                             c_dark_gray );
+    text += "\n" + colorize(
+                _( "Bandages stop bleeding, disinfectant prevents infection, splints help broken limbs mend." ),
+                c_dark_gray );
     return text;
 }
 
-/// The Modern body report: the wheel scrolls a long report, the scrollbar shows
-/// the position and is clickable, and Close (or Escape) leaves.  Information
-/// only: no click here spends moves or touches the body.
 auto show_details_mouse( const std::string &text ) -> void
 {
     constexpr auto border = 1;
     constexpr auto scrollbar_width = 1;
     constexpr auto button_height = 1;
-    constexpr auto wheel_step = 3;
+    constexpr auto wheel_lines_per_notch = 3;
 
     const auto max_text_width = std::max( 1, FULL_SCREEN_WIDTH - 2 * border - scrollbar_width );
     const auto lines = foldstring( text, max_text_width );
@@ -194,8 +184,6 @@ auto show_details_mouse( const std::string &text ) -> void
     const auto close_label_width = utf8_width( close_label, true );
     content_width = std::max( content_width, close_label_width );
 
-    // Everything below is recomputed on resize, because the window and the
-    // cells the mouse is tested against must match what is drawn.
     auto viewport = 0;
     auto win_width = 0;
     auto win_height = 0;
@@ -213,7 +201,6 @@ auto show_details_mouse( const std::string &text ) -> void
         viewport = std::min<int>( lines.size(), max_viewport );
         win_width = std::min( TERMX, content_width + 2 * border + scrollbar_width );
         win_height = viewport + 2 * border + button_height;
-        // The scrollbar takes the column left of the right border.
         scrollbar_pos = point( win_width - 1 - scrollbar_width, border );
         close_pos = point( std::max( border, ( win_width - close_label_width ) / 2 ),
                            win_height - 1 - border );
@@ -259,9 +246,9 @@ auto show_details_mouse( const std::string &text ) -> void
             done = true;
         } else if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
             if( scrollable ) {
-                // Text view convention: the wheel turns three lines per notch.
                 scroll_pos = std::clamp(
-                                 scroll_pos + ( action == "SCROLL_DOWN" ? wheel_step : -wheel_step ), 0,
+                                 scroll_pos + ( action == "SCROLL_DOWN" ? wheel_lines_per_notch :
+                                                -wheel_lines_per_notch ), 0,
                                  static_cast<int>( lines.size() ) - viewport );
                 ui.invalidate_ui();
             }
@@ -269,7 +256,6 @@ auto show_details_mouse( const std::string &text ) -> void
             const auto mouse = ctxt.get_coordinates( win );
             auto now_hover = false;
             if( mouse ) {
-                // get_coordinates() is relative to the window centre.
                 const auto cell = mouse->xy().raw() + point( getmaxx( win ), getmaxy( win ) ) / 2;
                 if( cell.y == close_pos.y && cell.x >= close_pos.x &&
                     cell.x < close_pos.x + close_label_width ) {
@@ -279,8 +265,7 @@ auto show_details_mouse( const std::string &text ) -> void
                     }
                 } else if( scrollable && action == "SELECT" && cell.x == scrollbar_pos.x &&
                            cell.y >= scrollbar_pos.y && cell.y < scrollbar_pos.y + viewport ) {
-                    const auto hit = scrollbar_input::click(
-                    {
+                    const auto hit = scrollbar_input::click( {
                         .offset = scrollbar_pos,
                         .viewport_size = viewport,
                         .content_size = static_cast<int>( lines.size() ),
@@ -288,8 +273,6 @@ auto show_details_mouse( const std::string &text ) -> void
                         .scroll_to_last = true,
                     }, cell );
                     if( hit ) {
-                        // A text view shows whole pages, so the bar's last row
-                        // is the first row of the last page.
                         scroll_pos = std::min( hit->viewport_pos,
                                                static_cast<int>( lines.size() ) - viewport );
                         ui.invalidate_ui();
@@ -310,8 +293,7 @@ auto show_details( avatar &you ) -> void
         show_details_mouse( report_text( you ) );
         return;
     }
-    // Classic keeps the plain upstream popup.
     popup( report_text( you ) );
 }
 
-} // namespace body_panel
+}

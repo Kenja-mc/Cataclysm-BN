@@ -1702,7 +1702,6 @@ void explosion_funcs::regular( const queued_explosion &qe )
                 if( pr.second > 0 ) {
                     return string_format( _( "taking %d damage" ), pr.second );
                 }
-                // "You are hit by the shrapnel, but take no damage."
                 return critter->is_player() ? _( "but take no damage" ) : _( "but takes no damage" );
             }();
             if( critter->is_player() ) {

@@ -26,15 +26,12 @@ def check_hud(session):
     options = {"FONT_WIDTH": "8", "FONT_HEIGHT": "16", "FONT_SIZE": "16",
                "SCALING_FACTOR": "1", "HUD_ICONS": "ascii", "HUD_COMBAT_BOX": "off",
                "HUD_VEHICLE_BOX": "off", "HUD_WEATHER_BOX": "off"}
-    # The classic layout reserves 44 font cells, regardless of the map's tile dimensions.
     config = session.curses_userdir / "config" / "panel_options.json"
     config.write_text(json.dumps([{"current_layout_id": "classic", "layouts": []}]))
     observations = {}
     for side in ("right", "left"):
         opts = {**options, "SIDEBAR_POSITION": side}
         off = session.launch(f"{side}-off", opts)
-        # Read the terminal size from the capture: TERMINAL_X/Y are physical font cells and the
-        # window size has changed before (60-row runs made a hardcoded height lie).
         width, height, _ = frame_rgb(off)
         require(width % 8 == 0 and height % 16 == 0,
                 f"{side}: unexpected capture size {width}x{height}")
@@ -45,7 +42,6 @@ def check_hud(session):
             label = f"{side}-{corner}"
             on = session.launch(label, {**opts, "HUD_WEATHER_BOX": corner})
             x0, y0, x1, y1 = changed_bounds(off, on, origin, edge)
-            # HUD uses UI cells, not map tiles.
             require(y1 - y0 + 1 == 6 * 16,
                     f"{label}: weather facts were clipped or laid out in map tiles: {(x0, y0, x1, y1)}")
             if corner == "top_left":
@@ -59,8 +55,6 @@ def check_hud(session):
 
 
 class DashboardSession(Session):
-    """Use the same real saved-car fixture as the registered native dashboard case."""
-
     def build_world(self):
         build_driving_dashboard_world(self)
 
@@ -89,11 +83,7 @@ def main():
         session.start()
         session.build_world()
         observations = check_hud(session)
-        # Close the first session before the second replaces TMUX_TMPDIR, so each tmux server is
-        # stopped from its own environment.  The saved world stays on disk.
         session.close()
-        # A second fixture starts with the avatar in a spawned car; its world is separate so the
-        # weather captures keep their clear map.
         dashboard.start()
         dashboard.build_world()
         observations["dashboard"] = check_dashboard(dashboard)

@@ -1,9 +1,3 @@
-"""Mouse support in the help menu, the scores screen, and the examine item action list.
-
-Modern scheme only: classic keeps ignoring clicks. Every click lands on a cell the screen
-really drew (a topic row, a tab label, a scrollbar cell, an action row), so the tests also
-catch hit testing that drifted from the rendering. Keyboard paths stay open throughout.
-"""
 import re
 
 from fixtures import shared_game
@@ -11,7 +5,6 @@ from helpers import HELPERS, action_menu, arena, empty_inventory, give, option_v
 
 
 def find_scrollbar(screen):
-    """Locate a drawn vertical scrollbar as (top_y, bottom_y, x)."""
     lines = screen.splitlines()
     best = None
     for y, line in enumerate(lines):
@@ -31,7 +24,6 @@ def find_scrollbar(screen):
 
 
 def row_of(screen, text):
-    """First (x, y) of a text snippet on screen, searching top to bottom."""
     for y, line in enumerate(screen.splitlines()):
         x = line.find(text)
         if x >= 0:
@@ -48,7 +40,6 @@ def has_row(screen, text):
 
 
 def pane_rows(screen, top, bottom):
-    """The visible lines of a text pane between the scrollbar arrows."""
     return screen.splitlines()[top + 1:bottom]
 
 
@@ -83,7 +74,6 @@ def test_help_topic_opens_by_click(g):
         arena(game)
         open_help(game)
 
-        # Clicking the header or a border column must not open any topic.
         header = row_of(game.screen(), "Please press one of the following")
         game.click(*header)
         assert "survival roguelike" not in game.screen(), \
@@ -97,8 +87,6 @@ def test_help_topic_opens_by_click(g):
         screen = game.screen()
         assert "survival roguelike" in screen, "the double clicked topic should open\n" + screen
 
-        # Introduction fits the fixed-height help viewer. Open a genuinely long topic
-        # before exercising the shared scrollbar.
         game.keys("Escape", delay=0.8)
         x, y = row_of(game.screen(), "Items overview")
         game.click(x, y)
@@ -117,7 +105,6 @@ def test_help_topic_opens_by_click(g):
         assert pane_rows(screen, top, bottom) != before, \
             "the scrollbar track must scroll the topic text\n" + screen
 
-        # Keyboard still works in the viewer and in the menu.
         game.keys("Escape", delay=0.8)
         assert "Please press one of the following" in game.screen(), game.screen()
         game.keys("b", delay=0.8)
@@ -132,7 +119,6 @@ def test_help_wheel_moves_cursor_and_confirm_opens(g):
         arena(game)
         open_help(game)
         x, y = row_of(game.screen(), "Introduction")
-        # One wheel notch moves the cursor one row down; Enter then opens that topic.
         game.type(f"\x1b[<65;{x + 1};{y + 1}M", delay=1)
         game.keys("Enter", delay=0.8)
         assert "Move with" in game.screen(), \
@@ -178,12 +164,10 @@ def test_scores_tab_click_and_text_scroll(g):
         screen = game.screen()
         assert screen != first_tab, "clicking the SCORES tab should switch tabs\n" + screen
 
-        # A wheel notch over the text pane must keep the screen open and answering.
         game.type(f"\x1b[<65;{tx + 1};{ty + 10}M", delay=1)
         screen = game.screen()
         assert "KILLS" in screen, "the wheel must keep the scores screen open\n" + screen
 
-        # A pane long enough to draw a scrollbar must scroll from a track click.
         bar = find_scrollbar(screen)
         if bar:
             top, bottom, bx = bar
@@ -205,7 +189,6 @@ def test_examine_action_click_selects_then_runs(g):
         rock = display_name(game, "rock")
         pipe = display_name(game, "pipe")
 
-        # Two clicks on the same row: the first selects, the second runs the action.
         game.keys("i", delay=1.2)
         x, y = row_of(game.screen(), rock)
         game.click(x, y, button=2)
@@ -220,7 +203,6 @@ def test_examine_action_click_selects_then_runs(g):
         assert wait_until(lambda: "Drop" not in game.screen(), timeout=10), \
             "the second click on the same row must run the action\n" + game.screen()
 
-        # The toggle really happened through the clicked row.
         game.keys("Escape", delay=0.8)
         rock = display_name(game, "rock")
         game.keys("i", delay=1.2)
@@ -231,8 +213,6 @@ def test_examine_action_click_selects_then_runs(g):
         game.keys("Escape", delay=0.8)
         game.keys("Escape", delay=0.8)
 
-        # One click plus Enter: the click must have moved the selection to the clicked row,
-        # otherwise Enter would run the still selected first action instead.
         game.keys("i", delay=1.2)
         x, y = row_of(game.screen(), pipe)
         game.click(x, y, button=2)

@@ -83,12 +83,9 @@ FOLDED_PATHS = (
 FOLD_NOTE = ("**Fold required:** this change touches item data the fork folded; fold new items "
              "into variants and add a migration (AGENTS.md, Upstream merges step 2).")
 
-BODY_BUDGET = 58000       # GitHub stops at 65536 characters per comment.
-COMPARE_LIMIT = 250       # The compare endpoint returns at most 250 commits per response.
+BODY_BUDGET = 58000
+COMPARE_LIMIT = 250
 MAX_COMMIT_PAGES = 40
-# Checkpoint granularity: each batch of commits is fully written before the checkpoint moves,
-# and a run stops after this many batches or issues so a backfill stays inside rate limits and
-# the next run resumes from the checkpoint.
 BATCH_COMMITS = 20
 MAX_BATCHES = 10
 MAX_NEW_ISSUES = 25
@@ -96,7 +93,6 @@ RETRY_MARKERS = ("rate limit", "http 403", "http 429", "abuse detection")
 
 
 def api(endpoint, *, data=None, method="GET", paginate=False):
-    """Run one `gh api` call. Upstream is never written; throttling is retried."""
     if method != "GET" and endpoint.split("?", 1)[0].startswith(f"repos/{UPSTREAM}/"):
         raise ValueError("Refusing to change the upstream repository")
     command = ["gh", "api", "--hostname", "github.com", "--method", method, endpoint]
@@ -120,7 +116,6 @@ def api(endpoint, *, data=None, method="GET", paginate=False):
 
 
 def plain(value, limit):
-    """Collapse untrusted text, name PR refs and drop mention and issue-reference sigils."""
     text = "".join(ch for ch in str(value) if ch.isprintable() or ch in "\t\n\r ")
     text = " ".join(text.split())[:limit].strip()
     text = re.sub(r"\(#([0-9]{1,7})\)", r"(PR \1)", text)
@@ -167,21 +162,20 @@ def balance_subject(subject):
 
 
 def feature_from_commit(commit, pr_map=None):
-    """Return the clear feature this commit declares, or None for manual classification."""
     if not isinstance(commit, dict) or not isinstance(commit.get("sha"), str) \
             or not SHA.fullmatch(commit["sha"]):
         raise ValueError("Invalid upstream commit SHA")
     subject = commit_subject(commit)
     if len(commit.get("parents") or []) > 1:
-        return None  # A merge repeats the branch commits; classify the commits themselves.
+        return None
     match = FEATURE_SUBJECT.match(subject)
     if not match:
         return None
     scope = (match.group("scope") or "").strip()
     if BLOCKED_SCOPES & {part.strip().lower() for part in re.split(r"[/,]", scope)}:
-        return None  # Balance work is rejected wholesale by the fork rules.
+        return None
     if balance_subject(subject):
-        return None  # A balance subject is balance work even without the balance scope.
+        return None
     title = " ".join(match.group("title").split())
     pr = ""
     pr_match = PR_REF.search(title)
@@ -208,7 +202,6 @@ def feature_from_commit(commit, pr_map=None):
 
 
 def commit_files(commit, api=api):
-    """Return the file entries of an upstream commit, or an empty list when unavailable."""
     payload = api(f"repos/{UPSTREAM}/commits/{commit['sha']}")
     files = payload.get("files") if isinstance(payload, dict) else None
     if not isinstance(files, list):
@@ -244,7 +237,6 @@ def changes_world_option_range(files):
 
 
 def classify(commits, merged=(), pr_map=None, api=None):
-    """Split a range into feature candidates, uncertain commits and already-merged commits."""
     features, uncertain, already = [], [], []
     for commit in commits:
         feature = feature_from_commit(commit, pr_map)
@@ -276,7 +268,6 @@ def chunked(items, size):
 
 
 def compare_range(base, head, api=api):
-    """Return the compare payload and every page of commits, rejecting incomplete or duplicate pages."""
     for ref in (base, head):
         if not isinstance(ref, str) or not SHA.fullmatch(ref):
             raise ValueError("Invalid comparison ref")
@@ -299,7 +290,6 @@ def compare_range(base, head, api=api):
 
 
 def collect_commits(base, head, api=api):
-    """Return every commit from base to head, walking history past the compare cap if needed."""
     payload, commits = compare_range(base, head, api=api)
     if payload.get("status") not in ("ahead", "identical"):
         raise ValueError("Upstream ancestry changed; review the checkpoint rather than skipping commits")
@@ -314,7 +304,6 @@ def collect_commits(base, head, api=api):
 
 
 def walk_commits(base, head, total, api=api):
-    """Read oldest-first commits from the head history when compare truncated at its cap."""
     commits, seen = [], set()
     for page in range(1, MAX_COMMIT_PAGES + 1):
         batch = api(f"repos/{UPSTREAM}/commits?sha={head}&per_page=100&page={page}")
@@ -339,7 +328,6 @@ def walk_commits(base, head, total, api=api):
 
 
 def merge_pr_map(commits, api=api):
-    """Map branch commits of merge-commit PRs to their PR so their features group reliably."""
     mapping = {}
     for commit in commits:
         parents = commit.get("parents") or []
@@ -371,7 +359,6 @@ def merge_pr_map(commits, api=api):
 
 
 def merged_in_range(repo, base, api=api):
-    """Return commits in base..head the fork already merged, plus the fork's upstream merge base."""
     payload = api(f"repos/{repo}/compare/main...{UPSTREAM.split('/')[0]}:main?per_page=1")
     merge_base = (payload.get("merge_base_commit") or {}).get("sha") if isinstance(payload, dict) else None
     if not isinstance(merge_base, str) or not SHA.fullmatch(merge_base):
@@ -543,7 +530,6 @@ def tracker_stopped(tracker):
 
 
 def feature_keys(body):
-    """Read feature markers from their own line; inline prose cannot fake an issue."""
     return sorted(set(FEATURE_MARKER.findall(body or "")))
 
 
@@ -553,7 +539,7 @@ def find_feature_issues(issues):
         login = ((issue.get("user") or {}).get("login") or "").lower()
         labels = {label.get("name") for label in issue.get("labels") or [] if isinstance(label, dict)}
         if not login.startswith("github-actions") and CANDIDATE_LABEL not in labels:
-            continue  # Prose pasted into a human issue must not hijack a feature key.
+            continue
         keys = feature_keys(issue.get("body"))
         if len(keys) > 1:
             raise ValueError(f"Feature issue #{issue.get('number')} records multiple features")
@@ -579,7 +565,6 @@ def recorded_shas(repo, issue, api=api):
 
 
 def tracker_marks(repo, tracker, api=api):
-    """Return the commit SHAs and feature keys already recorded in tracker comments by CI."""
     commits, features = set(), set()
     owner = repo.split("/")[0].lower()
     pages = api(f"repos/{repo}/issues/{tracker['number']}/comments?per_page=100", paginate=True)
@@ -594,7 +579,7 @@ def tracker_marks(repo, tracker, api=api):
                 continue
             body = comment.get("body") or ""
             commits |= set(COMMIT_MARKER.findall(body))
-            commits |= set(COMMIT_LINK.findall(body))  # rows from before per-commit markers
+            commits |= set(COMMIT_LINK.findall(body))
             features |= set(FEATURE_LINK_MARKER.findall(body))
     return commits, features
 
@@ -616,7 +601,6 @@ def tracker_intro_block():
 
 
 def refresh_tracker_body(body):
-    """Replace the CI-owned intro with the current text, leaving human edits untouched."""
     managed = tracker_intro_block()
     if TRACKER_INTRO_START in body and TRACKER_INTRO_END in body:
         return re.sub(re.escape(TRACKER_INTRO_START) + r".*?" + re.escape(TRACKER_INTRO_END),
@@ -628,7 +612,6 @@ def refresh_tracker_body(body):
 
 
 def refresh_tracker(repo, tracker, apply=True, api=api):
-    """Bring an existing tracker's CI prose up to date without touching the checkpoint or notes."""
     endpoint = f"repos/{repo}/issues/{tracker['number']}"
     current = api(endpoint)
     if not isinstance(current, dict):
@@ -657,7 +640,6 @@ def ensure_tracker(repo, tracker, base, api=api):
 
 
 def ensure_feature_issues(repo, features, known, api=api, apply=True):
-    """Create or extend exactly one issue per feature. `known` is updated as issues are created."""
     states = {}
     for key, commits in group_features(features).items():
         issue = known.get(key)
@@ -717,7 +699,6 @@ def advance_checkpoint(repo, tracker, base, head, api=api):
 
 
 def pending_rejected(states):
-    """Commits for closed feature issues that are not recorded yet, for the tracker."""
     rows = []
     for state in states.values():
         if not state["rejected"]:
@@ -728,7 +709,6 @@ def pending_rejected(states):
 
 
 def publish(repo, tracker, base, head, commits, known, merged=(), pr_map=None, api=api, apply=True):
-    """File issues and tracker rows; each completed batch advances the checkpoint."""
     if not apply:
         if tracker is None:
             print("DRY RUN would create the tracker issue")
@@ -795,7 +775,6 @@ def raw_commit(sha, subject, *, parents=1, author="octocat"):
 
 
 class FakeGitHub:
-    """Offline stand-in for the `gh api` calls the watcher makes."""
 
     def __init__(self, *, compare=None, walk=None, fail_when=None):
         self.calls = []
@@ -878,7 +857,6 @@ class FakeGitHub:
 
 
 def watch(fake, apply=True):
-    """Run the main flow against the fake API."""
     issues = owned_issues(REPO, api=fake)
     tracker = find_tracker(issues)
     if tracker_stopped(tracker):
@@ -961,7 +939,7 @@ def check_untrusted_text():
     body = feature_body(feature["key"], [feature])
     assert "<script>" not in body and "&lt;script&gt;" in body and "&#96;" in body
     assert f"<!-- upstream-feature:{feature['key']} -->" in body
-    assert body.count("<!--") == 2  # the feature marker plus the one commit marker
+    assert body.count("<!--") == 2
     row = report_row(hostile)
     assert "<script>" not in row and row.count("<!--") == 1 and "@evil" not in row
     state = {"key": "pr-9", "commits": [feature], "number": 7, "pr": "999",
@@ -1111,7 +1089,6 @@ def check_publish():
     assert all(method == "GET" for method, endpoint in fake.calls if UPSTREAM in endpoint)
 
     before = (len(fake.issues), [len(value) for value in fake.comments.values()])
-    # Simulate a crash before the checkpoint advanced: issues and rows are already recorded.
     fake.find(1)["body"] = fake.find(1)["body"].replace(
         f"<!-- upstream-checkpoint:{HEAD} -->", f"<!-- upstream-checkpoint:{BASE} -->")
     watch(fake)
@@ -1136,7 +1113,6 @@ def check_publish():
 
 
 def check_cross_batch():
-    """A feature split across batches keeps one issue and gains a commit comment."""
     global BATCH_COMMITS
     original = BATCH_COMMITS
     BATCH_COMMITS = 1
@@ -1156,7 +1132,6 @@ def check_cross_batch():
 
 
 def check_backfill_cap():
-    """A capped run stops at a batch boundary and the next run drains the rest."""
     global BATCH_COMMITS, MAX_NEW_ISSUES
     original = (BATCH_COMMITS, MAX_NEW_ISSUES)
     commits = sample_commits()

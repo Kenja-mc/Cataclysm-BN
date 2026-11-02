@@ -157,7 +157,6 @@ def world_grid(frame, root):
     info = json.loads((root / "gfx/MSX++UnDeadPeopleEdition/tile_config.json").read_text())["tile_info"][0]
     tx, ty = info["width"], info["height"]
     width, height = frame[:2]
-    # The saved classic sidebar uses 44 terminal cells. Native view counts round up partial tiles.
     map_width = width - 44 * (width // 132)
     return {"ox": math.ceil(map_width / tx) // 2 * tx,
             "oy": math.ceil(height / ty) // 2 * ty, "tx": tx, "ty": ty}

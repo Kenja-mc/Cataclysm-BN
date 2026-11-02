@@ -760,7 +760,6 @@ std::vector<detached_ptr<item>> obtain_and_tokenize_items( player &p, std::list<
         p.mod_moves( -ait.consumed_moves );
 
         if( p.is_worn( *ait.loc ) ) {
-            // consumed_moves already includes the takeoff cost
             const auto moves = p.moves;
             const auto taken_off = p.takeoff( *ait.loc, &res );
             p.set_moves( moves );

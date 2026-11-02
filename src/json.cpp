@@ -837,7 +837,6 @@ void JsonIn::seek( int pos )
 
 void JsonIn::eat_whitespace()
 {
-    // Straight from the buffer, like skip_string: indentation is most of the bytes we read.
     auto *const buf = stream->rdbuf();
     for( auto c = buf->sgetc(); ; c = buf->snextc() ) {
         if( c == std::char_traits<char>::eof() ) {
@@ -931,7 +930,6 @@ void JsonIn::skip_string()
         err << "expecting string but found '" << ch << "'";
         error( err.str(), -1 );
     }
-    // Straight from the buffer: per-character istream::get() was a large part of load time.
     auto *const buf = stream->rdbuf();
     for( auto c = buf->sbumpc(); ; c = buf->sbumpc() ) {
         if( c == std::char_traits<char>::eof() ) {

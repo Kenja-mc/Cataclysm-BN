@@ -1,9 +1,3 @@
-"""Every verb leaves a trace on the HUD or the map, not only a line in the message log.
-
-Each test presses one Modern binding and reads the drawn screen: the STATUS rule's stance,
-the LOADOUT weapon and ammo, the carried weight, or a map tile glyph. Floating HUD windows
-are off so nothing draws over the map region these reads assume.
-"""
 import re
 from contextlib import contextmanager
 
@@ -80,18 +74,15 @@ def stance(screen):
 
 
 def weapon_line(screen):
-    """The row right under the LOADOUT rule: the held weapon as the section draws it."""
     return section_lines(screen, "LOADOUT", 1)[0]
 
 
 def names(screen_row, name):
-    """Whether a drawn row names `name`, ignoring the edge, its markers and loose spacing."""
     bare = re.sub(r"[│├─◆@]", " ", screen_row)
     return " ".join(name.split()).casefold() in " ".join(bare.split()).casefold()
 
 
 def picker_row(game, name, header):
-    """The row naming `name` inside the open picker, never the sidebar's own copy of it."""
     lines = game.screen().splitlines()
     start = next((y for y, line in enumerate(lines) if header in line), None)
     assert start is not None, f"no {header!r} picker:\n" + game.screen()

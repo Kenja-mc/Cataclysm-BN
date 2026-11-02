@@ -15,7 +15,6 @@ from fixtures import retire, shared_game
 
 NEEDS = ("Pain", "Thirst", "Hunger", "Rest", "Body temp")
 SIDEBAR_WIDTH = 44
-# Keep Needs visible at minimum height.
 LABEL_PANELS = ("Needs", "Movement", "Location", "Weapon", "Controls", "Log",
                 "Hint", "Limbs", "Body", "Mana", "Stats", "Vehicle", "Wind",
                 "Location Alt", "Wgt/Vol", "Sound", "Moon", "Armor", "comp.Armor",
@@ -26,7 +25,6 @@ _layouts = {}
 
 
 def layout_userdir(moon, options):
-    """Seed each option profile independently, including after retirement deletes its directory."""
     key = (moon, tuple(sorted(options.items())))
     if key not in _layouts or not (_layouts[key] / "config" / "panel_options.json").exists():
         userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-hud-status-"))
@@ -35,7 +33,6 @@ def layout_userdir(moon, options):
         enabled = {"Needs", "Movement", "Location", "Weapon", "Controls", "Log"}
         if moon:
             enabled.add("Moon")
-        # Wide Moon can overwrite the phase.
         layout = "labels-narrow" if moon else "labels"
         (config / "panel_options.json").write_text(json.dumps([{
             "current_layout_id": layout,
@@ -48,7 +45,6 @@ def layout_userdir(moon, options):
 
 
 def hud_setup(game):
-    # A test may leave the pane or the avatar changed; both are part of the profile's start.
     game.resize(140, 45)
     empty_inventory(game)
     arena(game)
@@ -74,8 +70,6 @@ def hud_game(tag, moon=False, **options):
                               "YN_HOTKEYS": "false", "CHRONIC_PAIN": "false", **options}) as game:
         game.options_changed = False
         yield game
-        # The profile's options are the key the game is shared under; once a test changed one
-        # in-game, the game no longer matches its profile.
         if game.options_changed:
             retire(game)
 
@@ -145,7 +139,6 @@ def status_box(screen, cols=140):
 
 
 def status_needs(screen, cols=140, expected=None):
-    """Only pressing needs belong in Status; the sidebar remains the descriptor oracle."""
     expected = expected or {}
     box = status_box(screen, cols)
     sidebar = regions(screen, cols)[1]
@@ -168,7 +161,6 @@ def counters(game):
 
 
 def resized_frame(game, cols, rows, ready, timeout=10.0):
-    """Wait for a complete resize repaint, not its first visible Needs row."""
     deadline = time.time() + timeout
     previous, screen = None, ""
     while time.time() < deadline:
@@ -181,7 +173,6 @@ def resized_frame(game, cols, rows, ready, timeout=10.0):
 
 
 def set_hud_option(game, label, value):
-    """Observe the first saved frame without an extra redraw."""
     game.options_changed = True
     open_options(game)
     header = next(((line.index("[Interface]") + 2, y)
@@ -243,7 +234,6 @@ def test_status_fixed_needs_and_text_modes(_g):
         assert counters(game) == before, "presentation changes must not alter gameplay time"
         healthy(game)
         status_needs(game.screen())
-        # Neither neutral thirst nor hydration asks the player to do anything.
         assert game.lua("gapi.get_avatar():set_thirst(90) out('ok')") == ["ok"]
         status_needs(game.screen())
         screen = set_hud_option(game, "Status box", "Off")
@@ -285,14 +275,12 @@ def test_status_short_narrow_fallback_retains_needs(_g):
                     assert "Needs met" not in terrain, screen
                 else:
                     status_needs(screen, cols)
-                # Fit policy may keep a lean loadout box or return it to the sidebar.
                 assert "Walking" in terrain or re.search(r"\bWield\s*:\s*\S", sidebar), screen
                 weather_rows(screen, cols)
         assert counters(game) == before, "resize must not consume turns or moves"
 
 
 def body_temp(game, celsius):
-    """The moodle is the readback: Lua sets the body temperature, the HUD shows it."""
     assert game.lua("local a=gapi.get_avatar() "
                     f"a:set_temp_celsius(Temperature.from_celsius({celsius})) "
                     "out('set')") == ["set"]
@@ -300,7 +288,6 @@ def body_temp(game, celsius):
 
 
 def test_temperature_row_names_comfort_and_mild_chill_is_fine(_g):
-    """Mild chill keeps Needs met; only the extremes press the row, in the cold direction."""
     with hud_game("bodytemp") as game:
         set_hud_option(game, "Status box", "Top left")
         screen = set_hud_option(game, "Box icons", "Unicode")
@@ -318,7 +305,6 @@ def test_temperature_row_names_comfort_and_mild_chill_is_fine(_g):
         box = status_box(game.screen())
         assert re.search(r"│\s*z\s+Dead Tired", box), "Rest needs one glyph:\n" + box
         assert "zz" not in box, "the two-letter sleep glyph must be gone:\n" + box
-        # The detailed panel keeps the full value under a neutral, direction-free label.
         assert sidebar_needs(set_hud_option(game, "Status box", "Off"))["Body temp"] == "Very cold!", \
             game.screen()
         assert not re.search(r"\bHeat\b", game.screen()), game.screen()
@@ -331,8 +317,6 @@ def weather_rows(screen, cols=140, sidebar_width=SIDEBAR_WIDTH):
     y = light[0]
     line = terrain[y]
     left = line.index("│")
-    # The nearest closing border, not the last one on the row: a bordered sidebar to the right
-    # would otherwise become the box's right edge and pull map terrain into the rows.
     right = line.index("│", left + 1)
     assert right > left, screen
     rows = [row[left + 1:right].strip() for row in terrain[y - 2:y + 2]]
@@ -345,7 +329,6 @@ def weather_rows(screen, cols=140, sidebar_width=SIDEBAR_WIDTH):
 
 
 def moon_phase(screen, cols=140):
-    """Use the narrow Moon panel as the phase oracle."""
     sidebar = regions(screen, cols, 32)[1]
     found = re.search(r"\bMoon\s*:\s*([^\n]+)", sidebar)
     assert found and found.group(1).strip(), screen
@@ -355,7 +338,6 @@ def moon_phase(screen, cols=140):
 def date_reading(game):
     season, date, clock = game.lua("local t=gapi.current_turn() out(t:season()) "
                                    "out(tostring(t)) out(t:to_string_time_of_day())")
-    # Read the day without assuming season length.
     day = re.search(re.escape(season) + r"\D+(\d+)", date)
     assert day, date
     return season, day.group(1), clock
@@ -455,7 +437,6 @@ def test_weather_text_wind_origin_matches_instrument(_g):
             "local origin=message.text:match('from the ([%a%-]+)%.') "
             "if origin then out(origin) end end")
         assert len(origins) == 1, origins
-        # Keep the oracle independent of the arrow table.
         expected = "".join(word[0].upper() for word in origins[0].split("-"))
         wind = weather_rows(game.screen())[3]
         assert wind.rsplit(" ", 1)[-1] == expected, (wind, origins)
@@ -467,7 +448,6 @@ def test_weather_text_wind_origin_matches_instrument(_g):
 
 
 def set_debug_turn(game, turn):
-    """Use the real debug time editor; calendar mutation is not exposed to Lua."""
     game.keys("F12", delay=0.2)
     game.wait_for("Debug Functions")
     choose_menu_entry(game, "Map…")

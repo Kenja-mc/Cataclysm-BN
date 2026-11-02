@@ -19,7 +19,6 @@ namespace
 
 constexpr auto moves_per_item = 50;
 
-/// Same tool, ignoring charges: cosmetic variants mix, other variants must match.
 auto same_kind( const item &a, const item &b ) -> bool
 {
     if( a.typeId() != b.typeId() ) {
@@ -33,7 +32,7 @@ auto same_kind( const item &a, const item &b ) -> bool
     return va && vb ? va->id == vb->id : static_cast<bool>( va ) == static_cast<bool>( vb );
 }
 
-} // namespace
+}
 
 namespace combine_items
 {
@@ -47,7 +46,6 @@ auto is_eligible( const item &it ) -> bool
     if( max <= 0 || it.charges <= 0 || it.charges >= max ) {
         return false;
     }
-    // Tools fed by another item (fuel, batteries) refill from that instead.
     return !it.ammo_type() || it.ammo_type()->default_ammotype() == it.typeId();
 }
 
@@ -55,8 +53,8 @@ auto partners( const avatar &you, const item &target ) -> std::vector<item *>
 {
     using namespace std::views;
     return you.all_items()
-           | filter( [&]( const item * it ) { return it != &target && is_eligible( *it ) && same_kind( target, *it ); } )
-           | std::ranges::to<std::vector>();
+    | filter( [&]( const item * it ) { return it != &target && is_eligible( *it ) && same_kind( target, *it ); } )
+    | std::ranges::to<std::vector>();
 }
 
 auto combine( avatar &you, item &target ) -> void
@@ -69,7 +67,6 @@ auto combine( avatar &you, item &target ) -> void
         add_msg( m_info, _( "You have no other partly used %s." ), target.tname( 1, false ) );
         return;
     }
-    // Emptiest first, so the fewest items are left over.
     std::ranges::sort( sources, {}, &item::charges );
 
     const auto max = target.type->tool->max_charges;
@@ -96,4 +93,4 @@ auto combine( avatar &you, item &target ) -> void
                                emptied + 1 ), emptied + 1, target.tname( emptied + 1, false ) );
 }
 
-} // namespace combine_items
+}

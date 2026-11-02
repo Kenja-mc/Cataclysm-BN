@@ -16,7 +16,7 @@ namespace
 
 generic_factory<item_variant_set> all_variant_sets( "item variants" );
 
-} // namespace
+}
 
 IMPLEMENT_STRING_ID( item_variant_set, all_variant_sets );
 
@@ -31,9 +31,9 @@ auto set_for( const item &it ) -> const item_variant_set * // *NOPAD*
     return id.is_valid() ? &id.obj() : nullptr;
 }
 
-} // namespace
+}
 
-void item_variant_set::load( const JsonObject &jo, const std::string & )
+auto item_variant_set::load( const JsonObject &jo, const std::string & ) -> void
 {
     optional( jo, was_loaded, "cosmetic", cosmetic, false );
     variants.clear();
@@ -56,7 +56,7 @@ void item_variant_set::load( const JsonObject &jo, const std::string & )
     }
 }
 
-void item_variant_set::check() const
+auto item_variant_set::check() const -> void
 {
     if( !itype_id( id.str() ).is_valid() ) {
         debugmsg( "item_variants %s does not match an item type", id.str() );
@@ -78,11 +78,11 @@ void item_variant_set::check() const
 namespace item_variants
 {
 
-void load( const JsonObject &jo, const std::string &src ) { all_variant_sets.load( jo, src ); }
+auto load( const JsonObject &jo, const std::string &src ) -> void { all_variant_sets.load( jo, src ); }
 
-void reset() { all_variant_sets.reset(); }
+auto reset() -> void { all_variant_sets.reset(); }
 
-void check_consistency() { all_variant_sets.check(); }
+auto check_consistency() -> void { all_variant_sets.check(); }
 
 auto assign_random( item &it ) -> void
 {
@@ -131,7 +131,8 @@ auto cosmetic( const itype &type ) -> bool
 auto sprite( const item &it ) -> std::string
 {
     const auto *variant = of( it );
-    return variant == nullptr ? std::string() : variant->looks_like.empty() ? variant->id : variant->looks_like;
+    return variant == nullptr ? std::string() : variant->looks_like.empty() ? variant->id :
+           variant->looks_like;
 }
 
 auto find( const itype_id &type, const std::string &variant ) -> const item_variant * // *NOPAD*
@@ -150,4 +151,4 @@ auto disassembly_extras( const item &it ) -> std::vector<variant_component>
     return variant != nullptr ? variant->components : std::vector<variant_component>();
 }
 
-} // namespace item_variants
+}

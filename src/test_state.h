@@ -17,11 +17,10 @@ struct row {
 void set_path( const std::string &path );
 auto enabled() -> bool;
 void on_turn( const avatar &you );
-/// Rewrite the overlay list while a UI such as the aim window changes it between turns.
 void refresh_overlays( const avatar &you );
 void input_wait( bool waiting );
 void ui_show( const std::string &id, const std::string &title,
               const std::vector<row> &rows, int selected );
 void ui_close( const std::string &id );
 
-} // namespace test_state
+}

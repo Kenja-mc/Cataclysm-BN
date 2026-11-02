@@ -90,15 +90,10 @@ static const flag_id json_flag_SPLINT( "SPLINT" );
 
 namespace
 {
-/// Sidebar rows share one label field: the label is padded to `label_pad` cells and then
-/// followed by ": ", so every value of a row starts `label_width` cells past its label.
 constexpr int label_pad = 6;
 constexpr int label_width = label_pad + 2;
-/// The classic layout runs one word longer, so its field is wider.
 constexpr int label_pad_classic = 8;
-/// The needs panel names body temperature, which needs one more cell than the other panels.
 constexpr int label_pad_needs = 9;
-/// Label columns of a sidebar row; a 44-cell layout fits three of them, a 32-cell layout two.
 constexpr int label_column = 0;
 constexpr int label_column_step = 15;
 
@@ -108,7 +103,6 @@ struct label_options {
     nc_color color = c_light_gray;
 };
 
-/// Prints "Label: " with the label padded to `pad` and returns the column the value goes at.
 auto print_label( const catacurses::window &w, const label_options &opts,
                   const int pad = label_pad ) -> int
 {
@@ -827,8 +821,6 @@ auto needs_status::temperature( const avatar &u ) -> reading
         temp_color = c_blue;
         temp_string = _( "Freezing!" );
     }
-    // Mild warmth or chill asks for nothing, so the needs summary keeps its "Needs met" row;
-    // the detailed panels still show the value.
     const auto level = define_temp_level( extreme_cur_temp );
     const auto side = extreme_cur_temp < BODYTEMP_COLD ? thermal::cold :
                       extreme_cur_temp > BODYTEMP_HOT ? thermal::hot : thermal::none;
@@ -842,7 +834,6 @@ auto needs_status::read( const avatar &you ) -> readings
     auto thirst = you.get_thirst_description();
     auto hunger = you.get_hunger_description();
     auto rest = you.get_fatigue_description();
-    // Sated is the only hunger level with nothing to do; Engorged is a warning too.
     const auto sated = hunger.second == c_green;
     return {
         .pain = { .text = pain.first.empty() ? _( "None" ) : std::move( pain.first ), .color = pain.second, .fine = you.get_perceived_pain() <= 0 },
@@ -1053,7 +1044,6 @@ auto limb_health_text( const avatar &u, const bodypart_str_id &bp ) -> limb_heal
     if( get_option<std::string>( "HEALTH_STYLE" ) == "number" || u.has_effect( effect_got_checked ) ) {
         return { .text = string_format( "%3d  ", hp_cur ), .color = hp.second };
     }
-    //Trailing dots fill the bar out to the five cells the limbs panel reserves for it
     const auto pad = std::max( 0, 5 - utf8_width( hp.first ) );
     return { .text = std::move( hp.first ), .color = hp.second, .pad = pad };
 }
@@ -1305,7 +1295,6 @@ static void draw_needs_compact( const avatar &u, const catacurses::window &w )
         auto hunger_pair = u.get_hunger_description();
         mvwprintz( w, point_zero, hunger_pair.second, hunger_pair.first );
         hunger_pair = u.get_fatigue_description();
-        // NOLINTNEXTLINE(cata-use-named-point-constants)
         mvwprintz( w, point( 0, 1 ), hunger_pair.second, hunger_pair.first );
         auto pain_pair = u.get_pain_description();
         mvwprintz( w, point( 0, 2 ), pain_pair.second, pain_pair.first );
@@ -1588,7 +1577,6 @@ static void draw_stat_wide( avatar &u, const catacurses::window &w )
 namespace
 {
 
-/// Rows of the Location panel: place and coordinates, then the weather rows no box shows already.
 struct location_rows {
     bool sky_and_time = true;
     bool light_and_date = true;
@@ -1605,14 +1593,13 @@ auto current_location_rows() -> location_rows
     };
 }
 
-/// The 5x5 overmap beside the rows needs four of them.
 auto location_height( const bool minimap ) -> int
 {
     const auto rows = current_location_rows().count();
     return minimap ? std::max( rows, 4 ) : rows;
 }
 
-} // namespace
+}
 
 static void draw_loc_labels( const avatar &u, const catacurses::window &w, bool minimap )
 {
@@ -1660,7 +1647,6 @@ static void draw_loc_labels( const avatar &u, const catacurses::window &w, bool 
         } else if( g->get_levz() >= 0 ) {
             wprintz( w, c_light_gray, time_approx() );
         } else {
-            // NOLINTNEXTLINE(cata-text-style): the question mark does not end a sentence
             wprintz( w, c_light_gray, _( "???" ) );
         }
     }
@@ -1745,7 +1731,6 @@ static void draw_needs_narrow( const avatar &u, const catacurses::window &w )
     mvwprintz( w, point( col, 2 ), needs.hunger.color, "%s", needs.hunger.text );
     print_label( w, { .pos = point( label_column, 3 ), .label = _( "Rest" ) }, label_pad_needs );
     mvwprintz( w, point( col, 3 ), needs.rest.color, "%s", needs.rest.text );
-    // Body comfort, not the outdoor temperature.
     print_label( w, { .pos = point( label_column, 4 ), .label = _( "Body temp" ) }, label_pad_needs );
     mvwprintz( w, point( col, 4 ), needs.heat.color, "%s", needs.heat.text );
     wnoutrefresh( w );
@@ -2018,7 +2003,6 @@ static void draw_armor_comp( const avatar &u, const catacurses::window &w )
 
 namespace
 {
-/// One line for the log panel: the running activity and its progress, empty when off or idle.
 auto activity_progress_line( const avatar &u ) -> std::string
 {
     if( !get_option<bool>( "ACTIVITY_LINE" ) || !u.activity || u.activity->is_null() ) {
@@ -2049,7 +2033,7 @@ auto activity_progress_line( const avatar &u ) -> std::string
     }
     return string_format( _( "Activity: %s" ), verb );
 }
-} // namespace
+}
 
 static void draw_messages( avatar &u, const catacurses::window &w )
 {
@@ -2312,7 +2296,6 @@ static void draw_lighting_classic( const avatar &u, const catacurses::window &w 
 {
     werase( w );
 
-    // The weather box already shows the light level, but the sound level only lives here.
     if( !hud_boxes::weather_box_shows_environment() ) {
         const std::pair<std::string, nc_color> ll = get_light_level(
                 character_funcs::fine_detail_vision_mod( get_avatar() ) );
@@ -2465,7 +2448,6 @@ auto tail_budget() -> int
             continue;
         }
         const auto name = panel.get_name();
-        // These height overrides share this budget; querying them here would recurse.
         if( name == "Compass" || name == "Controls" ) {
             budget -= spacer;
             continue;
@@ -2506,7 +2488,7 @@ auto compass_rows() -> int
     return std::clamp( tail_budget() - controls_rows(), 0, compass_full_rows );
 }
 
-} // namespace
+}
 
 static bool spell_panel()
 {
@@ -2538,7 +2520,6 @@ static bool veh_panel()
     return ( get_avatar().in_vehicle || g->remoteveh() ) && !hud_boxes::vehicle_box_shown();
 }
 
-/// True when a floating HUD window owns this reading, so its sidebar panel steps aside.
 static bool hud_window_owns( const char *id )
 {
     return hud_windows::shown( id );
@@ -2677,7 +2658,6 @@ static std::vector<window_panel> initialize_default_label_narrow_panels()
     ret.emplace_back( draw_weapon_labels, translate_marker( "Weapon" ), 2, 32, true, weapon_panel );
     ret.emplace_back( draw_weightvolume_narrow, translate_marker( "Wgt/Vol" ), 2, 32,
                       true, weight_panel );
-    // Movement already shows the sound level.
     ret.emplace_back( draw_sound_narrow, translate_marker( "Sound" ), 1, 32, false );
     ret.emplace_back( draw_messages, translate_marker( "Log" ), -2, 32, true, log_panel );
     ret.emplace_back( draw_moon_narrow, translate_marker( "Moon" ), 2, 32, false );
@@ -2759,7 +2739,6 @@ auto grouped_hud_panel( const hud_sidebar::section content,
     auto panel = window_panel( [content]( avatar & you, const catacurses::window & w ) {
         hud_sidebar::draw( you, w, content );
     }, name, 1, 44, true, [id]() {
-        // A disabled or unfittable window hands its readings back to the sidebar.
         return !hud_windows::shown( id );
     } );
     panel.set_height_override( [content]() { return hud_sidebar::height( content ); } );
@@ -2804,8 +2783,6 @@ auto initialize_grouped_panels() -> std::vector<window_panel>
     return ret;
 }
 
-/// The fusion sidebar: status, surroundings, loadout, map and log, each opened by a section rule.
-/// The ribbon, the key bar and the VEHICLE card draw over the map (hud_fusion).
 auto initialize_fusion_panels() -> std::vector<window_panel>
 {
     auto ret = std::vector<window_panel>();
@@ -2827,7 +2804,7 @@ auto initialize_fusion_panels() -> std::vector<window_panel>
     return ret;
 }
 
-} // namespace
+}
 
 static std::map<std::string, std::vector<window_panel>> initialize_default_panel_layouts()
 {
@@ -2863,7 +2840,6 @@ std::vector<window_panel> &panel_manager::get_current_layout()
 
 std::string panel_manager::get_current_layout_id() const
 {
-    // Fusion needs a large screen; smaller ones use the grouped layout of the same width.
     return current_layout_id == "fusion" && !hud_fusion::fits() ? std::string( "grouped" ) :
            current_layout_id;
 }
@@ -3114,7 +3090,6 @@ void panel_manager::show_adm()
     ctxt.register_action( "TOGGLE_PANEL" );
 
     const std::vector<int> column_widths = { 17, 37, 17 };
-    // The HUD windows follow the layouts in the third column, under one header row.
     const auto hud_entries = hud_windows::entries();
     const auto layout_rows = static_cast<size_t>( layouts.size() );
     const auto hud_header = hud_entries.empty() ? size_t{ 0 } : size_t{ 1 };
@@ -3131,13 +3106,11 @@ void panel_manager::show_adm()
     // panels not renderable due to game configuration will not be in this map
     std::map<size_t, size_t> row_indices;
 
-    /// Rows the HUD section adds to the third column; none where the floating HUD is inactive.
     const auto hud_section_rows = [&]() -> size_t {
         return hud_windows::active() && !hud_entries.empty() ? hud_header + hud_entries.size() :
                size_t{ 0 };
     };
 
-    /// Toggles the HUD window on a third-column row; false for layouts and the header.
     const auto toggle_hud_at = [&]( const size_t row ) -> bool {
         if( !hud_windows::active() || row < layout_rows + hud_header ) {
             return false;
@@ -3148,7 +3121,6 @@ void panel_manager::show_adm()
         }
         hud_windows::toggle( get_avatar(), hud_entries[index].first );
         g->invalidate_main_ui_adaptor();
-        // The sidebar panel this window owns appears or disappears now.
         recalc = true;
         return true;
     };
@@ -3293,7 +3265,6 @@ void panel_manager::show_adm()
             }
         } else if( !swapping && action == "MOVE_PANEL" && current_col == 2 ) {
             if( current_row >= layout_rows ) {
-                // On a HUD row this is the keyboard way to bring that window to the front.
                 if( hud_windows::active() && current_row >= layout_rows + hud_header ) {
                     const auto index = current_row - layout_rows - hud_header;
                     if( index < hud_entries.size() ) {

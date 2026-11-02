@@ -1,4 +1,3 @@
-"""Safe mode repeats a short hint while it blocks, and the wait menu offers Sleep and 6 hours."""
 import os
 import re
 import time
@@ -8,7 +7,6 @@ from helpers import HELPERS, arena, bub_pos, empty_inventory, give, settle
 from safe_click import see_everything
 from tmux_game import Game, start_new_game
 
-# Modern wait-menu choices differ from Classic.
 BASE_OPTIONS = {"SHOW_WELCOME": "false", "HUD_WEATHER_BOX": "off", "CONTROL_SCHEME": "modern",
                 "HUD_WINDOWS": "false"}
 
@@ -16,7 +14,6 @@ TIME_OF_DAY = re.compile(r"(\d{1,2}):(\d{2}):(\d{2})\s*([AP]M)")
 
 
 def minutes_of_day(game):
-    """The clock on the sidebar, in minutes since midnight, or None if it is not drawn."""
     found = TIME_OF_DAY.findall(game.screen())
     if len(found) != 1:
         return None
@@ -25,7 +22,6 @@ def minutes_of_day(game):
 
 
 def safe_mode_messages(game):
-    """(full warning seen, short repeat seen) among the recent log entries."""
     found = game.lua("local t=gapi.get_messages(12); local long,short=0,0 "
                      "for i,v in ipairs(t) do "
                      "if v.text:find('safe mode is on') then long=1 end "
@@ -35,7 +31,6 @@ def safe_mode_messages(game):
 
 
 def open_wait_menu(game):
-    """Ctrl+X waits; a character carrying an alarm clock is asked about it first."""
     game.keys("C-x", delay=1.0)
     if "What do you want to do?" in game.screen():
         game.keys("W", delay=1.0)
@@ -49,11 +44,8 @@ def test_safe_mode_repeats_hint_while_movement_is_blocked(_g):
     try:
         start_new_game(game)
         game.define_lua(HELPERS)
-        # Strip rolled gear and traits so no starting item or morale can change what is warned.
         empty_inventory(game)
         arena(game)
-        # The shelter can start very dark; the zombies must be seen to be warned about, and rolled
-        # wildlife must not be spotted first.
         see_everything(game, True)
         assert game.lua("for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end out('ok')") \
             == ["ok"]
@@ -69,16 +61,12 @@ def test_safe_mode_repeats_hint_while_movement_is_blocked(_g):
 
         enabled_color = safe_indicator()
         assert enabled_color["fg"] in (32, 92), "enabled safe mode must be green"
-        # Glass cells keep each zombie in sight but away from the player: the pauses below give it
-        # turns, and a zombie that reaches the player buries the warnings under combat messages.
         assert game.lua("function caged(x, y) for dx=-1,1 do for dy=-1,1 do if dx ~= 0 or dy ~= 0 then "
                         "M:set_ter_at(here(x+dx,y+dy), TerId.new('t_reinforced_glass'):int_id()) end end end "
                         "M:set_ter_at(here(x,y), TerId.new('t_floor'):int_id()) "
                         "gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(x,y)) "
                         "return gapi.get_monster_at(here(x,y)) ~= nil end "
                         "out(caged(4,0))") == ["true"]
-        # A zombie placed from Lua is only noticed when a turn passes, so the first key may still
-        # run; keep pausing until the full warning is logged, then block one more action.
         for _ in range(4):
             if safe_mode_messages(game)[0]:
                 break
@@ -93,8 +81,6 @@ def test_safe_mode_repeats_hint_while_movement_is_blocked(_g):
         assert blocked_color["fg"] in (33, 93), \
             "blocked safe mode must be yellow, distinct from enabled green:\n" + game.screen_colors()
         assert blocked_color != enabled_color
-        # The hint is drawn while the blocked key is processed, which lands later on a loaded
-        # runner than the fixed key delay allows for.
         try:
             game.wait_for("Safe mode:", timeout=20)
         except AssertionError:
@@ -134,8 +120,6 @@ def test_wait_menu_offers_sleep_and_six_hour_hotkey(_g):
         game.wait_for("Are you sure you want to sleep?")
         game.keys("Escape", delay=0)
         game.wait_gone("Are you sure you want to sleep?", timeout=10)
-        # Isolate the fixture from rolled world state so wildlife or NPC chatter cannot interrupt
-        # the six-hour wait (sealed underground arena, monsters banished, avatar deafened).
         assert game.lua("local a=gapi.get_avatar() local p=a:get_pos_ms() "
                         "a:set_pos_ms(TripointBubMs.new(p.x,p.y,p.z-1)) arena() "
                         "a:add_effect(EffectTypeId.new('deaf'), TimeDuration.from_hours(12)) "
@@ -149,11 +133,7 @@ def test_wait_menu_offers_sleep_and_six_hour_hotkey(_g):
                         "local m=gapi.get_monster_at(here(dx,dy)) "
                         "if m and not m:is_avatar() then park(m) end end end out('ok')") == ["ok", "ok"], game.screen()
         settle(game)
-        # 6 is bound to menu-right in the modern scheme, but must still pick "6 hours".
-        # If a 'Stop waiting?' prompt still appears, the test must fail rather than answer it.
         assert "Stop waiting?" not in game.screen(), game.screen()
-        # The clock row redraws a moment after the move and the arena edits; wait for it
-        # rather than sampling once.
         deadline = time.time() + 10
         before = minutes_of_day(game)
         while before is None and time.time() < deadline:
@@ -162,7 +142,6 @@ def test_wait_menu_offers_sleep_and_six_hour_hotkey(_g):
         assert before is not None, game.screen()
         open_wait_menu(game)
         game.keys("6", delay=0)
-        # The entry firing closes the menu; the wait itself then runs in a few seconds.
         deadline = time.time() + 20
         while time.time() < deadline and "Wait for how long?" in game.screen():
             time.sleep(1)

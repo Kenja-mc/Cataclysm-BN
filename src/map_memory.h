@@ -26,19 +26,15 @@ struct memorized_terrain_tile {
     }
 };
 
-/** What kind of door the avatar last found locked on a memorized tile. */
 enum class locked_door_kind : std::uint8_t {
     none = 0,
     terrain = 1,
     vehicle = 2,
 };
 
-/** One memorized tile, with both of its layers, in global map-square coordinates. */
 struct memorized_tile {
     tripoint_abs_ms pos;
-    /// Base terrain layer; empty when only the overlay was memorized.
     memorized_terrain_tile base;
-    /// Overlay layer: furniture, vehicle part or trap id; empty when none was memorized.
     memorized_terrain_tile overlay;
 };
 
@@ -57,7 +53,6 @@ struct mm_submap {
                    !has_locked_doors();
         }
 
-        /** Whether the avatar has ever found a door on this submap locked. */
         auto has_locked_doors() const -> bool {
             for( const auto kind : locked_doors ) {
                 if( kind != 0 ) {
@@ -153,7 +148,6 @@ struct mm_submap {
         std::vector<memorized_terrain_tile>
         terrain_tiles; // base terrain layer             — 0 or SEEX*SEEY
         std::vector<int> symbols; // holds either 0 or SEEX*SEEY elements
-        // What the avatar learned from an actual open attempt: 0 none, 1 terrain door, 2 vehicle door.
         std::vector<std::uint8_t> locked_doors;
         bool valid = true;
 };
@@ -265,35 +259,14 @@ class map_memory
          */
         void clear_memorized_tile( const tripoint_abs_ms &pos );
 
-        /**
-         * Returns what kind of door the avatar last found locked at the given position,
-         * or locked_door_kind::none when no attempt has taught it that the door is locked.
-         * @param pos tile position, in global ms coords.
-         */
         auto get_locked_door( const tripoint_abs_ms &pos ) -> locked_door_kind;
 
-        /**
-         * Records that the avatar's own open attempt found a locked door at the given position.
-         * @param pos tile position, in global ms coords.
-         * @param kind whether the door belongs to terrain or to a vehicle.
-         */
         auto set_locked_door( const tripoint_abs_ms &pos, locked_door_kind kind ) -> void;
 
-        /**
-         * Forgets that a door at the given position was locked, e.g. after it was opened.
-         * @param pos tile position, in global ms coords.
-         */
         auto clear_locked_door( const tripoint_abs_ms &pos ) -> void;
 
-        /// Every door the loaded memory still records as locked, in global ms coords.
         auto locked_door_positions() const -> std::vector<tripoint_abs_ms>;
 
-        /**
-         * Tiles the memory holds whose submap lies inside [min, max], both inclusive, on the
-         * given z level.  Nothing outside those submaps is copied, so a long session with a wide
-         * explored area does not pay for it.  Only tiles with a memorized terrain or overlay
-         * layer are returned.
-         */
         auto memorized_tiles( const tripoint_abs_sm &min, const tripoint_abs_sm &max ) const
         -> std::vector<memorized_tile>;
 

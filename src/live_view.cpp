@@ -59,7 +59,6 @@ void live_view::show( const tripoint_bub_ms &p )
             }
             const int live_view_box_height = std::min( max_height, std::max( line_out + 2, MIN_BOX_HEIGHT ) );
 
-            // The box sits in the top-left corner whatever side the sidebar takes.
             win = catacurses::newwin( live_view_box_height, width, point_zero );
             ui.position_from_window( win );
         } );

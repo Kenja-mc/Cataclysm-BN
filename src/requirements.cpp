@@ -453,7 +453,6 @@ std::string requirement_data::list_missing() const
 
 namespace
 {
-/// How much of `comp` the inventory holds, for the count shown next to a missing item.
 auto held_amount( const item_comp &comp, const inventory &crafting_inv,
                   const std::function<bool( const item & )> &filter ) -> int
 {
@@ -461,7 +460,7 @@ auto held_amount( const item_comp &comp, const inventory &crafting_inv,
            ? crafting_inv.charges_of( comp.type, INT_MAX, filter )
            : crafting_inv.amount_of( comp.type, false, INT_MAX, filter );
 }
-} // namespace
+}
 
 std::vector<std::string> requirement_data::blocker_lines( const inventory &crafting_inv,
         const std::function<bool( const item & )> &filter, int batch ) const
@@ -473,11 +472,9 @@ std::vector<std::string> requirement_data::blocker_lines( const inventory &craft
         int missing_held = 0;
         for( const item_comp &comp : group ) {
             if( comp.has( crafting_inv, filter, batch ) ) {
-                // This alternative is available, so the group is not a blocker.
                 missing = nullptr;
                 break;
             }
-            // A group offers alternatives; name the one the player is closest to finishing.
             const int held = held_amount( comp, crafting_inv, filter );
             if( missing == nullptr || held > missing_held ) {
                 missing = &comp;

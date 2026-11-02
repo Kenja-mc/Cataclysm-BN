@@ -55,7 +55,6 @@ auto joined_keys( const std::vector<action_id> &acts ) -> std::string
     return out;
 }
 
-/// "CTRL+WASD" when the four peek directions share a modifier, else the north peek key.
 auto peek_keys( const input_context &ctxt ) -> std::string
 {
     constexpr auto ids = std::array{ "PEEK_N", "PEEK_W", "PEEK_S", "PEEK_E" };
@@ -92,18 +91,15 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
         { ACTION_CRAFT, _( "craft" ) }, { ACTION_AUTO_EXPLORE, _( "explore" ) },
         { ACTION_SEARCH_ACTION, _( "search" ) },
     };
-    // Toggles and base-keeping come after the keys a new player needs to act at all.
     const auto later = std::vector<std::pair<action_id, std::string>> {
         { ACTION_TOGGLE_SAFEMODE, _( "safe mode" ) }, { ACTION_TOGGLE_AUTO_TRAVEL_MODE, _( "auto travel" ) },
         { ACTION_QUICK_STACK, _( "stash" ) }, { ACTION_SORT_PILE, _( "sort pile" ) },
-        // Look goes last: it is the first to drop off a full strip, and hovering the map covers it.
         { ACTION_TOGGLE_PANEL_ADM, _( "sidebar" ) }, { ACTION_LOOK, _( "look" ) },
     };
     auto hints = std::vector<hint>();
     hints.reserve( everyday.size() + later.size() + 8 );
     auto push = [&]( std::string keys, std::string label ) {
         if( keys.empty() ) {
-            // An unbound hint would print get_desc()'s "Unbound globally!" text as if it were keys.
             return;
         }
         hint h;
@@ -127,7 +123,6 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
         push( joined_keys( { ACTION_MOVE_FORTH_LEFT, ACTION_MOVE_FORTH_RIGHT, ACTION_MOVE_BACK_LEFT, ACTION_MOVE_BACK_RIGHT } ),
               _( "diag" ) );
     }
-    // The key list fits one row beside move and diag, so it survives the tightest strip.
     push( first_key( ACTION_KEYBINDINGS ), _( "all keys" ) );
     push_all( everyday );
     if( modern ) {
@@ -136,7 +131,6 @@ auto collect_hints( const bool driving ) -> std::vector<hint>
             push( ctxt.get_desc( "NEXT_TARGET", 1 ), _( "target" ) );
         }
         push( first_key( ACTION_OPEN_MOVEMENT ), _( "stance" ) );
-        // Shift+direction moves the selection marker; calling it "look" made it read like peeking.
         push( joined_keys( { ACTION_SHIFT_N, ACTION_SHIFT_W, ACTION_SHIFT_S, ACTION_SHIFT_E } ),
               _( "select" ) );
         push( peek_keys( ctxt ), _( "peek" ) );
@@ -230,7 +224,7 @@ auto draw_hints( const catacurses::window &w, const std::vector<hint> &hints,
     }
 }
 
-} // namespace
+}
 
 auto draw_keyhints( const avatar &you, const catacurses::window &w ) -> void
 {
@@ -322,7 +316,6 @@ auto show_welcome_once() -> void
                 _( "The Controls strip in the sidebar shows the main keys; %s on any screen lists every key." ),
                 key( ACTION_KEYBINDINGS ) );
     popup( text );
-    // Caves of Qud lets you pick Classic or Roleplay at the start; same here, using the existing death prompt.
     auto death = uilist();
     death.text = _( "How should death work?  You can change this later under Options, General." );
     death.addentry( 0, true, 'p', _( "Permadeath: a dead character stays dead" ) );

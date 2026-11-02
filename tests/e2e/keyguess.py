@@ -46,7 +46,6 @@ PANELS = ("Needs", "Movement", "Location", "Weapon", "Controls", "Log", "Compass
 
 
 def keyguess_userdir():
-    """A private config directory with the Controls panel off."""
     userdir = Path(tempfile.mkdtemp(prefix="bn-keyguess-"))
     config = userdir / "config"
     config.mkdir()
@@ -70,19 +69,15 @@ def new_game():
 
 
 def screen_text(game):
-    """The visible screen with the hint survey recorded, never rewritten."""
     text = game.screen()
     return text, [hint for hint in SIDEBAR_HINTS if hint in text.lower()]
 
-
-# --------------------------------------------------------------------------- probes
 
 def before_nothing(_game):
     return None
 
 
 def clock(game):
-    """Turns plus spent moves: one pause is one move, and a turn only ticks every 100."""
     turn, moves = game.lua("out(gapi.current_turn():to_turn()) "
                            "out(-gapi.get_avatar():get_moves())")
     return int(turn), int(moves)
@@ -93,13 +88,11 @@ def before_wait(game):
 
 
 def wielded(game):
-    """The wielded item from the sidebar; the Lua console cannot open under a menu."""
     found = re.search(r"Weapon\s*\|\s*(\S.*?)\s*(?:│|$)", game.screen(), re.M)
     return found.group(1).strip() if found else "none"
 
 
 def probe_inventory(game, _before):
-    """The item list itself: its header counts assigned hotkeys, which no other screen shows."""
     return "Item hotkeys assigned" in game.screen(), "inventory list"
 
 
@@ -120,13 +113,11 @@ def probe_hub(game, _before):
 
 
 def probe_craft(game, _before):
-    """The recipe list, not the hub entry that is also called Craft: it names missing parts."""
     screen = game.screen()
     return "craftable" in screen or "Missing:" in screen, "recipe list"
 
 
 def partial_craft_category(game):
-    """The Craft page of the Actions menu: the right first step of a two-step path."""
     return "Actions: Craft" in game.screen()
 
 
@@ -136,14 +127,10 @@ def probe_wield(game, _before):
 
 
 def probe_armor(game, _before):
-    """The item menu beside the helmet, where its protection table appears."""
     screen = game.screen()
     return "Activate" in screen and ("Protection" in screen or "Bash" in screen), "item menu"
 
 
-# --------------------------------------------------------------------------- scenarios
-# Each scenario: setup runs on a fresh game, open_keys reach the screen, goal is what the model
-# reads, candidates map a stable id to (description, key sequence), and probe proves the goal.
 SCENARIOS = {
     "inventory": {
         "setup": lambda g: (empty_inventory(g), give(g, "pipe")),
@@ -224,10 +211,6 @@ SCENARIOS = {
 
 
 def run_trial(scenario, keys):
-    """One trial on a fresh game: open the screen, (decide,) press, probe, close.
-
-    Returns (screen, hints, chosen_id or None, reached, evidence, before_screen).
-    """
     game = new_game()
     try:
         scenario["setup"](game)
@@ -269,7 +252,6 @@ def survey(scenario_id, scenario, model, trials, results_path, dry_run):
                 with results_path.open("a") as fh:
                     fh.write(json.dumps(row) + "\n")
                 print(f"{scenario_id:14} {model:28} -> error: {error}")
-                # A fresh gateway per trial: a retired model would stay retired otherwise.
                 gateway = Gateway(models=[model], dry_run=dry_run)
                 continue
             before = scenario["before"](game)
@@ -359,7 +341,6 @@ def main():
     for name in names:
         for model in models:
             survey(name, SCENARIOS[name], model, args.trials, results_path, args.dry_run)
-    # The jsonl holds every row, error rows included, in the order they happened.
     rows = [json.loads(line) for line in results_path.read_text().splitlines() if line]
 
     lines = ["# Key-guess survey", "",

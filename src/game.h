@@ -228,11 +228,8 @@ class game : public submap_load_listener
         shared_ptr_fast<ui_adaptor> create_or_get_main_ui_adaptor();
         void invalidate_main_ui_adaptor() const;
         void mark_main_ui_adaptor_resize() const;
-        /// Show the Mouse View box for a tile, as arrow-key aiming does.
         void show_tile_preview( const tripoint_bub_ms &p );
-        /// The tile whose Mouse View box is up, if any.
         auto tile_preview_position() -> std::optional<tripoint_bub_ms>;
-        /// Take the Mouse View box down again.
         void hide_tile_preview();
         void draw( ui_adaptor &ui );
         void draw_ter( bool draw_sounds = true );
@@ -627,7 +624,7 @@ class game : public submap_load_listener
          */
         void unload_npcs();
     public:
-        void chat(); // Talk to a nearby NPC  'C'
+        void chat();
         /** Unloads, then loads the NPCs */
         void reload_npcs();
         /** Immediately removes NPC with the given id from active_npc. */
@@ -701,7 +698,6 @@ class game : public submap_load_listener
         /** Checks whether or not there is a zone of particular type nearby */
         bool check_near_zone( const zone_type_id &type, const tripoint_bub_ms &where ) const;
         bool is_zones_manager_open() const;
-        /// The World page's Zones tab is a second host for the zone UI; tile overlays follow this.
         void set_zones_manager_open( bool open );
         bool is_zone_submap_grid_overlay_enabled() const;
         void zones_manager();
@@ -765,7 +761,6 @@ class game : public submap_load_listener
         void zoom_out();
         void reset_zoom();
         void set_zoom( float level );
-        /// Remembers the current zoom for the next launch.
         void save_zoom_preference() const;
         /// Applies the stored main-view zoom to the tile context even when the value is unchanged.
         auto reapply_zoom() -> void;
@@ -969,7 +964,6 @@ class game : public submap_load_listener
         void pickup(); // Pick up items from one nearby tile 'g', min 0
         void pickup_all(); // Pick up items from all nearby tiles ',', min 0
         void pickup( const tripoint_bub_ms &p );
-        /// Always opens the picker, even for a lone item.
         void pickup_list( const tripoint_bub_ms &p );
         void pickup_feet(); // Pick items at player position, min 1
 
@@ -977,8 +971,7 @@ class game : public submap_load_listener
         void drop_in_direction(); // Drop w/ direction  'D'
 
         void butcher();
-        /// Butcher corpses on `where` instead of underfoot.
-        void butcher( const tripoint_bub_ms &where ); // Butcher a corpse  'B'
+        void butcher( const tripoint_bub_ms &where );
         void dissect(); // dissect a corpse
     public:
         // Places the player at the specified point; hurts feet, lists items etc.
@@ -1327,14 +1320,9 @@ class game : public submap_load_listener
         /** This variant is suitable for the overmap. */
         tripoint_rel_omt mouse_edge_scrolling_overmap( input_context &ctxt );
 
-        /// Cursor panning: in normal play, holding the mouse at the map edge pans the view.
-        /// Returns true if the view was panned (so the caller can redraw).
         auto cursor_pan_view( input_context &ctxt ) -> bool;
-        /// Re-centre the view after a turn-consuming action or movement.
         auto cursor_pan_recenter() -> void;
-        /// Last time the view was panned (rate limiter).
         std::chrono::time_point<std::chrono::steady_clock> last_cursor_pan;
-        /// Last pan direction (to continue panning on timeout).
         tripoint_rel_ms last_cursor_pan_direction = tripoint_rel_ms::zero();
 
         // called on map shifting

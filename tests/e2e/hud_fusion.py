@@ -1,4 +1,3 @@
-"""The fusion HUD: ribbon and key bar over the map, ruled sections beside it."""
 import re
 
 from fixtures import shared_game
@@ -30,15 +29,11 @@ def assert_fusion(screen):
     first = screen.splitlines()[0]
     assert re.search(r"(Spring|Summer|Autumn|Winter) \d+", first), \
         f"the date and time belong at the top left:\n{screen}"
-    # The limbs panel's own grid stands in for an aggregate health bar and the BODY section.
     for limb in ("L ARM", "HEAD", "R ARM", "L LEG", "TORSO", "R LEG"):
         assert limb in screen, f"the {limb} bar is missing:\n{screen}"
     assert "Stamina" in screen, f"the stamina bar is missing:\n{screen}"
     assert "Health " not in screen, "there is no aggregate health bar:\n" + screen
     assert not rule_rows(screen, "BODY"), "the limbs live in STATUS now:\n" + screen
-    # The shared character may carry a wound, so the needs row's met state is covered on a fresh
-    # character by test_needs_collapse_to_one_needs_met_line.
-    # The floating windows and the old sidebar panels are gone.
     for old in ("Compass", "Movement", "Stats ", "Weight"):
         assert old not in screen, f"{old!r} belongs to another layout:\n{screen}"
 
@@ -51,7 +46,6 @@ def test_fusion_layout_draws_overlays_and_ruled_sidebar(_g):
 
 
 def test_fusion_is_the_fresh_default_and_small_screens_fall_back(_g):
-    # No panel_options.json is seeded: this is the real first-run layout.
     game = Game("bn-e2e-fusion-default", options=OPTIONS, layout=None, cols=160, rows=45)
     try:
         start_new_game(game)
@@ -121,7 +115,6 @@ def test_clicking_a_hotbar_slot_uses_it_and_overlay_clicks_stay_off_the_map(_g):
         game.settle_screen()
         assert "knife" in wielded(game), "a click on the slot should use it:\n" + game.screen()
         assert bub_pos(game) == before
-        # A click on the column is swallowed, never walked to or selected on the map.
         game.click(120, 2)
         assert bub_pos(game) == before
 
@@ -150,8 +143,6 @@ def test_around_names_who_is_in_sight(_g):
         assert game.lua("gapi.place_monster_at(MonsterTypeId.new('mon_zombie'),here(4,-3)) out('ok')") == ["ok"]
         game.keys("x", delay=0.8)
         game.settle_screen()
-        # The load race can dim a noon world (the light-cache bug); AROUND then sees nothing and
-        # this test would look like a layout failure. Say which one it is.
         top = game.screen().splitlines()[0]
         assert "very dark" not in top, f"the world loaded dim, the light-cache bug:\n{top}"
         game.wait_for("hostile", timeout=15)
@@ -206,7 +197,6 @@ def test_key_bar_switches_to_combat_keys_with_a_hostile_in_sight(_g):
 
 
 def status_region(screen):
-    """The drawn rows of the STATUS section, from its rule down to the next section's rule."""
     lines = screen.splitlines()
     start = next(y for y, line in enumerate(lines) if re.search(r"├─* *STATUS\b", line))
     end = next(y for y in range(start + 1, len(lines))
@@ -232,7 +222,6 @@ def test_status_names_a_bleeding_limb_in_the_needs_line(_g):
 def test_needs_collapse_to_one_needs_met_line(_g):
     with shared_game("bn-e2e-fusion", options=OPTIONS, layout="fusion", cols=160, rows=45,
                      define=HELPERS, setup=fusion_setup) as game:
-        # The fixture carries a bleeding arm; a character with nothing wrong collapses its needs.
         assert game.lua("local a=gapi.get_avatar() a:clear_effects() a:set_pain(0) out('ok')") == ["ok"]
         game.settle_screen()
         screen = game.screen()

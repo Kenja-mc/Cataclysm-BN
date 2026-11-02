@@ -14,7 +14,7 @@ auto matches_font( const std::string_view path, const std::string_view filename 
                                  name == filename.substr( 0, filename.size() - 4 ) );
 }
 
-} // namespace
+}
 
 void ensure_unifont_loaded( std::vector<std::string> &font_list )
 {

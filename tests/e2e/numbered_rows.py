@@ -1,13 +1,3 @@
-"""Numbered list rows in the tiles build: 1-9 and 0 select visible rows; Enter confirms.
-
-The fixture world is played by the curses build first: it carries ten distinct items and leaves
-twenty-seven distinct kinds on the avatar's tile.  The curses inventory and pickup screens are read
-only to record the real row order, so the tiles runs can assert which row a digit selected through
-the saved player data instead of OCR.  The first pickup row is then topped up to five so the
-''#' amount prompt can be checked.
-
-`build_numbered_rows_world` prepares the `tiles.py` session; `run_numbered_rows` is its case.
-"""
 import json
 import re
 import time
@@ -19,28 +9,20 @@ from tmux_game import Game, start_new_game
 
 MANIFEST = "numbered-rows-manifest.json"
 
-# Ten carried rows: the digits address each one.
 INVENTORY_ITEMS = ["rock", "pipe", "stick", "wrench", "crowbar",
                    "knife_combat", "machete", "hatchet", "shovel", "tshirt"]
 
-# Ground rows, disjoint from the carried set so a pickup changes exactly one type.
 PICKUP_ITEMS = ["hoe", "pickaxe", "screwdriver", "bat", "knife_steak", "fire_ax",
                 "knife_butcher", "tongs", "boltcutters", "hacksaw", "scissors", "geiger_off",
                 "flashlight", "lighter", "string_6", "rag", "leather", "nail", "matches",
                 "whistle", "bone", "charcoal", "tinder", "paper", "thread", "wire", "spike"]
 
 def pickup_page_size(count, rows):
-    """The visible pickup rows: itemsH = min(25, TERMY / 2); list height = TERMY - (itemsH + 4)."""
     max_items = rows - (min(25, rows // 2) + 4)
     return max(9, min(count, max_items))
 
 
 def _object_names(game, item_ids, source):
-    """Map each spawned/created instance's real display name to its type id.
-
-    Reading the instances (not fresh prototypes) matters: variants and charge-dependent names can
-    differ from a prototype's name, which made one fixture row unmatchable.
-    """
     wanted = set(item_ids)
     names = {}
     for raw in game.lua(source):
@@ -57,11 +39,6 @@ def _object_names(game, item_ids, source):
 
 
 def _rows_on_screen(game, names, first=0, count=None, columns=90):
-    """Type ids in the order their display names appear on the screen, top to bottom.
-
-    The scan stops left of the sidebar so the message log cannot stand in for a row, and pickup
-    callers restrict it to the list rows so the selected item's description cannot either.
-    """
     lines = game.screen().splitlines()
     found = []
     for line in lines[first:] if count is None else lines[first:first + count]:
@@ -75,11 +52,6 @@ def _rows_on_screen(game, names, first=0, count=None, columns=90):
 
 
 def _pickup_order(game, names, window_rows=45):
-    """The whole pickup list order, paging the curses menu so terminal size cannot shorten it.
-
-    Returns the order and every screen read, so a missing row can be diagnosed from the actual
-    menu rather than guessed at.
-    """
     game.keys("C-g", delay=0.4)
     game.wait_for("Pick up", timeout=20)
     page_rows = pickup_page_size(len(names), window_rows)
@@ -98,7 +70,6 @@ def _pickup_order(game, names, window_rows=45):
 
 
 def _inventory_order(game, names):
-    """The whole inventory row order; moving down scrolls the list past the window height."""
     game.keys("i", delay=0.6)
     game.wait_for("Inventory", timeout=20)
     cells = {}
@@ -120,7 +91,6 @@ def _inventory_order(game, names):
 
 
 def build_numbered_rows_world(session):
-    """Curses-built fixture: ten carried item rows and twenty-seven ground kinds, plus their order."""
     import subprocess
 
     import tiles
@@ -152,7 +122,6 @@ def build_numbered_rows_world(session):
             "for _,it in ipairs(M:get_items_at(here(0,0))) do "
             "out(it:get_type():str()..' | '..it:display_name(1)) end")
         pickup_order, pickup_screens = _pickup_order(game, ground_names, window_rows=rows)
-        # One reachable non-charge stack so '#', 3 picks three separate items.
         count_index = next( index for index, item_id in enumerate( pickup_order[:9] )
                             if game.lua( "local it=gapi.create_item(ItypeId.new('" + item_id +
                                          "'),-1) out(it:is_stackable())" ) == ["false"] )
@@ -213,7 +182,6 @@ def _open_window(session):
 
 
 def _wait_turns(x11, turns=6, key="x"):
-    """Advance the pickup activity to completion."""
     for _ in range(turns):
         x11.key(key, delay=0.35)
 
@@ -225,7 +193,6 @@ BASE_OPTIONS = {"CONTROL_SCHEME": "modern", "PICKUP_POSITION": "left",
 
 
 def _settle(session, window, label):
-    """Wait until two consecutive captures match, so the next key hits the drawn menu."""
     import tiles
 
     dest = session.artifacts / f"{label}-settle.png"
@@ -242,11 +209,6 @@ def _settle(session, window, label):
 
 
 def _run(session, label, keys, observations, options=None, wait_turns=False):
-    """Play one key script from the fixture save and return the saved player.
-
-    Menu-opening and menu-closing keys settle before the next key: a fixed delay raced the
-    item-action menu and left it open, so the save key never reached the map.
-    """
     import tiles
 
     with session.running_game(label, {**BASE_OPTIONS, **(options or {})}) as live:
@@ -280,12 +242,10 @@ def _run(session, label, keys, observations, options=None, wait_turns=False):
 
 
 def _row_digit(row):
-    """The key for a visible pickup row: 1-9, then 0 for the tenth."""
     return "0" if row == 10 else str(row)
 
 
 def _pickup_keys(manifest, index, count=None):
-    """Keys that take the pickup row at `index`, using digits and pages and an optional '#' count."""
     page_size = manifest["page_size"]
     page, row = divmod(index, page_size)
     assert row < 10, "the fixture only exercises rows 1-10"
@@ -299,7 +259,6 @@ def _pickup_keys(manifest, index, count=None):
 
 
 def run_numbered_rows(session):
-    """Drive the number path in the tiles build and read the result from the save file."""
     manifest = json.loads((session.artifacts / MANIFEST).read_text())
     failures, observations = [], {}
 
@@ -320,17 +279,14 @@ def run_numbered_rows(session):
         failures.append(f"{label}: did not open and wield the third visible inventory row: "
                         f"{observations[label]}")
     inventory_run("numbered-inventory-0", "0", manifest["inventory"][9])
-    # 6 and 4 fall back to RIGHT/LEFT in the default key context; numbers must win.
     inventory_run("numbered-inventory-6", "6", manifest["inventory"][5])
 
-    # The item action menu is a uilist with its own input loop: row 5 is Wield.
     player = _run(session, "numbered-uilist-wield",
                   [("i",), ("Return",), ("5",), ("Return",)], observations)
     if _wielded(player) != manifest["inventory"][0]:
         failures.append("uilist row 5: a numbered uilist did not select and confirm Wield: "
                         f"{observations['numbered-uilist-wield']}")
 
-    # Digit 4 is the row-number key that used to fall through to LEFT; row 4 is Wear.
     wear_index = manifest["inventory"].index("tshirt")
     player = _run(session, "numbered-uilist-wear",
                   [("i",), (_row_digit(wear_index + 1),), ("Return",), ("4",), ("Return",)],
@@ -380,8 +336,6 @@ def run_numbered_rows(session):
         failures.append("pickup after scrolling: digit 1 did not take row 1 of the second page: "
                         f"{observations['numbered-pickup-paged']}")
 
-
-    # The new menu groups items differently. Arrow navigation supplies its actual third row.
     reference = _run(session, "numbered-new-pickup-arrow-reference",
                      [("Control_L", "g"), ("Down",), ("Down",), ("Return",)], observations,
                      options={"NEW_PICKUP_MENU": "true"}, wait_turns=True)
@@ -403,7 +357,6 @@ def run_numbered_rows(session):
         failures.append(f"new pickup '#': did not take exactly one {new_third}: "
                         f"{observations['numbered-new-pickup-count']}")
 
-    # Option off: digits are unbound, so Enter opens the first row's item menu.
     player = _run(session, "numbered-option-off",
                   [("i",), ("3",), ("Return",), ("h",)], observations,
                   options={"NUMBERED_LIST_ROWS": "false"})
@@ -445,7 +398,6 @@ def _require_short_uilist(session, label, header_lines):
     import tiles
 
     grid = Grid(_settled_frame(session, label), *screen_size())
-    # The repeated real header proves the UiList opened, not just a still Lua error/editor.
     for column in range(grid.columns - 5):
         mask = grid.mask(column, 1, 6)
         if sum(mask) <= grid.cell_height * 3:
@@ -457,7 +409,6 @@ def _require_short_uilist(session, label, header_lines):
 
 
 def run_numbered_viewport(session):
-    """Digits may address only rows currently drawn, even when the list has more entries."""
     failures, observations = [], {}
     for digit, expected in (("0", "1"), ("3", "3")):
         label = "numbered-short-uilist-" + digit

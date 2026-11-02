@@ -41,8 +41,6 @@ units::angle random_direction()
 
 auto normal_roll( double mean, double stddev ) -> double
 {
-    // std::normal_distribution requires a positive standard deviation and aborts
-    // under _GLIBCXX_ASSERTIONS otherwise, so degenerate rolls just give the mean.
     if( !( stddev > 0.0 ) ) {
         return mean;
     }

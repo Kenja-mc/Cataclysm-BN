@@ -1,4 +1,3 @@
-"""The Controls strip follows the input context, including full-screen menus."""
 from fixtures import shared_game
 from helpers import (HELPERS, action_menu, arena, empty_inventory, give, settle,
                      spawn, wait_until)
@@ -40,7 +39,6 @@ def test_context_keyhints_inventory_pickup_crafting_and_look(_game):
         assert_map(game)
         game.wait_for("g pick up", timeout=15)
         hints = game.screen()
-        # A three-row strip must spend its room on the keys a new player acts with.
         for core in ("i inventory", "Enter menus", "v use", "f attack"):
             assert core in hints, f"{core!r} must show in the map strip:\n" + hints
         game.keys("i")

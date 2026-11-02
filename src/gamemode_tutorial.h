@@ -68,7 +68,6 @@ struct tutorial_game : public special_game {
         void add_message( tut_lesson lesson );
 
         std::map<tut_lesson, bool> tutorials_seen;
-        /// A reload was started; the firing lesson waits until the gun really holds ammo.
         bool gun_reload_pending = false;
 };
 

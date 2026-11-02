@@ -212,7 +212,6 @@ enum struct tab_direction {
     QUIT
 };
 
-/// Page chosen by a top-tab click, consumed by avatar::create().
 static auto requested_character_tab = -1;
 
 tab_direction set_points( avatar &u, points_left &points );
@@ -713,7 +712,6 @@ bool avatar::create( character_type type, const std::string &tempname )
 
         if( requested_character_tab >= 0 && result == tab_direction::NONE ) {
             const auto target = std::clamp( requested_character_tab, 0, get_max_tabs( prof ) );
-            // Keep the direction a normal adjacent page transition would hand to the target.
             result = target > tab ? tab_direction::FORWARD :
                      target < tab ? tab_direction::BACKWARD : tab_direction::NONE;
             tab = target;
@@ -893,7 +891,6 @@ static auto character_tab_captions( const profession_id &prof ) -> std::vector<s
     return captions;
 }
 
-/// Mirror draw_tabs() placement so top-tab clicks land on the drawn label.
 static auto record_character_tab_hits( const std::vector<std::string> &captions,
                                        const std::string &current, int width ) -> void
 {
@@ -1100,7 +1097,6 @@ tab_direction set_points( avatar &u, points_left &points )
                 cell->y < 5 + static_cast<int>( opts.size() ) ) {
                 const auto row = cell->y - 5;
                 if( row == highlighted && last_clicked_option == row ) {
-                    // Second click on the same row performs the keyboard action.
                     action = "CONFIRM";
                     last_clicked_option = -1;
                 } else {
@@ -1699,7 +1695,6 @@ tab_direction set_traits( avatar &u, points_left &points )
         std::string action = ctxt.handle_input();
         const bool mouse_select = modern && action == "SELECT";
         if( mouse_select ) {
-            // get_coordinates() is relative to the window centre.
             const auto mouse = ctxt.get_coordinates( w );
             const auto cell = mouse ? std::optional<point>(
                                   mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2 ) :
@@ -1733,7 +1728,6 @@ tab_direction set_traits( avatar &u, points_left &points )
                     if( row >= 0 && row < static_cast<int>( click_sizes[page] ) ) {
                         if( page == iCurWorkingPage && row == iCurrentLine[page] &&
                             last_clicked_line[page] == row ) {
-                            // Second click on the same row performs the keyboard action.
                             action = "CONFIRM";
                             last_clicked_line[page] = -1;
                         } else {
@@ -1750,7 +1744,6 @@ tab_direction set_traits( avatar &u, points_left &points )
                 last_clicked_line[0] = last_clicked_line[1] = last_clicked_line[2] = -1;
             }
         } else {
-            // Keyboard navigation and page switches invalidate the click pair.
             last_clicked_line[0] = last_clicked_line[1] = last_clicked_line[2] = -1;
         }
         if( action == "SCROLL_UP" ) {
@@ -2210,7 +2203,6 @@ tab_direction set_bionics( avatar &u, points_left &points )
         std::string action = ctxt.handle_input();
         const bool mouse_select = modern && action == "SELECT";
         if( mouse_select ) {
-            // get_coordinates() is relative to the window centre.
             const auto mouse = ctxt.get_coordinates( w );
             const auto cell = mouse ? std::optional<point>(
                                   mouse->xy().raw() + point( getmaxx( w ), getmaxy( w ) ) / 2 ) :
@@ -2244,7 +2236,6 @@ tab_direction set_bionics( avatar &u, points_left &points )
                     if( row >= 0 && row < static_cast<int>( click_sizes[page] ) ) {
                         if( page == iCurWorkingPage && row == iCurrentLine[page] &&
                             last_clicked_line[page] == row ) {
-                            // Second click on the same row performs the keyboard action.
                             action = "CONFIRM";
                             last_clicked_line[page] = -1;
                         } else {
@@ -2261,7 +2252,6 @@ tab_direction set_bionics( avatar &u, points_left &points )
                 last_clicked_line[0] = last_clicked_line[1] = last_clicked_line[2] = -1;
             }
         } else {
-            // Keyboard navigation and page switches invalidate the click pair.
             last_clicked_line[0] = last_clicked_line[1] = last_clicked_line[2] = -1;
         }
         if( action == "SCROLL_UP" ) {
@@ -2938,7 +2928,6 @@ tab_direction set_profession( avatar &u, points_left &points,
                 const int row = iStartPos + ( cell->y - 5 );
                 if( row >= 0 && row < profs_length ) {
                     if( row == cur_id && last_clicked_prof == row ) {
-                        // Second click on the same row performs the keyboard action.
                         action = "CONFIRM";
                         last_clicked_prof = -1;
                     } else {
@@ -2953,7 +2942,6 @@ tab_direction set_profession( avatar &u, points_left &points,
                 last_clicked_prof = -1;
             }
         } else {
-            // Keyboard navigation, filters and sorting invalidate the click pair.
             last_clicked_prof = -1;
         }
         if( action == "SCROLL_UP" ) {
@@ -3997,7 +3985,6 @@ tab_direction set_scenario( avatar &u, points_left &points,
                 const int row = iStartPos + ( cell->y - 5 );
                 if( row >= 0 && row < scens_length ) {
                     if( row == cur_id && last_clicked_scen == row ) {
-                        // Second click on the same row performs the keyboard action.
                         action = "CONFIRM";
                         last_clicked_scen = -1;
                     } else {
@@ -4011,7 +3998,6 @@ tab_direction set_scenario( avatar &u, points_left &points,
                 last_clicked_scen = -1;
             }
         } else {
-            // Keyboard navigation, filters and sorting invalidate the click pair.
             last_clicked_scen = -1;
         }
         if( action == "SCROLL_UP" ) {
@@ -4762,7 +4748,6 @@ tab_direction set_description( avatar &you, const bool allow_reroll,
                         break;
                 }
                 if( last_clicked_overview == clicked ) {
-                    // Second click on the same control performs the keyboard action.
                     switch( clicked ) {
                         case overview_click::name:
                         case overview_click::height:

@@ -16,7 +16,6 @@ class live_view
         void init();
         void show( const tripoint_bub_ms &p );
         bool is_enabled();
-        /// The tile currently shown, valid while is_enabled().
         auto position() const -> const tripoint_bub_ms &;
         void hide();
 

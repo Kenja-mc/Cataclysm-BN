@@ -27,7 +27,6 @@ from tiles import (Session, X11, WINDOW_TITLE_PREFIX, DETERMINISTIC_OPTIONS, pat
 from tmux_game import Game, start_new_game  # noqa: E402
 from helpers import HELPERS, arena, give, spawn, settle, save_and_quit  # noqa: E402
 
-# Each key tuple is one chord; successive tuples are separate key presses.
 SHOTS = [
     dict(id="hud-fusion", title="Fusion HUD",
          keys=[], layout="fusion",
@@ -83,8 +82,6 @@ SHOTS = [
          body="The crafting menu opens on a tab with recipes to make. The parts chain shows what a "
               "recipe needs, which of those parts the player can produce, and one honest time estimate."),
     dict(id="look", title="Look around and tile selection",
-         # RMB selects the tile east of the avatar: 11x24 cells, an 88-cell map with the avatar
-         # centered on cell (44, 24), so the tile's center pixel is (45*11+5, 24*24+12).
          keys=[], click=(500, 588, 3), options={"CONTROL_SCHEME": "modern"},
          body="A right click selects and inspects the adjacent tile without spending a turn. The "
               "tile inspector shows what it holds, and Space interacts with the selected tile."),
@@ -120,12 +117,6 @@ python3 tests/e2e/feature_shots.py
 
 
 def build_world(session, scheme="modern", setup=""):
-    """Builds one fixture save per control scheme and setup, and returns (user directory, world name).
-
-    The save carries the options it was created with, so a Classic capture needs a Classic fixture.
-    A setup snippet runs in the fixture game before the save, for shots that need a state the
-    default fixture does not have.
-    """
     tiles.tmux_game.ROOT = session.root
     key = f"{scheme}-{hashlib.sha256(setup.encode()).hexdigest()[:6]}" if setup else scheme
     userdir = session.work / f"fixture-{key}"
@@ -136,7 +127,6 @@ def build_world(session, scheme="modern", setup=""):
         start_new_game(game)
         game.define_lua(HELPERS)
         arena(game)
-        # Storage that already holds what the player carries, so quick stack has a target.
         spawn(game, 2, 0, "usb_drive", 1, "f_rack")
         spawn(game, 4, 0, "rag", 8, "f_workbench")
         give(game, "usb_drive", 3)
@@ -148,7 +138,6 @@ def build_world(session, scheme="modern", setup=""):
         settle(game)
         assert game.lua("out(gdebug.save_game())") == ["true"], \
             "saving the fixture failed:\n" + game.screen()
-        # Game.close() removes the private user directory, so read the world name before teardown.
         saves = [p for p in (userdir / "save").iterdir() if p.is_dir()]
         if len(saves) != 1:
             raise SystemExit(f"expected one saved world, found {saves}")
@@ -160,7 +149,6 @@ def build_world(session, scheme="modern", setup=""):
 
 
 def launch(session, label, options, run_root, fixture, layout=None):
-    """Starts the tiles build on a copy of the scheme's fixture save and returns the process and window."""
     fixture_dir, world = fixture
     run = run_root / label
     userdir, xdg = run / "userdir", run / "xdg"
@@ -186,16 +174,12 @@ def launch(session, label, options, run_root, fixture, layout=None):
                             cwd=session.root, env=env, stdout=log, stderr=log)
     x11 = None
     try:
-        # The caller only receives proc once the world is up, so a failed wait must clean up here.
         tiles.wait_for_frame(session, proc, run, min(session.timeout, 120))
         x11 = X11(session.display)
         window = x11.find_window(WINDOW_TITLE_PREFIX)
         if not window:
             raise RuntimeError(f"game window disappeared (see {run / 'tiles.log'})")
-        # There is no window manager, so the keys must be aimed at the game window explicitly.
         x11.focus_local(window, 40, 40)
-        # Then park the pointer off the window: a motion event over the map opens the Mouse View
-        # box, which would cover the HUD in the shot. Shot clicks move it back themselves.
         x11.focus(window, 1900, 1190)
     except BaseException:
         if x11 is not None:
@@ -256,7 +240,7 @@ def main():
                 seen_shots[digest] = shot["id"]
                 made.append(shot)
                 print(f"ok   {shot['id']} -> {png} ({png.stat().st_size // 1024} KB)")
-            except Exception as error:  # one bad key sequence must not lose the rest
+            except Exception as error:
                 failed.append((shot["id"], str(error)))
                 print(f"FAIL {shot['id']}: {error}")
             finally:

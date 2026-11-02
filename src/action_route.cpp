@@ -16,61 +16,58 @@
 namespace
 {
 
-/// The item panel button that does the action, for actions done on a carried item.
 auto item_panel_action( const action_id act ) -> std::optional<std::string>
 {
     switch( act ) {
-    case ACTION_WIELD:
-        return "WIELD";
-    case ACTION_WEAR:
-        return "WEAR";
-    case ACTION_TAKE_OFF:
-        return "TAKE_OFF";
-    case ACTION_EAT:
-        return "EAT";
-    case ACTION_USE:
-        return "ACTIVATE";
-    case ACTION_DROP:
-        return "DROP";
-    case ACTION_UNLOAD:
-        return "UNLOAD";
-    case ACTION_READ:
-        return "READ";
-    case ACTION_THROW:
-        return "THROW";
-    default:
-        return std::nullopt;
-}
+        case ACTION_WIELD:
+            return "WIELD";
+        case ACTION_WEAR:
+            return "WEAR";
+        case ACTION_TAKE_OFF:
+            return "TAKE_OFF";
+        case ACTION_EAT:
+            return "EAT";
+        case ACTION_USE:
+            return "ACTIVATE";
+        case ACTION_DROP:
+            return "DROP";
+        case ACTION_UNLOAD:
+            return "UNLOAD";
+        case ACTION_READ:
+            return "READ";
+        case ACTION_THROW:
+            return "THROW";
+        default:
+            return std::nullopt;
+    }
 }
 
-/// Space acts on the surrounding tiles when contextual interaction is on.
 auto contextual( const action_id act ) -> bool
 {
     switch( act ) {
-    case ACTION_OPEN:
-    case ACTION_CLOSE:
-    case ACTION_SMASH:
-    case ACTION_PICKUP:
-    case ACTION_EXAMINE:
-    case ACTION_JUMP:
-        return true;
-    default:
-        return false;
-}
+        case ACTION_OPEN:
+        case ACTION_CLOSE:
+        case ACTION_SMASH:
+        case ACTION_PICKUP:
+        case ACTION_EXAMINE:
+        case ACTION_JUMP:
+            return true;
+        default:
+            return false;
+    }
 }
 
-/// The action menu category an action sits in; mirrors handle_action_menu.
 auto menu_category( const action_id act ) -> std::optional<std::string>
 {
     switch( act ) {
-    case ACTION_LOOK:
-    case ACTION_PEEK:
-    case ACTION_CENTER:
-    case ACTION_LIST_ITEMS:
-    case ACTION_ZONES:
-    case ACTION_MAP:
-    case ACTION_SKY:
-        return _( "Look" );
+        case ACTION_LOOK:
+        case ACTION_PEEK:
+        case ACTION_CENTER:
+        case ACTION_LIST_ITEMS:
+        case ACTION_ZONES:
+        case ACTION_MAP:
+        case ACTION_SKY:
+            return _( "Look" );
         case ACTION_INVENTORY:
         case ACTION_ADVANCEDINV:
         case ACTION_SORT_ARMOR:
@@ -164,12 +161,9 @@ auto bound_key( const action_id act ) -> std::string
     if( keys.empty() ) {
         return press_x( act, "", "" );
     }
-    // One key reads better than every binding ("w", not "w or UP or 8 or NUMPAD_8").
     return keys.front() == ' ' ? std::string( _( "Space" ) ) : std::string( 1, keys.front() );
 }
 
-/// How the Modern scheme selects a tile: its directional selection keys.  They read as
-/// "Shift + a movement key" only while they really are the shifted movement keys.
 auto look_selection_route() -> std::optional<std::string>
 {
     static const auto directions = std::array{
@@ -218,7 +212,7 @@ auto look_selection_route() -> std::optional<std::string>
     return out;
 }
 
-} // namespace
+}
 
 auto action_route( const action_id act ) -> std::string
 {
@@ -258,7 +252,6 @@ auto action_route( const std::string &id ) -> std::string
     if( const auto act = look_up_action( id ); act != ACTION_NULL ) {
         return action_route( act );
     }
-    // Target cycling ids (NEXT_TARGET, PREV_TARGET) are only bound in the aiming context.
     if( inp_mngr.get_input_for_action( id, "DEFAULTMODE" ).empty() &&
         !inp_mngr.get_input_for_action( id, "TARGET" ).empty() ) {
         return input_context( "TARGET" ).get_desc( id, 1 );
@@ -271,8 +264,6 @@ auto action_route( const std::string &id, const std::string &context ) -> std::s
     if( context.empty() || context == "DEFAULTMODE" ) {
         return action_route( id );
     }
-    // The input manager already falls back to the binding the context would really use.
-    // A context without one keeps the old default-mode route instead of inventing a key.
     if( !inp_mngr.get_input_for_action( id, context ).empty() ) {
         return input_context( context ).get_desc( id, 1 );
     }

@@ -1,4 +1,3 @@
-"""Fire feedback when there is no ranged weapon wielded."""
 from helpers import arena
 
 
@@ -14,7 +13,6 @@ def _recent_messages(game):
 
 
 def test_fire_feedback_no_ranged_weapon(game):
-    # No weapon and no traits: the fire key must explain itself instead of spending a turn.
     assert game.lua("local a=gapi.get_avatar() "
                     "a:clear_bionics() a:clear_mutations() a:clear_morale() a:drop_all_items() "
                     "out('ok')") == ["ok"]
@@ -31,7 +29,6 @@ def test_fire_feedback_no_ranged_weapon(game):
             f"turn advanced: {before_turn} -> {after_turn}\n{screen}"
         )
     finally:
-        # Later tests create inventory through Lua and expect unconstrained storage.
         assert game.lua("gapi.get_avatar():set_mutation(MutationBranchId.new('DEBUG_STORAGE')) "
                         "out('ok')") == ["ok"]
 

@@ -249,7 +249,6 @@ char inventory::find_usable_cached_invlet( const itype_id &item_type )
 {
     // Some of our preferred letters might already be used.
     for( auto invlet : invlet_cache.invlets_for( item_type ) ) {
-        // Digits are never auto-assigned; the player assigns them manually.
         if( invlet_is_manual_digit( invlet ) ) {
             continue;
         }

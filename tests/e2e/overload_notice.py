@@ -1,4 +1,3 @@
-"""The pickup list spells out what over-capacity means: stamina burn and items left behind."""
 from fixtures import shared_game
 from helpers import HELPERS, arena
 
@@ -16,7 +15,6 @@ def bare_avatar(game):
 def test_pickup_states_the_weight_and_volume_consequence(_g):
     with shared_game("bn-e2e-overload-notice", options=OPTIONS, cols=160, rows=45,
                      define=HELPERS, setup=bare_avatar) as game:
-        # 200 rocks are 100 kg and 50 L: more than a bare avatar can carry or store.
         assert game.lua("M:create_item_at(here(0,0), ItypeId.new('rock'), 200) out('ok')") == ["ok"]
         game.keys("C-g", delay=0.4)
         game.wait_for("Pick up")

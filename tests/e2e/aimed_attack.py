@@ -1,4 +1,3 @@
-"""Modern f attacks what is aimed, then falls back to melee, aiming or smashing."""
 import re
 import time
 
@@ -22,17 +21,14 @@ def latest_message(game):
 
 
 def clear_inspection(game):
-    """Escape clears a reticle or a stale inspector without opening the main menu."""
     if "Mouse View" in game.screen():
         game.keys("Escape", delay=0.4)
         assert "Mouse View" not in game.screen()
 
 
 def aim_empty(game, steps):
-    """Move the reticle over an empty tile: the first arrow snaps to the player."""
     assert game.lua("out(#gapi.get_avatar():get_hostile_creatures(60))") == ["0"], \
         "an empty-tile aim must not see a hostile:\n" + game.screen()
-    # With no targets, Tab clears any stale reticle instead of selecting something.
     game.keys("Tab", delay=0.3)
     for _ in range(steps):
         game.keys("Right", delay=0.25)
@@ -40,7 +36,6 @@ def aim_empty(game, steps):
 
 
 def target_hostile(game):
-    """Tab selects the only visible hostile, independent of glyph positions."""
     clear_inspection(game)
     game.keys("Tab", delay=0.4)
     assert "Mouse View" in game.screen(), "the hostile must be selected:\n" + game.screen()
@@ -58,7 +53,6 @@ def wipe_monsters(game):
 def load_gun(game, loaded=True):
     assert game.lua(LOADED_GUN if loaded else UNLOADED_GUN) == ["true"]
     settle(game)
-    # A spawned hostile during the wait would make the no-reticle paths ambiguous.
     wipe_monsters(game)
 
 
@@ -81,7 +75,6 @@ def create_corpse(game, dx, dy, monster="mon_bear"):
 
 
 def corpse_state(game, dx, dy):
-    """Damage/max of the first corpse on the tile, regardless of stack order."""
     result = game.lua(
         f"local d,m='none','0' for _,it in ipairs(M:get_items_at(here({dx},{dy}))) do "
         "if d=='none' and it:is_corpse() then d=it:get_damage() m=it:get_max_damage() break end end "
@@ -95,7 +88,6 @@ def corpse_state(game, dx, dy):
 def wait_pulped(game, dx, dy):
     deadline = time.time() + 30
     while time.time() < deadline:
-        # Let the activity advance before opening the console again.
         time.sleep(1.0)
         state = corpse_state(game, dx, dy)
         if state[0] != "none" and state[0] == state[1]:
@@ -134,7 +126,6 @@ def wall(game, dx, dy):
 
 
 def face_east(game):
-    """Bump a blocking wall so the attack key has a tile ahead without walking."""
     position = bub_pos(game)
     game.keys("d", delay=0.6)
     assert bub_pos(game) == position, "the faced tile must block the step"
@@ -173,7 +164,6 @@ def test_aimed_door_smashes_despite_adjacent_hostile(_game):
         wield(game, "hammer_sledge")
         settle(game)
         wipe_monsters(game)
-        # Pin bash strength above a wooden door's resistance, rather than rolling for damage.
         assert game.lua("gapi.get_avatar():set_str_bonus(100) "
                         "M:set_ter_at(here(-1,0),TerId.new('t_door_c'):int_id()) out('ok')") == ["ok"]
         spawn_zombie(game, 1, 0)
@@ -183,7 +173,6 @@ def test_aimed_door_smashes_despite_adjacent_hostile(_game):
         assert terrain(game, -1, 0) != "t_door_c", "f must smash the selected door, not the hostile"
         assert bub_pos(game) == position, "smashing must not walk"
         assert action_clock(game) > clock, "the selected door smash must spend moves"
-
 
 
 def test_aimed_reach_weapon_swings_without_a_second_aim(_game):
@@ -208,7 +197,6 @@ def test_aimed_bayonet_gun_in_melee_mode_swings_adjacent(_game):
         wield(game, "sks")
         settle(game)
         wipe_monsters(game)
-        # The rifle carries an integrated bayonet as its second firing mode.
         action_menu(game, "Combat", "Toggle attack mode of Wielded Item")
         spawn_zombie(game, 1, 0)
         position, clock = bub_pos(game), action_clock(game)
@@ -243,10 +231,8 @@ def test_reachable_corpse_pulps_unless_hostile(_game):
         game.wait_for("thoroughly pulped", timeout=30)
         state = corpse_state(game, 1, 0)
         if state[0] == "none" or state[0] != state[1]:
-            # A previous test's message can satisfy wait_for before this pulp finishes.
             wait_pulped(game, 1, 0)
 
-        # A hostile standing on the corpse takes the attack instead of being pulped.
         clear_tile(game, 1, 0)
         create_corpse(game, 1, 0)
         spawn_zombie(game, 1, 0)
@@ -270,7 +256,6 @@ def test_reachable_corpse_with_gun_choice_cancel_preserves_state(_game):
         assert_corpse_choice(game)
         game.keys("Escape", delay=0.5)
         game.wait_gone("Attack the selected tile")
-        # Do not reselect or open Lua: the next attack must still target the same corpse.
         game.keys("f", delay=0.5)
         assert_corpse_choice(game)
         game.keys("Escape", delay=0.5)
@@ -323,7 +308,6 @@ def test_reachable_corpse_with_gun_pulp_choice_pulps(_game):
             game.keys("Enter", delay=0.5)
             captures.append(("after Enter", game.screen()))
             assert "< Firing " not in captures[-1][1], "Pulp must not open aiming"
-            # Let the real activity finish before Lua opens a debug menu and interrupts it.
             finish_smash(game)
             game.wait_for("thoroughly pulped", timeout=30)
             game.wait_gone("smashing", timeout=30)
@@ -354,7 +338,6 @@ def test_reachable_non_reviving_corpse_is_not_pulped(_game):
         assert "< Firing " not in game.screen()
         assert action_clock(game) == clock, "rejecting a dead corpse must not spend time"
 
-        # With a loaded gun the same corpse is a valid aiming target.
         load_gun(game)
         aim_empty(game, 2)
         clock = action_clock(game)
@@ -437,7 +420,6 @@ def test_aimed_non_empty_tile_opens_ordinary_aim(_game):
         game.keys("Escape", delay=0.6)
         assert (bub_pos(game), action_clock(game), ammo(game)) == before
 
-        # A friendly creature is not a hostile target, but can still be aimed at.
         clear_tile(game, 1, 0)
         assert game.lua("local m=gapi.place_monster_at(MonsterTypeId.new('mon_dog'),here(1,0)) "
                         "m:make_friendly() out(m ~= nil)") == ["true"]
@@ -535,7 +517,6 @@ def test_no_reticle_unloaded_gun_without_a_target_reports(_game):
     with contextual_game("bn-e2e-aimed-empty-gun-msg") as game:
         wipe_monsters(game)
         load_gun(game, loaded=False)
-        # Walk onto open floor so the faced tile is not worth smashing.
         game.keys("d", delay=0.6)
         wipe_monsters(game)
         clear_inspection(game)
@@ -670,7 +651,6 @@ def test_classic_keeps_f_fire_and_shift_f_fire_mode(_game):
                      options=options) as game:
         wipe_monsters(game)
 
-        # Classic F still switches the firing mode of a multi-mode gun on the map.
         wield(game, "m4a1")
         settle(game)
         wipe_monsters(game)
@@ -681,7 +661,6 @@ def test_classic_keeps_f_fire_and_shift_f_fire_mode(_game):
         assert wait_until(lambda: gun_mode(game, "M4A1") != before), game.screen()
         assert action_clock(game) == clock, "changing the fire mode stays free"
 
-        # A melee weapon on an aimed or empty tile never smashes in Classic.
         disarm(game)
         wield(game, "pipe")
         settle(game)
@@ -694,8 +673,6 @@ def test_classic_keeps_f_fire_and_shift_f_fire_mode(_game):
         assert "You have no ranged weapon wielded." in latest_message(game)
         assert action_clock(game) == clock, "Classic's rejection must not spend time"
 
-        # Classic f keeps its ordinary gun aiming. End here: no Lua call after the aim
-        # screen, which keeps the console out of any pending activity state.
         disarm(game)
         load_gun(game)
         game.keys("f", delay=1)

@@ -24,12 +24,11 @@
 
 namespace
 {
-// '!' and '=' are used as default bindings in the menu.
 const auto classic_mutation_chars = invlet_wrapper(
                                         "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\"#&()*+./:;@[\\]^_{|}" );
 const auto modern_mutation_chars = invlet_wrapper(
                                        "bcefghijklmnopqrtuvxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\"#&()*+./:;@[\\]^_{|}" );
-} // namespace
+}
 
 static void draw_exam_window( const catacurses::window &win, const int border_y )
 {
@@ -174,7 +173,6 @@ detail::mutations_ui_result detail::show_mutations_ui_internal( Character &who )
         } else {
             active.push_back( mut.first );
         }
-        // Saved conflicting shortcuts become usable Shift aliases, or another free letter.
         if( modern && mut.second.key != ' ' && !mutation_chars.valid( mut.second.key ) ) {
             const auto shifted = mut.second.key + 'A' - 'a';
             if( mut.second.key >= 'a' && mut.second.key <= 'z' && mutation_chars.valid( shifted ) &&
@@ -234,10 +232,7 @@ detail::mutations_ui_result detail::show_mutations_ui_internal( Character &who )
     int list_height = 0;
     int half_list_view_location = 0;
 
-    // Column row the mouse most recently clicked, as tab and list index; a second
-    // click on it runs the row's Enter action. Reset by any keyboard or scroll event.
     std::optional<std::pair<mutation_tab_mode, int>> mouse_row;
-    // Keep the cursor row inside the visible list after a click jump.
     const auto scroll_to_cursor = [&]() {
         if( cursor < scroll_position ) {
             scroll_position = cursor;
@@ -422,7 +417,6 @@ detail::mutations_ui_result detail::show_mutations_ui_internal( Character &who )
                 if( const auto mouse = ctxt.get_coordinates( wBio ) ) {
                     const auto cell = mouse->xy().raw() + point( getmaxx( wBio ),
                                       getmaxy( wBio ) ) / 2;
-                    // Column captions switch the active column like the tab keys.
                     const int caption_y = HEADER_LINE_Y + 1;
                     if( cell.y == caption_y && cell.x >= 2 &&
                         cell.x < 2 + utf8_width( _( "Passive:" ) ) && !passive.empty() ) {
@@ -464,8 +458,6 @@ detail::mutations_ui_result detail::show_mutations_ui_internal( Character &who )
                                 if( idx >= 0 && idx < static_cast<int>( column.size() ) ) {
                                     if( mouse_row &&
                                         *mouse_row == std::make_pair( clicked, idx ) ) {
-                                        // A second click on the same row runs its Enter
-                                        // action; activation keeps its usual prompts.
                                         action = "CONFIRM";
                                         mouse_row.reset();
                                     } else {

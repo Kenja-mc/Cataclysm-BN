@@ -1,4 +1,3 @@
-"""A locked selection owns the inspector and the only highlight; fire acts on it."""
 from aim_reticle import action_clock
 from contextual_hub import colored_cells
 from cursor_panning import pan_game, _right_edge
@@ -35,7 +34,6 @@ def test_locked_enemy_freezes_hover_and_fire_targets_it(_g):
         assert cells[y][x + 1][1] != enemy_before, "the locked enemy must be highlighted"
         assert cells[empty_cell[1]][empty_cell[0]][1] == empty_before, "only the enemy is highlighted"
 
-        # Moving the pointer elsewhere must not move the inspector or add a second highlight.
         game.hover(*empty_cell)
         assert "zombie" in mouse_view(game), "hover must not replace the locked inspector"
         cells = screen_cells(game)
@@ -95,7 +93,6 @@ def test_right_click_distant_door_shows_unreachable_actions(_g):
         assert "Interact with the" in screen, "RMB must still list what the tile offers:\n" + screen
         assert "You can't reach that tile." in screen, screen
         assert "open the" in screen, screen
-        # The rows are disabled, so their hotkeys must not run them.
         game.keys("o", delay=0.6)
         game.keys("Escape", delay=0.6)
         assert "Mouse View" in game.screen(), "closing the list must keep the selection"
@@ -151,7 +148,6 @@ def test_locked_selection_stops_edge_panning(_g):
         pan.hover(_right_edge(pan), y_player)
         assert pan.find("@")[0] == x_locked, "a locked selection must stop edge panning the view"
         assert "zombie" in mouse_view(pan), "panning must not replace the locked inspector"
-        # Leave the shared panning profile unlocked for the rest of the suite.
         pan.keys("Escape", delay=0.3)
 
 

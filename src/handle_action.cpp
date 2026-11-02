@@ -155,7 +155,7 @@ auto selected_tile_reachable( const tripoint_bub_ms &p ) -> bool
            !here.obstructed_by_vehicle_rotation( you.bub_pos(), p );
 }
 
-} // namespace
+}
 
 static const activity_id ACT_FERTILIZE_PLOT( "ACT_FERTILIZE_PLOT" );
 static const activity_id ACT_MOVE_LOOT( "ACT_MOVE_LOOT" );
@@ -557,7 +557,6 @@ input_context game::get_player_input( std::string &action )
                 ui_manager::redraw_invalidated();
             }
 #if defined(TILES)
-            // The first redraw can discover animated tiles or status overlays.
             needs_map_animation = minimap_requires_animation() || terrain_requires_animation();
 #endif
             const auto needs_timed_poll = realtime_turns || animate_weather || animate_sct ||
@@ -803,7 +802,7 @@ auto open( const tripoint_bub_ms *target = nullptr ) -> void
     }
 }
 
-} // namespace
+}
 
 static void close()
 {
@@ -1124,7 +1123,7 @@ auto smash( const tripoint_bub_ms *target = nullptr ) -> void
     }
 }
 
-} // namespace
+}
 
 auto tile_selection::open_at( const tripoint_bub_ms &p ) -> void
 {
@@ -1688,8 +1687,6 @@ static void wear()
     }
 }
 
-/// The tile a modern pickup acts on: the reticle, else the tile last pressed toward when it holds
-/// items, else the player's own tile.
 static auto modern_pickup_target( avatar &u ) -> std::optional<tripoint_bub_ms>
 {
     if( get_option<std::string>( "CONTROL_SCHEME" ) != "modern" ) {
@@ -1891,7 +1888,6 @@ static void open_movement_mode_menu()
     as_m.entries.emplace_back( CMM_WALK, true, 'w', _( "Walk" ) );
     as_m.entries.emplace_back( CMM_CROUCH, true, 'c', _( "Crouch" ) );
     as_m.entries.emplace_back( CMM_PRONE, true, 'p', _( "Prone" ) );
-    // In Modern the stance key opens this menu, so pressing it again cycles.
     const auto stance_key = get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ? 'X' : '"';
     as_m.entries.emplace_back( CMM_COUNT, true, stance_key, _( "Cycle move mode" ) );
     as_m.selected = 1;
@@ -2123,9 +2119,7 @@ bool game::handle_action()
         remote_vehicle != nullptr );
 
     std::optional<tripoint_bub_ms> mouse_target;
-    // A right-click action ran from inside the mouse branch; the normal tail still runs for it.
     auto interaction_ran = false;
-    // Moves before that menu, so its cost is measured like any other action's.
     auto moves_before_interaction = std::optional<int>();
     auto reticle_attack_mode = aim_reticle::attack_mode::fire_command;
     const auto directed_peek = action.starts_with( "PEEK_" ) ? peek_direction( action ) : std::nullopt;
@@ -2141,7 +2135,6 @@ bool game::handle_action()
             u.clear_destination();
             destination_preview.clear();
             if( aim_reticle::cycle( u, m, action == "PREV_TARGET" ) ) {
-                // A target past the edge of the view pulls the view toward it; a near one lets it settle.
                 const auto rel = *aim_reticle::pos() - u.bub_pos();
                 const auto off_screen = std::abs( rel.x() ) >= TERRAIN_WINDOW_WIDTH / 2 - 1 ||
                                         std::abs( rel.y() ) >= TERRAIN_WINDOW_HEIGHT / 2 - 1;
@@ -2179,7 +2172,6 @@ bool game::handle_action()
             if( uquit == QUIT_WATCH ) {
                 return false;
             }
-            // Esc first takes the aim reticle away; the menu opens on the next press.
             if( aim_reticle::clear() ) {
                 liveview.hide();
                 return false;
@@ -2250,8 +2242,6 @@ bool game::handle_action()
             const auto own_choice = own_tile ? tile_selection::primary_choice( u, *mouse_target ) :
                                     std::nullopt;
             if( act == ACTION_SEC_SELECT && modern && tile_selection::enabled() ) {
-                // Modern right click locks the clicked tile and offers what it can do. It never
-                // walks, never spends moves before a choice, and never runs a lone action.
                 u.clear_destination();
                 destination_preview.clear();
                 if( !aim_reticle::select( u, m, *mouse_target ) ) {
@@ -2290,8 +2280,6 @@ bool game::handle_action()
                 if( act == ACTION_SEC_SELECT ) {
                     return false;
                 }
-                // Modern: a nearby tile with something to use gets its main action; the click
-                // attacks a hostile and otherwise only selects, so it never walks.
                 const auto primary = modern ? tile_selection::primary_choice( u, *mouse_target ) :
                                      std::nullopt;
                 if( primary ) {
@@ -2304,7 +2292,6 @@ bool game::handle_action()
                 } else if( modern && !tile_selection::has_hostile( u, *mouse_target ) ) {
                     return false;
                 } else {
-                    // Use reticle dispatch so clicks pay normal attack costs.
                     mouse_target.reset();
                     reticle_attack_mode = aim_reticle::attack_mode::direct;
                     act = ACTION_FIRE;
@@ -2417,9 +2404,6 @@ bool game::handle_action()
         return false;
     }
 
-    // Sword of the Stars: The Pit style aiming. The arrow keys move a reticle for free instead
-    // of walking, and any action that spends a turn takes the reticle away again.
-    // The reticle is Modern-only, so Classic keeps upstream's arrow-key walking.
     if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" && aim_reticle::enabled() &&
         !action.empty() && !veh_ctrl && !u.is_dead_state() &&
         aim_reticle::arrow_move( act, ctxt ) ) {
@@ -2481,7 +2465,6 @@ bool game::handle_action()
     // actions allowed only while alive
     if( !u.is_dead_state() ) {
         ZoneScopedN( "handle_action_alive_switch" );
-        // Defer stairs to the normal action cases, retaining mount, vehicle and rope checks.
         auto contextual_examined = false;
         if( act == ACTION_EXAMINE && !mouse_target && !u.has_active_mutation( trait_SHELL2 ) &&
             get_option<std::string>( "CONTROL_SCHEME" ) == "modern" &&
@@ -2866,7 +2849,6 @@ bool game::handle_action()
                 } else if( mouse_target && tile_selection::reachable( u, *mouse_target ) ) {
                     pickup::pick_up_all_at( *mouse_target );
                 } else if( const auto tile = modern_pickup_target( u ) ) {
-                    // Modern: everything on the tile beside you that you face or selected.
                     pickup::pick_up_all_at( *tile );
                 } else {
                     pickup::pick_up_all_at_feet();
@@ -3023,8 +3005,6 @@ bool game::handle_action()
                 break;
 
             case ACTION_USE_CONTEXTUAL: {
-                // One key for the verbs that used to need their own: read, eat, wield, wear,
-                // unload the gun in your hands, or activate a tool.
                 item *const loc = game_menus::inv::titled_menu( u, _( "Use which item?" ) );
                 if( loc == nullptr ) {
                     add_msg( _( "Never mind." ) );
@@ -3101,8 +3081,6 @@ bool game::handle_action()
             }
 
             case ACTION_FIRE: {
-                // Modern's attack key routes through the reticle, which decides between a
-                // creature, a smashable tile and the ordinary aiming screen.
                 const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
                 const auto aim = !mouse_target && modern ?
                                  aim_reticle::attack( u, m, { .mode = reticle_attack_mode } ) : std::nullopt;
@@ -3121,8 +3099,6 @@ bool game::handle_action()
             }
 
             case ACTION_FORCE_MELEE: {
-                // Shift+F: swing at the aimed or nearest hostile even while a firearm is in a
-                // firing mode. It never opens the aiming screen.
                 const auto aim = aim_reticle::attack( u, m, {
                     .mode = aim_reticle::attack_mode::fire_command, .force_melee = true
                 } );
@@ -3382,15 +3358,12 @@ bool game::handle_action()
                 break;
 
             case ACTION_WORLD_HUB: {
-                // One page with numbered tabs; each tab draws its screen inline.
                 std::vector<world_hub::panel_ptr> screens;
                 screens.push_back( world_hub::missions_screen() );
                 screens.push_back( world_hub::factions_screen() );
                 screens.push_back( world_hub::zones_screen() );
                 screens.push_back( world_hub::scores_screen( get_achievements_tracker(), stats(),
                         get_kill_tracker() ) );
-                // The fusion column carries the page itself; other layouts keep the
-                // full-screen page.
                 if( panel_manager::get_manager().get_current_layout_id() == "fusion" ) {
                     world_hub::show_in_sidebar( std::move( screens ) );
                 } else {
@@ -3716,14 +3689,11 @@ bool game::handle_action()
     const auto action_moves_spent = u.moves > moves_before_debug_restore ? 0 :
                                     before_action_moves - u.moves;
     u.movecounter = ( !u.is_dead_state() ? action_moves_spent : 0 );
-    // Peeking spends time without changing what the player has selected.
     if( action_moves_spent > 0 && act != ACTION_PEEK && aim_reticle::clear() ) {
         liveview.hide();
     }
     dbg( DL::Info ) << string_format( "%s: [%d] %d - %d = %d", action_ident( act ),
                                       to_turn<int>( calendar::turn ), before_action_moves, u.movecounter, u.moves );
-    // Cursor panning: re-centre the view after a genuine turn-consuming action.
-    // TIMEOUT is excluded because it may originate from idle panning, not player intent.
     if( act != ACTION_TIMEOUT && action_moves_spent > 0 ) {
         cursor_pan_recenter();
     }

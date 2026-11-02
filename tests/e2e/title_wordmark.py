@@ -14,7 +14,6 @@ def test_title_wordmark_visible_on_80x25(_game):
     game = Game(name="bn-e2e-title-wordmark", cols=80, rows=25)
     try:
         boot_to_title(game)
-        # The Quit tab has no submenu covering the title art.
         game.keys("Left", "Left")
         game.wait_for(WORDMARK[0])
         screen = [line.strip() for line in game.screen().splitlines()]

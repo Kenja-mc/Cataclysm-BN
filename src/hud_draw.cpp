@@ -15,7 +15,7 @@ namespace
 auto windows = std::vector<catacurses::window>();
 auto used = size_t{ 0 };
 
-} // namespace
+}
 
 auto begin_frame() -> void { used = 0; }
 
@@ -105,14 +105,16 @@ auto dot( const catacurses::window &w, const point at ) -> int
     return text( w, at, pal::muted(), std::string( " " ) + glyph::dot + " " );
 }
 
-auto hline( const catacurses::window &w, const point at, const int width, const nc_color color ) -> void
+auto hline( const catacurses::window &w, const point at, const int width,
+            const nc_color color ) -> void
 {
     for( auto i = 0; i < width; ++i ) {
         mvwprintz( w, at + point( i, 0 ), color, "─" );
     }
 }
 
-auto vline( const catacurses::window &w, const point at, const int height, const nc_color color ) -> void
+auto vline( const catacurses::window &w, const point at, const int height,
+            const nc_color color ) -> void
 {
     for( auto i = 0; i < height; ++i ) {
         mvwprintz( w, at + point( 0, i ), color, "│" );
@@ -121,4 +123,4 @@ auto vline( const catacurses::window &w, const point at, const int height, const
 
 auto width( const std::string &s ) -> int { return utf8_width( remove_color_tags( s ) ); }
 
-} // namespace hud_draw
+}

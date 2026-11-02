@@ -1,4 +1,3 @@
-"""Built-in tutorial text must describe routes a player can actually follow."""
 import json
 import re
 import time
@@ -26,7 +25,6 @@ TUTORIAL_OPTIONS = {
 def lesson_prefix(lesson, scheme):
     modern = lesson + "_MODERN"
     source = SNIPPETS[modern if scheme == "modern" and modern in SNIPPETS else lesson]
-    # An anchor from the data, not a second copy of tutorial prose in the test.
     return source.split("<", 1)[0][:32].rstrip()
 
 
@@ -45,7 +43,6 @@ def close_lesson(game, name, scheme):
 
 def initial_lessons(game, scheme):
     start_tutorial(game)
-    # Tutorials present per-turn lessons only once the first real action runs.
     if lesson_prefix("LESSON_INTRO", scheme) not in game.screen():
         game.keys("x" if scheme == "modern" else ".", delay=0)
     lesson(game, "LESSON_INTRO", scheme)
@@ -87,7 +84,6 @@ def exercise_initial_and_door_lessons(scheme):
         game.define_lua(HELPERS)
         empty_inventory(game)
         arena(game)
-        # The tutorial starts over water with live fish outside the lesson area.
         assert game.lua(
             "for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end out('ok')"
         ) == ["ok"]
@@ -119,22 +115,17 @@ def exercise_initial_and_door_lessons(scheme):
         assert bub_pos(game) == position and action_clock(game) > clock
         clock = action_clock(game)
         if scheme == "modern":
-            # Follow the alternative taught route: select, Space, then the close choice.
             x, y = game.find("@")
             game.click(x + 1, y, button=2)
             game.wait_for("Interact with the")
             game.keys("Escape", delay=0.2)
             game.wait_gone("Interact with the")
-            # Space runs the door's obvious action, so the open door closes without a menu.
             game.keys("space", delay=0.2)
-            # Its post-action lesson is distinct from a direct click's Close lesson.
             interaction = lesson(game, "LESSON_INTERACT", scheme)
             assert "Space" in interaction, interaction
             close_lesson(game, "LESSON_INTERACT", scheme)
             assert game.lua("out(M:get_ter_at(here(1,0)):str_id():str())") == ["t_door_c"]
             assert bub_pos(game) == position and action_clock(game) > clock
-            # Follow the other taught close route too, without changing the fixture:
-            # reopen the real door, then click it closed to trigger the smash lesson.
             x, y = game.find("@")
             game.click(x + 1, y)
             assert game.lua("out(M:get_ter_at(here(1,0)):str_id():str())") == ["t_door_o"]
@@ -156,7 +147,6 @@ def exercise_initial_and_door_lessons(scheme):
 
 def exercise_container_ammo_lesson(game, scheme, spare_capacity):
     arena(game)
-    # Seed a real ammo container, then let pickup transfer the ground stack into it.
     capacity = int(game.lua(
         "local a=gapi.get_avatar() "
         "TUTORIAL_AMMO_POUCH=a:create_item(ItypeId.new('ammo_pouch'),-1) "
@@ -165,7 +155,6 @@ def exercise_container_ammo_lesson(game, scheme, spare_capacity):
         "M:create_item_at(here(0,0),ItypeId.new('9mm'),3) out(capacity)")[0])
     assert capacity > spare_capacity
     open_pickup_menu(game, scheme, "9mm")
-    # Merely opening/canceling pickup must not teach a successful acquisition.
     game.keys("Escape", delay=0.2)
     game.wait_gone("Select all")
     assert lesson_prefix("LESSON_GOT_AMMO", scheme) not in game.screen()
@@ -183,17 +172,14 @@ def exercise_container_ammo_lesson(game, scheme, spare_capacity):
 
 
 def test_tutorial_lessons_supply_what_they_promise(_g):
-    # Key tags are expanded in-game below; a malformed one would leave the lesson unreadable.
     for name, text in SNIPPETS.items():
         for match in re.finditer(r"<press_", text):
             assert text.find(">", match.end()) > match.end(), f"{name}: malformed key tag"
-    # The lessons that used to hardcode keys must name the active binding instead.
     assert "<press_LEVEL_DOWN>" in SNIPPETS["LESSON_STAIRS"]
     assert "<press_LEVEL_UP>" in SNIPPETS["LESSON_STAIRS"]
     assert "<press_LEVEL_UP>" in SNIPPETS["LESSON_DARK_NO_FLASH"]
     assert "<press_fire>" in SNIPPETS["LESSON_GUN_FIRE"]
     assert "'<'" not in SNIPPETS["LESSON_GUN_FIRE"] and "'>'" not in SNIPPETS["LESSON_GUN_FIRE"]
-    # Aiming-screen keys use the TARGET context; pre-aim commands stay on the main map.
     for lesson_id in ("LESSON_GUN_FIRE", "LESSON_GUN_FIRE_MODERN"):
         assert "<press_FIRE:TARGET>" in SNIPPETS[lesson_id], lesson_id
         assert "<press_NEXT_TARGET:TARGET>" in SNIPPETS[lesson_id], lesson_id
@@ -201,7 +187,6 @@ def test_tutorial_lessons_supply_what_they_promise(_g):
         assert "<press_fire>" in SNIPPETS[lesson_id], lesson_id
     assert "<press_force_melee>" in SNIPPETS["LESSON_GUN_FIRE_MODERN"]
     assert "<press_select_fire_mode>" not in SNIPPETS["LESSON_GUN_FIRE_MODERN"]
-    # Rebindable keys are expanded live, never copied from the shipped defaults.
     assert "<press_player_data>" in SNIPPETS["LESSON_WORE_STORAGE"]
     assert "<press_player_data>" in SNIPPETS["LESSON_WORE_MASK"]
     assert "press @" not in SNIPPETS["LESSON_WORE_STORAGE"] + SNIPPETS["LESSON_WORE_MASK"]
@@ -219,8 +204,6 @@ def test_tutorial_lessons_supply_what_they_promise(_g):
     try:
         initial_lessons(game, "modern")
         game.define_lua(HELPERS)
-        # The dark lesson tells the player to use the supplied flashlight, so it must be loaded.
-        # It lies 19 tiles east and 14 south of the starting tile.
         found, charge = game.lua(
             "local n=0 local c=0 "
             "for _,it in pairs(M:get_items_at(here(19,14))) do "
@@ -229,14 +212,12 @@ def test_tutorial_lessons_supply_what_they_promise(_g):
             "then c=it:ammo_remaining() end end end out(n,c)")[0].split(",")
         assert found == "1" and int(charge) >= 100, \
             f"the tutorial flashlight must spawn with a charged cell (found {found}, charge {charge})"
-        # The unclothed tutorial avatar has no storage; isolate the real pickup from capacity prompts.
         empty_inventory(game)
         assert game.lua("M:clear_items_at(here(0,0)) out('ok')") == ["ok"]
         spawn(game, 0, 0, "machete")
         assert count_carried(game, "machete") == 0 and count_at(game, 0, 0, "machete") == 1
         game.wait_gone("Cancel popup")
         game.keys("g", delay=0)
-        # The activity runs until its synchronous on_pickup callback opens this lesson.
         weapon = lesson(game, "LESSON_GOT_WEAPON", "modern")
         assert "A zombie has spawned nearby." in weapon, weapon
         close_lesson(game, "LESSON_GOT_WEAPON", "modern")
@@ -256,7 +237,6 @@ def test_modern_tutorial_routes_are_reachable(_g):
     game = exercise_initial_and_door_lessons("modern")
     try:
         arena(game)
-        # Ctrl+G must include adjacent tiles, not quick-pick up only the avatar's tile.
         spawn(game, 0, 0, "flashlight")
         assert game.lua("for _,it in pairs(M:get_items_at(here(0,0))) do "
                         "it:ammo_set(ItypeId.new('battery'),100) end out('ok')") == ["ok"]
@@ -285,7 +265,6 @@ def test_modern_tutorial_routes_are_reachable(_g):
             "local active=false for _,it in ipairs(gapi.get_avatar():all_items(false)) do "
             "if it:get_type():str()=='flashlight_on' then active=it:is_active() end end out(active)") == ["true"]), \
             "the tutorial's inventory activation route must turn the real light on:\n" + game.screen()
-        # Only one of the three rounds fits; the live remainder is then stashed.
         exercise_container_ammo_lesson(game, "modern", spare_capacity=1)
     finally:
         game.close()
@@ -294,14 +273,12 @@ def test_modern_tutorial_routes_are_reachable(_g):
 def test_classic_tutorial_preserves_classic_controls(_g):
     game = exercise_initial_and_door_lessons("classic")
     try:
-        # All three rounds merge, destroying the source and redirecting its safe reference.
         exercise_container_ammo_lesson(game, "classic", spare_capacity=3)
     finally:
         game.close()
 
 
 def write_user_bindings(directory, rows):
-    """Seed a real user keybinding file, as the in-game keybinding screen would save it."""
     config = directory / "config"
     config.mkdir(parents=True, exist_ok=True)
     (config / "keybindings.json").write_text(json.dumps(rows))
@@ -320,8 +297,6 @@ def test_tutorial_move_names_replaced_binding(_g):
             start_tutorial(game)
             if lesson_prefix("LESSON_INTRO", "modern") not in game.screen():
                 game.keys("x", delay=0)
-            # The movement lesson is shown before a move can happen, so check both the text
-            # and that the named key really moves afterwards.
             lesson(game, "LESSON_INTRO", "modern")
             close_lesson(game, "LESSON_INTRO", "modern")
             movement = lesson(game, "LESSON_MOVE", "modern")
@@ -351,10 +326,8 @@ def test_tutorial_names_action_key_rebound_during_play(_g):
         game.define_lua(HELPERS)
         empty_inventory(game)
         assert game.lua("M:clear_items_at(here(0,0)) out('ok')") == ["ok"]
-        # Choose the existing Add local mode, then the filtered row, then the new key.
         game.keys("?", delay=0.8)
         game.wait_for("Keybindings")
-        # The filter is a text entry: send one key at a time so the game does not drop any.
         for ch in "apply":
             game.keys(ch, delay=0.2)
         game.wait_for("Apply or Use Item")
@@ -375,7 +348,6 @@ def test_tutorial_names_action_key_rebound_during_play(_g):
         assert "→ item" not in tool, \
             "a bound action must not fall back to the menu route:\n" + tool
         close_lesson(game, "LESSON_GOT_TOOL", "modern")
-        # The taught key is live: it opens the real use-item menu for the flashlight.
         game.keys("j", delay=0.6)
         game.wait_for("Use item")
         game.wait_for("flashlight")
@@ -411,7 +383,6 @@ def test_tutorial_unbound_action_shows_reachable_route(_g):
             else:
                 raise AssertionError("no weapon lesson after the pickup:\n" + game.screen())
             weapon = lesson(game, found, "modern")
-            # The popup wraps mid-route, so check the route pieces rather than one line.
             assert re.search(r"i → item →", weapon) and "Wield" in weapon, \
                 "an unbound wield key must teach the item panel route:\n" + weapon
             assert not re.search(r"\bv\b", weapon), \
@@ -422,7 +393,6 @@ def test_tutorial_unbound_action_shows_reachable_route(_g):
 
 
 def lesson_popup(screen, prefix):
-    """The popup's own message text, without the surrounding sidebar and Controls strip."""
     lines = screen.splitlines()
     message_line = next((i for i, line in enumerate(lines) if prefix in line), None)
     assert message_line is not None, screen
@@ -442,12 +412,10 @@ def test_tutorial_aim_keys_use_target_context(_g):
     with TemporaryDirectory(prefix="bn-e2e-tutorial-target-") as directory:
         userdir = Path(directory)
         write_user_bindings(userdir, [
-            # Main-map commands keep their DEFAULTMODE bindings.
             {"type": "keybinding", "id": "fire", "category": "DEFAULTMODE",
              "bindings": [{"input_method": "keyboard", "key": "z"}]},
             {"type": "keybinding", "id": "force_melee", "category": "DEFAULTMODE",
              "bindings": [{"input_method": "keyboard", "key": "y"}]},
-            # The aiming screen registers its own FIRE, NEXT_TARGET and QUIT ids.
             {"type": "keybinding", "id": "NEXT_TARGET", "category": "TARGET",
              "bindings": [{"input_method": "keyboard", "key": "k"}]},
             {"type": "keybinding", "id": "QUIT", "category": "TARGET",
@@ -460,7 +428,6 @@ def test_tutorial_aim_keys_use_target_context(_g):
             game.define_lua(HELPERS)
             empty_inventory(game)
             assert game.lua("M:clear_items_at(here(0,0)) out('ok')") == ["ok"]
-            # The gun lesson waits for a real firearm to finish reloading.
             assert game.lua(
                 "local a=gapi.get_avatar() "
                 "local gun=a:create_item(ItypeId.new('model_10_revolver'),-1) "
@@ -475,11 +442,9 @@ def test_tutorial_aim_keys_use_target_context(_g):
                 game.keys("x", delay=0.25)
             screen = lesson(game, "LESSON_GUN_FIRE", "modern")
             popup = lesson_popup(screen, lesson_prefix("LESSON_GUN_FIRE", "modern"))
-            # Both contexts are named: the main map's custom keys...
             assert re.search(r"\bz\b", popup), popup
             assert re.search(r"\by\b", popup), popup
             assert re.search(r"\bTab\b", popup), popup
-            # ...and the aiming screen's own FIRE, NEXT_TARGET and QUIT bindings.
             assert re.search(r"\bf\b", popup), popup
             assert re.search(r"\bk\b", popup), popup
             assert re.search(r"\bj\b", popup), popup

@@ -216,7 +216,6 @@ void show_lua_console_impl()
 
     auto is_editing = false;
 
-    // Matches the scrollbar draw in on_redraw below; viewport_pos counts from the oldest line.
     const auto log_geometry = [&]() {
         return scrollbar_input::geometry{
             .offset = point( 0, 1 ),
@@ -361,10 +360,8 @@ void show_lua_console_impl()
         auto act = ctxt.handle_input();
 
         if( modern && ( act == "MOUSE_MOVE" || act == "SEC_SELECT" ) ) {
-            // Hovering and the secondary click never scroll or edit.
             act.clear();
         } else if( modern && act == "SELECT" ) {
-            // A click only scrolls the log view; it never injects characters or runs commands.
             if( const auto mouse = ctxt.get_coordinates( w_console ) ) {
                 const auto cell = mouse->xy().raw() + point( getmaxx( w_console ),
                                    getmaxy( w_console ) ) / 2;

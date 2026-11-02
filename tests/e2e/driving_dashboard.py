@@ -1,8 +1,3 @@
-"""Opt-in instruments in Fusion's vehicle card and the legacy floating vehicle window.
-
-These are curses scenarios only. Native scaling, paired compact/dashboard captures and
-real input traces belong to ``tiles.py driving_dashboard``.
-"""
 import json
 import re
 import tempfile
@@ -18,8 +13,6 @@ OPTIONS = {"DRIVING_DASHBOARD": "true", "HUD_WINDOWS": "true", "HUD_ICONS": "asc
            "SHOW_WELCOME": "false", "SHOW_TIPS": "false", "ANIMATIONS": "false",
            "USE_METRIC_SPEEDS": "mph", "SIDEBAR_POSITION": "right"}
 
-# A private high-lift aircraft reaches its real takeoff threshold in the paved arena.
-# No velocity, lift state or dashboard reading is injected.
 PLANE_WING = {
     "type": "vehicle_part", "id": "e2e_dashboard_wing", "copy-from": "wing_metal_external",
     "name": "dashboard test wing", "lift_coff": 5000,
@@ -93,14 +86,12 @@ def dashboard_game(name: str, *, layout: str = "fusion", cols: int = 160,
 
 
 def capture_proof(game: Game, directory: Path, phase: str) -> None:
-    """Retain actual curses cells (and their colours), including successful runs."""
     game.settle_screen()
     (directory / f"{phase}.txt").write_text(game.screen())
     (directory / f"{phase}.ansi").write_text(game.screen_colors())
 
 
 def vehicle_panel(screen: str) -> tuple[int, int, int, int]:
-    """Locate the actual bordered card/window, not a fixed number of instrument rows."""
     lines = screen.splitlines()
     titles = [(y, line, re.search(r"\b(?:VEHICLE|Vehicle)\b", line))
               for y, line in enumerate(lines)
@@ -135,7 +126,6 @@ def row_text(screen: str, needle: str) -> str:
 
 
 def speed_of(screen: str, units: str = "mph") -> int:
-    # Speed is a summary fact; neither title case nor border decoration is contractual.
     header = panel_text(screen).splitlines()[:2]
     found = re.search(r"(-?\d+)\s+" + re.escape(units) + r"\s+[NSEW]{1,2}\b", " ".join(header))
     assert found, "vehicle summary must show speed, units and cardinal heading:\n" + screen
@@ -193,7 +183,6 @@ def test_dashboard_fusion_driving_facts(_game):
 
 
 def test_dashboard_driving_facts_fit_80x25(_game):
-    # Fusion's real small-screen path is the grouped fallback, not a second tiny Fusion design.
     for layout in ("fusion", "labels"):
         game = dashboard_game("bn-e2e-dashboard-small-" + layout, layout=layout)
         try:
@@ -204,7 +193,6 @@ def test_dashboard_driving_facts_fit_80x25(_game):
             assert_instruments(screen)
             left, top, right, bottom = vehicle_panel(screen)
             assert 0 <= left < right < 36 and 0 <= top < bottom < 25, screen
-            # The actual avatar glyph remains visible outside the instrument window.
             avatars = [(x, y) for y, line in enumerate(screen.splitlines())
                        for x, ch in enumerate(line[:36]) if ch == "@"]
             assert avatars, "dashboard must not cover the avatar:\n" + screen
@@ -235,7 +223,6 @@ def test_dashboard_fuel_and_battery_warnings_are_worded(_game):
             capture_proof(game, proof, "low")
             low = re.search(BAR + r"\s+(\d+)%\s+low\b", row_text(game.screen(), fuel), re.I)
             assert low and 6 <= int(low.group(1)) <= 20, game.screen()
-            # Critical is a word plus punctuation, not just a red gauge.
             drain(game, fuel, fuel_left(game, fuel) * 4 // 5)
             capture_proof(game, proof, "critical")
             critical = re.search(r"(\d+)%\s+low!", row_text(game.screen(), fuel), re.I)
@@ -300,7 +287,6 @@ def test_dashboard_remote_control(_game):
             assert "Stop controlling" in game.screen() or "Stop driving" in game.screen(), game.screen()
             game.keys("Escape", delay=0.5)
             game.settle_screen()
-            # Absolute positions remain valid when driving recentres the reality bubble.
             positions = (
                 "local a=gapi.get_avatar():abs_pos() out(a.x,a.y,a.z) "
                 "for _,v in ipairs(M:get_vehicles()) do if v:type()=='bubble_car' then "

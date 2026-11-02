@@ -1,4 +1,3 @@
-"""Modern scheme mouse support in inventory menus: click a row to pick it, right click for item actions."""
 import re
 
 from aim_reticle import action_clock
@@ -34,7 +33,6 @@ def fresh_inventory(g):
 
 def test_double_click_picks_an_inventory_row(g):
     fresh_inventory(g)
-    # A lua read closes an open list with its console Escape, so read before opening one.
     assert wielded(g) == [""], "the fixture must start empty-handed"
     pipe = display_name(g, "pipe")
     action_menu(g, "Inventory", "Wield")
@@ -87,7 +85,6 @@ def test_wheel_moves_inventory_selection(g):
     action_menu(g, "Inventory", "Wield")
     x, y = row_of(g, pipe)
     g.hover(x, y)
-    # A wheel notch emits a press only, not a button-release packet.
     g.type(f"\x1b[<65;{x + 1};{y + 1}M", delay=1)
     g.keys("Enter", delay=1)
     assert wielded(g) == ["rock"], "the wheel must move the selection before Enter"
@@ -127,7 +124,6 @@ def test_right_click_outside_inventory_cancels(g):
 def test_tab_hint_and_shift_tab_in_inventory(g):
     fresh_inventory(g)
     before = action_clock(g)
-    # Tab opens the advanced inventory from the inventory screen.
     g.keys("i", delay=1)
     g.wait_for("[Tab] Advanced inventory", timeout=10)
     g.keys("Tab", delay=1)
@@ -135,7 +131,6 @@ def test_tab_hint_and_shift_tab_in_inventory(g):
     g.keys("Escape", delay=0.8)
     g.wait_gone("Surrounding area", timeout=10)
     assert in_game(g.screen()), "Escape must return from the advanced inventory to the game"
-    # Shift+Tab still toggles the category selection the Tab key used to open.
     g.keys("i", delay=1)
     g.wait_for("[Tab] Advanced inventory", timeout=10)
     g.keys("BTab", delay=0.8)
@@ -143,7 +138,6 @@ def test_tab_hint_and_shift_tab_in_inventory(g):
     g.keys("BTab", delay=0.8)
     g.wait_gone("Category selection mode", timeout=10)
     g.keys("Escape", delay=0.6)
-    # A click on the hint label opens it too.
     g.keys("i", delay=1)
     g.wait_for("[Tab] Advanced inventory", timeout=10)
     x, y = row_of(g, "[Tab] Advanced inventory")

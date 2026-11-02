@@ -1215,7 +1215,6 @@ void cata::detail::reg_character( sol::state &lua )
         DOC( "Attempts to wear an item not in the creature inventory. If boolean parameter is false, item is worn instantly. Returns true if the item was worn" );
         luna::set_fx( ut, "wear_detached", []( UT_CLASS & c, detached_ptr<item> &it, bool interactive )
         {
-            // wear_item returns the item when it could not be worn, so an empty result means success.
             return !c.wear_item( std::move( it ), interactive, std::nullopt );
         } );
 

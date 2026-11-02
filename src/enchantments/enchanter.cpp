@@ -277,7 +277,6 @@ auto enchantment_selector_menu(std::vector<enchant_info> options, Character& use
             if (!consumed) {
                 if (const auto cell = cell_in(w_info)) {
                     if (num_options > 0 && info_lines > height) {
-                        // Long info text is drawn last, on top of the list mirror.
                         if (const auto hit = scrollbar_input::click(
                         {
                             .offset = point(width, 0),
@@ -303,14 +302,12 @@ auto enchantment_selector_menu(std::vector<enchant_info> options, Character& use
                 }
             }
             if (consumed) {
-                // A scrollbar click never applies an enchantment.
                 last_clicked_ench = -1;
             } else if (const auto cell = cell_in(w_ench)) {
                 const int row = names_scroll_min + (cell->y - 1);
                 if (cell->y >= 1 && cell->y <= height && cell->x >= 1 && cell->x < width &&
                     row >= 0 && row < num_options) {
                     if (row == line && last_clicked_ench == row) {
-                        // Second click on the same row performs the keyboard action.
                         action = "CONFIRM";
                         last_clicked_ench = -1;
                     } else {

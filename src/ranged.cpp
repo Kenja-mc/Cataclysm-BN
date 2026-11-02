@@ -185,7 +185,6 @@ static auto make_gun_projectile( const item &gun,
 namespace
 {
 
-/// Modifier counts live on the rounds in a detachable magazine, or on the integral magazine.
 auto next_round_source( item &gun ) -> item & // *NOPAD*
 {
     if( item *mag = gun.magazine_current(); mag && !mag->contents.empty() ) {
@@ -194,7 +193,7 @@ auto next_round_source( item &gun ) -> item & // *NOPAD*
     return gun;
 }
 
-} // namespace
+}
 static void cycle_action( item &weap, const tripoint_bub_ms &pos );
 static dispersion_sources calculate_dispersion( const map &m, const Character &who, const item &gun,
         int at_recoil, bool burst );
@@ -425,15 +424,12 @@ auto clamp_range_to_reality_bubble( const tripoint_bub_ms &src, const int range 
     return std::min( std::max( 1, range ), max_range );
 }
 
-/// Whether @p cr counts as an ally of the player: a friendly creature of any kind, or an NPC
-/// that is not hostile (a follower, a passive companion and so on).
 auto is_player_ally( const Creature &cr, const Character &you ) -> bool
 {
     const auto att = cr.attitude_to( you );
     return att == Attitude::A_FRIENDLY || ( cr.is_npc() && att != Attitude::A_HOSTILE );
 }
 
-/// First ally of the player standing between the shooter and @p target along the firing line.
 auto find_ally_in_line_of_fire( const map &here, const Character &you,
                                 const tripoint_bub_ms &target ) -> Creature * // *NOPAD*
 {
@@ -450,7 +446,6 @@ auto find_ally_in_line_of_fire( const map &here, const Character &you,
     return nullptr;
 }
 
-/// Whether @p cr would come after you right now: it is adjacent to you, or already hunting you.
 auto is_immediate_threat( const Character &you, Creature *cr ) -> bool
 {
     if( rl_dist( cr->bub_pos(), you.bub_pos() ) <= 1 ) {
@@ -599,9 +594,7 @@ class target_ui
         // List of vehicle turrets in range (out of those listed in 'vturrets')
         std::vector<turret_with_lof> turrets_in_range;
 
-        // Lines printed under the target panel by the shot preview.
         std::vector<std::string> shot_preview_lines;
-        // Where the Mouse View box is pinned during the preview, in the terminal renderer.
         std::optional<tripoint_bub_ms> preview_liveview_at;
 
         // If true, draws turret lines
@@ -659,20 +652,14 @@ class target_ui
         // List friendly creatures currently occupying line of fire.
         std::vector<weak_ptr_fast<Creature>> list_friendlies_in_lof();
 
-        // First ally of the player standing between the shooter and 'target' along the
-        // firing line, or nullptr if the line is clear.
         Creature *ally_in_line_of_fire( const tripoint_bub_ms &target ); // *NOPAD*
 
-        // Prints a warning if an ally stands in the firing line to the current cursor position.
         void panel_ally_warning( int &text_y );
 
-        // Recompute the shot preview marks, overlay label and panel lines for the current aim.
         void refresh_shot_preview();
 
-        // Print the cover, creature and stray lines produced by refresh_shot_preview().
         void panel_shot_preview( int &text_y );
 
-        // The tile under the mouse, if the last input was a click on the map.
         auto clicked_tile() const -> std::optional<tripoint_bub_ms>;
 
         // Toggle snap-to-target
@@ -2163,7 +2150,6 @@ static double confidence_estimate( int range, double target_size,
     return 1 / ( max_lateral_offset / target_size );
 }
 
-/// The same number the aim row prints for @p aim_level; the cursor label reuses it.
 static auto hit_chance_percent( const int range, const double target_size,
                                 const dispersion_sources &dispersion,
                                 const double aim_level ) -> int
@@ -2444,7 +2430,6 @@ static int print_aim( const Character &p, const catacurses::window &w, int line_
         }
         const int at_recoil = at.has_threshold ? at.threshold : static_cast<int>( predicted_recoil );
         const int aim_moves = ranged::gun_engagement_moves( p, weapon, at_recoil, p.recoil );
-        // One tile costs a creature 100 moves; it recovers its speed in moves each turn.
         return aim_moves * target->get_speed() / 10000;
     };
     const double range = rl_dist( p.bub_pos(), pos );
@@ -3181,8 +3166,6 @@ target_handler::trajectory target_ui::run()
     } );
     ui.mark_resize();
 
-    // The resize callback normally creates these on the first redraw; the shot preview
-    // needs the aim types on that same frame, before the map is drawn.
     init_window_and_input();
 
     ui.on_redraw( [&]( const ui_adaptor & ) {
@@ -3283,8 +3266,6 @@ target_handler::trajectory target_ui::run()
             action = ctxt.handle_input( timeout );
         }
 
-        // A click already on the current target fires; any other click retargets through
-        // handle_cursor_movement. The chosen aim mode's action keeps its usual move cost.
         if( action == "SELECT" && mode == TargetMode::Fire && dst_critter != nullptr && dst != src ) {
             if( const auto clicked = clicked_tile(); clicked && *clicked == dst ) {
                 action = aim_mode->has_threshold ? aim_mode->action : "FIRE";
@@ -3737,8 +3718,6 @@ tripoint_bub_ms target_ui::choose_initial_target()
         return cr->bub_pos();
     }
 
-    // Try the most urgent creature: a hostile that is adjacent to you or already hunting you
-    // comes before any other target.
     if( !targets.empty() ) {
         if( get_option<bool>( "SMART_TARGETING" ) ) {
             const auto threat = std::ranges::find_if( targets, [&]( Creature * c ) {
@@ -3749,7 +3728,6 @@ tripoint_bub_ms target_ui::choose_initial_target()
             }
         }
 
-        // Try closest creature
         return targets[0]->bub_pos();
     }
 
@@ -3979,7 +3957,6 @@ void target_ui::refresh_shot_preview()
     map &here = get_map();
     next.active = true;
 
-    // The first tile on the line that can stop or slow the shot.
     const auto blocker_text = [&]( const tripoint_bub_ms & p )
         -> std::optional<std::tuple<std::string, std::string, int>> {
         const auto cover = [&]( const std::string & name, const ranged_bash_info & info ) {
@@ -4126,7 +4103,6 @@ void target_ui::refresh_shot_preview()
         const int chance = hit_chance_percent( rl_dist( src, dst ), target_size,
                                                selected_dispersion, accuracy_grazing );
         const std::string mode_name = aim_mode->name.empty() ? _( "Immediate" ) : aim_mode->name;
-        // The aim row is priced from the recoil left after aiming to its threshold.
         double row_recoil = predicted_recoil;
         if( aim_mode->has_threshold && aim_mode->threshold < row_recoil ) {
             do {
@@ -4796,7 +4772,6 @@ void target_ui::panel_gun_info( int &text_y )
             const damage_unit &gun_du = gun_damage.damage_units.front();
             const damage_unit &ammo_du = ammo_damage.damage_units.front();
             int damage = static_cast<int>( gun_du.amount + ammo_du.amount );
-            // Same enchantment bonus the item info screen adds to the displayed damage.
             damage += static_cast<int>( you->bonus_from_enchantments( damage,
                       enchantment_value_id( "RANGED_DAMAGE_" + gun_du.get_internal_name() ), true ) );
             const int pierce = static_cast<int>( gun_du.res_pen + ammo_du.res_pen );

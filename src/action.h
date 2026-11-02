@@ -104,7 +104,6 @@ enum action_id : int {
     ACTION_EXAMINE,
     /** Jump across a single adjacent tile */
     ACTION_JUMP,
-    /** Toggle a vehicle curtain (Shift+Space in the modern scheme) */
     ACTION_TOGGLE_CURTAIN,
     /** Pick up items from one current/adjacent square */
     ACTION_PICKUP,
@@ -112,7 +111,6 @@ enum action_id : int {
     ACTION_HORN,
     /** Pick up items from all current/adjacent squares */
     ACTION_PICKUP_ALL,
-    /// Take everything on the faced or selected neighbouring tile (else underfoot) without a menu.
     ACTION_QUICK_PICKUP,
     /** Pick up items from current square. Auto pickup if only one item */
     ACTION_PICKUP_FEET,
@@ -134,22 +132,16 @@ enum action_id : int {
     ACTION_ZONES,
     /** Sort out the loot */
     ACTION_LOOT,
-    /** Stash carried items into matching nearby storage */
     ACTION_QUICK_STACK,
-    /** Use the item remembered by a quick slot */
     ACTION_HOTBAR_1,
     ACTION_HOTBAR_2,
     ACTION_HOTBAR_3,
     ACTION_HOTBAR_4,
     ACTION_HOTBAR_5,
     ACTION_HOTBAR_6,
-    /** Choose which item a quick slot remembers */
     ACTION_HOTBAR_ASSIGN,
-    /** Distribute the pile underfoot into matching nearby storage */
     ACTION_SORT_PILE,
-    /** Auto-move toward the nearest unexplored area */
     ACTION_AUTO_EXPLORE,
-    /** Melee attack in a chosen direction */
     ACTION_ATTACK,
     /**@}*/
 
@@ -198,7 +190,6 @@ enum action_id : int {
     ACTION_THROW,
     /** Fire the wielded weapon, or open fire menu if none */
     ACTION_FIRE,
-    /** Attack in melee even while a firearm is in a firing mode */
     ACTION_FORCE_MELEE,
     /** Burst-fire the current weapon */
     ACTION_FIRE_BURST,
@@ -274,7 +265,6 @@ enum action_id : int {
     /**@{*/
     /** Display player status screen */
     ACTION_PL_INFO,
-    /** Display every limb's health and wounds */
     ACTION_BODY_STATUS,
     /** Display over-map */
     ACTION_MAP,
@@ -286,7 +276,6 @@ enum action_id : int {
     ACTION_SCORES,
     /** Display factions screen */
     ACTION_FACTIONS,
-    /** One screen for missions, factions, zones and scores */
     ACTION_WORLD_HUB,
     /** Display morale effects screen */
     ACTION_MORALE,
@@ -306,7 +295,6 @@ enum action_id : int {
     ACTION_KEYBINDINGS,
     /** Display options window */
     ACTION_OPTIONS,
-    /** Display sound and volume controls */
     ACTION_SOUND_MENU,
     /** Open autopickup manager */
     ACTION_AUTOPICKUP,

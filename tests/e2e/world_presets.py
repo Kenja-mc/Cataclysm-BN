@@ -1,4 +1,3 @@
-"""World presets: applying a difficulty preset to a world and to the current world."""
 import json
 import time
 from pathlib import Path
@@ -8,7 +7,6 @@ from tmux_game import Game
 
 
 def world_options_path(userdir, timeout=120):
-    """The world is saved as soon as it is created, and worldoptions.json holds the values."""
     save_dir = Path(userdir) / "save"
     deadline = time.time() + timeout
     while time.time() < deadline:
@@ -24,7 +22,6 @@ def read_options(path):
     try:
         return {entry["name"]: entry["value"] for entry in json.loads(path.read_text())}
     except (OSError, ValueError):
-        # The world is being written; the caller polls until its value appears.
         return {}
 
 
@@ -40,10 +37,6 @@ def wait_for_option(path, name, expected, timeout=30):
 
 
 def reach_world_options(g, timeout=240):
-    """Language prompt -> New Game -> Custom Character -> world creation -> World Options tab.
-
-    Play Now silently creates a world with defaults, so the interactive flow is Custom Character.
-    """
     deadline = time.time() + timeout
     while time.time() < deadline:
         screen = g.screen()
@@ -71,7 +64,6 @@ def reach_world_options(g, timeout=240):
 
 
 def ensure_in_game(g):
-    """A failed earlier test may leave the main menu or the options open."""
     for _ in range(4):
         screen = g.screen()
         if "MAIN MENU" in screen or " OPTIONS " in screen:
@@ -92,7 +84,6 @@ def open_current_world_page(g):
 
 
 def test_world_preset_during_worldgen(_g):
-    """p at world creation applies Scarce: its keys land in worldoptions.json, others keep their defaults."""
     g = Game(name="bn-e2e-world-preset", cols=100, rows=30)
     try:
         reach_world_options(g)
@@ -103,7 +94,6 @@ def test_world_preset_during_worldgen(_g):
         g.keys("Down", "Down", "Enter", delay=0.6)
         g.wait_for("Apply the Scarce preset?", timeout=15)
         g.keys("Left", "Enter", delay=0.8)
-        # Finish the world so it saves its options.
         g.keys("Tab", delay=1)
         g.wait_for("World Name", timeout=30)
         g.keys("Tab", delay=1)
@@ -115,7 +105,6 @@ def test_world_preset_during_worldgen(_g):
         assert values["SPAWN_RATE_ammo"] == "0.65", values
         assert values["VEHICLE_SPAWNRATE"] == "0.50", values
         assert values["VEHICLE_DAMAGE"] == "2.00", values
-        # A preset only changes the world page's defaults; the game rules keep their own values.
         assert values["CITY_SIZE"] == "8", values
         assert values["MONSTER_UPGRADE_FACTOR"] == "2.00", values
         assert values["NPC_DENSITY"] == "0.10", values
@@ -124,7 +113,6 @@ def test_world_preset_during_worldgen(_g):
 
 
 def test_world_defaults_unchanged_without_preset(g):
-    """A world made without a preset keeps every shipped default."""
     path = world_options_path(g.userdir, timeout=30)
     values = read_options(path)
     assert values["ITEM_SPAWNRATE"] == "1.00", values
@@ -134,7 +122,6 @@ def test_world_defaults_unchanged_without_preset(g):
 
 
 def test_world_preset_in_game(g):
-    """p on the in-game Current world page applies Relaxed, saves it, and Default restores it."""
     path = world_options_path(g.userdir, timeout=30)
     open_current_world_page(g)
     try:

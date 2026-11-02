@@ -1,9 +1,3 @@
-"""Native opt-in dashboard proof; registered only in tiles.py, never curses TESTS.
-
-Every compact/dashboard pair reloads the same real running car. It receives the same
-throttle/wait keys and retains full captures, input traces and persisted vehicle state.
-The small Fusion case exercises its grouped fallback at the supported 80x25 minimum.
-"""
 import json
 import sqlite3
 import subprocess
@@ -18,7 +12,6 @@ from vehicle_box import spawn_vehicle, take_control
 
 
 def saved_driver(world: Path, player: dict) -> dict:
-    """Read the actual occupied car, including SQLite-backed maps, after a real save."""
     import tiles
 
     maps = {str(path.relative_to(world)): path.read_bytes() for path in world.rglob("*.map")}
@@ -51,7 +44,6 @@ def saved_driver(world: Path, player: dict) -> dict:
 
 
 def build_driving_dashboard_world(session) -> None:
-    """Prepare one saved car through the normal spawn/start-engine controls."""
     import tiles
 
     tiles.tmux_game.ROOT = session.root
@@ -67,7 +59,6 @@ def build_driving_dashboard_world(session) -> None:
         arena(game)
         clear_driving_arena(game)
         spawn_vehicle(game)
-        # This is a real engine start, not a serialized engine_on/velocity edit.
         take_control(game)
         settle(game)
         tiles.require(game.lua(
@@ -78,7 +69,6 @@ def build_driving_dashboard_world(session) -> None:
         (session.artifacts / "dashboard-fixture-curses.txt").write_text(game.screen_colors())
         bind_keys(session, {"DEFAULTMODE": {"save": "F6"}})
     finally:
-        # Game.close deletes the saved fixture; only stop the private builder process here.
         subprocess.run(["tmux", "kill-session", "-t", game.name],
                        stderr=subprocess.DEVNULL, check=False)
     saves = [path for path in (session.curses_userdir / "save").iterdir() if path.is_dir()]
@@ -127,12 +117,9 @@ def case_driving_dashboard(session) -> tuple[list[str], dict]:
             "HUD_VEHICLE_BOX": "bottom_right", "TILES": "UNDEAD_PEOPLE_BASE"}
     observations = {}
     checks = []
-    # Full Fusion's existing card, labels' floating window and the real small Fusion fallback.
     for layout, columns, rows in (("fusion", 160, 45), ("labels", 80, 25), ("fusion", 80, 25)):
         panels = session.curses_userdir / "config" / "panel_options.json"
         panels.write_text(json.dumps([{"current_layout_id": layout, "layouts": []}]))
-        # The standard native display is 1920x1200. Full Fusion fits at 1x; the
-        # minimum-size cases prove both 1x and 2x without changing shared display defaults.
         for scale in ((1,) if columns >= 140 else (1, 2)):
             group = f"dashboard-{layout}-{columns}x{rows}-{scale}x"
             captures, states, traces, frames = {}, {}, {}, {}
@@ -176,8 +163,6 @@ def case_driving_dashboard(session) -> tuple[list[str], dict]:
             cell_width, cell_height = 8 * scale, 16 * scale
             width, height = columns * cell_width, rows * cell_height
             terrain_width = (columns - 44) * cell_width
-            # Both layouts reserve the same 44-column right sidebar. The avatar is drawn on
-            # the central map tile, not at the centre of the whole SDL window.
             pitch = 32 * scale
             avatar_x = terrain_width // pitch // 2 * pitch
             avatar_y = height // pitch // 2 * pitch
@@ -189,8 +174,6 @@ def case_driving_dashboard(session) -> tuple[list[str], dict]:
                 off, on = frames["off"][phase], frames["on"][phase]
                 bounds = _changed_bounds(off, on)
                 changes[phase] = bounds
-                # Before any turns, the frame difference isolates HUD placement. Driving also
-                # updates exhaust and the weather ribbon, which are not dashboard pixels.
                 if phase == "parked":
                     checks.append(tiles.Check(f"{group} {phase}: instruments fit beside right sidebar",
                                               bounds[2] <= terrain_width,
@@ -199,8 +182,6 @@ def case_driving_dashboard(session) -> tuple[list[str], dict]:
                     checks.append(tiles.Check(f"{group} {phase}: {name} remains unobscured",
                                               _region_bytes(off, rect) == _region_bytes(on, rect),
                                               f"protected native rectangle={rect}"))
-                # The stationary comparison proves the existing 32-column footprint without
-                # treating independently rendered exhaust as an instrument.
                 if phase == "parked" and layout == "fusion" and columns >= 140:
                     checks.append(tiles.Check(f"{group} {phase}: reuse Fusion vehicle card",
                                               bounds[0] < 32 * cell_width and bounds[2] <= 32 * cell_width,

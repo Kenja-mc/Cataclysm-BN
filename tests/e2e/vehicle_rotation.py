@@ -1,10 +1,3 @@
-"""Native tiles proof using two real, undamaged, engine-free swivel-chair vehicles.
-
-Run through tiles.py vehicle_rotation, not the curses TESTS runner. Both launches load
-one saved world; the only changed option is VEHICLE_SMOOTH_ROTATION. The positive
-assertion is confined to the diagonal chair's 3x3-tile image region, with the cardinal
-chair and an empty floor region as exact-equality controls.
-"""
 import json
 import shutil
 import sqlite3
@@ -19,14 +12,13 @@ TILESET = "MSX++UnDeadPeopleEdition"
 
 
 def _spawn_chair(game, heading):
-    """The debug menu creates a real vehicle; the bound API pins its condition/facing."""
     import tiles
 
     tiles.require(game.lua("rotation_spawn=gapi.get_avatar():abs_pos() out('ok')") == ["ok"],
                   "could not remember chair origin")
     game.keys("F12", delay=0.6)
     game.wait_for("Debug Functions")
-    game.keys("s", delay=0.3)  # Fixture explicitly uses Classic.
+    game.keys("s", delay=0.3)
     game.wait_for("Spawn a vehicle")
     game.keys("v", delay=0.3)
     game.wait_for("Choose vehicle to spawn")
@@ -37,8 +29,6 @@ def _spawn_chair(game, heading):
     game.keys("Down", "Enter", delay=0.6)
     game.wait_for("Vehicle direction")
     game.keys("Enter", delay=0.8)
-    # Debug spawning boards the avatar. Leave normally before replacing the chair;
-    # teleporting a boarded avatar would leave a stale passenger on the old vehicle.
     game.keys("h", delay=0.6)
     tiles.require(game.lua(
         "local p=gapi.get_avatar():abs_pos() "
@@ -51,7 +41,6 @@ def _spawn_chair(game, heading):
 
 
 def _saved_chairs(world, avatar, artifacts):
-    """Assert actual persisted origins, facing and parts, not just successful setup calls."""
     import tiles
 
     maps = {str(path.relative_to(world)): path.read_bytes() for path in world.rglob("*.map")}
@@ -83,7 +72,6 @@ def _saved_chairs(world, avatar, artifacts):
                                   f"{name}: unexpected saved vehicle parts")
                     found[name] = {"offset": offset, "heading": heading, "vehicle": vehicle}
                     sources[path] = json.loads(data)
-    # Keep the real saved source on success too: the harness otherwise removes its work tree.
     (artifacts / "vehicle-rotation-saved-submaps.json").write_text(json.dumps(sources, indent=2))
     (artifacts / "vehicle-rotation-fixture.json").write_text(json.dumps(found, indent=2))
     tiles.require(set(found) == set(CHAIRS), f"saved fixture chairs missing: {set(CHAIRS) - set(found)}")
@@ -115,9 +103,7 @@ def build_vehicle_rotation_world(session):
             "out(gapi.get_avatar():has_trait(MutationBranchId.new('DEBUG_NIGHTVISION')))")
             == ["true"], "could not pin fixture sight across save/reload")
         tiles.require(game.lua("rotation_clear()") == ["clear"], "courtyard setup failed")
-        settle(game)  # Activate queued creatures before the final cleanup.
-        # Movement/set_pos can recenter the reality bubble. Persistent anchors must
-        # be absolute; convert only at the point an API needs bubble coordinates.
+        settle(game)
         tiles.require(game.lua("rotation_clear() rotation_origin=gapi.get_avatar():abs_pos() "
                                "gapi.set_omt_weather_override("
                                "coords.project_to_omt(gapi.get_avatar():abs_pos()),3,'clear',nil)")
@@ -159,7 +145,6 @@ def build_vehicle_rotation_world(session):
 
 
 def _keep_sprite_source(session):
-    """Reject authored directional arrays and preserve the exact shipped source atlas."""
     import tiles
 
     directory = session.root / "gfx" / TILESET
@@ -202,14 +187,13 @@ def case_vehicle_rotation(session):
             try:
                 window = x11.find_window(tiles.WINDOW_TITLE_PREFIX)
                 tiles.require(window is not None, "rotation case: native window disappeared")
-                x11.focus_local(window, 1272, 952)  # Pointer stays outside the measured terrain.
+                x11.focus_local(window, 1272, 952)
                 pngs[enabled] = session.artifacts / f"{label}.png"
                 frames[enabled] = tiles.settle_capture(session, x11, window, pngs[enabled])
             finally:
                 x11.close()
     tiles.require(frames[False][:2] == frames[True][:2] == (1280, 960),
                   "rotation case requires the pinned 1280x960 native window")
-    # Same label-layout/right-sidebar geometry as the native known_locks/zoom cases.
     pitch = 32
     terrain_width = 1280 - tiles.ZOOM_SIDEBAR_CELLS * tiles.ZOOM_FONT_WIDTH
     ox = terrain_width // pitch // 2 * pitch
@@ -237,8 +221,6 @@ def case_vehicle_rotation(session):
             tiles.crop_to(pngs[enabled], rect,
                           session.artifacts / f"vehicle-rotation-{name}-{'on' if enabled else 'off'}.png",
                           margin=0)
-    # The positive signal must be in the diagonal vehicle, not weather, the sidebar,
-    # an arbitrary screenshot difference, or a change in the terrain underneath it.
     diagonal = regions["diagonal"]
     outside = sum(off[p:p + 3] != on[p:p + 3]
                   for y in range(960) for x in range(terrain_width)

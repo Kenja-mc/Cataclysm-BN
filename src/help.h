@@ -26,8 +26,6 @@ class help
 
         std::map<int, std::pair<std::string, std::vector<std::string> > > help_texts;
         std::vector< std::vector<std::string> > hotkeys;
-        /// Window-relative start and printed width of each rendered topic row, in the same
-        /// order as the hotkeys vector. Filled by draw_menu, read by the click handler.
         std::vector<std::pair<point, int>> menu_rows;
 
         input_context ctxt;
@@ -37,8 +35,6 @@ help &get_help();
 
 std::string get_hint();
 
-/// Replaces `<press_action>` tags with the first key bound to that action, e.g. "w".
-/// `<press_action:CONTEXT>` uses that input context's binding, e.g. `<press_QUIT:TARGET>`.
 std::string expand_key_tags( const std::string &text );
 
 

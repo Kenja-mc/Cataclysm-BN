@@ -193,7 +193,6 @@ void draw_perk_menu( Character &player )
         ctxt.register_action( "SCROLL_DOWN" );
     }
 
-    // Where the list rows of the category tab strip end, mirroring draw_cat_tabs().
     const auto tab_at = [&]( int x ) {
         return tab_input::index_at( {
             .texts = all_categories,
@@ -212,7 +211,6 @@ void draw_perk_menu( Character &player )
         std::string action = ctxt.handle_input();
         if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
             if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
-                // The list pans one row; the description text three lines.
                 if( ctxt.get_coordinates( w_list ) ) {
                     action = action == "SCROLL_UP" ? "UP" : "DOWN";
                 } else {

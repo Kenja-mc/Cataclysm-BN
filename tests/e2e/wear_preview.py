@@ -1,4 +1,3 @@
-"""The Wear menu previews the encumbrance an item would add before it is worn."""
 import re
 
 from fixtures import shared_game
@@ -19,7 +18,6 @@ def worn(game, item):
 
 
 def wear_from_pack(game, item):
-    """Wear one carried item without the menu, leaving the rest for the Wear menu."""
     out = game.lua("local a=gapi.get_avatar() local done=false "
                    "for _,it in ipairs(a:all_items(false)) do "
                    f"if it:get_type():str()=='{item}' and not a:is_wearing(it) then "

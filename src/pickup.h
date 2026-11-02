@@ -43,9 +43,7 @@ enum from_where : int {
 auto pick_up( const tripoint_bub_ms &p, int min, from_where get_items_from = prompt ) -> void;
 /** Pick up items from the player's tile and every adjacent tile. */
 auto pick_up_all_nearby() -> void;
-/// Queue every ground and cargo item on the player's tile through the pickup activity.
 auto pick_up_all_at_feet() -> void;
-/// Queue every ground and cargo item on tile `p`, which must be the player's tile or adjacent.
 auto pick_up_all_at( const tripoint_bub_ms &p ) -> void;
 /** Determines the cost of moving an item by a character. */
 auto cost_to_move_item( const Character &who, const item &it ) -> int;

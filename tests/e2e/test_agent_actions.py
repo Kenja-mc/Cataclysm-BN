@@ -1,11 +1,8 @@
-"""Menu observer contracts using rendered frame and title-screen text."""
 import unittest
 
 from agent_actions import actions_for, classify_screen, framed_title, menu_rows
 
 
-# Modern's title occupies an interior row above a full-width separator. The
-# Options row retains the captured map glyph and neighboring HUD border.
 MODERN_MENU = "\n".join([
     "│ a Background HUD row │",
     " " * 56 + "╭" + "─" * 27 + "╮",

@@ -23,7 +23,7 @@
 namespace
 {
 
-static const enchantment_value_id ench_val_REACH_RANGE_UNARMED( "REACH_RANGE_UNARMED" );
+const enchantment_value_id ench_val_REACH_RANGE_UNARMED( "REACH_RANGE_UNARMED" );
 
 auto reticle = std::optional<tripoint_bub_ms>();
 
@@ -106,14 +106,12 @@ auto melee_reach( const avatar &you ) -> int
     return std::max( 1, static_cast<int>( reach ) );
 }
 
-/// A firearm aimed in a firing mode. A gun left in melee mode counts as a melee weapon.
 auto is_firearm( const avatar &you ) -> bool
 {
     const auto &weapon = you.primary_weapon();
     return weapon.is_gun() && !weapon.gun_current_mode().melee();
 }
 
-/// A firearm that can fire at least one shot in its current mode.
 auto is_loaded_gun( const avatar &you ) -> bool
 {
     return is_firearm( you ) && you.primary_weapon().ammo_sufficient();
@@ -129,14 +127,9 @@ auto weapon_reaches( const avatar &you, const Creature &target, const bool melee
     return dist <= melee_reach( you );
 }
 
-/// The nearest visible hostile within melee reach. A plain attack with a firearm in a firing
-/// mode only clears an adjacent enemy, so the aiming screen still opens for a nearby shot;
-/// Shift+F may use an attached bayonet's reach.
 auto nearest_hostile_in_reach( const avatar &you, const bool force_melee )
-    -> std::optional<tripoint_bub_ms>
+-> std::optional<tripoint_bub_ms>
 {
-    // A firearm in a firing mode clears only the tile it could bash on a plain attack; a
-    // bayonet is used deliberately with Shift+F. A melee weapon uses its full reach.
     const auto reach = force_melee || !is_firearm( you ) ? melee_reach( you ) : 1;
     auto best = std::optional<target_rank>();
     for( const auto &critter : g->all_creatures() ) {
@@ -156,7 +149,6 @@ auto nearest_hostile_in_reach( const avatar &you, const bool force_melee )
     return best ? std::optional<tripoint_bub_ms>( best->pos ) : std::nullopt;
 }
 
-/// Attack a hostile the weapon reaches in place: a bump when adjacent, a reach swing when not.
 auto attack_reachable( avatar &you, map &m, const tripoint_bub_ms &p ) -> void
 {
     const auto diff = p - you.bub_pos();
@@ -166,8 +158,7 @@ auto attack_reachable( avatar &you, map &m, const tripoint_bub_ms &p ) -> void
         you.reach_attack( p );
     }
 }
-
-} // namespace
+}
 
 namespace aim_reticle
 {
@@ -248,8 +239,6 @@ auto attack( avatar &you, map &m, const attack_options &opts ) -> std::optional<
         if( mode == attack_mode::direct ) {
             return std::nullopt;
         }
-        // With nothing selected, attack what the weapon reaches in melee, in place. This
-        // comes before the aiming screen, so an adjacent enemy is a swing, not a shot.
         if( nearest_hostile_in_reach( you, force_melee ) ) {
             avatar_action::autoattack( you, m );
             return ACTION_NULL;
@@ -258,13 +247,9 @@ auto attack( avatar &you, map &m, const attack_options &opts ) -> std::optional<
             add_msg( m_info, _( "No hostile creature is within your weapon's reach." ) );
             return ACTION_NULL;
         }
-        // A loaded gun, and only a loaded gun, opens the ordinary aiming screen. It comes
-        // before smashing so the key keeps its ranged meaning while the weapon can shoot.
         if( is_loaded_gun( you ) ) {
             return ACTION_FIRE;
         }
-        // Otherwise break what the last step faced. Only a real object, field or reviving
-        // corpse counts, so walking on open floor never turns the attack key into digging.
         if( const auto faced = tile_selection::facing_tile( you );
             faced && tile_selection::reachable( you, *faced ) &&
             tile_selection::smashable_at( you, *faced ) ) {
@@ -281,8 +266,6 @@ auto attack( avatar &you, map &m, const attack_options &opts ) -> std::optional<
     const auto p = *reticle;
     auto *target = hostile_at( you, p );
     if( target != nullptr ) {
-        // A melee weapon, a gun left in a melee mode, and a forced melee all swing at the
-        // aimed creature in one step. Only a firearm in a firing mode opens the aiming screen.
         if( force_melee || !is_firearm( you ) ) {
             if( !weapon_reaches( you, *target, true ) ) {
                 add_msg( m_info, _( "%s is out of your weapon's reach." ), target->disp_name() );
@@ -298,14 +281,11 @@ auto attack( avatar &you, map &m, const attack_options &opts ) -> std::optional<
             return ACTION_NULL;
         }
 
-        // Aim at the creature the reticle covers, not whichever hostile is nearest.
         you.last_target = g->shared_from( *target );
         clear();
         return ACTION_FIRE;
     }
 
-    // A direct click only ever attacks the creature under it. Smashing and pulping belong to
-    // the fire command, so a click on terrain keeps its old meaning.
     if( mode == attack_mode::direct || force_melee ) {
         add_msg( m_info, _( "There's nothing there to attack." ) );
         return ACTION_NULL;
@@ -341,7 +321,6 @@ auto attack( avatar &you, map &m, const attack_options &opts ) -> std::optional<
         return ACTION_NULL;
     }
     if( loaded ) {
-        // The firing UI consumes this selection as its initial cursor position.
         return ACTION_FIRE;
     }
     if( !reachable && ( smashable || corpse ) ) {
@@ -368,5 +347,4 @@ auto clear() -> bool
     }
     return true;
 }
-
-} // namespace aim_reticle
+}

@@ -302,11 +302,6 @@ public:
     constexpr auto output() const -> bool { return do_output; }
     //@}
 
-    /**
-     * Override the tile's color. On TILES, ignored; on CURSES, forces the glyph color.
-     * Default: the tile's own color.
-     */
-    //@{
     auto color( const nc_color &v ) -> drawsq_params& {
         forced_color = v;
         do_force_color = true;
@@ -314,7 +309,6 @@ public:
     }
     auto has_color() const -> bool { return do_force_color; }
     auto color() const -> const nc_color& { return forced_color; } // *NOPAD*
-    //@}
 
     /**
      * Set view center.
@@ -2464,9 +2458,8 @@ private:
         uint32_t epoch = 0;
         char value = -1; // -1 = empty/miss
     };
-    static constexpr std::size_t vision_cache_slots = 1 << 17; // 131072 entries
+    static constexpr std::size_t vision_cache_slots = 1 << 17;
     mutable std::vector<vision_cache_slot> skew_vision_cache;
-    // The full epoch protects in-flight inserts when the slots' low 32 bits wrap.
     uint64_t skew_vision_cache_epoch = 1;
     // shared_mutex allows concurrent cache reads (common case)
     // while still serialising inserts.  Use shared_lock for reads and

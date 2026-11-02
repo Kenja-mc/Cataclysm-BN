@@ -1,16 +1,4 @@
 #!/usr/bin/env python3
-"""Merge per-shard `--durations` files into tests/e2e/durations.json.
-
-Each CI shard writes its own timings file, uploaded as the `e2e-suite-log-<shard>`
-artifact. Download them, then run:
-
-  python3 tests/e2e/merge_durations.py /tmp/e2e-durations-shard-*.json --write
-
-Without --write it only prints the merge. Tests missing from the inputs keep the value
-already in the manifest, so refreshing from one shard cannot erase the other tests.
-The manifest holds CI timings after a refresh: the shard split predicts CI cost, not
-this machine's.
-"""
 import argparse
 import json
 from pathlib import Path

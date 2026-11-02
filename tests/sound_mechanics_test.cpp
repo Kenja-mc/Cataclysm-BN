@@ -206,8 +206,6 @@ TEST_CASE("sounds_keep_absolute_positions_when_reality_bubble_resizes", "[sound]
     CHECK(instances.back().origin == cached_source);
 }
 
-// monster::update_idle_sound() returns before sounds::sound() when this gate is false, so a false
-// result means the cue produces no event at all: no marker, no log line and no NPC hearing.
 TEST_CASE("monster_ambience_gate_defaults_off_and_needs_the_clip", "[sound][monster_ambience]") {
     clear_all_state();
     const auto cleanup = on_out_of_scope([]() { clear_all_state(); });
@@ -221,10 +219,8 @@ TEST_CASE("monster_ambience_gate_defaults_off_and_needs_the_clip", "[sound][mons
         CHECK_FALSE(sounds::monster_ambience_allowed("plmove", "default"));
     }
 #if defined(SDL_SOUND)
-    // A sound build emits nothing at all for a clip its pack does not carry.
     CHECK_FALSE(sounds::monster_ambience_allowed("e2e_no_such_sound_id", "default"));
 #else
-    // Without audio the marker is the cue, so every id counts as present.
     CHECK(sounds::monster_ambience_allowed("e2e_no_such_sound_id", "default"));
 #endif
 }

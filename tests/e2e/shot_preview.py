@@ -1,4 +1,3 @@
-"""Shot preview: cover on the line, creatures in the way, strays, advance and clicks."""
 import re
 import tempfile
 from pathlib import Path
@@ -20,7 +19,6 @@ GUN = ("GUN=gapi.get_avatar():create_item(ItypeId.new('model_10_revolver'),-1) "
 WIPE = ("for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end out('ok')")
 NIGHTVISION = ("gapi.get_avatar():set_mutation(MutationBranchId.new('DEBUG_NIGHTVISION')) "
                "out('ok')")
-# A straight, lit lane east of the player: the targets must be seen for the reticle to pick them.
 LANE = ("for dx=0,7 do for dy=-2,2 do local p=here(dx,dy) "
         "M:set_ter_at(p,TerId.new('t_floor'):int_id()) "
         "M:set_furn_at(p,FurnId.new('f_null'):int_id()) M:clear_items_at(p) end end out('ok')")
@@ -58,7 +56,6 @@ def spawn(game, name, dx, dy, monster="mon_zombie"):
 
 
 def pin(game, *placements):
-    """Put creatures back on their tiles, unable to act, right before aiming."""
     code = " ".join(f"{name}:set_pos_ms(here({dx},{dy})) {name}:set_moves(-1000000)"
                     for name, dx, dy in placements)
     assert game.lua(code + " out('ok')") == ["ok"]
@@ -73,7 +70,6 @@ def overlays(game, kind):
 
 
 def panel_until(game, pattern, timeout=20):
-    """Read the firing window until it shows @p pattern; the window may lag the key."""
     last = {"panel": ""}
 
     def check():
@@ -90,7 +86,6 @@ def panel_until(game, pattern, timeout=20):
 
 
 def panel_gone(game, pattern, timeout=20):
-    """Wait until the firing window no longer shows @p pattern."""
     def check():
         try:
             return re.search(pattern, firing_target_panel(game)) is None
@@ -102,7 +97,6 @@ def panel_gone(game, pattern, timeout=20):
 
 
 def mouse_view_until(game, pattern, timeout=20):
-    """Read the Mouse View box until it shows @p pattern."""
     last = {"view": ""}
 
     def check():
@@ -119,7 +113,6 @@ def mouse_view_until(game, pattern, timeout=20):
 
 
 def open_aim_on_empty(game, dx):
-    # With no hostile selected the first arrow puts the reticle on the player.
     game.keys("Right", delay=0.5)
     for _ in range(dx):
         game.keys("Right", delay=0.2)
@@ -128,7 +121,6 @@ def open_aim_on_empty(game, dx):
 
 
 def open_aim_on_nearest(game):
-    # The first arrow snaps to the nearest hostile, which is also the cursor's first target.
     game.keys("Right", delay=0.6)
     game.keys("f", delay=1.0)
     game.wait_for("< Firing ", timeout=30)
@@ -136,7 +128,6 @@ def open_aim_on_nearest(game):
 
 
 def aim_rows(panel):
-    """The textual aim rows: name -> (moves, total hit percent)."""
     lines = panel.splitlines()
     rows = {}
     for index, line in enumerate(lines):
@@ -208,7 +199,6 @@ def test_stray_cone_narrows_with_the_aim_mode(_g):
         panel_until(game, r"Strays may hit:.*(?:the |a )?zombie")
         assert overlays(game, "stray_tile"), "the stray cone left no map tiles\n" + game.screen()
 
-        # Modern binds the aim mode menu to m; s moves the cursor south.
         game.keys("m", delay=0.8)
         game.wait_for("Select preferences", timeout=20)
         choose_menu_entry(game, "Precise")
@@ -277,12 +267,9 @@ def test_click_retargets_then_fires(_g):
         open_aim_on_nearest(game)
         panel_until(game, r"Range: 4/")
 
-        # game.lua types into the Lua console, and its retry presses Escape, which would close
-        # the aim window. Read the state file while the window is open.
         before = game.state()
         origin = game.find("@")
         assert origin, game.screen()
-        # Modern binds the target button to the right mouse button.
         game.click(origin[0] + 5, origin[1], button=2)
         panel_until(game, r"Range: 5/")
         after = game.state()
@@ -291,7 +278,6 @@ def test_click_retargets_then_fires(_g):
         assert after["turn"] == before["turn"], "retargeting must not pass a turn"
 
         game.click(origin[0] + 5, origin[1])
-        # The window reopens after the shot, so wait for the spent round, not for it to close.
         panel_until(game, r"Ammo: [^\n]*\(5/6\)")
         game.keys("Escape", delay=0.6)
         assert action_clock(game) > clock, "the shot must spend moves"

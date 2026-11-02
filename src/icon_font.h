@@ -1,13 +1,10 @@
 #pragma once
-/// Glyphs in the bundled icon font (data/font/bno-icons.ttf), which the tiles build always loads.
 namespace icon_font
 {
-/// Pinhead stance figures; two cells wide.
 inline constexpr auto walk = "\U0010F000";
 inline constexpr auto run = "\U0010F001";
 inline constexpr auto crouch = "\U0010F002";
 inline constexpr auto prone = "\U0010F003";
-/// Two-cell copies of the Material Design Icons the HUD uses.
 inline constexpr auto weather_sunny = "\U0010F010";
 inline constexpr auto weather_night = "\U0010F011";
 inline constexpr auto weather_cloudy = "\U0010F012";
@@ -44,12 +41,11 @@ inline constexpr auto moon_full = "\U0010F030";
 inline constexpr auto moon_waning_gibbous = "\U0010F031";
 inline constexpr auto moon_last_quarter = "\U0010F032";
 inline constexpr auto moon_waning_crescent = "\U0010F033";
-/// Door that the avatar found locked (Material Design "lock", U+F033E, one cell wide).
 inline constexpr auto lock = "\U000F033E";
-/// Whether this build draws text with SDL fonts and so has the bundled icon font.
 #if defined(TILES)
 inline constexpr auto bundled = true;
 #else
 inline constexpr auto bundled = false;
 #endif
-} // namespace icon_font
+
+}

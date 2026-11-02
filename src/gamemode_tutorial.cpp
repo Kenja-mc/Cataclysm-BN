@@ -110,13 +110,11 @@ std::string enum_to_string<tut_lesson>( tut_lesson data )
 namespace
 {
 
-/// Place up to `count` zombies on free, visible floor tiles near `near`; returns how many fit.
 auto spawn_tutorial_zombies( const tripoint_bub_ms &near, const int count ) -> int
 {
     map &here = get_map();
     int placed = 0;
     for( const tripoint_bub_ms &p : closest_points_first( near, 8 ) ) {
-        // Leave the player a tile to step back to and never place inside a wall.
         if( placed >= count || rl_dist( near, p ) < 2 || !here.inbounds( p ) ||
             here.impassable( p ) || !here.sees( near, p, 8 ) ) {
             continue;
@@ -128,7 +126,7 @@ auto spawn_tutorial_zombies( const tripoint_bub_ms &near, const int count ) -> i
     return placed;
 }
 
-} // namespace
+}
 
 bool tutorial_game::init()
 {
@@ -272,8 +270,6 @@ void tutorial_game::post_action( action_id act )
     switch( act ) {
         case ACTION_RELOAD_ITEM:
         case ACTION_RELOAD_WEAPON:
-            // Both reload routes finish as an activity, so per_turn shows the lesson once the
-            // gun is actually loaded instead of when the reload menu is confirmed.
             if( g->u.primary_weapon().is_gun() && !tutorials_seen[tut_lesson::LESSON_GUN_FIRE] ) {
                 gun_reload_pending = true;
             }
@@ -358,7 +354,6 @@ auto tutorial_game::on_pickup( const item &it ) -> void
     } else if( it.is_melee() &&
                !tutorials_seen[tut_lesson::LESSON_GOT_WEAPON] &&
                !tutorials_seen[tut_lesson::LESSON_GOT_WEAPON_ALONE] ) {
-    // The lesson promises a zombie to hit; use the variant that does not when none fits.
     add_message( spawn_tutorial_zombies( g->u.bub_pos(), 1 ) > 0 ?
                  tut_lesson::LESSON_GOT_WEAPON : tut_lesson::LESSON_GOT_WEAPON_ALONE );
     }
@@ -372,7 +367,6 @@ void tutorial_game::add_message( tut_lesson lesson )
     tutorials_seen[lesson] = true;
     g->invalidate_main_ui_adaptor();
     const auto id = io::enum_to_string<tut_lesson>( lesson );
-    // Modern unbinds many classic keys, so its lessons describe its own way of doing things.
     const auto modern_id = snippet_id( id + "_MODERN" );
     const auto use_modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern" &&
                             SNIPPET.get_snippet_by_id( modern_id ).has_value();

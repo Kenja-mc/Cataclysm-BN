@@ -309,16 +309,11 @@ class distribution_grid_tracker : public submap_load_listener
 
         /**
          * submap_load_listener overrides.
-         * Called when a submap at @p pos in dimension @p dim_id enters simulation.
          * Inserts the position into tracked_submaps_ and builds the grid cluster.
          */
         void on_submap_loaded( const tripoint_abs_sm &pos,
                                const dimension_id &dim_id ) override;
 
-        /**
-         * Called when the submap at @p pos in dimension @p dim_id leaves simulation.
-         * Retires its grid only when no tracked submaps remain in that grid.
-         */
         void on_submap_unloaded( const tripoint_abs_sm &pos,
                                  const dimension_id &dim_id ) override;
 

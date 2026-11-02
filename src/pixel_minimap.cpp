@@ -649,9 +649,6 @@ void pixel_minimap::draw( const SDL_Rect &screen_rect, const tripoint_bub_ms &ce
     const auto current_mapsize = get_map().getmapsize();
     total_tiles_count = { ( current_mapsize - 2 ) *SEEX, ( current_mapsize - 2 ) *SEEY };
 
-    // base_view_tiles_count is the 1x geographic extent the projector's tile size is
-    // derived from.  Zoom does not change it; it is used to compute the exact pixel
-    // tile size that 2x/4x then scale as integer multiples (1x stays identical).
     constexpr auto min_view_radius = 60;
     constexpr auto min_view_diameter = 2 * min_view_radius;
     base_view_tiles_count = {
@@ -664,9 +661,6 @@ void pixel_minimap::draw( const SDL_Rect &screen_rect, const tripoint_bub_ms &ce
         ? static_cast<int>( screen_rect.h / 2 )
         : static_cast<int>( screen_rect.h / 3 ) ) )
     };
-    // Zoom-in (2x/4x): show fewer tiles, each shown at an exact integer multiple of the
-    // 1x pixel size (the projector multiplies tile_size by the same divisor).  The on-screen
-    // minimap therefore stays about the same size while revealing less of the map.
     const auto zoom = zoom_tile_scale( settings.zoom );
     view_tiles_count = {
         std::max( 1, base_view_tiles_count.x / zoom ),

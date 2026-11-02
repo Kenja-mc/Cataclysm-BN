@@ -29,7 +29,6 @@ auto assigned_type( const avatar &you, const int slot ) -> itype_id
     return itype_id( you.get_value( key_of( slot ) ) );
 }
 
-/// The first carried item of the slot's type; a wielded one wins.
 auto find( avatar &you, const itype_id &type ) -> item *
 {
     auto *found = static_cast<item *>( nullptr );
@@ -47,7 +46,7 @@ auto find( avatar &you, const itype_id &type ) -> item *
     return found;
 }
 
-} // namespace
+}
 
 auto view( const avatar &you, const int slot ) -> slot_view
 {
@@ -93,7 +92,6 @@ auto use( avatar &you, const int slot ) -> void
 {
     const auto type = assigned_type( you, slot );
     if( type.is_empty() || !type.is_valid() ) {
-        // An item given this digit as its inventory letter is what the player means by "slot N".
         const auto letter = static_cast<char>( '1' + slot );
         for( item *it : you.all_items( false ) ) {
             if( it->invlet == letter ) {
@@ -110,7 +108,6 @@ auto use( avatar &you, const int slot ) -> void
         add_msg( m_info, _( "You have no %s for hotbar slot %d." ), type->nname( 1 ), slot + 1 );
         return;
     }
-    // A wielded gun is reloaded, not unloaded: the slot key then means "get it ready".
     if( it->is_gun() && you.is_wielding( *it ) ) {
         if( it->ammo_remaining() < it->ammo_capacity() ) {
             avatar_action::reload_wielded();
@@ -140,7 +137,8 @@ auto assign( avatar &you ) -> void
         return;
     }
     const auto slot = menu.ret;
-    item *const chosen = game_menus::inv::titled_menu( you, _( "Put which item in the slot?  (Esc clears it)" ) );
+    item *const chosen = game_menus::inv::titled_menu( you,
+                         _( "Put which item in the slot?  (Esc clears it)" ) );
     if( chosen == nullptr ) {
         you.set_value( key_of( slot ), "" );
         add_msg( m_info, _( "Hotbar slot %d cleared." ), slot + 1 );
@@ -150,4 +148,4 @@ auto assign( avatar &you ) -> void
     add_msg( m_info, _( "Hotbar slot %d: %s." ), slot + 1, chosen->type_name( 1 ) );
 }
 
-} // namespace hotbar
+}

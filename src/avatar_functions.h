@@ -54,7 +54,6 @@ void use_item( avatar &you, item &used );
 /** Unload an item at given location */
 bool unload_item( avatar &you, item &loc );
 
-/** Moves unload_item charges to empty @p target; zero when unloading is free or impossible. */
 int unload_moves( const Character &you, const item &target );
 
 /** List potential theft witnesses */

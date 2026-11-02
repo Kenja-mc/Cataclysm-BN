@@ -38,22 +38,14 @@
 namespace
 {
 
-/// The action a player binds to open the palette.  It stays in DEFAULTMODE so the keybindings
-/// editor lists it next to the other map controls.
 constexpr char search_action_id[] = "search_action";
 
-/// Idents that are plumbing rather than something a player can pick from a search.
-constexpr auto plumbing_actions = std::array
-{
+constexpr auto plumbing_actions = std::array {
     std::string_view( "ANY_INPUT" ), std::string_view( "COORDINATE" ),
-        std::string_view( "MOUSE_MOVE" ), std::string_view( "SELECT" ),
-        std::string_view( "SEC_SELECT" )
+    std::string_view( "MOUSE_MOVE" ), std::string_view( "SELECT" ),
+    std::string_view( "SEC_SELECT" )
 };
 
-/// Screens whose keys belong to a text field, plus the palette itself.  The search key must not
-/// steal a keystroke there, because the field would swallow the picked action.  A text field
-/// registers the TEXT.* editing actions, which also catches uilist filter fields; the named
-/// categories cover screens that build their context without them.
 auto takes_free_text( const input_context &origin ) -> bool
 {
     const auto &category = origin.get_category();
@@ -71,7 +63,6 @@ auto takes_free_text( const input_context &origin ) -> bool
     return false;
 }
 
-/// Matches kept after filtering, so one letter cannot fill the list with every floor tile.
 constexpr std::size_t max_results = 300;
 
 auto kind_rank( const global_search::target::kind type ) -> int
@@ -104,7 +95,6 @@ auto kind_color( const global_search::target::kind type ) -> nc_color
     return c_white;
 }
 
-/// Folds a name once per distinct name rather than once per tile.
 class name_fold
 {
     public:
@@ -124,7 +114,6 @@ auto distinct( const std::vector<std::string> &names, const std::string &name ) 
     return std::ranges::find( names, name ) == names.end();
 }
 
-/// "N", "NE" and so on, or nothing for the tile the player stands on.
 auto distance_detail( const int distance, const direction dir ) -> std::string
 {
     if( distance == 0 ) {
@@ -133,7 +122,6 @@ auto distance_detail( const int distance, const direction dir ) -> std::string
     return string_format( "%1$d %2$s", distance, direction_name_short( dir ) );
 }
 
-/// Turns a memorized terrain, furniture, trap or vehicle part id back into a player-visible name.
 auto memorized_name( const std::string &id, const bool base ) -> std::string
 {
     if( id.empty() ) {
@@ -164,7 +152,6 @@ auto by_distance( const global_search::target &lhs, const global_search::target 
     return lhs.distance != rhs.distance ? lhs.distance < rhs.distance : lhs.label < rhs.label;
 }
 
-/// Everything on the player's own floor that they can see right now, nearest first.
 auto sighted_targets( const avatar &you, map &here, name_fold &fold )
 -> std::vector<global_search::target>
 {
@@ -217,7 +204,6 @@ auto sighted_targets( const avatar &you, map &here, name_fold &fold )
     return out;
 }
 
-/// Every creature the compass would show the player, nearest first.
 auto creature_targets( const avatar &you, map &here, name_fold &fold )
 -> std::vector<global_search::target>
 {
@@ -233,16 +219,13 @@ auto creature_targets( const avatar &you, map &here, name_fold &fold )
         target.selectable = p.z() == you.bub_pos().z() && here.inbounds( p );
         target.detail = string_format( _( "%1$s, seen" ),
                                        distance_detail( target.distance,
-                                               direction_from( you.bub_pos().raw(), p.raw() ) ) );
+                                           direction_from( you.bub_pos().raw(), p.raw() ) ) );
         out.push_back( std::move( target ) );
     }
     std::ranges::sort( out, by_distance );
     return out;
 }
 
-/// What map memory holds nearby and the player cannot see any more: the whole point of a
-/// remembered search.  Only tiles the view can pan onto are listed, and only what memory holds is
-/// ever named — never what stands there now.
 auto remembered_targets( const avatar &you, map &here, name_fold &fold )
 -> std::vector<global_search::target>
 {
@@ -254,12 +237,11 @@ auto remembered_targets( const avatar &you, map &here, name_fold &fold )
             bubble_max ) ) {
         const tripoint_bub_ms p = abs_to_bub( tile.pos );
         if( p.z() != you.bub_pos().z() || !here.inbounds( p ) ) {
-            // Outside the loaded bubble there is nothing to draw and nothing to pan to.
             continue;
         }
         const int distance = rl_dist( you.bub_pos(), p );
         if( you.sees( p ) ) {
-            continue;    // the live scan already lists what is there now
+            continue;
         }
         const auto overlay = memorized_name( tile.overlay.tile, false );
         const auto base = memorized_name( tile.base.tile, true );
@@ -281,21 +263,16 @@ auto remembered_targets( const avatar &you, map &here, name_fold &fold )
         target.match_text = fold( label );
         target.pos = p;
         target.distance = distance;
-        // The view pans onto the memory; the targeting reticle is never put on unseen ground.
         target.selectable = true;
         target.detail = string_format( _( "%1$s, remembered" ),
                                        distance_detail( distance,
-                                               direction_from( you.bub_pos().raw(), p.raw() ) ) );
+                                           direction_from( you.bub_pos().raw(), p.raw() ) ) );
         out.push_back( std::move( target ) );
     }
-    // Every remembered tile of the loaded bubble stays searchable; the cap that used to apply
-    // here ran before the query, so a distant landmark could never be found.
     std::ranges::sort( out, by_distance );
     return out;
 }
 
-/// The controls the current screen handles.  Matches are sorted by name later, so this order is
-/// only the tie-breaker before that sort.
 auto control_targets( const input_context &origin, name_fold &fold )
 -> std::vector<global_search::target>
 {
@@ -323,8 +300,6 @@ struct hit {
     int score = 0;
 };
 
-/// Every term has to appear in the already folded text.  The score prefers a name that starts
-/// with a term over one that merely contains it, so the best match comes first.
 auto matches_query( const std::string &folded_text, const std::vector<std::string> &terms,
                     int &score ) -> bool
 {
@@ -355,27 +330,23 @@ auto hit_less( const hit &lhs, const hit &rhs ) -> bool
     return lhs.target->label < rhs.target->label;
 }
 
-} // namespace
+}
 
 namespace global_search
 {
 
 auto opens_here( const input_event &evt, const input_context &origin ) -> bool
 {
-    // Keyboard and gamepad alike; a menu pick returns an action string either way.
     if( ( evt.type != input_event_t::keyboard && evt.type != input_event_t::gamepad ) ||
         evt.sequence.empty() ) {
         return false;
     }
     if( g != nullptr && g->uquit == QUIT_WATCH ) {
-        return false;    // the death cam must not gain cursor control
+        return false;
     }
     if( takes_free_text( origin ) ) {
         return false;
     }
-    // Menus do not register the action and their contexts carry no binding of their own, so the
-    // map's key is the one binding to consult.  Looking it up in the screen's own context would
-    // make the input manager create a placeholder entry for every screen we pass through.
     for( const input_event &bound :
          inp_mngr.get_input_for_action( std::string( search_action_id ), "DEFAULTMODE" ) ) {
         if( bound == evt ) {
@@ -407,11 +378,6 @@ auto focus( const target &what ) -> bool
         return false;
     }
     if( what.type == target::kind::remembered ) {
-        // The view is the cursor for a remembered tile.  The targeting reticle is cleared first:
-        // a reticle is an attack target, so leaving one on other ground while the view moves to
-        // memory could make the next attack fire somewhere the player is not looking.  The tile
-        // inspector is closed for the same reason: it would read the live map instead of the
-        // memory the player is being shown.
         aim_reticle::clear();
         g->hide_tile_preview();
         you.view_offset = what.pos - you.bub_pos();
@@ -435,11 +401,8 @@ auto run( const input_context &origin ) -> std::string
     const bool map_scope = g != nullptr && origin.get_category() == "DEFAULTMODE";
     name_fold fold;
     const std::vector<target> controls = control_targets( origin, fold );
-    // The world is scanned on the first typed character, not when the box opens: an empty
-    // search lists nothing, so the scan would only delay the first frame.
     std::vector<target> world;
     bool world_built = false;
-    // Everything the palette may move, so canceling or running a control can put it back.
     const tripoint_rel_ms opening_offset = map_scope ? g->u.view_offset : tripoint_rel_ms::zero();
     const std::optional<tripoint_bub_ms> opening_reticle =
         map_scope ? aim_reticle::pos() : std::nullopt;
@@ -452,7 +415,6 @@ auto run( const input_context &origin ) -> std::string
     std::size_t scroll = 0;
     std::string last_query;
 
-    /// Undoes a preview: the map shows the cursor the screen had before the search.
     const auto restore_cursor = [&]() {
         if( !map_scope || !previewed ) {
             return;
@@ -471,7 +433,6 @@ auto run( const input_context &origin ) -> std::string
         g->invalidate_main_ui_adaptor();
     };
 
-    /// Puts the existing cursor on the selected row; a row without one undoes the last preview.
     const auto preview = [&]() {
         if( !map_scope ) {
             return;
@@ -496,7 +457,6 @@ auto run( const input_context &origin ) -> std::string
         selected = 0;
         scroll = 0;
         if( terms.empty() ) {
-            // A search box with nothing typed lists nothing, so Enter cannot run a guess.
             restore_cursor();
             return;
         }
@@ -560,7 +520,6 @@ auto run( const input_context &origin ) -> std::string
         const auto max_height = std::max( FULL_SCREEN_HEIGHT, TERMY );
         width = std::min( 88, max_width );
         height = std::min( 22, max_height );
-        // The Mouse View preview takes the upper half of the screen, so the map palette sits low.
         const auto top = map_scope ? max_height - height : max_height / 2 - height / 2;
         w = catacurses::newwin( height - 2, width - 2, point( max_width / 2 - width / 2, top ) );
         spopup.window( w, point( 4, 4 ), getmaxx( w ) - 3 );
@@ -613,14 +572,12 @@ auto run( const input_context &origin ) -> std::string
                                     static_cast<int>( matches.size() ) );
         }
         mvwprintz( w, point( 2, getmaxy( w ) - 2 ), c_dark_gray, "%s", status );
-        // The input line has to be drawn last: it places the terminal cursor.
         spopup.text( last_query );
         spopup.query_string( false, true );
         adaptor.record_term_cursor();
     };
     ui.on_redraw( redraw );
 
-    // Keep the input method out of the way, as every other text field in a loop does.
     ime_sentry sentry( ime_sentry::keep );
 
     std::string chosen;
@@ -642,11 +599,9 @@ auto run( const input_context &origin ) -> std::string
             } else {
                 const target &picked = *matches[selected].target;
                 if( picked.type == target::kind::control ) {
-                    // Running a control is not a map pick, so put the map cursor back first.
                     chosen = picked.ident;
                     restore_cursor();
                 } else {
-                    // A map pick leaves the cursor where the preview put it.
                     preview();
                 }
             }
@@ -676,4 +631,4 @@ auto run( const input_context &origin ) -> std::string
     return chosen;
 }
 
-} // namespace global_search
+}

@@ -12,15 +12,12 @@ def test_arrow_keys_aim_and_attack(game):
     arena(game)
     settle(game)
     try:
-        # Keep the target within unarmed reach.
         assert game.lua("local m=gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(1,0)) "
                         "out(m ~= nil)") == ["true"]
 
         turn = action_clock(game)
         pos = bub_pos(game)
-        # First arrow snaps to the nearest hostile.
         game.keys("Left", delay=1)
-        # Lua closes Mouse View; inspect it first.
         assert "Mouse View" in game.screen(), game.screen()
         assert bub_pos(game) == pos, "an arrow key aims instead of walking"
         assert action_clock(game) == turn, "aiming spends no time"
@@ -30,7 +27,6 @@ def test_arrow_keys_aim_and_attack(game):
             assert bub_pos(game) == pos, "the reticle moves, the player stays"
         assert action_clock(game) == turn, "moving the reticle spends no time"
 
-        # Misses still cost moves.
         game.keys("f", delay=1.2)
         assert action_clock(game) > turn, "f must spend moves attacking"
 

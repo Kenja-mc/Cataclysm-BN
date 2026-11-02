@@ -14,12 +14,10 @@ namespace {
 
 using known_fn = std::function<auto(const tripoint_bub_ms&)->bool>;
 
-/// The player knows every tile within `radius` steps of `centre` and nothing else.
 auto known_within(const tripoint_bub_ms& centre, const int radius) -> known_fn {
     return [centre, radius](const tripoint_bub_ms& p) { return square_dist(centre, p) <= radius; };
 }
 
-/// Walls every tile exactly `radius` steps from `centre`, except `gap`.
 auto wall_ring(
     map& here, const tripoint_bub_ms& centre, const int radius,
     const std::optional<tripoint_bub_ms>& gap) -> void {
@@ -30,7 +28,7 @@ auto wall_ring(
     }
 }
 
-} // namespace
+}
 
 TEST_CASE("auto_explore_picks_the_nearest_tile_bordering_unknown_ground", "[auto_explore]") {
     clear_all_state();
@@ -101,8 +99,6 @@ TEST_CASE("auto_explore_route_is_walkable_by_the_auto_move_loop", "[auto_explore
 
     REQUIRE(you.has_destination());
     CHECK(you.get_auto_move_route().back() == *target);
-    // The main loop asks for the next step from the player's current tile; a route whose first
-    // step was already consumed would cancel here.
     CHECK(you.get_next_auto_move_direction() != ACTION_NULL);
     you.clear_destination();
 }

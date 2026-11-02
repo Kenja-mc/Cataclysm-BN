@@ -1,14 +1,9 @@
-"""Bump attacks, the attack command and the electromagnetic unit.
-
-Tests that take `g` run on the runner's main game; BUMP_ATTACK=false needs its own.
-"""
 from aim_reticle import action_clock
 from helpers import HELPERS, action_menu, arena, bub_pos, empty_inventory, settle, start_new_game
 from tmux_game import Game
 
 
 def test_walking_into_enemy_attacks(g):
-    """Misses still count as bump attacks."""
     empty_inventory(g)
     arena(g)
     settle(g)
@@ -59,7 +54,6 @@ def test_attack_command(g):
 
 
 def test_magnet_pull_through_monster(g):
-    """Upstream #9354: pulling metal through a monster with the electromagnetic unit crashed."""
     arena(g)
     assert g.lua("local u=gapi.get_avatar() u:add_bionic(BionicDataId.new('bio_magnet')) "
                  "u:set_max_power_level(Energy.from_kilojoule(100)) out('ok')") == ["ok"]
@@ -71,7 +65,6 @@ def test_magnet_pull_through_monster(g):
         assert out and out[-1] == "true", g.screen()
     assert "wasd move" in g.screen(), "game should still be running"
     g.lua("for dx=-6,6 do for dy=-6,6 do local m=gapi.get_monster_at(here(dx,dy)) if m then park(m) end end end out('ok')")
-    # The pulls spend turns beside a zombie: clear the grab it left and let the turn finish.
     g.lua("gapi.get_avatar():clear_effects() out('ok')")
     settle(g)
 

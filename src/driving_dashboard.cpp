@@ -27,9 +27,7 @@ namespace driving_dashboard
 namespace
 {
 
-/// Instrument labels share this column so every value starts on the same cell.
 constexpr auto label_column = 8;
-/// A short bar reads in a terminal and still shows a direction of change without colour.
 constexpr auto bar_cells = 6;
 const auto fuel_type_muscle = itype_id( "muscle" );
 const auto fuel_type_battery = itype_id( "battery" );
@@ -41,8 +39,6 @@ auto padded_label( const std::string &text ) -> std::string
     return out;
 }
 
-/// `#####-` for a value out of a scale.  The fill is a glyph, not a colour, so the reading
-/// survives a monochrome terminal.
 auto bar( const int value, const int scale ) -> std::string
 {
     const auto filled = scale > 0 ?
@@ -70,8 +66,6 @@ auto controlled_vehicle( const avatar &you ) -> controlled
     return out;
 }
 
-/// The fuel of a running engine, else the first engine fuel a driver would watch.  This mirrors
-/// the compact readout's choice so both presentations name the same tank.
 auto engine_fuel( vehicle &veh ) -> std::optional<itype_id>
 {
     auto out = std::optional<itype_id>();
@@ -121,7 +115,6 @@ auto fuel_color( const int percent ) -> nc_color
     return percent > 20 ? c_light_gray : percent > 5 ? c_yellow : c_red;
 }
 
-/// One scale for both the row colour and the text marker, so a coloured warning always has a cue.
 enum class strain_level {
     none,
     light,
@@ -196,7 +189,6 @@ auto battery_color( const int percent ) -> nc_color
     return percent > 20 ? c_light_cyan : percent > 5 ? c_yellow : c_red;
 }
 
-/// Text-only rows still reserve the icon column so their values line up with the glyph rows.
 auto text_row( std::string text, const nc_color color ) -> hud_windows::window_line
 {
     return { .icon = {}, .icon_w = 0, .icon_color = color, .text = std::move( text ),
@@ -211,7 +203,6 @@ auto icon_row( std::string icon, std::string text, const nc_color color )
              .text = std::move( text ), .text_color = color, .label = {} };
 }
 
-/// The compact readout's icon vocabulary, limited to the three instrument rows that have one.
 enum class gauge {
     compass,
     fuel,
@@ -246,7 +237,6 @@ auto gauge_glyph( const gauge kind, const std::string &style ) -> std::string
     return {};
 }
 
-/// A fixed gutter for the glyph rows; the bundled font's copies are two cells wide.
 auto icon_column( const std::string &style ) -> int
 {
     if( style == "ascii" ) {
@@ -266,8 +256,6 @@ auto fuel_row( vehicle &veh, const itype_id &fuel, const std::string &icons )
                      electric ? battery_color( percent ) : fuel_color( percent ) );
 }
 
-/// Compass letters for the eight facings, in tileray's order (0 = east).  Not cached: the
-/// language can change without restarting the game.
 auto compass_letter( const int octant ) -> std::string
 {
     switch( std::clamp( octant, 0, 7 ) ) {
@@ -290,7 +278,7 @@ auto compass_letter( const int octant ) -> std::string
     }
 }
 
-} // namespace
+}
 
 auto read( const avatar &you ) -> hud_windows::vehicle_reading
 {
@@ -312,16 +300,12 @@ auto read( const avatar &you ) -> hud_windows::vehicle_reading
 
     out.icon_width = icon_column( icons );
 
-    // The title owns the speed and cardinal; the body shows the bar, azimuth, cruise and
-    // engine/fuel state, so no reading is repeated and the title stays short.
     out.summary = string_format( "%d %s %s", speed, units, heading );
 
     if( state.remote ) {
         out.body.push_back( text_row( _( "Remote control" ), c_light_cyan ) );
     }
 
-    // The bar fills toward the safe speed; above it the strain colour and marker start.
-    // safe_velocity does not emit the debug message max_velocity does.
     const auto safe_speed = static_cast<int>(
                                 convert_velocity( veh->safe_velocity( false ), VU_VEHICLE ) );
     const auto scale = std::max( std::abs( safe_speed ), 1 );
@@ -343,7 +327,6 @@ auto read( const avatar &you ) -> hud_windows::vehicle_reading
                                            veh->face.to_string_azimuth_from_north() ),
                             c_light_gray ) );
 
-    // Every coloured strain state also has a marker: `!`, `!!` and `!!!` for its three levels.
     const auto engine_state = veh->engine_on ? _( "On" ) : _( "Off" );
     out.body.push_back( text_row(
                             string_format( "%s %s%s", padded_label( _( "Engine" ) ), engine_state,
@@ -361,7 +344,6 @@ auto read( const avatar &you ) -> hud_windows::vehicle_reading
 
     if( veh->has_part( "WING" ) ) {
         const auto takeoff = veh->get_takeoff_speed();
-        // Zero means the wings cannot lift this vehicle; reaching the number means lift.
         const auto enough = takeoff > 0 && speed >= takeoff;
         out.body.push_back( text_row(
                                 string_format( "%s %d %s %s", padded_label( _( "Takeoff" ) ), takeoff,
@@ -377,4 +359,4 @@ auto install() -> void
     hud_windows::set_vehicle_provider( read );
 }
 
-} // namespace driving_dashboard
+}

@@ -38,24 +38,14 @@
 namespace
 {
 
-// Only the first crashing thread runs the handler; the rest wait on it.
 auto g_crash_logged = std::atomic_flag {};
-// Set after the report is on disk (before the dialog), so the watchdog stands
-// down and never auto-dismisses a dialog the user is still reading.
 auto g_crash_report_durable = std::atomic_bool { false };
-// Set after the dialog closes, so duplicate crashing threads do not terminate
-// the process while the dialog is still up.
 auto g_crash_handling_complete = std::atomic_bool { false };
-// Captured on the first (main-thread) init_crash_handlers() call; used on
-// non-Apple platforms to only drive the GUI from the main thread.
 auto g_main_thread_id = std::thread::id {};
 auto g_main_thread_id_set = std::atomic_flag {};
-// Bound on the non-interactive phase (log flush + stack trace) before giving up.
 constexpr auto crash_handler_timeout = std::chrono::seconds { 30 };
 constexpr auto crash_handler_wait_step = std::chrono::milliseconds { 10 };
 
-// std::signal( sig, SIG_DFL ) trips -Wold-style-cast because SIG_DFL expands to
-// a C-style cast; keep the suppression in one place.
 auto reset_signal_to_default( int sig ) -> void
 {
 #pragma GCC diagnostic push
@@ -66,9 +56,6 @@ auto reset_signal_to_default( int sig ) -> void
 #pragma GCC diagnostic pop
 }
 
-// No deadline: the first handler may be showing a dialog that blocks for the
-// user. If it instead hangs before the report is durable, the watchdog exits the
-// whole process, which unblocks this wait too.
 auto wait_for_crash_handling_completion() -> void
 {
     while( !g_crash_handling_complete.load( std::memory_order_acquire ) ) {
@@ -86,9 +73,6 @@ auto write_crash_log_file( const std::string &crash_log_file,
     }
 }
 
-// Forcibly terminate if the non-interactive phase (log flush + stack trace) hangs
-// or re-crashes - likely when the crash itself was caused by heap corruption.
-// Stands down once the report is durable so it never kills the crash dialog.
 auto start_crash_handling_watchdog() -> void
 {
     try {
@@ -100,9 +84,6 @@ auto start_crash_handling_watchdog() -> void
         } );
         watchdog.detach();
     } catch( ... ) {
-        // Best effort: if the watchdog thread cannot be started (e.g. the
-        // allocator is wedged) we still proceed; the duplicate-thread wait and
-        // the re-raise below bound the damage.
     }
 }
 
@@ -112,10 +93,6 @@ auto show_crash_dialog( const std::string &crash_log_file,
                         std::ostringstream &log_text ) -> void
 {
 #if defined(__APPLE__)
-    // SDL's message box marshals onto the main run loop, which deadlocks when a
-    // worker thread crashes while the main thread is blocked (e.g. waiting on the
-    // job that crashed). CFUserNotificationDisplayAlert spins its own run loop on
-    // the calling thread, so it works from any thread and any main-thread state.
     static_cast<void>( crash_log_file );
     static_cast<void>( log_text );
     auto *message = CFStringCreateWithCString( nullptr, header_text.c_str(),
@@ -129,7 +106,6 @@ auto show_crash_dialog( const std::string &crash_log_file,
         CFRelease( message );
     }
 #else
-    // On other platforms only the main thread may safely drive the GUI.
     if( std::this_thread::get_id() != g_main_thread_id ) {
         return;
     }
@@ -142,7 +118,7 @@ auto show_crash_dialog( const std::string &crash_log_file,
 }
 #endif
 
-} // namespace
+}
 
 #if defined(_WIN32)
 // Set by windows_exception_filter; used by dump_to() and debug_write_backtrace().
@@ -180,11 +156,6 @@ extern "C" {
             return;
         }
 
-        // This implementation is not technically async-signal-safe because it
-        // allocates and collects a backtrace. Write a minimal file first so a
-        // later failure still leaves a crash report on disk. This is best
-        // effort: building the report below already allocates, so a crash with a
-        // sufficiently corrupted heap may still take down this write itself.
 
         const auto crash_log_file = PATH_INFO::crash();
 #if defined(_WIN32)
@@ -214,12 +185,8 @@ extern "C" {
                               header_text +
                               "\nSTACK TRACE:\nStack trace collection has not completed.\n" );
 
-        // From here on every step can hang or re-crash on a corrupted heap, so
-        // arm the watchdog now that a crash report already exists on disk.
         start_crash_handling_watchdog();
 
-        // Flush the debug log after creating the crash report so that a hang
-        // here does not prevent crash.log from existing.
         flush_debug_log();
 
 #if defined(_WIN32)
@@ -231,8 +198,6 @@ extern "C" {
         write_crash_log_file( crash_log_file, log_text.str() );
         std::cerr << log_text.str();
 
-        // The report is now durable: tell the watchdog to stand down so the
-        // dialog below can block for the user without being auto-dismissed.
         g_crash_report_durable.store( true, std::memory_order_release );
 
 #if defined(TILES) && !defined(__ANDROID__)
@@ -320,8 +285,6 @@ static LONG WINAPI windows_exception_filter( EXCEPTION_POINTERS *exception_info 
 
 [[noreturn]] static void crash_terminate_handler()
 {
-    // log_crash() is guarded by g_crash_logged, so concurrent terminations are
-    // serialized: the first one dumps while the rest wait and then abort.
     const char *type;
     const char *msg;
     try {
@@ -349,8 +312,6 @@ static LONG WINAPI windows_exception_filter( EXCEPTION_POINTERS *exception_info 
 
 void init_crash_handlers()
 {
-    // The first caller is main() on the main thread, before any worker threads
-    // are spawned; thread_pool workers re-invoke this and must not clobber it.
     if( !g_main_thread_id_set.test_and_set( std::memory_order_acq_rel ) ) {
         g_main_thread_id = std::this_thread::get_id();
     }

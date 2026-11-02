@@ -1,21 +1,4 @@
 #!/usr/bin/env python3
-"""Build data/font/bno-icons.ttf from the SVGs in data/font/icons-src/.
-
-Setup and run:
-    python3 -m venv /tmp/iconfont-venv && /tmp/iconfont-venv/bin/pip install fonttools
-    /tmp/iconfont-venv/bin/python build-scripts/gen_icon_font.py [output.ttf]
-
-Sources:
-- pinhead/: Pinhead v16.26.0 stance figures (CC0 1.0), at U+10F000..U+10F003, two cells wide.
-- mdi/: Material Design Icons from npm @mdi/svg 7.4.47 (Apache-2.0), one cell wide at their
-  official codepoints (each matches @mdi/svg meta.json), plus two-cell copies at
-  U+10F010 upward in MDI order.
-
-Metrics match data/font/JetBrainsMonoNL-Regular.ttf (1000 UPM, 600-unit advance, ascent 1020,
-descent 300), so a one-cell icon is a 600-unit square and a two-cell icon a 1200-unit square,
-both centred on the middle of the line. Output is byte-identical across runs.
-"""
-
 from __future__ import annotations
 
 import sys
@@ -45,6 +28,9 @@ DESCENT = 300
 CELL = 600
 LINE_MIDDLE = (ASCENT - DESCENT) // 2
 
+REGULAR = 0x40
+USE_TYPO_METRICS = 0x80
+
 PINHEAD = {
     "walk": 0x10F000,
     "run": 0x10F001,
@@ -52,7 +38,6 @@ PINHEAD = {
     "prone": 0x10F003,
 }
 
-# Two-cell copies of MDI, in MDI table order; src/icon_font.h names them.
 MDI_WIDE_START = 0x10F010
 
 MDI = {
@@ -92,7 +77,6 @@ MDI = {
     "moon-waning-gibbous": 0xF0F66,
     "moon-last-quarter": 0xF0F63,
     "moon-waning-crescent": 0xF0F65,
-    # Appended last so the wide-copy codepoints of the icons above do not shift.
     "lock": 0xF033E,
 }
 
@@ -102,7 +86,6 @@ def glyph_name(codepoint: int) -> str:
 
 
 def draw_svg(svg: Path, size: int):
-    """Return a TrueType glyph of `svg` scaled into a `size` square centred on the line."""
     root = ET.parse(svg).getroot()
     for element in root.iter():
         if element.get("fill-rule") == "evenodd" or element.get("transform") is not None:
@@ -112,17 +95,14 @@ def draw_svg(svg: Path, size: int):
         raise SystemExit(f"{svg}: viewBox is not square")
     scale = size / width
     bottom = LINE_MIDDLE - size / 2
-    # SVG y grows downwards; flip it and place the view box on [bottom, bottom + size].
     transform = (scale, 0, 0, -scale, -min_x * scale, bottom + size + min_y * scale)
     outline = RecordingPen()
     SVGPath.fromstring(svg.read_bytes(), transform=transform).draw(outline)
-    # Fills close open subpaths implicitly; glyph contours must say so.
     outline.value = [("closePath", ()) if op == "endPath" else (op, args) for op, args in outline.value]
 
     area = AreaPen()
     outline.replay(area)
     tt_pen = TTGlyphPen(None)
-    # TrueType outer contours run clockwise (negative area).
     target = ReverseContourPen(tt_pen) if area.value > 0 else tt_pen
     outline.replay(Cu2QuPen(target, max_err=1.0, reverse_direction=False))
     return tt_pen.glyph()
@@ -175,7 +155,7 @@ def build(out: Path) -> None:
         sTypoLineGap=0,
         usWinAscent=ASCENT,
         usWinDescent=DESCENT,
-        fsSelection=0x40 | 0x80,  # REGULAR | USE_TYPO_METRICS
+        fsSelection=REGULAR | USE_TYPO_METRICS,
         fsType=0,
         achVendID="NONE",
     )

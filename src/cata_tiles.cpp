@@ -151,9 +151,6 @@ static const std::array<std::string, 14> TILE_CATEGORY_IDS = {{
 namespace
 {
 
-/// Exact clockwise rotation, in degrees from north, for a single sprite whose heading is
-/// `heading` degrees clockwise from east.  Nullopt for headings that are a multiple of 90
-/// degrees, where the rotation the tileset authored is already exact.
 auto exact_sprite_rotation( const int heading ) -> std::optional<int>
 {
     const auto degrees = ( ( heading % 360 ) + 360 ) % 360;
@@ -163,9 +160,6 @@ auto exact_sprite_rotation( const int heading ) -> std::optional<int>
     return ( degrees + 90 ) % 360;
 }
 
-/// Scale for a single sprite drawn rotated by an exact angle.  The parts of a vehicle that
-/// faces a diagonal direction sit on a sheared grid, so the sprite is enlarged just enough
-/// to reach the neighbouring part and close the gap between them.
 auto exact_rotation_scale( const int degrees ) -> float
 {
     const auto angle = units::from_degrees( degrees );
@@ -384,7 +378,6 @@ void idle_animation_manager::prepare_for_redraw()
     auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>( now );
     auto value = now_ms.time_since_epoch();
     // Aiming roughly at the standard 60 frames per second
-    // Bound the epoch-derived counter before narrowing to int.
     frame = static_cast<int>( ( value.count() / 17 ) & 0x3FFFFFFF );
 }
 
@@ -3867,7 +3860,6 @@ void cata_tiles::draw( point dest, const tripoint_bub_ms &center, int width, int
             }
             const auto lock = known_locks.find( p.pos );
             if( lock != known_locks.end() ) {
-                // Remembered tiles only report knowledge; visible tiles are validated first.
                 const auto known = p.invisible[0] ? lock->second : refresh_known_locked_door( p.pos );
                 if( known != locked_door_kind::none ) {
                     draw_known_locked_door( p.pos, known, overlay_strings );
@@ -4217,8 +4209,6 @@ void cata_tiles::draw( point dest, const tripoint_bub_ms &center, int width, int
             draw_sct_frame( overlay_strings );
             void_sct();
         }
-        // Hostiles the player sees outside the window: an arrow at the edge of the
-        // drawn area, projected from the centre the way the rest of the view is.
         const auto centre = player_to_screen( center.xy() );
         const auto half = point( ( centre.x - dest.x ) / tile_width, ( centre.y - dest.y ) / tile_height );
         for( const auto &arrow : enemy_indicators::map_arrows( g->u, 2 * half.x + 1, 2 * half.y + 1 ) ) {
@@ -4715,9 +4705,6 @@ bool cata_tiles::draw_from_id_string(
             tileray face = tileray( units::from_degrees( true_rota ) );
             true_rota = 3 - face.dir4();
 
-            // A vehicle that faces a diagonal direction is drawn as a staircase of axis-aligned
-            // parts.  Rotating each part by the exact heading, which only single sprites can do,
-            // makes it read as one vehicle instead.
             if( vehicle_smooth_rotation && !tile_iso && display_tile.rotates ) {
                 exact_rota = exact_sprite_rotation( tile.rota );
             }
@@ -5020,8 +5007,6 @@ auto cata_tiles::draw_sprite_at( const sprite_draw_options &params ) -> bool
     destination.w = width * tile_width * tile.pixelscale / tileset_ptr->get_tile_width();
     destination.h = height * tile_height * tile.pixelscale / tileset_ptr->get_tile_height();
 
-    // A sprite drawn at an angle keeps its own size, so a part of a diagonal vehicle is grown
-    // just enough to reach the neighbouring part instead of leaving a gap.
     if( rotate_sprite && exact_rota.has_value() ) {
         const auto scale = exact_rotation_scale( *exact_rota );
         const auto grow_x = static_cast<int>( ( destination.w * scale - destination.w ) / 2.0f );
@@ -5083,7 +5068,6 @@ auto cata_tiles::draw_sprite_at( const sprite_draw_options &params ) -> bool
 
     int ret = 0;
     if( rotate_sprite && exact_rota.has_value() ) {
-        // Drawn at the exact heading instead of the closest angle the tileset authored.
         ret = render( *exact_rota, SDL_FLIP_NONE );
     } else if( rotate_sprite ) {
         switch( rota ) {
@@ -5389,7 +5373,7 @@ auto items_on_furniture_surface( const tripoint_bub_ms &p ) -> bool
     return item_layering_enabled && furniture && furniture.id() != furn_f_mannequin;
 }
 
-} // namespace
+}
 
 auto cata_tiles::refresh_known_locked_door( const tripoint_bub_ms &p ) -> locked_door_kind
 {
@@ -5400,7 +5384,6 @@ auto cata_tiles::refresh_known_locked_door( const tripoint_bub_ms &p ) -> locked
         case locked_door_kind::none:
             return locked_door_kind::none;
         case locked_door_kind::terrain:
-            // Seen again and no longer locked (opened, unlocked, destroyed or replaced).
             if( !here.has_flag( "LOCKED", p ) ) {
                 you.forget_locked_door( abs );
                 return locked_door_kind::none;
@@ -5432,8 +5415,6 @@ auto cata_tiles::draw_known_locked_door( const tripoint_bub_ms &p, const locked_
         return;
     }
 
-    // The item sprite named "lock" already exists in some tilesets; draw it over the door.
-    // It has a transparent background, so the door stays visible.
     if( tileset_ptr && tileset_ptr->find_tile_type( "lock" ) ) {
         const auto lock_tile_id = std::string( "lock" );
         const auto tile = tile_search_params{ .id = lock_tile_id, .category = C_ITEM,
@@ -5445,7 +5426,6 @@ auto cata_tiles::draw_known_locked_door( const tripoint_bub_ms &p, const locked_
         }
     }
 
-    // Every tileset gets the bundled Material Design padlock from the icon font.
     overlay_strings.emplace(
         player_to_screen( p.xy() ) + point( tile_width / 4, tile_height / 4 ),
         formatted_text( icon_font::lock, catacurses::yellow, direction::NORTH ) );
@@ -5661,7 +5641,6 @@ bool cata_tiles::draw_furniture( const tripoint_bub_ms &p, const lit_level ll, i
 auto cata_tiles::draw_cliff_edges( const tripoint_bub_ms &p, const int terrain_height_3d,
                                    const bool ( &invisible )[5] ) -> void
 {
-    // Iso footprints are diamonds, so rectangular edge strips would not sit on the tile edges.
     if( !cliff_shading_enabled || tile_iso || invisible[0] ) {
         return;
     }
@@ -5670,7 +5649,6 @@ auto cata_tiles::draw_cliff_edges( const tripoint_bub_ms &p, const int terrain_h
     if( !terrain || terrain == t_open_air ) {
     return;
 }
-// invisible[1 + i] and neighborhood[i] are both ordered south, east, west, north.
 const auto open_air_edge = [&]( const int i ) {
     if( invisible[1 + i] ) {
             return false;
@@ -5689,7 +5667,6 @@ const auto open_air_edge = [&]( const int i ) {
                                  sdl_render_state_flags::blend_mode;
     const auto render_state = sdl_save_render_state<state_flags>( renderer.get() );
     SetRenderDrawBlendMode( renderer, SDL_BLENDMODE_BLEND );
-    // Terrain sprites are lifted by their stacked height; the strips are lifted by the same amount.
     const auto screen = player_to_screen( p.xy() ) +
                         point( 0, divide_round_down( -terrain_height_3d * tile_width,
                             tileset_ptr->get_tile_width() ) );
@@ -5735,7 +5712,6 @@ auto cata_tiles::sprite_id_for_type( const itype_id &type,
 auto cata_tiles::item_sprite_id( const item &itm,
                                  std::string &variant ) -> const std::string & // *NOPAD*
 {
-    // Variants keep their old item ids, which tilesets may still have sprites for.
     variant = item_variants::sprite( itm );
     if( !variant.empty() && !find_tile_with_season( variant ) ) {
         variant.clear();
@@ -5793,7 +5769,6 @@ auto cata_tiles::draw_top_item( const top_item_draw &params ) -> bool
     };
     auto drawn = false;
     if( params.surface ) {
-        // Keep the extra furniture lift local, but retain the sprite's native stack contribution.
         constexpr auto surface_offset = 1;
         auto surface_height = height_3d + surface_offset;
         drawn = draw_from_id_string( tile, p, bg_tint, fg_tint, lit, !overridden, params.z_drop, false,
@@ -6383,7 +6358,6 @@ bool cata_tiles::draw_critter_at( const tripoint_bub_ms &p, lit_level ll, int &h
                     attitude = pl->attitude_to( g-> u );
                 }
             } else {
-                // Monsters have no overlay pass of their own, so draw their loops here.
                 draw_status_effects( critter, p, ll, z_drop );
             }
         } else {
@@ -6429,7 +6403,6 @@ void cata_tiles::draw_health_bar( const map_overlay::overlay &bar )
     const auto bar_color = get_hp_bar( bar.value, bar.max_value, true ).second;
 
     const auto screen = player_to_screen( bar.pos.xy() );
-    // A short bar at the bottom of the tile, so the sprite stays readable.
     const auto bar_width = tile_iso ? tile_width * 3 / 4 : tile_width;
     const auto bar_left = screen.x + ( tile_width - bar_width ) / 2;
     const auto bar_height = std::max( 2, tile_height / 16 );
@@ -6811,9 +6784,6 @@ void cata_tiles::draw_entity_with_overlays( const Character &ch, const tripoint_
         return false;
     };
 
-    // Status effects that this module animates are drawn once, from a wall clock frame,
-    // instead of one static tile per effect in the loop below; monsters get the same
-    // overlay from the hook in draw_critter_at.
     if( tile_effects::enabled() ) {
         const tile_effects::overlay_options opt{ .critter = ch, .pos = p };
         if( const std::string *frame_id = tile_effects::overlay_tile_id( opt,
@@ -7575,7 +7545,6 @@ void cata_tiles::draw_footsteps_frame( const std::vector<map_overlay::overlay> &
         }
         const auto &id = mark.z_offset == 0 ? id_footstep :
                          mark.z_offset > 0 ? id_footstep_above : id_footstep_below;
-        // Fresh markers keep their color; older ones turn gray, stale ones turn off the shadow.
         const auto light = mark.stale ? lit_level::DARK :
                            mark.age == 0 ? lit_level::LIT : lit_level::LOW;
         draw_from_id_string( {id, C_NONE, empty_string, 0, 0}, mark.pos, std::nullopt, std::nullopt,

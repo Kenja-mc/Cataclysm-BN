@@ -1,4 +1,3 @@
-"""Map memory keeps the ground a moving vehicle hides (upstream #10452)."""
 import json
 import tempfile
 from pathlib import Path
@@ -9,7 +8,6 @@ from vehicle_box import spawn_vehicle, take_control
 
 
 def vehicle_game(name, **options):
-    # Clearing exhaust after driving invalidates the sight caches under test.
     userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-vehicle-memory-"))
     mod_dir = userdir / "mods" / "e2e_vehicle_memory"
     mod_dir.mkdir(parents=True)
@@ -17,7 +15,6 @@ def vehicle_game(name, **options):
         (ROOT / "data/json/vehicles/vans_busses.json").read_text()) if vehicle["id"] == "armored_car")
     prototype["id"] = "e2e_memory_electric_car"
     prototype["name"] = "Memory fixture armored car"
-    # Even mint-condition spawns randomly open doors; keep the rear opaque.
     replacements = {"diesel_engine_v8": "engine_electric_super",
                     "hddoor_opaque": "hdboard_horizontal"}
     for part in prototype["parts"]:
@@ -32,17 +29,13 @@ def vehicle_game(name, **options):
     defaults = json.loads((ROOT / "data/mods/default.json").read_text())
     (userdir / "config").mkdir()
     (userdir / "config/default_mods.json").write_text(json.dumps([*defaults, "e2e_vehicle_memory"]))
-    # This fixture samples terrain cells around the avatar; keep the floating HUD off so
-    # no window covers the remembered ground being measured.
     game = Game(name=name, userdir=userdir,
                 options={"SAFEMODE": "false", "ANIMATIONS": "false", "HUD_WINDOWS": "false",
                          **options})
     try:
         start_new_game(game)
         game.define_lua(HELPERS)
-        settle(game)  # Activate queued NPCs before parking them.
-        # Yellow pavement marks the memorable ground; its ':' symbol is unique on screen.
-        # Engine sounds place random '?' overlays in the occluded trail; isolate map memory.
+        settle(game)
         assert game.lua("local a=gapi.get_avatar() a:set_mutation(MutationBranchId.new('DEAF')) "
                         "out(a:is_deaf())") == ["true"]
         assert game.lua("for dx=-18,18 do for dy=-40,15 do local p=here(dx,dy) "
@@ -85,11 +78,8 @@ def ground_region(screen, rows):
 
 
 def test_memory_behind_moved_vehicle(_game):
-    """A vehicle that blocks the view must not blank the remembered ground behind it."""
     game = vehicle_game("bn-e2e-vehicle-memory")
     try:
-        # These uncovered tiles include the whole future trailing region, even if the
-        # drive advances ten tiles.  Their memory must exist before the vehicle spawns.
         before = game.screen()
         assert set(ground_region(before, range(-6, 9))) == {':'}, (
             "the fixture ground was not visible before spawning the vehicle:\n" + before)
@@ -101,7 +91,6 @@ def test_memory_behind_moved_vehicle(_game):
                         "for dx=0,4 do for dy=6,11 do visible=a:sees(here(dx,dy)) or visible end end "
                         "out(visible)") == ["false"], (
             "the vehicle must hide all ground being measured:\n" + screen)
-        # The solid rear blocks sight without randomized doors, cameras or exhaust.
         hidden = ground_region(screen, range(6, 12))
         assert set(hidden) == {':'}, (
             "tiles hidden by the vehicle lost their remembered ground: "

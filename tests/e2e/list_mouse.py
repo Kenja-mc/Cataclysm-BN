@@ -1,9 +1,3 @@
-"""Modern list mouse: double click confirms a row like Enter, and the option controls it.
-
-The lists that act on a single click now take two clicks: the first selects,
-the second follows Enter and any confirmation it raises. A list that binds Space
-to another action keeps that action. Classic keeps its keyboard-only lists.
-"""
 import shutil
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
@@ -87,7 +81,6 @@ def test_existing_space_and_user_rebind_stay_in_the_list(_g):
         game.wait_for("New key for Next item", timeout=10)
         game.keys("Space", delay=0.4)
         game.wait_for("This key conflicts with", timeout=10)
-        # Modern answers prompts with Enter; y only moves the highlight to Yes.
         game.keys("y", "Enter", delay=0.5)
         game.wait_gone("This key conflicts with", timeout=10)
         game.keys("Escape", delay=0.5)

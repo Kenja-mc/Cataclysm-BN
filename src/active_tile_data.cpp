@@ -297,7 +297,7 @@ auto needs_charge( const item &n ) -> bool
     return n.ammo_capacity() > n.ammo_remaining() ||
            ( n.type->battery && n.type->battery->max_capacity > n.energy_remaining() );
 }
-} // namespace
+}
 
 auto charger_tile::is_charging( const tripoint_abs_ms &p, mapbuffer &mb ) const -> bool
 {

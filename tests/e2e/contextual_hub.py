@@ -9,7 +9,6 @@ from safe_click import see_everything
 
 
 def contextual_setup(game):
-    # Effects, fields and view state survive from the previous test on the shared profile game.
     assert game.lua("gapi.get_avatar():clear_effects() "
                     "for dx=-4,4 do for dy=-4,4 do local p=here(dx,dy) M:remove_trap_at(p) "
                     "for _,fid in ipairs(M:get_field_ids_at(p)) do M:remove_field_at(p,fid) end "
@@ -34,8 +33,6 @@ def contextual_game(name, keybindings=None, **options):
 def select_tile(game, dx, dy):
     x, y = game.find("@")
     game.click(x + dx, y + dy, button=2)
-    # Modern right click also lists a reachable object's actions. These tests exercise the
-    # Space route, so close that list and keep the selection before pressing Space.
     if "Interact with the" in game.screen():
         game.keys("Escape", delay=0.3)
         game.wait_gone("Interact with the")
@@ -49,14 +46,10 @@ def doors(game, selected_dx=1):
 
 
 def nearby_doors(game):
-    """Keep both doors off the faced tile so Space must offer the nearby list."""
-    # Shared games retain the last attempted step even after arena() and a wait.
-    # A real step clears any selection and pins facing to the arena's empty north tile.
     before = bub_pos(game)
     game.keys("w", delay=0.6)
     assert bub_pos(game) == (before[0], before[1] - 1, before[2]), \
         "the nearby-menu fixture must face empty floor:\n" + game.screen()
-    # Do not advance a turn after placing the doors: Space must discover the new objects.
     doors(game)
 
 
@@ -99,7 +92,6 @@ def test_contextual_selected_vault_over_obstacle(_game):
 
 def test_contextual_attack_key_smashes_aimed_terrain(_game):
     with contextual_game("bn-e2e-context-smash") as game:
-        # Webs bash deterministically at this strength.
         assert game.lua(
             "for _,dx in ipairs({-1,1}) do "
             "M:add_field_at(here(dx,0),FieldTypeId.new('fd_web'):int_id(),1,TimeDuration.from_turns(0)) "
@@ -130,7 +122,6 @@ def test_contextual_distant_selection_does_not_fall_back(_game):
 
 
 def interact_menu(game):
-    """The rows of Space's "Interact with what?" list, as {label: hotkey}, with the capture."""
     game.wait_for("Interact with what?")
     game.settle_screen()
     screen = game.screen()
@@ -140,7 +131,6 @@ def interact_menu(game):
 
 
 def colored_cells(line):
-    """Visible cells and their effective SGR state from a real tmux color capture."""
     state = {"fg": 39, "bg": 49, "bold": False, "reverse": False}
     cells = []
     cursor = 0
@@ -231,7 +221,6 @@ def test_contextual_nearby_row_highlights_its_tile(_game):
 
 def test_contextual_space_uses_the_last_moved_direction(_game):
     with contextual_game("bn-e2e-context-faced") as game:
-        # A step east leaves that tile as the one Space acts on when nothing is aimed.
         game.keys("d", delay=0.9)
         spawn(game, 1, 0, "rock")
         settle(game)

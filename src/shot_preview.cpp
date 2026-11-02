@@ -7,7 +7,7 @@ namespace
 
 shot_preview::state preview_state;
 
-} // namespace
+}
 
 namespace shot_preview
 {
@@ -41,4 +41,4 @@ auto label_at( const tripoint_bub_ms &p ) -> std::string
     return preview_state.aim_label->label;
 }
 
-} // namespace shot_preview
+}

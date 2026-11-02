@@ -1,4 +1,3 @@
-"""Modern map controls: contextual stairs, quick/area pickup and health."""
 from aim_reticle import action_clock
 from contextual_hub import contextual_game, select_tile
 from helpers import arena, bub_pos, count_at, count_carried, settle, spawn, wait_until

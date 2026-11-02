@@ -1098,7 +1098,6 @@ void npc::move()
     }
 
     // check if in vehicle before doing any other follow activities
-    // Remote control counts as being in a vehicle, but there is no vehicle under the player.
     if( action == npc_undecided && is_walking_with() && player_character.in_vehicle && !in_vehicle &&
         here.veh_at( player_character.bub_pos() ) ) {
         action = npc_follow_embarked;
@@ -1492,7 +1491,6 @@ void npc::execute_action( npc_action action )
             const optional_vpart_position vp = here.veh_at( player_character.bub_pos() );
 
             if( !vp ) {
-                // The player left the vehicle between the decision and this step.
                 move_pause();
                 break;
             }
@@ -2200,8 +2198,6 @@ npc_action npc::address_needs( float danger )
     if( one_in( 3 ) ) {
         ZoneScopedN( "npc_address_needs_bio_painkiller" );
         if( get_perceived_pain() >= 15 ) {
-            // Upstream #10429: never stack another dose on a high painkiller level; that is how
-            // followers overdosed. Death comes above 240 and an oxycodone adds about 70.
             if( !activate_bionic_by_id( bio_painkiller ) && has_painkiller() && !took_painkiller() &&
                 get_painkiller() < 80 ) {
                 return npc_use_painkiller;

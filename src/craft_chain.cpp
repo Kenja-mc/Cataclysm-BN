@@ -14,7 +14,6 @@
 namespace
 {
 
-/// Tools and qualities count too, so this never promises a recipe that would stall.
 auto craftable_now( const inventory &crafting_inv, const recipe &producer ) -> bool
 {
     return producer.simple_requirements().can_make_with_inventory(
@@ -22,9 +21,6 @@ auto craftable_now( const inventory &crafting_inv, const recipe &producer ) -> b
                1, cost_adjustment::start_only );
 }
 
-/// Resolve the producers of `type` for one goal.  The candidate list itself is
-/// goal independent, so it is cached per component and shared across goals; the
-/// goal recipe is skipped per query, which keeps the shared cache correct.
 auto producers_for( const craft_chain::part_query &query, const itype_id &type )
 -> craft_chain::part_producers
 {
@@ -37,10 +33,7 @@ auto producers_for( const craft_chain::part_query &query, const itype_id &type )
     }
     if( candidates == &searched ) {
         searched = query.known_recipes.search_result( type );
-        // Nested category stubs and obsolete recipes never produce a part.
         std::erase_if( searched, []( const auto * r ) { return r == nullptr || r->obsolete || r->is_nested(); } );
-        // Recipes whose result is the component itself are preferred over ones
-        // that only make it as a byproduct.
         std::ranges::stable_sort( searched, std::ranges::greater(),
         [&]( const auto * r ) { return r->result() == type; } );
         if( query.cache != nullptr ) {
@@ -52,7 +45,6 @@ auto producers_for( const craft_chain::part_query &query, const itype_id &type )
 
     auto out = craft_chain::part_producers{};
     for( const auto *r : *candidates ) {
-        // The goal recipe is never a producer of its own missing part.
         if( r == &query.goal || r->ident() == query.goal.ident() ) {
             continue;
         }
@@ -76,8 +68,6 @@ auto producers_for( const craft_chain::part_query &query, const itype_id &type )
     return out;
 }
 
-/// How many units of `type` these crafted items carry, looking inside a
-/// produced container so contained results count towards the component too.
 auto units_of_type( const std::vector<detached_ptr<item>> &items,
                     const itype_id &type ) -> std::int64_t
 {
@@ -96,7 +86,7 @@ auto units_of_type( const std::vector<detached_ptr<item>> &items,
     return units;
 }
 
-} // namespace
+}
 
 namespace craft_chain
 {
@@ -109,9 +99,7 @@ auto find_part_recipe( const part_query &query, const item_comp &comp ) -> const
 auto find_part_recipe( const part_query &query ) -> const recipe * // *NOPAD*
 {
     const auto &filter = query.goal.get_component_filter( recipe_filter_flags::none );
-    // ponytail: immediate component producers, add shared-resource planning when full recursive chains are required.
     for( const auto &group : query.goal.simple_requirements().get_components() ) {
-        // A group with an available alternative does not block the recipe.
         const auto blocked = std::ranges::none_of( group, [&]( const item_comp & comp ) {
             return comp.has( query.crafting_inv, filter, query.goal_batch );
         } );
@@ -155,7 +143,6 @@ auto units_per_batch( const part_query &query, const recipe &producer,
             }
         }
     }
-    // One batch, built the way crafting itself builds it.
     const auto units = units_of_type( producer.create_results( 1 ), type ) +
                        units_of_type( producer.create_byproducts( 1 ), type );
     if( query.cache != nullptr ) {
@@ -164,4 +151,4 @@ auto units_per_batch( const part_query &query, const recipe &producer,
     return units;
 }
 
-} // namespace craft_chain
+}

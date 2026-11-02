@@ -16,10 +16,8 @@ class window;
 namespace character_display
 {
 
-/// The encumbrance from which the character sheet stops showing the normal encumbrance colour.
 inline constexpr int encumb_notice = 10;
 
-/// The colour the character sheet gives a body part's encumbrance.
 auto encumb_color( int level ) -> nc_color;
 
 /**

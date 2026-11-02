@@ -1,12 +1,3 @@
-"""The fork's Hitchhiker's Guide URL and the Limited_Reviving_Zombies mod, as the game shows them.
-
-Opening the guide ends in a browser, which curses cannot draw; `Game` already replaces `xdg-open`
-with a no-op, so these games replace it with a recorder and assert the exact URL handed over.
-Modern leaves `open_hhg` without a key, so the action menu is the route in, and the item action
-menu keeps the per-item page. The revival mod is a mod, not an option, so its world is started
-with it in the default mod list, and `no_reviving_zombies` is dropped: that one removes the
-`REVIVES` flag the mod limits.
-"""
 import json
 import re
 import tempfile
@@ -26,7 +17,6 @@ def default_mods():
 
 
 def recording_game(name, mods=None):
-    """A private game whose browser stub appends every URL it is asked to open."""
     userdir = Path(tempfile.mkdtemp(prefix=f"bn-e2e-{name}-"))
     if mods is not None:
         (userdir / "config").mkdir()
@@ -59,7 +49,6 @@ def wait_for_row(game, label, timeout=15):
 
 
 def selected_option(game, name, tries=200):
-    """Moves the options cursor onto a row, expanding a collapsed group the way a player would."""
     for _ in range(tries):
         screen = game.screen()
         if re.search(r">>\s*" + re.escape(name), screen):

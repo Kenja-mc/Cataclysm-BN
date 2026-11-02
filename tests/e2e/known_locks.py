@@ -1,12 +1,3 @@
-"""Known locked doors: only an attempted door is remembered, survives save, clears when opened.
-
-The curses game plays the fixture with real input: two identical locked doors, then an open
-attempt on the east one.  Map knowledge is read back from the real player database after a
-real save, so the check exercises the shipped save format rather than injected state.
-
-`analyse_known_lock_icons` is the narrow pixel check for the tiles harness in tiles.py: it
-compares captures of the same saved world with the display option off and on.
-"""
 import json
 import sqlite3
 import zlib
@@ -26,7 +17,6 @@ TILES_PER_REGION = MM_REG_SIZE * SEEX
 
 @dataclass(frozen=True)
 class LockTile:
-    """One memorized locked-door tile, in absolute map-square coordinates."""
     x: int
     y: int
     z: int
@@ -40,7 +30,6 @@ def _world_dir(game):
 
 
 def _region_index(path, submap_index, tile_index):
-    """Turn a .mmr file name, region submap index and submap tile index into absolute tiles."""
     stem = Path(path).name.removesuffix(".mmr")
     try:
         rx, ry, rz = (int(part) for part in stem.split(".")[-3:])
@@ -69,7 +58,6 @@ def _locks_from_region(path, raw):
 
 
 def lock_knowledge(game):
-    """Read every memorized locked door from the saved player database."""
     found = []
     world = _world_dir(game)
     for db_path in sorted(world.glob("*.sqlite3")):
@@ -87,7 +75,6 @@ def lock_knowledge(game):
                 raw = zlib.decompress(raw)
             found.extend(_locks_from_region(path, raw))
     if not found:
-        # Older worlds keep the same JSON in .mm1 files instead of the player database.
         for path in sorted(world.rglob("*.mmr")):
             found.extend(_locks_from_region(str(path), path.read_bytes()))
     return found
@@ -120,7 +107,6 @@ def start_lock_game(name, scheme):
 def two_locked_doors(game):
     arena(game)
     assert game.lua(
-        # A locked wood door opens normally from inside; remove the rolled shelter roof.
         "for dx=-2,2 do for dy=-2,2 do local p=here(dx,dy) "
         "M:set_ter_at(TripointBubMs.new(p.x,p.y,p.z+1),TerId.new('t_open_air'):int_id()) "
         "end end "
@@ -136,7 +122,7 @@ def two_locked_doors(game):
 def attempt_open_east(game):
     position, clock = abs_pos(game), game.lua(
         "out(gapi.current_turn():to_turn(), -gapi.get_avatar():get_moves())")[0]
-    game.keys("l", delay=0.3)  # Bumping a closed door is the native open attempt.
+    game.keys("l", delay=0.3)
     assert wait_until(lambda: "door is locked" in game.screen(), 5), game.screen()
     assert abs_pos(game) == position, "a failed open attempt must not move the avatar"
     assert game.lua(
@@ -158,12 +144,11 @@ def test_only_attempted_locked_door_is_remembered(_g):
         east = LockTile(avatar[0] + EAST_DOOR[0], avatar[1] + EAST_DOOR[1], avatar[2], "terrain")
         assert locks == [east], f"expected only the attempted east door, got {locks}"
 
-        # Real quit, resume and load; then a fresh save must still carry the marker.
         save_and_quit(game)
         game.wait_for("[Load]", timeout=60)
-        game.keys("Enter", delay=1)  # the cursor defaults to Load when saves exist
+        game.keys("Enter", delay=1)
         assert game.wait_for("Load character from", timeout=30), game.screen()
-        game.keys("Enter", delay=1)  # the only character
+        game.keys("Enter", delay=1)
         assert wait_until(lambda: in_game(game.screen()), 60), "resume did not reach the game"
         game.define_lua(HELPERS)
         assert abs_pos(game) == avatar, "resume loaded the wrong character position"
@@ -184,7 +169,6 @@ def test_opening_the_attempted_door_clears_the_marker(_g):
         east = LockTile(avatar[0] + EAST_DOOR[0], avatar[1] + EAST_DOOR[1], avatar[2], "terrain")
         assert save_and_read_locks(game) == [east]
 
-        # Placement can shift the map; derive the roof coordinates afterward.
         assert game.lua(
             "local a=gapi.get_avatar() local p=here(2,0) "
             "a:set_pos_ms(p) p=here(0,0) "
@@ -199,7 +183,6 @@ def test_opening_the_attempted_door_clears_the_marker(_g):
             + game.screen()
 
         game.keys("o", "h", delay=0.3)
-        # The avatar now stands east of the door, so the door is one tile west.
         assert wait_until(lambda: game.lua(
             "out(M:get_ter_at(here(-1,0)):str_id():str())") == ["t_door_o"], 10), game.screen()
         assert save_and_read_locks(game) == [], "opening a known locked door must clear its marker"
@@ -208,7 +191,6 @@ def test_opening_the_attempted_door_clears_the_marker(_g):
 
 
 def _nearest_locked_vehicle_door(game, origin):
-    """Find a locking door and a neighboring tile outside the vehicle."""
     reported = game.lua(
         f"local o=M:abs_to_bub(TripointAbsMs.new({origin[0]},{origin[1]},{origin[2]})) local r={{}} "
         "for dx=-3,3 do for dy=-3,3 do "
@@ -227,7 +209,6 @@ def _nearest_locked_vehicle_door(game, origin):
 
 
 def load_locked_vehicle_fixture(game, origin):
-    # Spawn can unlock random doors; prepare only this private saved vehicle, then load it.
     save_and_quit(game)
     game.wait_for("[Load]", timeout=60)
     connection = sqlite3.connect(_world_dir(game) / "map.sqlite3")
@@ -274,7 +255,6 @@ def test_vehicle_locked_door_knowledge_follows_attempts(_g):
     try:
         spawn_vehicle(game)
         origin = abs_pos(game)
-        # Leave through normal movement so the avatar's boarded state is cleared.
         game.keys("h", "h", "h", "h", delay=0.6)
         assert game.lua("out(M:has_vehicle_part_with_feature_at(here(0,0),'MOUNTABLE'))") == ["false"]
         assert game.lua(
@@ -298,12 +278,10 @@ def test_vehicle_locked_door_knowledge_follows_attempts(_g):
         locks = save_and_read_locks(game)
         assert locks == [door], f"only the attempted vehicle door should be remembered, got {locks}"
 
-        # Real bound fixture: replace with the same car without lock parts, then open for real.
         assert game.lua(
             f"local p=M:abs_to_bub(TripointAbsMs.new({origin[0]},{origin[1]},{origin[2]})) "
             "out(M:replace_vehicle(p,'car',{locks=false,status=0}))") == ["true"]
         settle(game)
-        # Mint spawns still randomize open doors.
         game.keys("c", delay=0)
         assert wait_until(lambda: "Close where?" in game.screen() or
                           "nothing that can be closed nearby" in game.screen(), 10), game.screen()
@@ -320,7 +298,6 @@ def test_vehicle_locked_door_knowledge_follows_attempts(_g):
 
 
 def test_lock_icon_option_follows_the_control_scheme(session, options, attempted_tile, off, on):
-    """Observe the tiles-only option's real default, rendered marker, and native save."""
     import shutil
     import time
     import tiles
@@ -363,7 +340,6 @@ def test_lock_icon_option_follows_the_control_scheme(session, options, attempted
                 window = x11.find_window(tiles.WINDOW_TITLE_PREFIX)
                 tiles.require(window is not None, f"{label}: game window disappeared")
                 x11.focus_local(window, 0, 0)
-                # The native sound menu saves all options without changing the icon option.
                 x11.key("F7")
                 tiles.wait_for_frame(session, live.proc, live.run, session.timeout)
                 x11.key("Left")
@@ -397,7 +373,6 @@ def test_lock_icon_option_follows_the_control_scheme(session, options, attempted
 
 
 def build_known_lock_fixture(game):
-    """Build two identical locked doors and try only the east one, then save the world."""
     game.define_lua(HELPERS)
     two_locked_doors(game)
     attempt_open_east(game)
@@ -405,7 +380,6 @@ def build_known_lock_fixture(game):
 
 
 def build_known_lock_world(session):
-    """Prepare a tiles.py Session from the attempt fixture; call before session.launch()."""
     import subprocess
 
     import tiles
@@ -434,13 +408,7 @@ class LockCheck:
 
 
 def analyse_known_lock_icons(off_png, on_png, attempted_tile, untried_tile, artifacts):
-    """Pixel proof for tiles.py: only the attempted door changes when the icons are enabled.
-
-    attempted_tile and untried_tile are (x0, y0, x1, y1) pixel rectangles around the two
-    identical doors.  The off capture is the same saved world with the option false; the on
-    capture has it true.  Returns a list of LockCheck; the caller turns them into its report.
-    """
-    import tiles  # local import keeps the curses tests usable without the tiles dependencies
+    import tiles
 
     checks = []
     w, h, off = tiles.frame_rgb(off_png)

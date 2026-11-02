@@ -386,7 +386,6 @@ constexpr auto cbm_recharge_steps = std::array<cbm_recharge_rule, 5> { {
     cbm_recharge_rule::CBM_RECHARGE_NONE
 } };
 
-// CBM enum values are percentages, so the next value must come from the step list.
 template<typename T, size_t N>
 auto next_step( const T current, const std::array<T, N> &steps ) -> T
 {
@@ -448,8 +447,6 @@ auto cbm_recharge_label( const cbm_recharge_rule rule ) -> std::string
     return {};
 }
 
-// Flips what the follower does now. A temporary order on the same rule would hide the flip,
-// so that order is cleared with it.
 auto palette_toggle_rule( npc &guy, const ally_rule rule ) -> void
 {
     const auto enable = !guy.rules.has_flag( rule );
@@ -463,8 +460,6 @@ auto palette_toggle_rule( npc &guy, const ally_rule rule ) -> void
     guy.wield_better_weapon();
 }
 
-// Follower command palette: one follower's rules without entering dialogue.
-// Option-gated on NPC_UI. Writes the same npc_follower_rules fields the dialogue topics write.
 auto follower_command_palette( const std::vector<npc *> &npc_list ) -> void
 {
     const auto picked = npc_select_menu( npc_list, _( "Whose rules?" ), false );
@@ -561,7 +556,7 @@ auto follower_command_palette( const std::vector<npc *> &npc_list ) -> void
     }
 }
 
-} // namespace
+}
 
 static void tell_veh_stop_following()
 {
@@ -1723,7 +1718,6 @@ std::string dialogue::dynamic_line( const talk_topic &the_topic ) const
             } else {
                 info += _( "\nThirsty" );
             }
-            // bmr() is measured in kcal per day.
             if( p->max_stored_kcal() - p->get_stored_kcal() < 500 ) {
                 time_duration hunger_at = 1_days
                                           * ( 500 - p->max_stored_kcal() + p->get_stored_kcal() )
@@ -2406,8 +2400,6 @@ talk_topic dialogue::opt( dialogue_window &d_win, const std::string &npc_name,
 
     apply_speaker_effects( topic );
 
-    // Modern picks replies with 1-9 then 0 (wasd moves the selection); Classic keeps letters.
-    // Beyond ten replies the rest fall back to letters, so every reply stays reachable.
     const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
     const auto label_for = [modern]( const size_t i ) -> char {
         if( !modern ) {

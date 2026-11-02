@@ -1,5 +1,3 @@
-"""Sound & volume: the curses build explains that audio is unavailable."""
-
 from fixtures import shared_game
 from helpers import choose_menu_entry
 from tmux_game import in_game
@@ -20,7 +18,6 @@ def test_sound_menu_curses_unavailable(_game):
         assert "Cancel popup" in screen, "the first notice teaches the player:\n" + screen
         game.keys("Escape", delay=0.6)
         game.wait_for("X,Y,Z", timeout=15)
-        # The second visit must not block the game.
         game.keys("Enter", delay=0.8)
         choose_menu_entry(game, "Misc…")
         game.wait_for("Sound & volume")

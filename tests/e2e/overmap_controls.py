@@ -1,4 +1,3 @@
-"""The map shortcut returns to play without confirming a destination."""
 from aim_reticle import action_clock
 from fixtures import shared_game
 from helpers import HELPERS, arena, bub_pos

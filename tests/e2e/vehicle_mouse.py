@@ -1,9 +1,3 @@
-"""Modern-scheme mouse support on the vehicle work screen.
-
-Clicks select a part or overview row, switch install tabs and run the same
-keyboard actions as the drawn labels. Classic keeps the keyboard-only screen
-because the mouse actions are only registered under the modern scheme.
-"""
 import re
 import subprocess
 import time
@@ -15,12 +9,10 @@ from safe_click import see_everything
 from tmux_game import Game
 from vehicle_box import spawn_vehicle, vehicle_game as empty_vehicle_game
 
-# The work screen's first row of actions stays visible at every supported width.
 SCREEN_MARKER = "refill"
 
 
 def row_of(screen, needle, xmin=0):
-    """Absolute x, y of the first occurrence of needle at or after xmin."""
     for y, line in enumerate(screen.splitlines()):
         x = line.find(needle, xmin)
         if x >= 0:
@@ -29,19 +21,15 @@ def row_of(screen, needle, xmin=0):
 
 
 def parts_pane(screen):
-    """Text of the left parts list column on the default 140x45 layout."""
     return "\n".join(line[:48] for line in screen.splitlines())
 
 
 def open_vehicle_work_screen(g):
-    """Walk the real examine route instead of calling the screen directly."""
     action_menu(g, "Interact", "Examine Nearby Terrain")
     if "Examine where?" in g.screen():
         g.keys("x", delay=0.2)
     screen = g.screen()
     if "Interact with what?" in screen:
-        # Nearby terrain offers one examine action per adjacent tile. Pick the
-        # spawned vehicle's own tile, not the first neighboring floor.
         match = re.search(r"│\s+\S\s+(examine the [^│\n]* \(here\))\s+│", screen)
         assert match, "the current vehicle tile must be examinable\n" + screen
         choose_menu_entry(g, match.group(1))
@@ -54,7 +42,6 @@ def open_vehicle_work_screen(g):
 
 
 def vehicle_game(name, cols=140, rows=45):
-    """Spawn a car and stand next to it, before opening the work screen."""
     game = Game(name=name, cols=cols, rows=rows,
                 options={"SAFEMODE": "false", "CONTROL_SCHEME": "modern"})
     try:
@@ -84,7 +71,6 @@ def test_vehicle_grid_and_overview_clicks_select_parts(_g):
     try:
         before = g.screen()
         assert "quarterpanel" not in parts_pane(before), before
-        # A drawn car part sits just left of the centred cursor cell (24, 9).
         g.click(26, 7)
         selected = g.screen()
         assert "Esc-back" in selected, selected
@@ -92,7 +78,6 @@ def test_vehicle_grid_and_overview_clicks_select_parts(_g):
         assert "quarterpanel" in parts_pane(selected), \
             "clicking a drawn part must select the mount it belongs to\n" + selected
 
-        # An overview row is a second way to move the cursor, with no action attached.
         x, y = row_of(selected, "reclining seat", 48)
         g.click(50, y)
         after = g.screen()
@@ -126,7 +111,6 @@ def test_part_clicks_do_not_advance_time_or_start_work(_g):
         g.click(26, 7)
         x, y = row_of(g.screen(), "reclining seat", 48)
         g.click(50, y)
-        # Cancel the rename prompt, then leave through the drawn Esc-back label.
         x, y = row_of(g.screen(), "rEname")
         g.click(x + 1, y)
         g.wait_for("Enter new vehicle name:")
@@ -149,8 +133,6 @@ def test_install_row_and_tab_clicks(_g):
         screen = g.screen()
         lines = screen.splitlines()
         tab_y = next(i for i, l in enumerate(lines) if "<All>" in l)
-        # The list starts two rows down; take the second row, which is never the
-        # already-selected first entry and does not depend on the starting gear.
         row_line = lines[tab_y + 3]
         entry = row_line[48:93].strip()
         assert len(entry) > 2 and entry[1] == " ", row_line
@@ -199,7 +181,6 @@ def test_parts_list_hint_and_wheel_scroll(_g):
         screen = g.screen()
         assert "^ More parts above…" in screen, "the shown-down hint must scroll one row\n" + screen
 
-        # Wheel notches move the same cursor list one row and stop at the top.
         g.hover(10, 8)
         g.type("\x1b[<64;11;9M", delay=1)
         screen = g.screen()
@@ -219,7 +200,6 @@ def test_overview_wheel_and_hint_scroll(_g):
     try:
         screen = g.screen()
         assert "'{' to scroll up" not in screen, screen
-        # At 80 columns the overview starts at x=28, so hover over that pane.
         g.hover(40, 5)
         g.type("\x1b[<65;41;6M", delay=1)
         screen = g.screen()
@@ -257,13 +237,11 @@ def test_resize_rebuilds_the_click_map(_g):
 
 
 def shift_space(g, delay=0.8):
-    """Shift+Space, as the extended-key sequence the game's terminal input layer reads."""
     subprocess.run(["tmux", "send-keys", "-t", g.name, "-l", "--", "\x1b[32;2u"], check=True)
     time.sleep(delay)
 
 
 def cargo_curtain_tile(g):
-    """Offset from the avatar of the nearest tile with both a cargo part and a curtain part."""
     reported = g.lua(
         "local o=gapi.get_avatar():get_pos_ms() local r={} "
         "for dx=-3,3 do for dy=-3,3 do "
@@ -278,7 +256,6 @@ def cargo_curtain_tile(g):
 
 
 def select_vehicle_tile(g, cell):
-    """Right-click a vehicle tile and dismiss the action list, keeping the selection."""
     g.click(*cell, button=2)
     if "Interact with the" in g.screen():
         g.keys("Escape", delay=0.3)
@@ -286,12 +263,10 @@ def select_vehicle_tile(g, cell):
 
 
 def test_space_opens_trunk_and_shift_space_toggles_curtain(_g):
-    """Space loots a vehicle trunk directly; Shift+Space toggles its curtain both ways."""
     game = empty_vehicle_game("bn-e2e-vehicle-quick-actions", CONTROL_SCHEME="modern")
     try:
         spawn_vehicle(game, "camper_van")
         dx, dy = cargo_curtain_tile(game)
-        # Stand on the cargo tile to drop into its trunk.
         assert game.lua(
             f"local o=gapi.get_avatar():get_pos_ms() "
             f"gapi.get_avatar():set_pos_ms(TripointBubMs.new(o.x+{dx},o.y+{dy},o.z)) "
@@ -314,8 +289,6 @@ def test_space_opens_trunk_and_shift_space_toggles_curtain(_g):
         assert wait_until(lambda: count_at(game, 0, 0, "rock") == 0, 10), \
             "the dropped rock must sit in the trunk's cargo, not on the ground:\n" + game.screen()
 
-        # Space on the selected trunk tile: the contents come up ready to loot, with no
-        # vehicle interaction screen and no action menu in between.
         select_vehicle_tile(game, cell)
         game.keys("Space", delay=0.5)
         game.wait_for("Pick up")
@@ -329,7 +302,6 @@ def test_space_opens_trunk_and_shift_space_toggles_curtain(_g):
         assert wait_until(lambda: count_carried(game, "rock") == 1, 10), game.screen()
 
         assert bub_pos(game) == position, "opening a trunk must not move the avatar"
-        # A curtain cannot close through an occupant; stand at the neighboring controls.
         assert game.lua(
             f"local o=gapi.get_avatar():get_pos_ms() "
             f"gapi.get_avatar():set_pos_ms(TripointBubMs.new(o.x-({dx}),o.y-({dy}),o.z)) "
@@ -349,7 +321,6 @@ def test_space_opens_trunk_and_shift_space_toggles_curtain(_g):
         assert count_carried(game, "rock") == 1, "toggling must not disturb the looted rock"
         assert bub_pos(game) == position, "toggling a curtain must not move the avatar"
 
-        # Without a selected tile the chord still names its target instead of acting blindly.
         shift_space(game)
         game.wait_for("Toggle which curtain?")
         game.keys("Escape", delay=0.3)

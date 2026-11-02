@@ -1,4 +1,3 @@
-"""New worlds load the Stocked River Barges mod and its sealed cargo crates hold loot."""
 import json
 
 from helpers import HELPERS, Game, arena, settle, start_new_game
@@ -20,10 +19,10 @@ def test_new_worlds_stock_river_barges(_g):
         game.keys("/", delay=0.4)
         game.type("stocked_barge_crate_sealed")
         game.wait_for("stocked_barge_crate_sealed")
-        game.keys("Enter", delay=0.6)  # Ends the filter.
-        game.keys("Enter", delay=0.8)  # Picks the chunk and opens the look cursor.
+        game.keys("Enter", delay=0.6)
+        game.keys("Enter", delay=0.8)
         game.wait_for("Show extended description")
-        game.keys("Enter", delay=0.8)  # The look cursor starts on the avatar.
+        game.keys("Enter", delay=0.8)
         game.wait_gone("Show extended description")
         settle(game)
         out = game.lua("local p=here(0,0) out(M:get_furn_at(p):str_id():str(), #M:get_items_at(p):items())")

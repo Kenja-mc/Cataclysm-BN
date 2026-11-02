@@ -176,5 +176,5 @@ int mk_wcwidth( uint32_t ucs )
                ( ucs >= 0xffe0 && ucs <= 0xffe6 ) ||
                ( ucs >= 0x20000 && ucs <= 0x2fffd ) ||
                ( ucs >= 0x30000 && ucs <= 0x3fffd ) ||
-               ( ucs >= 0x10f000 && ucs <= 0x10f0ff ) ) ); /* bundled icon font, icon_font.h */
+               ( ucs >= 0x10f000 && ucs <= 0x10f0ff ) ) );
 }

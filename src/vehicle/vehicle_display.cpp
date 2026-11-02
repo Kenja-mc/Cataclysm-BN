@@ -314,7 +314,6 @@ auto vehicle::print_vparts_descs(
             lines += new_lines;
             start_limit = start_at;
         } else {
-            // fold_and_print uses the same folding, so this is the row the hint starts on.
             hints.down = static_cast<int>(foldstring(msg, width - 2).size());
             msg += std::string("<color_yellow>") + _("More parts here…") + "  >" + "</color>\n";
             start_limit = i;

@@ -260,7 +260,6 @@ TEST_CASE("fluid grid storage split keeps every milliliter", "[overmap][fluid_gr
     CHECK(split.lhs.stored_for(gasoline) + split.rhs.stored_for(gasoline) == 1000_ml);
     CHECK(split.lhs.stored_total() + split.rhs.stored_total() == original.stored_total());
 
-    // Equal halves with odd volumes must still add up exactly.
     const auto halves = fluid_grid::split_storage_state(original, 670_ml, 670_ml);
     CHECK(halves.lhs.stored_for(water) + halves.rhs.stored_for(water) == 333_ml);
     CHECK(halves.lhs.stored_for(clean) + halves.rhs.stored_for(clean) == 7_ml);

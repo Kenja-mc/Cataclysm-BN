@@ -539,13 +539,11 @@ public:
         bool detail = false, int start_at = 0) const -> int;
 
     // Vehicle parts descriptions - descriptions for all the parts on a single tile
-    /// Drawn rows of the description pane's scroll hints.
     struct desc_hint_rows {
         std::optional<int> up;
         std::optional<int> down;
     };
 
-    /// @return Drawn rows of the "more parts above/below" hints, when present.
     auto print_vparts_descs(
         const catacurses::window& win, int max_y, int width, int p, int& start_at,
         int& start_limit) const -> desc_hint_rows;

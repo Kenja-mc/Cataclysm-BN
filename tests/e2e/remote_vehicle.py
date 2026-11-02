@@ -1,12 +1,8 @@
-"""Remote vehicle control (upstream #5413): pressing the control-vehicle action must open
-the remote vehicle's menu instead of indexing vehicles parts with -1.
-"""
 from helpers import HELPERS, Game, action_menu, arena, settle, start_new_game
 from vehicle_box import spawn_vehicle
 
 
 def open_action_menu(game, category, action):
-    """The hub check reads the screen once; under load the redraw can lag, so retry it."""
     try:
         action_menu(game, category, action)
     except AssertionError:
@@ -16,14 +12,12 @@ def open_action_menu(game, category, action):
 
 def remote_vehicle_game(name: str, *, layout: str = "labels", cols: int = 140,
                         rows: int = 45, **options: str) -> Game:
-    # Dashboard callers opt in without changing this compact regression fixture.
     game = Game(name=name, layout=layout, cols=cols, rows=rows,
                 options={"SAFEMODE": "false", "HUD_WINDOWS": "false", **options})
     try:
         start_new_game(game)
         game.define_lua(HELPERS)
         arena(game)
-        # The bubble car ships drive-by-wire controls (REMOTE_CONTROLS + CONTROLS).
         spawn_vehicle(game, "bubble_car")
     except Exception:
         game.close()
@@ -32,9 +26,6 @@ def remote_vehicle_game(name: str, *, layout: str = "labels", cols: int = 140,
 
 
 def enter_remote_control(game):
-    """Add bio_remote, then take control through the real UI so setremoteveh() caches it."""
-    # Step off inside the same submap: a cross-submap teleport shifts the map, and the
-    # shift's setremoteveh() would cache the pre-setup lookup for the rest of the turn.
     assert game.lua("gapi.get_avatar():set_pos_ms(here(-6,-6)) out('ok')") == ["ok"]
     settle(game)
     prepared = game.lua(
@@ -47,14 +38,13 @@ def enter_remote_control(game):
     assert prepared == ["true,false"], prepared
     open_action_menu(game, "Misc", "View/Activate Bionics")
     game.wait_for("Remote Controller")
-    game.keys("Enter", delay=1.0)  # The only bionic is on the cursor.
+    game.keys("Enter", delay=1.0)
     game.wait_for("Perform which function:")
-    game.keys("Enter", delay=1.0)  # "Control vehicle"
+    game.keys("Enter", delay=1.0)
     game.wait_for("What to do with remote vehicle control:")
-    game.keys("Enter", delay=1.0)  # "Take control of a vehicle."
+    game.keys("Enter", delay=1.0)
     game.wait_for("Select vehicle to access")
-    game.keys("Enter", delay=1.0)  # The only vehicle: Bubble Car.
-    # The bionics screen hides the message log, so close it before reading the message.
+    game.keys("Enter", delay=1.0)
     game.keys("Escape", delay=0.8)
     game.wait_for("You take control of the vehicle.")
     settle(game)

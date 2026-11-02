@@ -197,8 +197,6 @@ static void init_global_game_state(
     get_options().init();
     get_options().load();
 
-    // The suite tests upstream behaviour, so use the fork's classic controls (vi-keys, bump
-    // attacks) and no tips.
     for (const auto& [name, value] :
          {std::pair{"CONTROL_SCHEME", "classic"}, std::pair{"BUMP_ATTACK", "true"},
           std::pair{"FORCE_CAPITAL_YN", "true"}, std::pair{"YN_HOTKEYS", "true"},

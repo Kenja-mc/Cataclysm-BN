@@ -255,8 +255,6 @@ veh_interact::veh_interact(vehicle& veh, tripoint_mnt_veh p)
     main_context.register_action("ZOOM_OUT");
     main_context.register_action("ANY_INPUT");
     if (modern_mouse()) {
-        // Classic keeps the upstream keyboard-only screen; these actions only
-        // exist so the modern scheme can report clicks and wheel notches.
         main_context.register_action("SELECT");
         main_context.register_action("SCROLL_UP");
         main_context.register_action("SCROLL_DOWN");
@@ -427,7 +425,6 @@ auto veh_interact::mouse_input() -> bool {
 auto veh_interact::mouse_cell(const catacurses::window &win) -> std::optional<point> {
     const auto mouse = main_context.get_coordinates(win);
     if (!mouse) { return std::nullopt; }
-    // get_coordinates() is relative to the window centre.
     const auto cell = mouse->xy().raw() + point(getmaxx(win), getmaxy(win)) / 2;
     if (cell.x < 0 || cell.y < 0 || cell.x >= getmaxx(win) || cell.y >= getmaxy(win)) {
         return std::nullopt;
@@ -441,7 +438,6 @@ auto veh_interact::parts_row_at(point cell) const -> std::optional<int> {
     const auto max_y = getmaxy(w_parts) - 1;
     const auto top = parts_list_offset > 0 ? 1 : 0;
     const auto row = cell.y - top;
-    // The last row holds the "more parts below" hint instead of a part.
     if (row < 0 || cell.y >= max_y) { return std::nullopt; }
     const auto index = row + parts_list_offset;
     if (index < 0 || index >= static_cast<int>(pl.size())) { return std::nullopt; }
@@ -452,8 +448,6 @@ auto veh_interact::click_vehicle_grid(point cell) -> void {
     auto mount_delta = point_rel_veh::zero();
 #if defined(TILES)
     if (get_option<bool>("VEHICLE_EDIT_TILES") && is_draw_tiles_mode()) {
-        // The tile preview owns its zoom and pixel geometry, so ask it which
-        // mount is drawn under the clicked cell.
         if (!tile_preview) { return; }
         const auto delta = tile_preview->mount_delta_at(cell);
         if (!delta) { return; }
@@ -461,8 +455,6 @@ auto veh_interact::click_vehicle_grid(point cell) -> void {
     } else
 #endif
     {
-        // Mirrors display_veh(): the cursor sits at the window centre and the
-        // screen uses the inverse of the keyboard direction rotation.
         const auto center = point(getmaxx(w_disp) / 2, getmaxy(w_disp) / 2);
         mount_delta = point_rel_veh(cell - center).rotate(1);
     }
@@ -482,7 +474,6 @@ auto veh_interact::main_mouse_action(const std::string &action) -> std::string {
                     std::max(0, static_cast<int>(parts_here.size()) - 1));
             }
         } else if (mouse_cell(w_msg)) {
-            // The description is a line-by-line text viewer on DESC_LIST_*.
             move_cursor(tripoint_rel_veh::zero(), delta);
         }
         return "";
@@ -1148,7 +1139,6 @@ void veh_interact::do_install() {
                     ? install_row_at_y[cell->y]
                     : -1;
                 if (cell && cell->y == 0 && tab_hit >= 0) {
-                    // Switch tabs exactly like PREV_TAB/NEXT_TAB, including the filter.
                     tab = static_cast<size_t>(tab_hit);
                     tab_vparts.clear();
                     pos = 0;
@@ -1157,7 +1147,7 @@ void veh_interact::do_install() {
                     action.clear();
                 } else if (row_hit >= 0) {
                     if (row_hit == pos) {
-                        action = "CONFIRM"; // a second click runs the keyboard confirm
+                        action = "CONFIRM";
                     } else {
                         pos = row_hit;
                         action.clear();
@@ -1375,7 +1365,7 @@ void veh_interact::do_repair() {
                 if (iter != need_repair.end()) {
                     const auto hit = static_cast<int>(std::distance(need_repair.begin(), iter));
                     if (hit == pos) {
-                        action = "CONFIRM"; // a second click runs the keyboard confirm
+                        action = "CONFIRM";
                     } else {
                         pos = hit;
                         action.clear();
@@ -1910,7 +1900,7 @@ void veh_interact::overview(const overview_enable_t& enable, const overview_acti
                 if (idx >= 0 && idx < static_cast<int>(overview_opts.size())
                     && overview_opts[idx].hotkey) {
                     if (idx == overview_pos) {
-                        input = "CONFIRM"; // a second click runs the keyboard confirm
+                        input = "CONFIRM";
                     } else {
                         overview_pos = idx;
                         continue;
@@ -2140,7 +2130,7 @@ void veh_interact::do_remove() {
                 const auto row = cell ? parts_row_at(*cell) : std::nullopt;
                 if (row && *row < static_cast<int>(parts_here.size())) {
                     if (*row == pos) {
-                        action = "CONFIRM"; // a second click runs the keyboard confirm
+                        action = "CONFIRM";
                     } else {
                         pos = *row;
                         action.clear();

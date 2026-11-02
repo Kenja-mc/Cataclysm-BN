@@ -1,8 +1,3 @@
-"""Floating HUD windows: collapse, restore, drag, persistence and the keyboard path.
-
-The windows are the slide-2 layout: weather/time, combat, needs and vehicle readings,
-each with a title row and a collapse control over the map.
-"""
 import re
 
 from crafting import load_first_save
@@ -30,7 +25,6 @@ def hud_game(name, **options):
 
 
 def find_titles(screen, name):
-    """Every title row for one window, matched at a box interior."""
     rows = []
     for y, line in enumerate(screen.splitlines()):
         start = 0
@@ -44,8 +38,6 @@ def find_titles(screen, name):
                 controls = [(at, token) for at, token in controls if at >= 0]
                 if controls:
                     control_at, _ = min(controls)
-                    # A border between the name and the control means the control
-                    # belongs to a later window on the same screen row.
                     if "│" not in line[found:control_at]:
                         rows.append((y, line))
                         break
@@ -60,7 +52,6 @@ def title_row(screen, name):
 
 
 def title_column(line, name):
-    """The name's column where it starts a box whose control is on the same row."""
     start = 0
     while True:
         found = line.find(name, start)
@@ -79,12 +70,6 @@ def title_column(line, name):
 
 
 def control(line, name):
-    """The window's own control: take the nearest control token after its name.
-
-    Two windows can share a title row, and the window being clicked may be collapsed
-    while a later window on the same row shows `[-]`, so checking one token at a time
-    in a fixed order picks the wrong box.
-    """
     start = title_column(line, name)
     found = [(line.find(token, start), token) for token in ("[-]", "[+]")]
     found = [(at, token) for at, token in found if at >= 0]
@@ -93,14 +78,12 @@ def control(line, name):
 
 
 def summary(line, name):
-    """The live state between the window name and its control."""
     start = title_column(line, name) + len(name)
     end = min(i for i in (line.find("[-]", start), line.find("[+]", start)) if i >= 0)
     return line[start:end].strip()
 
 
 def marker_on(game, label):
-    """Whether the Sidebar Options cursor (>>) is on a HUD window row."""
     for line in game.screen().splitlines():
         marker = line.find(">>")
         if marker > 40 and label in line[marker:]:
@@ -109,7 +92,6 @@ def marker_on(game, label):
 
 
 def goto_hud_row(game, label):
-    """Navigates down the third column to a HUD row; assumes the cursor is in that column."""
     for _ in range(20):
         if marker_on(game, label):
             return
@@ -123,7 +105,6 @@ def reach_hud_row(game, label):
 
 
 def menu_lines(game):
-    """The rows covered by the open Sidebar Options window."""
     lines = game.screen().splitlines()
     top = next(i for i, line in enumerate(lines) if "SIDEBAR OPTIONS" in line)
     return lines[top:top + 21]
@@ -135,7 +116,6 @@ def row_slice(screen, row, first, last):
 
 
 def menu_column(game):
-    # The menu's third column starts at screen column 90; stop at its right border.
     return "\n".join(line[90:107] for line in menu_lines(game))
 
 
@@ -158,7 +138,6 @@ def test_collapse_restore_drag_and_needs(_g):
                        for line in screen.splitlines()), \
             "the vehicle window must not exist on foot:\n" + screen
 
-        # Right clicks on a window are consumed too.
         right_clock = action_clock(game)
         right_pos = bub_pos(game)
         game.click(title_column(weather, "Weather") + 4, weather_y + 1, button=2)
@@ -166,7 +145,6 @@ def test_collapse_restore_drag_and_needs(_g):
             "a right click on a window must not select the map tile under it"
         assert bub_pos(game) == right_pos and action_clock(game) == right_clock
 
-        # Collapsing keeps one line of live state and the click never reaches the map.
         before_clock = action_clock(game)
         before_pos = bub_pos(game)
         game.click(control(weather, "Weather")[0], weather_y)
@@ -180,7 +158,6 @@ def test_collapse_restore_drag_and_needs(_g):
         assert live in collapsed, "a collapsed window must keep its live state:\n" + collapsed
         assert "Light:" not in screen, "the collapsed body must be hidden:\n" + screen
 
-        # Clicking the name restores the window in place.
         game.click(title_column(collapsed, "Weather"), collapsed_y)
         screen = game.screen()
         restored_y, restored = title_row(screen, "Weather")
@@ -188,7 +165,6 @@ def test_collapse_restore_drag_and_needs(_g):
         assert "Light:" in screen and "Wind:" in screen
         assert restored_y == weather_y, "restoring must not move the window"
 
-        # A collapsed window still has a drag handle beside its name.
         game.click(control(restored, "Weather")[0], restored_y)
         screen = game.screen()
         collapsed_y, collapsed = title_row(screen, "Weather")
@@ -210,7 +186,6 @@ def test_collapse_restore_drag_and_needs(_g):
         assert control(restored, "Weather")[1] == "[-]", \
             "the name must restore the moved collapsed window:\n" + restored
 
-        # Click a title, move the pointer, click again: the window follows inside the map.
         target_row = restored_y + 3
         game.click(title_column(restored, "Weather"), restored_y)
         game.hover(14, target_row)
@@ -221,10 +196,8 @@ def test_collapse_restore_drag_and_needs(_g):
             "the title drag must move the window:\n" + moved
         assert "Mouse View" not in screen, \
             "dropping a window must not select the map tile under it"
-        # The sidebar starts at column 96 on this profile.
         assert control(moved, "Weather")[0] < 96, "the window must not cover the sidebar:\n" + moved
 
-        # A drag into the map's right edge stops there, clear of the sidebar and the log.
         game.click(title_column(moved, "Weather"), moved_y)
         game.hover(139, 24)
         game.click(139, 24)
@@ -233,7 +206,6 @@ def test_collapse_restore_drag_and_needs(_g):
         assert control(edge, "Weather")[0] < 96, "the window must not cover the sidebar:\n" + edge
         assert edge_y < 45, "the window must stay on screen:\n" + edge
 
-        # Every window carries the same control; the limb window is the new-layout example.
         limbs_y, limbs = title_row(screen, "Limbs")
         assert "HEAD" in screen
         game.click(control(limbs, "Limbs")[0], limbs_y)
@@ -245,7 +217,6 @@ def test_collapse_restore_drag_and_needs(_g):
         assert control(title_row(screen, "Limbs")[1], "Limbs")[1] == "[-]"
         assert "HEAD" in screen
 
-        # A pressing need lists its glyph and label, never the adjective.
         assert game.lua("gapi.get_avatar():set_thirst(300) out('ok')") == ["ok"]
         settle(game)
         screen = game.screen()
@@ -271,7 +242,6 @@ def test_positions_and_collapse_survive_reload(_g):
         placed_x, placed_y = title_column(moved, "Weather"), moved_y
         assert (placed_x, placed_y) == (start_x + 10, y + 2), \
             "the drag must place the window where it was dropped:\n" + moved
-        # Collapse after moving, so both pieces of state are saved together.
         game.click(control(moved, "Weather")[0], moved_y)
         assert control(title_row(game.screen(), "Weather")[1], "Weather")[1] == "[+]"
 
@@ -284,7 +254,6 @@ def test_positions_and_collapse_survive_reload(_g):
             "the saved position must survive the reload:\n" + reloaded
         assert control(reloaded, "Weather")[1] == "[+]", "the saved collapse must survive:\n" + reloaded
         assert "Light:" not in screen
-        # The restored window expands again after the reload.
         game.click(title_column(reloaded, "Weather"), reloaded_y)
         screen = game.screen()
         restored_y, restored = title_row(screen, "Weather")
@@ -301,18 +270,16 @@ def test_sidebar_options_toggles_a_window_without_a_mouse(_g):
         action_menu(game, "Misc", "Sidebar Options")
         game.wait_for("SIDEBAR OPTIONS")
         game.keys("Right", delay=0.4)
-        # The menu's third column lists every window below the layouts.
         for name in ("Weather", "Combat", "Needs", "Limbs", "Stats", "Movement",
                      "Weight", "Compass", "Log", "Vehicle"):
             assert name in menu_column(game), \
                 f"{name} must be reachable without a mouse:\n" + game.screen()
 
-        # Classic/compact keep their panels, so the HUD rows disappear there.
-        game.keys("Enter", delay=0.6)  # row 0: classic
+        game.keys("Enter", delay=0.6)
         column = menu_column(game)
         assert "HUD WINDOWS" not in column and "Weather" not in column, \
             "classic layouts must not list floating windows:\n" + game.screen()
-        game.keys("Down", "Down", "Down", "Enter", delay=0.4)  # back to labels
+        game.keys("Down", "Down", "Down", "Enter", delay=0.4)
         assert "HUD WINDOWS" in menu_column(game), \
             "labels must list the floating windows:\n" + game.screen()
 
@@ -328,7 +295,6 @@ def test_sidebar_options_toggles_a_window_without_a_mouse(_g):
             "toggling the window off must remove it:\n" + screen
         assert "Str" in screen, "the sidebar must own the readings again:\n" + screen
 
-        # The same keyboard path turns it back on.
         action_menu(game, "Misc", "Sidebar Options")
         game.wait_for("SIDEBAR OPTIONS")
         reach_hud_row(game, "Stats")
@@ -341,7 +307,6 @@ def test_sidebar_options_toggles_a_window_without_a_mouse(_g):
 
 
 def test_small_terminal_keeps_the_avatar_and_left_clamp(_g):
-    """At the supported 80x25 minimum windows keep off the avatar and inside a left-sidebar map."""
     game = Game(name="bn-e2e-hud-small", cols=80, rows=25,
                 options={"SAFEMODE": "false", "SHOW_WELCOME": "false",
                          "ANIMATIONS": "false", "HUD_ICONS": "ascii",
@@ -354,11 +319,8 @@ def test_small_terminal_keeps_the_avatar_and_left_clamp(_g):
         settle(game)
         screen = game.screen()
         lines = screen.splitlines()
-        # 80 columns with the 44-column sidebar: the map is 36x25, so the avatar sits at
-        # map cell (18, 12), screen column 44 + 18, row 12.
         assert len(lines) > 12 and len(lines[12]) > 62 and lines[12][62] == "@", \
             "a default window covered the avatar:\n" + screen
-        # Windows that cannot fit hand their readings back to the sidebar.
         if not find_titles(screen, "Stats"):
             assert "Str" in screen, "the skipped stats reading must return to the sidebar:\n" + screen
 
@@ -376,10 +338,7 @@ def test_small_terminal_keeps_the_avatar_and_left_clamp(_g):
         game.close()
 
 
-
-
 def test_window_order_raises_and_persists(_g):
-    """Clicking a window raises it; Sidebar Options raises by keyboard and the order saves."""
     game = hud_game("bn-e2e-hud-order")
     try:
         y, line = title_row(game.screen(), "Weather")
@@ -390,8 +349,6 @@ def test_window_order_raises_and_persists(_g):
         wy, wline = title_row(screen, "Weather")
         assert (title_column(wline, "Weather"), wy) == (12, 4), wline
         weather_right = wline.index("│", control(wline, "Weather")[0] + 3)
-        # Hide Combat's name behind Weather while leaving its summary/header
-        # exposed, even when the rolled weather or carried clock changes width.
         combat_target_x = weather_right - len("Combat") + 1
         combat_name_end = combat_target_x + len("Combat")
 
@@ -405,7 +362,6 @@ def test_window_order_raises_and_persists(_g):
         assert "Combat" in row_slice(screen, cy, combat_target_x, combat_name_end), \
             "the last raised window must be drawn on top:\n" + screen
 
-        # Enter on a HUD row brings that window to the front without a mouse.
         action_menu(game, "Misc", "Sidebar Options")
         game.wait_for("SIDEBAR OPTIONS")
         reach_hud_row(game, "Weather")
@@ -418,9 +374,6 @@ def test_window_order_raises_and_persists(_g):
         assert "Combat" not in row_slice(screen, cy, combat_target_x, combat_name_end), \
             "raising Weather must hide the overlapping Combat title:\n" + screen
 
-        # Weather's live summary changes its width.  Find the exposed Combat
-        # header after Weather's right border, but before Combat's control,
-        # using this same capture rather than a weather/state-dependent cell.
         wy, wline = title_row(screen, "Weather")
         weather_right = wline.index("│", control(wline, "Weather")[0] + 3)
         combat_header = screen.splitlines()[cy]
@@ -440,7 +393,7 @@ def test_window_order_raises_and_persists(_g):
             "raising Combat must not move it:\n" + screen
         assert control(raised, "Combat")[1] == "[-]", \
             "the exposed header click must not collapse Combat:\n" + screen
-        game.click(combat_x, cy)  # drop the grab at the same cell
+        game.click(combat_x, cy)
         wy, wline = title_row(game.screen(), "Weather")
         game.click(title_column(wline, "Weather"), wy)
         screen = game.screen()
@@ -449,7 +402,7 @@ def test_window_order_raises_and_persists(_g):
         raised_y, raised = title_row(screen, "Weather")
         assert (title_column(raised, "Weather"), raised_y) == (12, 4), \
             "raising Weather must not move it:\n" + screen
-        game.click(title_column(raised, "Weather"), raised_y)  # drop the grab
+        game.click(title_column(raised, "Weather"), raised_y)
         assert bub_pos(game) == before_pos, "raising windows must not move the avatar"
         assert action_clock(game) == before_clock, "raising windows must not act on the map"
 
@@ -474,7 +427,6 @@ def test_window_order_raises_and_persists(_g):
 
 
 def test_grouped_fresh_default_uses_the_same_windows(_g):
-    """The first-run grouped layout draws the same ten windows, not only its sidebar sections."""
     game = Game(name="bn-e2e-hud-grouped", cols=140, rows=45, layout="grouped",
                 options={"SAFEMODE": "false", "SHOW_WELCOME": "false",
                          "ANIMATIONS": "false", "HUD_ICONS": "ascii"})

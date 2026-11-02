@@ -28,7 +28,6 @@ namespace
 // maximum limit of the UIs width. After that, we center them, with an even space left and right
 const int MAX_DAIRY_UI_WIDTH = 150;
 
-/** Layout of one print_list_scrollable() call, for click hit testing. */
 struct scrollable_list_layout {
     scrollbar_input::geometry bar{};
     int entries_per_page = 0;
@@ -36,7 +35,6 @@ struct scrollable_list_layout {
     int content_size = 0;
 };
 
-/**print a scrollable list; printed std::vector<std::string> as list with scrollbar*/
 void print_list_scrollable( catacurses::window *win, std::vector<std::string> list, int *selection,
                             int entries_per_page, int xoffset, int width, bool active, bool border,
                             const report_color_error color_error,
@@ -356,11 +354,9 @@ void diary::show_diary_ui( diary *c_diary )
         ui_manager::redraw_invalidated();
         std::string action = ctxt.handle_input();
         if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
-            // Editing keeps its Enter flow: a click only focuses a pane and selects a row.
             if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
                 const int step = action == "SCROLL_UP" ? -1 : 1;
                 if( currwin == window_mode::TEXT_WIN ) {
-                    // The page text scrolls three lines per notch.
                     selected[currwin] += step * 3;
                     action.clear();
                 } else {

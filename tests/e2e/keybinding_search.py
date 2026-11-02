@@ -1,4 +1,3 @@
-"""Typing searches keybindings; navigation stays on dedicated keys and the wheel."""
 import shutil
 import subprocess
 import tempfile
@@ -135,4 +134,3 @@ TESTS = [
     test_letters_search_keybindings_after_scrolling,
     test_local_unbind_can_be_readded_globally,
 ]
-

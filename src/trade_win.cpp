@@ -285,7 +285,6 @@ auto trading_window::update_win( npc &np, const std::string &deal ) -> void
     const auto cost_w = utf8_width( cost_tag );
     const auto cost_x = 1 + ( head_inner_w - cost_w ) / 2;
     mvwprintz( w_head, point( cost_x, head_bottom_y ), trade_color, cost_tag );
-    // The exchange label doubles as the accept button; Enter keeps its confirmation.
     click_targets.push_back( click_target{ .min = point( cost_x, head_bottom_y ),
                                            .max = point( cost_x + cost_w, head_bottom_y + 1 ),
                                            .action = "CONFIRM"
@@ -572,7 +571,6 @@ auto trading_window::update_win( npc &np, const std::string &deal ) -> void
                 const auto category_y = static_cast<int>( row + 1 + trade_total_header_rows );
                 mvwprintz( w_whose, point( 2, category_y ), c_magenta,
                            trim_by_length( category_label, win_w - 1 ) );
-                // Clicking a category header selects the first item under it.
                 row_at[category_y] = i;
                 row++;
                 if( row >= entries_per_page ) {
@@ -677,7 +675,6 @@ auto trading_window::update_win( npc &np, const std::string &deal ) -> void
                                                static_cast<int>( total_pages ) );
         const auto page_x = 1 + std::max( win_w - utf8_width( page_label ), 0 );
         mvwprintw( w_whose, point( page_x, paging_y ), page_label );
-        // '<' goes back one page, the rest of the label advances one page.
         click_targets.push_back( click_target{ .min = point( page_x, paging_y ),
                                                .max = point( page_x + 2, paging_y + 1 ),
                                                .action = "PAGE_UP",
@@ -789,7 +786,6 @@ auto trading_window::show_item_data( size_t index, bool target_is_theirs ) -> in
         ui_manager::redraw();
         auto action = ctxt.handle_input();
         if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
-            // The item description is text: three lines per wheel notch.
             if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
                 const auto inner_h = std::max( getmaxy( w_popup ) - 2, 1 );
                 const auto folded = foldstring( info_text, std::max( getmaxx( w_popup ) - 2, 1 ) );
@@ -1207,8 +1203,6 @@ auto trading_window::perform_trade( npc &np, const std::string &deal ) -> bool
             return std::abs( lhs - current_amount ) > std::abs( rhs - current_amount );
         } );
     };
-    // The hotkey mark/unmark toggle. Also used when a second click lands on the
-    // same row; multi-count items keep their amount prompt.
     const auto toggle_item_mark = [&]( item_pricing & ip ) -> void {
         auto change_amount = 1;
         auto &owner_sells = focus_them ? ip.u_has : ip.npc_has;
@@ -1289,7 +1283,6 @@ auto trading_window::perform_trade( npc &np, const std::string &deal ) -> bool
         auto action = ctxt.handle_input();
         if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
             if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
-                // One row per notch, like the arrow keys.
                 action = action == "SCROLL_UP" ? "UP" : "DOWN";
                 mouse_row_them.reset();
                 mouse_row_you.reset();
@@ -1314,8 +1307,6 @@ auto trading_window::perform_trade( npc &np, const std::string &deal ) -> bool
                     }
                     return nullptr;
                 };
-                // Filter and paging labels live in a pane, so they are tested with
-                // that pane's own coordinates.
                 const auto pane_hit_test = [&]( point cell, bool target_them ) -> const click_target * {
                     for( const click_target &target : click_targets ) {
                         if( !target.in_pane || target.target_them != target_them ) {
@@ -1351,9 +1342,6 @@ auto trading_window::perform_trade( npc &np, const std::string &deal ) -> bool
                     target = pane_hit_test( *pane_cell, they );
                 }
                 if( target != nullptr ) {
-                    // Drawn labels run their keybind actions; the deal itself keeps
-                    // the Enter confirmation prompt, and any layout change forgets
-                    // the pending row click.
                     if( target->action != "CONFIRM" ) {
                         mouse_row_them.reset();
                         mouse_row_you.reset();
@@ -1362,8 +1350,6 @@ auto trading_window::perform_trade( npc &np, const std::string &deal ) -> bool
                         action = "SWITCH_LISTS";
                     } else if( target->action == "FILTER" || target->action == "PAGE_UP" ||
                                target->action == "PAGE_DOWN" ) {
-                        // Pane labels act on the focused pane; the first click on the
-                        // other pane only moves the focus there.
                         if( focus_them != target->target_them ) {
                             focus_them = target->target_them;
                             action.clear();
@@ -1380,7 +1366,6 @@ auto trading_window::perform_trade( npc &np, const std::string &deal ) -> bool
                     if( row_it != row_at.end() ) {
                         const size_t idx = row_it->second;
                         if( focus_them != they ) {
-                            // A first click on the other pane only focuses and selects.
                             focus_them = they;
                             auto &clicked_list = focus_them ? state.theirs : state.yours;
                             auto &clicked_filtered = focus_them ? them_filtered : you_filtered;
@@ -1403,7 +1388,6 @@ auto trading_window::perform_trade( npc &np, const std::string &deal ) -> bool
                             }
                             pending_count.reset();
                         } else if( mouse_row && *mouse_row == idx ) {
-                            // A second click on the same row marks/unmarks the item.
                             toggle_item_mark( target_list[filtered[idx]] );
                             pending_count.reset();
                             mouse_row = idx;
@@ -1419,7 +1403,6 @@ auto trading_window::perform_trade( npc &np, const std::string &deal ) -> bool
                 action.clear();
             }
         } else {
-            // Keyboard, wheel-free navigation and content changes reset click tracking.
             mouse_row_them.reset();
             mouse_row_you.reset();
         }

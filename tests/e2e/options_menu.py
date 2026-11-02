@@ -1,4 +1,3 @@
-"""Options menu: key guide footer, reset to default, and Modern mouse support."""
 import re
 import time
 
@@ -6,7 +5,6 @@ from tmux_game import Game, start_new_game
 
 
 def open_options(g):
-    """Esc opens the main menu; another Escape retries a key the game swallowed mid-action."""
     deadline = time.time() + 15
     while "MAIN MENU" not in g.screen():
         assert time.time() < deadline, "Esc should open the main menu\n" + g.screen()
@@ -29,7 +27,6 @@ def close_options(g):
 
 
 def bool_rows(g):
-    """Screen rows that show a True/False option value, with the value's column."""
     rows = []
     for y, line in enumerate(g.screen().splitlines()):
         match = re.search(r"│ (True|False) +│", line)

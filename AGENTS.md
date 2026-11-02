@@ -23,7 +23,12 @@ learn and use. It keeps the BN game rules. `OVERHAUL.md` explains each change.
    cosmetic visuals may be tiles-only. Current exceptions: numbered list rows (tiles only).
 4. Keep the classic control scheme the same as upstream.
 5. Do not add AI art.
-6. Keep comments terse. Add one only for a non-obvious reason; remove comments that restate code.
+6. Fork-owned code carries its intent in names, small functions, tests and commit messages, with no
+   comments. Fork-owned code is every file the fork added and every line it added to an upstream
+   file; upstream lines keep their comments. Lines a tool reads stay: `// *NOPAD*`, `NOLINT`, lint
+   pragmas, shebangs, Lua `---@` annotations, docstrings printed as `--help`, license headers.
+   `python3 build-scripts/check_fork_comments.py` lists the rest. This overrides the Part 2
+   doc-comment rule for fork-owned code.
 7. Obey the upstream code rules in Part 2.
 8. Never touch the upstream. `cataclysmbn/Cataclysm-BN` is a source to merge from and nothing else:
    do not open a pull request, issue, comment, branch or release there. Everything we submit goes to
@@ -36,6 +41,7 @@ learn and use. It keeps the BN game rules. `OVERHAUL.md` explains each change.
    reason, and confirm the cited line sits in the function you are about to change. #33 cited
    `test_mre_unpacks_its_entree`, but MRE rations use `DISASSEMBLE` and never run `unpack_actor`,
    so that test could not have been its regression test.
+10. Close an issue only after its change is on `main`.
 
 ### Build
 
@@ -271,7 +277,7 @@ auto two_value() -> my_data; //< **MUST NOT** use `std::pair`/`std::tuple` for m
 auto may_have_value() -> std::optional<int>; //< **MUST** use `std::optional` for functions that may not return a value.
 auto may_fail() -> std::expected<int, std::string>; //< **MUST** use `std::expected` for functions that may fail.
 
-/// **MUST** use triple slash for doc comments like rust's.
+/// **MUST** use triple slash for doc comments like rust's (upstream code; Part 1 rule 6 governs fork-owned code).
 /// **MUST** use snake_case for functions and variables.
 struct comparable {
   int x;

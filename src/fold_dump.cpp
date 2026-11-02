@@ -52,7 +52,7 @@ auto to_g( const units::mass m ) -> double
 }
 
 template<typename Container>
-void write_ids( JsonOut &js, const std::string &name, const Container &values )
+auto write_ids( JsonOut &js, const std::string &name, const Container &values ) -> void
 {
     js.member( name );
     js.start_array();
@@ -62,8 +62,8 @@ void write_ids( JsonOut &js, const std::string &name, const Container &values )
     js.end_array();
 }
 
-void write_damage( JsonOut &js, const damage_instance &damage, const float damage_mult,
-                   const float penetration_mult )
+auto write_damage( JsonOut &js, const damage_instance &damage, const float damage_mult,
+                   const float penetration_mult ) -> void
 {
     js.start_array();
     for( const damage_unit &du : damage.damage_units ) {
@@ -83,7 +83,7 @@ void write_damage( JsonOut &js, const damage_instance &damage, const float damag
     js.end_array();
 }
 
-void write_variant( JsonOut &js, const item &obj )
+auto write_variant( JsonOut &js, const item &obj ) -> void
 {
     std::string variant;
 #ifdef FOLD_DUMP_VARIANTS
@@ -94,7 +94,7 @@ void write_variant( JsonOut &js, const item &obj )
     js.member( "variant", variant );
 }
 
-void write_stack_modifiers( JsonOut &js, const item &obj )
+auto write_stack_modifiers( JsonOut &js, const item &obj ) -> void
 {
     js.member( "stack_modifiers" );
     js.start_object();
@@ -131,7 +131,7 @@ auto modifier_product( const item &obj, const std::string &what ) -> float
     return result;
 }
 
-void write_effective_modifier( JsonOut &js, const item &obj )
+auto write_effective_modifier( JsonOut &js, const item &obj ) -> void
 {
     js.member( "effective_modifier" );
     js.start_object();
@@ -154,7 +154,7 @@ auto variant_price_multiplier( const item &obj ) -> float
     return 1.0f;
 }
 
-void write_contents( JsonOut &js, const item &obj )
+auto write_contents( JsonOut &js, const item &obj ) -> void
 {
     js.member( "contents" );
     js.start_array();
@@ -171,7 +171,7 @@ void write_contents( JsonOut &js, const item &obj )
     js.end_array();
 }
 
-void write_comestible( JsonOut &js, const item &obj )
+auto write_comestible( JsonOut &js, const item &obj ) -> void
 {
     js.member( "comestible" );
     if( !obj.type->comestible ) {
@@ -206,7 +206,7 @@ void write_comestible( JsonOut &js, const item &obj )
     js.end_object();
 }
 
-void write_book( JsonOut &js, const item &obj )
+auto write_book( JsonOut &js, const item &obj ) -> void
 {
     js.member( "book" );
     if( !obj.type->book ) {
@@ -235,7 +235,7 @@ void write_book( JsonOut &js, const item &obj )
     js.end_object();
 }
 
-void write_ammo( JsonOut &js, const item &obj )
+auto write_ammo( JsonOut &js, const item &obj ) -> void
 {
     js.member( "ammo" );
     if( !obj.type->ammo ) {
@@ -249,8 +249,6 @@ void write_ammo( JsonOut &js, const item &obj )
     const float recoil_mult = modifier_product( obj, "recoil" );
     std::set<ammo_effect_str_id> effects = a.ammo_effects;
 #ifdef FOLD_DUMP_STACK_MODIFIERS
-    // Firing applies the selected modifier to gun.ammo_effects() just before the shot; the
-    // comparison items are pure migrated stacks, so the whole-stack effective set is this one.
     for( const stack_modifier_count &m : stack_modifiers::on( obj ) ) {
         m.id->apply_ammo_effects( effects );
     }
@@ -272,7 +270,7 @@ void write_ammo( JsonOut &js, const item &obj )
     js.end_object();
 }
 
-void write_magazine( JsonOut &js, const item &obj )
+auto write_magazine( JsonOut &js, const item &obj ) -> void
 {
     js.member( "magazine" );
     if( !obj.type->magazine ) {
@@ -292,7 +290,7 @@ void write_magazine( JsonOut &js, const item &obj )
     js.end_object();
 }
 
-void write_gun( JsonOut &js, const item &obj )
+auto write_gun( JsonOut &js, const item &obj ) -> void
 {
     js.member( "gun" );
     if( !obj.type->gun ) {
@@ -321,7 +319,7 @@ void write_gun( JsonOut &js, const item &obj )
     js.end_object();
 }
 
-void write_tool( JsonOut &js, const item &obj )
+auto write_tool( JsonOut &js, const item &obj ) -> void
 {
     js.member( "tool" );
     if( !obj.type->tool ) {
@@ -348,7 +346,7 @@ void write_tool( JsonOut &js, const item &obj )
     js.end_object();
 }
 
-void write_container( JsonOut &js, const item &obj )
+auto write_container( JsonOut &js, const item &obj ) -> void
 {
     js.member( "container" );
     if( !obj.type->container ) {
@@ -365,7 +363,7 @@ void write_container( JsonOut &js, const item &obj )
     js.end_object();
 }
 
-void write_battery( JsonOut &js, const item &obj )
+auto write_battery( JsonOut &js, const item &obj ) -> void
 {
     js.member( "battery" );
     if( !obj.type->battery ) {
@@ -378,7 +376,7 @@ void write_battery( JsonOut &js, const item &obj )
     js.end_object();
 }
 
-void write_armor( JsonOut &js, const item &obj )
+auto write_armor( JsonOut &js, const item &obj ) -> void
 {
     js.member( "armor" );
     if( !obj.type->armor ) {
@@ -413,7 +411,7 @@ void write_armor( JsonOut &js, const item &obj )
     js.end_object();
 }
 
-void write_uncraft( JsonOut &js, const item &obj )
+auto write_uncraft( JsonOut &js, const item &obj ) -> void
 {
     js.member( "uncraft" );
     const recipe &r = recipe_dictionary::get_uncraft( obj.typeId() );
@@ -437,7 +435,7 @@ void write_uncraft( JsonOut &js, const item &obj )
     js.end_object();
 }
 
-void write_item_props( JsonOut &js, const item &obj )
+auto write_item_props( JsonOut &js, const item &obj ) -> void
 {
     js.start_object();
     js.member( "type_id", obj.typeId().str() );
@@ -538,11 +536,9 @@ auto serialize_item( const item &obj ) -> std::string
 
 auto spawn_with_charges( const itype_id &id, const spawn_request &request ) -> detached_ptr<item>
 {
-    // Suppress randomized tool charges so the dump is reproducible; rand_charges is compared
-    // as type data instead.
     detached_ptr<item> spawned = request.has_charges
-                                  ? item::spawn( id, calendar::turn )
-                                  : item::spawn( id, calendar::turn, item::default_charges_tag{} );
+                                 ? item::spawn( id, calendar::turn )
+                                 : item::spawn( id, calendar::turn, item::default_charges_tag{} );
     if( !spawned ) {
         return spawned;
     }
@@ -710,7 +706,6 @@ auto dump_fork( const std::vector<spawn_request> &requests ) -> bool
         js.member( "charges", request.charges );
         js.member( "replacement", replacement.str() );
 
-        // Fresh spawn of the replacement: what mapgen and item groups create today.
         detached_ptr<item> fresh = spawn_with_charges( replacement, request );
         if( fresh ) {
             item_controller->migrate_item( request.id, *fresh );
@@ -721,7 +716,6 @@ auto dump_fork( const std::vector<spawn_request> &requests ) -> bool
             js.write_null();
         }
 
-        // Real save-load path: deserialize the mainline item and let the loader migrate it.
         if( !request.save_json.empty() ) {
             std::istringstream in( request.save_json );
             JsonIn jsin( in );
@@ -743,8 +737,7 @@ auto dump_fork( const std::vector<spawn_request> &requests ) -> bool
     js.end_object();
     return true;
 }
-
-} // namespace
+}
 
 auto dump_folded_items( const std::vector<std::string> &opts ) -> bool
 {
@@ -772,8 +765,6 @@ auto dump_folded_items( const std::vector<std::string> &opts ) -> bool
     } else {
         ok = read_requests( opts[0], requests ) && dump_baseline( requests );
     }
-    // The dump is complete; skip process teardown (Lua/dynamic-loader destruction crashes in
-    // this headless mode) so a repeatable check gets a clean exit status.
     std::cout.flush();
     std::_Exit( ok ? 0 : 1 );
 }

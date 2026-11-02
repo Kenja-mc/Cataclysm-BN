@@ -820,7 +820,6 @@ void color_manager::show_gui()
     }
     ctxt.set_space_action_priority( true );
 
-    // Matches the draw_scrollbar() call in on_redraw below.
     const auto scrollbar_geometry = [&]() {
         return scrollbar_input::geometry{
             .offset = point( 0, 5 ),
@@ -831,11 +830,8 @@ void color_manager::show_gui()
         };
     };
 
-    // Header rectangles of the drawn shortcut labels.
     auto header_labels = std::vector<color_header_label>{};
-    // Row of the last plain click, -1 when the next click starts a new pair.
     auto last_click_row = -1;
-    // A row click leaves the view where it is, so a second click hits the same row.
     auto preserve_view = false;
 
     std::map<std::string, color_struct> name_color_map;
@@ -928,7 +924,6 @@ void color_manager::show_gui()
 
         auto action = ctxt.handle_input();
 
-        // get_coordinates() is relative to the window centre.
         const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
             const auto mouse = ctxt.get_coordinates( win );
             if( !mouse ) {
@@ -944,7 +939,6 @@ void color_manager::show_gui()
         auto mouse_hover = false;
         auto mouse_handled = false;
         if( modern && action == "MOUSE_MOVE" ) {
-            // Hover never changes the selection.
             action.clear();
             mouse_hover = true;
         } else if( modern && action == "SELECT" ) {
@@ -974,10 +968,8 @@ void color_manager::show_gui()
                 } else if( const auto cell = cell_in( w_colors ) ) {
                     const auto row = iStartPos + cell->y;
                     if( cell->y < iContentHeight && row < iMaxColors ) {
-                        // The Normal/Invert split is the w column separator at x = 48.
                         const auto clicked_col = cell->x > 48 ? 2 : 1;
                         if( row == last_click_row ) {
-                            // The second click on the same row runs Enter.
                             iCurrentCol = clicked_col;
                             action = "CONFIRM";
                             last_click_row = -1;
@@ -993,14 +985,12 @@ void color_manager::show_gui()
                 }
             }
             if( !consumed ) {
-                // A click outside the drawn controls does nothing.
                 action.clear();
                 last_click_row = -1;
                 preserve_view = false;
             }
         }
         if( !mouse_handled && !mouse_hover ) {
-            // Keyboard and wheel input end a click pair.
             last_click_row = -1;
             preserve_view = false;
         }

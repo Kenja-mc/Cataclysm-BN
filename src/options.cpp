@@ -180,7 +180,6 @@ struct scheme_companion {
     bool value = false;
 };
 
-/// Options that follow the control scheme: classic means upstream behaviour.
 auto scheme_companions( const bool classic ) -> std::vector<scheme_companion>
 {
     return { { .id = "BUMP_ATTACK", .value = true }, { .id = "FORCE_CAPITAL_YN", .value = classic },
@@ -194,7 +193,7 @@ auto scheme_companions( const bool classic ) -> std::vector<scheme_companion>
         { .id = "KNOWN_LOCKED_DOOR_ICONS", .value = !classic } };
 }
 
-} // namespace
+}
 
 options_manager::options_manager()
 {
@@ -369,7 +368,6 @@ for( const JsonObject dep_jo : jo.get_array( "deps" ) ) {
     return result;
 }
 
-/// Parses the whole string, so trailing garbage is rejected rather than ignored as atoi does.
 template<typename T>
 auto parse_number( const std::string &text, T &out ) -> bool
 {
@@ -382,7 +380,6 @@ ss >> std::ws;
 return ss.eof();
 }
 
-/// Preset values are the same strings the options file and worldoptions.json store.
 auto read_preset_value( const JsonMember &member ) -> std::string
 {
     if( member.test_string() ) {
@@ -1871,7 +1868,6 @@ auto options_manager::load_option_definitions() -> void
         }
     }
 
-    // A preset file can name an option declared in another file, so validate once, after all load.
     validate_world_presets();
 }
 
@@ -4208,7 +4204,6 @@ auto options_manager::reset_page_to_defaults( const Page &page ) -> void
 {
 for( const PageItem &item : page.items_ ) {
     if( item.type == ItemType::Option ) {
-            // get_option copies the definition into a world that predates the option.
             get_option( item.data ).set_default();
         }
     }
@@ -4226,7 +4221,7 @@ auto options_rows_numbered() -> bool
 #endif
 }
 
-} // namespace
+}
 
 std::string options_manager::show( bool ingame, const bool world_options_only,
                                    const std::function<bool()> &on_quit )
@@ -4266,7 +4261,7 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
     }
 
     input_context ctxt( "OPTIONS" );
-    ctxt.register_action( "ANY_INPUT" ); // positional row digits
+    ctxt.register_action( "ANY_INPUT" );
     ctxt.register_cardinal();
     ctxt.register_action( "QUIT" );
     ctxt.register_action( "NEXT_TAB" );
@@ -4345,7 +4340,6 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
     const auto tab_name = [&]( const int i ) -> std::string {
         return ingame && i == iWorldOptPage ? _( "Current world" ) : pages_[i].name_.translated();
     };
-    // Tabs are drawn from this column as "[name]" plus a separator.
     const auto first_tab_x = 7;
     const auto tab_at = [&]( const int x ) -> std::optional<int> {
         auto left = first_tab_x;
@@ -4378,7 +4372,6 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
 
         auto &cOPTIONS = ( ingame || world_options_only ) && iCurrentPage == iWorldOptPage ?
                          ACTIVE_WORLD_OPTIONS : OPTIONS;
-        // Presets edit a concrete world, not the global defaults.
         const bool can_apply_preset = ( ingame || world_options_only ) &&
                                       iCurrentPage == iWorldOptPage;
 
@@ -4522,7 +4515,6 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
             std::array<const char *, 2> actions;
             const char *label;
             int row = 0;
-            /// Only shown where a concrete world can be edited.
             bool world_only = false;
         };
         constexpr auto hints = std::array {
@@ -4582,8 +4574,6 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
             if( key >= '0' && key <= '9' ) {
                 const auto visible = visible_rows( page_items );
                 const int row = iStartPos + ( key == '0' ? 9 : key - '1' );
-                // Match the mouse path exactly: blank lines are not selectable and a digit on one
-                // changes nothing, rather than jumping to a neighbour the pointer did not name.
                 if( row >= 0 && row < static_cast<int>( visible.size() ) &&
                     page_items[visible[row]].type != ItemType::BlankLine ) {
                     iCurrentLine = visible[row];
@@ -4598,7 +4588,6 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
         }
 
         if( modern && ( action == "MOUSE_MOVE" || action == "SELECT" || action == "SEC_SELECT" ) ) {
-            // get_coordinates() is relative to the window centre.
             const auto cell_in = [&]( const catacurses::window & w ) -> std::optional<point> {
                 const auto mouse = ctxt.get_coordinates( w );
                 if( !mouse )
@@ -4662,7 +4651,6 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
                 }
             }
             if( on_scrollbar ) {
-                /* The click was consumed by the scrollbar; do not act on a row. */
             } else if( const auto cell = cell_in( w_options ) ) {
                 const auto visible = visible_rows( page_items );
                 const auto row = iStartPos + cell->y;
@@ -4680,7 +4668,6 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
                     iCurrentPage = *tab;
                     iCurrentLine = 0;
                     iStartPos = 0;
-                    // The page items and option set above belong to the old page.
                     continue;
                 }
             }
@@ -4839,7 +4826,6 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
             }
             reset_page_to_defaults( page );
             for( const auto &[name, value] : preset.values ) {
-                // get_option imports the definition when an old world lacks the option.
                 get_option( name ).setValue( value );
                 for( const PageItem &item : page_items ) {
                     if( item.type == ItemType::Option && item.data == name && !item.group.empty() ) {
@@ -4921,7 +4907,6 @@ std::string options_manager::show( bool ingame, const bool world_options_only,
             refresh_display();
 
             if( control_scheme_changed ) {
-                // Options that belong to the scheme follow it, unless they were changed alongside it.
                 const auto classic = ::get_option<std::string>( "CONTROL_SCHEME" ) == "classic";
                 for( const auto &[id, value] : scheme_companions( classic ) ) {
                     if( OPTIONS[id] == OPTIONS_OLD[id] ) {
@@ -5028,7 +5013,6 @@ void options_manager::deserialize( JsonIn &jsin )
         options[ name ].setValue( value );
         loaded_names.insert( name );
     }
-    // A scheme set without its companions (a hand-written options.json) still gets them.
     if( loaded_names.contains( "CONTROL_SCHEME" ) ) {
         const auto classic = options[ "CONTROL_SCHEME" ].getValue() == "classic";
         for( const auto &[id, value] : scheme_companions( classic ) ) {

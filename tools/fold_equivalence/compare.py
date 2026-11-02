@@ -1,26 +1,12 @@
 #!/usr/bin/env python3
-"""Compare a mainline fold baseline with the fork dump and report every mismatch.
-
-The mainline dump (`--dump-stats FOLDED ... <requests.json>`) produces the baseline.
-The fork dump (`--dump-stats FOLDED ... <baseline.json>`) spawns the migrated replacement
-fresh and through the save-load path, then this script compares both with the baseline.
-
-Usage:
-  tools/fold_equivalence/compare.py --baseline baseline.json --fork fork.json \
-      [--allowlist allowlist.json] [--json out.json] [--markdown out.md]
-"""
-
 import argparse
 import json
 import sys
 
-# Identity, not balance: the fold intentionally replaces the id, chooses the variant and
-# records the stack modifier.  Their gameplay effects appear in the compared fields.
 IDENTITY_FIELDS = {
     "type_id", "variant", "stack_modifiers", "effective_modifier",
 }
 
-# Order-insensitive containers.
 SORTED_FIELDS = {"materials", "flags", "use_methods", "techniques", "ammo_types",
                  "magazine_compatible", "covers", "effects"}
 SORTED_OBJECT_LISTS = {"contents", "damage", "portions", "components"}
@@ -50,8 +36,6 @@ def normalise(value, key=None, depth=0):
 
 def same_value(left, right):
     if isinstance(left, (int, float)) and isinstance(right, (int, float)):
-        # Float32 accumulation in the stack-modifier multipliers is representation noise;
-        # every real difference in this data is far above one hundredth of a cent.
         return abs(left - right) <= max(0.01, 1e-6 * max(abs(left), abs(right)))
     return left == right
 
@@ -79,7 +63,6 @@ def flatten(node, prefix=""):
 
 
 def compare_props(expected, actual):
-    """Deep compare two normalised prop trees; return [(field, expected, actual)]."""
     diffs = []
     expected_flat = flatten(normalise(expected))
     actual_flat = flatten(normalise(actual))
@@ -145,8 +128,6 @@ def main():
                 entry["mismatches"][view] = [
                     {"view": view, "field": "item", "mainline": "present", "fork": None}]
                 continue
-            # For an ammo stack, ammo_current is the item's own type id, i.e. the identity
-            # that the migration replaces by design.  For a magazine it is the loaded ammo.
             ignore_ammo_current = (
                 base["props"].get("ammo_current") == base["props"].get("type_id") and
                 actual.get("ammo_current") == actual.get("type_id"))

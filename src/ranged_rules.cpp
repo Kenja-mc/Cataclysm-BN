@@ -18,4 +18,4 @@ auto capped_miss_angle( const units::angle dispersion ) -> units::angle
     return std::min( dispersion, units::from_degrees( max_miss_degrees ) );
 }
 
-} // namespace ranged_rules
+}

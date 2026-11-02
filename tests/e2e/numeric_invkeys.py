@@ -1,5 +1,3 @@
-"""Numeric item shortcuts: Modern Reassign accepts 0-9, a digit selects its item,
-letters keep working, Classic still refuses digits."""
 from crafting import load_first_save
 from fixtures import shared_game
 from helpers import HELPERS, arena, count_at, count_carried, empty_inventory, give, save_and_quit
@@ -12,7 +10,6 @@ MENU_MARKERS = ("Inventory", "Enter new letter", "Origin:", "to enter/edit comma
 
 
 def to_game(g):
-    """Escape until no menu is on screen; Lua calls must only run in game mode."""
     for _ in range(8):
         s = g.screen()
         if not any(marker in s for marker in MENU_MARKERS):
@@ -35,7 +32,6 @@ def fresh_items(g, *items):
 
 
 def row_invlet(g, needle):
-    """Read the shortcut before the item's optional clothing/status markers."""
     x, y = row_of(g, needle)
     line = g.screen().splitlines()[y]
     prefix = line[line.rfind("│", 0, x) + 1:x].lstrip()
@@ -43,7 +39,6 @@ def row_invlet(g, needle):
 
 
 def reassign(g, needle, key):
-    """Open the item menu for the row and type the new shortcut key."""
     open_inventory(g)
     x, y = row_of(g, needle)
     g.click(x, y, button=2)
@@ -51,15 +46,9 @@ def reassign(g, needle, key):
     g.keys("=", delay=0.6)
     g.wait_for("Enter new letter", timeout=15)
     g.keys(key, delay=0.6)
-    # A finished reassign returns to the rebuilt inventory list.
 
 
 def reopen_and_drop(g, key, item):
-    """Close the menu, reopen so the cursor rests on the first row, then press the key.
-
-    The key must open that item's item menu; dropping from it proves which item answered.
-    Lua runs only after the menus closed.
-    """
     to_game(g)
     open_inventory(g)
     g.keys(key, delay=1.0)
@@ -91,8 +80,6 @@ def test_modern_digit_survives_restack_and_digits_stay_manual(_g):
         reassign(g, "rock", "0")
         assert row_invlet(g, "rock") == "0", "the rock row must show shortcut 0\n" + g.screen()
         to_game(g)
-        # Adding an item restacks the inventory; the digit must survive it and the
-        # auto-assigned shirt shortcut must stay a letter.
         give(g, "tshirt")
         open_inventory(g)
         assert row_invlet(g, "rock") == "0", "restacking must keep the digit shortcut\n" + g.screen()
@@ -130,7 +117,7 @@ def test_classic_rejects_digits_but_letters_still_work(_g):
         g.define_lua(HELPERS)
         fresh_items(g, "pipe", "rock")
         open_inventory(g)
-        g.keys("Down", delay=0.4)  # select the rock row under the pipe
+        g.keys("Down", delay=0.4)
         g.keys("Enter", delay=1.0)
         g.wait_for("Reassign", timeout=15)
         g.keys("=", delay=0.6)

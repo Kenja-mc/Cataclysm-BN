@@ -56,7 +56,6 @@ from fluid_grid import TESTS as FLUID_GRID_TESTS
 from river_barges import TESTS as RIVER_BARGES_TESTS
 from vehicle_box import TESTS as VEHICLE_BOX_TESTS
 from remote_vehicle import TESTS as REMOTE_VEHICLE_TESTS
-# Native dashboard scaling/capture cases are registered separately in tiles.py.
 from driving_dashboard import TESTS as DRIVING_DASHBOARD_TESTS
 from cursor_panning import TESTS as CURSOR_PANNING_TESTS
 from npc_palette import TESTS as NPC_PALETTE_TESTS
@@ -118,8 +117,6 @@ from action_feedback import TESTS as ACTION_FEEDBACK_TESTS
 from action_costs import TESTS as ACTION_COSTS_TESTS
 
 from title_wordmark import TESTS as TITLE_WORDMARK_TESTS
-# The modules, in run order. A module's tests that take `g` run on the main game, so a
-# test that needs the state another left behind belongs after it in this order.
 MODULES = [
     ("title_wordmark", TITLE_WORDMARK_TESTS),
     ("onboarding", ONBOARDING_TESTS),
@@ -205,18 +202,13 @@ MODULES = [
     ("trade_mouse", TRADE_MOUSE_TESTS),
     ("action_feedback", ACTION_FEEDBACK_TESTS),
     ("action_costs", ACTION_COSTS_TESTS),
-    # Applies and resets world options on the main world, so it runs last.
     ("world_presets", WORLD_PRESETS_TESTS),
 ]
 
 MODULE_OF = {test: name for name, tests in MODULES for test in tests}
 TESTS = [test for _, tests in MODULES for test in tests]
 
-# One representative test per module, chosen to be fast and to touch the module's main path.
-# `--tier=smoke` runs this list in parallel: it is the quick "did anything break" gate.
 SMOKE = [
-    # One representative test per module, the cheapest one that still exercises its main
-    # path. A module whose tests are not green yet stays out of the gate.
     "test_death_mode_choice",
     "test_title_wordmark_visible_on_80x25",
     "test_wait_keeps_position",
@@ -235,8 +227,6 @@ SMOKE = [
     "test_smart_safe_mode_horde",
     "test_char_creation_overview_fits_small_terminal",
     "test_partial_grid_transfer_keeps_the_rest",
-    # river_barges is registered but stays out of the smoke gate until it is green;
-    # add its test here once its owner reports it.
     "test_vehicle_box_aircraft",
     "test_remote_vehicle_controls_menu",
     "test_cursor_panning_off",
@@ -278,7 +268,6 @@ SMOKE_TESTS = [test for test in TESTS if test.__name__ in SMOKE]
 
 
 def list_tests():
-    """Every registered test once, with its module, so a duplicate shows up here first."""
     seen = {}
     for test in TESTS:
         assert test.__name__ not in seen, f"{test.__name__} is registered twice"
@@ -298,7 +287,6 @@ DURATIONS = Path(__file__).with_name("durations.json")
 
 
 def recorded_durations():
-    """Per-test seconds from the last run, used to split the shards by cost."""
     try:
         return json.loads(DURATIONS.read_text())
     except (OSError, ValueError):
@@ -306,13 +294,11 @@ def recorded_durations():
 
 
 def missing_durations():
-    """Registered tests the shard split has to price at the median, so CI keeps recording."""
     durations = recorded_durations()
     return [test.__name__ for test in TESTS if test.__name__ not in durations]
 
 
 def report_missing_durations():
-    """Names the tests without a recorded duration on stderr; the run keeps going."""
     missing = missing_durations()
     if not missing:
         return
@@ -322,12 +308,6 @@ def report_missing_durations():
 
 
 def shard_of(tests, index, count):
-    """Assigns a whole test to one shard, longest first into the lightest bin.
-
-    Positional slicing cost a third of the CI wall time: the three mouse tests sat in one
-    shard and made it 47% longer than its neighbours. A test stays whole, so tests keep
-    their relative order inside a shard and shared state behaves as it did.
-    """
     if count == 1:
         return list(tests)
     durations = recorded_durations()
@@ -338,13 +318,11 @@ def shard_of(tests, index, count):
         lightest = min(range(count), key=loads.__getitem__)
         bins[lightest].append(test)
         loads[lightest] += durations.get(test.__name__, default)
-    # Keep the suite's own order inside a shard: shared state depends on it.
     order = {test: n for n, test in enumerate(tests)}
     return sorted(bins[index], key=order.__getitem__)
 
 
 def run_parallel(count, forward):
-    """Runs `count` shards at once, each its own game, and prefixes their output by shard."""
     import subprocess
     import threading
     logs = Path(tempfile.mkdtemp(prefix="bn-e2e-parallel-"))
@@ -381,19 +359,15 @@ def run_parallel(count, forward):
 
 
 def default_setup(game):
-    """The main game's start state, also run when another test borrows its profile."""
     settle(game)
-    # Lua-created inventory must not depend on the random starting outfit's pockets.
     assert game.lua("gapi.get_avatar():set_mutation(MutationBranchId.new('DEBUG_STORAGE')) out('ok')") == ["ok"]
 
 
 def default_parallel():
-    """Four games at once keeps the input queues short; a small machine runs fewer."""
     return min(4, max(1, (os.cpu_count() or 1) // 4))
 
 
 def smoke_parallel():
-    """The smoke tier is short and starts fewer games per shard, so it runs wider."""
     return min(6, max(2, (os.cpu_count() or 1) // 2))
 
 
@@ -424,7 +398,6 @@ def main():
         sys.exit("no tests match the requested names")
     serial = "--serial" in args
     forward = [a for a in args if a not in ("--serial",)]
-    # --parallel=<n> runs n shards at once on one machine; the suite is serial otherwise.
     parallel = next((a.split("=", 1)[1] for a in args if a.startswith("--parallel=")), None)
     if any(a.startswith("--shard=") for a in args) and (parallel is not None or serial):
         sys.exit("--shard cannot be combined with --parallel or --serial")
@@ -444,8 +417,6 @@ def main():
             report_missing_durations()
             return run_parallel(count, forward)
         forward = [a for a in forward if not a.startswith("--parallel=")]
-    # --shard=<index>/<count> splits the suite for parallel jobs, balanced by the recorded
-    # per-test durations (tests/e2e/durations.json) so no shard sets the wall time alone.
     shard = next((a for a in forward if a.startswith("--shard=")), "")
     if shard:
         index, count = (int(v) for v in shard.split("=", 1)[1].split("/"))
@@ -455,7 +426,6 @@ def main():
             report_missing_durations()
     else:
         index, count = 0, 1
-    # --durations=<path> records this run's per-test seconds, for the next shard split.
     record = next((a.split("=", 1)[1] for a in forward if a.startswith("--durations=")), "")
     pool = TESTS if tier == "full" else SMOKE_TESTS
     chosen = shard_of(pool, index, count)
@@ -466,7 +436,6 @@ def main():
             Path(record).write_text("{}\n")
         print("0/0 passed")
         return 0
-    # A shard's private tmux server cannot starve another shard of input.
     os.environ.pop("TMUX", None)
     socket_dir = tempfile.mkdtemp(prefix="bn-e2e-tmux-")
     os.environ["TMUX_TMPDIR"] = socket_dir
@@ -493,8 +462,6 @@ def run_tests(chosen, g=None, record=""):
     for test in chosen:
         started = time.time()
         try:
-            # Borrow for one test, not the whole suite: a retired profile is replaced on
-            # the next iteration, while successful tests still share the cached game.
             context = nullcontext(g) if g is not None else shared_game(
                 "bn-e2e", options={"SAFEMODE": "false", "SOUND_MARKER_TURNS": "3"},
                 define=HELPERS, setup=default_setup)
@@ -503,7 +470,6 @@ def run_tests(chosen, g=None, record=""):
                     game.dismiss_error_popup()
                     test(game)
                 except Exception:
-                    # Capture the failure before the fixture's final borrower closes it.
                     try:
                         print(game.screen())
                     except CalledProcessError as error:
@@ -516,7 +482,6 @@ def run_tests(chosen, g=None, record=""):
             print(f"FAIL {test.__name__}")
             traceback.print_exc()
             if g is not None:
-                # --keep deliberately preserves the same game, including after a failure.
                 try:
                     g.keys("Escape", delay=0.5)
                     g.dismiss_error_popup()

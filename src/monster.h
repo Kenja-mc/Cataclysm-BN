@@ -849,7 +849,6 @@ class monster : public Creature, public location_visitable<monster>
         bool reproduces;
         std::optional<time_point> baby_timer;
         time_point udder_timer;
-        /// When this monster may next make its idle sound; empty while busy or unscheduled.
         std::optional<time_point> idle_sound_at;
         monster_horde_attraction horde_attraction;
         /** Found path. Note: Not used by monsters that don't pathfind! **/
@@ -861,7 +860,6 @@ class monster : public Creature, public location_visitable<monster>
 
         player *find_dragged_foe();
         void nursebot_operate( player *dragged_foe );
-        /// Emit this monster's idle ambience on its own cooldown, if it is idle and has a sound.
         void update_idle_sound();
 
     protected:

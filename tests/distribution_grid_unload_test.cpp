@@ -41,7 +41,7 @@ auto install_grid_cable(vehicle& veh, const tripoint_abs_ms& target) -> bool {
     return veh.install_part(cable_part_pos, std::move(cable)) >= 0;
 }
 
-} // namespace
+}
 
 TEST_CASE("vehicle_power_ignores_grid_on_unloaded_submap", "[map][vehicle][grid]") {
     clear_all_state();

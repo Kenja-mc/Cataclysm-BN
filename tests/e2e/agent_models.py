@@ -1,22 +1,3 @@
-"""Model layer for the agentic playtest (fork issue #6).
-
-One interface, :meth:`Gateway.decide`, over four API surfaces:
-
-* ``chat`` - an OpenAI-compatible ``/chat/completions`` route (Experiential Labs,
-  OpenCode, or OpenRouter) that is asked for a JSON object naming the action.
-* ``systemone`` - TypeSafe System One typed decisions (``choice``, ``noul``,
-  ``score``).
-* ``decisions`` - OpenAI's Decisions API, typed ``predicate``/``choice``/``score``
-  questions with probabilities, billed on input tokens only.
-
-The gateway never dials a lane that is not free: the free tier is the budget, so a
-spent free tier moves to the next model or stops, it does not bill.
-
-Standard library only. Importing this module reads no key and opens no socket;
-that happens on the first real (non dry-run) request. A key may come from the
-environment or, for OpenRouter, from the ``KEY=VALUE`` file named by
-``OPENROUTER_ENV_FILE``; a value is never printed, logged or echoed.
-"""
 from __future__ import annotations
 
 import argparse
@@ -36,26 +17,20 @@ from typing import Any
 
 DEFAULT_TIMEOUT = 30.0
 RETRY_SLEEP = 1.0
-CHARS_PER_TOKEN = 4  # rough English/prose heuristic for the size of a request in tokens
+CHARS_PER_TOKEN = 4
 QUOTA_STATUSES = (402, 429)
-SYSTEMONE_MAX_OPTIONS = 64  # Jev gateway bound; the other surfaces take up to 255
+SYSTEMONE_MAX_OPTIONS = 64
 
 
 class ModelError(Exception):
-    """Base class for every failure raised by this layer."""
+    pass
 
 
 class MissingKey(ModelError):
-    """The environment does not hold the key a surface needs."""
+    pass
 
 
 class NoModelAvailable(ModelError):
-    """Every model in the pool is exhausted, so no decision can be made.
-
-    ``reasons`` maps a model id to the reason it was retired or skipped, in the
-    order the gateway gave up on it.
-    """
-
     def __init__(self, reasons: dict[str, str]):
         self.reasons = dict(reasons)
         detail = ", ".join(f"{model}: {reason}" for model, reason in self.reasons.items())
@@ -63,8 +38,6 @@ class NoModelAvailable(ModelError):
 
 
 class BudgetExceeded(ModelError):
-    """A cap (usd or call count) would be crossed by the next request."""
-
     def __init__(self, message: str, *, spent_usd: float, calls: int):
         self.spent_usd = spent_usd
         self.calls = calls
@@ -72,36 +45,32 @@ class BudgetExceeded(ModelError):
 
 
 class _Retire(Exception):
-    """The model cannot serve for the rest of this run; try the next one."""
+    pass
 
 
 class _Quota(_Retire):
-    """Free-tier or credit exhaustion (429/402, insufficient_quota, free limit)."""
+    pass
 
 
 class _Rejected(_Retire):
-    """The surface refused the request (4xx): the model or the shape is unusable."""
+    pass
 
 
 class _TryNext(Exception):
-    """This call failed; another model may still answer."""
+    pass
 
-
-# --------------------------------------------------------------------------- registry
 
 @dataclass(frozen=True)
 class ModelSpec:
-    """One catalog model: which surface reaches it, how big it is, what it costs."""
-
     id: str
-    provider: str  # "xplabs" | "opencode"
-    surface: str  # "chat" | "systemone" | "decisions"
-    context: int | None  # tokens shared by state and question; None = not published
+    provider: str
+    surface: str
+    context: int | None
     vision: bool
     free: bool
-    usd_per_mtok_in: float = 0.0  # list price; a free model contributes 0
+    usd_per_mtok_in: float = 0.0
     usd_per_mtok_out: float = 0.0
-    free_until: str | None = None  # ISO date: after it the model is not free any more
+    free_until: str | None = None
     note: str = ""
 
 
@@ -141,12 +110,6 @@ REGISTRY: dict[str, ModelSpec] = {
             "glm-5.3-flash-free", "opencode", "chat", None, False, True,
             note="context not published",
         ),
-        # OpenRouter, checked 2026-10-21 against GET https://openrouter.ai/api/v1/models
-        # (21 rows carry a zero price). Each id below answered the harness's JSON-action
-        # prompt in a local probe on that date; ids this account's data policy blocks
-        # (nemotron-3.5-super-vl, minimax-m3.1-flash, flint) and upstream-429 gemma are
-        # left out. Free models cost 0 whatever their list price says, and OpenRouter
-        # reports usage, so a run measures its tokens.
         ModelSpec(
             "nvidia/nemotron-3-ultra-550b-a55b:free", "openrouter", "chat", 1_000_000, False, True,
             note="verified 2026-10-21: one JSON action in 5.9 s",
@@ -175,7 +138,6 @@ REGISTRY: dict[str, ModelSpec] = {
     )
 }
 
-# (provider, surface) -> (endpoint, key environment variable)
 SURFACES: dict[tuple[str, str], tuple[str, str]] = {
     ("xplabs", "chat"): ("https://api.experientiallabs.ai/v1/chat/completions", "XPL_SK_AGENT"),
     ("xplabs", "systemone"): ("https://api.experientiallabs.ai/v1/systemone", "XPL_SK_AGENT"),
@@ -185,8 +147,6 @@ SURFACES: dict[tuple[str, str], tuple[str, str]] = {
     ("openrouter", "chat"): ("https://openrouter.ai/api/v1/chat/completions", "OPENROUTER_API_KEY"),
 }
 
-# Headers a provider likes beyond Authorization. OpenRouter attributes traffic to an app
-# with these two; they are not secrets and the harness never sends anything else.
 EXTRA_HEADERS: dict[str, dict[str, str]] = {
     "openrouter": {
         "HTTP-Referer": "https://github.com/Kenja-mc/Cataclysm-BN",
@@ -194,8 +154,6 @@ EXTRA_HEADERS: dict[str, dict[str, str]] = {
     },
 }
 
-# A key may also come from a KEY=VALUE file named by this variable (one line per key,
-# optionally with `export`), so a local run never puts the key on a command line.
 ENV_FILE_VAR = "OPENROUTER_ENV_FILE"
 
 POOLS: dict[str, list[str]] = {
@@ -216,10 +174,6 @@ POOLS: dict[str, list[str]] = {
         "deepseek-v4.1-flash-free",
         "glm-5.3-flash-free",
     ],
-    # OpenRouter needs one key for every model, so it gets pools of its own instead of
-    # being appended to the pools above: a run with only OPENROUTER_API_KEY stays live
-    # rather than retiring every Experiential Labs and OpenCode model first.
-    # Chosen 2026-10-21 from the 21 zero-priced models in GET /api/v1/models.
     "openrouter-text": [
         "nvidia/nemotron-3-ultra-550b-a55b:free",
         "poolside/laguna-xs-2.1:free",
@@ -236,7 +190,6 @@ POOLS: dict[str, list[str]] = {
 
 
 def usable(spec: ModelSpec, *, today: date | None = None) -> bool:
-    """False when the model is not free any more and must never be dialled."""
     if not spec.free:
         return False
     if spec.free_until is None:
@@ -245,13 +198,10 @@ def usable(spec: ModelSpec, *, today: date | None = None) -> bool:
 
 
 def pool(name: str) -> list[str]:
-    """The ordered model ids of a named pool, models on a spent promo window removed."""
     if name not in POOLS:
         raise ValueError(f"unknown pool {name!r}; expected one of {sorted(POOLS)}")
     return [model for model in POOLS[name] if usable(REGISTRY[model])]
 
-
-# --------------------------------------------------------------------------- keys
 
 _ENV_LINE = re.compile(r"^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$")
 _LOADED_ENV_FILES: set[str] = set()
@@ -259,7 +209,6 @@ _env_file_error = ""
 
 
 def _env_pair(line: str) -> tuple[str, str] | None:
-    """``(name, value)`` of one env-file line, or None for a comment or blank line."""
     text = line.strip()
     if not text or text.startswith("#"):
         return None
@@ -275,13 +224,6 @@ def _env_pair(line: str) -> tuple[str, str] | None:
 
 
 def load_env_file(path: str | None = None) -> list[str]:
-    """Read ``KEY=VALUE`` lines from ``OPENROUTER_ENV_FILE`` into the environment.
-
-    Called the first time a key is looked up, never at import, and read once per path.
-    A variable already set in the environment wins over the file, as ``set -a; . file``
-    would. Returns the names it added: a value stays out of every return value, log line
-    and error message, and the file is not echoed.
-    """
     global _env_file_error
     path = path or os.environ.get(ENV_FILE_VAR) or ""
     if not path or path in _LOADED_ENV_FILES:
@@ -290,7 +232,6 @@ def load_env_file(path: str | None = None) -> list[str]:
     try:
         lines = Path(path).expanduser().read_text(encoding="utf-8").splitlines()
     except OSError as error:
-        # The path is not a secret; say it was unusable, never what it holds.
         _env_file_error = f"{ENV_FILE_VAR}={path} could not be read ({error.strerror or error})"
         return []
     _env_file_error = ""
@@ -308,7 +249,6 @@ def load_env_file(path: str | None = None) -> list[str]:
 
 
 def env_key(name: str) -> str:
-    """The key ``name`` names, loading OPENROUTER_ENV_FILE once when the variable is absent."""
     key = os.environ.get(name, "")
     if not key:
         load_env_file()
@@ -317,19 +257,12 @@ def env_key(name: str) -> str:
 
 
 def estimate_tokens(text: str) -> int:
-    """Rough token count of a string (prose heuristic: four characters per token)."""
     return -(-len(text) // CHARS_PER_TOKEN) if text else 0
 
 
 def compact_state(
     text: str, *, context: int, reserve_tokens: int = 0
 ) -> tuple[str, bool]:
-    """Shrink ``text`` to fit a model's context, returning ``(text, changed)``.
-
-    Keeps the last turns (trailing lines), an optional one-line summary (the first
-    line, when it is short) and a marker naming how many lines were dropped. The
-    result is bounded by the budget plus the summary and marker.
-    """
     budget = max(64, context - reserve_tokens)
     if estimate_tokens(text) <= budget:
         return text, False
@@ -347,7 +280,7 @@ def compact_state(
             break
     kept.reverse()
     if len(kept) == 1 and used > keep_chars:
-        kept = [kept[0][-keep_chars:]]  # a single line longer than the whole budget
+        kept = [kept[0][-keep_chars:]]
     dropped = len(lines) - len(kept)
     summary = ""
     if dropped >= 1 and len(lines[0]) <= 200 and lines[0] != kept[0]:
@@ -357,17 +290,13 @@ def compact_state(
     return f"{summary}{marker}\n" + "\n".join(kept), True
 
 
-# --------------------------------------------------------------------------- questions
-
 @dataclass(frozen=True)
 class Question:
-    """A typed question for the non-chat surfaces."""
-
     qid: str
     instructions: str
-    kind: str = "choice"  # "choice" | "noul" | "score"
-    choices: dict[str, str] | None = None  # choice: option id -> description
-    levels: tuple[str, ...] = ()  # score: ordered levels
+    kind: str = "choice"
+    choices: dict[str, str] | None = None
+    levels: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if self.kind not in ("choice", "noul", "score"):
@@ -382,14 +311,12 @@ class Question:
 
 @dataclass(frozen=True)
 class Answer:
-    """A typed answer: the chosen option, a probability, or a score."""
-
     kind: str
     value: str | float
     confidence: float
     tokens_in: int
     tokens_out: int
-    measured: bool  # True: usage from the response. False: estimated locally.
+    measured: bool
 
 
 @dataclass(frozen=True)
@@ -401,10 +328,8 @@ class Decision:
     tokens_out: int
     usd: float
     measured: bool
-    exhausted: tuple[str, ...]  # models retired so far this run, in order
+    exhausted: tuple[str, ...]
 
-
-# --------------------------------------------------------------------------- answers
 
 def _clamp(value: float) -> float:
     return 0.0 if value < 0.0 else 1.0 if value > 1.0 else value
@@ -429,7 +354,6 @@ def _argmax(mapping: dict[str, float], allowed: set[str] | None) -> tuple[str, f
 
 
 def _json_objects(text: str) -> list[str]:
-    """Balanced ``{...}`` substrings, longest first, so prose around JSON is tolerated."""
     found: list[str] = []
     depth = 0
     start = 0
@@ -452,7 +376,6 @@ CHAT_ACTION_KEYS = ("action", "action_id", "choice", "answer", "id")
 def _parse_chat_choice(
     text: str, choices: dict[str, str]
 ) -> tuple[str, float] | None:
-    """Pull ``(action_id, confidence)`` out of a chat reply, prose allowed."""
     for candidate in _json_objects(text):
         try:
             payload = json.loads(candidate)
@@ -475,7 +398,6 @@ def _parse_chat_choice(
             best = _argmax(numbers, set(choices))
             if best is not None:
                 return best[0], _clamp(best[1])
-    # No JSON: accept a reply that names exactly one option.
     named = [option for option in choices if re.search(rf"\b{re.escape(option)}\b", text)]
     if len(named) == 1 and text.strip():
         return named[0], 0.5
@@ -485,7 +407,6 @@ def _parse_chat_choice(
 def _parse_systemone_answer(
     answer: dict[str, Any], choices: dict[str, str] | None
 ) -> tuple[str, str | float, float]:
-    """System One answer -> ``(kind, value, confidence)``."""
     kind = answer.get("type")
     if kind == "choice":
         probabilities = {
@@ -507,7 +428,6 @@ def _parse_systemone_answer(
         value = answer.get("noul")
         if not isinstance(value, (int, float)):
             raise _TryNext("noul answer carries no probability")
-        # A noul is the probability itself; confidence is how far it is from a toss-up.
         return "noul", float(value), _clamp(abs(2.0 * float(value) - 1.0))
     if kind == "score":
         value = answer.get("score")
@@ -521,7 +441,6 @@ def _parse_systemone_answer(
 def _parse_decisions_answer(
     answers: list[Any], name: str, choices: set[str] | None
 ) -> tuple[str, str | float, float]:
-    """Decisions API answers -> ``(kind, value, confidence)`` for question ``name``."""
     if not isinstance(answers, list) or not answers:
         raise _TryNext("decision response carries no answers")
     answer: Any = None
@@ -569,10 +488,7 @@ def _parse_decisions_answer(
     raise _TryNext(f"unsupported answer type {kind!r}")
 
 
-# --------------------------------------------------------------------------- transport
-
 def _error_fields(body: str) -> tuple[str, str]:
-    """``(code, message)`` from a provider error body, tolerating a plain-text one."""
     try:
         payload = json.loads(body)
     except ValueError:
@@ -604,7 +520,6 @@ def _data_url(image: bytes) -> str:
 
 
 def _post(client: "Client", body: dict[str, Any], *, timeout: float, attempts: int = 2) -> dict[str, Any]:
-    """POST JSON and return the parsed reply. One retry on 5xx or a timeout, never on 429."""
     key = env_key(client.key_env)
     if not key:
         hint = f" ({_env_file_error})" if _env_file_error else ""
@@ -613,7 +528,7 @@ def _post(client: "Client", body: dict[str, Any], *, timeout: float, attempts: i
             f"file named by {ENV_FILE_VAR}, or pass dry_run=True"
         )
     headers = {
-        "Authorization": f"Bearer {key}",  # never logged, never echoed in an error
+        "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
@@ -649,8 +564,6 @@ def _post(client: "Client", body: dict[str, Any], *, timeout: float, attempts: i
                 payload = json.loads(raw)
             except ValueError as error:
                 raise _TryNext(f"reply is not JSON: {raw[:200]!r}") from error
-            # OpenRouter reports an upstream failure as HTTP 200 with an `error` object:
-            # a 429 in it is still quota, anything else means another model may answer.
             error = payload.get("error") if isinstance(payload, dict) else None
             if isinstance(error, dict) and error.get("message"):
                 code = str(error.get("code") or "")
@@ -665,7 +578,6 @@ def _post(client: "Client", body: dict[str, Any], *, timeout: float, attempts: i
 
 
 def _usage(body: dict[str, Any], reply: dict[str, Any], reply_text: str) -> tuple[int, int, bool]:
-    """``(tokens_in, tokens_out, measured)``; estimates from the request when absent."""
     usage = reply.get("usage") if isinstance(reply.get("usage"), dict) else {}
     tokens_in = usage.get("prompt_tokens", usage.get("input_tokens"))
     tokens_out = usage.get("completion_tokens", usage.get("output_tokens"))
@@ -676,7 +588,6 @@ def _usage(body: dict[str, Any], reply: dict[str, Any], reply_text: str) -> tupl
 
 
 def cost_usd(spec: ModelSpec, tokens_in: int, tokens_out: int) -> float:
-    """List-price cost of a call; a free model always reports 0."""
     if spec.free:
         return 0.0
     return (tokens_in * spec.usd_per_mtok_in + tokens_out * spec.usd_per_mtok_out) / 1_000_000
@@ -684,8 +595,6 @@ def cost_usd(spec: ModelSpec, tokens_in: int, tokens_out: int) -> float:
 
 @dataclass(frozen=True)
 class Client:
-    """One surface of one provider: where to POST, which key unlocks it."""
-
     provider: str
     surface: str
     endpoint: str
@@ -763,7 +672,6 @@ class Client:
         self, spec, question, state_text, state_image, timeout, allow_estimate
     ) -> Answer:
         if question.choices and len(question.choices) > SYSTEMONE_MAX_OPTIONS:
-            # The Jev gateway bound is 64 options; another model may still answer.
             raise _TryNext(
                 f"systemone takes at most {SYSTEMONE_MAX_OPTIONS} options, got {len(question.choices)}"
             )
@@ -774,7 +682,6 @@ class Client:
             "questions": {question.qid: _systemone_question(question)},
         }
         if self._sees(spec, state_image):
-            # TypeSafe state may be an array of parts; keep the image attempt, fall back below.
             body["state"] = [
                 {"type": "input_text", "text": state},
                 {"type": "input_image", "image_url": _data_url(state_image or b"")},
@@ -784,7 +691,7 @@ class Client:
         except _Rejected:
             if not self._sees(spec, state_image):
                 raise
-            body["state"] = state  # the surface refused the image: ask about the text alone
+            body["state"] = state
             reply = _post(self, body, timeout=timeout)
         answers = reply.get("answers")
         answer = answers.get(question.qid) if isinstance(answers, dict) else None
@@ -860,7 +767,6 @@ def _decisions_question(question: Question) -> dict[str, Any]:
 
 
 def client_for(model_id: str) -> Client:
-    """The surface that reaches ``model_id``."""
     spec = REGISTRY.get(model_id)
     if spec is None:
         raise ValueError(f"unknown model {model_id!r}")
@@ -869,7 +775,6 @@ def client_for(model_id: str) -> Client:
 
 
 def required_keys(models: list[str]) -> list[str]:
-    """The environment variables a live (non dry-run) run over ``models`` needs."""
     needed: list[str] = []
     for model_id in models:
         env = client_for(model_id).key_env
@@ -879,23 +784,14 @@ def required_keys(models: list[str]) -> list[str]:
 
 
 def missing_keys(models: list[str]) -> list[str]:
-    """The subset of :func:`required_keys` that is absent from the environment and env file."""
     return [env for env in required_keys(models) if not env_key(env)]
 
 
 def pools_with_keys() -> dict[str, list[str]]:
-    """``pool name -> missing key vars`` for every pool; empty list means a live run can start."""
     return {name: [env for env in required_keys(pool(name)) if not env_key(env)] for name in POOLS}
 
 
-# --------------------------------------------------------------------------- gateway
-
 class Gateway:
-    """Chooses one action from a closed list through the cheapest free surface.
-
-    Exhaustion is per-run state: a new instance starts with a full pool.
-    """
-
     def __init__(
         self,
         *,
@@ -951,11 +847,6 @@ class Gateway:
         choices: dict[str, str],
         allow_estimate: bool = True,
     ) -> Decision:
-        """Decide one action from ``choices`` (id -> description).
-
-        ``allow_estimate=False`` refuses a reply that carries no usage instead of
-        accounting for it with a local estimate.
-        """
         if not choices:
             raise ValueError("choices must not be empty")
         typed = Question("action", question, "choice", dict(choices))
@@ -991,7 +882,7 @@ class Gateway:
                     tokens_in=0,
                     tokens_out=0,
                     usd=0.0,
-                    measured=True,  # dry-run zeros are exact, not estimates
+                    measured=True,
                     exhausted=self.exhausted,
                 )
             try:
@@ -1006,8 +897,6 @@ class Gateway:
                 self._retire(model_id, f"refused: {error}")
                 continue
             except MissingKey as error:
-                # A pool may mix providers whose keys arrive separately (an OpenRouter
-                # key alone is a live run): the keyless models are skipped, not fatal.
                 failed[model_id] = f"no key: {error}"
                 env = client_for(model_id).key_env
                 if env not in key_envs:
@@ -1037,7 +926,6 @@ class Gateway:
         if key_envs and not self._retired and all(
             reason.startswith("no key:") for reason in failed.values()
         ):
-            # Nothing else rules the pool out: the run needs one of these variables.
             raise MissingKey(
                 f"no model in the pool has a key ({', '.join(key_envs)} unset): "
                 "set one of them, or put it in the file named by " + ENV_FILE_VAR
@@ -1045,7 +933,6 @@ class Gateway:
         raise NoModelAvailable({**self._retired, **failed})
 
     def report(self) -> dict[str, Any]:
-        """Run totals for the playtest report."""
         return {
             "calls": self.calls,
             "spent_usd": self.spent_usd,
@@ -1053,8 +940,6 @@ class Gateway:
             "exhausted": {model: reason for model, reason in self._retired.items()},
         }
 
-
-# --------------------------------------------------------------------------- self-test
 
 def _self_test() -> int:
     failures: list[str] = []
@@ -1269,8 +1154,6 @@ def _self_test() -> int:
             check("a pool with no key at all names every variable",
                   "XPL_SK_AGENT" in str(error) and "OPENROUTER_API_KEY" in str(error))
 
-        # A key may arrive in the file OPENROUTER_ENV_FILE names: read once, never echoed,
-        # an exported variable always wins.
         import tempfile
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -1317,7 +1200,6 @@ def main(argv: list[str] | None = None) -> int:
         help="report the secrets a live run needs; exit 2 when one is missing",
     )
     args = parser.parse_args(argv)
-    # Load a local key file at startup; a value is never printed, only used by a request.
     load_env_file()
     try:
         if args.self_test:
@@ -1352,7 +1234,6 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(decision.__dict__, indent=2))
             return 0
     except MissingKey as error:
-        # A readable line, not a traceback: the run cannot start without the secret.
         print(f"agent_models: {error}", file=sys.stderr)
         return 2
     except ModelError as error:

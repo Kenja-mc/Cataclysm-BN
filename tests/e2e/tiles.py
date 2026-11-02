@@ -64,8 +64,6 @@ GOLD = (255, 215, 0)
 GOLD_TOLERANCE = 12
 ZOOMS = ("1x", "2x", "4x")
 
-# Frame made deterministic: no animation, beacon blink, rain or static noise.
-# Fit the default 11x24 font within the 1200px-high Xvfb display.
 DETERMINISTIC_OPTIONS = {
     "USE_TILES": "true",
     "FULLSCREEN": "no",
@@ -80,18 +78,15 @@ DETERMINISTIC_OPTIONS = {
     "PIXEL_MINIMAP": "true",
     "PIXEL_MINIMAP_HEIGHT": "16",
     "PIXEL_MINIMAP_BLINK": "0",
-    # The frame wait reads the loader by its default compact progress window at the bottom.
     "LOADING_PROGRESS_COMPACT": "true",
     "LOADING_SCREEN_IMAGES": "false",
 }
 
-# Fixture offsets relative to the avatar, (dx, dy).
-GROUND_ITEMS = {"east": (3, 0), "west": (-3, 2), "north": (0, -4)}  # open floor, loose rock
-GROUND_JAR = (-6, -3)     # glass jar on open floor with a rock sealed inside: a perceived item, marked
-SEALED_SAFE = (0, 3)      # f_safe_c with a rock inside: outer tile seen, contents inaccessible, unmarked
-HIDDEN_BEHIND_WALL = (8, 0)  # loose rock, sight blocked by the wall column at dx=6: unmarked
+GROUND_ITEMS = {"east": (3, 0), "west": (-3, 2), "north": (0, -4)}
+GROUND_JAR = (-6, -3)
+SEALED_SAFE = (0, 3)
+HIDDEN_BEHIND_WALL = (8, 0)
 WALL_TILE = (6, 0)
-# Tiles that must carry a new gold marker. Everything else stays unmarked.
 MARKED = {"east": GROUND_ITEMS["east"], "west": GROUND_ITEMS["west"], "north": GROUND_ITEMS["north"],
           "jar": GROUND_JAR}
 
@@ -112,11 +107,7 @@ def require(cond, message):
         raise Failure(message)
 
 
-# ---------------------------------------------------------------- X11 via ctypes (no compiled helper)
-
 class X11:
-    """Xlib and XTest through ctypes, bound only to the private display it is given."""
-
     def __init__(self, display):
         self.xlib = ctypes.CDLL("libX11.so.6")
         self.xtst = ctypes.CDLL("libXtst.so.6")
@@ -169,7 +160,6 @@ class X11:
             self.dpy = None
 
     def find_window(self, prefix):
-        """First window whose WM_NAME starts with prefix, searched depth-first from the root."""
         stack = [self.root]
         while stack:
             win = stack.pop()
@@ -201,13 +191,11 @@ class X11:
         return None
 
     def focus(self, win, x, y):
-        """Moves the pointer to root (x, y) and gives win the keyboard focus (no window manager here)."""
         self.xtst.XTestFakeMotionEvent(self.dpy, -1, x, y, 0)
         self.xlib.XSetInputFocus(self.dpy, win, 2, 0)
         self.xlib.XSync(self.dpy, 0)
 
     def focus_local(self, win, x, y):
-        """Moves to a window-local pixel without assuming SDL placed the window at root (0, 0)."""
         root_x, root_y, child = ctypes.c_int(), ctypes.c_int(), ctypes.c_ulong()
         require(self.xlib.XTranslateCoordinates(self.dpy, win, self.root, x, y,
                                                 ctypes.byref(root_x), ctypes.byref(root_y),
@@ -216,7 +204,6 @@ class X11:
         self.focus(win, root_x.value, root_y.value)
 
     def key(self, *names, delay=0.1):
-        """Presses the keysyms together (e.g. 'Shift_L', 'a'), then releases them in reverse order."""
         codes = []
         for name in names:
             code = self.xlib.XKeysymToKeycode(self.dpy, self.xlib.XStringToKeysym(name.encode()))
@@ -246,7 +233,6 @@ class X11:
         time.sleep(delay)
 
     def drag(self, win, start, end, button=3, steps=6, delay=0.05):
-        """Presses a button on a window-local point, moves in steps, releases."""
         self.focus_local(win, *start)
         self.press(button)
         for step in range(1, steps + 1):
@@ -257,14 +243,7 @@ class X11:
         self.release(button)
 
 
-# ---------------------------------------------------------------- private display
-
 def start_xvfb(work, size=(1920, 1200)):
-    """Start Xvfb on a free display from :100 up and wait for its -displayfd ready report.
-
-    The display number must be explicit. Without one, Xvfb -displayfd probes from :0 and replaces
-    the desktop Xwayland socket /tmp/.X11-unix/X0; X11 apps such as Steam then fail until relogin.
-    """
     log = (work / "xvfb.log").open("w")
     candidates = [n for n in range(100, 200)
                   if not os.path.lexists(f"/tmp/.X{n}-lock") and not os.path.lexists(f"/tmp/.X11-unix/X{n}")]
@@ -287,7 +266,7 @@ def start_xvfb(work, size=(1920, 1200)):
         os.close(read_fd)
         if data.strip() == str(number).encode():
             return proc, f":{number}", log
-        stop_process(proc)  # another server took this number first, or Xvfb failed; try the next one
+        stop_process(proc)
     log.close()
     raise Failure(f"Xvfb did not report a display (see {work / 'xvfb.log'})")
 
@@ -302,15 +281,7 @@ def stop_process(proc, timeout=10):
             proc.wait(timeout)
 
 
-# ---------------------------------------------------------------- captures and pixels
-
 def magick_command(tool):
-    """The ImageMagick command for `tool`: 7.x `magick <tool>`, or the 6.x binary.
-
-    Ubuntu runners carry ImageMagick 6, which has no `magick` shim, so `import`,
-    `identify` and `convert` are called directly there; a developer machine usually
-    carries 7, whose `magick` shim fronts the same three tools.
-    """
     if not shutil.which("magick"):
         return ["convert" if tool == "convert" else tool]
     return ["magick"] if tool == "convert" else ["magick", tool]
@@ -323,12 +294,8 @@ def capture(display, window_id, png):
 
 
 def frame_shows_world(rgb):
-    """Recognize edge content from the loaded world's map and sidebar.
-
-    Launch options disable splash artwork; the title and compact loader stay centered.
-    """
     width, height, pixels = rgb
-    inset = min(20, width // 8)          # a full-screen border line is not the sidebar
+    inset = min(20, width // 8)
     band = min(max(40, width // 8), width - 2 * inset)
     edges = ((inset, inset + band), (width - inset - band, width - inset))
     painted_rows = 0
@@ -345,7 +312,6 @@ def frame_shows_world(rgb):
 
 
 def frame_rgb(png):
-    """(width, height, raw 8-bit RGB bytes) of a whole capture."""
     size = subprocess.run([*magick_command("identify"), "-format", "%w %h", str(png)],
                           check=True, capture_output=True, text=True).stdout.split()
     w, h = int(size[0]), int(size[1])
@@ -356,7 +322,6 @@ def frame_rgb(png):
 
 
 def gold_mask(rgb):
-    """1 for each pixel within GOLD_TOLERANCE of the marker gold, else 0."""
     r, g, b = rgb[0::3], rgb[1::3], rgb[2::3]
     return bytearray(1 if (abs(r[i] - GOLD[0]) <= GOLD_TOLERANCE and abs(g[i] - GOLD[1]) <= GOLD_TOLERANCE
                            and abs(b[i] - GOLD[2]) <= GOLD_TOLERANCE) else 0
@@ -364,7 +329,6 @@ def gold_mask(rgb):
 
 
 def blobs_of(mask, w, h):
-    """4-connected blobs of set pixels with bounding boxes and centres."""
     seen = bytearray(w * h)
     blobs = []
     for start in range(w * h):
@@ -397,10 +361,7 @@ def crop_to(png, blob, out, margin=4):
                     "+repage", str(out)], check=True, capture_output=True)
 
 
-# ---------------------------------------------------------------- marker grid
-
 def solve_line(xs, ys):
-    """Least squares y = a + b*x; returns (a, b)."""
     n = len(xs)
     mx, my = sum(xs) / n, sum(ys) / n
     var = sum((x - mx) ** 2 for x in xs)
@@ -410,10 +371,6 @@ def solve_line(xs, ys):
 
 
 def fit_marker_grid(blobs, expected):
-    """Pairs each expected tile with one blob so the centres sit on one grid, x = ox + dx*tx, y = oy + dy*ty.
-
-    Every assignment of blobs to expected tiles is tried; the smallest worst-case residual wins.
-    """
     names = list(expected)
     best = None
     for perm in itertools.permutations(range(len(blobs)), len(names)):
@@ -430,11 +387,7 @@ def fit_marker_grid(blobs, expected):
     return best
 
 
-# ---------------------------------------------------------------- curses fixture
-
 FIXTURE_LUA = (
-    # An outdoor courtyard with an opaque ring; remove the shelter roof so daylight survives reload.
-    # The internal column hides (8,0).
     "function minimap_fixture() "
     "for dx=-11,11 do for dy=-11,11 do local p=here(dx,dy) "
     "M:set_ter_at(p, TerId.new('t_floor'):int_id()) "
@@ -447,11 +400,9 @@ FIXTURE_LUA = (
     "M:clear_items_at(p) end end end "
     "for dy=-2,2 do M:set_ter_at(here(6,dy), TerId.new('t_wall'):int_id()) end "
     "out('fixture') end "
-    # A glass jar on open floor with a rock sealed inside it.
     "function ground_jar(dx,dy) local p=here(dx,dy) M:create_item_at(p, ItypeId.new('jar_glass'), -1) "
     "local jar=nil for _,it in pairs(M:get_items_at(p)) do if it:get_type():str()=='jar_glass' then jar=it end end "
     "jar:add_item_with_id(ItypeId.new('rock'), 1) out(jar:has_item_with_id(ItypeId.new('rock'))) end "
-    # Sight, opacity, items, sealed-container flags, and game clock. Every value comes from a bound method.
     "function minimap_sight() local a=gapi.get_avatar() "
     "out(a:sees(here(3,0)), a:sees(here(-3,2)), a:sees(here(0,-4)), a:sees(here(-6,-3)), a:sees(here(0,3))) "
     "out(a:sees(here(8,0)), M:has_ter_flag_at('TRANSPARENT', here(6,0)), "
@@ -460,7 +411,6 @@ FIXTURE_LUA = (
     "out(M:has_flag_at('CONTAINER', here(0,3)), M:has_flag_at('SEALED', here(0,3)), "
     "gapi.current_turn():hour_of_day()) end"
 )
-# Expected values, in the order minimap_sight() returns them.
 SIGHT_ASSERTS = [
     ("sees east (3,0)", "true"),
     ("sees west (-3,2)", "true"),
@@ -475,7 +425,6 @@ SIGHT_ASSERTS = [
     ("items jar (-6,-3)", "true"),
     ("items safe (0,3)", "true"),
     ("items hidden (8,0)", "true"),
-    # Sealed container: could_see_items() is false when CONTAINER and SEALED both hold on the tile.
     ("safe is CONTAINER", "true"),
     ("safe is SEALED", "true"),
     ("game hour is INITIAL_TIME 12", "12"),
@@ -483,12 +432,10 @@ SIGHT_ASSERTS = [
 
 
 def build_fixture(game, work, zoom_ruler=False):
-    """Builds the fixture in the curses game and asserts it through bound objects, then saves."""
     game.define_lua(HELPERS + " " + FIXTURE_LUA)
     arena(game)
     require(game.lua("minimap_fixture()") == ["fixture"], "fixture setup did not finish:\n" + game.screen())
     settle(game)
-    # Terrain changes can drop old shelter contents; clear that debris before placing the measured loot.
     require(game.lua("minimap_fixture()") == ["fixture"], "post-settle courtyard cleanup failed")
     if zoom_ruler:
         require(game.lua("for dx=-11,11 do for dy=-11,11 do "
@@ -515,8 +462,6 @@ def build_fixture(game, work, zoom_ruler=False):
     require(game.lua("out(gdebug.save_game())") == ["true"], "saving the debug world failed:\n" + game.screen())
 
 
-# ---------------------------------------------------------------- tiles launch
-
 def patch_options(path, values):
     rows = [r for r in json.loads(path.read_text()) if r["name"] not in values]
     rows += [{"info": "", "default": "", "name": k, "value": v} for k, v in values.items()]
@@ -524,17 +469,11 @@ def patch_options(path, values):
 
 
 def patch_launch_options(userdir, xdg, values):
-    """Patch both config locations selected by the compile-time USE_XDG_DIR option."""
     patch_options(Path(userdir) / "config" / "options.json", values)
     patch_options(Path(xdg) / "cataclysm-bn" / "options.json", values)
 
 
 def wait_for_frame(session, proc, run, timeout):
-    """Waits for two identical decoded captures of the loaded world.
-
-    The world must be drawn (see frame_shows_world) as well as still, so neither a loading screen
-    nor a half-painted first frame satisfies the wait.
-    """
     deadline = time.time() + timeout
     x11 = X11(session.display)
     try:
@@ -566,8 +505,6 @@ class RunningGame:
 
 
 class Session:
-    """One CLI run: private work tree, private Xvfb, and the saved fixture that every launch copies."""
-
     def __init__(self, args, work, artifacts):
         self.work = work
         self.artifacts = artifacts
@@ -583,7 +520,6 @@ class Session:
         self.world = None
 
     def start(self):
-        # An outer tmux would be addressed through TMUX; isolate tmux before any tmux call.
         os.environ.pop("TMUX", None)
         os.environ["TMUX_TMPDIR"] = str(self.work / "tmux")
         (self.work / "tmux").mkdir(parents=True, exist_ok=True)
@@ -600,7 +536,6 @@ class Session:
 
     def build_world(self, zoom_ruler=False):
         tmux_game.ROOT = self.root
-        # INITIAL_TIME 12 starts the world at noon, so the fixture is lit the same way on every run.
         game = Game(name="bn-tiles-e2e-fixture", options={"SAFEMODE": "false", "INITIAL_TIME": "12"},
                     userdir=self.curses_userdir)
         try:
@@ -615,11 +550,6 @@ class Session:
 
     @contextmanager
     def running_game(self, label, tiles_options, fresh=True, state_out=False):
-        """Keeps a fixture copy running for real input and captures; owns process cleanup.
-
-        ``fresh=False`` reuses the label's own directories, so a relaunch sees the config a
-        previous process wrote (zoom persistence, for instance).
-        """
         run = self.work / "runs" / label
         userdir = run / "userdir"
         xdg = run / "xdg"
@@ -678,10 +608,7 @@ class Session:
         return kept
 
 
-# ---------------------------------------------------------------- minimap case
-
 def analyse_zoom(zoom, off_png, on_png, artifacts):
-    """Compares a markers-off and a markers-on capture of the same frame and checks the marker set."""
     checks = []
     w, h, off = frame_rgb(off_png)
     w2, h2, on = frame_rgb(on_png)
@@ -768,8 +695,6 @@ def case_minimap(session):
 
 
 def case_mouse(session):
-    """Check 2x selection with either sidebar origin."""
-    # Free selection doesn't enable quicksave; use save-and-quit.
     bindings = session.curses_userdir / "config" / "keybindings.json"
     rows = json.loads(bindings.read_text()) if bindings.exists() else []
     rows = [row for row in rows if not (row.get("category") == "DEFAULTMODE"
@@ -794,22 +719,17 @@ def case_mouse(session):
                 win = x11.find_window(WINDOW_TITLE_PREFIX)
                 require(win is not None, f"{label}: game window disappeared")
                 width, height, before = frame_rgb(live.frame)
-                # The isolated fork layout has 44 sidebar cells, UndeadPeople tiles are 32px.
-                # At 2x scale the visible map origin is 704px for the left sidebar, 0 otherwise.
                 sidebar_width, tile_size = 44 * 8 * 2, 32 * 2
                 terrain_width = width - sidebar_width
                 require(terrain_width >= 3 * tile_size, f"{label}: terrain too narrow")
                 origin = sidebar_width if side == "left" else 0
                 avatar_x = origin + (terrain_width // tile_size // 2) * tile_size + tile_size // 2
                 avatar_y = (height // tile_size // 2) * tile_size + tile_size // 2
-                # The Mouse View box sits in the top-left corner whichever side the sidebar is on.
                 x11.focus_local(win, avatar_x + tile_size, avatar_y)
                 time.sleep(1)
                 hover_png = capture(session.display, win, session.artifacts / f"{label}-hover.png")
                 _, _, hovered = frame_rgb(hover_png)
                 def mouse_view(rgb):
-                    """The box between its top and bottom border lines, found as rows whose left
-                    stretch is one non-black colour (the box's horizontal rule)."""
                     def row(frame, y):
                         return frame[3 * y * width:3 * (y * width + sidebar_width)]
                     def ruled(y):
@@ -819,7 +739,6 @@ def case_mouse(session):
                     bottom = next((y for y in rules if rules and y > rules[0] + 32), None)
                     if bottom is None:
                         return b""
-                    # Other windows below the box have rules of their own; stop at the box's.
                     return b"".join(row(rgb, y) for y in range(rules[0], bottom + 2))
                 actual_panel = mouse_view(hovered)
                 require(actual_panel, f"{label}: adjacent tile produced no hover")
@@ -862,11 +781,6 @@ def saved_turn(path):
 
 
 def saved_overmap_notes(save_dir):
-    """Overmap notes from a save, keyed by text, as global (x, y) overmap-tile positions.
-
-    Notes live in the player's `.seen.X.Y` view files: plain files in a V1 save, zlib rows of a
-    `files` table in a V2 save's sqlite databases.
-    """
     views = {path.name: path.read_text() for path in save_dir.glob("*.seen.*")}
     for db in save_dir.glob("*.sqlite3"):
         with sqlite3.connect(f"{db.as_uri()}?mode=ro", uri=True) as con:
@@ -884,7 +798,6 @@ def saved_overmap_notes(save_dir):
 
 
 def frames_close(a, b, tolerance=0.002):
-    """True when two captures are the same frame; a blinking cursor stays under the tolerance."""
     if a[:2] != b[:2]:
         return False
     left, right = a[2], b[2]
@@ -893,7 +806,6 @@ def frames_close(a, b, tolerance=0.002):
 
 
 def settle_capture(session, x11, win, png, timeout=20):
-    """Captures until two consecutive frames match, so a half-drawn redraw is never compared."""
     deadline = time.time() + timeout
     previous = None
     while time.time() < deadline:
@@ -906,7 +818,6 @@ def settle_capture(session, x11, win, png, timeout=20):
 
 
 def wait_capture(session, x11, win, png, predicate, timeout=20):
-    """Waits for the frame to satisfy `predicate` before settling, so input latency is not a failure."""
     deadline = time.time() + timeout
     while time.time() < deadline:
         rgb = frame_rgb(capture(session.display, win, png))
@@ -917,7 +828,6 @@ def wait_capture(session, x11, win, png, predicate, timeout=20):
 
 
 def case_side_buttons(session):
-    """X1 backs out of the open screen; on the map it does nothing."""
     options = {
         "CONTROL_SCHEME": "modern",
         "MOUSE_MOVE": "false",
@@ -931,7 +841,6 @@ def case_side_buttons(session):
             win = x11.find_window(WINDOW_TITLE_PREFIX)
             require(win is not None, "side-buttons: game window disappeared")
             width, height, _ = frame_rgb(live.frame)
-            # Park the pointer over the sidebar: hovering the map would change the frame.
             x11.focus_local(win, width - 8, height - 8)
             shots = session.artifacts
 
@@ -940,12 +849,10 @@ def case_side_buttons(session):
 
             map_frame = shot("map")
 
-            # On the map there is no screen to leave, so the back button does nothing.
             x11.click(8, delay=0.6)
             require(frames_close(shot("map-back"), map_frame),
                     "back with no open screen must not change the frame")
 
-            # Bionics is a real screen and Modern opens it with p.
             x11.key("p", delay=0.8)
             screen_frame = wait_capture(session, x11, win, shots / "side-buttons-screen.png",
                                         lambda frame: not frames_close(frame, map_frame))
@@ -976,7 +883,6 @@ def column_levels(rgb, width, x0, x1, y0, y1):
 
 
 def tile_pitch(png, terrain_width, center_y):
-    """Median rendered width of the fixture's alternating floor columns, in pixels."""
     width, height, rgb = frame_rgb(png)
     left, right = max(0, terrain_width // 2 - 360), terrain_width // 2 - 60
     top, bottom = max(0, center_y - 360), center_y - 140
@@ -996,7 +902,6 @@ def tile_pitch(png, terrain_width, center_y):
 
 
 def case_overmap(session):
-    """Clicks on partial-tile viewports keep the map still; drags pan one overmap tile per tile."""
     state_path = session.curses_userdir / "save" / session.world / "uistate.json"
     state = json.loads(state_path.read_text())
     state["overmap_blinking"] = False
@@ -1047,7 +952,6 @@ def case_overmap(session):
                 x11.focus_local(window, center_x, center_y)
                 x11.click(1)
                 clicked = settled("clicked")
-                # A later popup acknowledges the click before the no-change assertion.
                 x11.key("Shift_L", "n")
                 settled("note-popup", reference=clicked)
                 x11.key("Escape")
@@ -1064,16 +968,13 @@ def case_overmap(session):
                     x11.key("Return")
                     return settled(f"note-{text}", reference=popup)
 
-                # Notes mark the cursor before and after the drags; the save proves the distance.
                 noted = place_note("a", after)
-                # Right-drag pans the map with the pointer.
                 x11.drag(window, (center_x, center_y), (center_x + 2 * tile, center_y + tile))
                 dragged = settled("dragged", reference=noted)
                 panned = sum(before[2][i:i + 3] != dragged[2][i:i + 3]
                              for i in range(0, len(before[2]), 3))
                 checks.append(Check(f"{scale}x right-drag pans the overmap",
                                     panned > 0, f"{panned} pixels changed"))
-                # Left-drag pans too, and the release that ends it does not also select.
                 x11.drag(window, (center_x, center_y), (center_x - 3 * tile, center_y - tile), button=1)
                 left = settled("left-dragged", reference=dragged)
                 moved = sum(dragged[2][i:i + 3] != left[2][i:i + 3] for i in range(0, len(left[2]), 3))
@@ -1100,7 +1001,6 @@ def case_overmap(session):
                 notes = saved_overmap_notes(save_dir)
                 shift = (tuple(b - a for a, b in zip(notes["a"], notes["b"]))
                          if {"a", "b"} <= notes.keys() else None)
-                # The map follows the pointer, so the view centre moves against the drag.
                 checks.append(Check(f"{scale}x a two-by-one tile right-drag moves the cursor two by one",
                                     shift == (-2, -1), f"saved notes {notes}"))
                 observations[label] = {"cursor": [center_x, center_y], "changed_pixels": changed,
@@ -1113,7 +1013,6 @@ def case_overmap(session):
 
 
 def add_keybinding(session, action, key):
-    """Binds a DEFAULTMODE action to one key in the fixture config every launch copies."""
     bindings = session.curses_userdir / "config" / "keybindings.json"
     rows = json.loads(bindings.read_text()) if bindings.exists() else []
     rows = [row for row in rows if not (row.get("category") == "DEFAULTMODE" and row.get("id") == action)]
@@ -1123,9 +1022,7 @@ def add_keybinding(session, action, key):
 
 
 def case_zoom(session):
-    """Default keyboard and wheel zoom change the rendered tile pitch and spend no turn."""
     add_keybinding(session, "quicksave", "F6")
-    # Modern leaves the full look screen unbound; bind it so the case can open it by key.
     add_keybinding(session, "look", ";")
     source = session.curses_userdir / "save" / session.world
     starts = list(source.glob("*.sav"))
@@ -1136,7 +1033,6 @@ def case_zoom(session):
         "SCALING_FACTOR": "1", "FONT_WIDTH": str(ZOOM_FONT_WIDTH), "FONT_HEIGHT": "16",
         "FONT_SIZE": "16", "TILES": "UNDEAD_PEOPLE_BASE",
         "TERMINAL_X": "160", "TERMINAL_Y": "60", "SIDEBAR_POSITION": "right",
-        # Floating HUD windows sit over the measured floor columns.
         "MOUSE_MOVE": "false", "HUD_WINDOWS": "false",
     }
     checks, pitches, frames = [], {}, {}
@@ -1161,7 +1057,6 @@ def case_zoom(session):
                 return pitches[label]
 
             def snapshot(label):
-                """Captures a frame without measuring pitch; the far zoom is too dense to measure."""
                 wait_for_frame(session, live.proc, live.run, session.timeout)
                 png = capture(session.display, win, session.artifacts / f"zoom-{label}.png")
                 frames[label] = str(png)
@@ -1181,14 +1076,12 @@ def case_zoom(session):
             x11.click(5)
             wheel_restored = observe("wheel-out")
 
-            # Zoom must work while looking: first the modern reticle, then the full look screen.
             x11.key("Shift_L", "d")
             reticle = observe("reticle")
             x11.key("equal")
             reticle_in = observe("reticle-zoom-in")
             x11.key("minus")
             observe("reticle-zoom-out")
-            # Esc first takes the reticle away; a second press would open the main menu.
             x11.key("Escape")
             map_frame_label = "map-after-reticle"
             map_frame = observe(map_frame_label)
@@ -1211,7 +1104,6 @@ def case_zoom(session):
                 time.sleep(0.2)
             require(save.stat().st_mtime_ns != stamp, "zoom: quicksave did not write the save")
             final_turn = saved_turn(save)
-            # Zoom stops at its ends: winding past the last step must not jump to the other end.
             for _ in range(8):
                 x11.key("equal", delay=0.05)
             at_max = snapshot("zoom-max")
@@ -1225,7 +1117,6 @@ def case_zoom(session):
             still_min = snapshot("zoom-min-minus")
             same_min = at_min.read_bytes() == still_min.read_bytes()
 
-            # Clamp at the far end, walk back to 1x deterministically, then one step to 2x.
             for _ in range(8):
                 x11.key("minus", delay=0.05)
             for _ in range(2):
@@ -1266,7 +1157,6 @@ def case_zoom(session):
             ])
         finally:
             x11.close()
-    # A relaunch over the same config directory must come back at the zoom it left.
     with session.running_game("zoom", options, fresh=False) as live:
         x11 = X11(session.display)
         try:
@@ -1288,7 +1178,6 @@ def case_zoom(session):
 
 
 def case_known_locks(session):
-    """Only a door found locked gets a marker, at either display scale."""
     from known_locks import (analyse_known_lock_icons,
                              test_lock_icon_option_follows_the_control_scheme)
 
@@ -1336,28 +1225,24 @@ def case_known_locks(session):
 
 
 def case_numbered_rows(session):
-    """Digits 1-9/0 select visible item rows; Enter confirms; the option gates the gutter."""
     from numbered_rows import run_numbered_rows
 
     return run_numbered_rows(session)
 
 
 def case_numbered_menu(session):
-    """Digits select visible options and construction rows; scrolling renumbers them."""
     from numbered_menu_cases import run_numbered_menu
 
     return run_numbered_menu(session)
 
 
 def case_numbered_viewport(session):
-    """Invisible item rows cannot be selected through positional digits."""
     from numbered_rows import run_numbered_viewport
 
     return run_numbered_viewport(session)
 
 
 def case_sound_menu(session):
-    """Drive the tiles menu; check saved settings, not audible output or OCR."""
     bindings = session.curses_userdir / "config" / "keybindings.json"
     rows = json.loads(bindings.read_text()) if bindings.exists() else []
     rows = [row for row in rows if not (row.get("category") == "DEFAULTMODE"
@@ -1400,7 +1285,6 @@ def case_sound_menu(session):
                     time.sleep(0.1)
                 raise AssertionError(f"sound menu did not persist {expected}: {last}")
 
-            # Leave MUSIC_ENABLED unpatched: the first save also checks its true default.
             open_menu("initial")
             x11.key("Left")
             x11.key("Escape")
@@ -1440,17 +1324,10 @@ def case_sound_menu(session):
 
 MENU_DRAG_TERMINAL = (80, 24)
 MENU_DRAG_FONT = (8, 16)
-# Debug menu → Spawning → Spawn monster: a list of every monster type.
 MENU_DRAG_KEYS = ("F12", "S", "m")
 
 
 def menu_scrollbar_cells(session):
-    """(column, first row, last row) of a long list menu's scrollbar, read from a curses game.
-
-    The list menu's layout depends only on its entries and the terminal size, so a curses game
-    at the same size shows the cells the tiles window draws. The debug monster list has far more
-    entries than the 24-row terminal shows, so its scrollbar can be dragged.
-    """
     cols, rows = MENU_DRAG_TERMINAL
     probe = Game(name="bn-tiles-e2e-menu-probe", cols=cols, rows=rows, userdir=session.work / "probe",
                  options={"CONTROL_SCHEME": "modern", "SAFEMODE": "false", "SHOW_WELCOME": "false"})
@@ -1461,8 +1338,6 @@ def menu_scrollbar_cells(session):
         screen = probe.screen().splitlines()
     finally:
         probe.close()
-    # The list spans the terminal, so its scrollbar replaces the left border; arrows flank the
-    # draggable track rows.
     up = next((y for y, line in enumerate(screen) if line[:1] == "^"), None)
     down = next((y for y in range(len(screen) - 1, up or 0, -1) if screen[y][:1] == "v"), None)
     require(up is not None and down is not None, "menu drag: no scrolling list found\n" + "\n".join(screen))
@@ -1470,7 +1345,6 @@ def menu_scrollbar_cells(session):
 
 
 def case_menu_drag(session):
-    """Holding the left button on a list menu's scrollbar drags the thumb before any release."""
     column, first, last = menu_scrollbar_cells(session)
     font_w, font_h = MENU_DRAG_FONT
     options = {"CONTROL_SCHEME": "modern", "TERMINAL_X": str(MENU_DRAG_TERMINAL[0]),
@@ -1481,7 +1355,6 @@ def case_menu_drag(session):
         return cell_x * font_w + font_w // 2, cell_y * font_h + font_h // 2
 
     def changed(a, b):
-        """Fraction of the list's pixel rows that differ between two frames."""
         width, _, left = a
         _, _, right = b
         top, bottom = 3 * first * font_h * width, 3 * (last + 1) * font_h * width
@@ -1493,7 +1366,6 @@ def case_menu_drag(session):
         try:
             win = x11.find_window(WINDOW_TITLE_PREFIX)
             require(win is not None, "menu drag: game window disappeared")
-            # The pointer waits on the scrollbar column, where hover highlights no row.
             x11.focus_local(win, *pixel(column, first + 1))
             x11.key("F12", delay=1)
             x11.key("Shift_L", "s", delay=1)
@@ -1519,7 +1391,6 @@ def case_menu_drag(session):
 
 
 def case_state_channel(session):
-    """The state file names the open inventory, clears it, and advances the turn counter."""
     observations = {}
     with session.running_game("state-channel", {"CONTROL_SCHEME": "modern"},
                               state_out=True) as live:
@@ -1576,7 +1447,6 @@ from driving_dashboard_native import case_driving_dashboard  # noqa: E402
 
 
 def case_map_overlays(session):
-    """The tiles build reports the memorized locked door in the state file."""
     observations = {}
     with session.running_game("map-overlays", {"CONTROL_SCHEME": "modern"},
                               state_out=True) as live:
@@ -1653,7 +1523,7 @@ def main(argv=None):
         else:
             session.build_world(zoom_ruler=args.case == "zoom")
         failures, report = CASES[args.case](session)
-    except Exception as exc:  # reported; the work tree is kept with the artifacts
+    except Exception as exc:
         failures.append(f"{type(exc).__name__}: {exc}")
         (artifacts / "exception.txt").write_text(traceback.format_exc())
     finally:

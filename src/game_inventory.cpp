@@ -143,7 +143,6 @@ class common_inventory_selector : public inventory_pick_selector
             return requested_action;
         }
 
-        /// Empty unless Modern is active and its Craft shortcut is bound.
         [[nodiscard]] auto craft_hint() const -> std::string {
             if( get_option<std::string>( "CONTROL_SCHEME" ) != "modern" ||
                 ctxt.key_bound_to( "CRAFT", 0, false ).empty() ) {
@@ -152,7 +151,6 @@ class common_inventory_selector : public inventory_pick_selector
             return string_format( _( "[%s] Craft" ), ctxt.get_desc( "CRAFT" ) );
         }
 
-        /// Empty unless Modern is active. Also makes the label open the advanced inventory on a click.
         [[nodiscard]] auto advinv_hint() -> std::string {
             if( get_option<std::string>( "CONTROL_SCHEME" ) != "modern" ) {
                 return std::string();
@@ -1211,9 +1209,7 @@ class read_inventory_preset final: public inventory_selector_preset
 
         /** Splits books into groups: Unknown, CanTrainSkill, CanNotTrainSkillAnymore, ForFun.
         * 1. Unknown sorted by default algorithm.
-        * 2. CanTrainSkill grouped by skill and sorted by level, then by time to read
         *    because player probably wants to level up certain skill faster.
-        * 3. CanNotTrainSkillAnymore grouped by skill and sorted by level.
         * 4. ForFun sorted to make most fun books first.
         */
         bool sort_compare( const inventory_entry &lhs, const inventory_entry &rhs ) const override {
@@ -1809,7 +1805,6 @@ drop_locations game_menus::inv::multidrop( player &p )
     }
 }
 
-/// The pickup hint: numbered rows move the amount behind '#', otherwise digits type it.
 static auto pickup_amount_hint() -> std::string
 {
 #if defined(TILES)
@@ -1994,7 +1989,6 @@ void game_menus::inv::reassign_letter( Character &who, item &it, int invlet )
 namespace
 {
 
-/// Manual digit invlets are unreachable while positional row numbers own the digits.
 auto manual_digit_invlets_allowed() -> bool
 {
     if( get_option<std::string>( "CONTROL_SCHEME" ) != "modern" ) {
@@ -2007,7 +2001,7 @@ auto manual_digit_invlets_allowed() -> bool
 #endif
 }
 
-} // namespace
+}
 
 void game_menus::inv::prompt_reassign_letter( Character &who, item &it )
 {
@@ -2492,7 +2486,6 @@ namespace
 
 using game_menus::inv::unpack_result;
 
-// What picking the item up by hand costs (src/pickup.cpp).
 constexpr int take_move_cost = 100;
 
 class unpack_inventory_selector : public inventory_multiselector
@@ -2558,7 +2551,6 @@ auto unpack_inventory_selector::chosen_count( const item *target ) const -> size
             return entry.chosen_count;
         }
     }
-    // A filter parks still-selected items in entries_hidden.
     for( const inventory_entry &entry : own_inv_column.entries_hidden ) {
         if( matches( entry ) ) {
             return entry.chosen_count;
@@ -2582,14 +2574,12 @@ auto unpack_inventory_selector::add_content( detached_ptr<item> &&content ) -> v
 
 auto unpack_inventory_selector::can_carry( const item &content ) const -> bool
 {
-    // Hand pickup gate: loose liquids are spilled, weight may go to four times capacity.
     return !content.made_of( LIQUID ) && u.can_pick_weight( content, false ) &&
            u.can_pick_volume( content );
 }
 
 auto unpack_inventory_selector::take_into_pack( detached_ptr<item> &take ) -> bool
 {
-    // Hand pickup fills magazines before the pack and counts that as taken.
     if( take->is_ammo() ) {
     const auto original_charges = take->charges;
     const auto ammo = safe_reference<item> { *take };
@@ -2715,7 +2705,6 @@ auto unpack_inventory_selector::replace_worn( item *target, item &blocker ) -> b
     const auto worn_item = safe_reference<item> { *to_wear };
     auto failed = u.wear_item( std::move( to_wear ) );
     if( failed ) {
-        // Keep the new item in the list and put the old one back on.
         contents.push_back( std::move( failed ) );
         restore_worn( removed );
         return false;
@@ -2741,7 +2730,6 @@ auto unpack_inventory_selector::wear_entry( item *target ) -> bool
 
     auto *blocker = static_cast<item *>( nullptr );
     for( auto &worn_item : u.worn ) {
-        // Only an item on the same layer can be in the way.
         if( worn_item->get_layer() != target->get_layer() ) {
             continue;
         }
@@ -2784,7 +2772,6 @@ auto unpack_inventory_selector::execute() -> unpack_result
             }
             typed_count = 0;
         } else if( input.action == "WIELD" ) {
-            // The contents are only offered for taking or wearing.
             typed_count = 0;
         } else if( input.action == "RIGHT" ) {
             const auto selected = get_active_column().get_all_selected();
@@ -2812,7 +2799,6 @@ auto unpack_inventory_selector::execute() -> unpack_result
         } else if( input.action == "CONFIRM" ) {
             break;
         } else if( input.action == "QUIT" ) {
-            // Cancel leaves every content on the floor; nothing is carried.
             cancelled = true;
             break;
         } else {
@@ -2837,7 +2823,6 @@ auto unpack_inventory_selector::execute() -> unpack_result
                     ? std::move( content )
                     : content->split( static_cast<int>( chosen ) );
         if( !take ) {
-            // No split was possible; keep the stack rather than lose it.
             remaining.push_back( std::move( content ) );
             continue;
         }
@@ -2852,7 +2837,6 @@ auto unpack_inventory_selector::execute() -> unpack_result
             continue;
         }
         result.no_room.push_back( colored );
-        // A refused split rejoins its stack, so the floor shows one stack, not two.
         if( content && take && content->merge_charges( std::move( take ), true ) ) {
             remaining.push_back( std::move( content ) );
         } else {
@@ -2868,7 +2852,7 @@ auto unpack_inventory_selector::execute() -> unpack_result
     return result;
 }
 
-} // namespace
+}
 
 auto game_menus::inv::unpack( player &p, std::vector<detached_ptr<item>> &contents )
 -> game_menus::inv::unpack_result

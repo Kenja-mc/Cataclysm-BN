@@ -1,4 +1,3 @@
-"""Vehicle HUD contracts exercised through actual vehicles and driving controls."""
 import re
 import subprocess
 
@@ -7,7 +6,6 @@ from helpers import HELPERS, Game, action_menu, arena, choose_menu_entry, option
 
 def vehicle_game(name: str, *, layout: str = "labels", cols: int = 140,
                  rows: int = 45, **options: str) -> Game:
-    # Legacy compact fixtures keep their existing defaults; dashboard callers opt in themselves.
     game = Game(name=name, layout=layout, cols=cols, rows=rows,
                 options={"SAFEMODE": "false", "USE_METRIC_SPEEDS": "mph",
                          "HUD_WINDOWS": "false", **options})
@@ -33,19 +31,18 @@ def spawn_vehicle(game, prototype="car"):
     game.type(f"({prototype})")
     game.keys("Enter", "Enter", delay=0.6)
     game.wait_for("Vehicle condition")
-    game.keys("Down", "Enter", delay=0.6)  # Undamaged; debug spawn fills fuel stores.
+    game.keys("Down", "Enter", delay=0.6)
     game.wait_for("Vehicle direction")
-    game.keys("Enter", delay=0.8)  # Default -90 degrees: north.
+    game.keys("Enter", delay=0.8)
     settle(game)
     assert game.lua("out(M:has_vehicle_part_with_feature_at(here(0,0),'CONTROLS'))") == ["true"]
 
 
 def take_control(game):
-    """Taking control also starts the engine, which nearby monsters may interrupt."""
     action_menu(game, "Misc", "Control Vehicle")
     for _ in range(40):
         if "Stop trying to start the vehicle?" in game.screen():
-            game.keys("I", delay=0.8)  # Ignore further distractions and finish.
+            game.keys("I", delay=0.8)
         if "Engine: on" in game.screen():
             return
         game.keys("x", delay=1.0)
@@ -53,7 +50,6 @@ def take_control(game):
 
 
 def test_vehicle_horn_and_handbrake_route(_game):
-    """H honks while driving; Space brakes directly, and the vehicle menu still offers it."""
     game = vehicle_game("bn-e2e-vehicle-brake")
     try:
         spawn_vehicle(game)
@@ -73,7 +69,6 @@ def test_vehicle_horn_and_handbrake_route(_game):
         braked = re.search(r"Speed: (\d+) mph", game.screen())
         assert braked and int(braked[1]) < int(moving[1]), \
             "Space must brake while driving:\n" + game.screen()
-        # The driving menu keeps its own entries; the handbrake no longer hides inside it.
         game.keys("Enter", delay=1.0)
         choose_menu_entry(game, "Control Vehicle")
         game.wait_for("Vehicle controls")
@@ -102,7 +97,6 @@ def test_vehicle_box(_game):
         assert re.search(r"gasoline: \d+%", screen, re.IGNORECASE) and "Battery: 100%" in screen, screen
         subprocess.run(["tmux", "resize-window", "-t", game.name, "-x", "140", "-y", "45"], check=True)
         settle(game)
-        # Fuel exhaustion remains visible rather than making its row disappear.
         assert int(game.lua("out(M:drain_vehicle_fuel_at(here(0,0),'CONTROLS',ItypeId.new('gasoline'),1000000000))")[0]) > 0
         assert int(game.lua("out(M:get_vehicle_fuel_left_at(here(0,0),'CONTROLS',ItypeId.new('gasoline')))")[0]) == 0
         settle(game)
@@ -121,7 +115,6 @@ def test_vehicle_box_electric(_game):
         screen = game.screen()
         assert "Azimuth: 0°" in screen and "Battery: 100%" in screen, screen
         assert len(re.findall(r"(?:battery|batteries):\s*\d+%", screen, re.IGNORECASE)) == 1, "Electric fuel and battery must not duplicate:\n" + screen
-        # The same corner already holds weather/combat; all three must survive stacking.
         assert "Walking" in screen and "Azimuth:" in screen, screen
         assert "wasd move" in screen and "throttle" not in screen, screen
         take_control(game)
@@ -169,7 +162,6 @@ def test_vehicle_box_off(_game):
 
 
 def test_vehicle_handbrake_and_horn(_game):
-    """While driving, Space pulls the handbrake and H honks, without a vehicle menu."""
     game = vehicle_game("bn-e2e-vehicle-brake")
     try:
         spawn_vehicle(game)

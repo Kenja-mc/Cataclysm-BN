@@ -1261,7 +1261,6 @@ action_id handle_action_menu()
                 ACTION_WAIT, ACTION_SLEEP, ACTION_BIONICS, ACTION_MUTATIONS, ACTION_PERKS,
                 ACTION_CONTROL_VEHICLE, ACTION_ITEMACTION, ACTION_TOGGLE_THIEF_MODE, ACTION_SOUND_MENU,
                 ACTION_HOTBAR_ASSIGN,
-                // Modern unbinds the sidebar options key, so the menu keeps them reachable.
                 ACTION_TOGGLE_PANEL_ADM
             } );
 #if defined(TILES)
@@ -1372,7 +1371,6 @@ std::optional<tripoint_rel_ms> choose_direction( const std::string &message,
         action = ctxt.handle_input();
         auto vec = ctxt.get_direction( action );
         if( action == "SELECT" ) {
-            // A click on a tile beside you answers like its direction key.
             if( const auto clicked = ctxt.get_coordinates( g->w_terrain ) ) {
                 const auto delta = *clicked - g->u.bub_pos();
                 if( delta.z() == 0 && std::abs( delta.x() ) <= 1 && std::abs( delta.y() ) <= 1 ) {

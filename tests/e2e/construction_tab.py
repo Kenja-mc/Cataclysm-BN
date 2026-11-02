@@ -1,4 +1,3 @@
-"""The construction menu opens on a tab with content, not the empty Favorite tab."""
 import json
 import os
 import re
@@ -8,13 +7,11 @@ from tmux_game import ROOT, Game, start_new_game
 
 
 def construction_names():
-    """Every construction group name the game data defines."""
     groups = json.loads((ROOT / "data/json/construction_group.json").read_text())
     return [g["name"] for g in groups if g.get("name")]
 
 
 def list_pane(screen):
-    """The text drawn inside the menu's construction list pane."""
     lines = screen.splitlines()
     top = next((l for l in lines if "┴" in l), None)
     if top is None:
@@ -35,7 +32,6 @@ def listed_names(screen):
 
 
 def favorite_key(screen):
-    """The favorite hotkey the menu footer advertises."""
     found = re.search(r"Press \[([^\]]+)\] to add", screen)
     assert found, "the footer must name the favorite key:\n" + screen
     return found[1]
@@ -63,7 +59,6 @@ def test_construction_opens_on_content(_g):
         shown = listed_names(screen)
         assert shown, "the construction list must show at least one construction:\n" + screen
 
-        # Favorite the selected construction, then close and reopen.
         game.keys(favorite_key(screen), delay=0.8)
         game.keys("Escape", delay=0.8)
         screen = open_menu(game)

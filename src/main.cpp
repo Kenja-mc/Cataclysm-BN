@@ -332,7 +332,6 @@ int main( int argc, char *argv[] )
                     }
                     test_mode = true;
                     dump = params[ 0 ];
-                    // The fold dump takes its request file where other dumps take a mode.
                     const auto fold_dump = dump == "FOLDED";
                     for( int i = fold_dump ? 1 : 2; i < n; ++i )
                     {

@@ -364,11 +364,6 @@ struct requirement_data {
          */
         void consolidate();
 
-        /**
-         * Lines describing why this requirement is not satisfied: the first missing
-         * component group, tool and quality, each with the count the player holds.
-         * Empty when nothing is missing.
-         */
         std::vector<std::string> blocker_lines( const inventory &crafting_inv,
                                                 const std::function<bool( const item & )> &filter,
                                                 int batch = 1 ) const;

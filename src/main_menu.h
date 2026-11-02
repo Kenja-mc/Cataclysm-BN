@@ -106,8 +106,6 @@ class main_menu
 
         void display_sub_menu( int sel, const point &bottom_left, int sel_line );
 
-        /// A title-menu button under a screen position: which tab, and which sub-menu
-        /// entry (-1 when the hit is on the tab strip itself).
         struct button_hit {
             int tab;
             int entry;

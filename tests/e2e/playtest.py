@@ -203,7 +203,6 @@ SCENARIOS = [
             "On a small terminal, edge arrows point at the off-screen part of the horde in yellow.",
         ],
     },
-    # ------------------------------------------------------------------ agentic playtest content
     {
         "id": "main_menu",
         "about": "Main menu navigation: the title screen and every submenu the fork reaches from it",
@@ -239,32 +238,23 @@ SCENARIOS = [
         ],
     },
     {
-        # One map that gathers the fork's inventory, HUD, body panel and hub changes within a few tiles
-        # of the player. The groups below are the fork features, in the order the checks read them.
         "id": "fork_features",
         "about": "A custom map next to the fork's inventory, HUD, body panel, weather and hub changes",
         "setup":
             "arena() "
-            # Quick stack: a rack that already holds what the player carries.
             "spawn(2,0,'usb_drive',1,'f_rack') give('usb_drive',3) give('plastic_six_dice',1) "
-            # Sort pile: loose piles under the player next to racks that already hold the same items.
             "spawn(3,2,'flyer',1,'f_rack') spawn(-3,0,'character_sheet',1,'f_rack') "
             "spawn(0,0,'usb_drive',2) spawn(0,0,'character_sheet',1) spawn(0,0,'plastic_six_dice',1) "
             "spawn(-1,0,'rag',4) "
-            # Item variants and stack modifiers: one folded 9mm line and two rings sharing one row.
             "local p=here(1,0) M:create_item_at(p, ItypeId.new('9mm'), 20) "
             "local bp=gapi.create_item(ItypeId.new('9mm'), 10) bp:set_var_str('stack_mod:black_powder','10') "
             "M:add_item(p, bp) local u=gapi.get_avatar() "
             "for _,v in ipairs({'ruby_gold_ring','copper_ring'}) do "
             "local r=gapi.create_item(ItypeId.new('jewelry_ring'), -1) r:set_var_str('variant',v) u:add_item(r) end "
-            # Body panel: a bleeding left arm and a bat to wield, so wounds and stance have a subject.
             "u:add_effect(EffectTypeId.new('bleed'), TimeDuration.from_turns(30), BodyPartTypeId.new('arm_l')) "
             "u:add_item(gapi.create_item(ItypeId.new('bat'), -1)) "
-            # Thermometer and weather: rain over the player's overmap tile, so the reading and the
-            # weather box both have something to show.
             "u:add_item(gapi.create_item(ItypeId.new('thermometer'), -1)) "
             "gapi.set_omt_weather_override(coords.project_to_omt(u:abs_pos()), 3, 'rain', nil) "
-            # Combat and interaction: a zombie west of you and another near the shelter's edge.
             + ZOMBIE.format(id="mon_zombie", x=-6, y=0)
             + ZOMBIE.format(id="mon_zombie", x=6, y=-4),
         "check": [
@@ -296,22 +286,15 @@ def tiles_binary():
     raise SystemExit("cataclysm-bn-tiles not found; build the tiles target first")
 
 
-# ------------------------------------------------------------------ the startup handle
-
 @dataclass
 class TilesRun:
-    """A live tiles game on a private Xvfb display, in the shape agent_state reads.
-
-    agent_state resolves handle.tiles.x11 / .display / .window_id (or .win) and falls back to a
-    fresh tiles.capture(); .frame is the capture that proved the window had drawn.
-    """
     proc: object
     xvfb: object
     x11: "tiles.X11"
     window_id: int
     display: str
     run: Path
-    frame: object  # Path of the drawn-world capture, or None
+    frame: object
     log: object
     xvfb_log: object = None
     state_path: Path | None = None
@@ -325,7 +308,6 @@ class TilesRun:
         return self.window_id
 
     def capture(self, png=None):
-        """Whole-window PNG of the current frame, written under the run directory by default."""
         path = Path(png) if png else self.run / f"frame-{time.time():.3f}.png"
         return tiles.capture(self.display, self.window_id, path)
 
@@ -339,8 +321,6 @@ class TilesRun:
         self.x11.click(button, delay=delay)
 
     def close(self):
-        # Close the display connection first: Xvfb going away under an open connection aborts the
-        # whole process with an XIO fatal IO error, which would skip the caller's own teardown.
         if self.x11:
             self.x11.close()
         tiles.stop_process(self.proc)
@@ -352,30 +332,23 @@ class TilesRun:
 
 @dataclass
 class ScenarioHandle:
-    """The started scenario: one shape for both modes, so callers never branch on the library."""
     scenario_id: str
-    mode: str                      # "curses" | "tiles"
+    mode: str
     scheme: str
-    userdir: Path                  # private; never deleted here
-    save_name: str | None          # the saved world, read before teardown in tiles mode
-    game: Game | None = None       # curses only
-    tiles: TilesRun | None = None  # tiles only
+    userdir: Path
+    save_name: str | None
+    game: Game | None = None
+    tiles: TilesRun | None = None
     about: str = ""
     check: tuple[str, ...] = field(default_factory=tuple)
 
     def close(self):
-        """Stop the game: kill the tmux session and stop Xvfb/the tiles process."""
         if self.game is not None:
             subprocess.run(["tmux", "kill-session", "-t", self.game.name], stderr=subprocess.DEVNULL)
         if self.tiles is not None:
             self.tiles.close()
 
 
-# ------------------------------------------------------------------ startup
-
-# tmux_game.Game builds its command line from the Game constructor, which takes no extra game
-# arguments, so a --seed run goes through a shim in front of the binary: the wrapper receives the
-# binary path as $1 and the game's own arguments after it. Only --seed is injected.
 SEED_PATTERN = re.compile(r"[A-Za-z0-9_.-]{1,64}")
 
 
@@ -390,7 +363,6 @@ def seed_wrapper(userdir, seed):
 
 
 def reach_main_menu(g, timeout=240):
-    """Get past the language prompt and welcome popup, and stop on the title screen."""
     deadline = time.time() + timeout
     while time.time() < deadline:
         screen = g.screen()
@@ -399,7 +371,7 @@ def reach_main_menu(g, timeout=240):
         elif "Welcome to Bright Nights" in screen:
             g.keys("Escape", delay=1)
         elif "Really quit?" in screen:
-            g.keys("Escape", delay=1)  # Escape at the title screen opens this; it would eat later keys
+            g.keys("Escape", delay=1)
         elif "MOTD" in screen and "New Game" in screen:
             return
         elif not screen.strip():
@@ -410,7 +382,6 @@ def reach_main_menu(g, timeout=240):
 
 
 def select_row(g, label, *, timeout=20):
-    """Move the cursor inside the open menu box onto the row containing label, then activate it."""
     deadline = time.time() + timeout
     while time.time() < deadline:
         rows = [line for line in g.screen().splitlines() if line.count("│") >= 2]
@@ -426,26 +397,22 @@ def select_row(g, label, *, timeout=20):
 
 
 def start_tutorial(g, timeout=300):
-    """New Game > Tutorial, then wait for the tutorial room and dismiss its intro popup."""
     reach_main_menu(g)
-    # The title screen is a tab bar with the selected tab's rows in a box next to it; New Game
-    # holds Tutorial, and picking a row needs the cursor moved onto it, not a hotkey.
     g.keys("n", delay=1)
     if not select_row(g, "Tutorial"):
-        g.keys("Enter", delay=1)  # some layouts need Enter to open the tab's rows first
+        g.keys("Enter", delay=1)
         if not select_row(g, "Tutorial"):
             raise SystemExit("no Tutorial row in the New Game menu\n" + g.screen())
     deadline = time.time() + timeout
     while time.time() < deadline:
         screen = g.screen()
         if "Really quit?" in screen:
-            g.keys("Escape", delay=1)  # a stray quit prompt would eat every later key
+            g.keys("Escape", delay=1)
         elif "Are you SURE" in screen:
             g.keys("Y", delay=1)
         elif "How should death work" in screen:
             g.keys("r", delay=1)
         elif in_game(screen) or ("tutorial" in screen.lower() and "[MOTD]" not in screen):
-            # The lesson is a modal popup; leave it up so the first state dump shows it.
             return
         else:
             time.sleep(0.5)
@@ -453,10 +420,6 @@ def start_tutorial(g, timeout=300):
 
 
 def wait_for_save(userdir, timeout=90):
-    """Wait for the saved world and return its name.
-
-    The title screen renders the Load tab as "LoAd", so the save on disk is the reliable signal.
-    """
     save_dir = Path(userdir) / "save"
     deadline = time.time() + timeout
     while time.time() < deadline:
@@ -468,12 +431,6 @@ def wait_for_save(userdir, timeout=90):
 
 
 def start_tiles(userdir, save_name, seed=None, timeout=180):
-    """Reopen a saved scenario world in the tiles build on a private Xvfb display.
-
-    The tiles build picks its config directory at compile time (XDG_CONFIG_HOME with USE_XDG_DIR,
-    <userdir>/config without it), so the scenario's config is copied to both places and the
-    deterministic tiles options are merged into both.
-    """
     icd = tiles.DEFAULT_LAVAPIPE_ICD
     if not icd.exists():
         raise SystemExit(f"lavapipe ICD not found: {icd} (install the software Vulkan driver)")
@@ -507,17 +464,15 @@ def start_tiles(userdir, save_name, seed=None, timeout=180):
     proc = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=log, stderr=log)
     x11 = None
     try:
-        # The frame must be the loaded world, not the loading screen, and it must be still.
         frame = tiles.wait_for_frame(_Display(display), proc, run, timeout)
         x11 = tiles.X11(display)
         window = x11.find_window(tiles.WINDOW_TITLE_PREFIX)
         if not window:
             raise SystemExit(f"tiles window not found (see {run / 'tiles.log'})")
-        # There is no window manager, so keys must be aimed at the game window explicitly.
         x11.focus_local(window, 40, 40)
     except BaseException:
         if x11:
-            x11.close()  # before Xvfb goes away, or Xlib aborts this process
+            x11.close()
         tiles.stop_process(proc)
         tiles.stop_process(xvfb)
         log.close()
@@ -527,22 +482,11 @@ def start_tiles(userdir, save_name, seed=None, timeout=180):
 
 
 class _Display:
-    """tiles.wait_for_frame only needs the display name on its session argument."""
-
     def __init__(self, display):
         self.display = display
 
 
 def start_scenario(scenario_id, *, mode="curses", scheme="modern", userdir=None, seed=None):
-    """Build a scenario in a fresh private world and return a live ScenarioHandle.
-
-    mode: "curses" keeps the tmux game in the handle's .game; "tiles" saves the prepared world and
-    reopens it in the tiles build under a private Xvfb display, in the handle's .tiles. scheme is
-    written as CONTROL_SCHEME (pass "" to leave the game's own default). seed fixes the world
-    generator when given; it is taken as text (1-64 letters, digits, '.', '_' or '-'), and any
-    other type is stringified so an int seed from argparse still works. userdir defaults to
-    /tmp/bn-playtest/<scenario> and is always rebuilt.
-    """
     scenario = scenario_by_id(scenario_id)
     if mode not in ("curses", "tiles"):
         raise SystemExit(f"unknown mode {mode!r}; use 'curses' or 'tiles'")
@@ -598,21 +542,12 @@ def start_scenario(scenario_id, *, mode="curses", scheme="modern", userdir=None,
 
     save_and_quit(g)
     save_name = wait_for_save(dirpath)
-    # Game.close() would delete the private user directory, so kill the session instead.
     subprocess.run(["tmux", "kill-session", "-t", g.name], stderr=subprocess.DEVNULL)
     run = start_tiles(dirpath, save_name, seed=seed)
     return handle(save_name=save_name, game=None, tiles=run)
 
 
-# ------------------------------------------------------------------ the CLI
-
 def record_session(handle, scenario, scheme):
-    """Write a reproducible session record into the scenario's userdir and a persistent log.
-
-    SESSION.md in the scenario userdir travels with the save while the game is running;
-    an identical record is archived under ~/.local/share/cataclysm-bn/playtests/ so
-    --no-attach runs are not lost.
-    """
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M")
     try:
         sha = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "--short", "HEAD"],
@@ -661,21 +596,14 @@ def record_session(handle, scenario, scheme):
 
 
 def reopen_in_tiles_window(handle):
-    """Hand the prepared save to the tiles build in the user's own display, and wait for it.
-
-    This is the human path behind --tiles: a normal window the reader can play. The agent path uses
-    start_scenario(mode="tiles") instead, which runs headless on a private Xvfb display.
-    """
     g = handle.game
     save_and_quit(g)
     handle.save_name = wait_for_save(handle.userdir)
     handle.close()
-    # Honor the scenario's config with either compile-time config directory.
     xdg = handle.userdir / "xdg"
     shutil.rmtree(xdg, ignore_errors=True)
     shutil.copytree(handle.userdir / "config", xdg / "cataclysm-bn")
     tiles.patch_launch_options(handle.userdir, xdg, {"USE_TILES": "true"})
-    # The tiles binary loads the first save of the world given by --world.
     return subprocess.run([str(tiles_binary()), "--basepath", f"{ROOT}/", "--userdir", f"{handle.userdir}/",
                            "--world", handle.save_name], cwd=ROOT,
                           env={**os.environ, "XDG_CONFIG_HOME": str(xdg)}).returncode
@@ -711,7 +639,6 @@ def main():
         handle.game.close()
         return 0
     if args.tiles:
-        # Reopen the prepared world in the reader's display, so the old blocking --tiles path stays.
         return reopen_in_tiles_window(handle)
     if sys.stdin.isatty() and "TMUX" not in os.environ:
         os.execvp("tmux", ["tmux", "attach", "-t", handle.game.name])

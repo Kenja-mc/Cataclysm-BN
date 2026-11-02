@@ -36,17 +36,12 @@ namespace
 
 using namespace hud_draw;
 
-/// Icon, the need's name and its state; an unmet need replaces "ok" with its own wording.
 struct hit_area {
     rect at;
-    /// Hotbar slot index, or -1 for an overlay that only swallows the click.
     int slot = -1;
 };
-/// Where the last frame drew its overlays, in map-window cells, for click handling.
 auto hits = std::vector<hit_area>();
-/// Where the LOADOUT section drew its hotbar cells, in sidebar cells, for click handling.
 auto loadout_hits = std::vector<hit_area>();
-/// Where the STATUS needs line drew the encumbrance entries, in screen cells.
 auto encumbered_hits = std::vector<hit_area>();
 
 auto edge( const catacurses::window &w ) -> void;
@@ -95,7 +90,6 @@ auto draw_ribbon( const canvas &area, const hud_snapshot::snapshot &s ) -> void
     }
 }
 
-/// The first key bound to `id` on the map, empty when unbound.
 auto key_id( const std::string &id ) -> std::string
 {
     const auto ctxt = input_context( "DEFAULTMODE" );
@@ -103,7 +97,8 @@ auto key_id( const std::string &id ) -> std::string
         return {};
     }
     const auto desc = ctxt.get_desc( id, 1 );
-    return desc == inp_mngr.get_keyname( ' ', input_event_t::keyboard ) ? std::string( _( "spc" ) ) : desc;
+    return desc == inp_mngr.get_keyname( ' ',
+                                         input_event_t::keyboard ) ? std::string( _( "spc" ) ) : desc;
 }
 
 auto key_for( const action_id act ) -> std::string
@@ -116,8 +111,6 @@ struct key_entry {
     std::string label;
 };
 
-/// The keys the current situation needs, centred on one row along the bottom of the map: combat
-/// keys while a hostile is in sight, the everyday ones otherwise.
 auto draw_keys( const canvas &area, const hud_snapshot::snapshot &s ) -> void
 {
     const auto modern = get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
@@ -172,17 +165,17 @@ auto draw_keys( const canvas &area, const hud_snapshot::snapshot &s ) -> void
 }
 
 auto vehicle_card( const canvas &area, const int rows,
-                   std::string summary = {} ) -> catacurses::window
-{
+std::string summary = {} ) -> catacurses::window {
     const auto height = rows + 2;
-    // One row up from the bottom edge, so the key bar keeps the last row of the map.
     const auto at = point( 0, area.height - height - 1 );
     hits.push_back( { .at = { .at = at, .width = 32, .height = height } } );
     auto w = panel( area, {
         .at = at, .width = 32, .height = height
     } );
-    card( w, { .title = _( "VEHICLE" ), .summary = std::move( summary ),
-               .summary_color = pal::accent() } );
+    card( w, {
+        .title = _( "VEHICLE" ), .summary = std::move( summary ),
+        .summary_color = pal::accent()
+    } );
     return w;
 }
 
@@ -194,7 +187,7 @@ auto draw_vehicle( const avatar &you, const canvas &area ) -> void
             return;
         }
         const auto w = vehicle_card( area, static_cast<int>( dash.body.size() ),
-                                    std::move( dash.summary ) );
+                                     std::move( dash.summary ) );
         auto y = 1;
         for( const auto &row : dash.body ) {
             if( !row.icon.empty() ) {
@@ -211,19 +204,20 @@ auto draw_vehicle( const avatar &you, const canvas &area ) -> void
     }
     const auto w = vehicle_card( area, static_cast<int>( rows.size() ) );
     for( auto i = 0; i < static_cast<int>( rows.size() ); ++i ) {
-        text( w, point( 2, 1 + i ), rows[static_cast<size_t>( i )].color, rows[static_cast<size_t>( i )].text );
+        text( w, point( 2, 1 + i ), rows[static_cast<size_t>( i )].color,
+              rows[static_cast<size_t>( i )].text );
     }
 }
 
-/// The LOADOUT section: the held weapon and the hotbar, in the column.
-auto loadout_section( const catacurses::window &w, const avatar &you, const hud_snapshot::snapshot &s ) -> void
+auto loadout_section( const catacurses::window &w, const avatar &you,
+                      const hud_snapshot::snapshot &s ) -> void
 {
     edge( w );
     rule( w, { .title = _( "LOADOUT" ),
                .summary = string_format( "%s kg  %s L", s.weight, s.volume ),
-               .summary_color = pal::muted() } );
+               .summary_color = pal::muted()
+             } );
 
-    // The held weapon: its map symbol, its name, and the ammo it fires.
     text( w, point( 2, 1 ), s.weapon_color, s.weapon_symbol );
     auto x = text( w, point( 4, 1 ), pal::title(), utf8_truncate( s.weapon, 24 ) );
     if( s.gun ) {
@@ -233,28 +227,28 @@ auto loadout_section( const catacurses::window &w, const avatar &you, const hud_
         text( w, point( x + 1, 1 ), pal::text(), glyph::weapon );
     }
 
-    // Hotbar: three cells per row, the digit that uses the slot first. Empty slots still draw, so
-    // the row shows what there is to fill and where.
     constexpr auto cell_w = 14;
     for( auto i = 0; i < hotbar::slots; ++i ) {
         const auto v = hotbar::view( you, i );
         const auto sx = 2 + ( i % 3 ) * cell_w;
         const auto sy = 2 + i / 3;
         loadout_hits.push_back( { .at = { .at = point( getbegx( w ) + sx, getbegy( w ) + sy ),
-                                         .width = cell_w, .height = 1 }, .slot = i } );
+                                          .width = cell_w, .height = 1
+                                        }, .slot = i } );
         const auto ready = v.assigned && v.count > 0;
-        auto cx = text( w, point( sx, sy ), v.wielded ? pal::accent() : pal::heading(), std::to_string( i + 1 ) );
+        auto cx = text( w, point( sx, sy ), v.wielded ? pal::accent() : pal::heading(),
+                        std::to_string( i + 1 ) );
         if( !v.assigned ) {
             text( w, point( cx + 1, sy ), pal::border(), "·" );
             continue;
         }
         cx = text( w, point( cx + 1, sy ), ready ? v.color : pal::border(), " " + v.symbol );
         const auto label = v.name + ( v.count > 1 ? " x" + std::to_string( v.count ) : std::string() );
-        text( w, point( cx + 1, sy ), ready ? pal::title() : pal::muted(), utf8_truncate( label, cell_w - 6 ) );
+        text( w, point( cx + 1, sy ), ready ? pal::title() : pal::muted(), utf8_truncate( label,
+                cell_w - 6 ) );
     }
 }
 
-/// Read once per map frame by the overlays and reused by the sidebar sections drawn after them.
 auto cache = std::optional<hud_snapshot::snapshot>();
 
 auto refresh( const avatar &you ) -> const hud_snapshot::snapshot & // *NOPAD*
@@ -268,14 +262,12 @@ auto current( const avatar &you ) -> const hud_snapshot::snapshot & // *NOPAD*
     return cache ? *cache : refresh( you );
 }
 
-/// Every sidebar section draws a left edge, so the column reads as one sidebar.
 auto edge( const catacurses::window &w ) -> void
 {
     werase( w );
     vline( w, point_zero, getmaxy( w ), pal::border() );
 }
 
-/// The body panel's wound wording, with the first letter up so it heads a row.
 auto sentence( std::string text ) -> std::string
 {
     if( !text.empty() && text.front() >= 'a' && text.front() <= 'z' ) {
@@ -284,7 +276,6 @@ auto sentence( std::string text ) -> std::string
     return text;
 }
 
-/// The needs line: one row that only names what needs action, and says so when nothing does.
 auto needs_line( const catacurses::window &w, const hud_snapshot::snapshot &s ) -> void
 {
     constexpr auto y = 4;
@@ -324,8 +315,6 @@ auto needs_line( const catacurses::window &w, const hud_snapshot::snapshot &s ) 
     if( s.pain_level > 0 ) {
         x = text( w, point( x, y ), s.pain.color, string_format( _( "Pain %d" ), s.pain_level ) ) + 2;
     }
-    // Each wound is named with the limb that carries it, in the wound's own colour, so a bleeding
-    // arm cannot hide behind a calm needs row.
     for( const auto &limb : s.limbs ) {
         if( limb.wound.empty() ) {
             continue;
@@ -333,8 +322,6 @@ auto needs_line( const catacurses::window &w, const hud_snapshot::snapshot &s ) 
         x = text( w, point( x, y ), limb.wound_color, sentence( limb.wound ) );
         x = text( w, point( x + 1, y ), pal::text(), limb.name ) + 2;
     }
-    // The worst encumbered parts come first, in the colour the character sheet gives them; a long
-    // list folds into a count so the row never pushes the log off the section.
     if( s.encumbered.empty() ) {
         return;
     }
@@ -349,17 +336,15 @@ auto needs_line( const catacurses::window &w, const hud_snapshot::snapshot &s ) 
                   string_format( "+%d", static_cast<int>( s.encumbered.size() ) - named ) );
     }
     encumbered_hits.push_back( { .at = { .at = point( getbegx( w ) + start, getbegy( w ) + y ),
-                                        .width = std::max( 1, x - start ), .height = 1 } } );
+                                         .width = std::max( 1, x - start ), .height = 1
+                                       } } );
 }
 
-/// The STATUS section: the original BN limb grid, Stamina, and the needs that need action. It sits
-/// in the column so nothing covers the map.
-auto status_section( const catacurses::window &w, const avatar &you, const hud_snapshot::snapshot &s ) -> void
+auto status_section( const catacurses::window &w, const avatar &you,
+                     const hud_snapshot::snapshot &s ) -> void
 {
     edge( w );
     rule( w, { .title = _( "STATUS" ), .summary = s.stance, .summary_color = s.stance_color } );
-    // Two rows of three, the limbs laid out as they sit on the body: every limb keeps its own bar
-    // and the limbs panel's colours, so the one that was hit stands out.
     constexpr auto column_step = 14;
     static const auto grid = std::array{
         bodypart_str_id( "arm_l" ), bodypart_str_id( "head" ), bodypart_str_id( "arm_r" ),
@@ -377,15 +362,15 @@ auto status_section( const catacurses::window &w, const avatar &you, const hud_s
     }
     const auto stamina = s.stamina_max > 0 ? s.stamina * 100 / s.stamina_max : 0;
     vital( w, { .y = 3, .icon = glyph::stamina, .color = pal::stamina(), .value = s.stamina,
-                .max = s.stamina_max, .label = string_format( _( "Stamina %d%%" ), stamina ) } );
-    // Walking is the normal reading, so only a slowed turn is worth the cells.
+                .max = s.stamina_max, .label = string_format( _( "Stamina %d%%" ), stamina )
+              } );
     if( s.speed != 100 ) {
         text( w, point( 34, 3 ), pal::muted(), string_format( _( "Speed %d" ), s.speed ) );
     }
     needs_line( w, s );
 }
 
-} // namespace
+}
 
 auto around_rows( const avatar &you ) -> int
 {
@@ -399,7 +384,6 @@ auto minimap_rows() -> int
         return 0;
     }
     const auto chosen = get_option<int>( "PIXEL_MINIMAP_HEIGHT" );
-    // The minimap gives way first, so every section below it still fits on the screen.
     const auto rest = 1 + status_rows + loadout_rows +
                       around_rows( get_avatar() ) + sidebar::log_min_rows;
     return std::clamp( chosen > 0 ? chosen : 12, 6, std::max( 6, TERMY - rest ) );
@@ -440,8 +424,6 @@ auto draw_minimap( avatar &, const catacurses::window &w ) -> void
 {
     edge( w );
     wnoutrefresh( w );
-    // The pixel minimap is drawn into a window one column inside the sidebar edge, so it never
-    // overlaps the rule and edge lines.
     static auto inner = catacurses::window();
     const auto at = point( getbegx( w ) + 1, getbegy( w ) );
     if( !inner || getmaxx( inner ) != getmaxx( w ) - 1 || getmaxy( inner ) != getmaxy( w ) ||
@@ -458,9 +440,6 @@ auto clicked( avatar &you, const point &cell ) -> bool
     if( !active() ) {
         return false;
     }
-    // The hotbar lives in the column now: a click there uses a slot, a click on the encumbrance
-    // entries opens the armor screen, and any other click on the column stops here instead of
-    // reaching the map behind it.
     if( get_option<std::string>( "SIDEBAR_POSITION" ) == "right" ) {
         const auto sidebar_x = TERMX - panel_manager::get_manager().get_width_right();
         if( cell.x >= sidebar_x ) {
@@ -483,11 +462,10 @@ auto clicked( avatar &you, const point &cell ) -> bool
             return true;
         }
     }
-    // Later entries sit on top of earlier ones: the vehicle card over the map it sits on.
-    for( auto it = hits.rbegin(); it != hits.rend(); ++it ) {
-        const auto &hit = *it;
+    for( const auto &hit : hits | std::views::reverse ) {
         const auto &r = hit.at;
-        if( cell.x < r.at.x || cell.y < r.at.y || cell.x >= r.at.x + r.width || cell.y >= r.at.y + r.height ) {
+        if( cell.x < r.at.x || cell.y < r.at.y || cell.x >= r.at.x + r.width ||
+            cell.y >= r.at.y + r.height ) {
             continue;
         }
         if( hit.slot >= 0 ) {
@@ -525,11 +503,10 @@ auto draw_around( avatar &you, const catacurses::window &w ) -> void
     rule( w, {
         .title = _( "AROUND" ),
         .summary = s.seen.empty() ? std::string( _( "nothing in sight" ) ) :
-                   hostiles > 0 ? string_format( _( "%d hostile" ), hostiles ) :
-                   string_format( _( "%d in sight" ), static_cast<int>( s.seen.size() ) ),
+        hostiles > 0 ? string_format( _( "%d hostile" ), hostiles ) :
+        string_format( _( "%d in sight" ), static_cast<int>( s.seen.size() ) ),
         .summary_color = hostiles > 0 ? pal::danger() : pal::muted()
     } );
-    // Who is there: symbol, name, direction and distance, nearest hostiles first.
     const auto rows = getmaxy( w ) - 1;
     const auto shown = std::min( static_cast<int>( s.seen.size() ), rows );
     const auto room = getmaxx( w ) - 2;
@@ -566,10 +543,8 @@ auto draw_log( avatar &you, const catacurses::window &w ) -> void
     }
     const auto first = std::max( 0, static_cast<int>( lines.size() ) - rows );
     for( auto i = first; i < static_cast<int>( lines.size() ); ++i ) {
-        // Each message keeps the log's own colour: its type while fresh, gray once old.
         text( w, point( 2, 1 + i - first ), pal::text(), lines[static_cast<size_t>( i )] );
     }
     wnoutrefresh( w );
 }
-
-} // namespace hud_fusion
+}

@@ -1,4 +1,3 @@
-"""Default Smash keys pulp the chosen corpse without moving or damaging the floor."""
 from aim_reticle import action_clock
 from contextual_hub import contextual_game, contextual_setup, select_tile
 from fixtures import shared_game
@@ -6,13 +5,11 @@ from helpers import HELPERS, bub_pos, wait_until
 
 
 def finish_smash(game):
-    """Answer the distraction prompt a wandering monster can raise mid-smash."""
     if wait_until(lambda: "Stop smashing?" in game.screen(), 3):
         game.keys("I", delay=0.5)
 
 
 def pulp_selected_direction(game, key, direction):
-    # The default no-revival mod makes zombie corpses ineligible; bears still zombify.
     assert game.lua(
         "M:create_corpse_at(here(1,0),MonsterTypeId.new('mon_bear')) "
         "M:create_corpse_at(here(-1,0),MonsterTypeId.new('mon_bear')) out('ok')") == ["ok"]

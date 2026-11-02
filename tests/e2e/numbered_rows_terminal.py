@@ -1,4 +1,3 @@
-"""Terminal compatibility for tiles-only numbered rows; native cases live in numbered_rows.py."""
 import re
 from fixtures import shared_game
 from helpers import HELPERS, arena, count_carried, empty_inventory, spawn

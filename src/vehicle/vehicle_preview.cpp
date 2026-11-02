@@ -149,7 +149,6 @@ auto vehicle_preview_window::mount_delta_at(point cell) const -> std::optional<p
     if (cell.x < 0 || cell.y < 0 || cell.x >= win_cols || cell.y >= win_lines) {
         return std::nullopt;
     }
-    // display() anchors each part tile's top-left at center + mount * tile size.
     const int tile_w = std::max(1, tilecontext->get_tile_width());
     const int tile_h = std::max(1, tilecontext->get_tile_height());
     const point center((win_cols * termx_pixels) / 2, (win_lines * termy_pixels) / 2);

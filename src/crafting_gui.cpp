@@ -469,7 +469,6 @@ auto recipe_info( const recipe_info_options &opts ) -> std::vector<std::string>
     std::ostringstream oss;
 
     const inventory &crafting_inv = crafter.crafting_inventory();
-    // Friendly duration of the batches of `r`, at the crafter's own speed.
     const auto craft_time_string = [&crafter]( const recipe & r, const int batches ) {
         const auto expected_turns = crafter.expected_time_to_craft( r, batches )
                                     / to_moves<int>( 1_turns );
@@ -676,11 +675,6 @@ auto recipe_info( const recipe_info_options &opts ) -> std::vector<std::string>
         result.insert( result.end(), tools.begin(), tools.end() );
         result.insert( result.end(), comps.begin(), comps.end() );
 
-        // Panel: the recipe for a missing part, with the real units one batch
-        // yields and an honest time for the batches still needed, followed by
-        // the prerequisites of those batches.  Known producers that cannot be
-        // crafted right now are shown as blocked, with what they are missing.
-        // Nothing here promises the whole goal can be crafted.
         if( part_chains ) {
             const auto &filter = recp.get_component_filter( recipe_filter_flags::none );
             auto first_part = true;
@@ -693,7 +687,6 @@ auto recipe_info( const recipe_info_options &opts ) -> std::vector<std::string>
                 }
                 for( const auto &comp : group ) {
                     const auto *producer = craft_chain::find_part_recipe( query, comp );
-                    // A known producer can exist without being craftable right now.
                     const auto *known_producer = producer != nullptr
                                                  ? nullptr
                                                  : craft_chain::find_known_producer( query, comp );
@@ -705,7 +698,6 @@ auto recipe_info( const recipe_info_options &opts ) -> std::vector<std::string>
                         result.push_back( std::string() );
                     }
                     first_part = false;
-                    // Units are wide: counts and batch sizes are a product.
                     const auto needed = static_cast<std::int64_t>( comp.count ) * batch_size;
                     auto have = std::int64_t{ 0 };
                     if( comp.get_component_type() == component_type::ITEM ) {
@@ -716,14 +708,11 @@ auto recipe_info( const recipe_info_options &opts ) -> std::vector<std::string>
                         }
                     }
                     const auto missing = std::max<std::int64_t>( 0, needed - have );
-                    // Real output units, so charged, contained and byproduct
-                    // results all count towards one batch of the part.
                     const auto units = craft_chain::units_per_batch( query, *part, comp.type );
                     if( units <= 0 ) {
                         continue;
                     }
                     const auto batches = missing / units + ( missing % units != 0 );
-                    // ponytail: totals through 50 producer batches, expand when native estimates support larger bounded totals.
                     const auto per_batch = batches > 50;
                     const auto estimate_batches = per_batch ? 1 : static_cast<int>( batches );
                     auto part_oss = std::ostringstream();
@@ -751,8 +740,6 @@ auto recipe_info( const recipe_info_options &opts ) -> std::vector<std::string>
                         const auto note = foldstring( _( "  Prerequisites per batch:" ), fold_width );
                         result.insert( result.end(), note.begin(), note.end() );
                     }
-                    // What the part still needs for the batches above: components
-                    // with their alternatives, tools and qualities alike.
                     const auto &part_req = part->simple_requirements();
                     const auto &part_filter = part->get_component_filter( recipe_filter_flags::none );
                     for( const auto &line : part_req.blocker_lines( crafting_inv, part_filter,
@@ -795,7 +782,7 @@ auto recipe_info( const recipe_info_options &opts ) -> std::vector<std::string>
     return result;
 }
 
-} // namespace
+}
 
 static input_context make_crafting_context( bool highlight_unread_recipes )
 {
@@ -848,9 +835,6 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
     } recipe_info_cache;
     int recipe_info_scroll = 0;
 
-    // Part lookups are cached here and shared across every goal the menu shows,
-    // so browsing a long list never searches the same component twice.  Cleared
-    // when the menu regenerates (inventory, crafter or known recipes changed).
     auto prod_cache = craft_chain::production_info{};
 
     const auto cached_recipe_info = [&]( const recipe_info_options & opts )
@@ -946,8 +930,6 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
     std::vector<std::string> keybinding_tips;
     int keybinding_x = 0;
     ui_adaptor ui;
-    // Recomputed from the input loop when the selection changes, so the key hints below can
-    // mention CRAFT_PARTS only while it can do something.
     const recipe *parts_hint_for = nullptr;
     bool parts_hint_available = false;
 
@@ -1029,13 +1011,9 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
     std::vector<const recipe *> current;
     std::vector<int> indent;
     std::vector<availability> available;
-    // Lazily computed part markers, keyed by recipe pointer; cleared on recalc
-    // (recalc fires when inventory changes, e.g. picking up items or crafting).
     std::unordered_map<const recipe *, std::string> part_markers;
     int line = 0;
-    // Last recipe row picked with the mouse, for click-then-confirm.
     int last_clicked_recipe = -1;
-    // Geometry of the drawn scrollbars, refreshed by on_redraw.
     int recipe_info_total_lines = 0;
     int recipe_info_scrollbar_x = -1;
     int recipe_list_click_end = 32;
@@ -1062,7 +1040,6 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
     const auto &available_recipes = crafter.get_available_recipes( crafting_inv, &helpers );
     std::unordered_map<const recipe *, availability> availability_cache( available_recipes.size() );
 
-    // Open on something useful rather than an empty favorites list.
     if( available_recipes.favorite().empty() ) {
         if( !available_recipes.recent().empty() ) {
             for( size_t i = 0; i < craft_subcat_list[tab.cur()].size() &&
@@ -1194,10 +1171,6 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
                 mvwprintz( w_data, print_from + offset, new_recipe_str_col, "%s", new_recipe_str );
                 rcp_name_trim_width -= new_recipe_str_width + 1;
             }
-            // List-level part marker: flag recipes whose missing components
-            // include one that can be crafted right now (can_make) or has a known
-            // producer that is unavailable (known).  Lazily computed for visible
-            // rows only; cache cleared on recalc (inventory/menu generation).
             std::string part_marker;
             if( !batch && !current[i]->is_nested() && get_option<bool>( "CRAFTING_PART_CHAINS" )
                 && !available[i].can_craft ) {
@@ -1241,7 +1214,6 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
                 }
                 part_marker = it->second;
             }
-            // Trim the recipe name so the marker stays on screen next to it.
             const int part_marker_width = utf8_width( part_marker );
             if( part_marker_width > 0 ) {
                 rcp_name_trim_width = std::max( 0, rcp_name_trim_width - part_marker_width );
@@ -1674,9 +1646,6 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
                     return availability_cache.at( e );
                 } );
 
-                // Clear the lazy part state: markers are computed on demand for
-                // visible rows only, and the shared producer cache is only valid
-                // for the inventory and crafter this menu regeneration used.
                 part_markers.clear();
                 prod_cache.clear();
             }
@@ -1755,7 +1724,6 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
         std::string action = ctxt.handle_input();
         const bool mouse_select = modern && action == "SELECT";
         if( mouse_select ) {
-            // get_coordinates() is relative to the window centre.
             const auto cell_in = [&]( const catacurses::window & win ) -> std::optional<point> {
                 const auto mouse = ctxt.get_coordinates( win );
                 if( !mouse )
@@ -1799,7 +1767,6 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
                 }
             }
             if( consumed ) {
-                // Scrollbar clicks never craft or select the row underneath.
                 last_clicked_recipe = -1;
             } else {
                 bool on_tab = false;
@@ -1839,7 +1806,6 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
                     if( cell->y < dataLines && cell->x >= 2 && cell->x < recipe_list_click_end &&
                         row >= 0 && row < static_cast<int>( current.size() ) ) {
                         if( row == line && last_clicked_recipe == row ) {
-                            // Second click on the same row performs the keyboard action.
                             action = "CONFIRM";
                             last_clicked_recipe = -1;
                         } else {
@@ -1855,7 +1821,6 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
                 }
             }
         } else {
-            // Keyboard navigation, filters and tab changes invalidate the click pair.
             last_clicked_recipe = -1;
         }
         if( action == "SCROLL_UP" ) {
@@ -2271,9 +2236,7 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
                 popup( _( "That recipe is hidden, so it cannot be shown here." ) );
                 continue;
             }
-            // Leaving batch mode keeps the menu's single-selection semantics.
             batch = false;
-            // Filter to the part and select it, the same way RELATED_RECIPES moves the cursor.
             filterstring = part->result_name();
             recalc_unread = highlight_unread_recipes;
             jump_to = part;
@@ -2285,7 +2248,6 @@ const recipe *select_crafting_recipe( int &batch_size_out, Character &crafter )
             line = 0;
         }
 
-        // Refresh the "craft parts" hint; its text is only built on resize.
         const recipe *const hovered = !current.empty() && line >= 0 ? current[line] : nullptr;
         if( hovered != parts_hint_for ) {
             parts_hint_for = hovered;
@@ -2488,7 +2450,6 @@ static void draw_recipe_tabs( const catacurses::window &w, const std::string &ta
 
             draw_tabs( w, tabs, real_tab, width_for_tabs );
 
-            // Mirror draw_tabs() placement so clicks land on the drawn tab.
             const int tab_step = 3;
             int total_used_width = 0;
             int current = 0;

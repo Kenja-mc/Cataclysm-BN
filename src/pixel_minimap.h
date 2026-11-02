@@ -35,9 +35,7 @@ struct pixel_minimap_settings {
     int beacon_blink_interval = 0;
     bool square_pixels = true;
     bool scale_to_fit = false;
-    // Zoom level: 1x (default), 2x, 4x
     pixel_minimap_zoom zoom = pixel_minimap_zoom::zoom_1x;
-    // Show yellow markers on tiles with visible items
     bool item_markers = false;
 };
 

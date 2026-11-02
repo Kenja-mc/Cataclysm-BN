@@ -1,15 +1,4 @@
 #!/usr/bin/env bash
-# A Jev-only curses playtest: the fast local loop for judging a change by playing it.
-#
-# The key never reaches argv or the transcript. It comes from $XPL_SK_AGENT, from the file named
-# by $OPENROUTER_ENV_FILE, or from the omp provider key file, which is exported only into this
-# process tree.
-#
-#   bin/playtest-jev <scenario> [agent_playtest.py arguments]
-#   bin/playtest-jev --list
-#
-# Defaults suit a quick look: curses, the modern scheme, `jev-latest`, 6 turns, a 15 minute wall
-# clock, and a fresh report under out/playtests/. Any of them can be overridden.
 set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)

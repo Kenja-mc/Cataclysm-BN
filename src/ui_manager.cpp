@@ -332,14 +332,11 @@ void ui_adaptor::redraw_invalidated()
         return;
     }
 
-    // Advance a finished music track even when no turn is being processed
-    // (menus, inventory, or simply standing still).
     music::pump();
 
     static auto last_context = size_t{ 0 };
     const auto context = input_context::active_context_version();
     if( last_context != context ) {
-        // Also restore the footer's old screen area when a smaller menu closes.
         for( ui_adaptor &ui : ui_stack ) {
             ui.invalidated = true;
         }

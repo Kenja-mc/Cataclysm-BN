@@ -493,7 +493,6 @@ static void achievement_attained( const achievement *a )
 // This is the main game set-up process.
 namespace
 {
-// Zoom values wrap inside these bounds; the numbering is historical.
 constexpr int MAXIMUM_ZOOM_LEVEL = 4;
 constexpr int MINIMUM_ZOOM_LEVEL = 64;
 
@@ -502,7 +501,6 @@ auto zoom_preference_path() -> std::string
     return PATH_INFO::config_dir() + "tileset_zoom";
 }
 
-/// The zoom the player left the game at, read before the tileset is built.
 auto stored_tileset_zoom() -> float
 {
     std::ifstream in( zoom_preference_path() );
@@ -513,7 +511,7 @@ auto stored_tileset_zoom() -> float
     }
     return DEFAULT_TILESET_ZOOM;
 }
-} // namespace
+}
 
 game::game() :
     map_ptr( 1 ),
@@ -880,7 +878,6 @@ void game::load_map( const point_abs_sm &pos_sm, const bool pump_events )
     update_active_load_regions( new_dim_id, pos_sm,
                                 pos_sm + point_rel_sm( g_mapsize, g_mapsize ) );
 
-    // Replay only simulated submaps, not the mapbuffer's retained or border cache.
     {
         // Ensure a tracker exists for this dimension.
         if( grid_trackers_.find( new_dim_id ) == grid_trackers_.end() ) {
@@ -890,9 +887,6 @@ void game::load_map( const point_abs_sm &pos_sm, const bool pump_events )
         }
         auto &tracker = *grid_trackers_[new_dim_id];
         tracker.clear();
-        // Snapshot resident simulated positions before replaying: on_submap_loaded()
-        // loads further submaps into the buffer's unordered_map, which would
-        // invalidate an iterator held over it.
         std::vector<tripoint_abs_sm> simulated_resident;
         for( const auto &[raw_pos, sm_ptr] : MAPBUFFER_REGISTRY.get( new_dim_id ) ) {
             const auto sm_pos = tripoint_abs_sm( raw_pos );
@@ -2364,7 +2358,6 @@ bool game::do_turn()
                 if( u.activity ) {
                     const auto activity_moves_before = u.moves;
                     process_activity();
-                    // A multi-turn activity spends turns too: let old sound markers age out.
                     if( !soundperf && u.moves != activity_moves_before ) {
                         sounds::reset_markers();
                     }
@@ -2552,8 +2545,6 @@ bool game::do_turn()
     }
     {
         ZoneScopedN( "do_turn_sfx" );
-        // Select the context first: do_danger_music() yields the old danger
-        // ambience to the danger playlist when the latter is playing.
         music::update();
         sfx::do_danger_music();
         sfx::do_vehicle_engine_sfx();
@@ -3595,14 +3586,10 @@ void game::handle_key_blocking_activity()
 // Returns true if input requires breaking out into a game action.
 namespace
 {
-/// Mouse input is scaled pixels in tiles and screen cells in the terminal; the HUD windows
-/// are laid out in map-window cells.
 auto map_window_cell( const input_event &event, const catacurses::window &w ) -> point
 {
 #if defined(TILES)
-    // HUD windows are laid out in standard-font terminal cells, not map-tile cells.
     const auto dim = get_window_dimensions( w );
-    // A non-terrain window reports the standard-font cell, which is what HUD windows use.
     const auto cell = get_window_dimensions( point_zero, point( 1, 1 ) ).scaled_font_size;
     const auto fx = std::max( 1, cell.x );
     const auto fy = std::max( 1, cell.y );
@@ -3612,7 +3599,7 @@ auto map_window_cell( const input_event &event, const catacurses::window &w ) ->
     return point( event.mouse_pos.x - getbegx( w ), event.mouse_pos.y - getbegy( w ) );
 #endif
 }
-} // namespace
+}
 
 auto game::handle_mouseview( input_context &ctxt, std::string &action,
                              const int poll_timeout ) -> bool
@@ -3622,8 +3609,6 @@ auto game::handle_mouseview( input_context &ctxt, std::string &action,
     const auto cursor_panning = get_option<bool>( "CURSOR_PANNING" );
     const auto edge_scroll = cursor_panning ? get_option<int>( "EDGE_SCROLL" ) : -1;
     const auto pan_timeout = edge_scroll;
-    // A locked selection owns the inspector and the only highlight. The pointer cannot
-    // replace it, and edge panning cannot slide the view away under it.
     const auto selection_locked = aim_reticle::active();
 
     do {
@@ -3636,8 +3621,6 @@ auto game::handle_mouseview( input_context &ctxt, std::string &action,
                                  : poll_timeout;
             action = ctxt.handle_input( timeout );
         }
-        // The fusion overlays own their cells: a click on a hotbar slot uses it, any other click on
-        // an overlay is swallowed, and none of them reaches the map behind.
         if( hud_fusion::active() && ctxt.get_raw_input().type == input_event_t::mouse ) {
             const auto &raw = ctxt.get_raw_input();
             const auto left = std::ranges::find( raw.sequence, MOUSE_BUTTON_LEFT ) !=
@@ -3649,8 +3632,6 @@ auto game::handle_mouseview( input_context &ctxt, std::string &action,
                 continue;
             }
         }
-        // Floating HUD windows own their cells: a click never reaches the map behind them,
-        // and pointer motion moves a grabbed window instead of the look cursor.
         if( hud_windows::active() && ctxt.get_raw_input().type == input_event_t::mouse ) {
             const auto &raw = ctxt.get_raw_input();
             const auto left = std::ranges::find( raw.sequence, MOUSE_BUTTON_LEFT ) !=
@@ -3670,9 +3651,6 @@ auto game::handle_mouseview( input_context &ctxt, std::string &action,
             if( consumed ) {
                 liveview.hide();
                 ui_manager::redraw();
-                // `continue` in a do/while only re-tests the condition, which would exit with
-                // the click action and let handle_action run it on the map.  Keep waiting
-                // instead, so a consumed click never reaches the map.
                 action = "MOUSE_MOVE";
                 continue;
             }
@@ -3682,8 +3660,6 @@ auto game::handle_mouseview( input_context &ctxt, std::string &action,
         if( action == "MOUSE_MOVE" ) {
             ZoneScopedN( "handle_mouseview_mouse_move" );
             if( selection_locked ) {
-                // Moving the pointer cannot move what is already locked. A click is a new
-                // input and still changes the selection when it is handled.
                 last_cursor_pan_direction = tripoint_rel_ms::zero();
                 continue;
             }
@@ -3707,7 +3683,6 @@ auto game::handle_mouseview( input_context &ctxt, std::string &action,
         }
     } while( action == "MOUSE_MOVE" ||
              ( action == "ANY_INPUT" && ctxt.get_raw_input().type == input_event_t::mouse ) );
-    // Cursor panning: continue panning when the cursor rests at the edge.
     if( action == "TIMEOUT" && !selection_locked && cursor_pan_view( ctxt ) ) {
         const std::optional<tripoint_bub_ms> panned_pos = ctxt.get_coordinates( w_terrain );
         tile_selection::hover( u, m, panned_pos );
@@ -3715,7 +3690,6 @@ auto game::handle_mouseview( input_context &ctxt, std::string &action,
     }
 
     if( action != "TIMEOUT" ) {
-        // A click is resolved against the hovered tile, which keeps its pending confirmation.
         if( ctxt.get_raw_input().type == input_event_t::mouse && tile_selection::enabled() ) {
             return false;
         }
@@ -4204,7 +4178,6 @@ bool game::try_get_right_click_action( action_id &act, const tripoint_bub_ms &mo
         }
 
         // TODO: Add weapon range check. This requires weapon to be reloaded.
-        // Modern names the clicked creature here; classic leaves last_target to upstream's aim UI.
         if( get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
             u.last_target = shared_from( *mon );
         }
@@ -4954,7 +4927,6 @@ void game::disp_NPCs()
 // A little helper to draw footstep glyphs.
 namespace
 {
-/// Colour of a heard-sound marker: by kind, dimmer as it ages.
 auto footstep_color( const map_overlay::overlay &mark ) -> nc_color
 {
     if( mark.age >= 2 ) {
@@ -4968,10 +4940,8 @@ auto footstep_color( const map_overlay::overlay &mark ) -> nc_color
     return violent ? c_light_red : talk ? c_light_cyan : c_yellow;
 }
 
-/// Glyph of a heard-sound marker, smaller once it is stale.
 auto footstep_glyph( const map_overlay::overlay &mark ) -> std::string
 {
-    // Direction wins: a stale marker on another level still has to say which way it is.
     if( mark.z_offset != 0 ) {
         return mark.z_offset > 0 ? "^" : "v";
     }
@@ -4980,7 +4950,7 @@ auto footstep_glyph( const map_overlay::overlay &mark ) -> std::string
     }
     return "?";
 }
-} // namespace
+}
 
 static void draw_footsteps( const catacurses::window &window, const tripoint_rel_ms &offset,
                             const std::vector<map_overlay::overlay> &overlays )
@@ -5263,8 +5233,6 @@ void game::draw( ui_adaptor &ui )
             }
         }
     }
-    // Terminal boxes go into the map window; tiles boxes are their own windows on top of the
-    // map, so they must come after the map refresh that paints the tiles.
     const auto fusion = hud_fusion::active();
     if( !is_draw_tiles_mode() && !fusion ) {
         hud_boxes::draw( u, w_terrain );
@@ -5273,7 +5241,6 @@ void game::draw( ui_adaptor &ui )
         ZoneScopedN( "game_draw_wrefresh" );
         wnoutrefresh( w_terrain );
     }
-    // The fusion overlays are their own windows in both builds, painted over the refreshed map.
     if( fusion ) {
         hud_fusion::draw( u, w_terrain );
     } else if( is_draw_tiles_mode() ) {
@@ -5298,9 +5265,6 @@ void game::draw_panels( bool force_draw )
     auto &mgr = panel_manager::get_manager();
     int y = 0;
     const bool sidebar_right = get_option<std::string>( "SIDEBAR_POSITION" ) == "right";
-    // Panels do not cover every sidebar cell (a panel may be hidden or the layout may leave
-    // gaps), so clear the column first.  Otherwise a previous full-screen UI, such as the
-    // overmap legend, stays visible between the panels.
     const int sidebar_width = sidebar_right ? mgr.get_width_right() : mgr.get_width_left();
     if( sidebar_width > 0 ) {
         static auto sidebar_bg = catacurses::window();
@@ -5477,7 +5441,6 @@ void game::draw_ter( const tripoint_bub_ms &center, const bool looking, const bo
         draw_critter( critter, center );
     }
 
-    // The keyboard auto-travel mode also fills destination_preview; only mouse walking is optional.
     if( ( get_option<bool>( "MOUSE_MOVE" ) || u.is_auto_moving() ) &&
         !destination_preview.empty() && u.view_offset.z() == 0 ) {
         // Draw auto-move preview trail
@@ -5498,7 +5461,6 @@ void game::draw_ter( const tripoint_bub_ms &center, const bool looking, const bo
         m.drawsq( w_terrain, *hovered, drawsq_params().highlight( true ).center( center ) );
     }
 
-    // Keep selection visible after the mouse leaves.
     for( const auto &overlay : overlays ) {
         switch( overlay.kind ) {
             case map_overlay::overlay_kind::reticle:
@@ -5523,8 +5485,6 @@ void game::draw_ter( const tripoint_bub_ms &center, const bool looking, const bo
         draw_veh_dir_indicator( false );
         draw_veh_dir_indicator( true );
     }
-    // Drawn before the HUD boxes, so a box in a corner hides an arrow under it
-    // instead of the arrow being drawn over the box.
     for( const auto &arrow : enemy_indicators::map_arrows( u, TERRAIN_WINDOW_WIDTH,
             TERRAIN_WINDOW_HEIGHT ) ) {
         mvwprintz( w_terrain, point( POSX, POSY ) + arrow.offset, arrow.color, arrow.glyph );
@@ -6052,7 +6012,6 @@ auto game::mon_info_update() -> void
     mon_visible.nearby_hostile_count = 0;
     mon_visible.combat_hostile_count = 0;
     mon_visible.offscreen_hostiles = {};
-    // Distance to the nearest off-screen hostile per compass direction.
     auto offscreen_nearest = std::array<int, 8> {};
     const int combat_bubble_range = SEEX * ( get_option<int>( "COMBAT_BUBBLE_SIZE" ) + 1 );
 
@@ -6152,8 +6111,6 @@ auto game::mon_info_update() -> void
         const auto matt = critter.attitude( &u );
         const auto player_attitude = player_attitude_from( matt );
 
-        // Off-screen hostiles become the map-edge arrows; index 8 means the map
-        // window shows the monster already.
         if( index < 8 && ( MATT_ATTACK == matt || MATT_FOLLOW == matt ) ) {
             auto &offscreen = mon_visible.offscreen_hostiles[compass_index];
             offscreen.count++;
@@ -6230,9 +6187,6 @@ auto game::mon_info_update() -> void
         const auto [index, compass_index] = visible_info( guy.bub_pos() );
         mon_visible.visible_count_by_dir[compass_index]++;
 
-        // Off-screen hostiles become the map-edge arrows; index 8 means the map
-        // window shows the survivor already. A hostile survivor counts as close
-        // enough to matter within safe mode's own distance.
         if( index < 8 && guy.get_attitude() == NPCATT_KILL ) {
             auto &offscreen = mon_visible.offscreen_hostiles[compass_index];
             offscreen.count++;
@@ -6298,7 +6252,6 @@ auto game::mon_info_update() -> void
             cancel_activity_or_ignore_query( distraction_type::hostile_spotted_far, _( "Monsters spotted!" ) );
         }
         turnssincelastmon = 0;
-        // Hostile survivors always count; monsters only when they can reach you soon.
         const auto survivor_seen = std::cmp_less( new_seen_mon.size(), newseen );
         if( safe_mode == SAFE_MODE_ON &&
             ( survivor_seen || smart_safemode::any_threatens( new_seen_mon, u ) ) ) {
@@ -8593,11 +8546,6 @@ void game::control_vehicle()
             veh_part = vp->part_index();
         }
     } else {
-        // A remotely controlled vehicle has no part under the avatar.  Passing -1 to the
-        // part-index lookups below indexes parts out of bounds, which crashed on large
-        // vehicles (#5413).  Prefer real controls: cam_control is REMOTE_CONTROLS without
-        // CONTROLS and can precede the controls part, so the first remote part may not
-        // satisfy the CONTROLS lookup.
         const auto controls_parts = veh->get_avail_parts( "CONTROLS" );
         if( !controls_parts.empty() ) {
             const auto part = *controls_parts.begin();
@@ -8614,7 +8562,6 @@ void game::control_vehicle()
             }
         }
     }
-    // use_controls() itself accepts a remote vehicle with only REMOTE_CONTROLS.
     if( veh != nullptr && veh->player_in_control( u ) &&
         ( remote || veh->avail_part_with_feature( veh_part, "CONTROLS", true ) >= 0 ) ) {
         veh->use_controls( controls_pos );
@@ -9164,11 +9111,9 @@ auto game::examine() -> action_id
     const auto contextual = get_option<bool>( "CONTEXTUAL_INTERACT" ) &&
                             get_option<std::string>( "CONTROL_SCHEME" ) == "modern";
     const auto selected = contextual ? aim_reticle::pos() : std::nullopt;
-    // While driving, Space is the handbrake: the vehicle menu has its own key.
     const optional_vpart_position vp = m.veh_at( u.bub_pos() );
     if( vp && vp->vehicle().player_in_control( u ) && !selected ) {
         const vehicle &veh = vp->vehicle();
-        // A standstill brake would only cost a turn and print a message.
         if( veh.velocity != 0 || veh.cruise_velocity != 0 ) {
             handbrake();
         }
@@ -9187,8 +9132,6 @@ auto game::examine() -> action_id
             tile_selection::interact_at( u, *selected, actions );
             return deferred;
         }
-        // Nothing aimed: act on the tile the player last pressed toward, else list the vicinity.
-        // A bare floor ahead only offers jump and smash, which would hide the useful list.
         if( const auto faced = tile_selection::facing_tile( u );
             faced && tile_selection::reachable( u, *faced ) ) {
             const auto choices = tile_selection::interact_choices( u, *faced, true );
@@ -9205,8 +9148,6 @@ auto game::examine() -> action_id
         }
     }
 
-    // Interactable tiles are highlighted, but any adjacent tile may be picked to have
-    // it described (e.g. "That is a dirt"); choose_adjacent_highlight would reject the rest.
     std::vector<tripoint_bub_ms> valid;
     for( const tripoint_bub_ms &p : m.points_in_radius( u.bub_pos(), 1 ) ) {
         if( !m.obstructed_by_vehicle_rotation( u.bub_pos(), p ) && can_examine_at( p ) ) {
@@ -9479,7 +9420,6 @@ void game::pickup( const tripoint_bub_ms &p )
     } );
     add_draw_callback( hilite_cb );
 
-    // A tile holding one item needs no picker: take it the way pickup-at-feet does.
     if( std::ranges::distance( m.i_at( p ) ) == 1 ) {
         pickup::pick_up( p, 1 );
         return;
@@ -9669,7 +9609,6 @@ void game::print_all_tile_info( const tripoint_bub_ms &lp, const catacurses::win
         case VIS_LIT:
         case VIS_HIDDEN:
             print_visibility_info( w_look, column, line, visibility );
-            // What the player remembers of an unseen tile is still worth reading.
             if( inbounds ) {
                 const auto &memory = u.get_memorized_tile( bub_to_abs( lp ) );
                 const auto remembered = furn_str_id( memory.tile ).is_valid() ?
@@ -10020,7 +9959,6 @@ bool game::is_zone_submap_grid_overlay_enabled() const
     return zone_submap_grid_overlay;
 }
 
-/// A clickable shortcut label: window column range and the action it runs.
 struct zones_shortcut_button {
     int x_min = 0;
     int x_max = 0;
@@ -10043,8 +9981,6 @@ static void zones_manager_shortcuts( const catacurses::window &w_info, const boo
                                 .action = action } );
         }
     };
-    // Split one "<+->" style label where the arrows end: the left part runs the
-    // first action, the rest the second.
     const auto record_split = [&]( int x, int width, int split, int y, const std::string & first,
     const std::string & second ) {
         if( buttons != nullptr ) {
@@ -10658,13 +10594,10 @@ void game::zones_manager()
                     if( cell.y >= 0 && cell.y < max_rows && start_index + cell.y < zone_cnt ) {
                         const int idx = start_index + cell.y;
                         if( mouse_row && *mouse_row == idx ) {
-                            // A second click on the same row runs the row's Enter
-                            // action; editing keeps its usual menus.
                             active_index = idx;
                             action = "CONFIRM";
                             mouse_row.reset();
                         } else {
-                            // A click only selects the zone.
                             active_index = idx;
                             mouse_row = idx;
                         }
@@ -10688,7 +10621,6 @@ void game::zones_manager()
                 action.clear();
             }
         } else {
-            // Keyboard navigation and content changes forget the pending row click.
             mouse_row.reset();
         }
     } while( action != "QUIT" );
@@ -11242,7 +11174,6 @@ static float calc_next_zoom( float cur_zoom, int direction )
     // Round to closest integer
     const size_t zoom_level = std::round( expected_cur_ndx ) + direction;
 
-    // Clamp at the ends: winding the wheel past the last step must not jump to the other end.
     const auto next_zoom = std::clamp( std::pow( nth_root_2, zoom_level ),
                                        static_cast<double>( MAXIMUM_ZOOM_LEVEL ),
                                        static_cast<double>( MINIMUM_ZOOM_LEVEL ) );
@@ -11825,7 +11756,6 @@ static auto list_vehicles( const vehicle_list_t &vehicle_list ) -> vehicle_menu_
                         cell.x < 2 + utf8_width( "<Tab> " ) + utf8_width( _( "Vehicles" ) ) ) {
                         action = "NEXT_TAB";
                     } else if( vehicle_list.empty() ) {
-                        // No rows or bar to click.
                     } else if( const auto hit = scrollbar_input::click( {
                     .offset = point_south,
                     .viewport_size = iMaxRows,
@@ -12029,7 +11959,6 @@ game::vmenu_ret game::list_items( const std::vector<map_item_stack> &item_list )
     int iActive = 0; // Item index that we're looking at
     bool refilter = true;
     int page_num = 0;
-    // Upstream #870: describe the item of the selected group, not just the stack's first item.
     const auto shown_item = [&]() -> const item & {
         const auto &groups = activeItem->vIG;
         const auto *picked = page_num >= 0 && page_num < static_cast<int>( groups.size() ) ? groups[page_num].example : nullptr;
@@ -12418,7 +12347,6 @@ game::vmenu_ret game::list_items( const std::vector<map_item_stack> &item_list )
 
         action = ctxt.handle_input();
         if( modern && ctxt.get_raw_input().type == input_event_t::mouse ) {
-            // The list pans one row; the item readout text three lines.
             if( action == "SCROLL_UP" || action == "SCROLL_DOWN" ) {
                 if( ctxt.get_coordinates( w_items_border ) ) {
                     action = action == "SCROLL_UP" ? "UP" : "DOWN";
@@ -12439,7 +12367,6 @@ game::vmenu_ret game::list_items( const std::vector<map_item_stack> &item_list )
                                cell.x >= getmaxx( w_items_border ) - utf8_width( sort_label ) ) {
                         action = "SORT";
                     } else if( cell.y == TERMY - iInfoHeight - 1 ) {
-                        // Footer labels, laid out exactly like reset_item_list_state().
                         std::vector<std::string> tokens;
                         if( !sFilter.empty() ) {
                             tokens.emplace_back( _( "<R>eset" ) );
@@ -12490,7 +12417,6 @@ game::vmenu_ret game::list_items( const std::vector<map_item_stack> &item_list )
                             page_num = 0;
                             iScrollPos = 0;
                             if( iActive >= iItemNum || !mSortCategory[iActive].empty() ) {
-                                // Landed on a category header; use the nearest item row.
                                 int forward = iActive;
                                 while( forward < iItemNum && !mSortCategory[forward].empty() ) {
                                     forward++;
@@ -12507,7 +12433,6 @@ game::vmenu_ret game::list_items( const std::vector<map_item_stack> &item_list )
                             const int display = iStartPos + cell.y - 1;
                             if( display >= 0 && display < iItemNum &&
                                 mSortCategory[display].empty() ) {
-                                // A click only selects; travel keeps its checks.
                                 iActive = display;
                                 page_num = 0;
                                 iScrollPos = 0;
@@ -12599,7 +12524,6 @@ game::vmenu_ret game::list_monsters( const std::vector<Creature *> &monster_list
 
     // first integer is the row the attitude category string is printed in the menu
     std::map<int, Attitude> mSortCategory;
-    // Column extent of the drawn safemode shortcut label, for click hit testing.
     std::optional<std::pair<int, int>> safemode_button;
 
     const bool player_knows = !u.has_trait( trait_INATTENTIVE );
@@ -12894,7 +12818,6 @@ game::vmenu_ret game::list_monsters( const std::vector<Creature *> &monster_list
                         } else if( cell.y >= 1 && cell.y < iMaxRows ) {
                             const int iMenuSize = static_cast<int>( monster_list.size() ) +
                                                   static_cast<int>( mSortCategory.size() );
-                            // Mirror the redraw: monster index -> display row, then back.
                             int iSelPos = iActive;
                             for( const auto &ia : mSortCategory ) {
                                 if( ia.first <= iSelPos ) {
@@ -12917,7 +12840,6 @@ game::vmenu_ret game::list_monsters( const std::vector<Creature *> &monster_list
                                     }
                                 }
                                 if( mon >= 0 && mon < static_cast<int>( monster_list.size() ) ) {
-                                    // A click only selects; firing keeps its keys.
                                     iActive = mon;
                                 }
                             }
@@ -13541,7 +13463,6 @@ bool game::check_safe_mode_allowed( bool repeat_safe_mode_warnings )
     }
 
     if( safe_mode_warning_logged && get_option<std::string>( "CONTROL_SCHEME" ) == "modern" ) {
-        // Repeating the full warning can wrap its repeat counter out of view.
         add_msg( game_message_params{ m_warning, gmf_bypass_cooldown },
                  _( "Safe mode: %1$s off, %2$s ignore" ),
                  press_x( ACTION_TOGGLE_SAFEMODE, "", _( "Try" ) ),
@@ -16128,10 +16049,6 @@ auto game::travel_to_dimension( const dimension_id &dim_id,
     // Prevent temperature/weather code from accessing the grid while it's
     // being cleared and rebuilt.  Must be set BEFORE activate_dimension_state().
     swapping_dimensions = true;
-    // The flag guards the grid only while it is cleared and rebuilt below; by the
-    // time this function returns, the destination map, NPCs and caches are fully
-    // loaded, so every exit path clears it. Turn processing used to be the only
-    // reset, which stranded the guard for synchronous Lua-driven travels.
     auto clear_swap_guard = on_out_of_scope( [this]() {
         swapping_dimensions = false;
     } );
@@ -17896,7 +17813,6 @@ std::vector<weak_ptr_fast<npc>> game::get_npcs_pointers_if( const std::function<
                              &pred )
 {
     std::vector<weak_ptr_fast<npc>> result;
-    // Keep the range alive: a temporary in the range-for initializer dies before the loop runs.
     const auto npcs = all_npcs();
     for( weak_ptr_fast<npc> guy : *npcs.items ) {
         if( shared_ptr_fast<npc> true_guy = guy.lock() ) {
@@ -18080,8 +17996,6 @@ auto ensure_distribution_grid_tracker_for(
                                     MAPBUFFER_REGISTRY.get( dim_id ), dim_id );
     auto &tracker = *g->grid_trackers_[dim_id];
     submap_loader.add_listener( &tracker );
-    // Pick up existing simulated cable endpoints without activating retained submaps.
-    // Snapshot first: on_submap_loaded() may load further submaps into the buffer.
     std::vector<tripoint_abs_sm> simulated_resident;
     for( const auto &[raw_pos, sm_ptr] : MAPBUFFER_REGISTRY.get( dim_id ) ) {
         const auto sm_pos = tripoint_abs_sm( raw_pos );

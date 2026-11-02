@@ -7,14 +7,11 @@ from pathlib import Path
 from tmux_game import Game, start_new_game
 
 
-
 def sidebar(screen, cols, width):
-    """The sidebar columns only, so map or log text cannot satisfy an assertion."""
     return "\n".join(line[cols - width:] for line in screen.splitlines())
 
 
 def strip(cols, rows, layout="labels", spacers=False, panels=None):
-    """A fresh Modern game with a saved sidebar layout."""
     userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-keyhints-"))
     config = userdir / "config"
     config.mkdir()
@@ -38,16 +35,13 @@ def strip(cols, rows, layout="labels", spacers=False, panels=None):
 
 
 def move_hint_line(side):
-    """Find the movement row without pinning its current shortcut spelling."""
     return next((line for line in side.splitlines() if re.search(r"\bmove\b", line)), "")
 
 
-# The Log panel's height follows the messages the world rolled, so it is off for strip checks.
 NO_LOG = [{"name": "Log", "toggle": False}]
 
 
 def test_controls_strip_shows_on_80x25(_g):
-    """The minimum supported terminal height must retain the core controls."""
     side, screen = strip(80, 25, panels=NO_LOG)
     assert re.match(r"\s*\S+ +move\b", move_hint_line(side)), \
         "80x25 must still show how to move:\n" + screen

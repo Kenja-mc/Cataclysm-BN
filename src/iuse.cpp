@@ -1255,7 +1255,7 @@ static void marloss_common( player &p, item &it, const trait_id &current_color )
             p.rem_addiction( pr.second );
         }
         p.set_mutation(
-             trait_MARLOSS_AVOID ); // And if you survive it's etched in your RNA, so you're unlikely to repeat the experiment.
+             trait_MARLOSS_AVOID );
     } else if( marloss_count >= 2 ) {
         p.add_msg_if_player( m_bad,
                              _( "You feel a familiar warmth, but suddenly it surges into painful burning as you convulse and collapse to the ground…" ) );
@@ -9473,7 +9473,6 @@ auto iuse::modify_fluid_grid_connections( player *p, item *it, bool,
         return 0;
     }
 
-    // Connect before consuming so a rejected connection costs the player nothing.
     const auto result = fluid_grid::add_grid_connection( pos_abs, destination_pos_abs );
     if( !result ) {
         p->add_msg_if_player( m_info, failure_message( result.error() ) );

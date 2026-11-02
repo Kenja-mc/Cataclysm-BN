@@ -133,7 +133,7 @@ auto add_shot_preview( std::vector<map_overlay::overlay> &out ) -> void
     }
 }
 
-} // namespace
+}
 
 namespace map_overlay
 {
@@ -170,4 +170,4 @@ auto kind_name( const overlay_kind kind ) -> std::string
     return "unknown";
 }
 
-} // namespace map_overlay
+}

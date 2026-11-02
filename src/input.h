@@ -72,11 +72,7 @@ static constexpr int KEY_PPAGE      = 0x153;    /* page up */
 static constexpr int KEY_ENTER      = 0x157;    /* enter */
 static constexpr int KEY_BTAB       = 0x161;    /* back-tab = shift + tab */
 static constexpr int KEY_END        = 0x168;    /* End */
-/// Shift+Space from terminals and window systems that report it. Above every Unicode scalar
-/// value, so no text input can produce this code by accident.
 static constexpr int KEY_SHIFT_SPACE = 0x110000;
-/// Ctrl+Space. Terminals send NUL, but keycode 0 is the invalid-key sentinel, so the backends
-/// translate it to this code instead.
 static constexpr int KEY_CTRL_SPACE = 0x110001;
 
 static constexpr int LEGEND_HEIGHT = 11;
@@ -103,7 +99,6 @@ enum mouse_buttons {
     SCROLLWHEEL_UP,
     SCROLLWHEEL_DOWN,
     MOUSE_MOVE,
-    // The browser-style back side button (X1).
     MOUSE_BUTTON_BACK,
 };
 
@@ -274,7 +269,6 @@ class input_manager
          * Initializes the input manager, aka loads the input mapping configuration JSON.
          */
         void init();
-        /// Changes whenever any binding changes, so callers can cache what they derive from them.
         auto bindings_version() const -> int { return bindings_version_; }
         /**
          * Opposite of @ref init, save the data that has been loaded by @ref init,
@@ -341,9 +335,7 @@ class input_manager
         using t_actions = std::map<std::string, action_attributes>;
         using t_action_contexts = std::map<std::string, t_actions>;
         t_action_contexts action_contexts;
-        /** Bindings from the game data and control scheme, before the user's own changes. */
         t_action_contexts default_contexts;
-        /// Bindings from data/raw/keybindings alone, before a control scheme rebinds them.
         t_action_contexts upstream_contexts;
         int bindings_version_ = 0;
 
@@ -533,7 +525,6 @@ class input_context
 
         virtual ~input_context();
 
-        /// Contexts become active when they read input, not when binding helpers are constructed.
         static auto get_active() -> const input_context *; // *NOPAD*
         static auto active_context_version() -> size_t;
         auto get_category() const -> const std::string & { return category; } // *NOPAD*
@@ -541,7 +532,6 @@ class input_context
             return registered_actions;
         }
 
-        /// Let a Space binding on another action win over CONFIRM in this Modern list.
         void set_space_action_priority( bool enabled ) {
             space_action_priority = enabled;
         }
@@ -762,7 +752,7 @@ class input_context
     private:
         bool registered_any_input;
         std::string category; // The input category this context uses.
-        bool space_action_priority = false; // Eligible Modern list: another Space action beats CONFIRM.
+        bool space_action_priority = false;
         point coordinate;
         bool coordinate_input_received;
         bool handling_coordinate_input;

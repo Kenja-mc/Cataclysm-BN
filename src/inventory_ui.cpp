@@ -935,7 +935,6 @@ size_t inventory_column::get_entry_indent( const inventory_entry &entry ) const
 
     size_t res = 2;
 #if defined(TILES)
-    // Item rows start with the row number and thumbnail gutters, so the invlet and names shift together.
     if( rows_are_numbered() ) {
         res += static_cast<size_t>( list_row_number_gutter_cells() );
     }
@@ -1663,8 +1662,6 @@ void inventory_selector::prepare_layout( size_t client_width, size_t client_heig
         for( const auto letter : available ) {
             allowed[static_cast<unsigned char>( letter )] = true;
         }
-        // Only digits not bound to any action may keep their numeric invlet.
-        // Row numbers own the digits when they are on, so those entries shift to letters below.
         if( !rows_are_numbered() ) {
             for( const auto digit : ctxt.get_available_single_char_hotkeys( "0123456789" ) ) {
                 allowed[static_cast<unsigned char>( digit )] = true;
@@ -1992,8 +1989,6 @@ bool inventory_selector::wield( inventory_entry &entry )
     bool wield_result = u.can_wield( *item ).success();
     if( wield_result ) {
         remove_item( item );
-        // Wielding may swap the previous weapon into the inventory, so rebuild
-        // both own columns and show the held weapon right away.
         if( u.wield( *item ) ) {
             refresh_own_items( u );
             prepare_layout();
@@ -2017,8 +2012,6 @@ bool inventory_selector::wear( inventory_entry &entry )
     if( wear_result ) {
         remove_item( item );
         auto to_move = item->detach();
-        // wear_item keeps the same item object when it succeeds, so the pointer
-        // can be shown again right away, now under the worn items category.
         if( !u.wear_item( std::move( to_move ) ) ) {
             add_item( own_gear_column, item, &item_category_id( "ITEMS_WORN" ).obj() );
             prepare_layout();
@@ -2227,7 +2220,6 @@ auto inventory_selector::hint_hotspot_at( point cell ) const -> bool
         return false;
     }
     const auto hint_width = utf8_width( hint, true );
-    // draw_header folds the hint; once folded the suffix is no longer on this row.
     if( hint_width > getmaxx( w_inv ) - 2 * ( border + 1 ) ) {
         return false;
     }
@@ -2239,8 +2231,6 @@ auto inventory_selector::hint_hotspot_at( point cell ) const -> bool
 auto inventory_selector::mouse_input( inventory_input res ) -> inventory_input
 {
     res.entry = nullptr;
-    // Cancel is a real mouse binding now (the back side button); only clicks and the wheel
-    // are translated into inventory navigation here.
     if( res.action == "QUIT" ) {
         return res;
     }
@@ -2255,7 +2245,6 @@ auto inventory_selector::mouse_input( inventory_input res ) -> inventory_input
         res.action = res.action == "SEC_SELECT" ? "QUIT" : "";
         return res;
     }
-    // get_coordinates() is relative to the window centre.
     const auto cell = mouse->xy().raw() + point( getmaxx( w_inv ), getmaxy( w_inv ) ) / 2;
     if( res.action == "SELECT" && hint_hotspot_at( cell ) ) {
         mouse_click.reset();
@@ -2319,11 +2308,9 @@ inventory_input inventory_selector::get_input()
         inventory_column &column = get_active_column();
         if( column.visible() ) {
             if( const auto index = column.numbered_row_index( number ) ) {
-                // A number only moves the highlight to its row; Enter then acts on it.
                 column.select( *index, scroll_direction::FORWARD );
             }
         }
-        // The digits belong to the rows, so the raw key never reaches quantity entry.
         res.action.clear();
         res.ch = 0;
         return res;
@@ -2469,7 +2456,6 @@ void inventory_selector::toggle_navigation_mode()
 void inventory_selector::append_column( inventory_column &column )
 {
     column.on_mode_change( mode );
-    // A read-only list never prints numbers, so it must not reserve their gutter.
     column.set_row_numbers_allowed( column.allows_selecting() && row_numbers_allowed );
 
     if( columns.empty() ) {
@@ -2703,7 +2689,6 @@ inventory_iuse_selector::inventory_iuse_selector(
     inventory_multiselector( p, preset, selector_title ),
     get_stats( get_st )
 {
-    // Digits type the amount to use, so they cannot also select rows.
     set_row_numbers_allowed( false );
 }
 
@@ -2816,7 +2801,6 @@ inventory_drop_selector::inventory_drop_selector( player &p,
         const inventory_selector_preset &preset ) :
     inventory_multiselector( p, preset, _( "ITEMS TO DROP" ) )
 {
-    // Digits type the amount to drop, so they cannot also select rows.
     set_row_numbers_allowed( false );
 #if defined(__ANDROID__)
     // allow user to type a drop number without dismissing virtual keyboard after each keypress
@@ -3041,7 +3025,6 @@ inventory_pickup_selector::inventory_pickup_selector( player &p,
         const inventory_selector_preset &preset ) :
     inventory_multiselector( p, preset, "ITEMS TO PICKUP" )
 {
-    // Numbered rows own the digits, so amounts move to the count prompt.
     if( rows_are_numbered() ) {
         ctxt.register_action( "SET_COUNT", to_translation( "Set pickup count" ) );
     }
@@ -3107,7 +3090,6 @@ std::vector<pickup::pick_drop_selection> inventory_pickup_selector::execute()
             std::vector<item *> locations;
             std::vector<int> counts;
 
-            // With numbered rows, Enter on a highlighted row takes it, as in the classic list.
             const bool take_highlight = rows_are_numbered();
             const auto pickup_entries = map_column.get_all_entries();
             const bool any_chosen = std::any_of( pickup_entries.begin(), pickup_entries.end(),

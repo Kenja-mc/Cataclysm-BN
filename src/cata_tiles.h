@@ -817,8 +817,6 @@ class cata_tiles
             unsigned int loc_rand;
             bool is_fg;
             int rota;
-            /// Exact clockwise rotation from north in degrees, when a single sprite is drawn
-            /// rotated by the vehicle's own heading instead of the nearest cardinal one.
             std::optional<int> exact_rota;
             const tint_config &tint;
             lit_level ll;
@@ -830,10 +828,8 @@ class cata_tiles
             const render_light_tint &light_tint;
         };
 
-        /// Draw a foreground or background sprite, accumulating its stacked height.
         auto draw_sprite_at( const sprite_draw_options &params ) -> bool;
 
-        /// Draw the background, then the foreground described by params.
         auto draw_tile_at( const sprite_draw_options &params, const tint_config &bg_tint ) -> bool;
 
         /**
@@ -913,10 +909,8 @@ class cata_tiles
 
         bool draw_terrain( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
                            const bool ( &invisible )[5], int z_drop );
-        /** Draws a lock icon for a door the caller already established as known locked. */
         auto draw_known_locked_door( const tripoint_bub_ms &p, locked_door_kind kind,
                                      std::multimap<point, formatted_text> &overlay_strings ) -> void;
-        /** Validates remembered lock knowledge against a visible tile and returns what remains. */
         auto refresh_known_locked_door( const tripoint_bub_ms &p ) -> locked_door_kind;
         bool draw_furniture( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
                              const bool ( &invisible )[5], int z_drop );
@@ -945,9 +939,7 @@ class cata_tiles
                          const bool ( &invisible )[5], int z_drop );
         bool draw_critter_at( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
                               const bool ( &invisible )[5], int z_drop );
-        /** Draws a health bar from a collect() entry that the frame already decided on. */
         void draw_health_bar( const map_overlay::overlay &bar );
-        /** Draws the looping status effect overlays (bleeding, burning, ...) of one creature. */
         void draw_status_effects( const Creature &critter, const tripoint_bub_ms &p,
                                   lit_level ll, int z_drop );
         bool draw_zone_mark( const tripoint_bub_ms &p, lit_level ll, int &height_3d,
@@ -1143,7 +1135,6 @@ class cata_tiles
 
         idle_animation_manager idle_animations;
 
-        /// Overlays collect() decided for the frame being drawn.
         std::vector<map_overlay::overlay> frame_overlays;
 
         bool in_animation = false;
@@ -1204,7 +1195,6 @@ class cata_tiles
         std::map<tripoint_bub_ms, bool> graffiti_override;
         std::map<tripoint_bub_ms, trap_id> trap_override;
         std::map<tripoint_bub_ms, field_type_id> field_override;
-        // Corpse sprite ids keyed by monster id, so corpse thumbnails and draws do not rebuild strings.
         std::map<std::string, std::string> corpse_sprite_ids;
         // bool represents item highlight
         std::map<tripoint_bub_ms, std::tuple<itype_id, mtype_id, bool>> item_override;
@@ -1223,7 +1213,6 @@ class cata_tiles
          */
         bool nv_goggles_activated = false;
         bool env_goggles_activated = false;
-        /// Draw single-sprite vehicle parts rotated by the exact heading of their vehicle.
         bool vehicle_smooth_rotation = false;
 
         // Active warp hash for character rendering (0 if none)
