@@ -24,6 +24,7 @@
 #include "player_activity.h"
 #include "smart_safemode.h"
 #include "string_formatter.h"
+#include "test_state.h"
 #include "translations.h"
 #include "trap.h"
 #include "travel/travel_destination.h"
@@ -752,9 +753,13 @@ auto hover( avatar &you, map &m, const std::optional<tripoint_bub_ms> &p ) -> vo
     if( hovered_tile == p && hovered_turn == calendar::turn && hovered_mouse_move == mouse_move ) {
         return;
     }
+    const auto changed = hovered_tile != p;
     hovered_tile = p;
     hovered_turn = calendar::turn;
     hovered_mouse_move = mouse_move;
+    if( changed && test_state::enabled() ) {
+        test_state::refresh_overlays( you );
+    }
     if( !mouse_move ) {
         hovered_route.clear();
         pending_click.reset();
@@ -810,10 +815,14 @@ auto hover( avatar &you, map &m, const std::optional<tripoint_bub_ms> &p ) -> vo
 
 auto clear_hover() -> void
 {
+    const auto had_hover = hovered_tile.has_value();
     hovered_tile.reset();
     hovered_route.clear();
     hovered_hint.clear();
     pending_click.reset();
+    if( had_hover && g != nullptr && test_state::enabled() ) {
+        test_state::refresh_overlays( g->u );
+    }
 }
 
 auto hovered() -> std::optional<tripoint_bub_ms> { return hovered_tile; }

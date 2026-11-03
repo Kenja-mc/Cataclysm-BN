@@ -50,7 +50,42 @@ struct mm_submap {
         /** Whether this mm_submap is empty. Empty submaps are skipped during saving. */
         bool is_empty() const {
             return tiles.empty() && symbols.empty() && terrain_tiles.empty() &&
-                   !has_locked_doors();
+                   !has_locked_doors() && !has_seen_containers();
+        }
+
+        auto has_seen_containers() const -> bool {
+            for( const auto seen : seen_containers ) {
+                if( seen != 0 ) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        auto container_seen( const point_sm_ms &p ) const -> bool {
+            const auto index = p.y() * SEEX + p.x();
+            return index < static_cast<int>( seen_containers.size() ) &&
+                   seen_containers[index] != 0;
+        }
+
+        auto set_container_seen( const point_sm_ms &p, bool seen ) -> void {
+            const auto index = p.y() * SEEX + p.x();
+            if( !seen ) {
+                if( index >= static_cast<int>( seen_containers.size() ) ) {
+                    return;
+                }
+                seen_containers[index] = 0;
+                if( !has_seen_containers() ) {
+                    seen_containers.clear();
+                    seen_containers.shrink_to_fit();
+                }
+                return;
+            }
+            if( seen_containers.empty() ) {
+                seen_containers.reserve( SEEX * SEEY );
+                seen_containers.resize( SEEX * SEEY, 0 );
+            }
+            seen_containers[index] = 1;
         }
 
         auto has_locked_doors() const -> bool {
@@ -149,6 +184,7 @@ struct mm_submap {
         terrain_tiles; // base terrain layer             — 0 or SEEX*SEEY
         std::vector<int> symbols; // holds either 0 or SEEX*SEEY elements
         std::vector<std::uint8_t> locked_doors;
+        std::vector<std::uint8_t> seen_containers;
         bool valid = true;
 };
 
@@ -266,6 +302,10 @@ class map_memory
         auto clear_locked_door( const tripoint_abs_ms &pos ) -> void;
 
         auto locked_door_positions() const -> std::vector<tripoint_abs_ms>;
+
+        auto get_container_seen( const tripoint_abs_ms &pos ) -> bool;
+
+        auto set_container_seen( const tripoint_abs_ms &pos, bool seen ) -> void;
 
         auto memorized_tiles( const tripoint_abs_sm &min, const tripoint_abs_sm &max ) const
         -> std::vector<memorized_tile>;

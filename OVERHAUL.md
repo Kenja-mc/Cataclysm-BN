@@ -491,6 +491,10 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   Hover and clicks follow the panned view. Returning to the middle or moving into the sidebar
   stops scrolling; pressing a key recenters the view without making hover consume a turn.
   Options → Interface → Cursor panning enables it; Edge scrolling chooses the speed or disables it.
+- **Container highlight** (Options → Interface): the container the pointer selects is tinted.
+  Yellow means its contents are visible now; cyan means you have looked inside it before. A
+  container whose contents you have never seen stays untinted, so hidden loot is never revealed.
+  The terminal recolors the container glyph; the tiles version tints the selection highlight.
 - **Pixel minimap zoom** (tiles): choose 1x, 2x or 4x under Options → Graphics without changing
   the main map's zoom. **Pixel minimap item markers**, off by default, adds gold dots for loot you
   can currently see. Items behind walls or inside sealed furniture do not get markers.

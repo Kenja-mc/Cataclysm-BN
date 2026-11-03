@@ -3,6 +3,7 @@
 #include "avatar.h"
 #include "cached_options.h"
 #include "character.h"
+#include "container_highlight.h"
 #include "coordinates.h"
 #include "cursesdef.h"
 #include "enums.h"
@@ -1017,7 +1018,9 @@ void game::draw_highlight( const tripoint_bub_ms &p )
         return;
     }
 
-    tilecontext->init_draw_highlight( p );
+    const auto state = container_highlight::level( u, m, p );
+    tilecontext->init_draw_highlight(
+        p, state > 0 ? tint_config( container_highlight::tint( state ) ) : tint_config() );
 }
 #else
 void game::draw_highlight( const tripoint_bub_ms & )

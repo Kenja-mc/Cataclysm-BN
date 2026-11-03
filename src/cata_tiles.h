@@ -1000,7 +1000,7 @@ class cata_tiles
         void draw_cursor();
         void void_cursor();
 
-        void init_draw_highlight( const tripoint_bub_ms &p );
+        void init_draw_highlight( const tripoint_bub_ms &p, const tint_config &tint = {} );
         void draw_highlight();
         void void_highlight();
 
@@ -1173,7 +1173,7 @@ class cata_tiles
         std::string line_endpoint_id;
 
         std::vector<tripoint_bub_ms> cursors;
-        std::vector<tripoint_bub_ms> highlights;
+        std::vector<std::pair<tripoint_bub_ms, tint_config>> highlights;
 
         weather_printable anim_weather;
         std::string weather_name;
