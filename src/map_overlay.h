@@ -18,6 +18,7 @@ enum class overlay_kind {
     shot_blocker,
     stray_tile,
     aim_label,
+    container,
 };
 
 enum class sound_flavor {

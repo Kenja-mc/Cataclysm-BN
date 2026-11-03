@@ -4,6 +4,7 @@
 
 #include "aim_reticle.h"
 #include "avatar.h"
+#include "container_highlight.h"
 #include "coordinates.h"
 #include "game.h"
 #include "map/map.h"
@@ -133,6 +134,23 @@ auto add_shot_preview( std::vector<map_overlay::overlay> &out ) -> void
     }
 }
 
+auto add_selected_container( std::vector<map_overlay::overlay> &out, const avatar &you ) -> void
+{
+    const auto hovered = tile_selection::hovered();
+    if( !hovered ) {
+        return;
+    }
+    const auto state = container_highlight::level( you, get_map(), *hovered );
+    if( state == 0 ) {
+        return;
+    }
+    out.push_back( map_overlay::overlay{
+        .pos = *hovered,
+        .kind = map_overlay::overlay_kind::container,
+        .severity = state,
+    } );
+}
+
 }
 
 namespace map_overlay
@@ -146,6 +164,7 @@ auto collect( const avatar &you ) -> std::vector<overlay>
     add_known_locks( out, you );
     add_health_bars( out, you );
     add_shot_preview( out );
+    add_selected_container( out, you );
     return out;
 }
 
@@ -166,6 +185,8 @@ auto kind_name( const overlay_kind kind ) -> std::string
             return "stray_tile";
         case overlay_kind::aim_label:
             return "aim_label";
+        case overlay_kind::container:
+            return "container";
     }
     return "unknown";
 }

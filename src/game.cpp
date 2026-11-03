@@ -38,6 +38,7 @@
 #include "computer_session.h"
 #include "construction.h"
 #include "construction_group.h"
+#include "container_highlight.h"
 #include "coordinates.h"
 #include "crafting.h"
 #include "creature_throw.h"
@@ -2502,6 +2503,7 @@ bool game::do_turn()
         u.process_turn();
         u.process_items();
     }
+    container_highlight::observe( u, get_map() );
 
     {
         ZoneScopedN( "do_turn_lua_every_x" );
@@ -3056,6 +3058,7 @@ auto game::execute_activity_fixed_window_skip( const time_duration &duration ) -
             ZoneScopedN( "do_turn_player_process_turn" );
             u.process_turn();
         }
+        container_highlight::observe( u, get_map() );
         {
             ZoneScopedN( "do_turn_lua_every_x" );
             cata::run_on_every_x_hooks( *DynamicDataLoader::get_instance().lua );
@@ -5458,7 +5461,16 @@ void game::draw_ter( const tripoint_bub_ms &center, const bool looking, const bo
         if( get_option<bool>( "MOUSE_MOVE" ) && !path.empty() ) {
             draw_line( path.back(), u.bub_pos() + u.view_offset, path, true );
         }
-        m.drawsq( w_terrain, *hovered, drawsq_params().highlight( true ).center( center ) );
+        const auto container = std::ranges::find_if( overlays, [&]( const auto & overlay ) {
+            return overlay.kind == map_overlay::overlay_kind::container && overlay.pos == *hovered;
+        } );
+        auto params = drawsq_params().center( center );
+        if( container != overlays.end() && !is_draw_tiles_mode() ) {
+            params.color( container_highlight::tint( container->severity ) );
+        } else {
+            params.highlight( true );
+        }
+        m.drawsq( w_terrain, *hovered, params );
     }
 
     for( const auto &overlay : overlays ) {

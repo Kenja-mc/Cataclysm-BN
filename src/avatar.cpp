@@ -323,6 +323,16 @@ auto avatar::forget_locked_door( const tripoint_abs_ms &p ) -> void
     player_map_memory->clear_locked_door( p );
 }
 
+auto avatar::has_seen_container_contents( const tripoint_abs_ms &p ) const -> bool
+{
+    return player_map_memory->get_container_seen( p );
+}
+
+auto avatar::remember_container_contents( const tripoint_abs_ms &p ) -> void
+{
+    player_map_memory->set_container_seen( p, true );
+}
+
 bool avatar::has_memorized_tile_for_autodrive( const tripoint_abs_ms &p ) const
 {
     return player_map_memory->has_memory_for_autodrive( p );

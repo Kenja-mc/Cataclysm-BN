@@ -3976,7 +3976,7 @@ void mm_submap::serialize( JsonOut &jsout ) const
 {
     jsout.start_array();
 
-    if( has_locked_doors() ) {
+    if( has_locked_doors() || has_seen_containers() ) {
         jsout.start_object();
         for( const auto kind : { locked_door_kind::terrain, locked_door_kind::vehicle } ) {
             jsout.member( kind == locked_door_kind::terrain ? "locked_terrain" : "locked_vehicle" );
@@ -3988,6 +3988,14 @@ void mm_submap::serialize( JsonOut &jsout ) const
             }
             jsout.end_array();
         }
+        jsout.member( "seen_containers" );
+        jsout.start_array();
+        for( const auto p : submap_tiles() ) {
+            if( container_seen( p ) ) {
+                jsout.write( p.y() * SEEX + p.x() );
+            }
+        }
+        jsout.end_array();
         jsout.end_object();
     }
 
@@ -4052,6 +4060,14 @@ void mm_submap::deserialize( JsonIn &jsin )
         };
         load_kind( "locked_terrain", locked_door_kind::terrain );
         load_kind( "locked_vehicle", locked_door_kind::vehicle );
+        if( jo.has_member( "seen_containers" ) ) {
+            for( const auto index : jo.get_int_array( "seen_containers" ) ) {
+                if( index < 0 || index >= SEEX * SEEY ) {
+                    continue;
+                }
+                set_container_seen( point_sm_ms( index % SEEX, index / SEEX ), true );
+            }
+        }
     }
 
     // Uses RLE for compression.

@@ -113,6 +113,7 @@ void map_memory::clear_memorized_tile( const tripoint_abs_ms &pos )
     sm.set_tile( p.remainder, mm_submap::default_tile );
     sm.set_terrain_tile( p.remainder, mm_submap::default_tile );
     sm.set_locked_door( p.remainder, locked_door_kind::none );
+    sm.set_container_seen( p.remainder, false );
 }
 
 auto map_memory::get_locked_door( const tripoint_abs_ms &pos ) -> locked_door_kind
@@ -152,6 +153,20 @@ auto map_memory::locked_door_positions() const -> std::vector<tripoint_abs_ms>
         }
     }
     return ret;
+}
+
+auto map_memory::get_container_seen( const tripoint_abs_ms &pos ) -> bool
+{
+    const auto p = project_remain<coords::sm>( pos );
+    const auto &sm = get_submap( p.quotient_tripoint );
+    return sm.container_seen( p.remainder );
+}
+
+auto map_memory::set_container_seen( const tripoint_abs_ms &pos, const bool seen ) -> void
+{
+    const auto p = project_remain<coords::sm>( pos );
+    auto &sm = get_submap( p.quotient_tripoint );
+    sm.set_container_seen( p.remainder, seen );
 }
 
 auto map_memory::memorized_tiles( const tripoint_abs_sm &min, const tripoint_abs_sm &max ) const

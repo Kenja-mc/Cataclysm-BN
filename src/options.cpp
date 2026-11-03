@@ -2248,6 +2248,10 @@ void options_manager::add_options_interface()
     { { "unicode", translate_marker( "Unicode" ) }, { "nerd", translate_marker( "Icon font" ) }, { "ascii", translate_marker( "Text only" ) } },
     icon_font::bundled ? "nerd" : "unicode" );
 
+    add( "CONTAINER_HIGHLIGHT", interface, translate_marker( "Highlight containers" ),
+         translate_marker( "Tint the container the pointer selects.  A yellow tint means its contents are visible now; a cyan tint means you have looked inside it before.  Containers whose contents you have never seen stay untinted, so hidden loot is never revealed." ),
+         true );
+
     add( "SHOW_TIPS", interface, translate_marker( "Show first-time tips" ),
          translate_marker( "If true, a one-line tip appears in the message log the first time your character gets hungry, hurt, sees a hostile and so on." ),
          true

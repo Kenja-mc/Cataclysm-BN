@@ -7022,10 +7022,10 @@ void cata_tiles::init_draw_cursor( const tripoint_bub_ms &p )
     do_draw_cursor = true;
     cursors.emplace_back( p );
 }
-void cata_tiles::init_draw_highlight( const tripoint_bub_ms &p )
+void cata_tiles::init_draw_highlight( const tripoint_bub_ms &p, const tint_config &tint )
 {
     do_draw_highlight = true;
-    highlights.emplace_back( p );
+    highlights.emplace_back( p, tint );
 }
 void cata_tiles::init_draw_weather( weather_printable weather, std::string name )
 {
@@ -7412,10 +7412,10 @@ void cata_tiles::draw_cursor()
 }
 void cata_tiles::draw_highlight()
 {
-    for( const tripoint_bub_ms &p : highlights ) {
+    for( const auto &[p, tint] : highlights ) {
         draw_from_id_string(
         {"highlight", C_NONE, empty_string, 0, 0},
-        p, std::nullopt, std::nullopt,
+        p, std::nullopt, tint,
         lit_level::LIT, false, 0, false
         );
     }

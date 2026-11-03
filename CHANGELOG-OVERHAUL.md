@@ -4,6 +4,16 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-11-03
+
+### Added
+
+- **Container highlight** (Options → Interface, on by default): the container the pointer selects
+  is tinted. Yellow marks a container whose contents are visible now; cyan marks one you have
+  looked inside before. A container whose contents you have never seen stays untinted, so hidden
+  loot is not revealed. The terminal recolors the container glyph; the tiles build tints the
+  selection highlight. Turn it off to keep the plain selection highlight.
+
 ## 2026-11-02
 
 ### Added
