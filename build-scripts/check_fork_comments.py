@@ -467,6 +467,7 @@ def owned_targets(base):
         "diff",
         "-U0",
         "--no-color",
+        "--diff-algorithm=histogram",
         "--src-prefix=a/",
         "--dst-prefix=b/",
         fork_point,
