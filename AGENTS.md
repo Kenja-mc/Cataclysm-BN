@@ -26,7 +26,8 @@ learn and use. It keeps the BN game rules. `OVERHAUL.md` explains each change.
 6. Fork-owned code carries its intent in names, small functions, tests and commit messages, with no
    comments. Fork-owned code is every file the fork added and every line it added to an upstream
    file; upstream lines keep their comments. Lines a tool reads stay: `// *NOPAD*`, `NOLINT`, lint
-   pragmas, shebangs, Lua `---@` annotations, docstrings printed as `--help`, license headers.
+   pragmas, `//~` translator notes, `/*name*/` and `/*name=*/` parameter comments, shebangs, Lua
+   `---@` annotations, docstrings printed as `--help`, license headers.
    `python3 build-scripts/check_fork_comments.py` lists the rest. This overrides the Part 2
    doc-comment rule for fork-owned code.
 7. Obey the upstream code rules in Part 2.
@@ -47,14 +48,21 @@ learn and use. It keeps the BN game rules. `OVERHAUL.md` explains each change.
 
 Run these from the repository root. `linux-curses` is the fork's terminal build; `linux-full` adds
 tiles and sound. Every output path below is relative to `out/build/<preset>/`. `mise.toml` pins
-CMake, Ninja, mold and ccache for this checkout and its `bn-wt-*` worktrees; the compiler and the
-formatter come from the system:
+CMake, Ninja, mold and ccache for this checkout and its `bn-wt-*` worktrees; clang comes from the
+system. Use Artistic Style 3.4.13 for fork C++ formatting:
 
 ```sh
 mise install
-sudo pacman -S --needed clang astyle
+sudo pacman -S --needed clang
 mise exec -- ccache --max-size=20G
 ```
+Run the file-scoped formatter through `uv`, which supplies the pinned astyle without changing the
+system installation:
+
+```sh
+uv run --no-project --with astyle==3.4.13 build-scripts/format-cpp.sh src/npc.cpp
+```
+
 
 Run the build commands below through `mise exec --` (or with mise shell activation), so the system
 CMake and Ninja are never picked up. `clang` is required. If `ccache` or `mold` is absent, configure
