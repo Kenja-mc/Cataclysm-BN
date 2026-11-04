@@ -333,6 +333,11 @@ auto avatar::remember_container_contents( const tripoint_abs_ms &p ) -> void
     player_map_memory->set_container_seen( p, true );
 }
 
+auto avatar::forget_container_contents( const tripoint_abs_ms &p ) -> void
+{
+    player_map_memory->set_container_seen( p, false );
+}
+
 bool avatar::has_memorized_tile_for_autodrive( const tripoint_abs_ms &p ) const
 {
     return player_map_memory->has_memory_for_autodrive( p );

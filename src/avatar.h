@@ -154,6 +154,7 @@ class avatar : public player
         auto forget_locked_door( const tripoint_abs_ms &p ) -> void;
         auto has_seen_container_contents( const tripoint_abs_ms &p ) const -> bool;
         auto remember_container_contents( const tripoint_abs_ms &p ) -> void;
+        auto forget_container_contents( const tripoint_abs_ms &p ) -> void;
         /** Returns last stored map tile in given location in tiles mode */
         bool has_memorized_tile_for_autodrive( const tripoint_abs_ms &p ) const;
 

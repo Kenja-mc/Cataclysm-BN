@@ -14,12 +14,17 @@ auto is_container( const map &here, const tripoint_bub_ms &p ) -> bool
 
 auto record_contents( avatar &you, const map &here, const tripoint_bub_ms &p ) -> void
 {
-    if( !is_container( here, p ) || !here.could_see_items( p, you ) ) {
+    if( !is_container( here, p ) || !here.could_see_items( p, you ) ||
+        !you.sees( p ) ) {
         return;
     }
     const auto abs = bub_to_abs( p );
-    if( !you.has_seen_container_contents( abs ) ) {
-        you.remember_container_contents( abs );
+    if( here.sees_some_items( p, you ) ) {
+        if( !you.has_seen_container_contents( abs ) ) {
+            you.remember_container_contents( abs );
+        }
+    } else if( you.has_seen_container_contents( abs ) ) {
+        you.forget_container_contents( abs );
     }
 }
 
@@ -34,8 +39,8 @@ auto level( const avatar &you, const map &here, const tripoint_bub_ms &p ) -> in
         !you.sees( p ) ) {
         return 0;
     }
-    if( here.sees_some_items( p, you ) ) {
-        return 1;
+    if( here.could_see_items( p, you ) ) {
+        return here.sees_some_items( p, you ) ? 1 : 0;
     }
     return you.has_seen_container_contents( bub_to_abs( p ) ) ? 2 : 0;
 }
