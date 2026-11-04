@@ -229,6 +229,7 @@
 #include <span>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <type_traits>
 #include <unordered_map>
@@ -336,6 +337,116 @@ auto fling_bash_damage( const Creature &c, const float flvel ) -> int
 }
 
 } // namespace
+
+namespace
+{
+
+auto drawn_sound_marker_signature = std::uint64_t{ 0 };
+auto drawn_sound_marker_signature_valid = false;
+
+constexpr auto marker_pacing_delay = std::chrono::milliseconds( 250 );
+constexpr int marker_pacing_max_pauses = 4;
+
+auto presented_markers = std::vector<sounds::footstep_marker>{};
+auto presented_markers_valid = false;
+auto presented_marker_paces_left = 0;
+auto marker_pacing_pending = false;
+auto pacing_activity = static_cast<const player_activity *>( nullptr );
+
+auto marker_pacing_tier( const int age ) -> int
+{
+    if( !get_option<bool>( "SOUND_MARKER_GLYPH_AGING" ) && is_draw_tiles_mode() ) {
+        return std::min( age, 1 );
+    }
+    return std::min( age, 2 );
+}
+
+auto marker_frame_has_age_transition( const std::vector<sounds::footstep_marker> &current ) -> bool
+{
+    if( !presented_markers_valid ) {
+        presented_markers = current;
+        presented_markers_valid = true;
+        presented_marker_paces_left = marker_pacing_max_pauses;
+        return false;
+    }
+    auto transitioned = false;
+    for( const auto &now : current ) {
+        const auto old = std::ranges::find_if( presented_markers,
+        [&now]( const sounds::footstep_marker & mark ) {
+            return mark.pos == now.pos;
+        } );
+        if( old != presented_markers.end() &&
+            marker_pacing_tier( now.age ) > marker_pacing_tier( old->age ) ) {
+            transitioned = true;
+            break;
+        }
+    }
+    if( !transitioned ) {
+        for( const auto &old : presented_markers ) {
+            const auto now = std::ranges::find_if( current,
+            [&old]( const sounds::footstep_marker & mark ) {
+                return mark.pos == old.pos;
+            } );
+            if( now == current.end() && !g->u.sees( old.pos ) ) {
+                transitioned = true;
+                break;
+            }
+        }
+    }
+    presented_markers = current;
+    if( !transitioned || presented_marker_paces_left <= 0 ) {
+        return false;
+    }
+    --presented_marker_paces_left;
+    return true;
+}
+
+auto pace_presented_marker_frame() -> void
+{
+    if( !get_option<bool>( "SOUND_MARKER_PACING" ) ) {
+        return;
+    }
+    const auto current = sounds::get_footstep_markers();
+    if( !( g->u.activity && *g->u.activity ) ) {
+        presented_markers = current;
+        presented_markers_valid = true;
+        presented_marker_paces_left = marker_pacing_max_pauses;
+        pacing_activity = nullptr;
+        return;
+    }
+    const auto *activity = g->u.activity.get();
+    if( activity != pacing_activity ) {
+        pacing_activity = activity;
+        presented_marker_paces_left = marker_pacing_max_pauses;
+    }
+    if( !marker_frame_has_age_transition( current ) ) {
+        return;
+    }
+    if( g->u.in_skip_state ) {
+        std::this_thread::sleep_for( marker_pacing_delay );
+    } else {
+        marker_pacing_pending = true;
+    }
+}
+
+auto flush_marker_pacing() -> void
+{
+    if( !marker_pacing_pending ) {
+        return;
+    }
+    marker_pacing_pending = false;
+    std::this_thread::sleep_for( marker_pacing_delay );
+}
+
+auto reset_marker_pacing() -> void
+{
+    presented_markers_valid = false;
+    presented_marker_paces_left = 0;
+    marker_pacing_pending = false;
+    pacing_activity = nullptr;
+}
+
+}
 
 static const activity_id ACT_OPERATION( "ACT_OPERATION" );
 static const activity_id ACT_AUTODRIVE( "ACT_AUTODRIVE" );
@@ -769,6 +880,8 @@ void game::setup( bool load_world_modfiles )
     turnssincelastmon = 0; //Auto safe mode init
 
     sounds::reset_sounds();
+    drawn_sound_marker_signature_valid = false;
+    reset_marker_pacing();
     clear_zombies();
     coming_to_stairs.clear();
     for( const auto &guy : active_npc ) {
@@ -2281,7 +2394,11 @@ bool game::do_turn()
             refresh_player_visibility_cache_if_needed( true, true );
         }
         process_voluntary_act_interrupt();
+        const auto wait_turn = u.has_effect( effect_sleep ) || ( u.activity && *u.activity );
         process_activity();
+        if( wait_turn ) {
+            sounds::reset_markers();
+        }
         update_performance_bubble();
     }
     if( !soundperf ) {
@@ -2597,6 +2714,7 @@ bool game::do_turn()
     }
 
     test_state::on_turn( u );
+    flush_marker_pacing();
 
     return false;
 }
@@ -3074,6 +3192,19 @@ auto game::execute_activity_fixed_window_skip( const time_duration &duration ) -
         u.apply_wetness_morale( weather.temperature );
         u.volume = 0;
 
+        sounds::reset_markers();
+        const auto marker_signature = sounds::footstep_marker_signature();
+        if( !drawn_sound_marker_signature_valid ||
+            marker_signature != drawn_sound_marker_signature ) {
+            drawn_sound_marker_signature = marker_signature;
+            drawn_sound_marker_signature_valid = true;
+            wait_popup.reset();
+            invalidate_main_ui_adaptor();
+            ui_manager::redraw();
+            refresh_display();
+            pace_presented_marker_frame();
+        }
+
         if( !activity_continues || ( !u.in_sleep_state() && u.activity->complete() ) ) {
             break;
         }
@@ -3233,23 +3364,70 @@ auto game::handle_wait_activity_redraw( const bool force ) -> void
     }
     if( wait_redraw ) {
         ZoneScopedN( "wait_redraw" );
-        if( force || first_redraw_since_waiting_started ||
+        const auto in_activity = u.activity && *u.activity;
+        auto markers_changed = false;
+        auto marker_signature = std::uint64_t{ 0 };
+        auto have_marker_signature = false;
+        if( in_activity ) {
+            marker_signature = sounds::footstep_marker_signature();
+            have_marker_signature = true;
+            markers_changed = !drawn_sound_marker_signature_valid ||
+                              marker_signature != drawn_sound_marker_signature;
+        }
+        const auto map_refresh = force || first_redraw_since_waiting_started || markers_changed ||
+                                 action_time_scale::once_every_this_tick( wait_refresh_rate );
+        if( map_refresh ||
             action_time_scale::once_every_this_tick( std::min( 1_minutes, wait_refresh_rate ) ) ) {
-            if( force || first_redraw_since_waiting_started ||
-                action_time_scale::once_every_this_tick( wait_refresh_rate ) ) {
+            if( map_refresh ) {
+                if( markers_changed ) {
+                    wait_popup.reset();
+                    invalidate_main_ui_adaptor();
+                    ui_manager::redraw();
+                } else {
+                    invalidate_main_ui_adaptor();
+                }
+                wait_popup = std::make_unique<static_popup>();
+                wait_popup->on_top( true ).wait_message( "%s", wait_message );
+                ui_manager::redraw();
+            } else {
+                ui_adaptor dummy( ui_adaptor::disable_uis_below {} );
+                wait_popup = std::make_unique<static_popup>();
+                wait_popup->on_top( true ).wait_message( "%s", wait_message );
                 ui_manager::redraw();
             }
-
-            ui_adaptor dummy( ui_adaptor::disable_uis_below {} );
-            wait_popup = std::make_unique<static_popup>();
-            wait_popup->on_top( true ).wait_message( "%s", wait_message );
-            ui_manager::redraw();
             refresh_display();
+            if( map_refresh ) {
+                pace_presented_marker_frame();
+                if( !have_marker_signature ) {
+                    marker_signature = sounds::footstep_marker_signature();
+                }
+                drawn_sound_marker_signature = marker_signature;
+                drawn_sound_marker_signature_valid = true;
+            }
             first_redraw_since_waiting_started = false;
         }
+    } else if( player_is_sleeping || u.has_destination() || ( u.activity && *u.activity ) ) {
+        const auto marker_signature = sounds::footstep_marker_signature();
+        const auto markers_changed = !drawn_sound_marker_signature_valid ||
+                                     marker_signature != drawn_sound_marker_signature;
+        if( markers_changed || wait_popup ) {
+            wait_popup.reset();
+            invalidate_main_ui_adaptor();
+            ui_manager::redraw();
+            refresh_display();
+            if( markers_changed ) {
+                pace_presented_marker_frame();
+            }
+        }
+        drawn_sound_marker_signature = marker_signature;
+        drawn_sound_marker_signature_valid = true;
     } else {
         wait_popup.reset();
         first_redraw_since_waiting_started = true;
+        drawn_sound_marker_signature_valid = false;
+        presented_markers_valid = false;
+        presented_marker_paces_left = 0;
+        pacing_activity = nullptr;
     }
 }
 
@@ -9590,6 +9768,33 @@ void game::draw_look_around_cursor( const tripoint_bub_ms &lp, const visibility_
     }
 }
 
+namespace
+{
+
+auto heard_marker_age( const std::vector<sounds::footstep_marker> &markers,
+                       const tripoint_bub_ms &p ) -> std::optional<int>
+{
+    const auto found = std::ranges::find_if( markers,
+    [&p]( const sounds::footstep_marker & mark ) {
+        return mark.pos == p;
+    } );
+    return found == markers.end() ? std::nullopt : std::optional<int>( found->age );
+}
+
+auto heard_sound_text( const std::string &sound, const std::string &from,
+                       const std::optional<int> &age ) -> std::string
+{
+    if( !age ) {
+        return string_format( _( "You heard %s from %s." ), sound, from );
+    }
+    const auto when = *age <= 0 ? std::string( _( "just now" ) ) :
+                      *age == 1 ? std::string( _( "~1 turn ago" ) ) :
+                      string_format( _( "~%d turns ago" ), *age );
+    return string_format( _( "Heard %s from %s, %s." ), sound, from, when );
+}
+
+}
+
 void game::print_all_tile_info( const tripoint_bub_ms &lp, const catacurses::window &w_look,
                                 const std::string &area_name, int column,
                                 int &line,
@@ -9656,9 +9861,24 @@ void game::print_all_tile_info( const tripoint_bub_ms &lp, const catacurses::win
     if( !inbounds ) {
         return;
     }
-    auto this_sound = sounds::sound_at( lp );
+    std::optional<std::vector<sounds::footstep_marker>> heard_markers;
+    const auto age_at = [&heard_markers]( const tripoint_bub_ms & p ) -> std::optional<int> {
+        if( !heard_markers ) {
+            heard_markers = sounds::get_footstep_markers();
+        }
+        return heard_marker_age( *heard_markers, p );
+    };
+    const auto print_heard_sound = [&]( const std::string & sound, const std::string & from,
+    const tripoint_bub_ms & at ) {
+        if( line >= last_line ) {
+            return;
+        }
+        trim_and_print( w_look, point( 1, ++line ), std::max( 0, getmaxx( w_look ) - 2 ), c_white,
+                        heard_sound_text( sound, from, age_at( at ) ), report_color_error::no );
+    };
+    const auto this_sound = sounds::sound_at( lp );
     if( !this_sound.empty() ) {
-        mvwprintw( w_look, point( 1, ++line ), _( "You heard %s from here." ), this_sound );
+        print_heard_sound( this_sound, _( "here" ), lp );
     } else {
         // Check other z-levels
         auto tmp = lp;
@@ -9667,10 +9887,10 @@ void game::print_all_tile_info( const tripoint_bub_ms &lp, const catacurses::win
                 continue;
             }
 
-            auto zlev_sound = sounds::sound_at( tmp );
+            const auto zlev_sound = sounds::sound_at( tmp );
             if( !zlev_sound.empty() ) {
-                mvwprintw( w_look, point( 1, ++line ), tmp.z() > lp.z() ?
-                           _( "You heard %s from above." ) : _( "You heard %s from below." ), zlev_sound );
+                const auto from = tmp.z() > lp.z() ? _( "above" ) : _( "below" );
+                print_heard_sound( zlev_sound, from, tmp );
             }
         }
     }

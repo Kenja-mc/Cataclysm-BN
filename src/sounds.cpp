@@ -2933,7 +2933,7 @@ void sounds::process_sound_markers( Character *who )
                     who->get_value( "sound_marker_legend" ).empty() ) {
                     who->set_value( "sound_marker_legend", "1" );
                     add_msg( game_message_params{ m_info, gmf_bypass_cooldown },
-                             _( "? = a sound you heard, · = an older one." ) );
+                             _( "? = a sound you heard, · = an older one. ^/v = another level." ) );
                 }
             }
         }
@@ -3066,7 +3066,7 @@ void sounds::reset_markers()
     }
     const auto keep = get_option<int>( "SOUND_MARKER_TURNS" );
     std::erase_if( sound_markers, [&]( const auto & mark ) {
-        return keep <= 1 || calendar::turn - mark.second.created_at >= time_duration::from_turns( keep - 1 );
+        return keep <= 1 || calendar::turn - mark.second.created_at >= time_duration::from_turns( keep );
     } );
 }
 
@@ -3088,6 +3088,36 @@ auto sounds::get_footstep_markers() -> std::vector<footstep_marker>
     | std::ranges::to<std::vector>();
 }
 
+auto sounds::footstep_marker_signature() -> std::uint64_t
+{
+    const auto mix = []( std::uint64_t hash, const std::uint64_t value ) {
+        return ( hash ^ value ) * 0x100000001b3ULL;
+    };
+    auto signature = std::uint64_t{ 0xcbf29ce484222325ULL };
+    signature = mix( signature,
+                     static_cast<std::uint64_t>( get_option<bool>( "SOUND_MARKER_GLYPH_AGING" ) ) );
+    signature = mix( signature, static_cast<std::uint64_t>(
+                        g->u.bub_pos().z() + g->u.view_offset.z() ) );
+    if( hears_nothing( g->u ) ) {
+        return signature;
+    }
+    auto combined = std::uint64_t{ 0 };
+    for( const auto &mark : sound_markers ) {
+        if( g->u.sees( mark.first ) ) {
+            continue;
+        }
+        auto hash = std::uint64_t{ 0xcbf29ce484222325ULL };
+        hash = mix( hash, static_cast<std::uint64_t>( mark.first.x() ) );
+        hash = mix( hash, static_cast<std::uint64_t>( mark.first.y() ) );
+        hash = mix( hash, static_cast<std::uint64_t>( mark.first.z() ) );
+        hash = mix( hash, static_cast<std::uint64_t>( std::min(
+                        to_turns<int>( calendar::turn - mark.second.created_at ), 2 ) ) );
+        hash = mix( hash, static_cast<std::uint64_t>( mark.second.category ) );
+        combined ^= hash;
+    }
+    return mix( signature, combined );
+}
+
 std::pair< std::vector<tripoint_bub_ms>, std::vector<tripoint_bub_ms>> sounds::get_monster_sounds()
 {
     std::vector<tripoint_bub_ms> allsounds;
@@ -3104,6 +3134,9 @@ std::pair< std::vector<tripoint_bub_ms>, std::vector<tripoint_bub_ms>> sounds::g
 
 std::string sounds::sound_at( const tripoint_bub_ms &location )
 {
+    if( hears_nothing( g->u ) || g->u.sees( location ) ) {
+        return std::string();
+    }
     auto this_sound = sound_markers.find( location );
     if( this_sound == sound_markers.end() ) {
         return std::string();

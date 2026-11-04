@@ -9,10 +9,26 @@ Upstream's own changes are in `docs/en/game/changelog`.
 ### Added
 
 - **Container highlight** (Options → Interface, on by default): the container the pointer selects
-  is tinted. Yellow marks a container whose contents are visible now; cyan marks one you have
-  looked inside before. A container whose contents you have never seen stays untinted, so hidden
-  loot is not revealed. The terminal recolors the container glyph; the tiles build tints the
-  selection highlight. Turn it off to keep the plain selection highlight.
+  is tinted. Yellow marks a container whose contents are visible now; cyan marks one where you
+  have seen items before and its contents are hidden now. A container whose contents you have
+  never seen stays untinted, so hidden loot is not revealed. Looking inside an empty container
+  clears its remembered loot, so an emptied container gets no tint later. The terminal recolors
+  the container glyph; the tiles build tints the selection highlight. Turn it off to keep the
+  plain selection highlight.
+
+### Changed
+
+- Sound markers shrink to a dot in the tiles build as well as the terminal view: a fresh marker
+  keeps its sprite, and from two turns old it becomes the same small `·`, while a marker on
+  another level keeps its `^` or `v` arrow. A marker's colour still fades. With Sound markers
+  shrink off, both builds keep the `?` or arrow and the full sprite for the marker's whole
+  lifetime, and the marker still disappears after Sound marker turns.
+- The Mouse View line for a heard sound names where it came from and its age
+  (`Heard a yell from above, ~2 turns ago.`) instead of only naming the sound.
+- Sound markers are pruned while a multi-turn activity spends turns, so an old cue does not sit
+  on the map for the whole activity.
+- **Pause when sound markers age** (Options → Interface, off by default) briefly holds up to four
+  marker transitions per activity without spending in-game time.
 
 ## 2026-11-02
 

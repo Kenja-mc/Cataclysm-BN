@@ -468,12 +468,18 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   characters. They loop in real time even while you stand still, starting without another keypress.
   Options → Graphics → Status effect animations turns them off.
 - **Fading sound markers**: the `?` for a sound you heard but cannot see stays for a few turns,
-  dims, and becomes a small `·` once it is two turns old, so a fresh cue looks different from a
-  stale one.  The first marker in a game explains the glyphs in the log once, when
+  dims, and becomes a small `·` once it is two turns old in both the terminal and tiles views, so
+  a fresh cue looks different from a stale one; a cue on another level keeps its `^` or `v`
+  arrow.  The Mouse View line for that tile names where the sound came from — here, above or
+  below — and how old it is (`Heard a yell from above, ~2 turns ago.`).  Markers age out while a
+  multi-turn activity spends turns, not only after a player action, so no cue outstays
+  Sound marker turns.  The first marker in a game explains the glyphs in the log once, when
   Options → Interface → Show first-time tips is on.  Losing your hearing clears the markers
   already on the map.  Options → Interface → Sound marker turns sets how long a cue lasts (1
   turn gives the upstream behaviour, where it vanishes after your next action); Sound markers
-  shrink keeps the single glyph.
+  shrink off keeps the `?` or arrow for the marker's whole lifetime, and the colour still fades.
+  Pause when sound markers age is off by default. Turn it on to hold up to four changed marker
+  frames per activity for about 250 ms each; the pauses do not spend in-game time.
 - **Activity line in the log**: while an activity runs, the top row of the Message log names it,
   its progress and the time left, counted with that activity's own speed factors.  Further log
   rows keep their messages.  Options → Interface → Activity line in the log turns the line off
@@ -492,9 +498,11 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   stops scrolling; pressing a key recenters the view without making hover consume a turn.
   Options → Interface → Cursor panning enables it; Edge scrolling chooses the speed or disables it.
 - **Container highlight** (Options → Interface): the container the pointer selects is tinted.
-  Yellow means its contents are visible now; cyan means you have looked inside it before. A
-  container whose contents you have never seen stays untinted, so hidden loot is never revealed.
-  The terminal recolors the container glyph; the tiles version tints the selection highlight.
+  Yellow means its contents are visible now; cyan means you have seen items inside it before and
+  its contents are hidden now. A container whose contents you have never seen stays untinted, so
+  hidden loot is never revealed. The memory records only loot you actually observed: looking
+  inside an empty container clears it, so an emptied container gets no tint later. The terminal
+  recolors the container glyph; the tiles version tints the selection highlight.
 - **Pixel minimap zoom** (tiles): choose 1x, 2x or 4x under Options → Graphics without changing
   the main map's zoom. **Pixel minimap item markers**, off by default, adds gold dots for loot you
   can currently see. Items behind walls or inside sealed furniture do not get markers.

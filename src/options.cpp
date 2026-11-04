@@ -2087,8 +2087,12 @@ void options_manager::add_options_interface()
          translate_marker( "How many turns a ? marker for a sound you heard but couldn't see stays on the map, fading as it ages.  1 clears it after your next action, as upstream does." ),
          1, 10, 3 );
     add( "SOUND_MARKER_GLYPH_AGING", interface, translate_marker( "Sound markers shrink" ),
-         translate_marker( "In the terminal view, a sound marker becomes a small dot once it is two turns old.  If false, it keeps its ? or arrow for its whole lifetime; the colour still fades.  The one-time glyph legend appears with first-time tips." ),
+         translate_marker( "A sound marker becomes a small dot once it is two turns old.  If false, it keeps its ? or arrow for its whole lifetime; the colour still fades.  A marker on another level keeps its arrow.  The one-time glyph legend appears with first-time tips." ),
          true
+       );
+    add( "SOUND_MARKER_PACING", interface, translate_marker( "Pause when sound markers age" ),
+         translate_marker( "Hold the screen briefly when a sound marker you already saw ages or fades out while an activity runs, so you can watch it change.  Only a few pauses happen per activity.  Off keeps activities at full speed." ),
+         false
        );
 
     add( "ENEMY_EDGE_ARROWS", interface, translate_marker( "Enemy edge arrows" ),

@@ -167,6 +167,13 @@ auto exact_rotation_scale( const int degrees ) -> float
     return reach > 0.0 ? static_cast<float>( 1.0 / reach ) : 1.0f;
 }
 
+constexpr int stale_marker_color = catacurses::black + 8;
+
+auto footstep_marker_uses_dot( const map_overlay::overlay &mark ) -> bool
+{
+    return mark.kind == map_overlay::overlay_kind::sound_marker && mark.stale && mark.z_offset == 0;
+}
+
 std::string get_ascii_tile_id( const uint32_t sym, const int FG, const int BG )
 {
     return std::string( { 'A', 'S', 'C', 'I', 'I', '_', static_cast<char>( sym ), static_cast<char>( FG ), static_cast<char>( BG ) } );
@@ -4183,6 +4190,14 @@ void cata_tiles::draw( point dest, const tripoint_bub_ms &center, int width, int
                    do_draw_sct || do_draw_zones || do_draw_cone_aoe;
 
     draw_footsteps_frame( frame_overlays );
+    for( const auto &mark : frame_overlays ) {
+        if( !footstep_marker_uses_dot( mark ) ) {
+            continue;
+        }
+        overlay_strings.emplace(
+                           player_to_screen( mark.pos.xy() ) + point( tile_width / 2, 0 ),
+                           formatted_text( "·", stale_marker_color, direction::NORTH ) );
+    }
     if( in_animation ) {
         if( do_draw_explosion ) {
             draw_explosion_frame();
@@ -7540,14 +7555,20 @@ void cata_tiles::draw_footsteps_frame( const std::vector<map_overlay::overlay> &
     static const std::string id_footstep_below = "footstep_below";
 
     for( const auto &mark : overlays ) {
-        if( mark.kind != map_overlay::overlay_kind::sound_marker ) {
+        if( mark.kind != map_overlay::overlay_kind::sound_marker || footstep_marker_uses_dot( mark ) ) {
             continue;
         }
         const auto &id = mark.z_offset == 0 ? id_footstep :
                          mark.z_offset > 0 ? id_footstep_above : id_footstep_below;
         const auto light = mark.stale ? lit_level::DARK :
                            mark.age == 0 ? lit_level::LIT : lit_level::LOW;
-        draw_from_id_string( {id, C_NONE, empty_string, 0, 0}, mark.pos, std::nullopt, std::nullopt,
+        auto fade = tint_config{};
+        if( mark.age > 0 ) {
+            const auto level = static_cast<uint8_t>( mark.age >= 2 ? 141 : 204 );
+            fade.blend_mode = tint_blend_mode::multiply;
+            fade.color = SDL_Color{ level, level, level, 255 };
+        }
+        draw_from_id_string( {id, C_NONE, empty_string, 0, 0}, mark.pos, std::nullopt, fade,
                              light, false, 0, false );
     }
 }

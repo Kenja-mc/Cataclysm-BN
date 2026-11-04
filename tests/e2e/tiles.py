@@ -25,6 +25,7 @@ Usage:
   python3 tests/e2e/tiles.py numbered_menu [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py numbered_viewport [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
   python3 tests/e2e/tiles.py state_channel [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
+  python3 tests/e2e/tiles.py sound_markers [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
 
 --root is the game tree (data and the curses build); --binary is the tiles executable.
 Artifacts (window captures, marker crops, logs, fixture asserts, result.json) stay in --out.
@@ -537,7 +538,7 @@ class Session:
     def build_world(self, zoom_ruler=False):
         tmux_game.ROOT = self.root
         game = Game(name="bn-tiles-e2e-fixture", options={"SAFEMODE": "false", "INITIAL_TIME": "12"},
-                    userdir=self.curses_userdir)
+                    userdir=self.curses_userdir, owns_userdir=False)
         try:
             start_new_game(game)
             build_fixture(game, self.work, zoom_ruler=zoom_ruler)
@@ -549,7 +550,7 @@ class Session:
         self.world = saves[0].name
 
     @contextmanager
-    def running_game(self, label, tiles_options, fresh=True, state_out=False):
+    def running_game(self, label, tiles_options, fresh=True, state_out=False, world_mods=None):
         run = self.work / "runs" / label
         userdir = run / "userdir"
         xdg = run / "xdg"
@@ -559,6 +560,21 @@ class Session:
             shutil.copytree(self.curses_userdir / "config", userdir / "config")
             shutil.copytree(self.curses_userdir / "save", userdir / "save")
             shutil.copytree(self.curses_userdir / "config", xdg / "cataclysm-bn")
+            mods = self.curses_userdir / "mods"
+            if world_mods:
+                require(fresh, "world_mods only works for a fresh launch userdir")
+                require(mods.is_dir(), f"sound marker mods are missing: {mods}")
+                shutil.copytree(mods, userdir / "mods")
+                path = userdir / "save" / self.world / "mods.json"
+                require(path.exists(), f"world mods list is missing: {path}")
+                rows = json.loads(path.read_text())
+                rows += [mod for mod in world_mods if mod not in rows]
+                path.write_text(json.dumps(rows))
+                written = json.loads(path.read_text())
+                require(all(mod in written for mod in world_mods),
+                        f"world mods list did not take {world_mods}: {written}")
+            elif mods.is_dir():
+                shutil.copytree(mods, userdir / "mods")
             patch_launch_options(userdir, xdg, {**DETERMINISTIC_OPTIONS, **tiles_options})
         for sub in ("home", "cache", "data", "state"):
             (run / sub).mkdir(parents=True, exist_ok=True)
@@ -1330,6 +1346,7 @@ MENU_DRAG_KEYS = ("F12", "S", "m")
 def menu_scrollbar_cells(session):
     cols, rows = MENU_DRAG_TERMINAL
     probe = Game(name="bn-tiles-e2e-menu-probe", cols=cols, rows=rows, userdir=session.work / "probe",
+                 owns_userdir=True,
                  options={"CONTROL_SCHEME": "modern", "SAFEMODE": "false", "SHOW_WELCOME": "false"})
     try:
         start_new_game(probe)
@@ -1446,6 +1463,12 @@ from vehicle_rotation import case_vehicle_rotation  # noqa: E402
 from driving_dashboard_native import case_driving_dashboard  # noqa: E402
 
 
+def case_sound_markers(session):
+    from sound_markers_native import case_sound_markers as run_sound_markers
+
+    return run_sound_markers(session)
+
+
 def case_map_overlays(session):
     observations = {}
     with session.running_game("map-overlays", {"CONTROL_SCHEME": "modern"},
@@ -1484,7 +1507,25 @@ CASES = {"minimap": case_minimap, "mouse": case_mouse, "side_buttons": case_side
          "driving_dashboard": case_driving_dashboard,
          "numbered_rows": case_numbered_rows, "numbered_menu": case_numbered_menu,
          "numbered_viewport": case_numbered_viewport, "state_channel": case_state_channel,
-         "map_overlays": case_map_overlays}
+         "map_overlays": case_map_overlays, "sound_markers": case_sound_markers}
+
+
+def copy_work_tree(source, destination):
+    source, destination = Path(source), Path(destination)
+
+    def ignore(directory, names):
+        skipped = []
+        for name in names:
+            candidate = Path(directory) / name
+            try:
+                if candidate.is_socket() or candidate.is_fifo() or candidate.is_block_device() \
+                        or candidate.is_char_device():
+                    skipped.append(name)
+            except OSError:
+                skipped.append(name)
+        return skipped
+
+    shutil.copytree(source, destination, ignore=ignore, symlinks=True, dirs_exist_ok=True)
 
 
 def main(argv=None):
@@ -1520,6 +1561,9 @@ def main(argv=None):
         elif args.case in ("numbered_rows", "numbered_viewport"):
             from numbered_rows import build_numbered_rows_world
             build_numbered_rows_world(session)
+        elif args.case == "sound_markers":
+            from sound_markers_native import build_sound_marker_world
+            build_sound_marker_world(session)
         else:
             session.build_world(zoom_ruler=args.case == "zoom")
         failures, report = CASES[args.case](session)
@@ -1529,7 +1573,7 @@ def main(argv=None):
     finally:
         session.close()
     if failures:
-        shutil.move(str(work), str(artifacts / "work"))
+        copy_work_tree(work, artifacts / "work")
     else:
         shutil.rmtree(work, ignore_errors=True)
     result = {"case": args.case, "passed": not failures, "failures": failures, "observations": report}

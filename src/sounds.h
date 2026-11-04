@@ -85,6 +85,7 @@ struct footstep_marker {
     sound_t category = sound_t::background;
 };
 auto get_footstep_markers() -> std::vector<footstep_marker>;
+auto footstep_marker_signature() -> std::uint64_t;
 // Return a vector of all sound events not from monsters, and all sound events from monsters.
 std::pair< std::vector<tripoint_bub_ms>, std::vector<tripoint_bub_ms>> get_monster_sounds();
 // retrieve the sound event(s?) at a location.
