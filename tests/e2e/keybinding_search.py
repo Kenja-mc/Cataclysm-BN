@@ -66,7 +66,8 @@ def test_local_unbind_can_be_readded_globally(_g):
     game = None
     reloaded = None
     try:
-        game = Game(name="bn-e2e-keybinding-readd", options=options, userdir=userdir)
+        game = Game(name="bn-e2e-keybinding-readd", options=options, userdir=userdir,
+                    owns_userdir=True)
         start_new_game(game)
         game.define_lua(HELPERS)
         arena(game)
@@ -105,7 +106,8 @@ def test_local_unbind_can_be_readded_globally(_g):
             + game.screen())
 
         subprocess.run(["tmux", "kill-session", "-t", game.name], check=True)
-        reloaded = Game(name="bn-e2e-keybinding-reloaded", options=options, userdir=userdir)
+        reloaded = Game(name="bn-e2e-keybinding-reloaded", options=options, userdir=userdir,
+                        owns_userdir=True)
         game = None
         start_new_game(reloaded)
         reloaded.define_lua(HELPERS)

@@ -59,7 +59,7 @@ def keyguess_userdir():
 
 
 def new_game():
-    game = Game(name="bn-keyguess", userdir=keyguess_userdir(), options={
+    game = Game(name="bn-keyguess", userdir=keyguess_userdir(), owns_userdir=True, options={
         "SAFEMODE": "false", "SHOW_WELCOME": "false", "SHOW_TIPS": "false",
         "CONTROL_SCHEME": "modern", "ANIMATIONS": "false", "NO_UNKNOWN_COMMAND_MSG": "false",
     })

@@ -16,9 +16,14 @@ fixtures.py, which keeps one game per profile for the whole process.
   python3 tests/e2e/run.py --durations=PATH    record per-test seconds for the shard split
   python3 tests/e2e/run.py --check-durations   exit 1 when a test has no recorded duration
   python3 tests/e2e/run.py --serial --keep     leave the main game running for inspection
+
+SIGTERM, SIGINT and SIGHUP stop every tmux game this run started; a parallel parent also
+stops the shards it started, and each shard stops only its own games. `--serial --keep` still
+leaves its game running, and prints how to attach to it.
 """
 import json
 import os
+import shutil
 import sys
 import tempfile
 import time
@@ -29,7 +34,8 @@ from subprocess import CalledProcessError
 
 from fixtures import shared_game
 from helpers import HELPERS, settle
-from tmux_game import Game, start_new_game
+from tmux_game import (Game, close_owned_games, install_signal_handlers, on_cleanup,
+                       on_shutdown, remove_cleanup_hook, remove_shutdown_hook, start_new_game)
 
 from onboarding import TESTS as ONBOARDING_TESTS
 from movement import TESTS as MOVEMENT_TESTS
@@ -324,40 +330,126 @@ def shard_of(tests, index, count):
     return sorted(bins[index], key=order.__getitem__)
 
 
+SHARD_STOP_SECONDS = 120
+SHARD_KILL_SECONDS = 10
+
+
+def _shard_children(parent):
+    if not os.path.isdir("/proc"):
+        return []
+    script = str(Path(__file__).resolve()).encode()
+    invoked = str(__file__).encode()
+    marker = b"--shard="
+    children = []
+    for entry in os.listdir("/proc"):
+        if not entry.isdigit():
+            continue
+        try:
+            stat = Path(f"/proc/{entry}/stat").read_text()
+            argv = Path(f"/proc/{entry}/cmdline").read_bytes()
+        except OSError:
+            continue
+        fields = stat.rsplit(")", 1)[1].split()
+        if len(fields) < 20 or fields[0] == "Z" or fields[1] != str(parent):
+            continue
+        if marker in argv and (script in argv or invoked in argv):
+            children.append((int(entry), fields[19]))
+    return children
+
+
+def _shard_alive(pid, started):
+    try:
+        stat = Path(f"/proc/{pid}/stat").read_text()
+    except OSError:
+        return False
+    fields = stat.rsplit(")", 1)[1].split()
+    return len(fields) >= 20 and fields[0] != "Z" and fields[19] == started
+
+
 def run_parallel(count, forward):
+    import signal
     import subprocess
     import threading
     logs = Path(tempfile.mkdtemp(prefix="bn-e2e-parallel-"))
     processes = {}
     threads = []
-    for index in range(count):
-        durations = logs / f"shard-{index}.json"
-        process = subprocess.Popen(
-            [sys.executable, __file__, f"--shard={index}/{count}", f"--durations={durations}", *forward],
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1,
-            env={**os.environ, "BN_E2E_SHARD_CHILD": "1"})
-        processes[index] = (process, durations)
+    stopping = []
 
-        def pump(shard, stream=process.stdout):
-            for line in stream:
-                print(f"[{shard}] {line}", end="")
-        thread = threading.Thread(target=pump, args=(index,), daemon=True)
-        threads.append(thread)
-        thread.start()
-    failed = 0
-    merged = {}
-    for index, (process, durations) in processes.items():
-        if process.wait():
-            failed += 1
-        if durations.exists():
-            merged.update(json.loads(durations.read_text()))
-    for thread in threads:
-        thread.join()
-    wanted = next((a.split("=", 1)[1] for a in forward if a.startswith("--durations=")), "")
-    if wanted:
-        Path(wanted).write_text(json.dumps(merged, indent=1, sort_keys=True) + "\n")
-    print(f"{count} shards finished, {failed} failed")
-    return 1 if failed else 0
+    def stop_shards():
+        if stopping:
+            return
+        stopping.append(True)
+        shards = _shard_children(os.getpid())
+        for pid, started in shards:
+            if not _shard_alive(pid, started):
+                continue
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except OSError:
+                continue
+        pending = [(pid, started) for pid, started in shards
+                   if _shard_alive(pid, started)]
+        deadline = time.time() + SHARD_STOP_SECONDS
+        while pending and time.time() < deadline:
+            pending = [(pid, started) for pid, started in pending if _shard_alive(pid, started)]
+            time.sleep(0.05)
+        for pid, started in pending:
+            if not _shard_alive(pid, started):
+                continue
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except OSError:
+                continue
+        kill_deadline = time.time() + SHARD_KILL_SECONDS
+        pending = [(pid, started) for pid, started in pending if _shard_alive(pid, started)]
+        while pending and time.time() < kill_deadline:
+            pending = [(pid, started) for pid, started in pending if _shard_alive(pid, started)]
+            time.sleep(0.05)
+
+    hook = on_shutdown(stop_shards)
+    drop_logs = on_cleanup(lambda: shutil.rmtree(logs, ignore_errors=True))
+    try:
+        for index in range(count):
+            durations = logs / f"shard-{index}.json"
+            process = subprocess.Popen(
+                [sys.executable, __file__, f"--shard={index}/{count}", f"--durations={durations}", *forward],
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1,
+                env={**os.environ, "BN_E2E_SHARD_CHILD": "1"})
+            processes[index] = (process, durations)
+
+            def pump(shard, stream=process.stdout):
+                for line in stream:
+                    print(f"[{shard}] {line}", end="")
+            thread = threading.Thread(target=pump, args=(index,), daemon=True)
+            threads.append(thread)
+            thread.start()
+        failed = 0
+        merged = {}
+        for index, (process, durations) in processes.items():
+            while True:
+                try:
+                    code = process.wait(timeout=0.1)
+                    break
+                except subprocess.TimeoutExpired:
+                    continue
+            if code:
+                failed += 1
+            if durations.exists():
+                merged.update(json.loads(durations.read_text()))
+        for thread in threads:
+            thread.join()
+        wanted = next((a.split("=", 1)[1] for a in forward if a.startswith("--durations=")), "")
+        if wanted:
+            Path(wanted).write_text(json.dumps(merged, indent=1, sort_keys=True) + "\n")
+        print(f"{count} shards finished, {failed} failed")
+        return 1 if failed else 0
+    finally:
+        try:
+            stop_shards()
+        finally:
+            remove_shutdown_hook(hook)
+            remove_cleanup_hook(drop_logs)
+            shutil.rmtree(logs, ignore_errors=True)
 
 
 def default_setup(game):
@@ -374,6 +466,7 @@ def smoke_parallel():
 
 
 def main():
+    install_signal_handlers()
     args = sys.argv[1:]
     keep = "--keep" in args
     if "--help" in args or "-h" in args:
@@ -449,7 +542,16 @@ def main():
         g.define_lua(HELPERS)
         assert g.lua("gapi.get_avatar():set_mutation(MutationBranchId.new('DEBUG_STORAGE')) out('ok')") == ["ok"]
     else:
-        return run_tests(chosen, record=record)
+        def drop_socket_dir():
+            shutil.rmtree(socket_dir, ignore_errors=True)
+
+        hook = on_cleanup(drop_socket_dir)
+        try:
+            return run_tests(chosen, record=record)
+        finally:
+            remove_cleanup_hook(hook)
+            close_owned_games()
+            drop_socket_dir()
     try:
         failures = run_tests(chosen, g, record)
     finally:

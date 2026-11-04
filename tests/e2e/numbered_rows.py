@@ -98,6 +98,7 @@ def build_numbered_rows_world(session):
     tiles.tmux_game.ROOT = session.root
     columns, rows = screen_size()
     game = Game(name="bn-tiles-e2e-numbered-rows", userdir=session.curses_userdir,
+                owns_userdir=False,
                 cols=columns, rows=rows,
                 options={"SAFEMODE": "false", "INITIAL_TIME": "12", "CONTROL_SCHEME": "modern",
                          "SHOW_WELCOME": "false", "NEW_PICKUP_MENU": "false",

@@ -83,6 +83,7 @@ def build_vehicle_rotation_world(session):
 
     tiles.tmux_game.ROOT = session.root
     game = tiles.Game(name="bn-tiles-e2e-vehicle-rotation", userdir=session.curses_userdir,
+                      owns_userdir=False,
                       options={"SAFEMODE": "false", "INITIAL_TIME": "12",
                                "CONTROL_SCHEME": "classic", "ANIMATIONS": "false"})
     try:

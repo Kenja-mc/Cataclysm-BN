@@ -94,7 +94,7 @@ class RenderSession(Session):
     def build_world(self):
         tmux_game.ROOT = self.root
         game = Game(name="bn-render-fixture", options={"SAFEMODE": "false", "INITIAL_TIME": "12"},
-                    userdir=self.curses_userdir)
+                    userdir=self.curses_userdir, owns_userdir=False)
         try:
             start_new_game(game)
             console_source = " ".join(line for line in FIXTURE_LUA.splitlines()

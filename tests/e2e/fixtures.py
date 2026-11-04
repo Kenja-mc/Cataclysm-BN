@@ -1,6 +1,4 @@
-import atexit
 import json
-import os
 import sys
 from contextlib import contextmanager
 
@@ -9,17 +7,6 @@ from tmux_game import Game, start_new_game
 _games = {}
 _borrowers = {}
 _retired = set()
-
-
-def _close_all():
-    if os.environ.get("BN_E2E_KEEP"):
-        return
-    for game in _games.values():
-        game.close()
-    _games.clear()
-
-
-atexit.register(_close_all)
 
 
 def _key(options, cols, rows, keybindings, userdir, layout, state_path):
@@ -39,10 +26,11 @@ def retire(game):
 
 @contextmanager
 def shared_game(name, options=None, cols=140, rows=45, keybindings=None, userdir=None,
-                define="", setup=None, layout="labels", retries=1, state_path=None):
+                define="", setup=None, layout="labels", retries=1, state_path=None,
+                owns_userdir=None):
     for attempt in range(retries + 1):
         cm = _shared_game_once(name, options, cols, rows, keybindings, userdir,
-                               define, setup, layout, state_path)
+                               define, setup, layout, state_path, owns_userdir)
         try:
             game = cm.__enter__()
         except AssertionError:
@@ -61,7 +49,7 @@ def shared_game(name, options=None, cols=140, rows=45, keybindings=None, userdir
 
 @contextmanager
 def _shared_game_once(name, options, cols, rows, keybindings, userdir, define, setup, layout,
-                      state_path):
+                      state_path, owns_userdir):
     key = _key(options, cols, rows, keybindings, userdir, layout, state_path)
     game = _games.get(key)
     if game in _retired:
@@ -70,8 +58,12 @@ def _shared_game_once(name, options, cols, rows, keybindings, userdir, define, s
     if fresh:
         game = Game(name=name, cols=cols, rows=rows, options=options,
                     keybindings=keybindings, userdir=userdir, layout=layout,
-                    state_path=state_path)
+                    state_path=state_path, owns_userdir=owns_userdir)
         _games[key] = game
+    elif owns_userdir is True and not game._owns_userdir:
+        game.adopt_userdir()
+    elif owns_userdir is False:
+        game.keep_userdir()
     _borrowers[game] = _borrowers.get(game, 0) + 1
     try:
         if fresh:
@@ -80,6 +72,8 @@ def _shared_game_once(name, options, cols, rows, keybindings, userdir, define, s
                 game.define_lua(define)
         else:
             game.dismiss_error_popup()
+            if define and define not in game._defined:
+                game.define_lua(define)
         if setup:
             setup(game)
         yield game

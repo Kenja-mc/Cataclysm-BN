@@ -58,6 +58,7 @@ def hud_setup(game):
 @contextmanager
 def hud_game(tag, moon=False, **options):
     with shared_game(f"bn-e2e-hud-{tag}", cols=140, rows=45, userdir=layout_userdir(moon, options),
+                     owns_userdir=True,
                      define=HELPERS, setup=hud_setup,
                      options={"SAFEMODE": "false", "SHOW_WELCOME": "false",
                               "SHOW_TIPS": "false", "CONTROL_SCHEME": "modern",

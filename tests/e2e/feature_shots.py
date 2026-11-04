@@ -120,7 +120,7 @@ def build_world(session, scheme="modern", setup=""):
     tiles.tmux_game.ROOT = session.root
     key = f"{scheme}-{hashlib.sha256(setup.encode()).hexdigest()[:6]}" if setup else scheme
     userdir = session.work / f"fixture-{key}"
-    game = Game(name=f"bn-shots-fixture-{key}", userdir=userdir,
+    game = Game(name=f"bn-shots-fixture-{key}", userdir=userdir, owns_userdir=True,
                 options={"SAFEMODE": "false", "INITIAL_TIME": "12", "SHOW_WELCOME": "false",
                          "CONTROL_SCHEME": scheme})
     try:

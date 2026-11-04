@@ -29,7 +29,7 @@ def vehicle_game(name, **options):
     defaults = json.loads((ROOT / "data/mods/default.json").read_text())
     (userdir / "config").mkdir()
     (userdir / "config/default_mods.json").write_text(json.dumps([*defaults, "e2e_vehicle_memory"]))
-    game = Game(name=name, userdir=userdir,
+    game = Game(name=name, userdir=userdir, owns_userdir=True,
                 options={"SAFEMODE": "false", "ANIMATIONS": "false", "HUD_WINDOWS": "false",
                          **options})
     try:

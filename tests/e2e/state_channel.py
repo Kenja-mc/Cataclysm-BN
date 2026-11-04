@@ -32,7 +32,7 @@ def test_state_file_reports_inventory_and_turn(_g):
     userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-state-"))
     with shared_game("bn-e2e-state-channel",
                      options={"CONTROL_SCHEME": "modern", "SAFEMODE": "false"},
-                     define=HELPERS, userdir=userdir,
+                     define=HELPERS, userdir=userdir, owns_userdir=True,
                      state_path=userdir / "state.json") as game:
         give(game, "rock", 1)
         game.keys("i", delay=0.8)

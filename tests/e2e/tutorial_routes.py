@@ -292,7 +292,7 @@ def test_tutorial_move_names_replaced_binding(_g):
             "bindings": [{"input_method": "keyboard", "key": "j"}],
         }])
         game = Game(name="bn-e2e-tutorial-move-key", cols=174, rows=45,
-                    userdir=userdir, options=TUTORIAL_OPTIONS)
+                    userdir=userdir, owns_userdir=True, options=TUTORIAL_OPTIONS)
         try:
             start_tutorial(game)
             if lesson_prefix("LESSON_INTRO", "modern") not in game.screen():
@@ -364,7 +364,7 @@ def test_tutorial_unbound_action_shows_reachable_route(_g):
             "bindings": [], "is_deleted": True,
         }])
         game = Game(name="bn-e2e-tutorial-unbound", cols=174, rows=45,
-                    userdir=userdir, options=TUTORIAL_OPTIONS)
+                    userdir=userdir, owns_userdir=True, options=TUTORIAL_OPTIONS)
         try:
             initial_lessons(game, "modern")
             game.define_lua(HELPERS)
@@ -422,7 +422,7 @@ def test_tutorial_aim_keys_use_target_context(_g):
              "bindings": [{"input_method": "keyboard", "key": "j"}]},
         ])
         game = Game(name="bn-e2e-tutorial-target", cols=174, rows=45,
-                    userdir=userdir, options=TUTORIAL_OPTIONS)
+                    userdir=userdir, owns_userdir=True, options=TUTORIAL_OPTIONS)
         try:
             initial_lessons(game, "modern")
             game.define_lua(HELPERS)
@@ -462,7 +462,7 @@ def test_tutorial_look_names_rebound_selection_keys(_g):
             "bindings": [{"input_method": "keyboard", "key": "F"}],
         }])
         game = Game(name="bn-e2e-tutorial-look", cols=174, rows=45,
-                    userdir=userdir, options=TUTORIAL_OPTIONS)
+                    userdir=userdir, owns_userdir=True, options=TUTORIAL_OPTIONS)
         try:
             start_tutorial(game)
             if lesson_prefix("LESSON_INTRO", "modern") not in game.screen():

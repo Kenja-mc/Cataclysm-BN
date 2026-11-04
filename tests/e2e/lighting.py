@@ -72,7 +72,7 @@ class LightingSession(Session):
     def build_world(self):
         tmux_game.ROOT = self.root
         game = Game(name="bn-lighting-fixture", options={"SAFEMODE": "false"},
-                    userdir=self.curses_userdir)
+                    userdir=self.curses_userdir, owns_userdir=False)
         self.fixtures = {}
         try:
             start_new_game(game)

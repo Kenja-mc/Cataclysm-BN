@@ -49,7 +49,7 @@ def aircraft_game(name: str) -> Game:
     (userdir / "config").mkdir()
     (userdir / "config/default_mods.json").write_text(
         json.dumps([*defaults, "e2e_dashboard_plane"]))
-    game = Game(name=name, userdir=userdir, layout="fusion", cols=160, rows=45,
+    game = Game(name=name, userdir=userdir, owns_userdir=True, layout="fusion", cols=160, rows=45,
                 options={**OPTIONS, "SAFEMODE": "false"})
     try:
         start_new_game(game)

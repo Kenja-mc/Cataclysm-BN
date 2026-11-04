@@ -20,7 +20,7 @@ def strip(cols, rows, layout="labels", spacers=False, panels=None):
         "layouts": [{"layout_id": layout, "panels": panels or []}],
     }]))
     g = Game(name=f"bn-e2e-keyhints-{cols}x{rows}-{os.getpid()}", cols=cols, rows=rows,
-             userdir=userdir,
+             userdir=userdir, owns_userdir=True,
              options={"SAFEMODE": "false", "SHOW_WELCOME": "false",
                       "CONTROL_SCHEME": "modern", "SIDEBAR_SPACERS": str(spacers).lower(),
                       "HUD_WINDOWS": "false"})

@@ -20,7 +20,7 @@ def test_classic_weather_resize_preserves_facts_and_help(_g):
         ]}],
     }]))
     game = Game(name=f"bn-e2e-weather-layout-{os.getpid()}", cols=90, rows=45,
-                userdir=userdir, options={"SAFEMODE": "false", "HUD_WEATHER_BOX": "top_left",
+                userdir=userdir, owns_userdir=True, options={"SAFEMODE": "false", "HUD_WEATHER_BOX": "top_left",
                                          "HUD_COMBAT_BOX": "off", "HUD_VEHICLE_BOX": "off",
                                          "HUD_ICONS": "ascii", "SIDEBAR_POSITION": "right",
                                          "CONTROL_SCHEME": "classic"})

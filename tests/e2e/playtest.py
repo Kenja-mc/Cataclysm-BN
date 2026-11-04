@@ -13,7 +13,12 @@ next to the player, and then:
 The same startup path serves the agentic playtest (tests/e2e/agent_playtest.py): start_scenario()
 returns a handle whose .game (curses) or .tiles (the tiles build on a private Xvfb display) carries
 the live game for tests/e2e/agent_state.py to read and drive, and whose .close() stops the game
-without deleting the private user directory. See docs/fork/agentic-playtests.md.
+without deleting the user directory (pass keep_userdir=False to discard it, which only works for a
+directory the harness owns). start_scenario() makes its own unique directory unless a caller passes
+userdir=; a caller's directory stays the caller's and is never scanned or removed unless the caller
+hands it over with owns_userdir=True. The attach path detaches the game so the session outlives this
+process.
+See docs/fork/agentic-playtests.md.
 """
 import argparse
 import json
@@ -22,6 +27,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -341,12 +347,25 @@ class ScenarioHandle:
     tiles: TilesRun | None = None
     about: str = ""
     check: tuple[str, ...] = field(default_factory=tuple)
+    owns_userdir: bool = False
 
-    def close(self):
+    def hand_off(self):
         if self.game is not None:
-            subprocess.run(["tmux", "kill-session", "-t", self.game.name], stderr=subprocess.DEVNULL)
+            self.game.detach()
+
+    def close(self, keep_userdir=True):
+        had_game = self.game is not None
+        if self.game is not None:
+            if keep_userdir:
+                self.game.keep_userdir()
+            self.game.close()
+            self.game = None
         if self.tiles is not None:
             self.tiles.close()
+            self.tiles = None
+        if not keep_userdir and self.owns_userdir and not had_game:
+            shutil.rmtree(self.userdir, ignore_errors=True)
+            self.owns_userdir = False
 
 
 SEED_PATTERN = re.compile(r"[A-Za-z0-9_.-]{1,64}")
@@ -486,7 +505,8 @@ class _Display:
         self.display = display
 
 
-def start_scenario(scenario_id, *, mode="curses", scheme="modern", userdir=None, seed=None):
+def start_scenario(scenario_id, *, mode="curses", scheme="modern", userdir=None, seed=None,
+                   owns_userdir=None):
     scenario = scenario_by_id(scenario_id)
     if mode not in ("curses", "tiles"):
         raise SystemExit(f"unknown mode {mode!r}; use 'curses' or 'tiles'")
@@ -496,9 +516,13 @@ def start_scenario(scenario_id, *, mode="curses", scheme="modern", userdir=None,
     if mode == "tiles" and start != "game":
         raise SystemExit(f"scenario {scenario_id!r} starts at {start!r} and has no saved world; "
                          "the tiles build can only reopen a saved world")
-    dirpath = Path(userdir) if userdir else Path("/tmp/bn-playtest") / scenario_id
-    shutil.rmtree(dirpath, ignore_errors=True)
-    dirpath.mkdir(parents=True)
+    if userdir:
+        dirpath = Path(userdir)
+        dirpath.mkdir(parents=True, exist_ok=True)
+        owned = bool(owns_userdir)
+    else:
+        dirpath = Path(tempfile.mkdtemp(prefix=f"bn-playtest-{scenario_id}-"))
+        owned = True if owns_userdir is None else bool(owns_userdir)
 
     options = {"SAFEMODE": "false", **scenario.get("options", {})}
     if scheme:
@@ -508,7 +532,8 @@ def start_scenario(scenario_id, *, mode="curses", scheme="modern", userdir=None,
     if wrapper:
         os.environ["GAME_WRAPPER"] = wrapper
     try:
-        g = Game(name=f"bn-playtest-{scenario_id}", options=options, userdir=dirpath)
+        g = Game(name=f"bn-playtest-{scenario_id}", options=options, userdir=dirpath,
+                 owns_userdir=owned)
     finally:
         if wrapper:
             if previous_wrapper is None:
@@ -518,7 +543,8 @@ def start_scenario(scenario_id, *, mode="curses", scheme="modern", userdir=None,
 
     def handle(**kwargs):
         return ScenarioHandle(scenario_id=scenario_id, mode=mode, scheme=scheme, userdir=dirpath,
-                              about=scenario["about"], check=tuple(scenario["check"]), **kwargs)
+                              about=scenario["about"], check=tuple(scenario["check"]),
+                              owns_userdir=owned, **kwargs)
 
     if start == "menu":
         reach_main_menu(g)
@@ -542,7 +568,8 @@ def start_scenario(scenario_id, *, mode="curses", scheme="modern", userdir=None,
 
     save_and_quit(g)
     save_name = wait_for_save(dirpath)
-    subprocess.run(["tmux", "kill-session", "-t", g.name], stderr=subprocess.DEVNULL)
+    g.keep_userdir()
+    g.close()
     run = start_tiles(dirpath, save_name, seed=seed)
     return handle(save_name=save_name, game=None, tiles=run)
 
@@ -632,16 +659,16 @@ def main():
     print(f"\n{scenario['id']}: {scenario['about']}\nWhat to check:")
     for line in scenario["check"]:
         print(f"  - {line}")
-    print(f"Game data: {handle.userdir}\n")
-
     if args.no_attach:
         print(handle.game.screen())
-        handle.game.close()
+        handle.close(keep_userdir=False)
         return 0
+    print(f"Game data: {handle.userdir}\n")
     if args.tiles:
         return reopen_in_tiles_window(handle)
     if sys.stdin.isatty() and "TMUX" not in os.environ:
         os.execvp("tmux", ["tmux", "attach", "-t", handle.game.name])
+    handle.hand_off()
     print(f"Attach with: tmux attach -t {handle.game.name}")
     return 0
 

@@ -21,7 +21,7 @@ def recording_game(name, mods=None):
     if mods is not None:
         (userdir / "config").mkdir()
         (userdir / "config/default_mods.json").write_text(json.dumps(mods))
-    game = Game(name=f"bn-e2e-{name}", userdir=userdir)
+    game = Game(name=f"bn-e2e-{name}", userdir=userdir, owns_userdir=True)
     opened = userdir / "opened_urls.log"
     opener = userdir / "bin/xdg-open"
     opener.write_text(f"#!/bin/sh\nprintf '%s\\n' \"$1\" >> '{opened}'\nexit 0\n")

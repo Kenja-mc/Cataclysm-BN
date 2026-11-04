@@ -147,7 +147,8 @@ def aim_rows(panel):
 def test_cover_on_the_line_and_point_blank(_g):
     userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-shot-cover-"))
     with shared_game("bn-e2e-shot-cover", options=profile(), define=HELPERS,
-                     userdir=userdir, state_path=userdir / "state.json") as game:
+                     userdir=userdir, state_path=userdir / "state.json",
+                     owns_userdir=True) as game:
         scene(game)
         furniture(game, 2, 0, "f_counter")
         open_aim_on_empty(game, 4)
@@ -173,7 +174,8 @@ def test_cover_on_the_line_and_point_blank(_g):
 def test_creatures_in_the_way_and_behind(_g):
     userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-shot-line-"))
     with shared_game("bn-e2e-shot-line", options=profile(), define=HELPERS,
-                     userdir=userdir, state_path=userdir / "state.json") as game:
+                     userdir=userdir, state_path=userdir / "state.json",
+                     owns_userdir=True) as game:
         scene(game)
         spawn(game, "A", 4, 0)
         spawn(game, "B", 5, 0)
@@ -190,7 +192,8 @@ def test_creatures_in_the_way_and_behind(_g):
 def test_stray_cone_narrows_with_the_aim_mode(_g):
     userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-shot-strays-"))
     with shared_game("bn-e2e-shot-strays", options=profile(), define=HELPERS,
-                     userdir=userdir, state_path=userdir / "state.json") as game:
+                     userdir=userdir, state_path=userdir / "state.json",
+                     owns_userdir=True) as game:
         scene(game)
         spawn(game, "A", 5, 0)
         spawn(game, "B", 5, 2)
@@ -210,7 +213,8 @@ def test_stray_cone_narrows_with_the_aim_mode(_g):
 def test_advance_estimate_on_the_aim_rows(_g):
     userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-shot-advance-"))
     with shared_game("bn-e2e-shot-advance", options=profile(), define=HELPERS,
-                     userdir=userdir, state_path=userdir / "state.json") as game:
+                     userdir=userdir, state_path=userdir / "state.json",
+                     owns_userdir=True) as game:
         scene(game)
         spawn(game, "A", 5, 0, "mon_zeer")
         pin(game, ("A", 5, 0))
@@ -231,7 +235,8 @@ def test_advance_estimate_on_the_aim_rows(_g):
 def test_hit_label_matches_the_selected_row(_g):
     userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-shot-label-"))
     with shared_game("bn-e2e-shot-label", options=profile(), define=HELPERS,
-                     userdir=userdir, state_path=userdir / "state.json") as game:
+                     userdir=userdir, state_path=userdir / "state.json",
+                     owns_userdir=True) as game:
         scene(game)
         spawn(game, "A", 4, 0)
         pin(game, ("A", 4, 0))
@@ -258,7 +263,8 @@ def test_hit_label_matches_the_selected_row(_g):
 def test_click_retargets_then_fires(_g):
     userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-shot-click-"))
     with shared_game("bn-e2e-shot-click", options=profile(), define=HELPERS,
-                     userdir=userdir, state_path=userdir / "state.json") as game:
+                     userdir=userdir, state_path=userdir / "state.json",
+                     owns_userdir=True) as game:
         scene(game)
         spawn(game, "A", 4, 0)
         spawn(game, "B", 5, 0)
@@ -287,7 +293,8 @@ def test_click_retargets_then_fires(_g):
 def test_damage_and_ap_match_the_item_info(_g):
     userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-shot-damage-"))
     with shared_game("bn-e2e-shot-damage", options=profile(), define=HELPERS,
-                     userdir=userdir, state_path=userdir / "state.json") as game:
+                     userdir=userdir, state_path=userdir / "state.json",
+                     owns_userdir=True) as game:
         scene(game)
         spawn(game, "A", 4, 0)
         pin(game, ("A", 4, 0))
@@ -318,7 +325,8 @@ def test_damage_and_ap_match_the_item_info(_g):
 def test_option_off_leaves_the_aim_window_unchanged(_g):
     userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-shot-off-"))
     with shared_game("bn-e2e-shot-off", options=profile(SHOT_PREVIEW="false"), define=HELPERS,
-                     userdir=userdir, state_path=userdir / "state.json") as game:
+                     userdir=userdir, state_path=userdir / "state.json",
+                     owns_userdir=True) as game:
         scene(game)
         furniture(game, 2, 0, "f_counter")
         open_aim_on_empty(game, 4)

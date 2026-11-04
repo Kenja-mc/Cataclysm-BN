@@ -1,8 +1,10 @@
+import atexit
 import curses
 import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -10,6 +12,358 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+TMUX_TIMEOUT = 5
+START_TIMEOUT = 60
+
+_owned = set()
+_orphan_userdirs = set()
+_starting = {}
+_shutdown_hooks = []
+_cleanup_hooks = []
+_handling_signal = None
+
+
+def _target(name):
+    return f"={name}:"
+
+
+def _kill_session(name):
+    try:
+        return subprocess.run(["tmux", "kill-session", "-t", _target(name)],
+                              stderr=subprocess.DEVNULL, timeout=TMUX_TIMEOUT)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+
+def _session_exists(name):
+    try:
+        return subprocess.run(["tmux", "has-session", "-t", _target(name)],
+                              stderr=subprocess.DEVNULL,
+                              timeout=TMUX_TIMEOUT).returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return True
+
+
+def _close_starting_sessions(grace=3.0):
+    deadline = time.time() + grace
+    seen = set()
+    while True:
+        for name, client in tuple(_starting.items()):
+            if client is not None:
+                seen.add(name)
+                _stop_pid(client[0], 1.0, client[1])
+            found = _new_session_client_pids(name)
+            for pid, started in found:
+                _stop_pid(pid, 1.0, started)
+            if found:
+                seen.add(name)
+                if _starting.get(name) is None:
+                    _starting[name] = found[0]
+            _kill_session(name)
+            if name in seen and not _session_exists(name) and not _new_session_client_pids(name):
+                _starting.pop(name, None)
+        if not _starting:
+            return
+        if time.time() >= deadline:
+            for _ in range(2):
+                for name in tuple(_starting):
+                    for pid, started in _new_session_client_pids(name):
+                        _stop_pid(pid, 0.5, started)
+                    _kill_session(name)
+                time.sleep(0.05)
+            for name in tuple(_starting):
+                _starting.pop(name, None)
+            return
+        time.sleep(0.05)
+
+
+def on_shutdown(hook):
+    _shutdown_hooks.append(hook)
+    return hook
+
+
+def remove_shutdown_hook(hook):
+    if hook in _shutdown_hooks:
+        _shutdown_hooks.remove(hook)
+
+
+def on_cleanup(hook):
+    _cleanup_hooks.append(hook)
+    return hook
+
+
+def remove_cleanup_hook(hook):
+    if hook in _cleanup_hooks:
+        _cleanup_hooks.remove(hook)
+
+
+def close_owned_games():
+    if os.environ.get("BN_E2E_KEEP"):
+        return
+    try:
+        _close_starting_sessions()
+    except Exception as error:
+        print(f"could not stop a starting game: {error}", file=sys.stderr)
+    for game in tuple(_owned):
+        try:
+            game.close()
+        except Exception as error:
+            print(f"could not stop {game.name}: {error}", file=sys.stderr)
+    for path in tuple(_orphan_userdirs):
+        shutil.rmtree(path, ignore_errors=True)
+        _orphan_userdirs.discard(path)
+
+
+def _run_shutdown_hooks():
+    for hook in tuple(_shutdown_hooks):
+        try:
+            hook()
+        except Exception as error:
+            print(f"shutdown hook failed: {error}", file=sys.stderr)
+
+
+def _run_cleanup_hooks():
+    for hook in tuple(_cleanup_hooks):
+        try:
+            hook()
+        except Exception as error:
+            print(f"cleanup hook failed: {error}", file=sys.stderr)
+
+
+def _report_kept_games():
+    socket_dir = os.environ.get("TMUX_TMPDIR", "")
+    for game in tuple(_owned):
+        print(f"Kept game: env -u TMUX TMUX_TMPDIR={socket_dir} "
+              f"tmux attach-session -t {_target(game.name)}", file=sys.stderr)
+        print(f"User directory: {game.userdir}", file=sys.stderr)
+    sys.stderr.flush()
+
+
+def _cleanup_at_exit():
+    if os.environ.get("BN_E2E_KEEP"):
+        return
+    _run_shutdown_hooks()
+    close_owned_games()
+    _run_cleanup_hooks()
+
+
+atexit.register(_cleanup_at_exit)
+
+
+def _handle_signal(signum, _frame):
+    global _handling_signal
+    if _handling_signal is not None:
+        return
+    _handling_signal = signum
+    try:
+        _run_shutdown_hooks()
+        close_owned_games()
+        if os.environ.get("BN_E2E_KEEP"):
+            _report_kept_games()
+        else:
+            _run_cleanup_hooks()
+    finally:
+        signal.signal(signum, signal.SIG_DFL)
+        os.kill(os.getpid(), signum)
+
+
+def install_signal_handlers():
+    try:
+        signal.pthread_sigmask(signal.SIG_UNBLOCK,
+                               (signal.SIGTERM, signal.SIGINT, signal.SIGHUP))
+    except (AttributeError, OSError):
+        pass
+    for signum in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
+        try:
+            if signal.getsignal(signum) == signal.SIG_IGN:
+                continue
+            signal.signal(signum, _handle_signal)
+        except (ValueError, OSError):
+            continue
+
+
+_UNAVAILABLE_START_TIME = "unavailable"
+
+
+def _start_time(pid):
+    if not os.path.isdir("/proc"):
+        return _UNAVAILABLE_START_TIME
+    try:
+        stat = Path(f"/proc/{pid}/stat").read_text()
+    except OSError:
+        return _UNAVAILABLE_START_TIME if os.path.exists(f"/proc/{pid}") else None
+    fields = stat.rsplit(")", 1)[1].split()
+    if len(fields) < 20 or fields[0] == "Z":
+        return None
+    return fields[19]
+
+
+def _child_processes():
+    if not os.path.isdir("/proc"):
+        return []
+    parent = str(os.getpid())
+    children = []
+    for entry in os.listdir("/proc"):
+        if not entry.isdigit():
+            continue
+        try:
+            stat = Path(f"/proc/{entry}/stat").read_text()
+            argv = Path(f"/proc/{entry}/cmdline").read_bytes()
+        except OSError:
+            continue
+        fields = stat.rsplit(")", 1)[1].split()
+        if len(fields) < 20 or fields[1] != parent or fields[0] == "Z":
+            continue
+        children.append((int(entry), argv))
+    return children
+
+
+def _unreaped_client_identity(client):
+    return client.pid, _start_time(client.pid)
+
+
+def _new_session_client_pids(name):
+    marker = b"-s\0" + name.encode() + b"\0"
+    return [(pid, _start_time(pid)) for pid, argv in _child_processes()
+            if b"tmux" in argv and b"new-session" in argv and marker in argv]
+
+
+def _group_members(pid):
+    if not os.path.isdir("/proc"):
+        return []
+    group = str(pid)
+    members = []
+    for entry in os.listdir("/proc"):
+        if not entry.isdigit():
+            continue
+        try:
+            stat = Path(f"/proc/{entry}/stat").read_text()
+        except OSError:
+            continue
+        fields = stat.rsplit(")", 1)[1].split()
+        if len(fields) < 20 or fields[2] != group or fields[0] == "Z":
+            continue
+        members.append((int(entry), fields[19]))
+    return members
+
+
+def _pid_matches(pid, started):
+    if started == _UNAVAILABLE_START_TIME:
+        return True
+    if started is None:
+        return False
+    return _start_time(pid) == started
+
+
+def _signal_pid(pid, signum, started=None):
+    if not _pid_matches(pid, started):
+        return False
+    try:
+        os.kill(pid, signum)
+    except OSError:
+        return False
+    return True
+
+
+def _stop_pid(pid, grace, started=None):
+    if not _signal_pid(pid, signal.SIGTERM, started):
+        return True
+    deadline = time.time() + grace
+    while time.time() < deadline:
+        if not _pid_matches(pid, started):
+            return True
+        time.sleep(0.05)
+    _signal_pid(pid, signal.SIGKILL, started)
+    time.sleep(0.05)
+    return not _pid_matches(pid, started)
+
+
+def _stop_process_group(pid, grace=2.0, started=None, members=()):
+    if not _pid_matches(pid, started):
+        return True
+    verified = [(member, member_start) for member, member_start in members
+                if _pid_matches(member, member_start)]
+
+    def alive():
+        if _pid_matches(pid, started):
+            return True
+        return any(_pid_matches(member, member_start) for member, member_start in verified)
+
+    try:
+        os.killpg(pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    except OSError:
+        return _stop_pid(pid, grace, started)
+    for member, member_start in verified:
+        _signal_pid(member, signal.SIGTERM, member_start)
+    deadline = time.time() + grace
+    while time.time() < deadline:
+        if not alive():
+            return True
+        time.sleep(0.05)
+    try:
+        os.killpg(pid, signal.SIGKILL)
+    except OSError:
+        pass
+    for member, member_start in verified:
+        _signal_pid(member, signal.SIGKILL, member_start)
+    time.sleep(0.05)
+    return not alive()
+
+
+def _program(argv):
+    return argv.split(b"\0", 1)[0].rsplit(b"/", 1)[-1]
+
+
+def _processes_using(userdir):
+    if not os.path.isdir("/proc"):
+        return []
+    directory = str(userdir).encode()
+    spaced = b"--userdir " + directory
+    separate = b"--userdir\0" + directory
+    needles = (separate + b"\0", separate + b"/\0", spaced + b" ", spaced + b"\0")
+    pids = []
+    for entry in os.listdir("/proc"):
+        if not entry.isdigit():
+            continue
+        try:
+            argv = Path(f"/proc/{entry}/cmdline").read_bytes()
+        except OSError:
+            continue
+        if _program(argv) == b"tmux":
+            continue
+        if any(needle in argv for needle in needles):
+            pid = int(entry)
+            pids.append((pid, _start_time(pid)))
+    return pids
+
+
+def _stop_userdir_processes(userdir, grace=1.0):
+    for pid, started in _processes_using(userdir):
+        _stop_pid(pid, grace, started)
+
+
+def _unique_session_name(base):
+    taken = {game.name for game in tuple(_owned)}
+    if base not in taken:
+        return base
+    suffix = 1
+    while f"{base}-{suffix}" in taken:
+        suffix += 1
+    return f"{base}-{suffix}"
+
+
+def _pane_pids(name):
+    try:
+        listed = subprocess.run(["tmux", "list-panes", "-t", _target(name), "-F", "#{pane_pid}"],
+                                capture_output=True, text=True, timeout=TMUX_TIMEOUT)
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    if listed.returncode:
+        return []
+    pids = [int(value) for value in listed.stdout.split() if value.isdigit()]
+    return [(pid, _start_time(pid), _group_members(pid)) for pid in pids]
 
 
 def find_binary():
@@ -25,9 +379,20 @@ def find_binary():
 
 class Game:
     def __init__(self, name="bn-e2e", cols=140, rows=45, options=None, keybindings=None,
-                 userdir=None, layout="labels", state_path=None):
-        self.name = f"{name}-{os.getpid()}"
-        self.userdir = Path(userdir) if userdir else Path(tempfile.mkdtemp(prefix="bn-e2e-"))
+                 userdir=None, layout="labels", state_path=None, owns_userdir=None):
+        self.name = _unique_session_name(f"{name}-{os.getpid()}")
+        if userdir:
+            self.userdir = Path(userdir)
+            if owns_userdir is None:
+                owns_userdir = False
+        else:
+            self.userdir = Path(tempfile.mkdtemp(prefix="bn-e2e-"))
+            _orphan_userdirs.add(self.userdir)
+            if owns_userdir is None:
+                owns_userdir = True
+        self._owns_userdir = bool(owns_userdir)
+        self._defined = set()
+        _owned.add(self)
         self.state_path = Path(state_path).resolve() if state_path else None
         config = self.userdir / "config"
         config.mkdir(parents=True, exist_ok=True)
@@ -39,7 +404,7 @@ class Game:
                 [{"info": "", "default": "", "name": k, "value": v} for k, v in options.items()]))
         if keybindings:
             (config / "keybindings.json").write_text((ROOT / keybindings).read_text())
-        subprocess.run(["tmux", "kill-session", "-t", self.name], stderr=subprocess.DEVNULL)
+        _kill_session(self.name)
         stub_bin = self.userdir / "bin"
         stub_bin.mkdir(exist_ok=True)
         (stub_bin / "xdg-open").write_text("#!/bin/sh\nexit 0\n")
@@ -48,11 +413,27 @@ class Game:
         state_arg = f" --state-out {self.state_path}" if self.state_path else ""
         cmd = (f"cd {ROOT} && env -u DISPLAY -u WAYLAND_DISPLAY {env} "
                f"{os.environ.get('GAME_WRAPPER', '')} {find_binary()} "
-               f"--basepath {ROOT}/ --userdir {self.userdir}/{state_arg}")
-        subprocess.run(["tmux", "new-session", "-d", "-s", self.name, "-x", str(cols), "-y", str(rows), cmd], check=True)
+               f"--basepath {ROOT}/ --userdir {self.userdir}{state_arg}")
+        _starting[self.name] = None
+        try:
+            client = subprocess.Popen(["tmux", "new-session", "-d", "-s", self.name,
+                                       "-x", str(cols), "-y", str(rows), cmd])
+            _starting[self.name] = _unreaped_client_identity(client)
+            try:
+                code = client.wait(timeout=START_TIMEOUT)
+            except subprocess.TimeoutExpired:
+                _stop_pid(client.pid, 1.0, _start_time(client.pid))
+                raise subprocess.TimeoutExpired(client.args, START_TIMEOUT)
+            if code:
+                raise subprocess.CalledProcessError(code, client.args)
+        except BaseException:
+            self.close()
+            raise
+        finally:
+            _starting.pop(self.name, None)
 
     def screen(self):
-        return subprocess.run(["tmux", "capture-pane", "-p", "-t", self.name],
+        return subprocess.run(["tmux", "capture-pane", "-p", "-t", _target(self.name)],
                               capture_output=True, text=True, check=True).stdout
 
     def state(self):
@@ -61,11 +442,11 @@ class Game:
         return json.loads(self.state_path.read_text())
 
     def resize(self, cols, rows):
-        subprocess.run(["tmux", "resize-window", "-t", self.name,
+        subprocess.run(["tmux", "resize-window", "-t", _target(self.name),
                         "-x", str(cols), "-y", str(rows)], check=True)
 
     def screen_colors(self):
-        return subprocess.run(["tmux", "capture-pane", "-p", "-e", "-t", self.name],
+        return subprocess.run(["tmux", "capture-pane", "-p", "-e", "-t", _target(self.name)],
                               capture_output=True, text=True, check=True).stdout
 
     def keys(self, *keys, delay=0.25):
@@ -73,26 +454,26 @@ class Game:
             if k == "Home":
                 curses.setupterm(term="xterm-256color")
                 code = curses.tigetstr("khome")
-                subprocess.run(["tmux", "send-keys", "-H", "-t", self.name, "--",
+                subprocess.run(["tmux", "send-keys", "-H", "-t", _target(self.name), "--",
                                 *(f"{byte:02x}" for byte in code)], check=True)
             else:
-                subprocess.run(["tmux", "send-keys", "-t", self.name, "--", k], check=True)
+                subprocess.run(["tmux", "send-keys", "-t", _target(self.name), "--", k], check=True)
             time.sleep(delay)
 
     def type(self, text, delay=0.05):
         chunk = ""
         for ch in text:
             if chunk and (chunk[-1] == ch or len(chunk) >= 24):
-                subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", chunk], check=True)
+                subprocess.run(["tmux", "send-keys", "-t", _target(self.name), "-l", "--", chunk], check=True)
                 time.sleep(0.08 if chunk[-1] == ch else 0.02)
                 chunk = ""
             chunk += ch
-        subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", chunk], check=True)
+        subprocess.run(["tmux", "send-keys", "-t", _target(self.name), "-l", "--", chunk], check=True)
         time.sleep(delay)
 
     def click(self, x, y, button=0, settle=True):
         for suffix in ("M", "m"):
-            subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", f"\x1b[<{button};{x + 1};{y + 1}{suffix}"], check=True)
+            subprocess.run(["tmux", "send-keys", "-t", _target(self.name), "-l", "--", f"\x1b[<{button};{x + 1};{y + 1}{suffix}"], check=True)
             time.sleep(0.05)
         if settle:
             self.settle_screen(minimum=1.0, timeout=1.5)
@@ -100,12 +481,12 @@ class Game:
     def double_click(self, x, y, button=0):
         for _ in range(2):
             for suffix in ("M", "m"):
-                subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", f"\x1b[<{button};{x + 1};{y + 1}{suffix}"], check=True)
+                subprocess.run(["tmux", "send-keys", "-t", _target(self.name), "-l", "--", f"\x1b[<{button};{x + 1};{y + 1}{suffix}"], check=True)
                 time.sleep(0.02)
         self.settle_screen(minimum=1.0, timeout=1.5)
 
     def hover(self, x, y):
-        subprocess.run(["tmux", "send-keys", "-t", self.name, "-l", "--", f"\x1b[<35;{x + 1};{y + 1}M"], check=True)
+        subprocess.run(["tmux", "send-keys", "-t", _target(self.name), "-l", "--", f"\x1b[<35;{x + 1};{y + 1}M"], check=True)
         time.sleep(1)
 
     def find(self, ch):
@@ -256,6 +637,7 @@ class Game:
                 last = str(err)
                 continue
             if result == ["defined"]:
+                self._defined.add(code)
                 return
             last = f"Lua helper definition returned {result!r}"
         raise AssertionError(f"{last}\n{self.screen()}")
@@ -264,9 +646,42 @@ class Game:
         line = next(l for l in self.screen().splitlines() if "X,Y,Z:" in l)
         return tuple(int(v) for v in line.split("X,Y,Z:")[1].split()[0:3] for v in [v.strip(",")])
 
+    def keep_userdir(self):
+        self._owns_userdir = False
+        _orphan_userdirs.discard(self.userdir)
+
+    def adopt_userdir(self):
+        self._owns_userdir = True
+
+    def detach(self):
+        self._owns_userdir = False
+        _orphan_userdirs.discard(self.userdir)
+        _owned.discard(self)
+
+    def _shares_userdir(self):
+        others = [other for other in tuple(_owned)
+                  if other is not self and other.userdir == self.userdir]
+        return any(_session_exists(other.name) for other in others)
+
     def close(self):
-        subprocess.run(["tmux", "kill-session", "-t", self.name], stderr=subprocess.DEVNULL)
-        shutil.rmtree(self.userdir, ignore_errors=True)
+        stopped = False
+        shared = self._owns_userdir and self._shares_userdir()
+        try:
+            for pid, started, members in _pane_pids(self.name):
+                _stop_process_group(pid, started=started, members=members)
+            _kill_session(self.name)
+            deadline = time.time() + 2.0
+            while _session_exists(self.name) and time.time() < deadline:
+                _kill_session(self.name)
+                time.sleep(0.05)
+            stopped = not _session_exists(self.name)
+            if self._owns_userdir and stopped and not shared:
+                _stop_userdir_processes(self.userdir)
+        finally:
+            if self._owns_userdir and stopped and not shared:
+                shutil.rmtree(self.userdir, ignore_errors=True)
+            _orphan_userdirs.discard(self.userdir)
+            _owned.discard(self)
 
 
 def in_game(screen):

@@ -37,7 +37,7 @@ def ambience_game(name, **options):
     defaults = json.loads((ROOT / "data/mods/default.json").read_text())
     (userdir / "config").mkdir()
     (userdir / "config/default_mods.json").write_text(json.dumps([*defaults, MOD_ID]))
-    game = Game(name=f"bn-e2e-{name}", userdir=userdir,
+    game = Game(name=f"bn-e2e-{name}", userdir=userdir, owns_userdir=True,
                 options={"SAFEMODE": "false", "SHOW_TIPS": "false", "SHOW_WELCOME": "false",
                          "ANIMATIONS": "false", "SOUND_MARKER_TURNS": "1",
                          "STATIC_NPC": "false", "STARTING_NPC": "never", "RANDOM_NPC": "false",

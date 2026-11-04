@@ -48,6 +48,7 @@ def build_driving_dashboard_world(session) -> None:
 
     tiles.tmux_game.ROOT = session.root
     game = Game(name="bn-tiles-dashboard-fixture", userdir=session.curses_userdir,
+                owns_userdir=False,
                 layout="fusion", cols=160, rows=45,
                 options={"SAFEMODE": "false", "INITIAL_TIME": "12", "CONTROL_SCHEME": "modern",
                          "HUD_WINDOWS": "true", "DRIVING_DASHBOARD": "false", "HUD_ICONS": "ascii",

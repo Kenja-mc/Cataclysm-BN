@@ -35,7 +35,7 @@ def fluid_grid_game(name):
     (userdir / "config").mkdir()
     (userdir / "config/default_mods.json").write_text(
         json.dumps([*defaults, "e2e_fluid_grid"]))
-    game = Game(name=name, userdir=userdir,
+    game = Game(name=name, userdir=userdir, owns_userdir=True,
                 options={"SAFEMODE": "false", "CONTROL_SCHEME": "classic",
                          "AUTOSELECT_SINGLE_VALID_TARGET": "false"})
     try:

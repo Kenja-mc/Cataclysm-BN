@@ -48,7 +48,7 @@ def test_existing_space_and_user_rebind_stay_in_the_list(_g):
     userdir = tempfile.mkdtemp(prefix="bn-e2e-list-mouse-rebind-")
     game = None
     try:
-        game = Game(name="bn-e2e-list-mouse-rebind", userdir=userdir,
+        game = Game(name="bn-e2e-list-mouse-rebind", userdir=userdir, owns_userdir=True,
                     options={"CONTROL_SCHEME": "modern", "SAFEMODE": "false"})
         start_new_game(game)
         game.define_lua(HELPERS)

@@ -162,7 +162,7 @@ def long_body_report_game():
     defaults = json.loads((ROOT / "data/mods/default.json").read_text())
     (userdir / "config").mkdir()
     (userdir / "config/default_mods.json").write_text(json.dumps([*defaults, mod_id]))
-    game = Game(name="bn-e2e-body-report", userdir=userdir, cols=80, rows=25,
+    game = Game(name="bn-e2e-body-report", userdir=userdir, owns_userdir=True, cols=80, rows=25,
                 options={"SAFEMODE": "false"})
     try:
         start_new_game(game)

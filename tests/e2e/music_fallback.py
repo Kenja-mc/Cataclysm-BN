@@ -41,7 +41,7 @@ def test_missing_context_playlist_falls_back_to_title(_g):
                      options={"CONTROL_SCHEME": "modern", "SAFEMODE": "false",
                               "SOUND_ENABLED": "true", "MUSIC_ENABLED": "true",
                               "SOUNDPACKS": "title-only", "DYNAMIC_MUSIC": "true"},
-                     userdir=userdir, define=HELPERS) as game:
+                     userdir=userdir, define=HELPERS, owns_userdir=True) as game:
         arena(game)
         clear_hostiles(game)
         assert wait_until(lambda: resolution(game)[0] != "danger", timeout=60), \
