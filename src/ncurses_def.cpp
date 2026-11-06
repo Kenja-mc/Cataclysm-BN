@@ -599,7 +599,10 @@ input_event input_manager::get_input_event()
                 ungetch( ch );
             }
         }
-        if( key != ERR ) {
+        const auto context = input_context::get_active();
+        const auto text_entry = context &&
+                                std::ranges::contains( context->get_registered_actions(), "TEXT.CLEAR" );
+        if( key != ERR && !text_entry ) {
             int newch;
             // Clear the buffer of characters that match the one we're going to act on.
             const int prev_timeout = input_timeout;

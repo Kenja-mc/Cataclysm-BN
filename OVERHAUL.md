@@ -140,6 +140,8 @@ free. Text fields still accept normal typing; **Classic** retains the upstream c
 In ordinary Modern menus, **Space** confirms the highlighted choice just like Enter; it never
 means an unconditional Yes. A list menu that already binds Space to another action keeps that
 action, including a player rebind. Spaces stay literal in filters, world names and the Lua console.
+Terminal text fields preserve repeated letters, digits and punctuation even when several
+characters are queued together. Gameplay input still suppresses queued repeats.
 The title menu supports mouse hover and clicking; Quit asks for confirmation.
 
 Where a Shift shortcut was already occupied, the other menu action moves:

@@ -996,6 +996,27 @@ class LifecycleTests(unittest.TestCase):
             else:
                 os.environ["TMUX_TMPDIR"] = previous
 
+    def test_lua_preserves_queued_repeated_text_in_both_schemes(self):
+        for scheme in ("modern", "classic"):
+            with self.subTest(scheme=scheme):
+                game = Game(name="bn-e2e-lifecycle-lua-burst",
+                            options={**PROFILE, "CONTROL_SCHEME": scheme})
+                try:
+                    start_new_game(game)
+
+                    def queue_text(text, delay=0):
+                        subprocess.run(
+                            ["tmux", "send-keys", "-t", tmux_game._target(game.name),
+                             "-l", "--", text], check=True)
+
+                    game.type = queue_text
+                    self.assertEqual(
+                        game._lua("local p=TripointBubMs.new(100000,222,0) "
+                                  "out('bookkeeper',p.x,p.y,'((same))',100000//333)"),
+                        ["bookkeeper,100000,222,((same)),300"])
+                finally:
+                    game.close()
+
     def test_nested_failure_preserves_active_borrower_then_replaces_profile(self):
         with shared_game("bn-e2e-lifecycle", options=PROFILE,
                          define="LIFECYCLE=1") as outer:

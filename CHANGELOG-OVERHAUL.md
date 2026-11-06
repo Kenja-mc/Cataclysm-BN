@@ -4,6 +4,14 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-11-06
+
+### Fixed
+
+- Terminal text fields preserve repeated characters when input arrives faster than the game
+  can read it. Lua-console test setup no longer loses punctuation, letters or digits on slow
+  runners. Gameplay key-repeat suppression is unchanged.
+
 ## 2026-11-05
 
 ### Changed
