@@ -1,12 +1,13 @@
 import re
 
 from fixtures import shared_game
-from helpers import HELPERS, settle
+from helpers import HELPERS, arena, empty_inventory, settle
+from hud_status import healthy
 
 MARK = "E2E activity row marker"
 
 BASE = {"SAFEMODE": "false", "SHOW_TIPS": "false", "SHOW_WELCOME": "false", "ANIMATIONS": "false",
-        "ACTIVITY_PROGRESS_SCALE": "50", "LOG_FLOW": "new_top"}
+        "ACTIVITY_PROGRESS_SCALE": "50", "LOG_FLOW": "new_top", "CHRONIC_PAIN": "false"}
 
 
 def assign_activity(game, half=False):
@@ -35,9 +36,22 @@ def force_redraw(game):
     game.settle_screen(minimum=0.2, timeout=2)
 
 
+def quiet_scene(game):
+    empty_inventory(game)
+    healthy(game)
+    arena(game)
+    assert game.lua("for dx=-4,4 do for dy=-4,4 do "
+                    "if math.abs(dx)==4 or math.abs(dy)==4 then "
+                    "M:set_ter_at(here(dx,dy), TerId.new('t_wall'):int_id()) "
+                    "end end end out('ok')") == ["ok"]
+    assert game.lua("local a=gapi.get_avatar() "
+                    "a:set_mutation(MutationBranchId.new('DEAF')) "
+                    "out(a:is_deaf())") == ["true"]
+
+
 def test_activity_line_names_progress_and_time_left(_g):
     with shared_game("bn-e2e-activity-line", define=HELPERS, options=BASE,
-                     layout="classic") as game:
+                     layout="classic", setup=quiet_scene) as game:
         settle(game)
         assert "Activity:" not in game.screen(), \
             "an idle player should not reserve a line:\n" + game.screen()
@@ -54,7 +68,8 @@ def test_activity_line_names_progress_and_time_left(_g):
 
 def test_activity_line_option_off_keeps_the_upstream_log(_g):
     with shared_game("bn-e2e-activity-line-off", define=HELPERS,
-                     options={**BASE, "ACTIVITY_LINE": "false"}, layout="classic") as game:
+                     options={**BASE, "ACTIVITY_LINE": "false"}, layout="classic",
+                     setup=quiet_scene) as game:
         settle(game)
         assert game.lua(f"gapi.add_msg('{MARK}') out('ok')") == ["ok"]
         game.wait_for(MARK)

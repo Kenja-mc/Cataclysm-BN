@@ -227,15 +227,21 @@ def test_modern_wield_nearby_rows_keep_their_shortcut(g):
 
 
 def item_picker_rows(screen, names):
+    lines = screen.splitlines()
+    title_row = next(index for index, line in enumerate(lines) if "Wield item" in line)
+    title = lines[title_row]
+    left = title.rfind("│", 0, title.index("Wield item"))
+    right = title.index("│", title.index("Wield item"))
+    assert 0 <= left < right, "the wield picker needs a bordered title:\n" + screen
     rows = []
-    for line in screen.splitlines():
-        if "│" not in line:
-            continue
-        inner = line[:line.rfind("│")]
+    for line in lines[title_row + 1:]:
+        if len(line) > left and line[left] in "╰└":
+            break
+        inner = line[left + 1:right]
         for name in names:
-            at = inner.find(name)
-            if at >= 2 and inner[at - 1] == " " and inner[at - 2].isalnum():
-                rows.append((inner[at - 2], name))
+            match = re.match(r"\s*([A-Za-z0-9])\s+" + re.escape(name) + r"(?=\s|$)", inner)
+            if match:
+                rows.append((match.group(1), name))
     return rows
 
 

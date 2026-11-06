@@ -1,6 +1,5 @@
-import time
-
-from helpers import HELPERS, action_menu, arena, choose_menu_entry, settle, start_new_game
+from contextual_hub import colored_cells
+from helpers import HELPERS, action_menu, arena, choose_menu_entry, settle, start_new_game, wait_until
 from tmux_game import Game
 
 
@@ -29,19 +28,20 @@ def zombie_down_a_corridor(name, options):
     return edge
 
 
+def _arrow_cells(edge):
+    hits = []
+    for y, line in enumerate(edge.screen_colors().splitlines()):
+        for x, (ch, state) in enumerate(colored_cells(line)):
+            if ch == "\u2192" and x < EDGE_MAP_COLUMNS:
+                hits.append((x, y, state["fg"]))
+    return hits
+
+
 def test_enemy_edge_arrows(g):
     edge = zombie_down_a_corridor("bn-e2e-edge", {"SAFEMODEPROXIMITY": "10"})
     try:
-        screen = edge.screen()
-        for _ in range(40):
-            if any(a in screen for a in EDGE_ARROWS):
-                break
-            time.sleep(0.5)
-            screen = edge.screen()
-        assert any(a in screen for a in EDGE_ARROWS), "no east arrow for the off-screen zombie:\n" + screen
-        colored = [line for line in edge.screen_colors().splitlines()
-                   if any(f"\x1b[{c}m\u2192" in line for c in ("33", "93"))]
-        assert colored, "yellow arrow expected, got:\n" + edge.screen_colors()
+        assert wait_until(lambda: any(fg in (33, 93) for _, _, fg in _arrow_cells(edge))), \
+            "no yellow east arrow for the off-screen zombie:\n" + edge.screen_colors()
     finally:
         edge.close()
 

@@ -31,7 +31,7 @@ def spawn_vehicle(game, prototype="car"):
     game.type(f"({prototype})")
     game.keys("Enter", "Enter", delay=0.6)
     game.wait_for("Vehicle condition")
-    game.keys("Down", "Enter", delay=0.6)
+    choose_menu_entry(game, "Undamaged")
     game.wait_for("Vehicle direction")
     game.keys("Enter", delay=0.8)
     settle(game)

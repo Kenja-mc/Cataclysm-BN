@@ -1,44 +1,3 @@
-"""Real tiles pixel checks for persistent sound markers around a scripted activity.
-
-The curses fixture builds a lit underground arena at z-1: clean floor, an opaque
-wall, and a farmer two tiles behind it.  The avatar gets DEBUG_NIGHTVISION so
-sight is pinned across save/reload, the arena is underground so wind cannot
-drown the shout, and the weather is pinned clear.  The fixture asserts the NPC
-is unseen, the wall is visible, the open floor is visible, there is one NPC,
-the hour is 12, the avatar is underground, and the avatar is not deaf.
-
-"Play Now! (Default Scenario)" randomizes the starting profession, and several
-professions (frat, escapist, heist, ...) spawn companion NPCs within ten tiles
-of the avatar.  Those companions would follow the avatar into the arena, make
-their own footsteps, and break the "exactly one NPC" contract.  The fixture
-therefore kills every NPC it finds while clearing the levels, runs one real
-turn so companions queued on the overmap become active, purges those too, and
-only then places the farmer.  A second turn lets cleanup_dead() remove the
-purged NPCs before the world is saved.  A randomly rolled Deaf trait is removed
-so the listener can always hear.
-
-A Lua mod is attached only to the copied tiles launch.  It never runs in the
-curses fixture.  It shouts once on the second player turn, then either starts a
-real six-turn ACT_HEATING activity (the activity scene) or moves the avatar one
-z-level after the marker exists (above/below scenes).  Every turn is driven by
-real input, so the marker is rendered at each sampled age.
-
-Activity rendering limit: while an activity runs, handle_wait_activity_redraw()
-normally redraws on the first activity turn and then on the five-minute cadence,
-under a wait_popup.  A changing marker signature forces an extra redraw, and
-SOUND_MARKER_PACING=true holds that frame for about 250 ms.  The state channel
-records every non-skipped turn.  The paced activity scene captures the held
-frame, then requires a later turn to advance without input; the unpaced scenes
-assert the aged pixels after the activity.  ACT_HEATING has no idle bubble
-effect, so it is not time-skipped.
-
-Reality-bubble coordinates shift when the bubble recenters during an activity.
-The scripted marker is therefore followed by its x/y offset from the avatar,
-not by a fixed tripoint.
-
-Usage:
-  python3 tests/e2e/tiles.py sound_markers [--root DIR] [--binary PATH] [--out DIR] [--timeout SEC]
-"""
 import json
 import math
 import re
@@ -300,16 +259,11 @@ def build_sound_marker_world(session):
         tiles.start_new_game(game)
         require(fixture_call("sound_fixture()") == ["fixture"],
                 "fixture scene did not build:\n" + game.screen())
-        # One real turn activates every NPC the overmap has queued for this
-        # bubble, including companions of a randomly rolled Play Now profession.
-        # Only then can the purge see and kill all of them.
         tiles.settle(game)
         require(fixture_call("sound_purge_npcs()") == ["purged"],
                 "fixture NPC purge failed:\n" + game.screen())
         require(fixture_call("sound_place_npc()") == ["npc"],
                 "fixture NPC placement failed:\n" + game.screen())
-        # Activate the farmer and let cleanup_dead() remove the purged NPCs
-        # before the world is saved.
         tiles.settle(game)
         require(fixture_call("sound_cleanup()") == ["clean"],
                 "fixture cleanup did not finish:\n" + game.screen())

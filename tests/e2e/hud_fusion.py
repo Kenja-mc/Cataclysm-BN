@@ -15,6 +15,11 @@ def fusion_setup(game):
     arena(game)
     healthy(game)
     assert game.lua("local a=gapi.get_avatar() "
+                    "gapi.set_omt_weather_override(coords.project_to_omt(a:abs_pos()),3,'clear',nil) "
+                    "for dx=-13,13 do for dy=-13,13 do local p=here(dx,dy) "
+                    "M:clear_items_at(TripointBubMs.new(p.x,p.y,p.z+1)) "
+                    "M:set_ter_at(TripointBubMs.new(p.x,p.y,p.z+1), TerId.new('t_open_air'):int_id()) "
+                    "M:set_furn_at(TripointBubMs.new(p.x,p.y,p.z+1), FurnId.new('f_null'):int_id()) end end "
                     "a:add_effect(EffectTypeId.new('bleed'),TimeDuration.from_minutes(30),"
                     "BodyPartTypeId.new('arm_l'),1) out('ok')") == ["ok"]
 

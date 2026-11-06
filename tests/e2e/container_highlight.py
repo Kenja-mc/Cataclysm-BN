@@ -75,6 +75,7 @@ def _pin_visibility(game):
         "a:add_effect(EffectTypeId.new('debug_clairvoyance'), TimeDuration.from_turns(100000)) "
         "gapi.set_omt_weather_override(coords.project_to_omt(a:abs_pos()),3,'clear',nil) "
         "for dx=-8,8 do for dy=-8,8 do local p=here(dx,dy) "
+        "M:clear_items_at(TripointBubMs.new(p.x,p.y,p.z+1)) "
         "M:set_ter_at(TripointBubMs.new(p.x,p.y,p.z+1), TerId.new('t_open_air'):int_id()) "
         "M:set_furn_at(TripointBubMs.new(p.x,p.y,p.z+1), FurnId.new('f_null'):int_id()) end end "
         "out('ok')") == ["ok"], "could not pin visibility\n" + game.screen()

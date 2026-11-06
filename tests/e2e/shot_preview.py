@@ -4,7 +4,7 @@ from pathlib import Path
 
 from aim_reticle import action_clock
 from fixtures import shared_game
-from helpers import HELPERS, arena, choose_menu_entry, settle, wait_until
+from helpers import HELPERS, arena, choose_menu_entry, empty_inventory, settle, wait_until
 from map_mouse import firing_target_panel, mouse_view
 
 BASE = {
@@ -29,6 +29,8 @@ def profile(**extra):
 
 
 def scene(game):
+    empty_inventory(game)
+    assert game.lua("out(gapi.get_avatar():is_armed())") == ["false"]
     arena(game)
     assert game.lua(WIPE) == ["ok"]
     settle(game)
@@ -36,6 +38,7 @@ def scene(game):
     assert game.lua(LANE) == ["ok"]
     settle(game)
     assert game.lua(GUN) == ["true"]
+    assert game.lua("out(gapi.get_avatar():is_wielding(GUN))") == ["true"]
     settle(game)
 
 
