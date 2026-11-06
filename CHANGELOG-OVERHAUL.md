@@ -16,6 +16,7 @@ Upstream's own changes are in `docs/en/game/changelog`.
 
 - Mod data validation now exits with failure when a mod cannot load, instead of reporting the
   error while returning success.
+- Test fixtures keep overlay coordinates alive and isolate night-vision checks from outdoor light.
 
 ## 2026-11-04
 
