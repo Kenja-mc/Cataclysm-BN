@@ -1,57 +1,12 @@
 name: fork-playtest
 
-# Play-testing the fork: the curses end-to-end suite, and an agentic playtest where a
-# decision model plays the game, chooses its own actions and reports what it finds
-# (fork issue #6).
-#
-# Exit codes are the driver's contract and the workflow keeps it: 0 clean, 1 a defect the
-# model named, 3 a cap (turns, wall clock, tokens, budget) cut the run short, 2 the harness
-# broke. Only 2 fails a leg: a defect and a cap are the run's product, so they are reported
-# in the leg summary, named in a warning, recorded as a verdict (clean | defect | killed |
-# harness-error) in the artifact's verdict.json, and the job stays green. The triage job
-# files one issue when any leg reported a defect; a cap is not an issue.
-#
-# Cost: the runners below are standard GitHub-hosted runners, which are free for public
-# repositories, so the runner minutes cost nothing. The model tokens are not free: every
-# decision is a paid call unless the pool is one of the *-free models. Each playtest leg
-# prints its cost from transcript.jsonl (and the report's own cost line) into the job
-# summary, and the triage job prints the whole-run total.
-#
-# Combinations: the four the user asked for, one leg each. kb means keyboard only, kb-mouse
-# means keyboard plus mouse; the surface is either the curses build or the tiles build
-# under Xvfb: kb (classic scheme) and kb-mouse (modern scheme) in curses, kb (classic) and
-# kb-mouse (modern) in tiles. Runs select one matching leg unless all_legs is requested.
-# Co-op is the fifth combination the fork wants but has no
-# harness: OVERHAUL.md ("Simple seamless co-op", fork issue #2) describes the co-op port as
-# work to evaluate and no multiplayer behavior is enabled, so there is nothing to drive
-# yet. A co-op leg belongs here once that harness exists.
-# Push/PR CI does not launch playtests. Manual dispatch selects the jobs below;
-# the existing nightly schedule still runs the full suite, model legs and screenshots.
-# A live leg needs OPENROUTER_API_KEY, or both XPL_SK_AGENT and OC_SK_AGENT.
-# Without a usable key, one dry leg checks the driver without model calls.
-#
-# The screenshots job is the fork's own visual check: nightly and on demand it replays the
-# fork features in the tiles build and regenerates docs/fork/images/features/ plus the page
-# docs/fork/feature-screenshots.md, which it uploads as an artifact. It never commits or
-# pushes an image; a human reviews the artifact and commits the page.
-#
-# Content per leg, from playtest.SCENARIOS: main menu navigation (main_menu), the tutorial
-# (tutorial), natural gameplay (natural_gameplay) and a custom map that exercises fork
-# features (fork_features: quick stack, sort pile, item variants, stack modifiers, the
-# body panel, the hub menus, modern keys). main_menu and tutorial start at the title
-# screen and the tutorial room, which have no tiles surface, so the tiles leg walks
-# natural_gameplay and fork_features only. Ids must exist in the registry; the run step
-# fails listing the unknown ids instead of letting each scenario die as a harness error.
-
 on:
   schedule:
-    # Nightly at 04:17 UTC. The matrix workflow runs weekly, so it may already have built a
-    # tiles package for this commit; otherwise the tiles legs build their own binary.
     - cron: "17 4 * * *"
   workflow_dispatch:
     inputs:
       run_e2e:
-        description: "Run the full end-to-end suite on one runner"
+        description: "Run the full end-to-end suite across eight isolated serial shards"
         type: boolean
         default: true
       run_agentic:
@@ -98,14 +53,10 @@ on:
         type: string
         default: ""
 
-# Manual and nightly runs may have distinct inputs or spent model tokens; let them finish.
 concurrency:
   group: fork-playtest-${{ github.event_name }}-${{ github.ref_name }}
   cancel-in-progress: false
 
-# Least privilege: the jobs that run third-party code (the game under test) and the
-# model-driven loop hold read permissions only. The triage job, which files the one issue,
-# grants itself issues: write in its own permissions block.
 permissions:
   actions: read
   contents: read
@@ -163,11 +114,9 @@ jobs:
               echo
               echo "The live playtest did not run: no model key is configured as a repository"
               echo "secret. Set \`OPENROUTER_API_KEY\` (enough on its own: the free OpenRouter"
-              echo "pools), or \`XPL_SK_AGENT\` and \`OC_SK_AGENT\` together. Everything else ran:"
-              echo "the end-to-end suite, the fork feature screenshots (when this is a scheduled"
-              echo "run) and one dry playtest leg, which checks the wiring with no key and no"
-              echo "network. Add a secret under Settings -> Secrets and variables -> Actions to"
-              echo "turn the full matrix on."
+              echo "pools), or \`XPL_SK_AGENT\` and \`OC_SK_AGENT\` together. The feature screenshots"
+              echo "and one dry playtest leg still run when selected. The separate fork-promote"
+              echo "workflow owns nightly deterministic E2E and stable promotion."
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
@@ -289,7 +238,7 @@ jobs:
           PY
 
   e2e-suite:
-    if: github.event_name == 'schedule' || inputs.run_e2e
+    if: github.event_name == 'workflow_dispatch' && inputs.run_e2e
     uses: ./.github/workflows/fork-e2e.yml
     with:
       checkout-ref: ${{ github.sha }}

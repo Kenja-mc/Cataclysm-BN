@@ -1061,8 +1061,22 @@ and logs stay there instead of your normal profile. Create the world and a chara
 menu once; without a character the game would quit immediately, so the launcher then opens the main
 menu instead. `--no-run` builds and exits and refuses game arguments, so it is safe for automation.
 It is an iteration build: asserts are off, the game is slower, and `-g1` is not enough for gdb, so
-run the test gate and performance checks with `linux-curses` or `linux-full`. See `--help` and the
+run targeted validation and performance checks with `linux-curses` or `linux-full`. See `--help` and the
 "Quick iteration" part of `AGENTS.md`.
+
+## Releases
+
+Successful Windows and Linux package builds, unit/data checks and updater checks publish prerelease
+candidates; pushes to `main` reserve the next semantic patch version at the exact source commit.
+`fork-promote.yml` runs the nightly deterministic full E2E suite on the selected candidate's exact
+SHA; it can also be dispatched from `main`. Only a complete pass promotes the same release to
+stable, reusing its existing assets without rebuilding or moving its tag. Failures, timeouts and
+cancellations leave the previous stable release in place. Model playtests and screenshots provide
+evidence, not promotion approval.
+
+The default Windows updater continues to use GitHub's `releases/latest` endpoint and installs
+stable releases only; candidate publication does not change what it offers.
+See [the release guide](docs/fork/releasing.md) for versioning, publication and promotion.
 
 ## Upstream merges
 
@@ -1094,20 +1108,19 @@ comparisons and partial-failure reruns.
 ## Future work
 
 - [Agentic UI/UX QA in CI](https://github.com/Kenja-mc/Cataclysm-BN/issues/1): review real
-  terminal and tiles captures with human triage; deterministic end-to-end checks remain the gate.
-- [Build speed](https://github.com/Kenja-mc/Cataclysm-BN/issues/17): enable the ccache and mold
-  wiring the presets already carry, then evaluate a game PCH, a faster test build type and one
-  shared `_deps` checkout. Measured options and target numbers are in the issue.
+  terminal and tiles captures with human triage; deterministic end-to-end checks gate stable promotion.
+- [Build speed](https://github.com/Kenja-mc/Cataclysm-BN/issues/17): evaluate a game PCH, a faster
+  test build type and one shared `_deps` checkout.
 - [Simple seamless co-op](https://github.com/Kenja-mc/Cataclysm-BN/issues/2): evaluate the BN
   co-op port and related projects before choosing an implementation. No multiplayer behavior is
   enabled by this ticket.
 
 ## Unit tests
 
-Upstream's Catch2 suite (`cata_test`) must pass. Upstream CI runs it in file shards on a software
-GPU, and the vision tests only agree with that setup, so run it the same way: Xvfb and the software
-Vulkan ICD (Lavapipe, from `vulkan-swrast`) must be installed, and `VK_DRIVER_FILES` must point at
-the ICD, then
+Run relevant upstream Catch2 tests (`cata_test`) for changed core behavior. For a full run,
+upstream CI uses file shards on a software GPU, and the vision tests need that setup: Xvfb and the
+software Vulkan ICD (Lavapipe, from `vulkan-swrast`) must be installed, and `VK_DRIVER_FILES`
+must point at the ICD, then
 
 ```sh
 cmake --preset linux-curses
@@ -1159,6 +1172,11 @@ The fork E2E run does not run the core Catch2 suite. Run each lane independently
 the other. Memory snapshots and reusable save templates remain a
 [future experiment](docs/fork/e2e-state-reuse-research.md), not part of this runner.
 
+Local pre-push checks follow the changed paths: affected feature tests and smoke checks for
+features, relevant lifecycle checks and affected modules for harness/shared-fixture changes,
+and data validation for data changes. Docs-only edits need no gameplay run. The full suite is a
+nightly stable-promotion gate, not a requirement before each push or candidate publication.
+
 `tests/e2e/run.py` starts the terminal build inside tmux, creates a character and plays through the
 fork features by sending real key presses and reading the screen. It needs `tmux` and a built
 `cataclysm-bn` binary. The harness looks in `out/build/linux-curses/src`, then the repo root, then
@@ -1167,11 +1185,11 @@ the legacy `build/src`.
 Each feature has its own module under `tests/e2e/` with a `TESTS` list; `run.py` is only the
 runner and registry. A test that takes the shared game `g` runs on the runner's main game. A test
 that needs other options borrows a game for its option profile from `fixtures.py`, which keeps one
-game per profile for the whole process, because each new game costs about 12 seconds.
+game per profile for the whole process.
 
 ```sh
 python3 tests/e2e/run.py                 # whole suite, parallel (up to 4 processes)
-python3 tests/e2e/run.py --tier=smoke    # one test per module, about 2 minutes
+python3 tests/e2e/run.py --tier=smoke    # one test per module
 python3 tests/e2e/run.py --list          # every registered test, its module and recorded time
 python3 tests/e2e/run.py wasd_ jewelry   # only tests whose name contains a substring
 python3 tests/e2e/run.py --serial --keep # one process; leave the main game open afterwards
@@ -1207,8 +1225,9 @@ timings change which tests share a game.
 
 CI playtests do not start automatically on pushes or pull requests. Nightly and manual runs
 use `.github/workflows/fork-playtest.yml`; manual runs can select the suite, model playtests
-and screenshots independently. Releases offer a default-off `run_playtests` checkbox. When
-selected, the shared `.github/workflows/fork-e2e.yml` suite must pass before publication.
+and screenshots independently. Nightly promotion requires a complete passing run of the shared
+`.github/workflows/fork-e2e.yml` suite on the selected candidate's exact SHA. A manual playtest
+run is evidence only and does not promote a release.
 
 The tiles checks also need the tiles binary, ImageMagick's `magick`, Xvfb, the X11/XTest libraries
 and a software Vulkan driver:

@@ -1,95 +1,126 @@
 # Releasing Bright Nights Overhaul
 
 Releases go to [Kenja-mc/Cataclysm-BN releases](https://github.com/Kenja-mc/Cataclysm-BN/releases).
-Players download them there, and the Windows launcher updates itself from the newest one. The
-workflow is `.github/workflows/fork-release.yml`; it never touches upstream.
+`.github/workflows/fork-release.yml` publishes prerelease candidates after package, unit/data and
+Windows updater checks pass. `.github/workflows/fork-promote.yml` promotes a candidate to stable
+only after the full deterministic E2E suite passes on its exact source SHA. Neither writes upstream.
+The Windows launcher uses `releases/latest`, so it continues to offer stable releases only.
 
-## Release preflight
+## Candidate preflight
 
-Before publication, check the exact source commit and version together. Confirm the commit is
-the intended fork commit on `main` (and includes the dated `CHANGELOG-OVERHAUL.md` entry), and
-that the canonical `vMAJOR.MINOR.PATCH` is unused and is the next version. The metadata job
-pins a publishing dispatch to the selected commit, but it does not replace this human review.
+Before publication, review the exact source commit and version together. The commit must be the
+intended fork commit on `main`, with a dated product entry in `CHANGELOG-OVERHAUL.md`.
+For a versioned release, choose an unused canonical `vMAJOR.MINOR.PATCH`. Publishing pins its tag
+before building; a later push to `main` cannot change the built commit.
 
-Review the fork identity in the release content: title/notes must say Bright Nights Overhaul,
-and links must target `Kenja-mc/Cataclysm-BN`, not upstream. Check the changelog entry describes
-the changes in this source and that the generated release notes include the expected dated
-sections. Compare the notes' download table with the workflow assets: Windows zip and Linux
-tarball, each with its `.sha256` file, under the stable names listed below. Do not announce a
-link or asset the publish job will not produce.
+Review the fork identity: titles and notes say Bright Nights Overhaul, and links target
+`Kenja-mc/Cataclysm-BN`. Check that the changelog describes the selected source and that generated
+notes include the expected dated sections. The download table must match the Windows zip and
+Linux tarball, each with its `.sha256` file, under the names below.
 
-Before tagging, exercise the candidate artifacts and documented entrypoints:
+Local checks follow the changed paths and affected behavior in `AGENTS.md`: build affected
+targets, run targeted regression/smoke checks, and validate changed data. Docs-only changes need
+no gameplay run. Do not require a full local E2E run before pushing or publishing a candidate.
+The full suite gates nightly stable promotion instead.
 
-- Compare the selected source SHA with each package's `VERSION.txt` and executable's `--version`.
-- Launch the actual title screen and check the window title identifies Bright Nights Overhaul.
-- Run commands affected by the release in `tools/*/README.md` and developer documentation as written,
-  using private user directories; do not substitute a different invocation for a broken example.
-- Complete the repository's data, upstream-test and fork end-to-end checks. Record failures and
-  any explicitly approved exception rather than describing a partial run as fully green.
+For data-loader or validation changes, reproduce the Linux release data gate locally:
 
-Run the local note generator to inspect the first-release notes, or pass the previous release's
-publication date to inspect an update:
+```sh
+out/build/linux-curses/src/cataclysm-bn --basepath ./ --userdir /tmp/chk/ --check-all-mods
+python3 build-scripts/test_mod_validation.py out/build/linux-curses/src/cataclysm-bn
+```
+
+The regression command requires valid mod data to exit zero and invalid mod data to exit nonzero.
+CI runs it after `--check-all-mods` so data validation cannot pass merely by printing an error.
+
+When reviewing candidate artifacts and affected entrypoints:
+
+- Compare the selected SHA and version with each package's `VERSION.txt` and executable's `--version`.
+- Launch the actual title screen and check that the window title identifies Bright Nights Overhaul.
+- Exercise affected commands in `tools/*/README.md` and developer documentation as written, with
+  private user directories.
+- Report the checks actually completed; a targeted run is not a full-suite pass.
+
+Inspect release notes locally, optionally passing the previous stable release's publication date:
 
 ```sh
 build-scripts/fork-release-notes.sh CHANGELOG-OVERHAUL.md
 build-scripts/fork-release-notes.sh CHANGELOG-OVERHAUL.md 2026-10-20
 ```
 
-For a harmless end-to-end rehearsal, use the build-only command below with a fresh, unpublished
-version label. It runs both builds and the updater gate, but skips publication and creates neither
-a tag nor a release. This is not a release and does not validate the final uploaded release notes.
-Only the publishing commands in [Cut a release](#cut-a-release) create a release.
+## Publish a candidate
 
-## Cut a release
+Pushes to `main` allocate the next patch version above the highest existing canonical
+`vMAJOR.MINOR.PATCH` fork tag, including reserved candidates. Eligible tags point to commits on
+`main` ancestry containing `CHANGELOG-OVERHAUL.md`; bundled upstream tags do not count.
+With no eligible tags, allocation starts at `v0.1.0`. Serialized release runs reserve the chosen
+tag at the exact source commit before building. Package builds, Windows and Linux unit tests,
+Linux data validation and updater checks must pass before the candidate becomes visible as a
+prerelease. All assets are uploaded before publication; stable and its updater remain unchanged.
 
-1. Add the changes to `CHANGELOG-OVERHAUL.md` under today's date and push to `main`. The
-   release notes are taken from it.
-2. Pick the next version (see below) and push a tag for it:
+To choose a version explicitly:
+
+1. Add the product changes to `CHANGELOG-OVERHAUL.md` and push to `main`.
+2. Choose the next version and push only its tag:
 
    ```sh
    git tag -a v0.3.0 -m "Bright Nights Overhaul v0.3.0"
    git push origin v0.3.0
    ```
 
-   Or run the workflow from `main` and type the version:
+   Or dispatch from the intended commit with the version:
 
    ```sh
    gh-fork workflow run fork-release.yml --repo Kenja-mc/Cataclysm-BN --ref main -f version=v0.3.0
    ```
 
-3. Watch it with `gh-fork run list --workflow fork-release.yml --repo Kenja-mc/Cataclysm-BN`.
-   The Windows build is the slow part; wait for both builds and the updater gate.
+3. Watch `gh-fork run list --workflow fork-release.yml --repo Kenja-mc/Cataclysm-BN`.
+   A successful run publishes a prerelease candidate, not a stable release.
 
-Publishing dispatches pin the version tag before building. A later push to `main` cannot
-change that tag or the built commit. No release becomes visible until its gates pass and all
-assets are uploaded. GitHub's job token can refuse to tag an older commit when workflow files
-differ from the default branch; for a historical commit, push its tag with your existing
-maintainer credentials. No extra personal access token is required.
+Push the tag by name, never `git push --tags`: clones also contain upstream tags.
+Only fork commits with `CHANGELOG-OVERHAUL.md` are eligible. GitHub's job token can refuse to tag
+an older commit whose workflow files differ from the default branch; push that exact tag with
+existing maintainer credentials instead. No extra personal access token is required.
 
-Gameplay playtests are optional and off by default for releases. Select **Run playtests** in
-the dispatch form, or add `-F run_playtests=true` to the command, to require the full suite.
-A selected suite must pass; skipping it is allowed only when it was not requested.
-Windows updater checks and both platform builds are always required.
+## Promote a candidate to stable
 
-Push the one tag by name. Never run `git push --tags`: every clone also has upstream's `v0.5.2`
-to `v0.13.0` tags. The workflow refuses any commit without `CHANGELOG-OVERHAUL.md`, so those
-tags would only produce failed runs, but they would still clutter the fork.
+`fork-promote.yml` runs nightly at 04:17 UTC and can also be dispatched from `main`:
+
+```sh
+gh-fork workflow run fork-promote.yml --repo Kenja-mc/Cataclysm-BN --ref main
+```
+
+It selects the newest published prerelease backed by a completed successful `fork-release` run,
+requires its tag's exact commit to belong to `main`, and pins the source SHA, release identity,
+assets and build evidence before calling the full deterministic `fork-e2e.yml` suite.
+The suite runs eight independent shards (`--shard=I/8`), each serial within its own runner.
+All eight must pass their pinned-checkout, lifecycle and gameplay checks; fail-fast is disabled
+so a failed shard does not discard the others' evidence. Logs are retained as `e2e-suite-log-I`.
+Manual `fork-playtest` runs, model playtests and screenshots are evidence only, not promotion gates.
+
+After a complete E2E pass, promotion rechecks the trusted package/unit/data/updater evidence,
+tag, asset identities and hashes. The candidate must be strictly newer than the current stable
+commit in `main` ancestry and have a higher semantic version than every existing stable release.
+An older run therefore cannot replace a newer stable release. Promotion changes the same GitHub
+release from prerelease to stable and makes it latest. It does not rebuild, re-upload assets or
+move the tag: players receive the candidate artifacts associated with the tested SHA.
+
+A failed, timed-out, cancelled or incomplete suite never promotes. Missing or changed evidence,
+tags or assets also block promotion. The previous stable release and `releases/latest` remain
+unchanged. Advancing `main` while the suite runs never substitutes a different commit.
 
 ## Validate builds without publishing
 
-Use an unpublished version label and disable publication when checking workflow changes or
-warming dependency caches:
+Use an unpublished version label and disable publication to check workflow changes or warm caches:
 
 ```sh
 gh-fork workflow run fork-release.yml --repo Kenja-mc/Cataclysm-BN --ref main \
   -f version=v0.2.1 -F publish=false
 ```
 
-This runs both platform builds and the Windows updater gate and retains their CI artifacts.
-Add `-F run_playtests=true` to exercise the optional gameplay gate as well.
-The publish job is skipped: no version tag or GitHub release is created. Repeat the same
-commit and label to check warm-cache reuse. Check cache-hit messages and actual build timings;
-a successful first run alone does not prove that the cache is reused.
+This runs both package builds, unit/data checks and the Windows updater gate and retains CI
+artifacts. It creates neither a tag nor a GitHub release and cannot become a promotion candidate.
+Repeat the same commit and label to inspect cache reuse; one successful run alone does not prove it.
 
 ## Correct notes without rebuilding
 
@@ -122,26 +153,30 @@ separately; do not check out the old tag and thereby discard the post-tag correc
 | `v0.X.0` | new features, new content, changed controls                                           | `v0.2.0` |
 | `v0.0.X` | fixes only                                                                            | `v0.1.1` |
 
-The first release is `v0.1.0`. Versions only go up: the updater installs a release when its
-version is higher than the player's `VERSION.txt`, and only the highest version becomes the
-"latest" release. A published version is immutable: a rerun refuses to replace it, because
-players already on that version would not receive the rebuilt files. Choose a new patch version.
-A failed release can be retried for the same commit and version. Once its tag exists, rerun
-the failed jobs or dispatch from that tag, not from a newer `main`.
+The first versioned release is `v0.1.0`. Versioned labels only go up. A published candidate is
+immutable: choose a new version or commit rather than replacing its files. Promotion changes
+release status, not its tag or assets. A failed unpublished build can be retried for the same
+commit and label; once its tag exists, rerun the failed workflow jobs rather than moving the tag.
+
+Automatic and manually versioned candidates both use canonical semantic versions, so existing
+Windows updaters remain compatible. The updater installs only a higher version from the stable
+`releases/latest` endpoint and validates the downloaded package's version before installation.
+The exact source SHA is retained in package provenance and promotion evidence; it is not a
+replacement for the semantic version.
 
 ## What the workflow does
 
-| Job            | What it does                                                                                                                                                                                                                                                                                                                                                                                         |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `metadata`     | Runs only in `Kenja-mc/Cataclysm-BN`. Checks canonical `v1.2.3` syntax, a fork changelog, matching existing tags, and that the version has not already been published. Queries all release pages before choosing whether this becomes latest. Publishing dispatches create the missing tag at the selected SHA before builds start; build-only runs never create tags.                               |
-| `updater-test` | Runs `fork-updater-test.yml` on Windows: parses scripts with Windows PowerShell 5.1, runs PSScriptAnalyzer, and exercises a local HTTP release with both PowerShell versions. Tests preservation, rollback/replay, unsafe archives/manifests/journals, missing checksums, concurrent updaters and a running-game process. Logs and failing mock installs are uploaded as `windows-updater-evidence`. |
-| `build`        | Builds the Windows MSVC tiles x64 and Linux tiles x64 packages through `build.yml`, the same reusable build upstream's releases use. No translations, no extra tilesets, no registry mods.                                                                                                                                                                                                           |
-| `publish`      | Downloads the Windows installed directory and Linux tarball from `build.yml`; adds the launcher, `README-FIRST.txt` and `bno-files.txt` to Windows; writes version headers and stable archives plus `.sha256` files. Requires the version tag to still match the built SHA. Creates/reuses only a draft, uploads all assets, then publishes. Only the highest version becomes latest.                |
+| Job            | What it does                                                                                                                                                                                                                                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `metadata`     | Runs only in `Kenja-mc/Cataclysm-BN`. Selects the exact source SHA and candidate label, checks fork identity and tag consistency, and refuses to replace a published candidate. Publishing pins a missing tag before builds; build-only runs never create tags.                                        |
+| `updater-test` | Runs `fork-updater-test.yml` on Windows: checks Windows PowerShell 5.1 parsing and PSScriptAnalyzer, then exercises preservation, rollback/replay, unsafe archives/manifests/journals, checksums, concurrency and a running game with both PowerShell versions. Retains `windows-updater-evidence`.    |
+| `build`        | Builds Windows MSVC tiles x64 and Linux tiles x64 packages through reusable `build.yml`, with unit tests and Linux data validation required. No translations, extra tilesets or registry mods.                                                                                                         |
+| `publish`      | Packages the Windows launcher, `README-FIRST.txt` and `bno-files.txt`, version headers, platform archives and checksums. Requires successful build/unit/data/updater evidence and an unchanged source tag. Uploads every asset to a draft, then publishes it as a prerelease without making it latest. |
 
 The Windows build also retains a `windows-tiles-x64-msvc-pdb` workflow artifact. Download it
 with the matching release when investigating a crash; symbols from another build do not match.
 
-Release files keep the same names every time, so these links always point at the newest release:
+Stable assets keep the same names, so these links always point at the latest promoted stable release:
 
 | File          | Link                                                                                                      |
 | ------------- | --------------------------------------------------------------------------------------------------------- |
@@ -151,7 +186,7 @@ Release files keep the same names every time, so these links always point at the
 Each has a `.sha256` file next to it.
 
 The release notes are a download table followed by every dated section of
-`CHANGELOG-OVERHAUL.md` on or after the previous release's publication date (only the newest
+`CHANGELOG-OVERHAUL.md` on or after the previous stable release's publication date (only the newest
 section for the first release). Including that day avoids omitting same-day fixes, but can repeat
 earlier changes from that day. `build-scripts/fork-release-notes.sh CHANGELOG-OVERHAUL.md 2026-10-20` shows what
 they would be.
@@ -171,7 +206,7 @@ they would be.
   `CCACHE_SLOPPINESS=include_file_ctime,include_file_mtime,time_macros,pch_defines` and
   `CFLAGS=-Xclang -fno-pch-timestamp` so ccache can reuse it; local presets are unchanged.
   See ccache's [precompiled-header requirements](https://ccache.dev/manual/latest.html#_precompiled_headers).
-- The full end-to-end suite runs on one runner, the only writer of its curses compiler
+- The nightly promotion suite uses eight runners; only shard 0 writes the shared curses compiler
   cache. Model playtest legs restore only; screenshots write the tiles cache once.
   The separate weekly matrix has one writer per curses/tiles key.
 - The host shader compiler keeps its fetched dependencies and incremental build tree in a

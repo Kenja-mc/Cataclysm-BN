@@ -1,0 +1,74 @@
+name: fork-promote
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: fork-stable-promotion
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  select:
+    if: github.repository == 'Kenja-mc/Cataclysm-BN' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      selected: ${{ steps.candidate.outputs.selected }}
+      sha: ${{ steps.candidate.outputs.sha }}
+      tag: ${{ steps.candidate.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Pin the newest completed candidate
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 build-scripts/fork-release-policy.py select --output candidate.json
+      - uses: actions/upload-artifact@v4
+        if: steps.candidate.outputs.selected == 'true'
+        with:
+          name: stable-candidate
+          path: candidate.json
+          if-no-files-found: error
+          retention-days: 14
+
+  e2e:
+    needs: select
+    if: needs.select.outputs.selected == 'true'
+    uses: ./.github/workflows/fork-e2e.yml
+    with:
+      checkout-ref: ${{ needs.select.outputs.sha }}
+
+  promote:
+    needs: [select, e2e]
+    if: >-
+      !cancelled() && github.repository == 'Kenja-mc/Cataclysm-BN' &&
+      github.ref == 'refs/heads/main' && needs.select.result == 'success' &&
+      needs.select.outputs.selected == 'true' && needs.e2e.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: stable-candidate
+          path: ${{ runner.temp }}/candidate
+      - name: Promote the tested release without changing its assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_SHA: ${{ needs.select.outputs.sha }}
+        run: |
+          python3 build-scripts/fork-release-policy.py promote \
+            --selection "$RUNNER_TEMP/candidate/candidate.json"

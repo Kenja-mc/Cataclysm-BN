@@ -19,9 +19,12 @@ env:
 jobs:
   e2e-suite:
     if: github.repository == 'Kenja-mc/Cataclysm-BN'
-    name: Fork end-to-end suite (curses)
+    name: Fork end-to-end suite (curses shard ${{ matrix.shard }}/8)
     runs-on: ubuntu-latest
-    # About 50 minutes of serial tests plus setup/build; leave room for cold caches.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
     timeout-minutes: 150
     steps:
       - name: checkout repository
@@ -29,6 +32,14 @@ jobs:
         with:
           fetch-depth: 1
           ref: ${{ inputs.checkout-ref }}
+
+      - name: Verify the pinned E2E commit
+        env:
+          EXPECTED_SHA: ${{ inputs.checkout-ref }}
+        run: |
+          if [ -n "$EXPECTED_SHA" ]; then
+            test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          fi
 
       - name: install dependencies (ubuntu)
         run: |
@@ -67,7 +78,7 @@ jobs:
             linux-clang-curses-
           max-size: 2G
           verbose: 2
-          save: ${{ contains(fromJSON('["push", "workflow_dispatch", "schedule", "release"]'), github.event_name) }}
+          save: ${{ matrix.shard == 0 && contains(fromJSON('["push", "workflow_dispatch", "schedule", "release"]'), github.event_name) }}
 
       # The matrix workflow uploads linux-tiles-x64-pr-... for the same commit, but that
       # artifact cannot supply this job's binary: the ci-tiles configure builds only
@@ -110,7 +121,7 @@ jobs:
           trap 'kill "$xvfb_pid" 2>/dev/null || true' EXIT
           export DISPLAY=:99
           sleep 1
-          python3 tests/e2e/run.py --serial --durations=e2e-durations.json \
+          python3 tests/e2e/run.py --shard=${{ matrix.shard }}/8 --durations=e2e-durations.json \
             2>&1 | tee e2e-suite.log
 
       # Always: a failing suite is the interesting one, and the log is its only evidence.
@@ -120,7 +131,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4.6.0
         with:
-          name: e2e-suite-log
+          name: e2e-suite-log-${{ matrix.shard }}
           path: |
             e2e-suite.log
             e2e-durations.json

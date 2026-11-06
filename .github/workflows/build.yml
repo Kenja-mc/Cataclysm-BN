@@ -948,6 +948,16 @@ jobs:
             -- `
             @testOpts
 
+      - name: Validate all mod data (Linux)
+        if: inputs.run-tests && runner.os == 'Linux' && (matrix.android == '' || matrix.android == 'none')
+        shell: bash
+        run: |
+          set -euo pipefail
+          binary="build/src/cataclysm-bn"
+          if [ "${{ matrix.tiles }}" = true ]; then binary="$binary-tiles"; fi
+          xvfb-run -a "$binary" --basepath ./ --userdir "$RUNNER_TEMP/data-check/" --check-all-mods
+          python3 build-scripts/test_mod_validation.py "$binary"
+
       - name: Save vcpkg binary archives (windows msvc)
         if: success() && runner.os == 'Windows' && env.CACHE_WRITE_ALLOWED == 'true' && steps.vcpkg-binary-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4

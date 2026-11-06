@@ -38,11 +38,17 @@ learn and use. It keeps the BN game rules. `OVERHAUL.md` explains each change.
    (enabled with `git config core.hooksPath .githooks`) refuses upstream pushes, and
    `git remote set-url --push upstream DISABLED-fetch-only` blocks the push at the remote. Fetching
    and merging from upstream are unaffected.
-9. Before implementing from a ticket, run the test it cites and confirm it fails for the stated
-   reason, and confirm the cited line sits in the function you are about to change. #33 cited
-   `test_mre_unpacks_its_entree`, but MRE rations use `DISASSEMBLE` and never run `unpack_actor`,
-   so that test could not have been its regression test.
+9. Before implementing from a ticket, check that its cited test exercises the affected path and that
+   the cited line belongs to the function being changed. Use a regression test for the actual path.
 10. Close an issue only after its change is on `main`.
+
+### Documentation
+
+Document current behavior concisely. Keep decisions and invariants beside the code they govern,
+in nearby documentation and executable tests; Part 1 rule 6 still governs code comments.
+Task lists contain only actionable remaining work. Git owns history: do not keep session diaries,
+progress logs, machine timings or repeated historical incident narratives in repository documents.
+Keep the actual product changes in `CHANGELOG-OVERHAUL.md`.
 
 ### Build
 
@@ -56,13 +62,13 @@ mise install
 sudo pacman -S --needed clang
 mise exec -- ccache --max-size=20G
 ```
+
 Run the file-scoped formatter through `uv`, which supplies the pinned astyle without changing the
 system installation:
 
 ```sh
 uv run --no-project --with astyle==3.4.13 build-scripts/format-cpp.sh src/npc.cpp
 ```
-
 
 Run the build commands below through `mise exec --` (or with mise shell activation), so the system
 CMake and Ninja are never picked up. `clang` is required. If `ccache` or `mold` is absent, configure
@@ -83,7 +89,7 @@ Use `cmake --preset <preset>` without `--fresh` for later configuration changes.
 discards tree-specific `-D` overrides, so reapply any intentional ones. Both local presets use
 `-O2 -g1`: backtraces retain function names and file/line information in the binary, but debugger
 locals and types are omitted. CI and distribution presets keep their existing flags.
-The stale test PCH is removed; compile-command export no longer controls whether tests build.
+Tests build independently of compile-command export.
 Local presets also turn off post-link Lua documentation generation, which otherwise runs the
 repository-wide formatter. Regenerate documentation explicitly when changing the Lua API.
 
@@ -95,10 +101,6 @@ identical text in the editor. Code inside `#if defined(SDL_SOUND)` is absent fro
 so editing it can correctly reuse the same object. For a suspected stale hit, build the preset
 that includes the changed block and inspect the object with `strings` or compare its checksum
 before and after; do not disable ccache based on elapsed time alone.
-Measured with both tools on this 8-core/16-thread machine: a clean curses build of the game and tests
-took 3 minutes 30 seconds on a fresh tree at a new repository path (438 of 758 objects came from
-ccache), returning to a previously built state took 0.7 seconds, and editing `src/game.cpp`, the
-largest file, took 17.8 seconds.
 
 Moving or renaming the repository invalidates every build tree, because `CMakeCache.txt` and the
 `_deps/*-subbuild` caches record absolute source paths, and a configure then fails with "the
@@ -148,18 +150,20 @@ relinking the binary underneath a running game.
 The dev presets are an iteration tool, not a validation tool. They compile `RelWithDebInfo` with the
 optimization flags replaced by `-O0 -g1 -DNDEBUG`, so `assert()` is compiled out and `RELEASE=1`:
 release-only code paths run and the game runs slower. Tests, clang-tidy and Tracy are not built, and
-`-g1` is too thin for gdb work — use `linux-curses` or `linux-full` for the test gate, for
-performance numbers, or when debugging. The gain is in the largest translation units: on a 4-core
-container `game.cpp` compiled in 28 seconds instead of 62 at `-O2`, while the `-O2` edit measured
-above takes 17.8 seconds on this 8-core/16-thread machine. Numbers are machine-specific, and small
-files gain little because parsing headers dominates. Editing a header that many files include still
-recompiles all of them.
+`-g1` is too thin for gdb work — use `linux-curses` or `linux-full` for targeted validation,
+performance measurements, or debugging. Editing a widely included header still recompiles its
+dependents.
 
 ### Test
 
-Do all three tests before you push. All results must be good.
+Before pushing, select checks from the changed paths and affected behavior. Docs-only changes
+need no game build or gameplay run. Code changes need the affected game target and targeted
+regression checks; data changes need the data check. Harness, build and shared-fixture changes
+need their relevant checks and affected E2E modules, not a full local suite.
+The full deterministic suite runs nightly before a candidate becomes stable; it is not a local
+pre-push or candidate-publication gate.
 
-1. Data check:
+1. Data check, for changed game data or loaders:
 
    ```sh
    out/build/linux-curses/src/cataclysm-bn --basepath ./ --userdir /tmp/chk/ --check-all-mods
@@ -167,7 +171,15 @@ Do all three tests before you push. All results must be good.
 
    Make sure that there are no errors.
 
-2. Upstream unit tests: use the software GPU, as upstream CI does. Xvfb must be installed, and the
+   For data-loader or validation changes, also verify the real CLI's exit status with valid and
+   invalid mod data in an isolated temporary directory:
+
+   ```sh
+   python3 build-scripts/test_mod_validation.py out/build/linux-curses/src/cataclysm-bn
+   ```
+
+2. Upstream unit tests, for affected core behavior: use the software GPU for file-tag shards, as
+   upstream CI does. Xvfb must be installed, and the
    software Vulkan ICD must be reachable; point `VK_DRIVER_FILES` at it. Without the ICD the
    `20-visibility` shard cannot create a GPU device:
 
@@ -186,16 +198,15 @@ Do all three tests before you push. All results must be good.
 
 3. Fork end-to-end tests, in proportion to the change:
 
-   | Change                                 | Run                                                     |
-   | -------------------------------------- | ------------------------------------------------------- |
-   | Docs only                              | Nothing                                                 |
-   | One feature                            | Its tests, then `python3 tests/e2e/run.py --tier=smoke` |
-   | Harness, build, data or shared fixture | The whole suite                                         |
+   | Change                                 | Run                                          |
+   | -------------------------------------- | -------------------------------------------- |
+   | Docs only                              | Nothing                                      |
+   | One feature                            | Its tests, then `--tier=smoke`               |
+   | Harness, build, data or shared fixture | Relevant harness checks and affected modules |
 
-   Run the whole suite as `python3 tests/e2e/run.py --parallel=2` with no command deadline: its 291
-   tests took 63 minutes here on 2026-10-27, so a one-hour cap cuts it off. Do not run other heavy
-   work at the same time, because slow input makes these tests fail. Name filters run single tests
-   while iterating.
+   Run named tests with `python3 tests/e2e/run.py <test-name ...>` while iterating. For an
+   explicitly requested full local run, use `python3 tests/e2e/run.py --parallel=2` without a
+   short command deadline. Do not run other heavy work alongside it: delayed input can fail tests.
 
    `bin/playtest-container.sh e2e [test-name ...]` runs the same suite inside an unprivileged
    bubblewrap container with a private HOME and `/tmp` and no network, and
@@ -209,19 +220,18 @@ Write one end-to-end test for each new fork feature, in its own module under `te
 `TESTS` list registered in `run.py`. Reuse a game per option profile through `fixtures.py` instead
 of starting a new one. Do not write unit tests for fork features.
 
-The same suite runs on GitHub Actions in `.github/workflows/fork-e2e.yml`, on one runner, only when
-selected: nightly, a manual `fork-playtest` dispatch, or the release `run_playtests` checkbox. The
-two-core runners are much slower than this machine (a test there takes 58 to 145 seconds against
-about 50 here). Three traps were found running it there, and each of them cost whole runs:
+`.github/workflows/fork-e2e.yml` runs the full deterministic suite across eight CI shards for nightly
+`fork-promote` stable promotion and selected manual `fork-playtest` runs. Successful package,
+unit/data and updater checks publish prerelease candidates. Only a full promotion-suite pass on a
+candidate's exact source SHA can promote that candidate and its existing assets; failures, timeouts
+and cancellations leave stable unchanged. The default updater remains stable-only. See
+[`docs/fork/releasing.md`](docs/fork/releasing.md) when publishing or promoting releases.
 
-- A check that reads the screen once, or after a fixed key delay, is a coin flip on the runners. Wait
-  for the text it needs with a bounded timeout (`Game.wait_for`) instead of sampling.
-- A game-side debug assertion opens a modal "An error has occurred!" popup that swallows every key,
-  and it then fails every later test in that game. The CI build keeps debug assertions on while a
-  local build does not, so it only reproduces there. `Game.dismiss_error_popup` answers the popup and
-  reports its text, and the suite calls it around every test.
-- An assertion over a span of the map must account for the fixture's own extent, such as a vehicle's
-  length, or it fails on one spawn and passes on the next.
+- Wait for required screen text with a bounded timeout (`Game.wait_for`), rather than sampling
+  once or after a fixed key delay.
+- Debug assertions open a modal "An error has occurred!" popup that consumes input. Keep
+  `Game.dismiss_error_popup` around every test to answer it and report its text.
+- Map-span assertions must include the fixture's full extent, such as a vehicle's length.
 
 ### Where to find the fork code
 

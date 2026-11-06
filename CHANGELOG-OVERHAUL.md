@@ -4,6 +4,19 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-11-05
+
+### Changed
+
+- New builds publish as prerelease candidates. A nightly full gameplay-test pass promotes the
+  tested candidate to stable without rebuilding; failed or interrupted checks keep the previous
+  stable release. The Windows updater continues to offer stable releases only.
+
+### Fixed
+
+- Mod data validation now exits with failure when a mod cannot load, instead of reporting the
+  error while returning success.
+
 ## 2026-11-04
 
 ### Added
