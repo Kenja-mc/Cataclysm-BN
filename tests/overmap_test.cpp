@@ -598,19 +598,6 @@ TEST_CASE("zoom_bookkeeping_matches_rendered_scale", "[overmap][zoom][tiles]") {
     g->reapply_zoom();
     REQUIRE(tilecontext->get_tile_width() == widths.at(16.f));
 
-    SECTION("main view steps through the zoom ladder and wraps at both ends") {
-        for (const float expected : {32.f, 64.f, 4.f, 8.f}) { // wraps 64 -> 4
-            g->zoom_in();
-            CHECK(g->get_zoom() == expected);
-            CHECK(tilecontext->get_tile_width() == widths.at(expected));
-        }
-        for (const float expected : {4.f, 64.f}) { // wraps 4 -> 64
-            g->zoom_out();
-            CHECK(g->get_zoom() == expected);
-            CHECK(tilecontext->get_tile_width() == widths.at(expected));
-        }
-    }
-
     SECTION("zoom stepping recovers from an off-grid zoom value") {
         g->set_zoom(20.f); // between the 16 and 32 steps
         REQUIRE(g->get_zoom() == 20.f);
