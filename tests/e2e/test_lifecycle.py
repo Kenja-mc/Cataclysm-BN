@@ -1011,8 +1011,8 @@ class LifecycleTests(unittest.TestCase):
 
                     game.type = queue_text
                     self.assertEqual(
-                        game._lua("local p=TripointBubMs.new(100000,222,0) "
-                                  "out('bookkeeper',p.x,p.y,'((same))',100000//333)"),
+                        game.lua("local p=TripointBubMs.new(100000,222,0) "
+                                 "out('bookkeeper',p.x,p.y,'((same))',100000//333)"),
                         ["bookkeeper,100000,222,((same)),300"])
                 finally:
                     game.close()
