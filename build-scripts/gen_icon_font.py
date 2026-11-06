@@ -36,6 +36,8 @@ PINHEAD = {
     "run": 0x10F001,
     "crouch": 0x10F002,
     "prone": 0x10F003,
+    "bone": 0x10F004,
+    "anguished-face-in-circle-outline": 0x10F042,
 }
 
 MDI_WIDE_START = 0x10F010
@@ -77,7 +79,34 @@ MDI = {
     "moon-waning-gibbous": 0xF0F66,
     "moon-last-quarter": 0xF0F63,
     "moon-waning-crescent": 0xF0F65,
+
     "lock": 0xF033E,
+}
+
+MDI_WIDE = {
+    "arm-flex": 0x10F035,
+    "shoe-sneaker-motion": 0x10F036,
+    "brain": 0x10F037,
+    "eye-outline": 0x10F038,
+    "lightning-bolt": 0x10F039,
+    "shield-check-outline": 0x10F03A,
+    "speedometer": 0x10F03B,
+    "waveform": 0x10F03C,
+    "heart-pulse": 0x10F03D,
+    "emoticon-happy-outline": 0x10F03E,
+    "target": 0x10F03F,
+    "weight-kilogram": 0x10F040,
+    "bag-personal": 0x10F041,
+    "thermometer-chevron-up": 0x10F043,
+    "thermometer-chevron-down": 0x10F044,
+    "water-outline": 0x10F045,
+    "virus-outline": 0x10F046,
+    "tooth-outline": 0x10F047,
+    "spray-bottle": 0x10F048,
+    "car-cruise-control": 0x10F049,
+    "engine": 0x10F04A,
+    "engine-off": 0x10F04B,
+    "airplane-takeoff": 0x10F04C,
 }
 
 
@@ -124,6 +153,8 @@ def build(out: Path) -> None:
     for index, (name, codepoint) in enumerate(MDI.items()):
         add(codepoint, SRC / "mdi" / f"{name}.svg", 1)
         add(MDI_WIDE_START + index, SRC / "mdi" / f"{name}.svg", 2)
+    for name, codepoint in MDI_WIDE.items():
+        add(codepoint, SRC / "mdi" / f"{name}.svg", 2)
 
     order = [".notdef", *sorted((g for g in glyphs if g != ".notdef"), key=lambda g: int(g[1:], 16))]
     fb = FontBuilder(UPM, isTTF=True)

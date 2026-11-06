@@ -4,6 +4,32 @@ Changes this fork makes on top of [Cataclysm: Bright Nights](https://github.com/
 `OVERHAUL.md` explains each feature in detail; `docs/fork/visual-changes.md` shows them.
 Upstream's own changes are in `docs/en/game/changelog`.
 
+## 2026-11-04
+
+### Added
+
+- In the graphical version, bundled icon-font glyphs for Stats, Movement, Weight, Needs,
+  Limbs and Vehicle rows, including the Dexterity shoe-motion mark, Pain face, thermometer
+  chevrons, wound badges and vehicle speed/cruise/engine/takeoff gauges. Terminal Nerd Font,
+  Unicode and Text-only rows keep their existing labels, indentation and glyphs.
+
+### Changed
+
+- Overhaul ballistic gunfire maps 36 weapon ids to a near and distant sound. Suppressed
+  gunfire randomly uses the suppressed pair for the nearby variant; energy weapons remain
+  silent by default.
+- E2E fixtures now read inherited terminal colours, clear starting gear before aim previews,
+  and select undamaged vehicles by their menu label.
+- Activity-line tests isolate their message log from NPC chatter and starting-character effects.
+  Fusion sidebar tests use clear daylight with an open sky so indoor darkness cannot masquerade
+  as a light-cache failure.
+- Wield-picker checks read only the dialog's rows, so background pickup messages cannot be
+  mistaken for extra items.
+- Sky-opening test fixtures clear roof loot before removing the roof, preventing falling items
+  from contaminating supposedly empty containers.
+- Monster-ambience checks use a fixed classic map layout, keeping question marks in log messages
+  out of the sound-marker counter.
+
 ## 2026-11-03
 
 ### Added
@@ -96,7 +122,7 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Fusion HUD: the STATUS card and the LOADOUT deck moved into the sidebar column, so the map keeps
   only the ribbon row and the vehicle card; the date and time ribbon now starts at the top left.
   BODY lists every limb again, healthy or not. The pixel minimap gives way when the column is full
-  and is turned off with *Pixel minimap*; the LOADOUT section carries the weapon, the hotbar and the
+  and is turned off with _Pixel minimap_; the LOADOUT section carries the weapon, the hotbar and the
   key hints, wrapped over three rows.
 - The World page (`M`) lives in the HUD column on the fusion layout: a two-row tab
   strip in the sidebar, numbers and arrows switch tabs, the list fills the column, Enter opens

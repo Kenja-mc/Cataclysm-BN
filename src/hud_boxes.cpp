@@ -102,7 +102,13 @@ auto compact_bars() -> bool
 enum class icon {
     sun, moon, cloud, rain, storm, snow, strange, underground, fists, melee, gun, bow, style,
     walk, run, crouch, prone, mana, compass, fuel, battery, pain, thirst, hunger, rest, temp,
-    cold, hot, clock, light, wind, needs_met
+    cold, hot, clock, light, wind, needs_met, strength, dexterity, intelligence, perception,
+    power, safe, speed, sound, stamina, mood, focus, weight, volume, bleeding, infected,
+    bitten, bandaged, disinfected, broken, cruise, engine_on, engine_off, takeoff
+};
+
+enum class wound_kind {
+    bandaged, bitten, bleeding, disinfected, infected, broken
 };
 
 struct glyph_set {
@@ -114,6 +120,10 @@ struct glyph_set {
 
 auto glyph( const icon i, const std::string &style ) -> std::string
 {
+    const auto bundled_icon = [&]( const char *bundled, const char *ascii ) {
+        return style == "ascii" ? "" :
+               style == "nerd" && icon_font::bundled ? bundled : ascii;
+    };
     const auto pick = [&]( const glyph_set & g ) {
         if( style == "ascii" ) {
             return std::string( g.ascii );
@@ -171,7 +181,7 @@ auto glyph( const icon i, const std::string &style ) -> std::string
         case icon::battery:
             return pick( { .uni = "↯", .mdi = "\U000F0079", .bundled = icon_font::battery, .ascii = "B" } );
         case icon::pain:
-            return pick( { .uni = "☹", .mdi = "\U000F0DAF", .bundled = icon_font::bandage, .ascii = "x" } );
+            return pick( { .uni = "☹", .mdi = "\U000F0DAF", .bundled = icon_font::anguished_face_in_circle_outline, .ascii = "x" } );
         case icon::thirst:
             return pick( { .uni = "☕", .mdi = "\U000F01AB", .bundled = icon_font::cup_water, .ascii = "~" } );
         case icon::hunger:
@@ -181,9 +191,9 @@ auto glyph( const icon i, const std::string &style ) -> std::string
         case icon::temp:
             return pick( { .uni = "⇅", .mdi = "\U000F050F", .bundled = icon_font::thermometer, .ascii = "=" } );
         case icon::cold:
-            return pick( { .uni = "❄", .mdi = "\U000F0598", .bundled = icon_font::weather_snowy, .ascii = "*" } );
+            return pick( { .uni = "❄", .mdi = "\U000F0598", .bundled = icon_font::thermometer_chevron_down, .ascii = "*" } );
         case icon::hot:
-            return pick( { .uni = "↑", .mdi = "\U000F050F", .bundled = icon_font::thermometer, .ascii = "^" } );
+            return pick( { .uni = "↑", .mdi = "\U000F050F", .bundled = icon_font::thermometer_chevron_up, .ascii = "^" } );
         case icon::clock:
             return pick( { .uni = "◷", .mdi = "\U000F0150", .bundled = icon_font::clock_outline, .ascii = "t" } );
         case icon::light:
@@ -192,6 +202,52 @@ auto glyph( const icon i, const std::string &style ) -> std::string
             return pick( { .uni = "≈", .mdi = "\U000F059D", .bundled = icon_font::weather_windy, .ascii = "w" } );
         case icon::needs_met:
             return pick( { .uni = "✓", .mdi = "\U000F012C", .bundled = icon_font::check, .ascii = "+" } );
+        case icon::strength:
+            return bundled_icon( icon_font::arm_flex, "" );
+        case icon::dexterity:
+            return bundled_icon( icon_font::shoe_sneaker_motion, "" );
+        case icon::intelligence:
+            return bundled_icon( icon_font::brain, "" );
+        case icon::perception:
+            return bundled_icon( icon_font::eye_outline, "" );
+        case icon::power:
+            return bundled_icon( icon_font::lightning_bolt, "" );
+        case icon::safe:
+            return bundled_icon( icon_font::shield_check_outline, "" );
+        case icon::speed:
+            return bundled_icon( icon_font::speedometer, "" );
+        case icon::sound:
+            return bundled_icon( icon_font::waveform, "" );
+        case icon::stamina:
+            return bundled_icon( icon_font::heart_pulse, "" );
+        case icon::mood:
+            return bundled_icon( icon_font::emoticon_happy_outline, "" );
+        case icon::focus:
+            return bundled_icon( icon_font::target, "" );
+        case icon::weight:
+            return bundled_icon( icon_font::weight_kilogram, "" );
+        case icon::volume:
+            return bundled_icon( icon_font::bag_personal, "" );
+        case icon::bleeding:
+            return bundled_icon( icon_font::water_outline, "" );
+        case icon::infected:
+            return bundled_icon( icon_font::virus_outline, "" );
+        case icon::bitten:
+            return bundled_icon( icon_font::tooth_outline, "" );
+        case icon::bandaged:
+            return bundled_icon( icon_font::bandage, "" );
+        case icon::disinfected:
+            return bundled_icon( icon_font::spray_bottle, "" );
+        case icon::broken:
+            return bundled_icon( icon_font::bone, "" );
+        case icon::cruise:
+            return bundled_icon( icon_font::car_cruise_control, "" );
+        case icon::engine_on:
+            return bundled_icon( icon_font::engine, "" );
+        case icon::engine_off:
+            return bundled_icon( icon_font::engine_off, "" );
+        case icon::takeoff:
+            return bundled_icon( icon_font::airplane_takeoff, "" );
     }
     return "?";
 }
@@ -554,30 +610,29 @@ auto vehicle_lines( const vehicle_state &state, const std::string &icons ) -> st
         const auto strain = veh->strain();
         const auto speed_color = strain <= 0 ? c_light_blue :
                                  strain <= 0.2 ? c_yellow : strain <= 0.4 ? c_light_red : c_red;
-        out.push_back( { .icon = indent, .icon_w = iw, .icon_color = speed_color,
-                         .text = string_format( _( "Speed: %d %s" ),
-                                                static_cast<int>( convert_velocity( veh->velocity, VU_VEHICLE ) ),
-                                                velocity_units( VU_VEHICLE ) ),
-                         .text_color = speed_color } );
+        const auto row = [&]( const icon symbol, std::string text, const nc_color color ) {
+            const auto symbol_text = ascii ? std::string() : glyph( symbol, icons );
+            const auto shown = symbol_text.empty() ? indent : symbol_text;
+            out.push_back( { .icon = shown, .icon_w = utf8_width( shown ),
+                             .icon_color = color, .text = std::move( text ), .text_color = color } );
+        };
+        row( icon::speed, string_format( _( "Speed: %d %s" ),
+                                         static_cast<int>( convert_velocity( veh->velocity, VU_VEHICLE ) ),
+                                         velocity_units( VU_VEHICLE ) ), speed_color );
         if( veh->cruise_on ) {
-            out.push_back( { .icon = indent, .icon_w = iw, .icon_color = c_light_gray,
-                             .text = string_format( _( "Cruise: %d %s" ),
-                                                    static_cast<int>( convert_velocity( veh->cruise_velocity, VU_VEHICLE ) ),
-                                                    velocity_units( VU_VEHICLE ) ),
-                             .text_color = c_light_gray } );
+            row( icon::cruise, string_format( _( "Cruise: %d %s" ),
+                                              static_cast<int>( convert_velocity( veh->cruise_velocity, VU_VEHICLE ) ),
+                                              velocity_units( VU_VEHICLE ) ), c_light_gray );
         }
         if( state.wing ) {
             const auto takeoff = veh->get_takeoff_speed();
-            out.push_back( { .icon = indent, .icon_w = iw, .icon_color = c_light_gray,
-                             .text = string_format( _( "Takeoff: %d %s" ),
-                                                    takeoff,
-                                                    velocity_units( VU_VEHICLE ) ),
-                             .text_color = convert_velocity( veh->velocity, VU_VEHICLE ) >= takeoff ?
-                                           c_light_green : c_light_red } );
+            row( icon::takeoff, string_format( _( "Takeoff: %d %s" ), takeoff,
+                                               velocity_units( VU_VEHICLE ) ),
+                 convert_velocity( veh->velocity, VU_VEHICLE ) >= takeoff ? c_light_green : c_light_red );
         }
-        out.push_back( { .icon = indent, .icon_w = iw, .icon_color = c_light_gray,
-                         .text = veh->engine_on ? _( "Engine: on" ) : _( "Engine: off" ),
-                         .text_color = veh->engine_on ? c_light_green : c_light_gray } );
+        row( veh->engine_on ? icon::engine_on : icon::engine_off,
+             veh->engine_on ? _( "Engine: on" ) : _( "Engine: off" ),
+             veh->engine_on ? c_light_green : c_light_gray );
     }
 
     const auto percentage = [&]( const itype_id & fuel ) {
@@ -1081,25 +1136,51 @@ const efftype_id effect_disinfected( "disinfected" );
 const efftype_id effect_infected( "infected" );
 const efftype_id effect_mending( "mending" );
 
+struct wound_result {
+    std::string text;
+    nc_color color;
+    wound_kind kind = wound_kind::broken;
+};
+
 auto wound_for( const avatar &you, const bodypart_id &bp )
--> std::optional<std::pair<std::string, nc_color>>
+-> std::optional<wound_result>
 {
-    auto out = std::optional<std::pair<std::string, nc_color>>();
+    auto out = std::optional<wound_result>();
     if( you.get_part_hp_cur( bp ) <= 0 ) {
         out.emplace( you.has_effect( effect_mending, bp.id() ) ? std::string( _( "mending" ) ) :
-                     std::string( _( "broken" ) ), c_magenta );
+                     std::string( _( "broken" ) ), c_magenta, wound_kind::broken );
     } else if( you.has_effect( effect_bleed, bp.id() ) ) {
-        out.emplace( std::string( _( "bleeding" ) ), c_red );
+        out.emplace( std::string( _( "bleeding" ) ), c_red, wound_kind::bleeding );
     } else if( you.has_effect( effect_infected, bp.id() ) ) {
-        out.emplace( std::string( _( "infected" ) ), c_light_red );
+        out.emplace( std::string( _( "infected" ) ), c_light_red, wound_kind::infected );
     } else if( you.has_effect( effect_bite, bp.id() ) ) {
-        out.emplace( std::string( _( "bitten" ) ), c_yellow );
+        out.emplace( std::string( _( "bitten" ) ), c_yellow, wound_kind::bitten );
     } else if( you.has_effect( effect_bandaged, bp.id() ) ) {
-        out.emplace( std::string( _( "bandaged" ) ), c_light_green );
+        out.emplace( std::string( _( "bandaged" ) ), c_light_green, wound_kind::bandaged );
     } else if( you.has_effect( effect_disinfected, bp.id() ) ) {
-        out.emplace( std::string( _( "disinfected" ) ), c_light_cyan );
+        out.emplace( std::string( _( "disinfected" ) ), c_light_cyan, wound_kind::disinfected );
     }
     return out;
+}
+
+auto wound_icon( const wound_kind kind ) -> icon
+{
+    switch( kind ) {
+    case wound_kind::bandaged:
+        return icon::bandaged;
+    case wound_kind::bitten:
+        return icon::bitten;
+    case wound_kind::bleeding:
+        return icon::bleeding;
+    case wound_kind::disinfected:
+        return icon::disinfected;
+    case wound_kind::infected:
+        return icon::infected;
+    case wound_kind::broken:
+        return icon::broken;
+
+}
+return icon::needs_met;
 }
 
 auto limb_bar( const avatar &you, const bodypart_id &bp ) -> std::pair<std::string, nc_color>
@@ -1110,23 +1191,29 @@ auto limb_bar( const avatar &you, const bodypart_id &bp ) -> std::pair<std::stri
     return { std::move( bar ), hp.second };
 }
 
-auto limbs_content( const avatar &you ) -> content
+auto limbs_content( const avatar &you, const std::string &icons ) -> content
 {
     auto out = content{
         .id = limbs_id, .name = _( "Limbs" )
     };
+    out.icon_width = icons == "nerd" && icon_font::bundled ? 3 : 0;
     auto wounded = 0;
     for( const auto &bp : you.get_all_body_parts( true ) ) {
         const auto bar = limb_bar( you, bp );
         auto text = body_part_hp_bar_ui_text( bp ) + " " + bar.first;
         auto color = bar.second;
+        auto wound_icon_text = std::string();
         if( const auto wound = wound_for( you, bp ) ) {
-            text += " " + wound->first;
-            color = wound->second;
+            wound_icon_text = icons == "ascii" ? std::string() :
+                              glyph( wound_icon( wound->kind ), icons );
+            text += " " + wound->text;
+            color = wound->color;
             wounded++;
         }
+        const auto wound_icon_width = utf8_width( wound_icon_text );
         out.body.push_back( {
-            .text = std::move( text ), .text_color = color
+            .icon = std::move( wound_icon_text ), .icon_w = wound_icon_width,
+            .icon_color = color, .text = std::move( text ), .text_color = color
         } );
     }
     out.summary = wounded > 0 ? string_format( _( "%d wounded" ), wounded ) :
@@ -1178,26 +1265,46 @@ auto safe_color() -> nc_color
     return color;
 }
 
-auto stats_content( const avatar &you ) -> content
+auto stats_content( const avatar &you, const std::string &icons ) -> content
 {
     auto out = content{
         .id = stats_id, .name = _( "Stats" )
     };
-    const auto stat_row = [&]( const char *label, const int base, const int value ) {
+    out.icon_width = icons == "nerd" && icon_font::bundled ? 3 : 0;
+    struct stat_reading {
+        const char *label;
+        int base;
+        int value;
+        icon symbol;
+    };
+    const auto stat_row = [&]( const stat_reading & reading ) {
+        const auto symbol_text = icons == "ascii" ? std::string() :
+                                 glyph( reading.symbol, icons );
         out.body.push_back( {
-            .text = string_format( "%s %s", _( label ), value_trimmed( value ) ),
-            .text_color = color_compare_base( base, value )
+            .icon = symbol_text, .icon_w = utf8_width( symbol_text ),
+            .icon_color = color_compare_base( reading.base, reading.value ),
+            .text = string_format( "%s %s", _( reading.label ),
+                                   value_trimmed( reading.value ) ),
+            .text_color = color_compare_base( reading.base, reading.value )
         } );
     };
-    stat_row( "Str", you.get_str_base(), you.get_str() );
-    stat_row( "Dex", you.get_dex_base(), you.get_dex() );
-    stat_row( "Int", you.get_int_base(), you.get_int() );
-    stat_row( "Per", you.get_per_base(), you.get_per() );
+    stat_row( { .label = "Str", .base = you.get_str_base(), .value = you.get_str(),
+                .symbol = icon::strength } );
+    stat_row( { .label = "Dex", .base = you.get_dex_base(), .value = you.get_dex(),
+                .symbol = icon::dexterity } );
+    stat_row( { .label = "Int", .base = you.get_int_base(), .value = you.get_int(),
+                .symbol = icon::intelligence } );
+    stat_row( { .label = "Per", .base = you.get_per_base(), .value = you.get_per(),
+                .symbol = icon::perception } );
     const auto power = power_reading( you );
+    const auto power_icon = icons == "ascii" ? std::string() : glyph( icon::power, icons );
     out.body.push_back( {
+        .icon = power_icon, .icon_w = utf8_width( power_icon ), .icon_color = power.first,
         .text = string_format( _( "Power %s" ), power.second ), .text_color = power.first
     } );
+    const auto safe_icon = icons == "ascii" ? std::string() : glyph( icon::safe, icons );
     out.body.push_back( {
+        .icon = safe_icon, .icon_w = utf8_width( safe_icon ), .icon_color = safe_color(),
         .text = string_format( _( "Safe: %s" ), g->safe_mode ? _( "On" ) : _( "Off" ) ),
         .text_color = safe_color()
     } );
@@ -1239,26 +1346,51 @@ auto sound_text( const avatar &you ) -> std::string
     return std::to_string( average_minvol_distance( 0, ( you.volume - ambient ) * 100, 0, 0 ) );
 }
 
-auto movement_content( const avatar &you ) -> content
+auto movement_content( const avatar &you, const std::string &icons ) -> content
 {
     auto out = content{
         .id = movement_id, .name = _( "Movement" )
     };
+    out.icon_width = icons == "nerd" && icon_font::bundled ? 3 : 0;
     const auto mode = move_mode_letter( you );
     out.summary = string_format( _( "Move %d(%s)" ), you.movecounter, mode );
     const auto stamina = get_hp_bar( you.get_stamina(), you.get_stamina_max() );
     auto bar = stamina.first;
     bar.append( static_cast<size_t>( std::max( 0, 5 - utf8_width( stamina.first ) ) ), '.' );
+    const auto bundled = icons == "nerd" && icon_font::bundled;
+    if( !bundled ) {
+        out.body.push_back( {
+            .text = string_format( _( "Speed %d" ), you.get_speed() ), .text_color = c_light_gray
+        } );
+        out.body.push_back( {
+            .text = string_format( _( "Sound %s  Stam %s" ), sound_text( you ), bar ),
+            .text_color = stamina.second
+        } );
+        out.body.push_back( {
+            .text = string_format( _( "Mood %d  Focus %d" ), you.get_morale_level(),
+                                   you.focus_pool ),
+            .text_color = c_light_gray
+        } );
+        return out;
+    }
+    const auto speed_icon = glyph( icon::speed, icons );
     out.body.push_back( {
+        .icon = speed_icon, .icon_w = utf8_width( speed_icon ), .icon_color = c_light_gray,
         .text = string_format( _( "Speed %d" ), you.get_speed() ), .text_color = c_light_gray
     } );
+    const auto sound_icon = glyph( icon::sound, icons );
+    const auto stamina_icon = glyph( icon::stamina, icons );
     out.body.push_back( {
-        .text = string_format( _( "Sound %s  Stam %s" ), sound_text( you ), bar ),
+        .icon = sound_icon, .icon_w = utf8_width( sound_icon ), .icon_color = c_light_gray,
+        .text = string_format( _( "Sound %s  %s Stam %s" ), sound_text( you ), stamina_icon, bar ),
         .text_color = stamina.second
     } );
+    const auto mood_icon = glyph( icon::mood, icons );
+    const auto focus_icon = glyph( icon::focus, icons );
     out.body.push_back( {
-        .text = string_format( _( "Mood %d  Focus %d" ), you.get_morale_level(),
-        you.focus_pool ),
+        .icon = mood_icon, .icon_w = utf8_width( mood_icon ), .icon_color = c_light_gray,
+        .text = string_format( _( "Mood %d  %s Focus %d" ), you.get_morale_level(),
+                               focus_icon, you.focus_pool ),
         .text_color = c_light_gray
     } );
     return out;
@@ -1267,43 +1399,50 @@ auto movement_content( const avatar &you ) -> content
 auto carry_weight_text( const avatar &you ) -> std::string
 {
     return string_format( "%.1f/%.1f", round_up( convert_weight( you.weight_carried() ), 1 ),
-                          round_up( convert_weight( you.weight_capacity() ), 1 ) );
+    round_up( convert_weight( you.weight_capacity() ), 1 ) );
 }
 
 auto carry_volume_text( const avatar &you ) -> std::string
 {
     return string_format( "%.2f/%.2f",
-                          round_up( convert_volume( to_milliliter( you.volume_carried() ) ), 2 ),
-                          round_up( convert_volume( to_milliliter( you.volume_capacity() ) ), 2 ) );
+           round_up( convert_volume( to_milliliter( you.volume_carried() ) ), 2 ),
+    round_up( convert_volume( to_milliliter( you.volume_capacity() ) ), 2 ) );
 }
 
 auto weight_color( const avatar &you ) -> nc_color
 {
     if( you.weight_carried() > you.weight_capacity() ) {
-        return c_red;
-    }
-    return you.weight_carried() > you.weight_capacity() * 0.75 ? c_yellow : c_light_gray;
+    return c_red;
+}
+return you.weight_carried() > you.weight_capacity() * 0.75 ? c_yellow : c_light_gray;
 }
 
 auto volume_color( const avatar &you ) -> nc_color
 {
     if( you.volume_carried() > you.volume_capacity() * 0.85 ) {
-        return c_red;
-    }
-    return you.volume_carried() > you.volume_capacity() * 0.65 ? c_yellow : c_light_gray;
+    return c_red;
+}
+return you.volume_carried() > you.volume_capacity() * 0.65 ? c_yellow : c_light_gray;
 }
 
-auto weight_content( const avatar &you ) -> content
+auto weight_content( const avatar &you, const std::string &icons ) -> content
 {
     auto out = content{
         .id = weight_id, .name = _( "Weight" )
     };
+    out.icon_width = icons == "nerd" && icon_font::bundled ? 3 : 0;
     const auto weight = carry_weight_text( you );
     const auto volume = carry_volume_text( you );
+    const auto weight_icon = icons == "ascii" ? std::string() : glyph( icon::weight, icons );
+    const auto volume_icon = icons == "ascii" ? std::string() : glyph( icon::volume, icons );
     out.body.push_back( {
+        .icon = weight_icon, .icon_w = utf8_width( weight_icon ),
+        .icon_color = weight_color( you ),
         .text = string_format( _( "Weight %s" ), weight ), .text_color = weight_color( you )
     } );
     out.body.push_back( {
+        .icon = volume_icon, .icon_w = utf8_width( volume_icon ),
+        .icon_color = volume_color( you ),
         .text = string_format( _( "Volume %s" ), volume ), .text_color = volume_color( you )
     } );
     out.summary = string_format( _( "Wgt %s  Vol %s" ), weight, volume );
@@ -1573,8 +1712,9 @@ auto draw( const avatar &you, const catacurses::window &w ) -> void
     auto contents = std::array<content, 10> {
         vehicle_content( you, icons ), weather_content( you, icons ),
         combat_content( you, icons ), needs_content( you, icons ),
-        limbs_content( you ), stats_content( you ), movement_content( you ),
-        weight_content( you ), compass_content( you ), log_content( max_inner )
+        limbs_content( you, icons ), stats_content( you, icons ),
+        movement_content( you, icons ), weight_content( you, icons ),
+        compass_content( you ), log_content( max_inner )
     };
     struct pending {
         content *body;
@@ -2078,8 +2218,8 @@ auto read( const avatar &you ) -> snapshot
             .color = get_hp_bar( you.get_part_hp_cur( bp ), you.get_part_hp_max( bp ) ).second
         };
         if( const auto wound = hud_windows::wound_for( you, bp ) ) {
-            entry.wound = wound->first;
-            entry.wound_color = wound->second;
+            entry.wound = wound->text;
+            entry.wound_color = wound->color;
         }
         out.limbs.push_back( std::move( entry ) );
         const auto encumbrance = you.encumb( bp.id() );

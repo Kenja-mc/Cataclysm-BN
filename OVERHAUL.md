@@ -188,27 +188,28 @@ food and a weapon, because houses usually have all three.
 
 <!-- BEGIN generated:keytable -->
 
-| Key / family | Action |
-| --- | --- |
-| <kbd>W</kbd>, <kbd>A</kbd>, <kbd>S</kbd>, <kbd>D</kbd> | move; bump an enemy to melee attack (the keypad moves too, and Numpad 5 waits a turn) |
-| <kbd>Shift</kbd>+<kbd>A</kbd>, <kbd>Shift</kbd>+<kbd>W</kbd>, <kbd>Shift</kbd>+<kbd>S</kbd>, <kbd>Shift</kbd>+<kbd>D</kbd> | select (look at) the next tile in that direction; no time passes |
-| <kbd>Q</kbd>, <kbd>E</kbd>, <kbd>Z</kbd>, <kbd>C</kbd> | move diagonally |
-| <kbd>Ctrl</kbd>+<kbd>W</kbd>, <kbd>Ctrl</kbd>+<kbd>A</kbd>, <kbd>Ctrl</kbd>+<kbd>S</kbd>, <kbd>Ctrl</kbd>+<kbd>D</kbd> | physical peek (normal 200-move cost) |
-| <kbd>Tab</kbd>, <kbd>Shift</kbd>+<kbd>Tab</kbd> | next / previous visible hostile |
-| <kbd>Shift</kbd>+<kbd>X</kbd> | movement mode menu: run, walk, crouch, prone |
-| <kbd>F</kbd>, <kbd>Shift</kbd>+<kbd>F</kbd>, <kbd>R</kbd>, <kbd>T</kbd> | attack aimed tile / force melee / reload / throw |
-| <kbd>P</kbd> | bionics |
-| <kbd>Space</kbd> | nearby or selected-tile actions, including explicit Jump and Smash |
-| <kbd>Shift</kbd>+<kbd>Space</kbd> | toggle a selected vehicle curtain, or choose one nearby |
-| <kbd>G</kbd>, <kbd>Shift</kbd>+<kbd>G</kbd>, <kbd>Ctrl</kbd>+<kbd>G</kbd> | pick up beside you / take everything beside you / nearby list |
-| <kbd>I</kbd>, <kbd>V</kbd>, <kbd>Shift</kbd>+<kbd>I</kbd> | inventory / use item by kind / advanced inventory |
-| <kbd>F5</kbd> | craft (also works with empty inventory) |
-| <kbd>@</kbd>, <kbd>Shift</kbd>+<kbd>P</kbd>, <kbd>Shift</kbd>+<kbd>B</kbd> | character sheet / message log / butcher |
-| <kbd>Enter</kbd> | all action groups; Info contains character/status screens |
-| <kbd>Ctrl</kbd>+<kbd>F</kbd> | search controls, creatures, tiles and items (see below) |
-| <kbd>1</kbd>–<kbd>6</kbd>, <kbd>Ctrl</kbd>+<kbd>T</kbd> | hotbar slots 1-6 / assign a slot |
-| <kbd>X</kbd>, <kbd>Ctrl</kbd>+<kbd>X</kbd> | wait one turn / wait or rest a while |
-| <kbd>M</kbd>, <kbd>N</kbd> | map / auto-explore |
+| Key / family                                                                                                               | Action                                                                                |
+| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| <kbd>W</kbd>, <kbd>A</kbd>, <kbd>S</kbd>, <kbd>D</kbd>                                                                     | move; bump an enemy to melee attack (the keypad moves too, and Numpad 5 waits a turn) |
+| <kbd>Shift</kbd>+<kbd>A</kbd>, <kbd>Shift</kbd>+<kbd>W</kbd>, <kbd>Shift</kbd>+<kbd>S</kbd>, <kbd>Shift</kbd>+<kbd>D</kbd> | select (look at) the next tile in that direction; no time passes                      |
+| <kbd>Q</kbd>, <kbd>E</kbd>, <kbd>Z</kbd>, <kbd>C</kbd>                                                                     | move diagonally                                                                       |
+| <kbd>Ctrl</kbd>+<kbd>W</kbd>, <kbd>Ctrl</kbd>+<kbd>A</kbd>, <kbd>Ctrl</kbd>+<kbd>S</kbd>, <kbd>Ctrl</kbd>+<kbd>D</kbd>     | physical peek (normal 200-move cost)                                                  |
+| <kbd>Tab</kbd>, <kbd>Shift</kbd>+<kbd>Tab</kbd>                                                                            | next / previous visible hostile                                                       |
+| <kbd>Shift</kbd>+<kbd>X</kbd>                                                                                              | movement mode menu: run, walk, crouch, prone                                          |
+| <kbd>F</kbd>, <kbd>Shift</kbd>+<kbd>F</kbd>, <kbd>R</kbd>, <kbd>T</kbd>                                                    | attack aimed tile / force melee / reload / throw                                      |
+| <kbd>P</kbd>                                                                                                               | bionics                                                                               |
+| <kbd>Space</kbd>                                                                                                           | nearby or selected-tile actions, including explicit Jump and Smash                    |
+| <kbd>Shift</kbd>+<kbd>Space</kbd>                                                                                          | toggle a selected vehicle curtain, or choose one nearby                               |
+| <kbd>G</kbd>, <kbd>Shift</kbd>+<kbd>G</kbd>, <kbd>Ctrl</kbd>+<kbd>G</kbd>                                                  | pick up beside you / take everything beside you / nearby list                         |
+| <kbd>I</kbd>, <kbd>V</kbd>, <kbd>Shift</kbd>+<kbd>I</kbd>                                                                  | inventory / use item by kind / advanced inventory                                     |
+| <kbd>F5</kbd>                                                                                                              | craft (also works with empty inventory)                                               |
+| <kbd>@</kbd>, <kbd>Shift</kbd>+<kbd>P</kbd>, <kbd>Shift</kbd>+<kbd>B</kbd>                                                 | character sheet / message log / butcher                                               |
+| <kbd>Enter</kbd>                                                                                                           | all action groups; Info contains character/status screens                             |
+| <kbd>Ctrl</kbd>+<kbd>F</kbd>                                                                                               | search controls, creatures, tiles and items (see below)                               |
+| <kbd>1</kbd>–<kbd>6</kbd>, <kbd>Ctrl</kbd>+<kbd>T</kbd>                                                                    | hotbar slots 1-6 / assign a slot                                                      |
+| <kbd>X</kbd>, <kbd>Ctrl</kbd>+<kbd>X</kbd>                                                                                 | wait one turn / wait or rest a while                                                  |
+| <kbd>M</kbd>, <kbd>N</kbd>                                                                                                 | map / auto-explore                                                                    |
+
 <!-- END generated:keytable -->
 
 Walking into an enemy attacks it in both control schemes. Options → Interface → Attack by walking
@@ -470,19 +471,19 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
 - **Fading sound markers**: the `?` for a sound you heard but cannot see stays for a few turns,
   dims, and becomes a small `·` once it is two turns old in both the terminal and tiles views, so
   a fresh cue looks different from a stale one; a cue on another level keeps its `^` or `v`
-  arrow.  The Mouse View line for that tile names where the sound came from — here, above or
-  below — and how old it is (`Heard a yell from above, ~2 turns ago.`).  Markers age out while a
+  arrow. The Mouse View line for that tile names where the sound came from — here, above or
+  below — and how old it is (`Heard a yell from above, ~2 turns ago.`). Markers age out while a
   multi-turn activity spends turns, not only after a player action, so no cue outstays
-  Sound marker turns.  The first marker in a game explains the glyphs in the log once, when
-  Options → Interface → Show first-time tips is on.  Losing your hearing clears the markers
-  already on the map.  Options → Interface → Sound marker turns sets how long a cue lasts (1
+  Sound marker turns. The first marker in a game explains the glyphs in the log once, when
+  Options → Interface → Show first-time tips is on. Losing your hearing clears the markers
+  already on the map. Options → Interface → Sound marker turns sets how long a cue lasts (1
   turn gives the upstream behaviour, where it vanishes after your next action); Sound markers
   shrink off keeps the `?` or arrow for the marker's whole lifetime, and the colour still fades.
   Pause when sound markers age is off by default. Turn it on to hold up to four changed marker
   frames per activity for about 250 ms each; the pauses do not spend in-game time.
 - **Activity line in the log**: while an activity runs, the top row of the Message log names it,
-  its progress and the time left, counted with that activity's own speed factors.  Further log
-  rows keep their messages.  Options → Interface → Activity line in the log turns the line off
+  its progress and the time left, counted with that activity's own speed factors. Further log
+  rows keep their messages. Options → Interface → Activity line in the log turns the line off
   and gives the row back to messages.
 - **Monster health bars** (tiles view): a small bar under every hurt monster in view, using the same
   coarse reading the look-around list gives rather than exact hit points. Options → Graphics →
@@ -567,7 +568,7 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   entries opens the armor layers screen, and nothing wrong reads `✓ Needs met` with focus and
   mood), **AROUND** (each creature in sight by name, direction and distance, hostiles first),
   **LOADOUT** (the held weapon with its ammo and six numbered hotbar cells), **MAP** (the pixel
-  minimap: turn *Pixel minimap* off to clear it, and it gives way when the column is full) and
+  minimap: turn _Pixel minimap_ off to clear it, and it gives way when the column is full) and
   **LOG** (messages in the log's own colours); the log takes every row the sections above leave.
   The map keeps only the ribbon row, the key bar and the VEHICLE card, and the character stays
   centred. Select fusion, grouped or another layout in **Enter → Misc → Sidebar Options**.
@@ -575,13 +576,13 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   `menus` and `all keys` normally; `fire`/`attack`, `reload`, `next target`, `run` and `all keys`
   while a hostile is in sight. Every key is the player's live binding, and an unbound one is left
   out. It shares the bottom row of the map with nothing: the VEHICLE card sits one row above it.
-- **Hotbar** (Modern, fusion LOADOUT section): six quick slots on `1`–`6`. **Ctrl+T** opens *Assign
-  a hotbar slot*: pick a slot, then an item (Esc clears it). A slot remembers the item type, not the
+- **Hotbar** (Modern, fusion LOADOUT section): six quick slots on `1`–`6`. **Ctrl+T** opens _Assign
+  a hotbar slot_: pick a slot, then an item (Esc clears it). A slot remembers the item type, not the
   stack; its key does what the Use menu does with the first matching carried item (read, eat, wield,
   wear or activate; a wielded gun is reloaded). An empty slot, or one whose item you no longer carry,
   only says so. Slots are saved with the character, so they work in every layout; only the fusion
   LOADOUT section draws them, and clicking a cell uses it. A slot with nothing assigned uses the item
-  whose inventory letter is that digit. Classic has no default hotbar keys; bind *Hotbar slot N* if
+  whose inventory letter is that digit. Classic has no default hotbar keys; bind _Hotbar slot N_ if
   you want them. Aboard or remote-controlling a vehicle, a **VEHICLE** card (azimuth, speed, cruise,
   engine, fuel, battery) sits at the bottom left of the map, one row above the key bar.
 - **Inventory item menu** numbers its rows `1`–`9`, `0` in Modern; the old letters still work.
@@ -610,13 +611,19 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   row each, or a single **Needs met** row when all are fine. Only a very hot or very cold body
   presses the Body temp row: mild warmth and chill stay in the detailed panels. Relevant mana
   remains `current/max`. Heat and cold each carry their own row icon; Rest uses one glyph.
+  In the graphical version the floating Stats, Movement, Weight and Limbs windows use the
+  same bundled icon set for Str, Dex, Int, Per, Power, Safe, Speed, Sound, Stam, Mood,
+  Focus, carried weight, carried volume, and the bleeding, infected, bitten, bandaged,
+  disinfected and broken limb states. Terminal Nerd Font, Unicode and Text only rows are
+  unchanged and carry no bundled glyphs.
   With icons the rows carry no labels; **Text only** keeps a label on every row. Normal gameplay
   descriptors and colors remain intact; Body temp describes body comfort, not the outdoor
   temperature.
   Options → Interface → Weather box / Status box moves or disables each box. Box icons selects
   **Text only**, Unicode or **Icon font**. The graphical version bundles the icon font: Material
-  Design Icons and human stance figures for walking, running, crouching and lying prone (Pinhead,
-  CC0), and uses it by default. A terminal needs a [Nerd Font](https://www.nerdfonts.com/) for
+  Design Icons, human stance figures for walking, running, crouching and lying prone (Pinhead,
+  CC0), and the approved stat, movement, weight, needs, limb and vehicle glyphs, and uses it by
+  default. A terminal needs a [Nerd Font](https://www.nerdfonts.com/) for
   it. Boxes avoid each other and the avatar's map center. A cramped Status box falls back to
   loadout-only or the sidebar; Needs disappear from the sidebar only when the box can carry them
   in Status. Weather, weapon and mana sidebar fields likewise return when their box cannot
@@ -640,6 +647,9 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   Vehicle sidebar panel steps aside only when the window/box fits; disabling it or losing room
   restores that panel. The optional **Driving dashboard** expands Fusion's Vehicle card and the
   legacy floating window; with it off, this compact reading remains available.
+  In the graphical version the vehicle rows use bundled speedometer, cruise, engine on/off
+  and takeoff glyphs in both the vehicle window and the driving dashboard. Terminal and
+  other modes keep the original indent.
   Speed, azimuth and fuel values stay readable at the minimum supported 80 × 25 terminal size.
 - **Smooth vehicle rotation** (Options → Graphics, tiles only): a vehicle that faces a direction
   other than north, south, east or west is drawn as one rotated vehicle. Each of its parts is
@@ -648,6 +658,8 @@ pictures, and uses the bundled default tileset (MSX++ UnDeadPeople).
   and isometric tilesets are unchanged. Turn it off to get the old axis-aligned drawing.
 - **Body panel** (inspired by Project Zomboid's health screen): the sidebar lists every hurt limb
   and what is wrong with it (bleeding, infected, bitten, broken, bandaged, disinfected).
+  In the graphical version bundled icon glyphs mark the bleeding, infected, bitten,
+  bandaged, disinfected and broken limb states in the sidebar and full view.
   **`h`** in Modern, or **Enter → Info → Body status**, opens the full view with every limb's health and what to do
   about wounds. Hide it like any panel from the sidebar options. The Hitchhiker's Guide remains
   available through Enter and item context menus.
@@ -668,6 +680,10 @@ or zero volume leaves no cue or marker. Idle sounds never wake a sleeper or inte
 a crowd is held to four new cue clips per quarter second. Up/Down selects a row, Left/Right changes
 it, and Enter toggles a switch or raises a volume. Changes apply immediately; **Escape** closes the
 menu and saves them. The terminal build instead shows “Sound is unavailable in this build.”
+
+Overhaul ballistic gunfire maps 36 weapon ids: a near `fire_gun` sound and a distant
+`fire_gun_distant` sound. Suppressed gunfire has no separate distant event; the nearby
+suppressed variant randomly uses the suppressed pair. Energy weapons remain silent by default.
 
 **Music follows the game state** (on by default) selects a soundpack's `danger`, `vehicle`,
 `underground`, `night`, `shelter` or `explore` playlist, in that priority. A missing, empty or
@@ -849,8 +865,8 @@ once and let stacks count how many of their units carry it:
   "recoil": 0.76,
   "price": 0.5,
   "price_postapoc": 0.5,
-  "ammo_effects": [ "RECYCLED", "BLACKPOWDER", "MUZZLE_SMOKE" ],
-  "remove_ammo_effects": [ "NEVER_MISFIRES" ]
+  "ammo_effects": ["RECYCLED", "BLACKPOWDER", "MUZZLE_SMOKE"],
+  "remove_ammo_effects": ["NEVER_MISFIRES"]
 }
 ```
 
@@ -1131,6 +1147,18 @@ not include the first-sighting safety check. Arrow timings include fresh-turn ro
 
 ## End-to-end tests
 
+The verification lanes are already separate:
+
+| Lane              | Runner                                   | Purpose                                        |
+| ----------------- | ---------------------------------------- | ---------------------------------------------- |
+| Core Catch2       | `build-scripts/run-linux-test-shards.ts` | Core behavior, including some fork regressions |
+| Fork E2E          | `python3 tests/e2e/run.py`               | Fork features exercised through the real game  |
+| Harness lifecycle | `python3 tests/e2e/test_lifecycle.py`    | Process ownership, interruption and cleanup    |
+
+The fork E2E run does not run the core Catch2 suite. Run each lane independently; neither replaces
+the other. Memory snapshots and reusable save templates remain a
+[future experiment](docs/fork/e2e-state-reuse-research.md), not part of this runner.
+
 `tests/e2e/run.py` starts the terminal build inside tmux, creates a character and plays through the
 fork features by sending real key presses and reading the screen. It needs `tmux` and a built
 `cataclysm-bn` binary. The harness looks in `out/build/linux-curses/src`, then the repo root, then
@@ -1150,15 +1178,30 @@ python3 tests/e2e/run.py --serial --keep # one process; leave the main game open
 ```
 
 Do not run unrelated heavy work alongside the suite. Each process uses a private tmux server,
-world and user directory. `--shard=I/N` runs one of N shards (CI uses four); tests are assigned
+world and user directory. `--shard=I/N` runs one of N shards; tests are assigned
 longest first to the lightest shard using `tests/e2e/durations.json`, then run in suite order.
 Use the `--parallel=N`, `--shard=I/N`, `--durations=PATH` and `--tier=` forms with `=`; unknown
 options are errors. Test-name filters that match nothing are errors; empty shards skip game
 startup.
 
-`--durations=<path>` writes only this run's passing tests' elapsed seconds. CI uploads one such
-file per shard; `python3 tests/e2e/merge_durations.py <shard files> --write` merges them into the
-checked-in manifest, so the shard split follows CI's timings instead of a fast local machine's.
+For an interruptible local run, launch independent shards and retain their logs instead of using
+the parallel coordinator's temporary logs. For example, create `out/e2e/local` and run:
+
+```sh
+script --quiet --return --flush --log-out out/e2e/local/shard-0.log -- \
+  python3 -u tests/e2e/run.py --shard=0/8 --durations=out/e2e/local/shard-0.json
+```
+
+Repeat for indices 0 through 7, with at most two running together. A completed shard needs exit
+status zero and passing-duration keys matching every test assigned to it. Restart an interrupted
+or failed shard in full, with a new attempt log; fixtures share state within a shard. This is manual
+batching, not automatic checkpoint/resume. Keep the same binary, source, data, test registry,
+selection and durations manifest across all batches; if any changes, start a new run rather than
+combine stale results. Local timings stay under `out`, never in the checked-in durations manifest.
+
+`--durations=<path>` writes only this run's passing tests' elapsed seconds. CI uploads its timing
+file; `python3 tests/e2e/merge_durations.py <timing files> --write` merges CI timings into the
+checked-in manifest, so the shard split follows CI instead of a fast local machine.
 Refresh the manifest only from a successful full run, and rerun the suite afterward: updated
 timings change which tests share a game.
 

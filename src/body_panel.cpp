@@ -11,6 +11,7 @@
 #include "catacharset.h"
 #include "color.h"
 #include "cursesdef.h"
+#include "icon_font.h"
 #include "input.h"
 #include "options.h"
 #include "output.h"
@@ -33,7 +34,14 @@ const efftype_id effect_mending( "mending" );
 struct wound {
     std::string text;
     nc_color color;
+    std::string icon;
 };
+
+auto wound_icon_text( const char *asset ) -> std::string
+{
+    return icon_font::bundled && get_option<std::string>( "HUD_ICONS" ) == "nerd" ?
+           std::string( asset ) : std::string();
+}
 
 template<typename Visit>
 auto for_each_wound( const avatar &you, const bodypart_id &bp, Visit visit ) -> void
@@ -41,32 +49,32 @@ auto for_each_wound( const avatar &you, const bodypart_id &bp, Visit visit ) -> 
     if( you.get_part_hp_cur( bp ) <= 0 ) {
         const auto text = you.has_effect( effect_mending, bp.id() ) ? _( "mending" )
                           : _( "broken" );
-        if( !visit( wound{ text, c_magenta } ) ) {
+        if( !visit( wound{ text, c_magenta, wound_icon_text( icon_font::bone ) } ) ) {
             return;
         }
     }
     if( you.has_effect( effect_bleed, bp.id() ) ) {
-        if( !visit( wound{ _( "bleeding" ), c_red } ) ) {
+        if( !visit( wound{ _( "bleeding" ), c_red, wound_icon_text( icon_font::water_outline ) } ) ) {
             return;
         }
     }
     if( you.has_effect( effect_infected, bp.id() ) ) {
-        if( !visit( wound{ _( "infected" ), c_light_red } ) ) {
+        if( !visit( wound{ _( "infected" ), c_light_red, wound_icon_text( icon_font::virus_outline ) } ) ) {
             return;
         }
     }
     if( you.has_effect( effect_bite, bp.id() ) ) {
-        if( !visit( wound{ _( "bitten" ), c_yellow } ) ) {
+        if( !visit( wound{ _( "bitten" ), c_yellow, wound_icon_text( icon_font::tooth_outline ) } ) ) {
             return;
         }
     }
     if( you.has_effect( effect_bandaged, bp.id() ) ) {
-        if( !visit( wound{ _( "bandaged" ), c_light_green } ) ) {
+        if( !visit( wound{ _( "bandaged" ), c_light_green, wound_icon_text( icon_font::bandage ) } ) ) {
             return;
         }
     }
     if( you.has_effect( effect_disinfected, bp.id() ) ) {
-        if( !visit( wound{ _( "disinfected" ), c_light_cyan } ) ) {
+        if( !visit( wound{ _( "disinfected" ), c_light_cyan, wound_icon_text( icon_font::spray_bottle ) } ) ) {
             return;
         }
     }
@@ -103,17 +111,18 @@ auto draw( avatar &you, const catacurses::window &w ) -> void
     auto lines = std::vector<wound>();
     for( const auto &bp : you.get_all_body_parts( true ) ) {
         if( const auto found = first_wound_of( you, bp ) ) {
-            lines.push_back( { string_format( "%s: %s", body_part_name_as_heading( bp, 1 ), found->text ),
-                               found->color } );
+            lines.push_back( { string_format( "%s%s: %s", found->icon.empty() ? std::string() : found->icon + " ",
+                                              body_part_name_as_heading( bp, 1 ), found->text ),
+                               found->color, found->icon } );
         }
     }
     const auto rows = std::max( getmaxy( w ) - 1, 1 );
     if( lines.empty() ) {
-        lines.push_back( { _( "No wounds" ), c_green } );
+        lines.push_back( { _( "No wounds" ), c_green, {} } );
     } else if( static_cast<int>( lines.size() ) > rows ) {
         const auto more = lines.size() - rows + 1;
         lines.resize( rows - 1 );
-        lines.push_back( { string_format( _( "And %d more" ), more ), c_light_gray } );
+        lines.push_back( { string_format( _( "And %d more" ), more ), c_light_gray, {} } );
     }
     const auto width = std::max( getmaxx( w ), 1 );
     for( int i = 0; i < static_cast<int>( lines.size() ) && i < rows; i++ ) {
@@ -146,7 +155,7 @@ auto report_text( avatar &you ) -> std::string
         text += colorize( name, c_white ) + " " + colorize( bar, bar_color ) +
                 string_format( " %d/%d", you.get_part_hp_cur( bp ), you.get_part_hp_max( bp ) );
         for( const auto &w : wounds_of( you, bp ) ) {
-            text += "  " + colorize( w.text, w.color );
+            text += "  " + colorize( w.icon.empty() ? w.text : w.icon + " " + w.text, w.color );
         }
         text += "\n";
     }

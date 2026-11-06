@@ -206,8 +206,18 @@ auto icon_row( std::string icon, std::string text, const nc_color color )
 enum class gauge {
     compass,
     fuel,
-    battery
+    battery,
+    speed,
+    cruise,
+    engine_on,
+    engine_off,
+    takeoff
 };
+
+auto bundled_glyph( const std::string &style, const char *bundled ) -> std::string
+{
+    return style == "nerd" && icon_font::bundled ? std::string( bundled ) : std::string();
+}
 
 auto gauge_glyph( const gauge kind, const std::string &style ) -> std::string
 {
@@ -233,8 +243,31 @@ auto gauge_glyph( const gauge kind, const std::string &style ) -> std::string
             const auto nerd = nerd_glyph( icon_font::battery, "\U000F0079" );
             return nerd.empty() ? std::string( "↯" ) : nerd;
         }
+        case gauge::speed:
+            return bundled_glyph( style, icon_font::speedometer );
+        case gauge::cruise:
+            return bundled_glyph( style, icon_font::car_cruise_control );
+        case gauge::engine_on:
+            return bundled_glyph( style, icon_font::engine );
+        case gauge::engine_off:
+            return bundled_glyph( style, icon_font::engine_off );
+        case gauge::takeoff:
+            return bundled_glyph( style, icon_font::airplane_takeoff );
     }
     return {};
+}
+
+struct gauge_row_options {
+    std::string style;
+    nc_color color = c_light_gray;
+};
+
+auto gauge_row( const gauge kind, std::string text, const gauge_row_options &options )
+-> hud_windows::window_line
+{
+    const auto glyph = gauge_glyph( kind, options.style );
+    return glyph.empty() ? text_row( std::move( text ), options.color ) :
+           icon_row( glyph, std::move( text ), options.color );
 }
 
 auto icon_column( const std::string &style ) -> int
@@ -310,16 +343,17 @@ auto read( const avatar &you ) -> hud_windows::vehicle_reading
                                 convert_velocity( veh->safe_velocity( false ), VU_VEHICLE ) );
     const auto scale = std::max( std::abs( safe_speed ), 1 );
     const auto strain = strain_level_of( veh->strain() );
-    out.body.push_back( text_row(
+    out.body.push_back( gauge_row( gauge::speed,
                             string_format( "%s %s", padded_label( _( "Speed" ) ),
                                            bar( std::abs( speed ), scale ) ),
-                            speed_color( strain ) ) );
+                            { .style = icons, .color = speed_color( strain ) } ) );
 
-    out.body.push_back( text_row(
+    out.body.push_back( gauge_row( gauge::cruise,
                             string_format( "%s %s", padded_label( _( "Cruise" ) ),
                                            cruising ? string_format( "%s %d %s", _( "On" ), cruise,
                                                    units ) : std::string( _( "Off" ) ) ),
-                            cruising ? c_light_green : c_light_gray ) );
+                            { .style = icons,
+                              .color = cruising ? c_light_green : c_light_gray } ) );
 
     out.body.push_back( icon_row(
                             gauge_glyph( gauge::compass, icons ),
@@ -328,10 +362,10 @@ auto read( const avatar &you ) -> hud_windows::vehicle_reading
                             c_light_gray ) );
 
     const auto engine_state = veh->engine_on ? _( "On" ) : _( "Off" );
-    out.body.push_back( text_row(
+    out.body.push_back( gauge_row( veh->engine_on ? gauge::engine_on : gauge::engine_off,
                             string_format( "%s %s%s", padded_label( _( "Engine" ) ), engine_state,
                                            strain_marker( strain ) ),
-                            engine_color( veh->engine_on, strain ) ) );
+                            { .style = icons, .color = engine_color( veh->engine_on, strain ) } ) );
 
     const auto fuel = engine_fuel( *veh );
     if( fuel ) {
@@ -345,10 +379,11 @@ auto read( const avatar &you ) -> hud_windows::vehicle_reading
     if( veh->has_part( "WING" ) ) {
         const auto takeoff = veh->get_takeoff_speed();
         const auto enough = takeoff > 0 && speed >= takeoff;
-        out.body.push_back( text_row(
+        out.body.push_back( gauge_row( gauge::takeoff,
                                 string_format( "%s %d %s %s", padded_label( _( "Takeoff" ) ), takeoff,
                                                units, enough ? _( "lift" ) : _( "no lift" ) ),
-                                enough ? c_light_green : c_light_red ) );
+                                { .style = icons,
+                                  .color = enough ? c_light_green : c_light_red } ) );
     }
 
     return out;
