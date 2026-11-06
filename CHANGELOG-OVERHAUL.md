@@ -11,6 +11,8 @@ Upstream's own changes are in `docs/en/game/changelog`.
 - Terminal text fields preserve repeated characters when input arrives faster than the game
   can read it. Lua-console test setup no longer loses punctuation, letters or digits on slow
   runners. Gameplay key-repeat suppression is unchanged.
+- Wall-search test fixtures clear rolled world creatures and keep their hidden zombie in place,
+  so unrelated combat cannot change the search counts.
 
 ## 2026-11-05
 

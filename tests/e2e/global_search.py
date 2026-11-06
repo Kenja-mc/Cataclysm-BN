@@ -158,15 +158,19 @@ def test_ctrl_f_never_lists_what_is_behind_a_wall(_g):
                      define=HELPERS) as game:
         arena(game)
         see_everything(game, True)
+        assert game.lua("for _,m in ipairs(gapi.get_all_monsters()) do m:set_hp(0) end "
+                        "for _,n in ipairs(gapi.get_all_npcs()) do park(n) end out('ok')") == ["ok"]
         settle(game)
         build_the_wall = ("M:set_ter_at(here(1,0), TerId.new('t_wall'):int_id()) "
                           "M:set_ter_at(here(2,0), TerId.new('t_floor'):int_id()) out('ok')")
         assert game.lua(build_the_wall) == ["ok"]
+        assert game.lua("out(gapi.get_avatar():sees(here(2,0)))") == ["false"], \
+            "the fixture wall must hide the target tile"
 
         creatures_before = search_total(game, "zombie")
         items_before = search_total(game, "rock")
         assert game.lua("local m=gapi.place_monster_at(MonsterTypeId.new('mon_zombie'), here(2,0)) "
-                        "out(m ~= nil)") == ["true"]
+                        "if m then m:set_moves(-1000000) end out(m ~= nil)") == ["true"]
         assert game.lua("local p=here(2,0) M:create_item_at(p, ItypeId.new('rock'), -1) "
                         "out(#M:get_items_at(p))") == ["1"]
         assert search_total(game, "zombie") == creatures_before, \
@@ -176,6 +180,8 @@ def test_ctrl_f_never_lists_what_is_behind_a_wall(_g):
 
         remove_the_wall = "M:set_ter_at(here(1,0), TerId.new('t_floor'):int_id()) out('ok')"
         assert game.lua(remove_the_wall) == ["ok"]
+        assert game.lua("out(gapi.get_avatar():sees(here(2,0)))") == ["true"], \
+            "removing the fixture wall must reveal the target tile"
         assert search_total(game, "zombie") > creatures_before
         assert search_total(game, "rock") > items_before
 

@@ -1247,6 +1247,8 @@ The checks also isolate reload inventories and use an unseen NPC call for sound-
 so earlier weapons, automatic over-capacity drops and wind-masked footsteps do not change the fixture.
 The targeting fixture starts with a real bound, loaded gun; the separate reload check drives
 the reload UI. Lua setup refuses to type into the game if its console did not open.
+The wall-search fixture clears rolled creatures and pins its zombie behind the wall; it checks
+that the target is unseen before removal and visible afterward, alongside the search results.
 The dynamic-music checks park every monster, record the baseline
 `gapi.music_context()` and `gapi.music_playlist()`, and then observe `danger` as soon as a hostile
 is in the bubble and the baseline playlist again after the hysteresis delay; a second game with
