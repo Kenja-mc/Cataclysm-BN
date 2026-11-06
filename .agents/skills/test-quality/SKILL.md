@@ -37,7 +37,13 @@ Use when adding or changing automated tests.
   state, move the fixture underground where ambient is fixed, then assert.
 - Avoid assertions that rely on probability, wall-clock time, locale, file order, or current global options unless the test pins them.
 - Reproduce reported flakes with the failing `--rng-seed` before accepting the fix.
-- When CI test jobs fail, inspect the job log for the exact test command, filters, shard split, user-dir, order-sensitive included tests, `--rng-seed`, and backend flags. Run that same shard command on the final rebased HEAD before declaring the fix validated; do not substitute a narrower tag filter or a different full-test command.
+- When CI test jobs fail, inspect the effective command, including runner-added flags, filters,
+  shard split, user-dir, order-sensitive included tests, `--rng-seed` and backend flags. Replay
+  that same shard on final HEAD; a narrower filter or different full-test command is not a substitute.
+  For filename-tag filters, use `build-scripts/run-linux-test-shards.ts` or retain the
+  `--filenames-as-tags` flag its `ensureFilenameTags` helper adds.
+  Report the observed executed test-case count with replay evidence. A pass requires exit zero
+  and at least one executed case; `No tests ran` or unmatched-only filters are invalid evidence.
 - Before pushing test fixes that touch global state, NPCs, maps, overmaps, player position, RNG, options, or fixtures, run both the relevant focused test and the CI-equivalent shard/full command that can expose state bleed from earlier tests.
 - Keep Lua/C++ integration tests on real bound objects when the binding behavior is under test.
 - Expected `DebugLog(DL::Error, ...)` still makes the test process fail even when assertions pass. Use
