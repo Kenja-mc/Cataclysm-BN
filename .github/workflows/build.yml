@@ -956,7 +956,7 @@ jobs:
           binary="build/src/cataclysm-bn"
           if [ "${{ matrix.tiles }}" = true ]; then binary="$binary-tiles"; fi
           xvfb-run -a "$binary" --basepath ./ --userdir "$RUNNER_TEMP/data-check/" --check-all-mods
-          python3 build-scripts/test_mod_validation.py "$binary"
+          xvfb-run -a python3 build-scripts/test_mod_validation.py "$binary"
 
       - name: Save vcpkg binary archives (windows msvc)
         if: success() && runner.os == 'Windows' && env.CACHE_WRITE_ALLOWED == 'true' && steps.vcpkg-binary-cache.outputs.cache-hit != 'true'

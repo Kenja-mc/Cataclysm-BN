@@ -180,6 +180,9 @@ pre-push or candidate-publication gate.
    python3 build-scripts/test_mod_validation.py out/build/linux-curses/src/cataclysm-bn
    ```
 
+   On headless runners, wrap the regression command in `xvfb-run -a` so its child game processes
+   inherit the display.
+
 2. Upstream unit tests, for affected core behavior: use the software GPU for file-tag shards, as
    upstream CI does. Xvfb must be installed, and the
    software Vulkan ICD must be reachable; point `VK_DRIVER_FILES` at it. Without the ICD the
