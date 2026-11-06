@@ -1138,6 +1138,8 @@ auto init::check_mods_for_errors( loading_ui &ui, const std::vector<mod_id> &opt
     // mapgen functions do not outlive the active Lua state.
     on_out_of_scope clear_last_checked_data( [] { clear_loaded_data(); } );
 
+    auto all_mods_loaded = true;
+
     for( const mod_id &id : to_check ) {
         clear_loaded_data();
 
@@ -1163,9 +1165,8 @@ auto init::check_mods_for_errors( loading_ui &ui, const std::vector<mod_id> &opt
         try {
             load_and_finalize_packs( ui, _( "Checking mods" ), mods_list );
         } catch( const std::exception &err ) {
+            all_mods_loaded = false;
             std::cerr << "Error loading data: " << err.what() << '\n';
-        } catch( const JsonError &err ) {
-            debugmsg( "(json-error)\n%s", err.what() );
         }
 
         std::string world_name = world_generator->active_world->info->world_name;
@@ -1176,7 +1177,7 @@ auto init::check_mods_for_errors( loading_ui &ui, const std::vector<mod_id> &opt
         get_primary_overmapbuffer().clear();
     }
 
-    return !debug_has_error_been_observed();
+    return all_mods_loaded && !debug_has_error_been_observed();
 }
 
 void init::load_soundpack_files( const std::string &soundpack_path )
