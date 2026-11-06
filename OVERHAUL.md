@@ -188,28 +188,27 @@ food and a weapon, because houses usually have all three.
 
 <!-- BEGIN generated:keytable -->
 
-| Key / family                                                                                                               | Action                                                                                |
-| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| <kbd>W</kbd>, <kbd>A</kbd>, <kbd>S</kbd>, <kbd>D</kbd>                                                                     | move; bump an enemy to melee attack (the keypad moves too, and Numpad 5 waits a turn) |
-| <kbd>Shift</kbd>+<kbd>A</kbd>, <kbd>Shift</kbd>+<kbd>W</kbd>, <kbd>Shift</kbd>+<kbd>S</kbd>, <kbd>Shift</kbd>+<kbd>D</kbd> | select (look at) the next tile in that direction; no time passes                      |
-| <kbd>Q</kbd>, <kbd>E</kbd>, <kbd>Z</kbd>, <kbd>C</kbd>                                                                     | move diagonally                                                                       |
-| <kbd>Ctrl</kbd>+<kbd>W</kbd>, <kbd>Ctrl</kbd>+<kbd>A</kbd>, <kbd>Ctrl</kbd>+<kbd>S</kbd>, <kbd>Ctrl</kbd>+<kbd>D</kbd>     | physical peek (normal 200-move cost)                                                  |
-| <kbd>Tab</kbd>, <kbd>Shift</kbd>+<kbd>Tab</kbd>                                                                            | next / previous visible hostile                                                       |
-| <kbd>Shift</kbd>+<kbd>X</kbd>                                                                                              | movement mode menu: run, walk, crouch, prone                                          |
-| <kbd>F</kbd>, <kbd>Shift</kbd>+<kbd>F</kbd>, <kbd>R</kbd>, <kbd>T</kbd>                                                    | attack aimed tile / force melee / reload / throw                                      |
-| <kbd>P</kbd>                                                                                                               | bionics                                                                               |
-| <kbd>Space</kbd>                                                                                                           | nearby or selected-tile actions, including explicit Jump and Smash                    |
-| <kbd>Shift</kbd>+<kbd>Space</kbd>                                                                                          | toggle a selected vehicle curtain, or choose one nearby                               |
-| <kbd>G</kbd>, <kbd>Shift</kbd>+<kbd>G</kbd>, <kbd>Ctrl</kbd>+<kbd>G</kbd>                                                  | pick up beside you / take everything beside you / nearby list                         |
-| <kbd>I</kbd>, <kbd>V</kbd>, <kbd>Shift</kbd>+<kbd>I</kbd>                                                                  | inventory / use item by kind / advanced inventory                                     |
-| <kbd>F5</kbd>                                                                                                              | craft (also works with empty inventory)                                               |
-| <kbd>@</kbd>, <kbd>Shift</kbd>+<kbd>P</kbd>, <kbd>Shift</kbd>+<kbd>B</kbd>                                                 | character sheet / message log / butcher                                               |
-| <kbd>Enter</kbd>                                                                                                           | all action groups; Info contains character/status screens                             |
-| <kbd>Ctrl</kbd>+<kbd>F</kbd>                                                                                               | search controls, creatures, tiles and items (see below)                               |
-| <kbd>1</kbd>–<kbd>6</kbd>, <kbd>Ctrl</kbd>+<kbd>T</kbd>                                                                    | hotbar slots 1-6 / assign a slot                                                      |
-| <kbd>X</kbd>, <kbd>Ctrl</kbd>+<kbd>X</kbd>                                                                                 | wait one turn / wait or rest a while                                                  |
-| <kbd>M</kbd>, <kbd>N</kbd>                                                                                                 | map / auto-explore                                                                    |
-
+| Key / family | Action |
+| --- | --- |
+| <kbd>W</kbd>, <kbd>A</kbd>, <kbd>S</kbd>, <kbd>D</kbd> | move; bump an enemy to melee attack (the keypad moves too, and Numpad 5 waits a turn) |
+| <kbd>Shift</kbd>+<kbd>A</kbd>, <kbd>Shift</kbd>+<kbd>W</kbd>, <kbd>Shift</kbd>+<kbd>S</kbd>, <kbd>Shift</kbd>+<kbd>D</kbd> | select (look at) the next tile in that direction; no time passes |
+| <kbd>Q</kbd>, <kbd>E</kbd>, <kbd>Z</kbd>, <kbd>C</kbd> | move diagonally |
+| <kbd>Ctrl</kbd>+<kbd>W</kbd>, <kbd>Ctrl</kbd>+<kbd>A</kbd>, <kbd>Ctrl</kbd>+<kbd>S</kbd>, <kbd>Ctrl</kbd>+<kbd>D</kbd> | physical peek (normal 200-move cost) |
+| <kbd>Tab</kbd>, <kbd>Shift</kbd>+<kbd>Tab</kbd> | next / previous visible hostile |
+| <kbd>Shift</kbd>+<kbd>X</kbd> | movement mode menu: run, walk, crouch, prone |
+| <kbd>F</kbd>, <kbd>Shift</kbd>+<kbd>F</kbd>, <kbd>R</kbd>, <kbd>T</kbd> | attack aimed tile / force melee / reload / throw |
+| <kbd>P</kbd> | bionics |
+| <kbd>Space</kbd> | nearby or selected-tile actions, including explicit Jump and Smash |
+| <kbd>Shift</kbd>+<kbd>Space</kbd> | toggle a selected vehicle curtain, or choose one nearby |
+| <kbd>G</kbd>, <kbd>Shift</kbd>+<kbd>G</kbd>, <kbd>Ctrl</kbd>+<kbd>G</kbd> | pick up beside you / take everything beside you / nearby list |
+| <kbd>I</kbd>, <kbd>V</kbd>, <kbd>Shift</kbd>+<kbd>I</kbd> | inventory / use item by kind / advanced inventory |
+| <kbd>F5</kbd> | craft (also works with empty inventory) |
+| <kbd>@</kbd>, <kbd>Shift</kbd>+<kbd>P</kbd>, <kbd>Shift</kbd>+<kbd>B</kbd> | character sheet / message log / butcher |
+| <kbd>Enter</kbd> | all action groups; Info contains character/status screens |
+| <kbd>Ctrl</kbd>+<kbd>F</kbd> | search controls, creatures, tiles and items (see below) |
+| <kbd>1</kbd>–<kbd>6</kbd>, <kbd>Ctrl</kbd>+<kbd>T</kbd> | hotbar slots 1-6 / assign a slot |
+| <kbd>X</kbd>, <kbd>Ctrl</kbd>+<kbd>X</kbd> | wait one turn / wait or rest a while |
+| <kbd>M</kbd>, <kbd>N</kbd> | map / auto-explore |
 <!-- END generated:keytable -->
 
 Walking into an enemy attacks it in both control schemes. Options → Interface → Attack by walking

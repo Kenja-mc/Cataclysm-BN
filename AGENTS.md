@@ -49,6 +49,8 @@ in nearby documentation and executable tests; Part 1 rule 6 still governs code c
 Task lists contain only actionable remaining work. Git owns history: do not keep session diaries,
 progress logs, machine timings or repeated historical incident narratives in repository documents.
 Keep the actual product changes in `CHANGELOG-OVERHAUL.md`.
+After formatting docs with generated controls tables, run `python3 build-scripts/gen_controls_guide.py`
+and its `--check` mode. The generator owns the embedded tables' formatting.
 
 ### Build
 
